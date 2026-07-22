@@ -34,7 +34,8 @@ export async function loginStepOneAction(email: string, password: string): Promi
   if (!validPassword) return { ok: false, error: GENERIC_CREDENTIALS_ERROR };
 
   if (!user.emailVerified) {
-    await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
+    const sendResult = await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
+    if (!sendResult.ok) return { ok: false, error: "Couldn't send the verification email. Try again in a moment." };
     return { ok: true, needsEmailVerification: true };
   }
 
@@ -46,7 +47,8 @@ export async function loginStepOneAction(email: string, password: string): Promi
     return { ok: true, needsEmailVerification: false, autoCode: code };
   }
 
-  await createAndSendCode({ email: user.email, userId: user.id, purpose: "LOGIN_2FA" });
+  const sendResult = await createAndSendCode({ email: user.email, userId: user.id, purpose: "LOGIN_2FA" });
+  if (!sendResult.ok) return { ok: false, error: "Couldn't send your login code. Try again in a moment." };
   return { ok: true, needsEmailVerification: false, autoCode: null };
 }
 

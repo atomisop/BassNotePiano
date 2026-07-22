@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useSession } from "next-auth/react";
 import { SCALE_GROUPS, PRO_LIFETIME_PRICE_CENTS } from "@/lib/curriculum";
 
 function formatUsd(cents: number) {
@@ -29,6 +30,9 @@ const gridItem = {
 };
 
 export default function LandingPage() {
+  const { data: session } = useSession();
+  const isLoggedIn = Boolean(session?.user);
+
   return (
     <div className="relative overflow-hidden">
       <div
@@ -45,10 +49,10 @@ export default function LandingPage() {
             Pricing
           </Link>
           <Link
-            href="/login"
+            href={isLoggedIn ? "/dashboard" : "/login"}
             className="rounded-full border border-neutral-800 px-4 py-1.5 text-neutral-200 transition hover:border-amber-400/50 hover:text-amber-300"
           >
-            Log in
+            {isLoggedIn ? "Dashboard" : "Log in"}
           </Link>
         </nav>
       </header>
@@ -74,10 +78,10 @@ export default function LandingPage() {
         </motion.p>
         <motion.div variants={heroItem} className="mt-9 flex flex-wrap items-center justify-center gap-3">
           <Link
-            href="/register"
+            href={isLoggedIn ? "/dashboard" : "/register"}
             className="rounded-xl bg-amber-400 px-6 py-3 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300"
           >
-            Start learning
+            {isLoggedIn ? "Go to dashboard" : "Start learning"}
           </Link>
           <Link
             href="/pricing"

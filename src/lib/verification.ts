@@ -46,11 +46,23 @@ async function issueCode({ email, userId, purpose, payload }: CreateCodeParams) 
   return { record, code, normalizedEmail };
 }
 
-/** Issues a fresh 6-digit code and emails it — the normal path for a real verification/2FA/reset request. */
-export async function createAndSendCode(params: CreateCodeParams) {
-  const { record, code, normalizedEmail } = await issueCode(params);
-  await sendVerificationCodeEmail(normalizedEmail, params.purpose, code);
-  return record;
+/**
+ * Issues a fresh 6-digit code and emails it — the normal path for a real
+ * verification/2FA/reset request. The code row is written regardless (a
+ * transient email-provider failure shouldn't corrupt the pending-change
+ * state), but the send itself is caught rather than left to throw — an
+ * external API hiccup should surface as a friendly "try again" to the
+ * caller, not an unhandled 500 crashing the page mid-flow.
+ */
+export async function createAndSendCode(params: CreateCodeParams): Promise<{ ok: true } | { ok: false }> {
+  const { code, normalizedEmail } = await issueCode(params);
+  try {
+    await sendVerificationCodeEmail(normalizedEmail, params.purpose, code);
+    return { ok: true };
+  } catch (err) {
+    console.error(`Failed to send ${params.purpose} code to ${normalizedEmail}:`, err);
+    return { ok: false };
+  }
 }
 
 /**

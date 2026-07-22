@@ -35,7 +35,8 @@ export async function requestNameChangeAction(newName: string) {
   if (!trimmed) return { ok: false as const, error: "Name can't be empty." };
 
   const { id, email } = await requireSession();
-  await createAndSendCode({ email, userId: id, purpose: "CHANGE_NAME", payload: { name: trimmed } });
+  const sendResult = await createAndSendCode({ email, userId: id, purpose: "CHANGE_NAME", payload: { name: trimmed } });
+  if (!sendResult.ok) return { ok: false as const, error: "Couldn't send the confirmation email. Try again in a moment." };
   return { ok: true as const };
 }
 
@@ -68,7 +69,8 @@ export async function requestPasswordChangeAction(currentPassword: string, newPa
   }
 
   const newPasswordHash = await bcrypt.hash(newPassword, 12);
-  await createAndSendCode({ email, userId: id, purpose: "CHANGE_PASSWORD", payload: { passwordHash: newPasswordHash } });
+  const sendResult = await createAndSendCode({ email, userId: id, purpose: "CHANGE_PASSWORD", payload: { passwordHash: newPasswordHash } });
+  if (!sendResult.ok) return { ok: false as const, error: "Couldn't send the confirmation email. Try again in a moment." };
   return { ok: true as const };
 }
 
@@ -102,7 +104,8 @@ export async function requestAvatarChangeAction(dataUri: string) {
   }
 
   const { id, email } = await requireSession();
-  await createAndSendCode({ email, userId: id, purpose: "CHANGE_AVATAR", payload: { image: dataUri } });
+  const sendResult = await createAndSendCode({ email, userId: id, purpose: "CHANGE_AVATAR", payload: { image: dataUri } });
+  if (!sendResult.ok) return { ok: false as const, error: "Couldn't send the confirmation email. Try again in a moment." };
   return { ok: true as const };
 }
 
