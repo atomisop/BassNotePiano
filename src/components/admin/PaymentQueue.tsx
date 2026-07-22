@@ -8,13 +8,35 @@ export interface PaymentQueueProps {
   payments: PendingZellePayment[];
   onApprove: (paymentId: string) => Promise<void>;
   onReject: (paymentId: string, reason: string) => Promise<void>;
+  emptyMessage?: string;
 }
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
-export function PaymentQueue({ payments, onApprove, onReject }: PaymentQueueProps) {
+const STATUS_LABEL: Record<string, string> = {
+  AWAITING_TRANSFER: "Awaiting transfer",
+  PENDING_REVIEW: "Pending review",
+  VERIFIED: "Verified",
+  REJECTED: "Rejected",
+  EXPIRED: "Expired",
+};
+
+const STATUS_STYLE: Record<string, string> = {
+  AWAITING_TRANSFER: "bg-neutral-800 text-neutral-400",
+  PENDING_REVIEW: "bg-amber-400/15 text-amber-300",
+  VERIFIED: "bg-emerald-400/15 text-emerald-300",
+  REJECTED: "bg-red-400/15 text-red-300",
+  EXPIRED: "bg-neutral-800 text-neutral-500",
+};
+
+export function PaymentQueue({
+  payments,
+  onApprove,
+  onReject,
+  emptyMessage = "Nothing to review right now.",
+}: PaymentQueueProps) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -46,7 +68,7 @@ export function PaymentQueue({ payments, onApprove, onReject }: PaymentQueueProp
   if (payments.length === 0) {
     return (
       <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-8 text-center text-sm text-neutral-500">
-        Nothing to review right now.
+        {emptyMessage}
       </div>
     );
   }
@@ -65,7 +87,14 @@ export function PaymentQueue({ payments, onApprove, onReject }: PaymentQueueProp
               </h3>
               <p className="mt-1 text-sm text-neutral-500">{payment.user.name ?? payment.user.email}</p>
             </div>
-            <p className="font-serif text-xl text-amber-300">{formatUsd(payment.amountCents)}</p>
+            <div className="text-right">
+              <p className="font-serif text-xl text-amber-300">{formatUsd(payment.amountCents)}</p>
+              <span
+                className={`mt-1 inline-block rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${STATUS_STYLE[payment.status]}`}
+              >
+                {STATUS_LABEL[payment.status]}
+              </span>
+            </div>
           </div>
 
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-3">
@@ -86,8 +115,11 @@ export function PaymentQueue({ payments, onApprove, onReject }: PaymentQueueProp
           </dl>
 
           {payment.note && <p className="mt-3 text-sm text-neutral-500">Note: {payment.note}</p>}
+          {payment.status === "REJECTED" && payment.rejectionReason && (
+            <p className="mt-2 text-sm text-red-400">Rejected: {payment.rejectionReason}</p>
+          )}
 
-          {rejectingId === payment.id ? (
+          {payment.status !== "PENDING_REVIEW" ? null : rejectingId === payment.id ? (
             <div className="mt-4 space-y-2">
               <textarea
                 autoFocus

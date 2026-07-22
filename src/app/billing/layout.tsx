@@ -11,9 +11,14 @@ export default function BillingLayout({ children }: { children: React.ReactNode 
         <Link href="/" className="font-serif text-sm tracking-[0.2em] text-neutral-200">
           KIÑIT <span className="text-amber-400">ACADEMY</span>
         </Link>
-        <Link href="/dashboard" className="text-sm text-neutral-500 transition hover:text-neutral-100">
-          Back to roadmap
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link href="/billing/history" className="text-sm text-neutral-500 transition hover:text-neutral-100">
+            Payment history
+          </Link>
+          <Link href="/dashboard" className="text-sm text-neutral-500 transition hover:text-neutral-100">
+            Back to roadmap
+          </Link>
+        </div>
       </header>
       <main className="relative flex flex-1 items-center justify-center px-6 pb-16">{children}</main>
     </div>

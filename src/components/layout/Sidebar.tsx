@@ -13,6 +13,7 @@ export interface SidebarProps {
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Roadmap" },
+  { href: "/billing/history", label: "Payment history" },
   { href: "/pricing", label: "Pricing" },
 ];
 

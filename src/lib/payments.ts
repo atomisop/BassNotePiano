@@ -1,6 +1,31 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma, ZellePaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AccessDeniedError, unlockScaleForUser, grantProLifetime } from "@/lib/access";
+
+/**
+ * A student who opens the payment modal but never actually confirms a
+ * transfer leaves an AWAITING_TRANSFER row behind forever otherwise —
+ * cluttering their own billing page and, at larger scale, the DB. Anything
+ * this old with no reference code submitted is safe to consider abandoned.
+ * Deliberately does NOT touch PENDING_REVIEW — once a student has submitted
+ * a reference code, a slow admin shouldn't cause their payment to vanish.
+ */
+const PENDING_PAYMENT_EXPIRY_DAYS = 7;
+
+/**
+ * Lazily sweeps stale AWAITING_TRANSFER rows to EXPIRED. There's no cron
+ * here — this runs inline wherever it matters (before creating/reusing a
+ * pending payment, before listing payments for admin) so the expiry is
+ * always accurate by the time anything reads it, without needing a
+ * scheduled job.
+ */
+async function expireStalePendingPayments() {
+  const cutoff = new Date(Date.now() - PENDING_PAYMENT_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
+  await prisma.zellePayment.updateMany({
+    where: { status: "AWAITING_TRANSFER", createdAt: { lt: cutoff } },
+    data: { status: "EXPIRED" },
+  });
+}
 
 interface PendingPaymentParams {
   userId: string;
@@ -24,6 +49,8 @@ async function getOrCreatePendingZellePayment({
   amountCents,
   zelleHandle,
 }: PendingPaymentParams) {
+  await expireStalePendingPayments();
+
   const existing = await prisma.zellePayment.findFirst({
     where: { userId, purpose, scaleGroupId: scaleGroupId ?? null, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
     orderBy: { createdAt: "desc" },
@@ -87,6 +114,26 @@ export async function submitZellePaymentReference(
 }
 
 // ---------------------------------------------------------------------------
+// Student-facing payment history
+// ---------------------------------------------------------------------------
+
+const paymentWithScaleInclude = {
+  scaleGroup: { select: { slug: true, code: true, title: true } },
+} satisfies Prisma.ZellePaymentInclude;
+
+export type UserPaymentRecord = Prisma.ZellePaymentGetPayload<{ include: typeof paymentWithScaleInclude }>;
+
+/** Every payment a student has ever submitted, newest first — their receipts/history view. */
+export async function getUserPaymentHistory(userId: string): Promise<UserPaymentRecord[]> {
+  await expireStalePendingPayments();
+  return prisma.zellePayment.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    include: paymentWithScaleInclude,
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Admin verification queue
 // ---------------------------------------------------------------------------
 
@@ -97,11 +144,21 @@ const pendingPaymentInclude = {
 
 export type PendingZellePayment = Prisma.ZellePaymentGetPayload<{ include: typeof pendingPaymentInclude }>;
 
-/** Everything awaiting manual review, oldest submission first — the admin queue's whole dataset. */
+/** Everything awaiting manual review, oldest submission first — the admin queue's default view. */
 export async function getPendingZellePayments(): Promise<PendingZellePayment[]> {
+  return getAdminPayments("PENDING_REVIEW");
+}
+
+/**
+ * Full admin payment listing, optionally filtered to one status — powers
+ * the richer "all payments" view (verified/rejected/expired history), not
+ * just the live pending queue.
+ */
+export async function getAdminPayments(status?: ZellePaymentStatus): Promise<PendingZellePayment[]> {
+  await expireStalePendingPayments();
   return prisma.zellePayment.findMany({
-    where: { status: "PENDING_REVIEW" },
-    orderBy: { submittedAt: "asc" },
+    where: status ? { status } : undefined,
+    orderBy: { createdAt: "desc" },
     include: pendingPaymentInclude,
   });
 }
