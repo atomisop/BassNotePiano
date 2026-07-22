@@ -1,5 +1,5 @@
 // ============================================================================
-// Ethiopian Scales, Rhythm & Chords — Prisma schema
+// Bass Note Piano — Prisma schema
 // PostgreSQL (Neon in production, any Postgres locally). Covers auth
 // (NextAuth adapter), the six-scale curriculum, per-user progress gating,
 // and manual Zelle payment verification for both Pay-As-You-Go ($25/session)
@@ -56,6 +56,15 @@ enum QuizResult {
   FAILED
 }
 
+enum VerificationPurpose {
+  EMAIL_VERIFY // confirm the address at signup
+  LOGIN_2FA // 6-digit code required on every login
+  PASSWORD_RESET // forgot-password flow
+  CHANGE_PASSWORD // confirm a password change from account settings
+  CHANGE_NAME // confirm a display name change
+  CHANGE_AVATAR // confirm a profile photo change
+}
+
 // ---------------------------------------------------------------------------
 // Auth (NextAuth.js Prisma adapter shape)
 // ---------------------------------------------------------------------------
@@ -82,6 +91,10 @@ model User {
   quizAttempts     QuizAttempt[]
   zellePayments    ZellePayment[]     @relation("PaymentSubmitter")
   reviewedPayments ZellePayment[]     @relation("PaymentReviewer")
+
+  verificationCodes VerificationCode[]
+  trustedDevices    TrustedDevice[]
+  loginEvents       LoginEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -120,6 +133,71 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// ---------------------------------------------------------------------------
+// Security — email verification codes, 2FA, trusted devices, login history
+// ---------------------------------------------------------------------------
+
+// A single-use 6-digit code emailed for any sensitive action. Codes are
+// hashed at rest (never store the raw digits) and scoped to one purpose, so
+// a leaked LOGIN_2FA code can't be replayed against, say, CHANGE_PASSWORD.
+// `payload` carries the pending value for CHANGE_* purposes (the new name,
+// the new password hash, the new avatar data URI) — the change is only
+// ever applied once the matching code is confirmed, never before.
+model VerificationCode {
+  id      String              @id @default(cuid())
+  userId  String?
+  email   String // the address the code was actually sent to
+  purpose VerificationPurpose
+
+  codeHash   String
+  payload    Json?
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  expiresAt  DateTime
+
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email, purpose])
+}
+
+// "Remember me for 7 days" — a browser holding a valid, unexpired token here
+// skips the LOGIN_2FA code step on its next password login.
+model TrustedDevice {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  label     String? // best-effort browser/OS description, cosmetic only
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// One row per successful login — what new-location detection compares
+// against, and eventually a place a student could review their own account
+// activity from.
+model LoginEvent {
+  id            String  @id @default(cuid())
+  userId        String
+  ip            String?
+  city          String?
+  region        String?
+  country       String?
+  userAgent     String?
+  isNewLocation Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 // ---------------------------------------------------------------------------

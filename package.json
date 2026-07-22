@@ -1,5 +1,5 @@
 {
-  "name": "ethiopian-scales-academy",
+  "name": "bass-note-piano",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -23,7 +23,8 @@
     "next": "^14.2.0",
     "next-auth": "^4.24.7",
     "react": "^18.3.0",
-    "react-dom": "^18.3.0"
+    "react-dom": "^18.3.0",
+    "resend": "^6.18.0"
   },
   "devDependencies": {
     "@netlify/plugin-nextjs": "^5.15.12",

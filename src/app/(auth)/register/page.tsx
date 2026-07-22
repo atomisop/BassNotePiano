@@ -3,7 +3,6 @@
 import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 
 const cardVariants = {
@@ -53,15 +52,10 @@ function RegisterForm() {
       return;
     }
 
-    const result = await signIn("credentials", { email, password, redirect: false });
-    if (result?.error) {
-      // Account was created but auto-login failed — send them to log in manually.
-      router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
-      return;
-    }
-
-    router.push(callbackUrl);
-    router.refresh();
+    // Account exists but isn't usable yet — a verification code was just
+    // emailed. Signing in happens at the end of that flow, not here.
+    const params = new URLSearchParams({ email, callbackUrl });
+    router.push(`/verify-email?${params}`);
   }
 
   return (

@@ -11,7 +11,7 @@ const display = Playfair_Display({
 const body = Inter({ subsets: ["latin"], variable: "--font-body" });
 
 export const metadata: Metadata = {
-  title: "Ethiopian Scales, Rhythm & Chords",
+  title: "Bass Note Piano",
   description:
     "An interactive masterclass in Ethiopian kiñit — Tizita, Bati, Anchihoye, and Mixolydian pentatonics, spelled correctly in every key.",
 };

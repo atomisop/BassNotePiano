@@ -9,7 +9,7 @@ export default function BillingLayout({ children }: { children: React.ReactNode 
       />
       <header className="relative flex items-center justify-between px-6 py-6">
         <Link href="/" className="font-serif text-sm tracking-[0.2em] text-neutral-200">
-          KIÑIT <span className="text-amber-400">ACADEMY</span>
+          BASS NOTE <span className="text-amber-400">PIANO</span>
         </Link>
         <div className="flex items-center gap-4">
           <Link href="/billing/history" className="text-sm text-neutral-500 transition hover:text-neutral-100">

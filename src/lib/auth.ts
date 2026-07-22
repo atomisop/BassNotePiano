@@ -3,14 +3,17 @@ import type { NextAuthOptions } from "next-auth";
 import { getServerSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { verifyCode } from "@/lib/verification";
+import { recordLoginAndDetectNewLocation } from "@/lib/login-tracking";
 
 type Entitlements = {
   role: "STUDENT" | "ADMIN";
   isProMember: boolean;
   unlockedScaleSlugs: string[];
   completedScaleSlugs: string[];
+  name: string | null;
+  image: string | null;
 };
 
 // Single source of truth for "what can this user see" — read by the jwt
@@ -23,7 +26,7 @@ async function loadEntitlements(userId: string): Promise<Entitlements> {
   const [user, verifiedUnlocks, unlockedProgress] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
-      select: { role: true, isProMember: true },
+      select: { role: true, isProMember: true, name: true, image: true },
     }),
     prisma.zellePayment.findMany({
       where: { userId, purpose: "SCALE_UNLOCK", status: "VERIFIED", scaleGroupId: { not: null } },
@@ -51,7 +54,29 @@ async function loadEntitlements(userId: string): Promise<Entitlements> {
     isProMember: user?.isProMember ?? false,
     unlockedScaleSlugs,
     completedScaleSlugs,
+    name: user?.name ?? null,
+    image: user?.image ?? null,
   };
+}
+
+// NextAuth v4 passes `authorize()` a lightweight, loosely-typed compat
+// request object rather than a full NextRequest — its exact header shape
+// varies slightly by runtime, so these read defensively instead of assuming
+// either a plain object or a Headers instance.
+function readHeader(req: unknown, name: string): string | null {
+  const headers = (req as { headers?: unknown } | undefined)?.headers;
+  if (!headers) return null;
+  if (typeof (headers as Headers).get === "function") return (headers as Headers).get(name);
+  return (headers as Record<string, string | undefined>)[name] ?? null;
+}
+
+function extractIp(req: unknown): string | null {
+  const forwarded = readHeader(req, "x-forwarded-for");
+  return forwarded?.split(",")[0]?.trim() || null;
+}
+
+function extractUserAgent(req: unknown): string | null {
+  return readHeader(req, "user-agent");
 }
 
 export const authOptions: NextAuthOptions = {
@@ -65,22 +90,35 @@ export const authOptions: NextAuthOptions = {
     error: "/login",
   },
   providers: [
+    // Deliberately password-less: this only ever checks a LOGIN_2FA code,
+    // never a password directly. Password verification happens entirely in
+    // the loginStepOneAction Server Action (src/app/(auth)/login/actions.ts),
+    // which — on success — either emails a real code (untrusted device) or
+    // silently issues one server-side and hands it straight back to the
+    // client (trusted device / just-verified signup), which immediately
+    // calls signIn with it. Splitting it this way means this is the *only*
+    // path that ever establishes a session, so the 2FA requirement can't be
+    // bypassed by calling signIn() directly with just a password.
     CredentialsProvider({
-      name: "Email & Password",
+      name: "Email code",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+        code: { label: "Code", type: "text" },
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) return null;
+      async authorize(credentials, req) {
+        if (!credentials?.email || !credentials.code) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase() },
-        });
-        if (!user?.passwordHash) return null;
+        const result = await verifyCode(credentials.email, "LOGIN_2FA", credentials.code);
+        if (!result.ok || !result.userId) return null;
 
-        const isValid = await bcrypt.compare(credentials.password, user.passwordHash);
-        if (!isValid) return null;
+        const user = await prisma.user.findUnique({ where: { id: result.userId } });
+        if (!user) return null;
+
+        // Best-effort — a slow/failed geo lookup or DB hiccup here should
+        // never block a login that already passed the real credential check.
+        await recordLoginAndDetectNewLocation(user.id, user.email, extractIp(req), extractUserAgent(req)).catch(
+          (err) => console.error("Login tracking failed (non-blocking):", err),
+        );
 
         return {
           id: user.id,
@@ -107,12 +145,16 @@ export const authOptions: NextAuthOptions = {
       token.isProMember = entitlements.isProMember;
       token.unlockedScaleSlugs = entitlements.unlockedScaleSlugs;
       token.completedScaleSlugs = entitlements.completedScaleSlugs;
+      token.name = entitlements.name;
+      token.picture = entitlements.image;
 
       return token;
     },
     async session({ session, token }) {
       if (session.user && token.sub) {
         session.user.id = token.sub;
+        session.user.name = token.name ?? null;
+        session.user.image = (token.picture as string | null | undefined) ?? null;
         session.user.role = token.role;
         session.user.isProMember = token.isProMember;
         session.user.unlockedScaleSlugs = token.unlockedScaleSlugs;

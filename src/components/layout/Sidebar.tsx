@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Roadmap" },
   { href: "/billing/history", label: "Payment history" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/account", label: "Account" },
 ];
 
 export function Sidebar({ name, email, isProMember, isAdmin }: SidebarProps) {
@@ -23,7 +24,7 @@ export function Sidebar({ name, email, isProMember, isAdmin }: SidebarProps) {
   return (
     <aside className="flex h-screen w-60 shrink-0 flex-col border-r border-neutral-900 bg-neutral-950/80 px-4 py-6">
       <Link href="/" className="px-2 font-serif text-sm tracking-[0.2em] text-neutral-200">
-        KIÑIT <span className="text-amber-400">ACADEMY</span>
+        BASS NOTE <span className="text-amber-400">PIANO</span>
       </Link>
 
       <nav className="mt-8 flex flex-1 flex-col gap-1">

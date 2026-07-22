@@ -38,7 +38,7 @@ export default function LandingPage() {
 
       <header className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <span className="font-serif text-sm tracking-[0.2em] text-neutral-200">
-          KIÑIT <span className="text-amber-400">ACADEMY</span>
+          BASS NOTE <span className="text-amber-400">PIANO</span>
         </span>
         <nav className="flex items-center gap-6 text-sm text-neutral-400">
           <Link href="/pricing" className="transition hover:text-neutral-100">
@@ -135,7 +135,7 @@ export default function LandingPage() {
       </motion.section>
 
       <footer className="relative border-t border-neutral-900 px-6 py-8 text-center text-xs text-neutral-600">
-        Ethiopian Scales, Rhythm &amp; Chords — a digital companion to the curriculum book.
+        Bass Note Piano — a digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book.
       </footer>
     </div>
   );

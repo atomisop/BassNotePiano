@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { createAndSendCode } from "@/lib/verification";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
       data: { name, email, passwordHash },
       select: { id: true, email: true },
     });
+    await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
     return NextResponse.json(user, { status: 201 });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {

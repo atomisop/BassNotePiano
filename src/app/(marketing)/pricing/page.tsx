@@ -30,7 +30,7 @@ export default function PricingPage() {
 
       <header className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <Link href="/" className="font-serif text-sm tracking-[0.2em] text-neutral-200">
-          KIÑIT <span className="text-amber-400">ACADEMY</span>
+          BASS NOTE <span className="text-amber-400">PIANO</span>
         </Link>
         <Link
           href="/login"
@@ -184,7 +184,7 @@ export default function PricingPage() {
       </motion.section>
 
       <footer className="relative border-t border-neutral-900 px-6 py-8 text-center text-xs text-neutral-600">
-        Ethiopian Scales, Rhythm &amp; Chords — a digital companion to the curriculum book.
+        Bass Note Piano — a digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book.
       </footer>
     </div>
   );

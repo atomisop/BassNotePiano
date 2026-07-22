@@ -13,7 +13,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <header className="border-b border-neutral-900 px-6 py-4">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4">
           <Link href="/" className="font-serif text-sm tracking-[0.2em] text-neutral-200">
-            KIÑIT <span className="text-amber-400">ACADEMY</span>
+            BASS NOTE <span className="text-amber-400">PIANO</span>
             <span className="ml-2 text-neutral-600">· Admin</span>
           </Link>
           <div className="flex items-center gap-4">
