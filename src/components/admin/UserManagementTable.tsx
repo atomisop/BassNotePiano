@@ -1,0 +1,146 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import type { Role } from "@prisma/client";
+import type { AdminUserRow } from "@/lib/admin";
+import { SCALE_GROUPS } from "@/lib/curriculum";
+
+export interface UserManagementTableProps {
+  users: AdminUserRow[];
+  initialQuery: string;
+  onSetRole: (userId: string, role: Role) => Promise<void>;
+  onSetPro: (userId: string, isPro: boolean) => Promise<void>;
+  onToggleScale: (userId: string, scaleSlug: string, unlock: boolean) => Promise<void>;
+}
+
+export function UserManagementTable({
+  users,
+  initialQuery,
+  onSetRole,
+  onSetPro,
+  onToggleScale,
+}: UserManagementTableProps) {
+  const router = useRouter();
+  const [query, setQuery] = useState(initialQuery);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  function handleSearchChange(value: string) {
+    setQuery(value);
+    const params = new URLSearchParams();
+    if (value.trim()) params.set("q", value.trim());
+    router.replace(`/admin/users${params.toString() ? `?${params}` : ""}`);
+  }
+
+  async function withBusy(userId: string, fn: () => Promise<void>) {
+    setBusyId(userId);
+    setError(null);
+    try {
+      await fn();
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <div>
+      <input
+        type="search"
+        value={query}
+        onChange={(e) => handleSearchChange(e.target.value)}
+        placeholder="Search by name or email…"
+        className="w-full max-w-sm rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none transition focus:border-amber-400/60"
+      />
+
+      {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+
+      <div className="mt-5 space-y-3">
+        {users.length === 0 && (
+          <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-8 text-center text-sm text-neutral-500">
+            No users found.
+          </div>
+        )}
+
+        {users.map((user) => {
+          const busy = busyId === user.id;
+          return (
+            <div key={user.id} className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-neutral-100">{user.name ?? "—"}</p>
+                  <p className="text-sm text-neutral-500">{user.email}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${
+                      user.role === "ADMIN" ? "bg-amber-400/15 text-amber-300" : "bg-neutral-800 text-neutral-400"
+                    }`}
+                  >
+                    {user.role}
+                  </span>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${
+                      user.isProMember ? "bg-emerald-400/15 text-emerald-300" : "bg-neutral-800 text-neutral-400"
+                    }`}
+                  >
+                    {user.isProMember ? "Pro" : "Pay-As-You-Go"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {user.scaleUnlocks.map((su) => {
+                  const scaleGroup = SCALE_GROUPS.find((sg) => sg.slug === su.slug)!;
+                  const state = su.completed ? "completed" : su.unlocked ? "unlocked" : "locked";
+                  return (
+                    <button
+                      key={su.slug}
+                      type="button"
+                      title={`${scaleGroup.code} — ${scaleGroup.title} (${state}). Click to ${su.unlocked ? "lock" : "unlock"}.`}
+                      disabled={busy}
+                      onClick={() => withBusy(user.id, () => onToggleScale(user.id, su.slug, !su.unlocked))}
+                      className={`h-8 min-w-[2.25rem] rounded-lg border px-2 text-xs font-medium transition disabled:opacity-40 ${
+                        su.completed
+                          ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                          : su.unlocked
+                            ? "border-amber-400/30 bg-amber-400/10 text-amber-300"
+                            : "border-neutral-800 text-neutral-500 hover:border-neutral-700"
+                      }`}
+                    >
+                      S{scaleGroup.order}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    withBusy(user.id, () => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN"))
+                  }
+                  className="rounded-lg border border-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:bg-neutral-800 disabled:opacity-40"
+                >
+                  {user.role === "ADMIN" ? "Remove admin" : "Make admin"}
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => withBusy(user.id, () => onSetPro(user.id, !user.isProMember))}
+                  className="rounded-lg border border-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:bg-neutral-800 disabled:opacity-40"
+                >
+                  {user.isProMember ? "Revoke Pro" : "Grant Pro"}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

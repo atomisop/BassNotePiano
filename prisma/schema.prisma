@@ -1,0 +1,244 @@
+// ============================================================================
+// Ethiopian Scales, Rhythm & Chords — Prisma schema
+// PostgreSQL (Neon in production, any Postgres locally). Covers auth
+// (NextAuth adapter), the six-scale curriculum, per-user progress gating,
+// and manual Zelle payment verification for both Pay-As-You-Go ($25/session)
+// and Pro lifetime ($200) purchases.
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Pooled connection (Neon's PgBouncer endpoint in production) — used for
+  // every query the running app makes.
+  url = env("DATABASE_URL")
+  // Direct, unpooled connection — used only by `prisma migrate`. PgBouncer's
+  // transaction-mode pooling doesn't support the session-level features
+  // migrations need, so this has to bypass the pooler. Locally, where
+  // there's no pooler, both vars just point at the same database.
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum ProgressStatus {
+  LOCKED // previous scale not yet completed
+  AVAILABLE // unlocked (paid or Pro) but not started
+  IN_PROGRESS // module read and/or practice logged, quiz not yet passed
+  COMPLETED // checklist fully cleared: read + practice + quiz passed
+}
+
+enum PaymentPurpose {
+  PRO_LIFETIME // one-time $200 full-platform unlock
+  SCALE_UNLOCK // $25 Pay-As-You-Go unlock for a single ScaleGroup
+}
+
+enum ZellePaymentStatus {
+  AWAITING_TRANSFER // modal opened, instructions shown, user hasn't submitted a reference yet
+  PENDING_REVIEW // user submitted a reference code; awaiting manual/automated verification
+  VERIFIED // confirmed — entitlement granted
+  REJECTED // reference could not be matched / invalid — user must resubmit
+  EXPIRED // left unconfirmed past the review window, auto-closed
+}
+
+enum QuizResult {
+  PASSED
+  FAILED
+}
+
+// ---------------------------------------------------------------------------
+// Auth (NextAuth.js Prisma adapter shape)
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String? // set only for credentials-based signup
+  role          Role      @default(STUDENT)
+
+  // Derived/cached entitlement flags — kept in sync whenever a ZellePayment
+  // transitions to VERIFIED. Read by the NextAuth JWT callback so middleware
+  // can gate routes without a DB round trip on the edge.
+  isProMember  Boolean   @default(false)
+  proUnlockedAt DateTime?
+
+  accounts Account[]
+  sessions Session[]
+
+  progress         ScaleProgress[]
+  quizAttempts     QuizAttempt[]
+  zellePayments    ZellePayment[]     @relation("PaymentSubmitter")
+  reviewedPayments ZellePayment[]     @relation("PaymentReviewer")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------------------------------------------------------------------------
+// Curriculum
+// ---------------------------------------------------------------------------
+
+// One row per book scale group (Scale 0 ... Scale 5). Seeded once from the
+// curriculum book — see prisma/seed.ts.
+model ScaleGroup {
+  id          String @id @default(cuid())
+  slug        String @unique // "scale-0" .. "scale-5"
+  order       Int    @unique // 0-5, defines the required sequencing
+  code        String // "Scale 3"
+  title       String // "Bati — Major, Minor & Lydian"
+  kinitName   String? // "Bati Minor", "Tizita Major (Full Tizita)", etc.
+  formula     String // degree formula, e.g. "1-b3-4-5-b7"
+  description String? @db.Text
+
+  priceCents Int @default(2500) // $25.00 Pay-As-You-Go price for this module
+
+  progress      ScaleProgress[]
+  quizAttempts  QuizAttempt[]
+  zellePayments ZellePayment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Per-user, per-scale checklist + gating state.
+model ScaleProgress {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  scaleGroupId String
+  scaleGroup   ScaleGroup @relation(fields: [scaleGroupId], references: [id], onDelete: Cascade)
+
+  status ProgressStatus @default(LOCKED)
+
+  // (a) instructional module marked as read
+  moduleRead   Boolean   @default(false)
+  moduleReadAt DateTime?
+
+  // (b) practical review completed
+  practiceCompleted   Boolean   @default(false)
+  practiceCompletedAt DateTime?
+
+  // (c) conceptual/scale-spelling quiz passed
+  quizPassed   Boolean   @default(false)
+  quizScore    Int?
+  quizPassedAt DateTime?
+
+  unlockedAt  DateTime? // when access was granted (Pro purchase, Zelle verification, or override)
+  completedAt DateTime? // when all three checklist items were satisfied
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, scaleGroupId])
+  @@index([userId, status])
+}
+
+model QuizAttempt {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  scaleGroupId String
+  scaleGroup   ScaleGroup @relation(fields: [scaleGroupId], references: [id], onDelete: Cascade)
+
+  score          Int
+  totalQuestions Int
+  result         QuizResult
+  answers        Json // [{ questionId, selected, correct }]
+
+  attemptedAt DateTime @default(now())
+
+  @@index([userId, scaleGroupId])
+}
+
+// ---------------------------------------------------------------------------
+// Commerce — Zelle manual verification
+// ---------------------------------------------------------------------------
+
+// Every Zelle transfer the platform expects to receive, whether it's a single
+// $25 scale unlock or the $200 lifetime Pro purchase. This is the row the
+// admin verification queue and the ZellePaymentModal both read/write.
+model ZellePayment {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation("PaymentSubmitter", fields: [userId], references: [id], onDelete: Cascade)
+
+  purpose PaymentPurpose
+
+  // Only set when purpose == SCALE_UNLOCK
+  scaleGroupId String?
+  scaleGroup   ScaleGroup? @relation(fields: [scaleGroupId], references: [id])
+
+  amountCents Int
+  zelleHandle String // platform's receiving handle/email shown to the user at request time
+
+  // Filled in by the student on the "I've sent it" step of the modal
+  senderName     String?
+  referenceCode  String? // Zelle confirmation/reference number
+  note           String? @db.Text
+  screenshotUrl  String? // optional proof-of-transfer upload
+
+  status ZellePaymentStatus @default(AWAITING_TRANSFER)
+
+  submittedAt DateTime? // student submitted a reference code
+  reviewedAt  DateTime? // staff/automation made a decision
+
+  reviewedById    String?
+  reviewedBy      User?   @relation("PaymentReviewer", fields: [reviewedById], references: [id])
+  rejectionReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([userId])
+}
