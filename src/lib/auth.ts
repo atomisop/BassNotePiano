@@ -129,5 +129,21 @@ export const authOptions: NextAuthOptions = {
  * Wrapped in React's cache() so the (dashboard) layout and the pages it
  * wraps — which each need the session independently — share one lookup per
  * request instead of re-decoding the JWT repeatedly.
+ *
+ * Also the one place that guards against a stale session: a browser can
+ * hold a valid, signed JWT for a user row that no longer exists (deleted
+ * directly in the DB, a wiped test account, etc). loadEntitlements() can't
+ * tell that apart from "brand new user with no entitlements yet," so it
+ * silently returns defaults — every other caller in the app trusts
+ * `session.user.id` as a real foreign key, which crashes the moment it's
+ * used in a write (or a findUniqueOrThrow read). Checking existence here
+ * means every existing `if (!session?.user) redirect(...)` guard across the
+ * app correctly treats a dead session as logged-out, with nothing else to change.
  */
-export const getServerAuthSession = cache(() => getServerSession(authOptions));
+export const getServerAuthSession = cache(async () => {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return session;
+
+  const exists = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true } });
+  return exists ? session : null;
+});
