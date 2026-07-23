@@ -7,18 +7,21 @@ export default async function AccountPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/account");
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: {
-      name: true,
-      email: true,
-      image: true,
-      primaryInstrument: true,
-      skillLevel: true,
-      genres: true,
-      learningGoal: true,
-    },
-  });
+  const [user, badgeRows] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        name: true,
+        email: true,
+        image: true,
+        primaryInstrument: true,
+        skillLevel: true,
+        genres: true,
+        learningGoal: true,
+      },
+    }),
+    prisma.userBadge.findMany({ where: { userId: session.user.id }, select: { code: true } }),
+  ]);
   if (!user) redirect("/login");
 
   return (
@@ -32,6 +35,7 @@ export default async function AccountPage() {
         genres: user.genres,
         learningGoal: user.learningGoal,
       }}
+      earnedBadgeCodes={badgeRows.map((b) => b.code)}
     />
   );
 }

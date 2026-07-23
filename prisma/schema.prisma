@@ -101,6 +101,37 @@ enum LearningGoal {
 }
 
 // ---------------------------------------------------------------------------
+// Gamification — badges and practice streaks
+// ---------------------------------------------------------------------------
+
+// Fixed, code-defined set (see src/lib/badges.ts for label/description/
+// unlock copy) — not admin-editable content, so no separate Badge table.
+enum BadgeCode {
+  FIRST_LESSON_DONE
+  SCALE_MASTER
+  RHYTHM_SPECIALIST
+  CHORD_MAESTRO
+  COURSE_GRADUATE
+  FIRST_FRIEND_ADDED // awarded once the friends system (later step) exists
+  COMMUNITY_CATALYST // 5+ friends — same dependency
+  ACTIVE_PRACTICE_PARTNER // same dependency
+  STREAK_3_DAY
+  STREAK_7_DAY
+  STREAK_30_DAY
+}
+
+model UserBadge {
+  id       String    @id @default(cuid())
+  userId   String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code     BadgeCode
+  earnedAt DateTime  @default(now())
+
+  @@unique([userId, code])
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
 // Auth (NextAuth.js Prisma adapter shape)
 // ---------------------------------------------------------------------------
 
@@ -129,6 +160,13 @@ model User {
   learningGoal      LearningGoal?
   onboardedAt       DateTime?
 
+  // A day counts once (max) toward the streak the first time any practice
+  // action (module read, practice logged, quiz attempted) happens that
+  // calendar day — see recordPracticeActivity() in src/lib/gamification.ts.
+  currentStreak    Int       @default(0)
+  longestStreak    Int       @default(0)
+  lastActivityDate DateTime?
+
   accounts Account[]
   sessions Session[]
 
@@ -140,6 +178,7 @@ model User {
   verificationCodes VerificationCode[]
   trustedDevices    TrustedDevice[]
   loginEvents       LoginEvent[]
+  badges            UserBadge[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

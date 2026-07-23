@@ -3,7 +3,8 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
+import type { BadgeCode, LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
+import { BadgeGrid } from "@/components/gamification/BadgeGrid";
 import { CodeGate } from "./CodeGate";
 import {
   requestNameChangeAction,
@@ -27,6 +28,7 @@ interface AccountSettingsProps {
   initialName: string | null;
   initialImage: string | null;
   initialMusicProfile: MusicProfile;
+  earnedBadgeCodes: BadgeCode[];
 }
 
 const MAX_AVATAR_BYTES = 1_800_000;
@@ -88,7 +90,13 @@ function SectionCard({ title, description, children }: { title: string; descript
   );
 }
 
-export function AccountSettings({ email, initialName, initialImage, initialMusicProfile }: AccountSettingsProps) {
+export function AccountSettings({
+  email,
+  initialName,
+  initialImage,
+  initialMusicProfile,
+  earnedBadgeCodes,
+}: AccountSettingsProps) {
   const { update } = useSession();
   const router = useRouter();
 
@@ -110,6 +118,15 @@ export function AccountSettings({ email, initialName, initialImage, initialMusic
       <AvatarSection initialImage={initialImage} email={email} onDone={syncSession} />
       <NameSection initialName={initialName} email={email} onDone={syncSession} />
       <MusicProfileSection initial={initialMusicProfile} />
+
+      <div id="badges" className="scroll-mt-6 rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6">
+        <h2 className="font-serif text-lg text-neutral-50">Badges</h2>
+        <p className="mt-1 text-sm text-neutral-500">Earned and locked achievements — hover a badge to see how to unlock it.</p>
+        <div className="mt-4">
+          <BadgeGrid earnedCodes={new Set(earnedBadgeCodes)} />
+        </div>
+      </div>
+
       <PasswordSection email={email} />
     </div>
   );

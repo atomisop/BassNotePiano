@@ -1,5 +1,17 @@
 import type { Prisma, ProgressStatus, ScaleGroup } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { checkCourseBadges, recordPracticeActivity } from "@/lib/gamification";
+
+// Badge/streak bookkeeping is a best-effort side effect — a hiccup here
+// should never fail the actual checklist mutation the student is waiting on.
+async function trackGamification(userId: string, justCompleted: boolean) {
+  try {
+    await recordPracticeActivity(userId);
+    if (justCompleted) await checkCourseBadges(userId);
+  } catch (err) {
+    console.error("Gamification tracking failed (non-blocking):", err);
+  }
+}
 
 /** Minimum score (0-1) to pass a scale's conceptual/spelling quiz. */
 export const QUIZ_PASS_THRESHOLD = 0.8;
@@ -129,7 +141,9 @@ export async function markModuleRead(userId: string, scaleSlug: string) {
       moduleReadAt: new Date(),
     },
   });
-  return syncProgressStatus(row.id);
+  const synced = await syncProgressStatus(row.id);
+  await trackGamification(userId, row.status !== "COMPLETED" && synced.status === "COMPLETED");
+  return synced;
 }
 
 export async function markPracticeCompleted(userId: string, scaleSlug: string) {
@@ -145,7 +159,9 @@ export async function markPracticeCompleted(userId: string, scaleSlug: string) {
       practiceCompletedAt: new Date(),
     },
   });
-  return syncProgressStatus(row.id);
+  const synced = await syncProgressStatus(row.id);
+  await trackGamification(userId, row.status !== "COMPLETED" && synced.status === "COMPLETED");
+  return synced;
 }
 
 export interface QuizSubmission {
@@ -192,7 +208,9 @@ export async function recordQuizAttempt(userId: string, scaleSlug: string, submi
     },
   });
 
-  return { passed, progress: await syncProgressStatus(row.id) };
+  const synced = await syncProgressStatus(row.id);
+  await trackGamification(userId, row.status !== "COMPLETED" && synced.status === "COMPLETED");
+  return { passed, progress: synced };
 }
 
 // ---------------------------------------------------------------------------

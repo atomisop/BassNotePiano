@@ -1,13 +1,19 @@
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { getRoadmap } from "@/lib/access";
+import { prisma } from "@/lib/prisma";
 import { ScaleRoadmap } from "@/components/progression/ScaleRoadmap";
+import { BadgeSummary } from "@/components/gamification/BadgeSummary";
 
 export default async function DashboardPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
 
-  const roadmap = await getRoadmap(session.user.id);
+  const [roadmap, badgeCount, user] = await Promise.all([
+    getRoadmap(session.user.id),
+    prisma.userBadge.count({ where: { userId: session.user.id } }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { currentStreak: true } }),
+  ]);
   const completedCount = roadmap.filter((s) => s.status === "COMPLETED").length;
 
   return (
@@ -22,6 +28,10 @@ export default async function DashboardPage() {
         Work through each scale in order — read the module, log your practice, then pass the quiz to unlock the
         next one.
       </p>
+
+      <div className="mt-6">
+        <BadgeSummary earnedCount={badgeCount} currentStreak={user?.currentStreak ?? 0} />
+      </div>
 
       <div className="mt-8">
         <ScaleRoadmap roadmap={roadmap} />
