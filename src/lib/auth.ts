@@ -16,6 +16,20 @@ type Entitlements = {
   image: string | null;
 };
 
+// Fallback used only if loadEntitlements() itself doesn't come back in time
+// (see loadEntitlementsBounded below) — least-privilege defaults, since a
+// degraded session should never accidentally grant more access than the DB
+// actually confirms. Self-corrects on the next jwt callback run once the DB
+// responds normally again.
+const DEFAULT_ENTITLEMENTS: Entitlements = {
+  role: "STUDENT",
+  isProMember: false,
+  unlockedScaleSlugs: [],
+  completedScaleSlugs: [],
+  name: null,
+  image: null,
+};
+
 // Single source of truth for "what can this user see" — read by the jwt
 // callback below so it can be baked into the session token. Unlock comes
 // from two independent places: a verified $25 Zelle payment for that scale,
@@ -57,6 +71,20 @@ async function loadEntitlements(userId: string): Promise<Entitlements> {
     name: user?.name ?? null,
     image: user?.image ?? null,
   };
+}
+
+// The jwt callback below runs synchronously in the login response path (and
+// on every subsequent session touch) — a slow Postgres round trip here has
+// the exact same blocking failure mode the login-tracking fix addressed, so
+// it gets the same hard cap rather than being trusted to always be fast.
+async function loadEntitlementsBounded(userId: string): Promise<Entitlements> {
+  return Promise.race([
+    loadEntitlements(userId),
+    new Promise<Entitlements>((resolve) => setTimeout(() => resolve(DEFAULT_ENTITLEMENTS), 3000)),
+  ]).catch((err) => {
+    console.error("loadEntitlements failed, using defaults for this session:", err);
+    return DEFAULT_ENTITLEMENTS;
+  });
 }
 
 // NextAuth v4 passes `authorize()` a lightweight, loosely-typed compat
@@ -145,7 +173,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token }) {
       if (!token.sub) return token;
 
-      const entitlements = await loadEntitlements(token.sub);
+      const entitlements = await loadEntitlementsBounded(token.sub);
       token.role = entitlements.role;
       token.isProMember = entitlements.isProMember;
       token.unlockedScaleSlugs = entitlements.unlockedScaleSlugs;
