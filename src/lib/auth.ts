@@ -13,7 +13,6 @@ type Entitlements = {
   unlockedScaleSlugs: string[];
   completedScaleSlugs: string[];
   name: string | null;
-  image: string | null;
 };
 
 // Fallback used only if loadEntitlements() itself doesn't come back in time
@@ -27,7 +26,6 @@ const DEFAULT_ENTITLEMENTS: Entitlements = {
   unlockedScaleSlugs: [],
   completedScaleSlugs: [],
   name: null,
-  image: null,
 };
 
 // Single source of truth for "what can this user see" — read by the jwt
@@ -36,11 +34,20 @@ const DEFAULT_ENTITLEMENTS: Entitlements = {
 // or a ScaleProgress row that already has unlockedAt set (covers Pro grants
 // and admin overrides, which stamp that field directly rather than creating
 // a ZellePayment).
+//
+// Deliberately does NOT select `image` — that column can hold a multi-KB
+// base64 data URI (the account settings avatar upload stores photos that
+// way), and JWT session strategy puts everything here directly into a
+// browser cookie. An oversized cookie gets silently dropped by the browser
+// or rejected by an intermediate proxy, which look identical to "login
+// hangs forever" from the client's perspective — this actually happened in
+// production. Anywhere that needs the real image fetches it directly from
+// the DB instead (see the /account page), never through the session.
 async function loadEntitlements(userId: string): Promise<Entitlements> {
   const [user, verifiedUnlocks, unlockedProgress] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
-      select: { role: true, isProMember: true, name: true, image: true },
+      select: { role: true, isProMember: true, name: true },
     }),
     prisma.zellePayment.findMany({
       where: { userId, purpose: "SCALE_UNLOCK", status: "VERIFIED", scaleGroupId: { not: null } },
@@ -69,7 +76,6 @@ async function loadEntitlements(userId: string): Promise<Entitlements> {
     unlockedScaleSlugs,
     completedScaleSlugs,
     name: user?.name ?? null,
-    image: user?.image ?? null,
   };
 }
 
@@ -179,7 +185,6 @@ export const authOptions: NextAuthOptions = {
       token.unlockedScaleSlugs = entitlements.unlockedScaleSlugs;
       token.completedScaleSlugs = entitlements.completedScaleSlugs;
       token.name = entitlements.name;
-      token.picture = entitlements.image;
 
       return token;
     },
@@ -187,7 +192,6 @@ export const authOptions: NextAuthOptions = {
       if (session.user && token.sub) {
         session.user.id = token.sub;
         session.user.name = token.name ?? null;
-        session.user.image = (token.picture as string | null | undefined) ?? null;
         session.user.role = token.role;
         session.user.isProMember = token.isProMember;
         session.user.unlockedScaleSlugs = token.unlockedScaleSlugs;
