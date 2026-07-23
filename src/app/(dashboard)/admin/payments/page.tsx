@@ -27,7 +27,7 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
         {payments.length} payment{payments.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
       </p>
 
-      <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full border border-slate-800 p-1">
+      <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full border border-white/10 p-1">
         {FILTERS.map((filter) => (
           <Link
             key={filter.value}

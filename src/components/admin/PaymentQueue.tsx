@@ -67,7 +67,7 @@ export function PaymentQueue({
 
   if (payments.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center text-sm text-slate-500">
+      <div className="glass-card p-8 text-center text-sm text-slate-500">
         {emptyMessage}
       </div>
     );
@@ -76,7 +76,7 @@ export function PaymentQueue({
   return (
     <div className="space-y-3">
       {payments.map((payment) => (
-        <div key={payment.id} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+        <div key={payment.id} className="glass-card p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">
@@ -127,7 +127,7 @@ export function PaymentQueue({
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Why couldn't this be verified?"
                 rows={2}
-                className="w-full resize-none rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-red-400/60"
+                className="w-full resize-none rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-red-400/60"
               />
               <div className="flex gap-2">
                 <button
@@ -137,7 +137,7 @@ export function PaymentQueue({
                     setReason("");
                   }}
                   disabled={busyId === payment.id}
-                  className="flex-1 rounded-lg border border-slate-800 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                  className="flex-1 rounded-lg border border-white/10 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -157,7 +157,7 @@ export function PaymentQueue({
                 type="button"
                 onClick={() => setRejectingId(payment.id)}
                 disabled={busyId === payment.id}
-                className="flex-1 rounded-lg border border-slate-800 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                className="flex-1 rounded-lg border border-white/10 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
               >
                 Reject
               </button>

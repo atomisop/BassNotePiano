@@ -10,14 +10,7 @@ export default async function AccountPage() {
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
-      name: true,
       email: true,
-      image: true,
-      username: true,
-      primaryInstrument: true,
-      skillLevel: true,
-      genres: true,
-      learningGoal: true,
       notifyEmailPayments: true,
       notifyEmailRoleUpdates: true,
       notifyEmailSocial: true,
@@ -29,15 +22,6 @@ export default async function AccountPage() {
   return (
     <AccountSettings
       email={user.email}
-      initialName={user.name}
-      initialImage={user.image}
-      initialUsername={user.username}
-      initialMusicProfile={{
-        primaryInstrument: user.primaryInstrument,
-        skillLevel: user.skillLevel,
-        genres: user.genres,
-        learningGoal: user.learningGoal,
-      }}
       isProMember={session.user.isProMember}
       initialNotificationPreferences={{
         notifyEmailPayments: user.notifyEmailPayments,

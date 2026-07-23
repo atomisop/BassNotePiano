@@ -16,7 +16,7 @@ export function TranspositionDashboard({ variant, root }: TranspositionDashboard
   const allKeys = useMemo(() => getScaleInAllKeys(variant.formula), [variant.formula]);
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+    <div className="glass-card p-6">
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Transposition Dashboard</p>
       <h2 className="mt-1 font-serif text-xl text-slate-50">{variant.name}</h2>
       <p className="mt-2 font-mono text-xs text-slate-500">{variant.formula.split("-").join(" – ")}</p>
@@ -54,7 +54,7 @@ export function TranspositionDashboard({ variant, root }: TranspositionDashboard
           </thead>
           <tbody>
             {ROOT_KEYS.map((key) => (
-              <tr key={key} className={`border-t border-slate-900 ${key === root ? "bg-amber-400/5" : ""}`}>
+              <tr key={key} className={`border-t border-white/5 ${key === root ? "bg-amber-400/5" : ""}`}>
                 <td className={`py-2 pr-4 font-medium ${key === root ? "text-amber-300" : "text-slate-300"}`}>
                   {key}
                 </td>

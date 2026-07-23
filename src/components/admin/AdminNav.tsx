@@ -13,7 +13,7 @@ export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-1.5 rounded-full border border-slate-800 p-1">
+    <nav className="flex gap-1.5 rounded-full border border-white/10 p-1">
       {NAV_ITEMS.map((item) => {
         const active = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
         return (

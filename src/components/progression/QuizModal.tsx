@@ -110,7 +110,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit }: 
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="relative w-full max-w-md overflow-hidden rounded-2xl border border-amber-400/20 bg-slate-900 shadow-[0_0_60px_-15px_rgba(217,180,88,0.35)]"
+            className="relative w-full max-w-md overflow-hidden rounded-2xl border border-amber-400/20 bg-slate-900/80 backdrop-blur-2xl shadow-[0_0_60px_-15px_rgba(217,180,88,0.35)]"
           >
             <div className="h-1 w-full bg-gradient-to-r from-amber-500/40 via-amber-300 to-amber-500/40" />
 
@@ -170,7 +170,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit }: 
                             className={`w-full rounded-xl border px-4 py-2.5 text-left text-sm font-medium transition ${
                               selected
                                 ? "border-amber-400 bg-amber-400/10 text-amber-300"
-                                : "border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-800/60"
+                                : "border-white/10 text-slate-300 hover:border-white/20 hover:bg-slate-800/60"
                             }`}
                           >
                             {choice}
@@ -187,7 +187,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit }: 
                           type="button"
                           onClick={() => setCurrentIndex((i) => i - 1)}
                           disabled={step === "submitting"}
-                          className="flex-1 rounded-xl border border-slate-800 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                          className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
                         >
                           Back
                         </button>
@@ -266,7 +266,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit }: 
                       <button
                         type="button"
                         onClick={handleClose}
-                        className="flex-1 rounded-xl border border-slate-800 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+                        className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
                       >
                         Done
                       </button>

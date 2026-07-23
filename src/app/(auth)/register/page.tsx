@@ -63,7 +63,7 @@ function RegisterForm() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900/60 p-7"
+      className="w-full max-w-sm glass-card p-7"
     >
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Start learning</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Create an account</h1>
@@ -80,7 +80,7 @@ function RegisterForm() {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
           />
         </div>
         <div>
@@ -94,7 +94,7 @@ function RegisterForm() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
           />
         </div>
         <div>
@@ -109,7 +109,7 @@ function RegisterForm() {
             minLength={MIN_PASSWORD_LENGTH}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
           />
         </div>
         <div>
@@ -124,7 +124,7 @@ function RegisterForm() {
             minLength={MIN_PASSWORD_LENGTH}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
           />
         </div>
 

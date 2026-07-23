@@ -39,13 +39,13 @@ export default async function BillingHistoryPage() {
       </p>
 
       {payments.length === 0 ? (
-        <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center text-sm text-slate-500">
+        <div className="mt-6 glass-card p-8 text-center text-sm text-slate-500">
           Nothing here yet — unlock a scale or go Pro to see your payments listed here.
         </div>
       ) : (
         <div className="mt-6 space-y-3">
           {payments.map((payment) => (
-            <div key={payment.id} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <div key={payment.id} className="glass-card p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-amber-400/80">

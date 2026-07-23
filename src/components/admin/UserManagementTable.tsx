@@ -53,14 +53,14 @@ export function UserManagementTable({
         value={query}
         onChange={(e) => handleSearchChange(e.target.value)}
         placeholder="Search by name or email…"
-        className="w-full max-w-sm rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+        className="w-full max-w-sm rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
       />
 
       {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
 
       <div className="mt-5 space-y-3">
         {users.length === 0 && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center text-sm text-slate-500">
+          <div className="glass-card p-8 text-center text-sm text-slate-500">
             No users found.
           </div>
         )}
@@ -68,7 +68,7 @@ export function UserManagementTable({
         {users.map((user) => {
           const busy = busyId === user.id;
           return (
-            <div key={user.id} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+            <div key={user.id} className="glass-card p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-slate-100">{user.name ?? "—"}</p>
@@ -108,7 +108,7 @@ export function UserManagementTable({
                           ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
                           : su.unlocked
                             ? "border-amber-400/30 bg-amber-400/10 text-amber-300"
-                            : "border-slate-800 text-slate-500 hover:border-slate-700"
+                            : "border-white/10 text-slate-500 hover:border-white/20"
                       }`}
                     >
                       S{scaleGroup.order}
@@ -124,7 +124,7 @@ export function UserManagementTable({
                   onClick={() =>
                     withBusy(user.id, () => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN"))
                   }
-                  className="rounded-lg border border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                  className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
                 >
                   {user.role === "ADMIN" ? "Remove admin" : "Make admin"}
                 </button>
@@ -132,7 +132,7 @@ export function UserManagementTable({
                   type="button"
                   disabled={busy}
                   onClick={() => withBusy(user.id, () => onSetPro(user.id, !user.isProMember))}
-                  className="rounded-lg border border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                  className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
                 >
                   {user.isProMember ? "Revoke Pro" : "Grant Pro"}
                 </button>

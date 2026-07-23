@@ -59,7 +59,7 @@ function VerifyEmailForm() {
         variants={cardVariants}
         initial="hidden"
         animate="visible"
-        className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900/60 p-7 text-center"
+        className="w-full max-w-sm glass-card p-7 text-center"
       >
         <p className="text-sm text-slate-400">
           Missing email.{" "}
@@ -77,7 +77,7 @@ function VerifyEmailForm() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900/60 p-7"
+      className="w-full max-w-sm glass-card p-7"
     >
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Almost there</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Verify your email</h1>
@@ -100,7 +100,7 @@ function VerifyEmailForm() {
             autoFocus
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-center font-mono text-lg tracking-[0.5em] text-slate-100 outline-none transition focus:border-amber-400/60"
+            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-center font-mono text-lg tracking-[0.5em] text-slate-100 outline-none transition focus:border-amber-400/60"
             placeholder="······"
           />
         </div>

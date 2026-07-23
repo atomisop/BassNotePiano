@@ -52,8 +52,10 @@ function NavItem({
   return (
     <Link
       href={href}
-      className={`relative flex flex-col items-center gap-1 rounded-xl px-2 py-2.5 text-center transition ${
-        active ? "bg-amber-400/10 text-amber-300" : "text-slate-500 hover:bg-slate-900 hover:text-slate-200"
+      className={`relative flex flex-col items-center gap-1 rounded-xl border px-2 py-2.5 text-center transition ${
+        active
+          ? "border-amber-400/20 bg-amber-400/10 text-amber-300"
+          : "border-transparent text-slate-500 hover:border-white/10 hover:bg-white/5 hover:text-slate-200"
       }`}
     >
       <NavIcon path={icon} />
@@ -71,11 +73,11 @@ export function Sidebar({ name, isAdmin, unreadMessageCount }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-24 shrink-0 flex-col items-center gap-1 border-r border-slate-900 bg-slate-950/80 py-5">
+    <aside className="flex h-screen w-24 shrink-0 flex-col items-center gap-1 border-r border-white/10 bg-slate-950/40 py-5 backdrop-blur-2xl">
       <Link
         href="/"
         aria-label="Bass Note Piano"
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-400/30 font-serif text-xs text-amber-300"
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-400/30 bg-amber-400/5 font-serif text-xs text-amber-300 shadow-[0_0_20px_-4px_rgba(251,191,36,0.4)]"
       >
         BN
       </Link>
@@ -100,7 +102,7 @@ export function Sidebar({ name, isAdmin, unreadMessageCount }: SidebarProps) {
         )}
       </nav>
 
-      <div className="my-4 h-px w-8 bg-slate-900" />
+      <div className="my-4 h-px w-8 bg-white/10" />
 
       <NavItem href="/profile" label="Profile" icon={ICON_PATHS.profile} active={pathname === "/profile"} />
 
@@ -112,7 +114,7 @@ export function Sidebar({ name, isAdmin, unreadMessageCount }: SidebarProps) {
           type="button"
           onClick={() => signOut({ callbackUrl: "/" })}
           title={name ? `Sign out (${name})` : "Sign out"}
-          className="flex flex-col items-center gap-1 rounded-xl px-2 py-2.5 text-center text-slate-500 transition hover:bg-slate-900 hover:text-slate-200"
+          className="flex flex-col items-center gap-1 rounded-xl border border-transparent px-2 py-2.5 text-center text-slate-500 transition hover:border-white/10 hover:bg-white/5 hover:text-slate-200"
         >
           <NavIcon path={ICON_PATHS.logout} />
           <span className="text-[10px] font-medium leading-none">Sign out</span>

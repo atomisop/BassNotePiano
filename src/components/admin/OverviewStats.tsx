@@ -35,7 +35,7 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
             key={card.label}
             variants={item}
             className={`rounded-2xl border p-5 ${
-              card.highlight ? "border-amber-400/30 bg-amber-400/5" : "border-slate-800 bg-slate-900/60"
+              card.highlight ? "border-amber-400/30 bg-amber-400/5" : "border-white/10 bg-white/[0.04] backdrop-blur-xl"
             }`}
           >
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">{card.label}</p>
@@ -49,13 +49,13 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
       <motion.div variants={item} className="flex flex-wrap gap-3">
         <Link
           href="/admin/payments"
-          className="rounded-xl border border-slate-800 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-300"
+          className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-300"
         >
           Review pending payments{stats.pendingPayments > 0 ? ` (${stats.pendingPayments})` : ""} →
         </Link>
         <Link
           href="/admin/users"
-          className="rounded-xl border border-slate-800 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-300"
+          className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-300"
         >
           Manage users →
         </Link>
@@ -64,14 +64,14 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
       <motion.div variants={item}>
         <h2 className="mb-1 font-serif text-xl text-slate-100">Module health</h2>
         <p className="mb-4 text-sm text-slate-500">Unlocks and completions across the whole user base.</p>
-        <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
+        <div className="overflow-hidden glass-card">
           {moduleHealth.map((row, i) => {
             const rate = row.unlockedCount === 0 ? 0 : Math.round((row.completedCount / row.unlockedCount) * 100);
             return (
               <div
                 key={row.slug}
                 className={`flex flex-wrap items-center justify-between gap-4 px-6 py-4 ${
-                  i > 0 ? "border-t border-slate-900" : ""
+                  i > 0 ? "border-t border-white/5" : ""
                 }`}
               >
                 <div>

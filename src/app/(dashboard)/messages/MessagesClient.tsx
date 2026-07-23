@@ -17,7 +17,7 @@ const ACTIVE_CONVERSATION_POLL_MS = 2_500;
 
 function Avatar({ image, label }: { image: string | null; label: string }) {
   return (
-    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-slate-800 bg-slate-800">
+    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-white/10 bg-slate-800">
       {image ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={image} alt="" className="h-full w-full object-cover" />
@@ -133,14 +133,14 @@ function MessagesInner({ initialConversations }: { initialConversations: Convers
 
   return (
     <div className="mx-auto flex h-[calc(100vh-6.25rem)] max-w-4xl gap-4">
-      <div className="w-64 shrink-0 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900/60 p-2">
+      <div className="w-64 shrink-0 overflow-y-auto glass-card p-2">
         {conversations.map((c) => (
           <button
             key={c.friendId}
             type="button"
             onClick={() => router.push(`/messages?with=${c.friendId}`)}
             className={`flex w-full items-center gap-2.5 rounded-lg p-2.5 text-left transition ${
-              active?.friendId === c.friendId ? "bg-amber-400/10" : "hover:bg-slate-900"
+              active?.friendId === c.friendId ? "bg-amber-400/10" : "hover:bg-white/5"
             }`}
           >
             <Avatar image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} />
@@ -159,10 +159,10 @@ function MessagesInner({ initialConversations }: { initialConversations: Convers
         ))}
       </div>
 
-      <div className="flex flex-1 flex-col rounded-2xl border border-slate-800 bg-slate-900/60">
+      <div className="flex flex-1 flex-col glass-card">
         {active && (
           <>
-            <div className="flex items-center gap-2.5 border-b border-slate-800 p-4">
+            <div className="flex items-center gap-2.5 border-b border-white/10 p-4">
               <Avatar image={active.friendImage} label={active.friendName ?? active.friendUsername ?? "?"} />
               <div>
                 <p className="text-sm text-slate-100">{active.friendName ?? "Unnamed"}</p>
@@ -177,7 +177,7 @@ function MessagesInner({ initialConversations }: { initialConversations: Convers
                   <div key={m.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                     <div
                       className={`max-w-[70%] rounded-2xl px-3.5 py-2 text-sm ${
-                        isMine ? "bg-amber-400 text-slate-950" : "border border-slate-800 bg-slate-950 text-slate-100"
+                        isMine ? "bg-amber-400 text-slate-950" : "border border-white/10 bg-slate-950 text-slate-100"
                       }`}
                     >
                       <p className="whitespace-pre-wrap break-words">{m.body}</p>
@@ -189,14 +189,14 @@ function MessagesInner({ initialConversations }: { initialConversations: Convers
               <div ref={messagesEndRef} />
             </div>
 
-            <form onSubmit={handleSend} className="flex gap-2 border-t border-slate-800 p-3">
+            <form onSubmit={handleSend} className="flex gap-2 border-t border-white/10 p-3">
               <input
                 type="text"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 placeholder="Write a message…"
                 maxLength={2000}
-                className="flex-1 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+                className="flex-1 rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
               />
               <button
                 type="submit"

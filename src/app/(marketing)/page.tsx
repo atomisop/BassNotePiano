@@ -50,7 +50,7 @@ export default function LandingPage() {
           </Link>
           <Link
             href={isLoggedIn ? "/dashboard" : "/login"}
-            className="rounded-full border border-slate-800 px-4 py-1.5 text-slate-200 transition hover:border-amber-400/50 hover:text-amber-300"
+            className="rounded-full border border-white/10 px-4 py-1.5 text-slate-200 transition hover:border-amber-400/50 hover:text-amber-300"
           >
             {isLoggedIn ? "Dashboard" : "Log in"}
           </Link>
@@ -85,7 +85,7 @@ export default function LandingPage() {
           </Link>
           <Link
             href="/pricing"
-            className="rounded-xl border border-slate-800 px-6 py-3 text-sm font-medium text-slate-200 transition hover:border-slate-700 hover:bg-slate-900"
+            className="rounded-xl border border-white/10 px-6 py-3 text-sm font-medium text-slate-200 transition hover:border-white/20 hover:bg-white/5"
           >
             See pricing
           </Link>
@@ -106,7 +106,7 @@ export default function LandingPage() {
               key={scale.slug}
               variants={gridItem}
               whileHover={{ y: -4 }}
-              className="group rounded-2xl border border-slate-800 bg-slate-900/60 p-5 transition hover:border-amber-400/30"
+              className="group glass-card p-5 transition hover:border-amber-400/30"
             >
               <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">{scale.code}</p>
               <h3 className="mt-2 font-serif text-lg text-slate-50">{scale.title}</h3>
@@ -125,7 +125,7 @@ export default function LandingPage() {
         className="relative mx-auto max-w-4xl px-6 pb-28"
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <div className="glass-card p-6">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Pay-As-You-Go</p>
             <p className="mt-2 font-serif text-3xl text-slate-50">$25</p>
             <p className="mt-1 text-sm text-slate-500">per session, unlocked in order</p>
@@ -138,7 +138,7 @@ export default function LandingPage() {
         </div>
       </motion.section>
 
-      <footer className="relative border-t border-slate-900 px-6 py-8 text-center text-xs text-slate-600">
+      <footer className="relative border-t border-white/5 px-6 py-8 text-center text-xs text-slate-600">
         Bass Note Piano — a digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book.
       </footer>
     </div>

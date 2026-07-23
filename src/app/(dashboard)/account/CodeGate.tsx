@@ -57,7 +57,7 @@ export function CodeGate({ email, onConfirm, onResend, onCancel, onSuccess }: Co
         autoFocus
         value={code}
         onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-        className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-center font-mono text-lg tracking-[0.5em] text-slate-100 outline-none transition focus:border-amber-400/60"
+        className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-center font-mono text-lg tracking-[0.5em] text-slate-100 outline-none transition focus:border-amber-400/60"
         placeholder="······"
       />
 

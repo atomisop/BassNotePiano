@@ -34,7 +34,7 @@ export default function PricingPage() {
         </Link>
         <Link
           href="/login"
-          className="rounded-full border border-slate-800 px-4 py-1.5 text-sm text-slate-200 transition hover:border-amber-400/50 hover:text-amber-300"
+          className="rounded-full border border-white/10 px-4 py-1.5 text-sm text-slate-200 transition hover:border-amber-400/50 hover:text-amber-300"
         >
           Log in
         </Link>
@@ -67,7 +67,7 @@ export default function PricingPage() {
         animate="visible"
         className="relative mx-auto grid max-w-4xl grid-cols-1 gap-5 px-6 pb-16 sm:grid-cols-2"
       >
-        <motion.div variants={item} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-7">
+        <motion.div variants={item} className="glass-card p-7">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Pay-As-You-Go</p>
           <p className="mt-3 font-serif text-4xl text-slate-50">
             $25<span className="text-lg font-sans text-slate-500"> / session</span>
@@ -91,7 +91,7 @@ export default function PricingPage() {
 
           <Link
             href="/register"
-            className="mt-7 block w-full rounded-xl border border-slate-700 py-2.5 text-center text-sm font-semibold text-slate-100 transition hover:border-amber-400/40 hover:text-amber-300"
+            className="mt-7 block w-full rounded-xl border border-white/15 py-2.5 text-center text-sm font-semibold text-slate-100 transition hover:border-amber-400/40 hover:text-amber-300"
           >
             Start learning
           </Link>
@@ -138,10 +138,10 @@ export default function PricingPage() {
           Each chapter is priced by how many named variants it bundles — a $25 session per variant.
         </p>
 
-        <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60">
+        <div className="overflow-x-auto glass-card">
           <table className="w-full min-w-[480px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate-800 text-left text-[11px] uppercase tracking-wide text-slate-500">
+              <tr className="border-b border-white/10 text-left text-[11px] uppercase tracking-wide text-slate-500">
                 <th className="px-6 py-3 font-medium">Scale</th>
                 <th className="px-6 py-3 font-medium">Sessions</th>
                 <th className="px-6 py-3 font-medium">Price</th>
@@ -149,7 +149,7 @@ export default function PricingPage() {
             </thead>
             <tbody>
               {SCALE_GROUPS.map((scale) => (
-                <tr key={scale.slug} className="border-b border-slate-900 last:border-0">
+                <tr key={scale.slug} className="border-b border-white/5 last:border-0">
                   <td className="px-6 py-3">
                     <p className="text-xs uppercase tracking-wide text-amber-400/80">{scale.code}</p>
                     <p className="text-slate-200">{scale.title}</p>
@@ -162,7 +162,7 @@ export default function PricingPage() {
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t border-slate-800">
+              <tr className="border-t border-white/10">
                 <td className="px-6 py-3 text-sm font-medium text-slate-300" colSpan={2}>
                   Pay-As-You-Go total
                 </td>
@@ -183,7 +183,7 @@ export default function PricingPage() {
         </div>
       </motion.section>
 
-      <footer className="relative border-t border-slate-900 px-6 py-8 text-center text-xs text-slate-600">
+      <footer className="relative border-t border-white/5 px-6 py-8 text-center text-xs text-slate-600">
         Bass Note Piano — a digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book.
       </footer>
     </div>

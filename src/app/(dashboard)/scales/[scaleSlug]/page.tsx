@@ -11,7 +11,7 @@ function pillClass(done: boolean) {
   return `rounded-full border px-4 py-2 text-sm font-medium transition ${
     done
       ? "cursor-default border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
-      : "border-slate-800 text-slate-300 hover:border-amber-400/40 hover:text-amber-300"
+      : "border-white/10 text-slate-300 hover:border-amber-400/40 hover:text-amber-300"
   }`;
 }
 

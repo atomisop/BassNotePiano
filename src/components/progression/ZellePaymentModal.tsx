@@ -135,7 +135,7 @@ export function ZellePaymentModal({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="relative w-full max-w-md overflow-hidden rounded-2xl border border-amber-400/20 bg-slate-900 shadow-[0_0_60px_-15px_rgba(217,180,88,0.35)]"
+            className="relative w-full max-w-md overflow-hidden rounded-2xl border border-amber-400/20 bg-slate-900/80 backdrop-blur-2xl shadow-[0_0_60px_-15px_rgba(217,180,88,0.35)]"
           >
             <div className="h-1 w-full bg-gradient-to-r from-amber-500/40 via-amber-300 to-amber-500/40" />
 
@@ -170,7 +170,7 @@ export function ZellePaymentModal({
                       unlock {scaleTitle}, then confirm below.
                     </p>
 
-                    <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3">
+                    <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3">
                       <div className="min-w-0">
                         <p className="text-[11px] uppercase tracking-wide text-slate-500">Zelle handle</p>
                         <p className="truncate font-mono text-sm text-slate-100">{zelleHandle}</p>
@@ -219,7 +219,7 @@ export function ZellePaymentModal({
                           value={senderName}
                           onChange={(e) => setSenderName(e.target.value)}
                           placeholder="Jordan Alemu"
-                          className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+                          className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
                         />
                       </div>
                       <div>
@@ -228,7 +228,7 @@ export function ZellePaymentModal({
                           value={referenceCode}
                           onChange={(e) => setReferenceCode(e.target.value)}
                           placeholder="e.g. ZL2K9F71M"
-                          className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 font-mono text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+                          className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 font-mono text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
                         />
                       </div>
                       <div>
@@ -238,7 +238,7 @@ export function ZellePaymentModal({
                           onChange={(e) => setNote(e.target.value)}
                           rows={2}
                           placeholder="Anything that helps us match the transfer"
-                          className="w-full resize-none rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+                          className="w-full resize-none rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
                         />
                       </div>
 
@@ -249,7 +249,7 @@ export function ZellePaymentModal({
                           type="button"
                           onClick={() => setStep("instructions")}
                           disabled={submitting}
-                          className="flex-1 rounded-xl border border-slate-800 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                          className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
                         >
                           Back
                         </button>
@@ -298,7 +298,7 @@ export function ZellePaymentModal({
                     <button
                       type="button"
                       onClick={handleClose}
-                      className="mt-6 w-full rounded-xl border border-slate-800 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+                      className="mt-6 w-full rounded-xl border border-white/10 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
                     >
                       Done
                     </button>

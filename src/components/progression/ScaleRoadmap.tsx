@@ -81,7 +81,7 @@ function StepMarker({ index, status, locked }: { index: number; status: Progress
   }
   if (locked) {
     return (
-      <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-800 bg-slate-950 text-slate-600">
+      <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white/10 bg-slate-950 text-slate-600">
         <LockIcon />
       </div>
     );
@@ -91,7 +91,7 @@ function StepMarker({ index, status, locked }: { index: number; status: Progress
       className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-semibold ${
         status === "IN_PROGRESS"
           ? "border-amber-400 bg-amber-400/10 text-amber-300"
-          : "border-slate-700 bg-slate-950 text-slate-400"
+          : "border-white/15 bg-slate-950 text-slate-400"
       }`}
     >
       {index + 1}
@@ -154,7 +154,7 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
             <motion.div key={scale.scaleGroup.slug} variants={gridItem} className="relative flex gap-4">
               <div className="flex flex-col items-center">
                 <StepMarker index={index} status={scale.status} locked={disabled} />
-                {!isLast && <span className="w-px flex-1 border-l-2 border-dotted border-slate-800" />}
+                {!isLast && <span className="w-px flex-1 border-l-2 border-dotted border-white/10" />}
               </div>
 
               <button
@@ -163,8 +163,8 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
                 disabled={disabled}
                 className={`group mb-4 flex-1 rounded-2xl border p-5 text-left transition ${
                   disabled
-                    ? "cursor-not-allowed border-slate-900 bg-slate-900/30 opacity-60"
-                    : "border-slate-800 bg-slate-900/60 hover:border-amber-400/30"
+                    ? "cursor-not-allowed border-white/5 bg-slate-900/30 opacity-60"
+                    : "border-white/10 bg-white/[0.04] backdrop-blur-xl hover:border-amber-400/30"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
