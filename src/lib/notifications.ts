@@ -57,12 +57,32 @@ async function maybeSendEmail(userId: string, category: EmailCategory, title: st
   await sendNotificationEmail(user.email, title, body ?? "");
 }
 
+/**
+ * Public entry point for callers that want the email side-effect only —
+ * new messages use this instead of createNotification, since they already
+ * have their own separate unread surface (the Messages nav badge and
+ * per-conversation counts), and would otherwise duplicate into the general
+ * bell too. Failure here is non-blocking, same as createNotification.
+ */
+export async function sendEmailIfEnabled(userId: string, category: EmailCategory, title: string, body?: string): Promise<void> {
+  await maybeSendEmail(userId, category, title, body).catch((err) =>
+    console.error("Notification email failed (non-blocking):", err),
+  );
+}
+
+// NEW_MESSAGE is deliberately excluded here — messages have their own
+// unread surface (Messages nav badge + conversation list), kept out of the
+// general bell so the two notification systems stay visually distinct.
 export async function getUnreadCount(userId: string): Promise<number> {
-  return prisma.notification.count({ where: { userId, readAt: null } });
+  return prisma.notification.count({ where: { userId, readAt: null, type: { not: "NEW_MESSAGE" } } });
 }
 
 export async function getRecentNotifications(userId: string, limit = 15) {
-  return prisma.notification.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: limit });
+  return prisma.notification.findMany({
+    where: { userId, type: { not: "NEW_MESSAGE" } },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
 }
 
 export async function markAllNotificationsRead(userId: string): Promise<void> {

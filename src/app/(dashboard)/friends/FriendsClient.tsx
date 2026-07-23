@@ -4,7 +4,6 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  setUsernameAction,
   searchUsersAction,
   sendFriendRequestAction,
   respondToFriendRequestAction,
@@ -61,54 +60,8 @@ function SectionCard({ title, description, children }: { title: string; descript
   );
 }
 
-function UsernameGate({ onSet }: { onSet: (username: string) => void }) {
-  const [value, setValue] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSubmitting(true);
-    const result = await setUsernameAction(value);
-    setSubmitting(false);
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-    onSet(value.trim().toLowerCase());
-  }
-
-  return (
-    <SectionCard title="Choose a username" description="Needed so other students can find and add you.">
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <div className="flex flex-1 items-center rounded-lg border border-neutral-800 bg-neutral-950 pl-3 focus-within:border-amber-400/60">
-          <span className="text-sm text-neutral-500">@</span>
-          <input
-            type="text"
-            required
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder="yourname"
-            className="w-full bg-transparent px-2 py-2 text-sm text-neutral-100 outline-none"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {submitting ? "Saving…" : "Save"}
-        </button>
-      </form>
-      {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
-    </SectionCard>
-  );
-}
-
-export function FriendsClient({ username: initialUsername, friends, receivedRequests, sentRequests, blocked }: FriendsClientProps) {
+export function FriendsClient({ username, friends, receivedRequests, sentRequests, blocked }: FriendsClientProps) {
   const router = useRouter();
-  const [username, setUsername] = useState(initialUsername);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PublicProfile[]>([]);
   const [searching, setSearching] = useState(false);
@@ -158,7 +111,14 @@ export function FriendsClient({ username: initialUsername, friends, receivedRequ
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Social</p>
           <h1 className="mt-1.5 font-serif text-2xl text-neutral-50">Friends</h1>
         </div>
-        <UsernameGate onSet={setUsername} />
+        <SectionCard title="Set a username first" description="Needed so other students can find and add you.">
+          <Link
+            href="/account"
+            className="inline-block rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300"
+          >
+            Go to Account settings
+          </Link>
+        </SectionCard>
       </div>
     );
   }

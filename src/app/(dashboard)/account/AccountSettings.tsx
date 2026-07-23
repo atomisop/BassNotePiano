@@ -15,6 +15,7 @@ import {
   confirmAvatarChangeAction,
   updateMusicProfileAction,
   updateNotificationPreferencesAction,
+  updateUsernameAction,
   type NotificationPreferencesInput,
 } from "./actions";
 
@@ -29,6 +30,7 @@ interface AccountSettingsProps {
   email: string;
   initialName: string | null;
   initialImage: string | null;
+  initialUsername: string | null;
   initialMusicProfile: MusicProfile;
   earnedBadgeCodes: BadgeCode[];
   initialNotificationPreferences: NotificationPreferencesInput;
@@ -97,6 +99,7 @@ export function AccountSettings({
   email,
   initialName,
   initialImage,
+  initialUsername,
   initialMusicProfile,
   earnedBadgeCodes,
   initialNotificationPreferences,
@@ -121,6 +124,7 @@ export function AccountSettings({
 
       <AvatarSection initialImage={initialImage} email={email} onDone={syncSession} />
       <NameSection initialName={initialName} email={email} onDone={syncSession} />
+      <UsernameSection initialUsername={initialUsername} />
       <MusicProfileSection initial={initialMusicProfile} />
 
       <div id="badges" className="scroll-mt-6 rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6">
@@ -381,6 +385,54 @@ function NameSection({ initialName, email, onDone }: { initialName: string | nul
           }}
         />
       )}
+    </SectionCard>
+  );
+}
+
+function UsernameSection({ initialUsername }: { initialUsername: string | null }) {
+  const [username, setUsernameValue] = useState(initialUsername ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSuccess(false);
+    setSubmitting(true);
+    const result = await updateUsernameAction(username);
+    setSubmitting(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setUsernameValue(result.username ?? username);
+    setSuccess(true);
+  }
+
+  return (
+    <SectionCard title="Username" description="How friends find and add you on the Friends page.">
+      <form onSubmit={handleSubmit} className="flex gap-2">
+        <div className="flex flex-1 items-center rounded-lg border border-neutral-800 bg-neutral-950 pl-3 focus-within:border-amber-400/60">
+          <span className="text-sm text-neutral-500">@</span>
+          <input
+            type="text"
+            required
+            value={username}
+            onChange={(e) => setUsernameValue(e.target.value)}
+            className="w-full bg-transparent px-2 py-2 text-sm text-neutral-100 outline-none"
+          />
+        </div>
+        <button
+          type="submit"
+          disabled={submitting || username.trim() === (initialUsername ?? "")}
+          className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {submitting ? "Saving…" : "Save"}
+        </button>
+      </form>
+      {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+      {success && <p className="mt-2 text-xs text-emerald-400">Username updated.</p>}
     </SectionCard>
   );
 }

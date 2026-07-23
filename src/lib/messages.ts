@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { createNotification } from "@/lib/notifications";
+import { sendEmailIfEnabled } from "@/lib/notifications";
 import { isFriend, getFriendsList, SocialError } from "@/lib/social";
 
 const MAX_MESSAGE_LENGTH = 2000;
@@ -30,14 +30,17 @@ export async function sendMessage(senderId: string, recipientId: string, body: s
 
   const message = await prisma.message.create({ data: { senderId, recipientId, body: trimmed } });
 
+  // No in-app Notification row here on purpose — messages already have
+  // their own separate unread surface (Messages nav badge + conversation
+  // list). Still emails if the recipient opted in, since they might not be
+  // on the site at all when it arrives.
   const sender = await prisma.user.findUnique({ where: { id: senderId }, select: { name: true, username: true } });
-  await createNotification({
-    userId: recipientId,
-    type: "NEW_MESSAGE",
-    title: "New message",
-    body: `${sender?.name ?? (sender?.username ? `@${sender.username}` : "Someone")} sent you a message.`,
-    emailCategory: "social",
-  });
+  await sendEmailIfEnabled(
+    recipientId,
+    "social",
+    "New message",
+    `${sender?.name ?? (sender?.username ? `@${sender.username}` : "Someone")} sent you a message.`,
+  );
 
   return message;
 }

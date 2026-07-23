@@ -14,6 +14,7 @@ export default async function AccountPage() {
         name: true,
         email: true,
         image: true,
+        username: true,
         primaryInstrument: true,
         skillLevel: true,
         genres: true,
@@ -33,6 +34,7 @@ export default async function AccountPage() {
       email={user.email}
       initialName={user.name}
       initialImage={user.image}
+      initialUsername={user.username}
       initialMusicProfile={{
         primaryInstrument: user.primaryInstrument,
         skillLevel: user.skillLevel,

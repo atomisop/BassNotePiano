@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
-import { saveOnboardingAction } from "./actions";
+import { saveOnboardingAction, checkUsernameAvailableAction } from "./actions";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -49,7 +49,7 @@ const LEARNING_GOALS: { value: LearningGoal; label: string }[] = [
   { value: "HOBBYIST", label: "Just for fun (hobbyist)" },
 ];
 
-const STEP_TITLES = ["Your instrument", "Your skill level", "Your genres", "Your goal"];
+const STEP_TITLES = ["Your username", "Your instrument", "Your skill level", "Your genres", "Your goal"];
 
 function OptionButton({
   label,
@@ -80,22 +80,43 @@ export function OnboardingWizard() {
   const { update } = useSession();
 
   const [step, setStep] = useState(0);
+  const [username, setUsernameValue] = useState("");
   const [instrument, setInstrument] = useState<PrimaryInstrument | null>(null);
   const [skillLevel, setSkillLevel] = useState<SkillLevel | null>(null);
   const [genres, setGenres] = useState<MusicGenre[]>([]);
   const [goal, setGoal] = useState<LearningGoal | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [checkingUsername, setCheckingUsername] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function toggleGenre(value: MusicGenre) {
     setGenres((prev) => (prev.includes(value) ? prev.filter((g) => g !== value) : [...prev, value]));
   }
 
-  const canAdvance = [instrument !== null, skillLevel !== null, genres.length > 0, goal !== null][step];
+  const canAdvance = [
+    username.trim().length >= 3,
+    instrument !== null,
+    skillLevel !== null,
+    genres.length > 0,
+    goal !== null,
+  ][step];
+
+  const lastStep = STEP_TITLES.length - 1;
 
   async function handleNext() {
     setError(null);
-    if (step < 3) {
+
+    if (step === 0) {
+      setCheckingUsername(true);
+      const result = await checkUsernameAvailableAction(username);
+      setCheckingUsername(false);
+      if (!result.available) {
+        setError(result.reason ?? "That username isn't available.");
+        return;
+      }
+    }
+
+    if (step < lastStep) {
       setStep((s) => s + 1);
       return;
     }
@@ -103,7 +124,7 @@ export function OnboardingWizard() {
     if (!instrument || !skillLevel || !goal) return;
 
     setSubmitting(true);
-    const result = await saveOnboardingAction({ primaryInstrument: instrument, skillLevel, genres, learningGoal: goal });
+    const result = await saveOnboardingAction({ username, primaryInstrument: instrument, skillLevel, genres, learningGoal: goal });
     if (!result.ok) {
       setError(result.error);
       setSubmitting(false);
@@ -144,7 +165,20 @@ export function OnboardingWizard() {
 
       <AnimatePresence mode="wait">
         <motion.div key={step} variants={stepVariants} initial="enter" animate="center" exit="exit" className="mt-6 space-y-2">
-          {step === 0 &&
+          {step === 0 && (
+            <div className="flex items-center rounded-xl border border-neutral-800 bg-neutral-950 pl-4 focus-within:border-amber-400/60">
+              <span className="text-sm text-neutral-500">@</span>
+              <input
+                type="text"
+                autoFocus
+                value={username}
+                onChange={(e) => setUsernameValue(e.target.value)}
+                placeholder="yourname"
+                className="w-full bg-transparent px-2 py-3 text-sm text-neutral-100 outline-none"
+              />
+            </div>
+          )}
+          {step === 1 &&
             INSTRUMENTS.map((opt) => (
               <OptionButton
                 key={opt.value}
@@ -153,7 +187,7 @@ export function OnboardingWizard() {
                 onClick={() => setInstrument(opt.value)}
               />
             ))}
-          {step === 1 &&
+          {step === 2 &&
             SKILL_LEVELS.map((opt) => (
               <OptionButton
                 key={opt.value}
@@ -162,7 +196,7 @@ export function OnboardingWizard() {
                 onClick={() => setSkillLevel(opt.value)}
               />
             ))}
-          {step === 2 &&
+          {step === 3 &&
             GENRES.map((opt) => (
               <OptionButton
                 key={opt.value}
@@ -171,7 +205,7 @@ export function OnboardingWizard() {
                 onClick={() => toggleGenre(opt.value)}
               />
             ))}
-          {step === 3 &&
+          {step === 4 &&
             LEARNING_GOALS.map((opt) => (
               <OptionButton
                 key={opt.value}
@@ -199,10 +233,10 @@ export function OnboardingWizard() {
         <button
           type="button"
           onClick={handleNext}
-          disabled={!canAdvance || submitting}
+          disabled={!canAdvance || submitting || checkingUsername}
           className="flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {submitting ? "Saving…" : step < 3 ? "Next" : "Finish"}
+          {checkingUsername ? "Checking…" : submitting ? "Saving…" : step < lastStep ? "Next" : "Finish"}
         </button>
       </div>
     </motion.div>

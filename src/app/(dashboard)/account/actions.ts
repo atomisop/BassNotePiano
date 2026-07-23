@@ -5,6 +5,7 @@ import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@p
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { verifyCode, createAndSendCode, type VerifyCodeResult } from "@/lib/verification";
+import { setUsername, SocialError } from "@/lib/social";
 
 const MIN_PASSWORD_LENGTH = 8;
 const MAX_AVATAR_DATA_URI_LENGTH = 2_500_000; // ~1.8MB image, base64-inflated
@@ -167,4 +168,20 @@ export async function updateNotificationPreferencesAction(input: NotificationPre
   const { id } = await requireSession();
   await prisma.user.update({ where: { id }, data: input });
   return { ok: true as const };
+}
+
+// ---------------------------------------------------------------------------
+// Username — used for friend search; not code-gated, same reasoning as the
+// music profile and notification settings above (not a security-sensitive
+// change, unlike name/password/avatar which prove identity elsewhere).
+// ---------------------------------------------------------------------------
+
+export async function updateUsernameAction(newUsername: string) {
+  const { id } = await requireSession();
+  try {
+    const updated = await setUsername(id, newUsername);
+    return { ok: true as const, username: updated.username };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof SocialError ? err.message : "Something went wrong." };
+  }
 }

@@ -7,6 +7,7 @@ import {
   markNotificationReadAction,
   type NotificationRow,
 } from "@/app/(dashboard)/notification-actions";
+import { playNotificationSound } from "@/lib/notification-sound";
 
 const POLL_INTERVAL_MS = 30_000;
 
@@ -27,9 +28,17 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [loaded, setLoaded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const previousUnreadRef = useRef<number | null>(null);
 
   async function refresh() {
     const result = await fetchNotificationsAction();
+    // Only chime when the count goes up from a known previous value — skips
+    // the initial mount (previousUnreadRef still null) and any decrease.
+    if (previousUnreadRef.current !== null && result.unreadCount > previousUnreadRef.current) {
+      playNotificationSound();
+    }
+    previousUnreadRef.current = result.unreadCount;
+
     setUnreadCount(result.unreadCount);
     setNotifications(result.notifications);
     setLoaded(true);

@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { ConversationSummary } from "@/lib/messages";
+import { playNotificationSound } from "@/lib/notification-sound";
 import {
   getConversationsAction,
   getConversationMessagesAction,
@@ -70,9 +71,19 @@ function MessagesInner({ initialConversations }: { initialConversations: Convers
     }
 
     let cancelled = false;
+    let previousLastMessageId: string | null = null; // null = haven't loaded yet, don't chime on first load
+
     async function load() {
       const rows = await getConversationMessagesAction(active!.friendId);
-      if (!cancelled) setMessages(rows);
+      if (cancelled) return;
+
+      const newest = rows[rows.length - 1];
+      if (previousLastMessageId !== null && newest && newest.id !== previousLastMessageId && newest.senderId === active!.friendId) {
+        playNotificationSound();
+      }
+      previousLastMessageId = newest?.id ?? previousLastMessageId;
+
+      setMessages(rows);
       await markConversationReadAction(active!.friendId);
     }
     load();
