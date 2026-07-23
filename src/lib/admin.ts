@@ -1,6 +1,7 @@
 import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { SCALE_SLUGS } from "@/lib/curriculum";
+import { createNotification } from "@/lib/notifications";
 
 // ---------------------------------------------------------------------------
 // Overview metrics
@@ -98,7 +99,20 @@ export async function searchUsers(query: string): Promise<AdminUserRow[]> {
 }
 
 export async function setUserRole(userId: string, role: Role) {
-  return prisma.user.update({ where: { id: userId }, data: { role } });
+  const before = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { role: true } });
+  const updated = await prisma.user.update({ where: { id: userId }, data: { role } });
+
+  if (role === "ADMIN" && before.role !== "ADMIN") {
+    await createNotification({
+      userId,
+      type: "ROLE_UPDATED",
+      title: "You've been granted Admin access",
+      body: "Your account now has Admin permissions — you can manage payments and users from the Admin panel.",
+      emailCategory: "roleUpdates",
+    });
+  }
+
+  return updated;
 }
 
 export async function setProMembership(userId: string, isPro: boolean) {

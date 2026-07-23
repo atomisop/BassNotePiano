@@ -1,6 +1,7 @@
 import type { Prisma, ZellePaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AccessDeniedError, unlockScaleForUser, grantProLifetime } from "@/lib/access";
+import { createNotification } from "@/lib/notifications";
 
 /**
  * A student who opens the payment modal but never actually confirms a
@@ -180,12 +181,23 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
     data: { status: "VERIFIED", reviewedAt: new Date(), reviewedById: reviewerId },
   });
 
+  let notificationBody = "Your payment was verified.";
   if (payment.purpose === "PRO_LIFETIME") {
     await grantProLifetime(payment.userId);
+    notificationBody = "Your $200 lifetime Pro payment was verified — every scale is unlocked.";
   } else if (payment.scaleGroupId) {
     const scaleGroup = await prisma.scaleGroup.findUniqueOrThrow({ where: { id: payment.scaleGroupId } });
     await unlockScaleForUser(payment.userId, scaleGroup.slug);
+    notificationBody = `Your $25 payment for ${scaleGroup.code} — ${scaleGroup.title} was verified. It's unlocked now.`;
   }
+
+  await createNotification({
+    userId: payment.userId,
+    type: "PAYMENT_APPROVED",
+    title: "Payment approved",
+    body: notificationBody,
+    emailCategory: "payments",
+  });
 }
 
 /** Rejects a pending payment with a reason the student sees on the resubmit screen. */
@@ -198,5 +210,13 @@ export async function rejectZellePayment(paymentId: string, reviewerId: string, 
   await prisma.zellePayment.update({
     where: { id: paymentId },
     data: { status: "REJECTED", reviewedAt: new Date(), reviewedById: reviewerId, rejectionReason: reason },
+  });
+
+  await createNotification({
+    userId: payment.userId,
+    type: "PAYMENT_REJECTED",
+    title: "Payment rejected",
+    body: `Your payment couldn't be verified: ${reason}. You can resubmit it from your billing page.`,
+    emailCategory: "payments",
   });
 }

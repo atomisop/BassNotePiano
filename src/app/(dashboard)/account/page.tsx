@@ -18,6 +18,10 @@ export default async function AccountPage() {
         skillLevel: true,
         genres: true,
         learningGoal: true,
+        notifyEmailPayments: true,
+        notifyEmailRoleUpdates: true,
+        notifyEmailSocial: true,
+        notifyEmailReminders: true,
       },
     }),
     prisma.userBadge.findMany({ where: { userId: session.user.id }, select: { code: true } }),
@@ -36,6 +40,12 @@ export default async function AccountPage() {
         learningGoal: user.learningGoal,
       }}
       earnedBadgeCodes={badgeRows.map((b) => b.code)}
+      initialNotificationPreferences={{
+        notifyEmailPayments: user.notifyEmailPayments,
+        notifyEmailRoleUpdates: user.notifyEmailRoleUpdates,
+        notifyEmailSocial: user.notifyEmailSocial,
+        notifyEmailReminders: user.notifyEmailReminders,
+      }}
     />
   );
 }

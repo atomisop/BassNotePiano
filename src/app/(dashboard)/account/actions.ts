@@ -151,3 +151,20 @@ export async function updateMusicProfileAction(input: MusicProfileInput) {
 
   return { ok: true as const };
 }
+
+// ---------------------------------------------------------------------------
+// Notification settings — also not security-sensitive, no code confirmation
+// ---------------------------------------------------------------------------
+
+export interface NotificationPreferencesInput {
+  notifyEmailPayments: boolean;
+  notifyEmailRoleUpdates: boolean;
+  notifyEmailSocial: boolean;
+  notifyEmailReminders: boolean;
+}
+
+export async function updateNotificationPreferencesAction(input: NotificationPreferencesInput) {
+  const { id } = await requireSession();
+  await prisma.user.update({ where: { id }, data: input });
+  return { ok: true as const };
+}

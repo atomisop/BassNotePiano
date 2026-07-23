@@ -14,6 +14,8 @@ import {
   requestAvatarChangeAction,
   confirmAvatarChangeAction,
   updateMusicProfileAction,
+  updateNotificationPreferencesAction,
+  type NotificationPreferencesInput,
 } from "./actions";
 
 interface MusicProfile {
@@ -29,6 +31,7 @@ interface AccountSettingsProps {
   initialImage: string | null;
   initialMusicProfile: MusicProfile;
   earnedBadgeCodes: BadgeCode[];
+  initialNotificationPreferences: NotificationPreferencesInput;
 }
 
 const MAX_AVATAR_BYTES = 1_800_000;
@@ -96,6 +99,7 @@ export function AccountSettings({
   initialImage,
   initialMusicProfile,
   earnedBadgeCodes,
+  initialNotificationPreferences,
 }: AccountSettingsProps) {
   const { update } = useSession();
   const router = useRouter();
@@ -126,6 +130,8 @@ export function AccountSettings({
           <BadgeGrid earnedCodes={new Set(earnedBadgeCodes)} />
         </div>
       </div>
+
+      <NotificationSettingsSection initial={initialNotificationPreferences} />
 
       <PasswordSection email={email} />
     </div>
@@ -471,6 +477,62 @@ function PasswordSection({ email }: { email: string }) {
           }}
         />
       )}
+    </SectionCard>
+  );
+}
+
+const NOTIFICATION_TOGGLES: { key: keyof NotificationPreferencesInput; label: string; description: string }[] = [
+  { key: "notifyEmailPayments", label: "Payment approvals", description: "Zelle payments verified or rejected." },
+  { key: "notifyEmailRoleUpdates", label: "Role updates", description: "Granted Admin access." },
+  { key: "notifyEmailSocial", label: "Social", description: "Friend requests and new messages." },
+  { key: "notifyEmailReminders", label: "Practice reminders", description: "Nudges after a few days away." },
+];
+
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative h-5 w-9 shrink-0 rounded-full transition ${checked ? "bg-amber-400" : "bg-neutral-800"}`}
+    >
+      <span
+        className={`absolute top-0.5 h-4 w-4 rounded-full bg-neutral-950 transition ${checked ? "left-[18px]" : "left-0.5"}`}
+      />
+    </button>
+  );
+}
+
+function NotificationSettingsSection({ initial }: { initial: NotificationPreferencesInput }) {
+  const [prefs, setPrefs] = useState(initial);
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  async function handleToggle(key: keyof NotificationPreferencesInput, value: boolean) {
+    const next = { ...prefs, [key]: value };
+    setPrefs(next);
+    setSuccess(false);
+    setSubmitting(true);
+    await updateNotificationPreferencesAction(next);
+    setSubmitting(false);
+    setSuccess(true);
+  }
+
+  return (
+    <SectionCard title="Notification settings" description="The in-app bell always shows these — choose which also send an email.">
+      <div className="space-y-3">
+        {NOTIFICATION_TOGGLES.map((item) => (
+          <div key={item.key} className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm text-neutral-200">{item.label}</p>
+              <p className="text-xs text-neutral-500">{item.description}</p>
+            </div>
+            <Toggle checked={prefs[item.key]} onChange={(value) => handleToggle(item.key, value)} />
+          </div>
+        ))}
+      </div>
+      {success && !submitting && <p className="mt-3 text-xs text-emerald-400">Saved.</p>}
     </SectionCard>
   );
 }

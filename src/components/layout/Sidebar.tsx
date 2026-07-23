@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export interface SidebarProps {
   name?: string | null;
@@ -23,9 +24,12 @@ export function Sidebar({ name, email, isProMember, isAdmin }: SidebarProps) {
 
   return (
     <aside className="flex h-screen w-60 shrink-0 flex-col border-r border-neutral-900 bg-neutral-950/80 px-4 py-6">
-      <Link href="/" className="px-2 font-serif text-sm tracking-[0.2em] text-neutral-200">
-        BASS NOTE <span className="text-amber-400">PIANO</span>
-      </Link>
+      <div className="flex items-center justify-between px-2">
+        <Link href="/" className="font-serif text-sm tracking-[0.2em] text-neutral-200">
+          BASS NOTE <span className="text-amber-400">PIANO</span>
+        </Link>
+        <NotificationBell />
+      </div>
 
       <nav className="mt-8 flex flex-1 flex-col gap-1">
         {NAV_ITEMS.map((item) => {

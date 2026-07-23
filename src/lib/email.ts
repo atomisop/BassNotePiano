@@ -134,6 +134,22 @@ export async function sendVerificationCodeEmail(to: string, purpose: Verificatio
   await sendEmail({ to, subject: copy.subject, html, text });
 }
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Generic notification email — payment approvals, role changes, practice reminders, etc. */
+export async function sendNotificationEmail(to: string, title: string, body: string) {
+  const html = emailShell(title, `<p style="margin:0;">${escapeHtml(body)}</p>`);
+  const text = body;
+  await sendEmail({ to, subject: `${title} — Bass Note Piano`, html, text });
+}
+
 export interface NewLocationAlertDetails {
   city: string | null;
   region: string | null;

@@ -132,6 +132,38 @@ model UserBadge {
 }
 
 // ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
+enum NotificationType {
+  PAYMENT_APPROVED
+  PAYMENT_REJECTED
+  ROLE_UPDATED
+  FRIEND_REQUEST_RECEIVED // awaiting the friends system (later step)
+  FRIEND_REQUEST_ACCEPTED // same dependency
+  NEW_MESSAGE // same dependency
+  PRACTICE_REMINDER
+}
+
+// The in-app inbox is the source of truth — always written regardless of
+// preference. The four notifyEmail* booleans on User only control whether a
+// given category *also* sends an email, same pattern as most apps' "also
+// notify me by email" toggle rather than a full per-channel opt-out.
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
 // Auth (NextAuth.js Prisma adapter shape)
 // ---------------------------------------------------------------------------
 
@@ -167,8 +199,18 @@ model User {
   longestStreak    Int       @default(0)
   lastActivityDate DateTime?
 
+  // Per-category "also email me" toggles for the in-app notification
+  // center — reminders default off since they're the closest thing to
+  // marketing email here, unlike the other three which are transactional.
+  notifyEmailPayments    Boolean @default(true)
+  notifyEmailRoleUpdates Boolean @default(true)
+  notifyEmailSocial      Boolean @default(true)
+  notifyEmailReminders   Boolean @default(false)
+
   accounts Account[]
   sessions Session[]
+
+  notifications Notification[]
 
   progress         ScaleProgress[]
   quizAttempts     QuizAttempt[]
