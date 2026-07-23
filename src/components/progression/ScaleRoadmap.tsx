@@ -63,6 +63,42 @@ function LockIcon() {
   );
 }
 
+function CheckIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="shrink-0">
+      <path d="M5 12l5 5L19 8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function StepMarker({ index, status, locked }: { index: number; status: ProgressStatus; locked: boolean }) {
+  if (status === "COMPLETED") {
+    return (
+      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-400 text-neutral-950">
+        <CheckIcon />
+      </div>
+    );
+  }
+  if (locked) {
+    return (
+      <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-neutral-800 bg-neutral-950 text-neutral-600">
+        <LockIcon />
+      </div>
+    );
+  }
+  return (
+    <div
+      className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-semibold ${
+        status === "IN_PROGRESS"
+          ? "border-amber-400 bg-amber-400/10 text-amber-300"
+          : "border-neutral-700 bg-neutral-950 text-neutral-400"
+      }`}
+    >
+      {index + 1}
+    </div>
+  );
+}
+
 function ctaLabel(scale: ScaleAccessState): string {
   if (scale.requiresOverrideConfirm) return "Unlock ahead";
   if (scale.reason === "requires-payment") return "Unlock — $25";
@@ -110,54 +146,54 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
 
   return (
     <>
-      <motion.div
-        variants={gridContainer}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-      >
-        {roadmap.map((scale) => {
+      <motion.div variants={gridContainer} initial="hidden" animate="visible" className="relative mx-auto max-w-2xl">
+        {roadmap.map((scale, index) => {
           const disabled = !scale.canAccess && scale.reason === "locked";
+          const isLast = index === roadmap.length - 1;
           return (
-            <motion.button
-              key={scale.scaleGroup.slug}
-              type="button"
-              variants={gridItem}
-              whileHover={disabled ? undefined : { y: -4 }}
-              onClick={() => handleCardClick(scale)}
-              disabled={disabled}
-              className={`group rounded-2xl border p-5 text-left transition ${
-                disabled
-                  ? "cursor-not-allowed border-neutral-900 bg-neutral-900/30 opacity-60"
-                  : "border-neutral-800 bg-neutral-900/60 hover:border-amber-400/30"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">
-                  {scale.scaleGroup.code}
-                </p>
-                <span className="flex items-center gap-1.5 text-[11px] text-neutral-500">
-                  <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[scale.status]}`} />
-                  {STATUS_LABEL[scale.status]}
-                </span>
+            <motion.div key={scale.scaleGroup.slug} variants={gridItem} className="relative flex gap-4">
+              <div className="flex flex-col items-center">
+                <StepMarker index={index} status={scale.status} locked={disabled} />
+                {!isLast && <span className="w-px flex-1 border-l-2 border-dotted border-neutral-800" />}
               </div>
 
-              <h3 className="mt-2 font-serif text-lg text-neutral-50">{scale.scaleGroup.title}</h3>
-              {scale.scaleGroup.kinitName && (
-                <p className="mt-1 text-sm text-neutral-500">{scale.scaleGroup.kinitName}</p>
-              )}
-
-              <ChecklistDots scale={scale} />
-
-              <div
-                className={`mt-5 flex items-center gap-1.5 text-sm font-medium ${
-                  disabled ? "text-neutral-600" : "text-amber-300"
+              <button
+                type="button"
+                onClick={() => handleCardClick(scale)}
+                disabled={disabled}
+                className={`group mb-4 flex-1 rounded-2xl border p-5 text-left transition ${
+                  disabled
+                    ? "cursor-not-allowed border-neutral-900 bg-neutral-900/30 opacity-60"
+                    : "border-neutral-800 bg-neutral-900/60 hover:border-amber-400/30"
                 }`}
               >
-                {disabled && <LockIcon />}
-                {ctaLabel(scale)}
-              </div>
-            </motion.button>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">
+                    {scale.scaleGroup.code}
+                  </p>
+                  <span className="flex items-center gap-1.5 text-[11px] text-neutral-500">
+                    <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[scale.status]}`} />
+                    {STATUS_LABEL[scale.status]}
+                  </span>
+                </div>
+
+                <h3 className="mt-2 font-serif text-lg text-neutral-50">{scale.scaleGroup.title}</h3>
+                {scale.scaleGroup.kinitName && (
+                  <p className="mt-1 text-sm text-neutral-500">{scale.scaleGroup.kinitName}</p>
+                )}
+
+                <ChecklistDots scale={scale} />
+
+                <div
+                  className={`mt-5 flex items-center gap-1.5 text-sm font-medium ${
+                    disabled ? "text-neutral-600" : "text-amber-300"
+                  }`}
+                >
+                  {disabled && <LockIcon />}
+                  {ctaLabel(scale)}
+                </div>
+              </button>
+            </motion.div>
           );
         })}
       </motion.div>

@@ -95,6 +95,44 @@ function SectionCard({ title, description, children }: { title: string; descript
   );
 }
 
+const SETTINGS_SECTIONS = [
+  { id: "profile", label: "Profile" },
+  { id: "username", label: "Username" },
+  { id: "music-profile", label: "Music profile" },
+  { id: "badges", label: "Badges" },
+  { id: "notifications", label: "Notifications" },
+  { id: "password", label: "Password" },
+];
+
+function SettingsNav() {
+  return (
+    <>
+      <nav className="mb-2 flex gap-2 overflow-x-auto pb-1 lg:hidden">
+        {SETTINGS_SECTIONS.map((s) => (
+          <a
+            key={s.id}
+            href={`#${s.id}`}
+            className="shrink-0 rounded-full border border-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-400 transition hover:border-amber-400/40 hover:text-amber-200"
+          >
+            {s.label}
+          </a>
+        ))}
+      </nav>
+      <nav className="sticky top-6 hidden w-44 shrink-0 flex-col gap-1 self-start lg:flex">
+        {SETTINGS_SECTIONS.map((s) => (
+          <a
+            key={s.id}
+            href={`#${s.id}`}
+            className="rounded-lg px-3 py-2 text-sm text-neutral-400 transition hover:bg-neutral-900 hover:text-neutral-100"
+          >
+            {s.label}
+          </a>
+        ))}
+      </nav>
+    </>
+  );
+}
+
 export function AccountSettings({
   email,
   initialName,
@@ -113,7 +151,7 @@ export function AccountSettings({
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
+    <div className="mx-auto max-w-4xl">
       <div>
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Settings</p>
         <h1 className="mt-1.5 font-serif text-2xl text-neutral-50">Account</h1>
@@ -122,22 +160,40 @@ export function AccountSettings({
         </p>
       </div>
 
-      <AvatarSection initialImage={initialImage} email={email} onDone={syncSession} />
-      <NameSection initialName={initialName} email={email} onDone={syncSession} />
-      <UsernameSection initialUsername={initialUsername} />
-      <MusicProfileSection initial={initialMusicProfile} />
+      <div className="mt-6 flex flex-col gap-8 lg:flex-row">
+        <SettingsNav />
 
-      <div id="badges" className="scroll-mt-6 rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6">
-        <h2 className="font-serif text-lg text-neutral-50">Badges</h2>
-        <p className="mt-1 text-sm text-neutral-500">Earned and locked achievements — hover a badge to see how to unlock it.</p>
-        <div className="mt-4">
-          <BadgeGrid earnedCodes={new Set(earnedBadgeCodes)} />
+        <div className="min-w-0 flex-1 space-y-6">
+          <div id="profile" className="scroll-mt-6 space-y-6">
+            <AvatarSection initialImage={initialImage} email={email} onDone={syncSession} />
+            <NameSection initialName={initialName} email={email} onDone={syncSession} />
+          </div>
+
+          <div id="username" className="scroll-mt-6">
+            <UsernameSection initialUsername={initialUsername} />
+          </div>
+
+          <div id="music-profile" className="scroll-mt-6">
+            <MusicProfileSection initial={initialMusicProfile} />
+          </div>
+
+          <div id="badges" className="scroll-mt-6 rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6">
+            <h2 className="font-serif text-lg text-neutral-50">Badges</h2>
+            <p className="mt-1 text-sm text-neutral-500">Earned and locked achievements — hover a badge to see how to unlock it.</p>
+            <div className="mt-4">
+              <BadgeGrid earnedCodes={new Set(earnedBadgeCodes)} />
+            </div>
+          </div>
+
+          <div id="notifications" className="scroll-mt-6">
+            <NotificationSettingsSection initial={initialNotificationPreferences} />
+          </div>
+
+          <div id="password" className="scroll-mt-6">
+            <PasswordSection email={email} />
+          </div>
         </div>
       </div>
-
-      <NotificationSettingsSection initial={initialNotificationPreferences} />
-
-      <PasswordSection email={email} />
     </div>
   );
 }

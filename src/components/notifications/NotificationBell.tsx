@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   fetchNotificationsAction,
@@ -116,7 +117,27 @@ export function NotificationBell() {
 
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
-              <p className="px-4 py-6 text-center text-xs text-neutral-500">Nothing yet.</p>
+              <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-neutral-800 text-neutral-600">
+                  <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
+                    <path
+                      d="M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5z"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinejoin="round"
+                    />
+                    <path d="M9.5 19.5a2.5 2.5 0 005 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <p className="text-xs font-medium text-neutral-400">No recent notifications</p>
+                <Link
+                  href="/account#notifications"
+                  onClick={() => setOpen(false)}
+                  className="mt-1 text-[11px] text-amber-300 transition hover:text-amber-200"
+                >
+                  Notification settings
+                </Link>
+              </div>
             ) : (
               notifications.map((n) => (
                 <button

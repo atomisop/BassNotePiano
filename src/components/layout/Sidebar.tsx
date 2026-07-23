@@ -13,13 +13,31 @@ export interface SidebarProps {
   unreadMessageCount: number;
 }
 
+function NavIcon({ path }: { path: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px] shrink-0">
+      <path d={path} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+const ICON_PATHS = {
+  roadmap: "M4 6h11a3 3 0 010 6H9a3 3 0 000 6h11M4 6l3-3M4 6l3 3M17 18l3 3M17 18l3-3",
+  friends: "M8 11a3 3 0 100-6 3 3 0 000 6zM3 20c0-3.3 2.7-6 6-6M17 11a3 3 0 100-6 3 3 0 000 6zM13.5 14c2.9.3 5.5 2.8 5.5 6",
+  messages: "M4 5h16v11H8l-4 4V5z",
+  payments: "M3 8h18M3 6h18v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6zM7 15h4",
+  pricing: "M4 4h6l10 10-6 6L4 10V4zM8.5 8.5h.01",
+  account: "M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c0-4.4 3.6-8 8-8s8 3.6 8 8",
+  admin: "M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z",
+} as const;
+
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Roadmap" },
-  { href: "/friends", label: "Friends" },
-  { href: "/messages", label: "Messages" },
-  { href: "/billing/history", label: "Payment history" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/account", label: "Account" },
+  { href: "/dashboard", label: "Roadmap", icon: ICON_PATHS.roadmap },
+  { href: "/friends", label: "Friends", icon: ICON_PATHS.friends },
+  { href: "/messages", label: "Messages", icon: ICON_PATHS.messages },
+  { href: "/billing/history", label: "Payment history", icon: ICON_PATHS.payments },
+  { href: "/pricing", label: "Pricing", icon: ICON_PATHS.pricing },
+  { href: "/account", label: "Account", icon: ICON_PATHS.account },
 ];
 
 export function Sidebar({ name, email, isProMember, isAdmin, unreadMessageCount }: SidebarProps) {
@@ -47,7 +65,10 @@ export function Sidebar({ name, email, isProMember, isAdmin, unreadMessageCount 
                   : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-100"
               }`}
             >
-              {item.label}
+              <span className="flex items-center gap-2.5">
+                <NavIcon path={item.icon} />
+                {item.label}
+              </span>
               {item.href === "/messages" && unreadMessageCount > 0 && (
                 <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-neutral-950">
                   {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
@@ -59,12 +80,13 @@ export function Sidebar({ name, email, isProMember, isAdmin, unreadMessageCount 
         {isAdmin && (
           <Link
             href="/admin/payments"
-            className={`rounded-lg px-3 py-2 text-sm transition ${
+            className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
               pathname.startsWith("/admin")
                 ? "bg-amber-400/10 text-amber-300"
                 : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-100"
             }`}
           >
+            <NavIcon path={ICON_PATHS.admin} />
             Admin
           </Link>
         )}
