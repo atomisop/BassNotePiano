@@ -4,6 +4,12 @@ import { isFriend, getFriendsList, SocialError } from "@/lib/social";
 
 const MAX_MESSAGE_LENGTH = 2000;
 
+// A typing row older than this is treated as stale rather than actively
+// typing — there's no explicit "stopped typing" write, so recency is the
+// only signal. Comfortably longer than the 2.5s active-thread poll interval
+// so a normal typing cadence never flickers off between polls.
+const TYPING_STALE_MS = 4_000;
+
 async function isBlockedEitherWay(userIdA: string, userIdB: string): Promise<boolean> {
   const block = await prisma.block.findFirst({
     where: {
@@ -30,6 +36,10 @@ export async function sendMessage(senderId: string, recipientId: string, body: s
 
   const message = await prisma.message.create({ data: { senderId, recipientId, body: trimmed } });
 
+  // A message landing is a much stronger signal than "typing" — clear it
+  // immediately rather than waiting out TYPING_STALE_MS.
+  await prisma.typingStatus.deleteMany({ where: { senderId, recipientId } });
+
   // No in-app Notification row here on purpose — messages already have
   // their own separate unread surface (Messages nav badge + conversation
   // list). Still emails if the recipient opted in, since they might not be
@@ -53,11 +63,24 @@ export interface ConversationSummary {
   lastMessageBody: string | null;
   lastMessageAt: Date | null;
   unreadCount: number;
+  isPinned: boolean;
+  pinOrder: number | null;
+  isTyping: boolean;
 }
 
 /** One row per friend, newest activity first — the conversation list view. */
 export async function getConversations(userId: string): Promise<ConversationSummary[]> {
-  const friends = await getFriendsList(userId);
+  const [friends, pinnedRows, typingRows] = await Promise.all([
+    getFriendsList(userId),
+    prisma.pinnedConversation.findMany({ where: { userId }, select: { friendId: true, pinOrder: true } }),
+    prisma.typingStatus.findMany({
+      where: { recipientId: userId, updatedAt: { gte: new Date(Date.now() - TYPING_STALE_MS) } },
+      select: { senderId: true },
+    }),
+  ]);
+
+  const pinnedByFriendId = new Map(pinnedRows.map((p) => [p.friendId, p.pinOrder]));
+  const typingFriendIds = new Set(typingRows.map((t) => t.senderId));
 
   const summaries = await Promise.all(
     friends.map(async (friend): Promise<ConversationSummary> => {
@@ -82,6 +105,9 @@ export async function getConversations(userId: string): Promise<ConversationSumm
         lastMessageBody: lastMessage?.body ?? null,
         lastMessageAt: lastMessage?.createdAt ?? null,
         unreadCount,
+        isPinned: pinnedByFriendId.has(friend.id),
+        pinOrder: pinnedByFriendId.get(friend.id) ?? null,
+        isTyping: typingFriendIds.has(friend.id),
       };
     }),
   );
@@ -112,5 +138,35 @@ export async function markConversationRead(userId: string, friendId: string): Pr
   await prisma.message.updateMany({
     where: { senderId: friendId, recipientId: userId, readAt: null },
     data: { readAt: new Date() },
+  });
+}
+
+/** Toggles pin state for a friend on the caller's own sidebar — not mutual. */
+export async function togglePin(userId: string, friendId: string): Promise<{ isPinned: boolean }> {
+  if (!(await isFriend(userId, friendId))) throw new SocialError("Not friends with this user.");
+
+  const existing = await prisma.pinnedConversation.findUnique({
+    where: { userId_friendId: { userId, friendId } },
+  });
+
+  if (existing) {
+    await prisma.pinnedConversation.delete({ where: { id: existing.id } });
+    return { isPinned: false };
+  }
+
+  const highest = await prisma.pinnedConversation.aggregate({ where: { userId }, _max: { pinOrder: true } });
+  await prisma.pinnedConversation.create({
+    data: { userId, friendId, pinOrder: (highest._max.pinOrder ?? 0) + 1 },
+  });
+  return { isPinned: true };
+}
+
+/** Upserted on a debounced keystroke in the composer; recency is the signal, not a boolean. */
+export async function setTyping(senderId: string, recipientId: string): Promise<void> {
+  if (!(await isFriend(senderId, recipientId))) return;
+  await prisma.typingStatus.upsert({
+    where: { senderId_recipientId: { senderId, recipientId } },
+    update: {},
+    create: { senderId, recipientId },
   });
 }

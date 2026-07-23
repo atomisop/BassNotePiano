@@ -1,0 +1,75 @@
+"use client";
+
+import { motion } from "framer-motion";
+import type { ConversationSummary } from "@/lib/messages";
+import { Avatar } from "./Avatar";
+import { PinIcon } from "./PinIcon";
+import { TypingIndicator } from "./TypingIndicator";
+
+function truncateSnippet(text: string, max = 16): string {
+  return text.length > max ? `${text.slice(0, max)}…` : text;
+}
+
+export function PinnedGrid({
+  pinned,
+  activeFriendId,
+  onSelect,
+  onTogglePin,
+}: {
+  pinned: ConversationSummary[];
+  activeFriendId: string | null;
+  onSelect: (friendId: string) => void;
+  onTogglePin: (friendId: string) => void;
+}) {
+  if (pinned.length === 0) return null;
+
+  return (
+    <div className="grid grid-cols-3 gap-x-2 gap-y-4 border-b border-white/10 p-3">
+      {pinned.map((c) => {
+        const showBadge = c.isTyping || c.unreadCount > 0;
+        const active = activeFriendId === c.friendId;
+        return (
+          <motion.div key={c.friendId} layout layoutId={`conv-${c.friendId}`} className="relative flex flex-col items-center gap-1.5">
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => onSelect(c.friendId)}
+                className={`overflow-hidden rounded-full border-2 transition ${
+                  active ? "border-amber-400" : "border-white/10 hover:border-white/25"
+                }`}
+              >
+                <Avatar image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-16 w-16 text-lg" />
+              </button>
+
+              {showBadge && (
+                <span
+                  className={`absolute -right-2 -top-1 flex max-w-[6rem] items-center justify-center rounded-full border border-white/10 px-2 py-1 text-[10px] font-medium shadow-lg ${
+                    c.isTyping ? "bg-amber-400 text-slate-950" : "bg-slate-900/95 text-slate-100 backdrop-blur"
+                  }`}
+                >
+                  {c.isTyping ? <TypingIndicator /> : truncateSnippet(c.lastMessageBody ?? "")}
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTogglePin(c.friendId);
+                }}
+                aria-label="Unpin conversation"
+                className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-white/10 bg-slate-950 text-amber-400 shadow"
+              >
+                <PinIcon filled className="h-3 w-3" />
+              </button>
+            </div>
+
+            <p className="max-w-[4.5rem] truncate text-center text-[11px] text-slate-400">
+              {c.friendName ?? `@${c.friendUsername}`}
+            </p>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}

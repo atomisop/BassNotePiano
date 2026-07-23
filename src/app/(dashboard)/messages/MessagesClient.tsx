@@ -1,42 +1,23 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { ConversationSummary } from "@/lib/messages";
 import { playNotificationSound } from "@/lib/notification-sound";
+import { ConversationSidebar } from "./components/ConversationSidebar";
+import { ChatWindow } from "./components/ChatWindow";
+import { EmptyState } from "./components/EmptyState";
 import {
   getConversationsAction,
   getConversationMessagesAction,
   sendMessageAction,
   markConversationReadAction,
+  togglePinAction,
   type MessageRow,
 } from "./actions";
 
 const CONVERSATION_LIST_POLL_MS = 15_000;
 const ACTIVE_CONVERSATION_POLL_MS = 2_500;
-
-function Avatar({ image, label }: { image: string | null; label: string }) {
-  return (
-    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-white/10 bg-slate-800">
-      {image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt="" className="h-full w-full object-cover" />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-xs text-slate-500">{label.charAt(0).toUpperCase()}</div>
-      )}
-    </div>
-  );
-}
-
-function relativeTime(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const minutes = Math.floor(diffMs / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-  return `${Math.floor(hours / 24)}d`;
-}
 
 function MessagesInner({ initialConversations }: { initialConversations: ConversationSummary[] }) {
   const router = useRouter();
@@ -45,17 +26,11 @@ function MessagesInner({ initialConversations }: { initialConversations: Convers
 
   const [conversations, setConversations] = useState(initialConversations);
   const [messages, setMessages] = useState<MessageRow[]>([]);
-  const [draft, setDraft] = useState("");
-  const [sending, setSending] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const active = conversations.find((c) => c.friendId === activeFriendId) ?? conversations[0] ?? null;
-
-  useEffect(() => {
-    if (!activeFriendId && conversations[0]) {
-      router.replace(`/messages?with=${conversations[0].friendId}`);
-    }
-  }, [activeFriendId, conversations, router]);
+  // activeChatId is a real, intentional null state (no auto-selecting the
+  // first conversation) — that's what makes the empty state and the mobile
+  // sidebar/chat split meaningful.
+  const active = conversations.find((c) => c.friendId === activeFriendId) ?? null;
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -85,6 +60,7 @@ function MessagesInner({ initialConversations }: { initialConversations: Convers
 
       setMessages(rows);
       await markConversationReadAction(active!.friendId);
+      setConversations(await getConversationsAction());
     }
     load();
 
@@ -95,24 +71,39 @@ function MessagesInner({ initialConversations }: { initialConversations: Convers
     };
   }, [active?.friendId]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+  function handleSelect(friendId: string) {
+    router.push(`/messages?with=${friendId}`);
+  }
 
-  async function handleSend(e: FormEvent) {
-    e.preventDefault();
-    if (!active || !draft.trim()) return;
-    setSending(true);
-    const body = draft;
-    setDraft("");
+  function handleMinimize() {
+    router.push("/messages");
+  }
+
+  async function handleSend(body: string): Promise<boolean> {
+    if (!active) return false;
     const result = await sendMessageAction(active.friendId, body);
-    setSending(false);
     if (result.ok) {
       setMessages(await getConversationMessagesAction(active.friendId));
       setConversations(await getConversationsAction());
-    } else {
-      setDraft(body);
     }
+    return result.ok;
+  }
+
+  async function handleTogglePin(friendId: string) {
+    // Optimistic: flip isPinned immediately, then reconcile with the
+    // server's actual pinOrder on the next poll or the action's response.
+    setConversations((prev) =>
+      prev.map((c) => (c.friendId === friendId ? { ...c, isPinned: !c.isPinned } : c)),
+    );
+    const result = await togglePinAction(friendId);
+    if (!result.ok) {
+      // Roll back — the toggle failed server-side.
+      setConversations((prev) =>
+        prev.map((c) => (c.friendId === friendId ? { ...c, isPinned: !c.isPinned } : c)),
+      );
+      return;
+    }
+    setConversations(await getConversationsAction());
   }
 
   if (conversations.length === 0) {
@@ -132,81 +123,21 @@ function MessagesInner({ initialConversations }: { initialConversations: Convers
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-6.25rem)] max-w-4xl gap-4">
-      <div className="w-64 shrink-0 overflow-y-auto glass-card p-2">
-        {conversations.map((c) => (
-          <button
-            key={c.friendId}
-            type="button"
-            onClick={() => router.push(`/messages?with=${c.friendId}`)}
-            className={`flex w-full items-center gap-2.5 rounded-lg p-2.5 text-left transition ${
-              active?.friendId === c.friendId ? "bg-amber-400/10" : "hover:bg-white/5"
-            }`}
-          >
-            <Avatar image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <p className="truncate text-sm text-slate-100">{c.friendName ?? `@${c.friendUsername}`}</p>
-                {c.unreadCount > 0 && (
-                  <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-slate-950">
-                    {c.unreadCount > 9 ? "9+" : c.unreadCount}
-                  </span>
-                )}
-              </div>
-              {c.lastMessageBody && <p className="truncate text-xs text-slate-500">{c.lastMessageBody}</p>}
-            </div>
-          </button>
-        ))}
+    <div className="glass-card flex h-[calc(100vh-9rem)] overflow-hidden">
+      <div className={`${activeFriendId ? "hidden md:flex" : "flex"} md:w-[350px] md:shrink-0`}>
+        <ConversationSidebar
+          conversations={conversations}
+          activeFriendId={activeFriendId}
+          onSelect={handleSelect}
+          onTogglePin={handleTogglePin}
+        />
       </div>
 
-      <div className="flex flex-1 flex-col glass-card">
-        {active && (
-          <>
-            <div className="flex items-center gap-2.5 border-b border-white/10 p-4">
-              <Avatar image={active.friendImage} label={active.friendName ?? active.friendUsername ?? "?"} />
-              <div>
-                <p className="text-sm text-slate-100">{active.friendName ?? "Unnamed"}</p>
-                {active.friendUsername && <p className="text-xs text-slate-500">@{active.friendUsername}</p>}
-              </div>
-            </div>
-
-            <div className="flex-1 space-y-2 overflow-y-auto p-4">
-              {messages.map((m) => {
-                const isMine = m.senderId !== active.friendId;
-                return (
-                  <div key={m.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`max-w-[70%] rounded-2xl px-3.5 py-2 text-sm ${
-                        isMine ? "bg-amber-400 text-slate-950" : "border border-white/10 bg-slate-950 text-slate-100"
-                      }`}
-                    >
-                      <p className="whitespace-pre-wrap break-words">{m.body}</p>
-                      <p className={`mt-1 text-[10px] ${isMine ? "text-slate-950/60" : "text-slate-600"}`}>{relativeTime(m.createdAt)}</p>
-                    </div>
-                  </div>
-                );
-              })}
-              <div ref={messagesEndRef} />
-            </div>
-
-            <form onSubmit={handleSend} className="flex gap-2 border-t border-white/10 p-3">
-              <input
-                type="text"
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                placeholder="Write a message…"
-                maxLength={2000}
-                className="flex-1 rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
-              />
-              <button
-                type="submit"
-                disabled={sending || !draft.trim()}
-                className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Send
-              </button>
-            </form>
-          </>
+      <div className={`${activeFriendId ? "flex" : "hidden md:flex"} min-w-0 flex-1`}>
+        {active ? (
+          <ChatWindow key={active.friendId} conversation={active} messages={messages} onSend={handleSend} onMinimize={handleMinimize} />
+        ) : (
+          <EmptyState />
         )}
       </div>
     </div>

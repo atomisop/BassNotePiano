@@ -11,10 +11,10 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   // Pooled connection (Neon's PgBouncer endpoint in production) — used for
   // every query the running app makes.
-  url = env("DATABASE_URL")
+  url       = env("DATABASE_URL")
   // Direct, unpooled connection — used only by `prisma migrate`. PgBouncer's
   // transaction-mode pooling doesn't support the session-level features
   // migrations need, so this has to bypass the pooler. Locally, where
@@ -224,6 +224,39 @@ model Message {
   @@index([recipientId, readAt])
 }
 
+// A conversation "pinned" to the top of a user's own Messages sidebar —
+// per-user, not mutual, so pinning a friend doesn't pin you on their side.
+model PinnedConversation {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation("PinnedByUser", fields: [userId], references: [id], onDelete: Cascade)
+  friendId String
+  friend   User   @relation("PinnedFriend", fields: [friendId], references: [id], onDelete: Cascade)
+  pinOrder Int
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, friendId])
+  @@index([userId, pinOrder])
+}
+
+// One row per (sender, recipient) pair, upserted on every debounced
+// keystroke in the composer. Freshness (updatedAt within the last few
+// seconds), not a boolean, is what the recipient's poll checks — there's no
+// "stopped typing" write, it just goes stale. Cleared explicitly on send so
+// the indicator doesn't linger for the full staleness window.
+model TypingStatus {
+  id          String   @id @default(cuid())
+  senderId    String
+  sender      User     @relation("TypingStatusSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User     @relation("TypingStatusRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([senderId, recipientId])
+  @@index([recipientId, updatedAt])
+}
+
 // ---------------------------------------------------------------------------
 // Auth (NextAuth.js Prisma adapter shape)
 // ---------------------------------------------------------------------------
@@ -246,7 +279,7 @@ model User {
   // Derived/cached entitlement flags — kept in sync whenever a ZellePayment
   // transitions to VERIFIED. Read by the NextAuth JWT callback so middleware
   // can gate routes without a DB round trip on the edge.
-  isProMember  Boolean   @default(false)
+  isProMember   Boolean   @default(false)
   proUnlockedAt DateTime?
 
   // Collected once by the mandatory post-registration wizard (middleware
@@ -255,7 +288,7 @@ model User {
   // even after that, since none of it gates access to anything.
   primaryInstrument PrimaryInstrument?
   skillLevel        SkillLevel?
-  genres            MusicGenre[]        @default([])
+  genres            MusicGenre[]       @default([])
   learningGoal      LearningGoal?
   onboardedAt       DateTime?
 
@@ -281,20 +314,24 @@ model User {
 
   progress         ScaleProgress[]
   quizAttempts     QuizAttempt[]
-  zellePayments    ZellePayment[]     @relation("PaymentSubmitter")
-  reviewedPayments ZellePayment[]     @relation("PaymentReviewer")
+  zellePayments    ZellePayment[]  @relation("PaymentSubmitter")
+  reviewedPayments ZellePayment[]  @relation("PaymentReviewer")
 
   verificationCodes VerificationCode[]
   trustedDevices    TrustedDevice[]
   loginEvents       LoginEvent[]
   badges            UserBadge[]
 
-  sentFriendRequests     FriendRequest[] @relation("FriendRequestSender")
-  receivedFriendRequests FriendRequest[] @relation("FriendRequestReceiver")
-  blocksMade             Block[]         @relation("BlockedBy")
-  blocksReceived         Block[]         @relation("BlockedUser")
-  messagesSent           Message[]       @relation("MessageSender")
-  messagesReceived       Message[]       @relation("MessageRecipient")
+  sentFriendRequests     FriendRequest[]      @relation("FriendRequestSender")
+  receivedFriendRequests FriendRequest[]      @relation("FriendRequestReceiver")
+  blocksMade             Block[]              @relation("BlockedBy")
+  blocksReceived         Block[]              @relation("BlockedUser")
+  messagesSent           Message[]            @relation("MessageSender")
+  messagesReceived       Message[]            @relation("MessageRecipient")
+  pinnedByMe             PinnedConversation[] @relation("PinnedByUser")
+  pinnedByOthers         PinnedConversation[] @relation("PinnedFriend")
+  typingStatusesSent     TypingStatus[]       @relation("TypingStatusSender")
+  typingStatusesReceived TypingStatus[]       @relation("TypingStatusRecipient")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -407,9 +444,9 @@ model LoginEvent {
 // One row per book scale group (Scale 0 ... Scale 5). Seeded once from the
 // curriculum book — see prisma/seed.ts.
 model ScaleGroup {
-  id          String @id @default(cuid())
-  slug        String @unique // "scale-0" .. "scale-5"
-  order       Int    @unique // 0-5, defines the required sequencing
+  id          String  @id @default(cuid())
+  slug        String  @unique // "scale-0" .. "scale-5"
+  order       Int     @unique // 0-5, defines the required sequencing
   code        String // "Scale 3"
   title       String // "Bati — Major, Minor & Lydian"
   kinitName   String? // "Bati Minor", "Tizita Major (Full Tizita)", etc.
@@ -500,10 +537,10 @@ model ZellePayment {
   zelleHandle String // platform's receiving handle/email shown to the user at request time
 
   // Filled in by the student on the "I've sent it" step of the modal
-  senderName     String?
-  referenceCode  String? // Zelle confirmation/reference number
-  note           String? @db.Text
-  screenshotUrl  String? // optional proof-of-transfer upload
+  senderName    String?
+  referenceCode String? // Zelle confirmation/reference number
+  note          String? @db.Text
+  screenshotUrl String? // optional proof-of-transfer upload
 
   status ZellePaymentStatus @default(AWAITING_TRANSFER)
 

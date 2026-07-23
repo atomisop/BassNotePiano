@@ -6,6 +6,8 @@ import {
   getConversations,
   getConversationMessages,
   markConversationRead,
+  togglePin,
+  setTyping,
   type ConversationSummary,
 } from "@/lib/messages";
 import { SocialError } from "@/lib/social";
@@ -51,4 +53,18 @@ export async function sendMessageAction(friendId: string, body: string) {
 export async function markConversationReadAction(friendId: string): Promise<void> {
   const userId = await requireUserId();
   await markConversationRead(userId, friendId);
+}
+
+export async function togglePinAction(friendId: string) {
+  try {
+    const userId = await requireUserId();
+    return { ok: true as const, ...(await togglePin(userId, friendId)) };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof SocialError ? err.message : "Something went wrong." };
+  }
+}
+
+export async function setTypingAction(friendId: string): Promise<void> {
+  const userId = await requireUserId();
+  await setTyping(userId, friendId);
 }
