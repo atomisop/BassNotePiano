@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   fetchNotificationsAction,
   markAllNotificationsReadAction,
@@ -23,13 +25,30 @@ function relativeTime(iso: string): string {
   return `${days}d ago`;
 }
 
+function BellIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
+      <path
+        d="M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path d="M9.5 19.5a2.5 2.5 0 005 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
-  const [loaded, setLoaded] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
   const previousUnreadRef = useRef<number | null>(null);
+
+  // Portals need a real document, which only exists client-side — the
+  // notification panel would otherwise crash during SSR.
+  useEffect(() => setMounted(true), []);
 
   async function refresh() {
     const result = await fetchNotificationsAction();
@@ -42,30 +61,23 @@ export function NotificationBell() {
 
     setUnreadCount(result.unreadCount);
     setNotifications(result.notifications);
-    setLoaded(true);
   }
 
   useEffect(() => {
     refresh();
     const interval = setInterval(refresh, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+    if (!open) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  async function handleToggle() {
-    const next = !open;
-    setOpen(next);
-    if (next && !loaded) await refresh();
-  }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [open]);
 
   async function handleMarkAllRead() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -81,22 +93,14 @@ export function NotificationBell() {
   }
 
   return (
-    <div ref={containerRef} className="relative">
+    <>
       <button
         type="button"
-        onClick={handleToggle}
+        onClick={() => setOpen(true)}
         aria-label="Notifications"
         className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-slate-400 backdrop-blur-md transition hover:border-white/20 hover:bg-white/5 hover:text-slate-200"
       >
-        <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
-          <path
-            d="M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5z"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinejoin="round"
-          />
-          <path d="M9.5 19.5a2.5 2.5 0 005 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
+        <BellIcon />
         {unreadCount > 0 && (
           <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-slate-950">
             {unreadCount > 9 ? "9+" : unreadCount}
@@ -104,60 +108,88 @@ export function NotificationBell() {
         )}
       </button>
 
-      {open && (
-        <div className="absolute left-0 top-11 z-20 w-80 overflow-hidden rounded-xl border border-white/10 bg-slate-950/95 shadow-2xl backdrop-blur-2xl">
-          <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-            <p className="text-sm font-medium text-slate-100">Notifications</p>
-            {unreadCount > 0 && (
-              <button type="button" onClick={handleMarkAllRead} className="text-xs text-amber-300 transition hover:text-amber-200">
-                Mark all read
-              </button>
-            )}
-          </div>
+      {mounted &&
+        createPortal(
+          <AnimatePresence>
+            {open && (
+              <motion.div
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", stiffness: 320, damping: 34 }}
+                className="fixed inset-0 z-50 flex flex-col bg-slate-950/98 backdrop-blur-2xl"
+              >
+                <div className="flex items-center gap-4 border-b border-white/10 px-6 py-5">
+                  <button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    aria-label="Back"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-slate-300 transition hover:border-white/20 hover:bg-white/5"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
+                      <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  <h1 className="font-serif text-lg text-slate-50">Notifications</h1>
+                  {unreadCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleMarkAllRead}
+                      className="ml-auto text-xs text-amber-300 transition hover:text-amber-200"
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                </div>
 
-          <div className="max-h-80 overflow-y-auto">
-            {notifications.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-slate-600">
-                  <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
-                    <path
-                      d="M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5z"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinejoin="round"
-                    />
-                    <path d="M9.5 19.5a2.5 2.5 0 005 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  </svg>
-                </span>
-                <p className="text-xs font-medium text-slate-400">No recent notifications</p>
-                <Link
-                  href="/account?tab=notifications"
-                  onClick={() => setOpen(false)}
-                  className="mt-1 text-[11px] text-amber-300 transition hover:text-amber-200"
-                >
-                  Notification settings
-                </Link>
-              </div>
-            ) : (
-              notifications.map((n) => (
-                <button
-                  key={n.id}
-                  type="button"
-                  onClick={() => handleNotificationClick(n)}
-                  className="flex w-full items-start gap-2.5 border-b border-white/5 px-4 py-3 text-left transition last:border-b-0 hover:bg-white/5"
-                >
-                  <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-amber-400"}`} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-xs font-medium text-slate-100">{n.title}</span>
-                    {n.body && <span className="mt-0.5 block text-xs text-slate-500">{n.body}</span>}
-                    <span className="mt-1 block text-[11px] text-slate-600">{relativeTime(n.createdAt)}</span>
-                  </span>
-                </button>
-              ))
+                <div className="mx-auto w-full max-w-xl flex-1 overflow-y-auto px-6 py-6">
+                  {notifications.length === 0 ? (
+                    <div className="flex flex-col items-center gap-3 pt-20 text-center">
+                      <span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 text-slate-600">
+                        <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+                          <path
+                            d="M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5z"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinejoin="round"
+                          />
+                          <path d="M9.5 19.5a2.5 2.5 0 005 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        </svg>
+                      </span>
+                      <p className="text-sm font-medium text-slate-400">No recent notifications</p>
+                      <Link
+                        href="/account?tab=notifications"
+                        onClick={() => setOpen(false)}
+                        className="text-xs text-amber-300 transition hover:text-amber-200"
+                      >
+                        Notification settings
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {notifications.map((n) => (
+                        <button
+                          key={n.id}
+                          type="button"
+                          onClick={() => handleNotificationClick(n)}
+                          className="flex w-full items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-left backdrop-blur-xl transition hover:bg-white/5"
+                        >
+                          <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-amber-400"}`} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-medium text-slate-100">{n.title}</span>
+                            {n.body && <span className="mt-0.5 block text-sm text-slate-500">{n.body}</span>}
+                            <span className="mt-1.5 block text-xs text-slate-600">{relativeTime(n.createdAt)}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
             )}
-          </div>
-        </div>
-      )}
-    </div>
+          </AnimatePresence>,
+          document.body,
+        )}
+    </>
   );
 }

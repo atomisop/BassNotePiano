@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export interface SidebarProps {
   name?: string | null;
@@ -73,20 +72,8 @@ export function Sidebar({ name, isAdmin, unreadMessageCount }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-24 shrink-0 flex-col items-center gap-1 border-r border-white/10 bg-slate-950/40 py-5 backdrop-blur-2xl">
-      <Link
-        href="/"
-        aria-label="Bass Note Piano"
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-400/30 bg-amber-400/5 font-serif text-xs text-amber-300 shadow-[0_0_20px_-4px_rgba(251,191,36,0.4)]"
-      >
-        BN
-      </Link>
-
-      <div className="mt-3">
-        <NotificationBell />
-      </div>
-
-      <nav className="mt-6 flex w-full flex-col items-center gap-1 px-2">
+    <aside className="flex h-full w-24 shrink-0 flex-col items-center gap-1 border-r border-white/10 bg-slate-950/40 py-5 backdrop-blur-2xl">
+      <nav className="flex w-full flex-col items-center gap-1 px-2">
         {NAV_ITEMS.map((item) => (
           <NavItem
             key={item.href}
