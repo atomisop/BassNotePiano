@@ -69,3 +69,24 @@ export async function recordPracticeActivity(userId: string): Promise<void> {
   const earned = STREAK_MILESTONES.filter((m) => newStreak >= m.days);
   await Promise.all(earned.map((m) => awardBadge(userId, m.code)));
 }
+
+const FRIEND_COUNT_MILESTONES: { count: number; code: BadgeCode }[] = [
+  { count: 1, code: "FIRST_FRIEND_ADDED" },
+  { count: 5, code: "COMMUNITY_CATALYST" },
+];
+
+/**
+ * Call whenever a friend request is accepted, for both participants — a
+ * request has two sides, and either one crossing a milestone should award
+ * it. ACTIVE_PRACTICE_PARTNER isn't checked here or anywhere yet: this app
+ * has no synchronous "practice together" mechanic to honestly measure, so
+ * it stays defined but unawarded rather than wired to a proxy metric that
+ * doesn't really mean what the badge claims.
+ */
+export async function checkSocialBadges(userId: string): Promise<void> {
+  const friendCount = await prisma.friendRequest.count({
+    where: { status: "ACCEPTED", OR: [{ senderId: userId }, { receiverId: userId }] },
+  });
+  const earned = FRIEND_COUNT_MILESTONES.filter((m) => friendCount >= m.count);
+  await Promise.all(earned.map((m) => awardBadge(userId, m.code)));
+}

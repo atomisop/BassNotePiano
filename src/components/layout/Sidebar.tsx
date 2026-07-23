@@ -10,16 +10,19 @@ export interface SidebarProps {
   email?: string | null;
   isProMember: boolean;
   isAdmin: boolean;
+  unreadMessageCount: number;
 }
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Roadmap" },
+  { href: "/friends", label: "Friends" },
+  { href: "/messages", label: "Messages" },
   { href: "/billing/history", label: "Payment history" },
   { href: "/pricing", label: "Pricing" },
   { href: "/account", label: "Account" },
 ];
 
-export function Sidebar({ name, email, isProMember, isAdmin }: SidebarProps) {
+export function Sidebar({ name, email, isProMember, isAdmin, unreadMessageCount }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -38,13 +41,18 @@ export function Sidebar({ name, email, isProMember, isAdmin }: SidebarProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`rounded-lg px-3 py-2 text-sm transition ${
+              className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
                 active
                   ? "bg-amber-400/10 text-amber-300"
                   : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-100"
               }`}
             >
               {item.label}
+              {item.href === "/messages" && unreadMessageCount > 0 && (
+                <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-neutral-950">
+                  {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
+                </span>
+              )}
             </Link>
           );
         })}

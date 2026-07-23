@@ -164,6 +164,67 @@ model Notification {
 }
 
 // ---------------------------------------------------------------------------
+// Social — friends and 1-on-1 direct messages
+// ---------------------------------------------------------------------------
+
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+// A friendship isn't a separate model — "are these two users friends" is
+// just "does an ACCEPTED request exist between them, in either direction."
+// Keeps the historical request itself (who asked whom, when) as the single
+// record rather than duplicating it into a second table on acceptance.
+model FriendRequest {
+  id          String              @id @default(cuid())
+  senderId    String
+  sender      User                @relation("FriendRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId  String
+  receiver    User                @relation("FriendRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  status      FriendRequestStatus @default(PENDING)
+  createdAt   DateTime            @default(now())
+  respondedAt DateTime?
+
+  @@unique([senderId, receiverId])
+  @@index([receiverId, status])
+  @@index([senderId, status])
+}
+
+// One-directional — A blocking B doesn't block B from A's perspective in
+// reverse, but sendFriendRequest/sendMessage check both directions before
+// allowing contact, so a block is effective regardless of who initiated it.
+model Block {
+  id        String   @id @default(cuid())
+  blockerId String
+  blocker   User     @relation("BlockedBy", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("BlockedUser", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+}
+
+// 1-on-1 only, no group threads — "conversations" are derived at query time
+// (distinct counterpart + latest message), not a separate Conversation
+// model, since there's nothing a thread record would own beyond that.
+model Message {
+  id          String    @id @default(cuid())
+  senderId    String
+  sender      User      @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User      @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  body        String    @db.Text
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([senderId, recipientId, createdAt])
+  @@index([recipientId, senderId, createdAt])
+  @@index([recipientId, readAt])
+}
+
+// ---------------------------------------------------------------------------
 // Auth (NextAuth.js Prisma adapter shape)
 // ---------------------------------------------------------------------------
 
@@ -175,6 +236,12 @@ model User {
   image         String?
   passwordHash  String? // set only for credentials-based signup
   role          Role      @default(STUDENT)
+
+  // Optional — nothing in the app requires it except the friends/messages
+  // system, which prompts for it inline rather than forcing it through the
+  // (already-shipped) onboarding wizard. Always stored lowercase so
+  // uniqueness is effectively case-insensitive without a citext extension.
+  username String? @unique
 
   // Derived/cached entitlement flags — kept in sync whenever a ZellePayment
   // transitions to VERIFIED. Read by the NextAuth JWT callback so middleware
@@ -221,6 +288,13 @@ model User {
   trustedDevices    TrustedDevice[]
   loginEvents       LoginEvent[]
   badges            UserBadge[]
+
+  sentFriendRequests     FriendRequest[] @relation("FriendRequestSender")
+  receivedFriendRequests FriendRequest[] @relation("FriendRequestReceiver")
+  blocksMade             Block[]         @relation("BlockedBy")
+  blocksReceived         Block[]         @relation("BlockedUser")
+  messagesSent           Message[]       @relation("MessageSender")
+  messagesReceived       Message[]       @relation("MessageRecipient")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

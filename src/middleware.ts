@@ -125,6 +125,8 @@ export const config = {
     "/admin/:path*",
     "/billing/:path*",
     "/account/:path*",
+    "/friends/:path*",
+    "/messages/:path*",
     "/onboarding",
   ],
 };
