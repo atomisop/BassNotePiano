@@ -3,6 +3,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
 import { CodeGate } from "./CodeGate";
 import {
   requestNameChangeAction,
@@ -11,15 +12,71 @@ import {
   confirmPasswordChangeAction,
   requestAvatarChangeAction,
   confirmAvatarChangeAction,
+  updateMusicProfileAction,
 } from "./actions";
+
+interface MusicProfile {
+  primaryInstrument: PrimaryInstrument | null;
+  skillLevel: SkillLevel | null;
+  genres: MusicGenre[];
+  learningGoal: LearningGoal | null;
+}
 
 interface AccountSettingsProps {
   email: string;
   initialName: string | null;
   initialImage: string | null;
+  initialMusicProfile: MusicProfile;
 }
 
 const MAX_AVATAR_BYTES = 1_800_000;
+
+const INSTRUMENTS: { value: PrimaryInstrument; label: string }[] = [
+  { value: "PIANO_KEYBOARD", label: "Piano / Keyboard" },
+  { value: "BASS", label: "Bass" },
+  { value: "GUITAR", label: "Guitar" },
+  { value: "DRUMS", label: "Drums" },
+  { value: "VOCAL", label: "Vocal" },
+  { value: "OTHER", label: "Other" },
+];
+
+const SKILL_LEVELS: { value: SkillLevel; label: string }[] = [
+  { value: "BEGINNER", label: "Beginner" },
+  { value: "INTERMEDIATE", label: "Intermediate" },
+  { value: "ADVANCED", label: "Advanced" },
+];
+
+const GENRES: { value: MusicGenre; label: string }[] = [
+  { value: "JAZZ", label: "Jazz" },
+  { value: "CLASSICAL", label: "Classical" },
+  { value: "RNB", label: "R&B" },
+  { value: "ROCK", label: "Rock" },
+  { value: "POP", label: "Pop" },
+  { value: "GOSPEL", label: "Gospel" },
+];
+
+const LEARNING_GOALS: { value: LearningGoal; label: string }[] = [
+  { value: "LEARN_THEORY_SCALES", label: "Learn theory & scales" },
+  { value: "MASTER_RHYTHM_CHORDS", label: "Master rhythm & chords" },
+  { value: "PREPARE_PERFORMANCE", label: "Prepare for a performance" },
+  { value: "HOBBYIST", label: "Just for fun (hobbyist)" },
+];
+
+function Pill({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+        selected
+          ? "border-amber-400/60 bg-amber-400/10 text-amber-200"
+          : "border-neutral-800 bg-neutral-950 text-neutral-400 hover:border-neutral-700"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
 
 function SectionCard({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
@@ -31,7 +88,7 @@ function SectionCard({ title, description, children }: { title: string; descript
   );
 }
 
-export function AccountSettings({ email, initialName, initialImage }: AccountSettingsProps) {
+export function AccountSettings({ email, initialName, initialImage, initialMusicProfile }: AccountSettingsProps) {
   const { update } = useSession();
   const router = useRouter();
 
@@ -52,8 +109,92 @@ export function AccountSettings({ email, initialName, initialImage }: AccountSet
 
       <AvatarSection initialImage={initialImage} email={email} onDone={syncSession} />
       <NameSection initialName={initialName} email={email} onDone={syncSession} />
+      <MusicProfileSection initial={initialMusicProfile} />
       <PasswordSection email={email} />
     </div>
+  );
+}
+
+function MusicProfileSection({ initial }: { initial: MusicProfile }) {
+  const [instrument, setInstrument] = useState(initial.primaryInstrument);
+  const [skillLevel, setSkillLevel] = useState(initial.skillLevel);
+  const [genres, setGenres] = useState<MusicGenre[]>(initial.genres);
+  const [goal, setGoal] = useState(initial.learningGoal);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  function toggleGenre(value: MusicGenre) {
+    setGenres((prev) => (prev.includes(value) ? prev.filter((g) => g !== value) : [...prev, value]));
+  }
+
+  async function handleSave() {
+    setError(null);
+    setSuccess(false);
+    if (!instrument || !skillLevel || !goal) {
+      setError("Fill in every field.");
+      return;
+    }
+
+    setSubmitting(true);
+    const result = await updateMusicProfileAction({ primaryInstrument: instrument, skillLevel, genres, learningGoal: goal });
+    setSubmitting(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setSuccess(true);
+  }
+
+  return (
+    <SectionCard title="Music profile" description="Personalizes your dashboard — collected once during onboarding.">
+      <div className="space-y-4">
+        <div>
+          <p className="mb-1.5 text-xs font-medium text-neutral-400">Primary instrument</p>
+          <div className="flex flex-wrap gap-2">
+            {INSTRUMENTS.map((opt) => (
+              <Pill key={opt.value} label={opt.label} selected={instrument === opt.value} onClick={() => setInstrument(opt.value)} />
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="mb-1.5 text-xs font-medium text-neutral-400">Skill level</p>
+          <div className="flex flex-wrap gap-2">
+            {SKILL_LEVELS.map((opt) => (
+              <Pill key={opt.value} label={opt.label} selected={skillLevel === opt.value} onClick={() => setSkillLevel(opt.value)} />
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="mb-1.5 text-xs font-medium text-neutral-400">Genres</p>
+          <div className="flex flex-wrap gap-2">
+            {GENRES.map((opt) => (
+              <Pill key={opt.value} label={opt.label} selected={genres.includes(opt.value)} onClick={() => toggleGenre(opt.value)} />
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="mb-1.5 text-xs font-medium text-neutral-400">Learning goal</p>
+          <div className="flex flex-wrap gap-2">
+            {LEARNING_GOALS.map((opt) => (
+              <Pill key={opt.value} label={opt.label} selected={goal === opt.value} onClick={() => setGoal(opt.value)} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+      {success && <p className="mt-3 text-xs text-emerald-400">Music profile updated.</p>}
+
+      <button
+        type="button"
+        onClick={handleSave}
+        disabled={submitting}
+        className="mt-4 rounded-lg bg-amber-400 px-4 py-1.5 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {submitting ? "Saving…" : "Save"}
+      </button>
+    </SectionCard>
   );
 }
 

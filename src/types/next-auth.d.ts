@@ -13,6 +13,8 @@ declare module "next-auth/jwt" {
     unlockedScaleSlugs: string[];
     /** Slugs where the full read + practice + quiz checklist has been cleared. */
     completedScaleSlugs: string[];
+    /** False until the post-registration onboarding wizard is completed — middleware redirects there until true. */
+    onboarded: boolean;
   }
 }
 
@@ -26,6 +28,7 @@ declare module "next-auth" {
       isProMember: boolean;
       unlockedScaleSlugs: string[];
       completedScaleSlugs: string[];
+      onboarded: boolean;
     } & DefaultSession["user"];
   }
 

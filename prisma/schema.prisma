@@ -66,6 +66,41 @@ enum VerificationPurpose {
 }
 
 // ---------------------------------------------------------------------------
+// Onboarding — collected once, right after signup; editable later in Settings
+// ---------------------------------------------------------------------------
+
+enum PrimaryInstrument {
+  PIANO_KEYBOARD
+  BASS
+  GUITAR
+  DRUMS
+  VOCAL
+  OTHER
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum MusicGenre {
+  JAZZ
+  CLASSICAL
+  RNB
+  ROCK
+  POP
+  GOSPEL
+}
+
+enum LearningGoal {
+  LEARN_THEORY_SCALES
+  MASTER_RHYTHM_CHORDS
+  PREPARE_PERFORMANCE
+  HOBBYIST
+}
+
+// ---------------------------------------------------------------------------
 // Auth (NextAuth.js Prisma adapter shape)
 // ---------------------------------------------------------------------------
 
@@ -83,6 +118,16 @@ model User {
   // can gate routes without a DB round trip on the edge.
   isProMember  Boolean   @default(false)
   proUnlockedAt DateTime?
+
+  // Collected once by the mandatory post-registration wizard (middleware
+  // redirects any signed-in-but-unonboarded user there). onboardedAt null
+  // is the "must complete the wizard" signal; everything else is optional
+  // even after that, since none of it gates access to anything.
+  primaryInstrument PrimaryInstrument?
+  skillLevel        SkillLevel?
+  genres            MusicGenre[]        @default([])
+  learningGoal      LearningGoal?
+  onboardedAt       DateTime?
 
   accounts Account[]
   sessions Session[]

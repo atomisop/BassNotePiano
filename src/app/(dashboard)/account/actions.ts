@@ -1,6 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { verifyCode, createAndSendCode, type VerifyCodeResult } from "@/lib/verification";
@@ -120,4 +121,33 @@ export async function confirmAvatarChangeAction(code: string) {
 
   const updated = await prisma.user.update({ where: { id }, data: { image: payload.image }, select: { image: true } });
   return { ok: true as const, image: updated.image };
+}
+
+// ---------------------------------------------------------------------------
+// Music profile (from onboarding — editable anytime, no code confirmation
+// needed since none of this is security-sensitive)
+// ---------------------------------------------------------------------------
+
+export interface MusicProfileInput {
+  primaryInstrument: PrimaryInstrument;
+  skillLevel: SkillLevel;
+  genres: MusicGenre[];
+  learningGoal: LearningGoal;
+}
+
+export async function updateMusicProfileAction(input: MusicProfileInput) {
+  if (input.genres.length === 0) return { ok: false as const, error: "Pick at least one genre." };
+
+  const { id } = await requireSession();
+  await prisma.user.update({
+    where: { id },
+    data: {
+      primaryInstrument: input.primaryInstrument,
+      skillLevel: input.skillLevel,
+      genres: input.genres,
+      learningGoal: input.learningGoal,
+    },
+  });
+
+  return { ok: true as const };
 }

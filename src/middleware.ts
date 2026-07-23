@@ -34,6 +34,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Mandatory one-time profile wizard — every other protected route bounces
+  // here until it's done. Checked before role/entitlement gating below so an
+  // unonboarded admin still lands on the wizard rather than /admin.
+  if (!token.onboarded && pathname !== "/onboarding") {
+    return NextResponse.redirect(new URL("/onboarding", req.url));
+  }
+
   if (pathname.startsWith("/admin")) {
     if (token.role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", req.url));
@@ -112,5 +119,12 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/scales/:path*", "/admin/:path*", "/billing/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/scales/:path*",
+    "/admin/:path*",
+    "/billing/:path*",
+    "/account/:path*",
+    "/onboarding",
+  ],
 };

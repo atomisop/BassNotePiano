@@ -13,19 +13,24 @@ type Entitlements = {
   unlockedScaleSlugs: string[];
   completedScaleSlugs: string[];
   name: string | null;
+  onboarded: boolean;
 };
 
 // Fallback used only if loadEntitlements() itself doesn't come back in time
 // (see loadEntitlementsBounded below) — least-privilege defaults, since a
 // degraded session should never accidentally grant more access than the DB
 // actually confirms. Self-corrects on the next jwt callback run once the DB
-// responds normally again.
+// responds normally again. `onboarded: false` for the same reason — worst
+// case a briefly-slow DB re-shows the wizard to someone who already
+// finished it, which is harmless; defaulting the other way could let a
+// genuinely new user skip mandatory onboarding entirely on unlucky timing.
 const DEFAULT_ENTITLEMENTS: Entitlements = {
   role: "STUDENT",
   isProMember: false,
   unlockedScaleSlugs: [],
   completedScaleSlugs: [],
   name: null,
+  onboarded: false,
 };
 
 // Single source of truth for "what can this user see" — read by the jwt
@@ -47,7 +52,7 @@ async function loadEntitlements(userId: string): Promise<Entitlements> {
   const [user, verifiedUnlocks, unlockedProgress] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
-      select: { role: true, isProMember: true, name: true },
+      select: { role: true, isProMember: true, name: true, onboardedAt: true },
     }),
     prisma.zellePayment.findMany({
       where: { userId, purpose: "SCALE_UNLOCK", status: "VERIFIED", scaleGroupId: { not: null } },
@@ -76,6 +81,7 @@ async function loadEntitlements(userId: string): Promise<Entitlements> {
     unlockedScaleSlugs,
     completedScaleSlugs,
     name: user?.name ?? null,
+    onboarded: Boolean(user?.onboardedAt),
   };
 }
 
@@ -185,6 +191,7 @@ export const authOptions: NextAuthOptions = {
       token.unlockedScaleSlugs = entitlements.unlockedScaleSlugs;
       token.completedScaleSlugs = entitlements.completedScaleSlugs;
       token.name = entitlements.name;
+      token.onboarded = entitlements.onboarded;
 
       return token;
     },
@@ -196,6 +203,7 @@ export const authOptions: NextAuthOptions = {
         session.user.isProMember = token.isProMember;
         session.user.unlockedScaleSlugs = token.unlockedScaleSlugs;
         session.user.completedScaleSlugs = token.completedScaleSlugs;
+        session.user.onboarded = token.onboarded;
       }
       return session;
     },
