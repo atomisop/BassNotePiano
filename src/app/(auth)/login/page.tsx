@@ -142,16 +142,6 @@ function LoginForm() {
                 />
               </div>
 
-              <label className="flex items-center gap-2 text-sm text-neutral-400">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-neutral-700 bg-neutral-950 accent-amber-400"
-                />
-                Remember me for 7 days
-              </label>
-
               {error && <p className="text-xs text-red-400">{error}</p>}
 
               <button
@@ -191,6 +181,16 @@ function LoginForm() {
                 className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-center font-mono text-lg tracking-[0.5em] text-neutral-100 outline-none transition focus:border-amber-400/60"
                 placeholder="······"
               />
+
+              <label className="flex items-center gap-2 text-sm text-neutral-400">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 rounded border-neutral-700 bg-neutral-950 accent-amber-400"
+                />
+                Remember me for 7 days
+              </label>
 
               {error && <p className="text-xs text-red-400">{error}</p>}
               {resent && <p className="text-xs text-emerald-400">New code sent.</p>}
