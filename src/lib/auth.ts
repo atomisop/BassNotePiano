@@ -116,9 +116,14 @@ export const authOptions: NextAuthOptions = {
 
         // Best-effort — a slow/failed geo lookup or DB hiccup here should
         // never block a login that already passed the real credential check.
-        await recordLoginAndDetectNewLocation(user.id, user.email, extractIp(req), extractUserAgent(req)).catch(
-          (err) => console.error("Login tracking failed (non-blocking):", err),
-        );
+        // A .catch() alone only guards against failure, not slowness — the
+        // ip-api.com free tier is known to rate-limit/hang on requests from
+        // cloud IP ranges (exactly what a serverless host's outbound IP is),
+        // so this also needs a hard cap on how long it's allowed to run.
+        await Promise.race([
+          recordLoginAndDetectNewLocation(user.id, user.email, extractIp(req), extractUserAgent(req)),
+          new Promise((resolve) => setTimeout(resolve, 2000)),
+        ]).catch((err) => console.error("Login tracking failed (non-blocking):", err));
 
         return {
           id: user.id,

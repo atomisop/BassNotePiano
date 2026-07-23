@@ -20,7 +20,7 @@ export async function lookupIpLocation(ip: string | null): Promise<GeoLocation> 
 
   try {
     const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,city,regionName,country`, {
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(1200),
     });
     if (!res.ok) return { ip, city: null, region: null, country: null };
 
