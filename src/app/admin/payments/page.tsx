@@ -22,18 +22,18 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
   return (
     <div>
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Admin</p>
-      <h1 className="mt-1.5 font-serif text-3xl text-neutral-50">Payments</h1>
-      <p className="mt-2 text-sm text-neutral-500">
+      <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Payments</h1>
+      <p className="mt-2 text-sm text-slate-500">
         {payments.length} payment{payments.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
       </p>
 
-      <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full border border-neutral-800 p-1">
+      <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full border border-slate-800 p-1">
         {FILTERS.map((filter) => (
           <Link
             key={filter.value}
             href={filter.value === "PENDING_REVIEW" ? "/admin/payments" : `/admin/payments?status=${filter.value}`}
             className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-              activeFilter === filter.value ? "bg-amber-400 text-neutral-950" : "text-neutral-400 hover:text-neutral-100"
+              activeFilter === filter.value ? "bg-amber-400 text-slate-950" : "text-slate-400 hover:text-slate-100"
             }`}
           >
             {filter.label}

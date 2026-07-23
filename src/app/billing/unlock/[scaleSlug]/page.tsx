@@ -30,8 +30,8 @@ export default async function BillingUnlockPage({ params }: { params: { scaleSlu
   return (
     <div className="w-full max-w-sm">
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">{scaleGroup.code}</p>
-      <h1 className="mt-1.5 font-serif text-2xl text-neutral-50">Unlock {scaleGroup.title}</h1>
-      <p className="mt-2 text-sm text-neutral-500">
+      <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Unlock {scaleGroup.title}</h1>
+      <p className="mt-2 text-sm text-slate-500">
         This scale is part of the Pay-As-You-Go plan — a one-time ${(scaleGroup.priceCents / 100).toFixed(0)} unlock
         via Zelle.
       </p>

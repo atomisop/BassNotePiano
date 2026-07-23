@@ -11,7 +11,7 @@ function pillClass(done: boolean) {
   return `rounded-full border px-4 py-2 text-sm font-medium transition ${
     done
       ? "cursor-default border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
-      : "border-neutral-800 text-neutral-300 hover:border-amber-400/40 hover:text-amber-300"
+      : "border-slate-800 text-slate-300 hover:border-amber-400/40 hover:text-amber-300"
   }`;
 }
 
@@ -32,8 +32,8 @@ export default async function ScalePage({ params }: { params: { scaleSlug: strin
   return (
     <div className="mx-auto max-w-5xl">
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">{scaleGroup.code}</p>
-      <h1 className="mt-1.5 font-serif text-3xl text-neutral-50">{scaleGroup.title}</h1>
-      {scaleGroup.kinitName && <p className="mt-1 text-neutral-500">{scaleGroup.kinitName}</p>}
+      <h1 className="mt-1.5 font-serif text-3xl text-slate-50">{scaleGroup.title}</h1>
+      {scaleGroup.kinitName && <p className="mt-1 text-slate-500">{scaleGroup.kinitName}</p>}
 
       <div className="mt-6 flex flex-wrap gap-3">
         <form action={markModuleReadAction.bind(null, scaleGroup.slug)}>
@@ -66,7 +66,7 @@ export default async function ScalePage({ params }: { params: { scaleSlug: strin
         {variants.length > 0 ? (
           <ScaleExplorer variants={variants} />
         ) : (
-          <p className="text-sm text-neutral-500">Interactive content for this scale is coming soon.</p>
+          <p className="text-sm text-slate-500">Interactive content for this scale is coming soon.</p>
         )}
       </div>
     </div>

@@ -45,8 +45,8 @@ export function CodeGate({ email, onConfirm, onResend, onCancel, onSuccess }: Co
       onSubmit={handleSubmit}
       className="mt-3 space-y-3 rounded-xl border border-amber-400/20 bg-amber-400/5 p-4"
     >
-      <p className="text-xs text-neutral-400">
-        Enter the 6-digit code we sent to <span className="text-neutral-200">{email}</span> to confirm.
+      <p className="text-xs text-slate-400">
+        Enter the 6-digit code we sent to <span className="text-slate-200">{email}</span> to confirm.
       </p>
       <input
         type="text"
@@ -57,7 +57,7 @@ export function CodeGate({ email, onConfirm, onResend, onCancel, onSuccess }: Co
         autoFocus
         value={code}
         onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-        className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-center font-mono text-lg tracking-[0.5em] text-neutral-100 outline-none transition focus:border-amber-400/60"
+        className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-center font-mono text-lg tracking-[0.5em] text-slate-100 outline-none transition focus:border-amber-400/60"
         placeholder="······"
       />
 
@@ -68,21 +68,21 @@ export function CodeGate({ email, onConfirm, onResend, onCancel, onSuccess }: Co
         <button
           type="submit"
           disabled={submitting || code.length !== 6}
-          className="rounded-lg bg-amber-400 px-4 py-1.5 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg bg-amber-400 px-4 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Confirming…" : "Confirm"}
         </button>
         <button
           type="button"
           onClick={handleResend}
-          className="text-xs text-neutral-500 transition hover:text-amber-300"
+          className="text-xs text-slate-500 transition hover:text-amber-300"
         >
           Resend
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="ml-auto text-xs text-neutral-500 transition hover:text-neutral-300"
+          className="ml-auto text-xs text-slate-500 transition hover:text-slate-300"
         >
           Cancel
         </button>

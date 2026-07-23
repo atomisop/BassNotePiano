@@ -58,7 +58,7 @@ export function ZelleUnlockGate({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300"
+        className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
       >
         {status === "REJECTED" ? "Resubmit payment" : "Pay with Zelle"}
       </button>

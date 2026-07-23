@@ -9,16 +9,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (session.user.role !== "ADMIN") redirect("/dashboard");
 
   return (
-    <div className="min-h-screen bg-neutral-950">
-      <header className="border-b border-neutral-900 px-6 py-4">
+    <div className="min-h-screen bg-slate-950">
+      <header className="border-b border-slate-900 px-6 py-4">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4">
-          <Link href="/" className="font-serif text-sm tracking-[0.2em] text-neutral-200">
+          <Link href="/" className="font-serif text-sm tracking-[0.2em] text-slate-200">
             BASS NOTE <span className="text-amber-400">PIANO</span>
-            <span className="ml-2 text-neutral-600">· Admin</span>
+            <span className="ml-2 text-slate-600">· Admin</span>
           </Link>
           <div className="flex items-center gap-4">
             <AdminNav />
-            <Link href="/dashboard" className="text-sm text-neutral-500 transition hover:text-neutral-100">
+            <Link href="/dashboard" className="text-sm text-slate-500 transition hover:text-slate-100">
               Back to app
             </Link>
           </div>

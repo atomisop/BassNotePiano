@@ -19,12 +19,12 @@ export default async function DashboardPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Your roadmap</p>
-      <h1 className="mt-1.5 font-serif text-3xl text-neutral-50">
+      <h1 className="mt-1.5 font-serif text-3xl text-slate-50">
         {completedCount === roadmap.length
           ? "All six scales complete"
           : `${completedCount} of ${roadmap.length} scales complete`}
       </h1>
-      <p className="mt-2 max-w-xl text-sm text-neutral-500">
+      <p className="mt-2 max-w-xl text-sm text-slate-500">
         Work through each scale in order — read the module, log your practice, then pass the quiz to unlock the
         next one.
       </p>

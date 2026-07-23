@@ -10,11 +10,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const unreadMessageCount = await getTotalUnreadMessageCount(session.user.id);
 
   return (
-    <div className="flex min-h-screen bg-neutral-950">
+    <div className="flex min-h-screen bg-slate-950">
       <Sidebar
         name={session.user.name}
-        email={session.user.email}
-        isProMember={session.user.isProMember}
         isAdmin={session.user.role === "ADMIN"}
         unreadMessageCount={unreadMessageCount}
       />

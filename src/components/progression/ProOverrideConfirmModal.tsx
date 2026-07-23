@@ -57,7 +57,7 @@ export function ProOverrideConfirmModal({
           <motion.div
             variants={backdropVariants}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-neutral-950/80 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
             onClick={isConfirming ? undefined : onCancel}
           />
 
@@ -69,14 +69,14 @@ export function ProOverrideConfirmModal({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="relative w-full max-w-sm rounded-2xl border border-amber-400/20 bg-neutral-900 p-6 shadow-[0_0_60px_-15px_rgba(217,180,88,0.35)]"
+            className="relative w-full max-w-sm rounded-2xl border border-amber-400/20 bg-slate-900 p-6 shadow-[0_0_60px_-15px_rgba(217,180,88,0.35)]"
           >
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Pro override</p>
-            <h2 id="override-modal-title" className="mt-1.5 font-serif text-lg text-neutral-50">
+            <h2 id="override-modal-title" className="mt-1.5 font-serif text-lg text-slate-50">
               Skip ahead?
             </h2>
-            <p className="mt-3 text-sm text-neutral-400">
-              Are you sure you want to unlock <span className="text-neutral-200">{targetCode}</span> even though you
+            <p className="mt-3 text-sm text-slate-400">
+              Are you sure you want to unlock <span className="text-slate-200">{targetCode}</span> even though you
               haven&apos;t unlocked the levels before it?
             </p>
 
@@ -85,7 +85,7 @@ export function ProOverrideConfirmModal({
                 type="button"
                 onClick={onCancel}
                 disabled={isConfirming}
-                className="flex-1 rounded-xl border border-neutral-800 py-2.5 text-sm font-medium text-neutral-300 transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex-1 rounded-xl border border-slate-800 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Go back
               </button>
@@ -93,7 +93,7 @@ export function ProOverrideConfirmModal({
                 type="button"
                 onClick={onConfirm}
                 disabled={isConfirming}
-                className="flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isConfirming ? "Unlocking…" : "Confirm override"}
               </button>

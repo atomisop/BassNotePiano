@@ -7,26 +7,23 @@ export default async function AccountPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/account");
 
-  const [user, badgeRows] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        name: true,
-        email: true,
-        image: true,
-        username: true,
-        primaryInstrument: true,
-        skillLevel: true,
-        genres: true,
-        learningGoal: true,
-        notifyEmailPayments: true,
-        notifyEmailRoleUpdates: true,
-        notifyEmailSocial: true,
-        notifyEmailReminders: true,
-      },
-    }),
-    prisma.userBadge.findMany({ where: { userId: session.user.id }, select: { code: true } }),
-  ]);
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      name: true,
+      email: true,
+      image: true,
+      username: true,
+      primaryInstrument: true,
+      skillLevel: true,
+      genres: true,
+      learningGoal: true,
+      notifyEmailPayments: true,
+      notifyEmailRoleUpdates: true,
+      notifyEmailSocial: true,
+      notifyEmailReminders: true,
+    },
+  });
   if (!user) redirect("/login");
 
   return (
@@ -41,7 +38,7 @@ export default async function AccountPage() {
         genres: user.genres,
         learningGoal: user.learningGoal,
       }}
-      earnedBadgeCodes={badgeRows.map((b) => b.code)}
+      isProMember={session.user.isProMember}
       initialNotificationPreferences={{
         notifyEmailPayments: user.notifyEmailPayments,
         notifyEmailRoleUpdates: user.notifyEmailRoleUpdates,

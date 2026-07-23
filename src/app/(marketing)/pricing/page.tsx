@@ -29,12 +29,12 @@ export default function PricingPage() {
       />
 
       <header className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <Link href="/" className="font-serif text-sm tracking-[0.2em] text-neutral-200">
+        <Link href="/" className="font-serif text-sm tracking-[0.2em] text-slate-200">
           BASS NOTE <span className="text-amber-400">PIANO</span>
         </Link>
         <Link
           href="/login"
-          className="rounded-full border border-neutral-800 px-4 py-1.5 text-sm text-neutral-200 transition hover:border-amber-400/50 hover:text-amber-300"
+          className="rounded-full border border-slate-800 px-4 py-1.5 text-sm text-slate-200 transition hover:border-amber-400/50 hover:text-amber-300"
         >
           Log in
         </Link>
@@ -52,10 +52,10 @@ export default function PricingPage() {
         >
           Pricing
         </motion.p>
-        <motion.h1 variants={item} className="font-serif text-4xl text-neutral-50">
+        <motion.h1 variants={item} className="font-serif text-4xl text-slate-50">
           Learn at your pace, or unlock everything at once
         </motion.h1>
-        <motion.p variants={item} className="mx-auto mt-4 max-w-lg text-base text-neutral-400">
+        <motion.p variants={item} className="mx-auto mt-4 max-w-lg text-base text-slate-400">
           Every scale and its native chords, spelled correctly in all 12 keys — pay as you go, or unlock the whole
           curriculum for good.
         </motion.p>
@@ -67,31 +67,31 @@ export default function PricingPage() {
         animate="visible"
         className="relative mx-auto grid max-w-4xl grid-cols-1 gap-5 px-6 pb-16 sm:grid-cols-2"
       >
-        <motion.div variants={item} className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-7">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-neutral-500">Pay-As-You-Go</p>
-          <p className="mt-3 font-serif text-4xl text-neutral-50">
-            $25<span className="text-lg font-sans text-neutral-500"> / session</span>
+        <motion.div variants={item} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-7">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Pay-As-You-Go</p>
+          <p className="mt-3 font-serif text-4xl text-slate-50">
+            $25<span className="text-lg font-sans text-slate-500"> / session</span>
           </p>
-          <p className="mt-1 text-sm text-neutral-500">{formatUsd(TOTAL_PAY_AS_YOU_GO_CENTS)} total across all 6 scale groups</p>
+          <p className="mt-1 text-sm text-slate-500">{formatUsd(TOTAL_PAY_AS_YOU_GO_CENTS)} total across all 6 scale groups</p>
 
-          <ul className="mt-6 space-y-2.5 text-sm text-neutral-300">
+          <ul className="mt-6 space-y-2.5 text-sm text-slate-300">
             <li className="flex gap-2.5">
-              <span className="text-neutral-600">→</span>
+              <span className="text-slate-600">→</span>
               Unlock scales one at a time, strictly in order
             </li>
             <li className="flex gap-2.5">
-              <span className="text-neutral-600">→</span>
+              <span className="text-slate-600">→</span>
               Pay via Zelle as you go — no upfront commitment
             </li>
             <li className="flex gap-2.5">
-              <span className="text-neutral-600">→</span>
+              <span className="text-slate-600">→</span>
               Multi-variant chapters (Bati, Anchihoye, Mixolydian) cost one session per variant
             </li>
           </ul>
 
           <Link
             href="/register"
-            className="mt-7 block w-full rounded-xl border border-neutral-700 py-2.5 text-center text-sm font-semibold text-neutral-100 transition hover:border-amber-400/40 hover:text-amber-300"
+            className="mt-7 block w-full rounded-xl border border-slate-700 py-2.5 text-center text-sm font-semibold text-slate-100 transition hover:border-amber-400/40 hover:text-amber-300"
           >
             Start learning
           </Link>
@@ -99,10 +99,10 @@ export default function PricingPage() {
 
         <motion.div variants={item} className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-7">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-300">Pro — Lifetime</p>
-          <p className="mt-3 font-serif text-4xl text-neutral-50">{formatUsd(PRO_LIFETIME_PRICE_CENTS)}</p>
+          <p className="mt-3 font-serif text-4xl text-slate-50">{formatUsd(PRO_LIFETIME_PRICE_CENTS)}</p>
           <p className="mt-1 text-sm text-amber-200/70">one-time payment · saves {formatUsd(savings)}</p>
 
-          <ul className="mt-6 space-y-2.5 text-sm text-neutral-200">
+          <ul className="mt-6 space-y-2.5 text-sm text-slate-200">
             <li className="flex gap-2.5">
               <span className="text-amber-400">→</span>
               All six scale groups, unlocked immediately
@@ -119,7 +119,7 @@ export default function PricingPage() {
 
           <Link
             href="/billing/pro"
-            className="mt-7 block w-full rounded-xl bg-amber-400 py-2.5 text-center text-sm font-semibold text-neutral-950 transition hover:bg-amber-300"
+            className="mt-7 block w-full rounded-xl bg-amber-400 py-2.5 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
           >
             Get lifetime access
           </Link>
@@ -133,15 +133,15 @@ export default function PricingPage() {
         transition={{ type: "spring", stiffness: 240, damping: 26 }}
         className="relative mx-auto max-w-4xl px-6 pb-24"
       >
-        <h2 className="mb-1 font-serif text-2xl text-neutral-100">The full matrix</h2>
-        <p className="mb-6 text-sm text-neutral-500">
+        <h2 className="mb-1 font-serif text-2xl text-slate-100">The full matrix</h2>
+        <p className="mb-6 text-sm text-slate-500">
           Each chapter is priced by how many named variants it bundles — a $25 session per variant.
         </p>
 
-        <div className="overflow-x-auto rounded-2xl border border-neutral-800 bg-neutral-900/60">
+        <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60">
           <table className="w-full min-w-[480px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-neutral-800 text-left text-[11px] uppercase tracking-wide text-neutral-500">
+              <tr className="border-b border-slate-800 text-left text-[11px] uppercase tracking-wide text-slate-500">
                 <th className="px-6 py-3 font-medium">Scale</th>
                 <th className="px-6 py-3 font-medium">Sessions</th>
                 <th className="px-6 py-3 font-medium">Price</th>
@@ -149,24 +149,24 @@ export default function PricingPage() {
             </thead>
             <tbody>
               {SCALE_GROUPS.map((scale) => (
-                <tr key={scale.slug} className="border-b border-neutral-900 last:border-0">
+                <tr key={scale.slug} className="border-b border-slate-900 last:border-0">
                   <td className="px-6 py-3">
                     <p className="text-xs uppercase tracking-wide text-amber-400/80">{scale.code}</p>
-                    <p className="text-neutral-200">{scale.title}</p>
+                    <p className="text-slate-200">{scale.title}</p>
                   </td>
-                  <td className="px-6 py-3 text-neutral-400">
+                  <td className="px-6 py-3 text-slate-400">
                     {scale.sessionCount} session{scale.sessionCount === 1 ? "" : "s"}
                   </td>
-                  <td className="px-6 py-3 font-medium text-neutral-100">{formatUsd(scale.priceCents)}</td>
+                  <td className="px-6 py-3 font-medium text-slate-100">{formatUsd(scale.priceCents)}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t border-neutral-800">
-                <td className="px-6 py-3 text-sm font-medium text-neutral-300" colSpan={2}>
+              <tr className="border-t border-slate-800">
+                <td className="px-6 py-3 text-sm font-medium text-slate-300" colSpan={2}>
                   Pay-As-You-Go total
                 </td>
-                <td className="px-6 py-3 font-serif text-base text-neutral-50">
+                <td className="px-6 py-3 font-serif text-base text-slate-50">
                   {formatUsd(TOTAL_PAY_AS_YOU_GO_CENTS)}
                 </td>
               </tr>
@@ -183,7 +183,7 @@ export default function PricingPage() {
         </div>
       </motion.section>
 
-      <footer className="relative border-t border-neutral-900 px-6 py-8 text-center text-xs text-neutral-600">
+      <footer className="relative border-t border-slate-900 px-6 py-8 text-center text-xs text-slate-600">
         Bass Note Piano — a digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book.
       </footer>
     </div>

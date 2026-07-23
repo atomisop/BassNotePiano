@@ -21,7 +21,7 @@ export function BadgeGrid({ earnedCodes }: BadgeGridProps) {
         const badges = BADGES.filter((b) => b.category === category);
         return (
           <div key={category}>
-            <p className="mb-2.5 text-xs font-medium uppercase tracking-[0.2em] text-neutral-500">
+            <p className="mb-2.5 text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
               {CATEGORY_LABELS[category]}
             </p>
             <div className="flex flex-wrap gap-3">
@@ -33,14 +33,14 @@ export function BadgeGrid({ earnedCodes }: BadgeGridProps) {
                       className={`flex h-16 w-16 flex-col items-center justify-center rounded-2xl border text-center transition ${
                         earned
                           ? "border-amber-400/50 bg-amber-400/10"
-                          : "border-neutral-800 bg-neutral-900/60 opacity-50"
+                          : "border-slate-800 bg-slate-900/60 opacity-50"
                       }`}
                     >
                       <span className="text-2xl">{earned ? "🏅" : "🔒"}</span>
                     </div>
-                    <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-44 -translate-x-1/2 rounded-lg border border-neutral-800 bg-neutral-950 p-2.5 text-center opacity-0 shadow-lg transition group-hover:opacity-100">
-                      <p className="text-xs font-medium text-neutral-100">{badge.label}</p>
-                      <p className="mt-0.5 text-[11px] text-neutral-500">{badge.description}</p>
+                    <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-44 -translate-x-1/2 rounded-lg border border-slate-800 bg-slate-950 p-2.5 text-center opacity-0 shadow-lg transition group-hover:opacity-100">
+                      <p className="text-xs font-medium text-slate-100">{badge.label}</p>
+                      <p className="mt-0.5 text-[11px] text-slate-500">{badge.description}</p>
                     </div>
                   </div>
                 );

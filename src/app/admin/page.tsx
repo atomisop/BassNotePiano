@@ -7,8 +7,8 @@ export default async function AdminOverviewPage() {
   return (
     <div>
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Admin</p>
-      <h1 className="mt-1.5 font-serif text-3xl text-neutral-50">Overview</h1>
-      <p className="mt-2 text-sm text-neutral-500">Platform-wide snapshot — users, revenue, and curriculum health.</p>
+      <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Overview</h1>
+      <p className="mt-2 text-sm text-slate-500">Platform-wide snapshot — users, revenue, and curriculum health.</p>
 
       <div className="mt-8">
         <OverviewStats stats={stats} moduleHealth={moduleHealth} />

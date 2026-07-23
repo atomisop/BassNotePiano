@@ -28,12 +28,12 @@ interface FriendsClientProps {
 
 function Avatar({ profile }: { profile: PublicProfile }) {
   return (
-    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-neutral-800 bg-neutral-800">
+    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-slate-800 bg-slate-800">
       {profile.image ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={profile.image} alt="" className="h-full w-full object-cover" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center text-xs text-neutral-500">
+        <div className="flex h-full w-full items-center justify-center text-xs text-slate-500">
           {(profile.name ?? profile.username ?? "?").charAt(0).toUpperCase()}
         </div>
       )}
@@ -44,17 +44,17 @@ function Avatar({ profile }: { profile: PublicProfile }) {
 function ProfileLine({ profile }: { profile: PublicProfile }) {
   return (
     <div className="min-w-0">
-      <p className="truncate text-sm text-neutral-100">{profile.name ?? "Unnamed"}</p>
-      {profile.username && <p className="truncate text-xs text-neutral-500">@{profile.username}</p>}
+      <p className="truncate text-sm text-slate-100">{profile.name ?? "Unnamed"}</p>
+      {profile.username && <p className="truncate text-xs text-slate-500">@{profile.username}</p>}
     </div>
   );
 }
 
 function SectionCard({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6">
-      <h2 className="font-serif text-lg text-neutral-50">{title}</h2>
-      {description && <p className="mt-1 text-sm text-neutral-500">{description}</p>}
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+      <h2 className="font-serif text-lg text-slate-50">{title}</h2>
+      {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
       <div className="mt-4">{children}</div>
     </div>
   );
@@ -109,12 +109,12 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
       <div className="mx-auto max-w-xl space-y-6">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Social</p>
-          <h1 className="mt-1.5 font-serif text-2xl text-neutral-50">Friends</h1>
+          <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Friends</h1>
         </div>
         <SectionCard title="Set a username first" description="Needed so other students can find and add you.">
           <Link
             href="/account"
-            className="inline-block rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300"
+            className="inline-block rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
           >
             Go to Account settings
           </Link>
@@ -127,9 +127,9 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
     <div className="mx-auto max-w-xl space-y-6">
       <div>
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Social</p>
-        <h1 className="mt-1.5 font-serif text-2xl text-neutral-50">Friends</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          You're <span className="text-neutral-300">@{username}</span>.
+        <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Friends</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          You're <span className="text-slate-300">@{username}</span>.
         </p>
       </div>
 
@@ -140,12 +140,12 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search @username"
-            className="flex-1 rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none transition focus:border-amber-400/60"
+            className="flex-1 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
           />
           <button
             type="submit"
             disabled={searching || query.trim().length < 2}
-            className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {searching ? "Searching…" : "Search"}
           </button>
@@ -156,7 +156,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
         {results.length > 0 && (
           <div className="mt-4 space-y-2">
             {results.map((profile) => (
-              <div key={profile.id} className="flex items-center justify-between gap-3 rounded-lg border border-neutral-800 p-2.5">
+              <div key={profile.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 p-2.5">
                 <div className="flex items-center gap-3">
                   <Avatar profile={profile} />
                   <ProfileLine profile={profile} />
@@ -165,7 +165,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                   type="button"
                   onClick={() => handleAddFriend(profile)}
                   disabled={sentTo.has(profile.id)}
-                  className="shrink-0 rounded-lg border border-neutral-700 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:border-amber-400/50 hover:text-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="shrink-0 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-amber-400/50 hover:text-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {sentTo.has(profile.id) ? "Sent" : "Add friend"}
                 </button>
@@ -179,7 +179,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
         <SectionCard title="Friend requests">
           <div className="space-y-2">
             {receivedRequests.map((req) => (
-              <div key={req.id} className="flex items-center justify-between gap-3 rounded-lg border border-neutral-800 p-2.5">
+              <div key={req.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 p-2.5">
                 <div className="flex items-center gap-3">
                   <Avatar profile={req.sender} />
                   <ProfileLine profile={req.sender} />
@@ -188,14 +188,14 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                   <button
                     type="button"
                     onClick={() => handleRespond(req.id, true)}
-                    className="rounded-lg bg-amber-400 px-3 py-1.5 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300"
+                    className="rounded-lg bg-amber-400 px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
                   >
                     Accept
                   </button>
                   <button
                     type="button"
                     onClick={() => handleRespond(req.id, false)}
-                    className="rounded-lg border border-neutral-700 px-3 py-1.5 text-xs font-medium text-neutral-400 transition hover:border-neutral-600"
+                    className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-slate-600"
                   >
                     Reject
                   </button>
@@ -210,12 +210,12 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
         <SectionCard title="Sent requests">
           <div className="space-y-2">
             {sentRequests.map((req) => (
-              <div key={req.id} className="flex items-center justify-between gap-3 rounded-lg border border-neutral-800 p-2.5">
+              <div key={req.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 p-2.5">
                 <div className="flex items-center gap-3">
                   <Avatar profile={req.receiver} />
                   <ProfileLine profile={req.receiver} />
                 </div>
-                <span className="shrink-0 text-xs text-neutral-500">Pending</span>
+                <span className="shrink-0 text-xs text-slate-500">Pending</span>
               </div>
             ))}
           </div>
@@ -224,11 +224,11 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
 
       <SectionCard title={`Friends (${friends.length})`}>
         {friends.length === 0 ? (
-          <p className="text-xs text-neutral-500">No friends yet — search above to find people.</p>
+          <p className="text-xs text-slate-500">No friends yet — search above to find people.</p>
         ) : (
           <div className="space-y-2">
             {friends.map((friend) => (
-              <div key={friend.id} className="flex items-center justify-between gap-3 rounded-lg border border-neutral-800 p-2.5">
+              <div key={friend.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 p-2.5">
                 <div className="flex items-center gap-3">
                   <Avatar profile={friend} />
                   <ProfileLine profile={friend} />
@@ -236,14 +236,14 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                 <div className="flex shrink-0 gap-2">
                   <Link
                     href={`/messages?with=${friend.id}`}
-                    className="rounded-lg border border-neutral-700 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:border-amber-400/50 hover:text-amber-300"
+                    className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-amber-400/50 hover:text-amber-300"
                   >
                     Message
                   </Link>
                   <button
                     type="button"
                     onClick={() => handleBlock(friend.id)}
-                    className="rounded-lg border border-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-500 transition hover:border-red-900 hover:text-red-400"
+                    className="rounded-lg border border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:border-red-900 hover:text-red-400"
                   >
                     Block
                   </button>
@@ -258,7 +258,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
         <SectionCard title="Blocked">
           <div className="space-y-2">
             {blocked.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between gap-3 rounded-lg border border-neutral-800 p-2.5">
+              <div key={entry.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 p-2.5">
                 <div className="flex items-center gap-3">
                   <Avatar profile={entry.user} />
                   <ProfileLine profile={entry.user} />
@@ -266,7 +266,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                 <button
                   type="button"
                   onClick={() => handleUnblock(entry.user.id)}
-                  className="shrink-0 rounded-lg border border-neutral-700 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:border-neutral-600"
+                  className="shrink-0 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-600"
                 >
                   Unblock
                 </button>

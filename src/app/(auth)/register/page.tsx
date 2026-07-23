@@ -63,14 +63,14 @@ function RegisterForm() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-sm rounded-2xl border border-neutral-800 bg-neutral-900/60 p-7"
+      className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900/60 p-7"
     >
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Start learning</p>
-      <h1 className="mt-1.5 font-serif text-2xl text-neutral-50">Create an account</h1>
+      <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Create an account</h1>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>
-          <label htmlFor="name" className="mb-1 block text-xs font-medium text-neutral-400">
+          <label htmlFor="name" className="mb-1 block text-xs font-medium text-slate-400">
             Name
           </label>
           <input
@@ -80,11 +80,11 @@ function RegisterForm() {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none transition focus:border-amber-400/60"
+            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
           />
         </div>
         <div>
-          <label htmlFor="email" className="mb-1 block text-xs font-medium text-neutral-400">
+          <label htmlFor="email" className="mb-1 block text-xs font-medium text-slate-400">
             Email
           </label>
           <input
@@ -94,11 +94,11 @@ function RegisterForm() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none transition focus:border-amber-400/60"
+            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
           />
         </div>
         <div>
-          <label htmlFor="password" className="mb-1 block text-xs font-medium text-neutral-400">
+          <label htmlFor="password" className="mb-1 block text-xs font-medium text-slate-400">
             Password
           </label>
           <input
@@ -109,11 +109,11 @@ function RegisterForm() {
             minLength={MIN_PASSWORD_LENGTH}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none transition focus:border-amber-400/60"
+            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
           />
         </div>
         <div>
-          <label htmlFor="confirmPassword" className="mb-1 block text-xs font-medium text-neutral-400">
+          <label htmlFor="confirmPassword" className="mb-1 block text-xs font-medium text-slate-400">
             Confirm password
           </label>
           <input
@@ -124,7 +124,7 @@ function RegisterForm() {
             minLength={MIN_PASSWORD_LENGTH}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none transition focus:border-amber-400/60"
+            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
           />
         </div>
 
@@ -133,13 +133,13 @@ function RegisterForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Creating account…" : "Create account"}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-neutral-500">
+      <p className="mt-6 text-center text-sm text-slate-500">
         Already have an account?{" "}
         <Link href="/login" className="text-amber-300 transition hover:text-amber-200">
           Log in

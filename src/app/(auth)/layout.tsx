@@ -8,7 +8,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         className="pointer-events-none absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(ellipse_at_top,_rgba(217,180,88,0.14),_transparent_60%)]"
       />
       <header className="relative px-6 py-6">
-        <Link href="/" className="font-serif text-sm tracking-[0.2em] text-neutral-200">
+        <Link href="/" className="font-serif text-sm tracking-[0.2em] text-slate-200">
           BASS NOTE <span className="text-amber-400">PIANO</span>
         </Link>
       </header>

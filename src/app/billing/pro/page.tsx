@@ -22,15 +22,15 @@ export default async function BillingProPage() {
   return (
     <div className="w-full max-w-sm">
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Pro — Lifetime</p>
-      <h1 className="mt-1.5 font-serif text-2xl text-neutral-50">Unlock the full curriculum</h1>
-      <p className="mt-2 text-sm text-neutral-500">
+      <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Unlock the full curriculum</h1>
+      <p className="mt-2 text-sm text-slate-500">
         One-time ${(PRO_LIFETIME_PRICE_CENTS / 100).toFixed(0)} payment via Zelle — saves $50 over paying for each
         scale individually.
       </p>
 
       <ul className="mt-5 space-y-2">
         {BENEFITS.map((benefit) => (
-          <li key={benefit} className="flex gap-2.5 text-sm text-neutral-300">
+          <li key={benefit} className="flex gap-2.5 text-sm text-slate-300">
             <span className="mt-0.5 text-amber-400">✓</span>
             {benefit}
           </li>

@@ -53,14 +53,14 @@ export function UserManagementTable({
         value={query}
         onChange={(e) => handleSearchChange(e.target.value)}
         placeholder="Search by name or email…"
-        className="w-full max-w-sm rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none transition focus:border-amber-400/60"
+        className="w-full max-w-sm rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
       />
 
       {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
 
       <div className="mt-5 space-y-3">
         {users.length === 0 && (
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-8 text-center text-sm text-neutral-500">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center text-sm text-slate-500">
             No users found.
           </div>
         )}
@@ -68,23 +68,23 @@ export function UserManagementTable({
         {users.map((user) => {
           const busy = busyId === user.id;
           return (
-            <div key={user.id} className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5">
+            <div key={user.id} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-neutral-100">{user.name ?? "—"}</p>
-                  <p className="text-sm text-neutral-500">{user.email}</p>
+                  <p className="text-slate-100">{user.name ?? "—"}</p>
+                  <p className="text-sm text-slate-500">{user.email}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span
                     className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${
-                      user.role === "ADMIN" ? "bg-amber-400/15 text-amber-300" : "bg-neutral-800 text-neutral-400"
+                      user.role === "ADMIN" ? "bg-amber-400/15 text-amber-300" : "bg-slate-800 text-slate-400"
                     }`}
                   >
                     {user.role}
                   </span>
                   <span
                     className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${
-                      user.isProMember ? "bg-emerald-400/15 text-emerald-300" : "bg-neutral-800 text-neutral-400"
+                      user.isProMember ? "bg-emerald-400/15 text-emerald-300" : "bg-slate-800 text-slate-400"
                     }`}
                   >
                     {user.isProMember ? "Pro" : "Pay-As-You-Go"}
@@ -108,7 +108,7 @@ export function UserManagementTable({
                           ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
                           : su.unlocked
                             ? "border-amber-400/30 bg-amber-400/10 text-amber-300"
-                            : "border-neutral-800 text-neutral-500 hover:border-neutral-700"
+                            : "border-slate-800 text-slate-500 hover:border-slate-700"
                       }`}
                     >
                       S{scaleGroup.order}
@@ -124,7 +124,7 @@ export function UserManagementTable({
                   onClick={() =>
                     withBusy(user.id, () => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN"))
                   }
-                  className="rounded-lg border border-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:bg-neutral-800 disabled:opacity-40"
+                  className="rounded-lg border border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
                 >
                   {user.role === "ADMIN" ? "Remove admin" : "Make admin"}
                 </button>
@@ -132,7 +132,7 @@ export function UserManagementTable({
                   type="button"
                   disabled={busy}
                   onClick={() => withBusy(user.id, () => onSetPro(user.id, !user.isProMember))}
-                  className="rounded-lg border border-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:bg-neutral-800 disabled:opacity-40"
+                  className="rounded-lg border border-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
                 >
                   {user.isProMember ? "Revoke Pro" : "Grant Pro"}
                 </button>

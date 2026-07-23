@@ -35,11 +35,11 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
             key={card.label}
             variants={item}
             className={`rounded-2xl border p-5 ${
-              card.highlight ? "border-amber-400/30 bg-amber-400/5" : "border-neutral-800 bg-neutral-900/60"
+              card.highlight ? "border-amber-400/30 bg-amber-400/5" : "border-slate-800 bg-slate-900/60"
             }`}
           >
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-neutral-500">{card.label}</p>
-            <p className={`mt-2 font-serif text-3xl ${card.highlight ? "text-amber-300" : "text-neutral-50"}`}>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">{card.label}</p>
+            <p className={`mt-2 font-serif text-3xl ${card.highlight ? "text-amber-300" : "text-slate-50"}`}>
               {card.value}
             </p>
           </motion.div>
@@ -49,47 +49,47 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
       <motion.div variants={item} className="flex flex-wrap gap-3">
         <Link
           href="/admin/payments"
-          className="rounded-xl border border-neutral-800 px-4 py-2.5 text-sm font-medium text-neutral-200 transition hover:border-amber-400/40 hover:text-amber-300"
+          className="rounded-xl border border-slate-800 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-300"
         >
           Review pending payments{stats.pendingPayments > 0 ? ` (${stats.pendingPayments})` : ""} →
         </Link>
         <Link
           href="/admin/users"
-          className="rounded-xl border border-neutral-800 px-4 py-2.5 text-sm font-medium text-neutral-200 transition hover:border-amber-400/40 hover:text-amber-300"
+          className="rounded-xl border border-slate-800 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-300"
         >
           Manage users →
         </Link>
       </motion.div>
 
       <motion.div variants={item}>
-        <h2 className="mb-1 font-serif text-xl text-neutral-100">Module health</h2>
-        <p className="mb-4 text-sm text-neutral-500">Unlocks and completions across the whole user base.</p>
-        <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900/60">
+        <h2 className="mb-1 font-serif text-xl text-slate-100">Module health</h2>
+        <p className="mb-4 text-sm text-slate-500">Unlocks and completions across the whole user base.</p>
+        <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
           {moduleHealth.map((row, i) => {
             const rate = row.unlockedCount === 0 ? 0 : Math.round((row.completedCount / row.unlockedCount) * 100);
             return (
               <div
                 key={row.slug}
                 className={`flex flex-wrap items-center justify-between gap-4 px-6 py-4 ${
-                  i > 0 ? "border-t border-neutral-900" : ""
+                  i > 0 ? "border-t border-slate-900" : ""
                 }`}
               >
                 <div>
                   <p className="text-xs uppercase tracking-wide text-amber-400/80">{row.code}</p>
-                  <p className="text-neutral-200">{row.title}</p>
+                  <p className="text-slate-200">{row.title}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-6 text-sm">
                   <div className="text-right">
-                    <p className="text-neutral-300">{row.unlockedCount}</p>
-                    <p className="text-[11px] text-neutral-600">unlocked</p>
+                    <p className="text-slate-300">{row.unlockedCount}</p>
+                    <p className="text-[11px] text-slate-600">unlocked</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-neutral-300">{row.completedCount}</p>
-                    <p className="text-[11px] text-neutral-600">completed</p>
+                    <p className="text-slate-300">{row.completedCount}</p>
+                    <p className="text-[11px] text-slate-600">completed</p>
                   </div>
                   <div className="w-14 text-right">
                     <p className="text-amber-300">{rate}%</p>
-                    <p className="text-[11px] text-neutral-600">completion</p>
+                    <p className="text-[11px] text-slate-600">completion</p>
                   </div>
                 </div>
               </div>

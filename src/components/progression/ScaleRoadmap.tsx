@@ -20,8 +20,8 @@ const STATUS_LABEL: Record<ProgressStatus, string> = {
 };
 
 const STATUS_DOT: Record<ProgressStatus, string> = {
-  LOCKED: "bg-neutral-700",
-  AVAILABLE: "bg-neutral-500",
+  LOCKED: "bg-slate-700",
+  AVAILABLE: "bg-slate-500",
   IN_PROGRESS: "bg-amber-400",
   COMPLETED: "bg-emerald-400",
 };
@@ -46,8 +46,8 @@ function ChecklistDots({ scale }: { scale: ScaleAccessState }) {
     <div className="mt-4 flex items-center gap-3">
       {items.map((item) => (
         <div key={item.label} className="flex items-center gap-1.5">
-          <span className={`h-1.5 w-1.5 rounded-full ${item.done ? "bg-amber-400" : "bg-neutral-700"}`} />
-          <span className={`text-[11px] ${item.done ? "text-neutral-300" : "text-neutral-600"}`}>{item.label}</span>
+          <span className={`h-1.5 w-1.5 rounded-full ${item.done ? "bg-amber-400" : "bg-slate-700"}`} />
+          <span className={`text-[11px] ${item.done ? "text-slate-300" : "text-slate-600"}`}>{item.label}</span>
         </div>
       ))}
     </div>
@@ -74,14 +74,14 @@ function CheckIcon() {
 function StepMarker({ index, status, locked }: { index: number; status: ProgressStatus; locked: boolean }) {
   if (status === "COMPLETED") {
     return (
-      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-400 text-neutral-950">
+      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-400 text-slate-950">
         <CheckIcon />
       </div>
     );
   }
   if (locked) {
     return (
-      <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-neutral-800 bg-neutral-950 text-neutral-600">
+      <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-slate-800 bg-slate-950 text-slate-600">
         <LockIcon />
       </div>
     );
@@ -91,7 +91,7 @@ function StepMarker({ index, status, locked }: { index: number; status: Progress
       className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-semibold ${
         status === "IN_PROGRESS"
           ? "border-amber-400 bg-amber-400/10 text-amber-300"
-          : "border-neutral-700 bg-neutral-950 text-neutral-400"
+          : "border-slate-700 bg-slate-950 text-slate-400"
       }`}
     >
       {index + 1}
@@ -154,7 +154,7 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
             <motion.div key={scale.scaleGroup.slug} variants={gridItem} className="relative flex gap-4">
               <div className="flex flex-col items-center">
                 <StepMarker index={index} status={scale.status} locked={disabled} />
-                {!isLast && <span className="w-px flex-1 border-l-2 border-dotted border-neutral-800" />}
+                {!isLast && <span className="w-px flex-1 border-l-2 border-dotted border-slate-800" />}
               </div>
 
               <button
@@ -163,30 +163,30 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
                 disabled={disabled}
                 className={`group mb-4 flex-1 rounded-2xl border p-5 text-left transition ${
                   disabled
-                    ? "cursor-not-allowed border-neutral-900 bg-neutral-900/30 opacity-60"
-                    : "border-neutral-800 bg-neutral-900/60 hover:border-amber-400/30"
+                    ? "cursor-not-allowed border-slate-900 bg-slate-900/30 opacity-60"
+                    : "border-slate-800 bg-slate-900/60 hover:border-amber-400/30"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">
                     {scale.scaleGroup.code}
                   </p>
-                  <span className="flex items-center gap-1.5 text-[11px] text-neutral-500">
+                  <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
                     <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[scale.status]}`} />
                     {STATUS_LABEL[scale.status]}
                   </span>
                 </div>
 
-                <h3 className="mt-2 font-serif text-lg text-neutral-50">{scale.scaleGroup.title}</h3>
+                <h3 className="mt-2 font-serif text-lg text-slate-50">{scale.scaleGroup.title}</h3>
                 {scale.scaleGroup.kinitName && (
-                  <p className="mt-1 text-sm text-neutral-500">{scale.scaleGroup.kinitName}</p>
+                  <p className="mt-1 text-sm text-slate-500">{scale.scaleGroup.kinitName}</p>
                 )}
 
                 <ChecklistDots scale={scale} />
 
                 <div
                   className={`mt-5 flex items-center gap-1.5 text-sm font-medium ${
-                    disabled ? "text-neutral-600" : "text-amber-300"
+                    disabled ? "text-slate-600" : "text-amber-300"
                   }`}
                 >
                   {disabled && <LockIcon />}

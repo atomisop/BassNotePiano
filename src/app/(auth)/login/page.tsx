@@ -98,17 +98,17 @@ function LoginForm() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-sm rounded-2xl border border-neutral-800 bg-neutral-900/60 p-7"
+      className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900/60 p-7"
     >
       <AnimatePresence mode="wait">
         {step === "password" ? (
           <motion.div key="password" variants={stepVariants} initial="enter" animate="center" exit="exit">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Welcome back</p>
-            <h1 className="mt-1.5 font-serif text-2xl text-neutral-50">Log in</h1>
+            <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Log in</h1>
 
             <form onSubmit={handlePasswordSubmit} className="mt-6 space-y-4">
               <div>
-                <label htmlFor="email" className="mb-1 block text-xs font-medium text-neutral-400">
+                <label htmlFor="email" className="mb-1 block text-xs font-medium text-slate-400">
                   Email
                 </label>
                 <input
@@ -119,15 +119,15 @@ function LoginForm() {
                   autoFocus
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none transition focus:border-amber-400/60"
+                  className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
                 />
               </div>
               <div>
                 <div className="mb-1 flex items-center justify-between">
-                  <label htmlFor="password" className="block text-xs font-medium text-neutral-400">
+                  <label htmlFor="password" className="block text-xs font-medium text-slate-400">
                     Password
                   </label>
-                  <Link href="/forgot-password" className="text-xs text-neutral-500 transition hover:text-amber-300">
+                  <Link href="/forgot-password" className="text-xs text-slate-500 transition hover:text-amber-300">
                     Forgot?
                   </Link>
                 </div>
@@ -138,7 +138,7 @@ function LoginForm() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none transition focus:border-amber-400/60"
+                  className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
                 />
               </div>
 
@@ -147,13 +147,13 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? "Checking…" : "Continue"}
               </button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-neutral-500">
+            <p className="mt-6 text-center text-sm text-slate-500">
               New here?{" "}
               <Link href="/register" className="text-amber-300 transition hover:text-amber-200">
                 Create an account
@@ -163,9 +163,9 @@ function LoginForm() {
         ) : (
           <motion.div key="code" variants={stepVariants} initial="enter" animate="center" exit="exit">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Confirm it's you</p>
-            <h1 className="mt-1.5 font-serif text-2xl text-neutral-50">Enter your code</h1>
-            <p className="mt-2 text-sm text-neutral-500">
-              We sent a 6-digit code to <span className="text-neutral-300">{email}</span>.
+            <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Enter your code</h1>
+            <p className="mt-2 text-sm text-slate-500">
+              We sent a 6-digit code to <span className="text-slate-300">{email}</span>.
             </p>
 
             <form onSubmit={handleCodeSubmit} className="mt-6 space-y-4">
@@ -178,16 +178,16 @@ function LoginForm() {
                 autoFocus
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-center font-mono text-lg tracking-[0.5em] text-neutral-100 outline-none transition focus:border-amber-400/60"
+                className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-center font-mono text-lg tracking-[0.5em] text-slate-100 outline-none transition focus:border-amber-400/60"
                 placeholder="······"
               />
 
-              <label className="flex items-center gap-2 text-sm text-neutral-400">
+              <label className="flex items-center gap-2 text-sm text-slate-400">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-neutral-700 bg-neutral-950 accent-amber-400"
+                  className="h-4 w-4 rounded border-slate-700 bg-slate-950 accent-amber-400"
                 />
                 Remember me for 7 days
               </label>
@@ -198,7 +198,7 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={submitting || code.length !== 6}
-                className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? "Logging in…" : "Log in"}
               </button>
@@ -212,11 +212,11 @@ function LoginForm() {
                   setCode("");
                   setError(null);
                 }}
-                className="text-neutral-500 transition hover:text-neutral-300"
+                className="text-slate-500 transition hover:text-slate-300"
               >
                 Back
               </button>
-              <button type="button" onClick={handleResend} className="text-neutral-500 transition hover:text-amber-300">
+              <button type="button" onClick={handleResend} className="text-slate-500 transition hover:text-amber-300">
                 Resend code
               </button>
             </div>

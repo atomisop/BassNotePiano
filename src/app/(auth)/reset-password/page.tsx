@@ -65,9 +65,9 @@ function ResetPasswordForm() {
         variants={cardVariants}
         initial="hidden"
         animate="visible"
-        className="w-full max-w-sm rounded-2xl border border-neutral-800 bg-neutral-900/60 p-7 text-center"
+        className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900/60 p-7 text-center"
       >
-        <p className="text-sm text-neutral-400">
+        <p className="text-sm text-slate-400">
           Missing email.{" "}
           <Link href="/forgot-password" className="text-amber-300 transition hover:text-amber-200">
             Start over
@@ -83,17 +83,17 @@ function ResetPasswordForm() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-sm rounded-2xl border border-neutral-800 bg-neutral-900/60 p-7"
+      className="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900/60 p-7"
     >
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Reset password</p>
-      <h1 className="mt-1.5 font-serif text-2xl text-neutral-50">Choose a new password</h1>
-      <p className="mt-2 text-sm text-neutral-500">
-        We sent a 6-digit code to <span className="text-neutral-300">{email}</span>.
+      <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Choose a new password</h1>
+      <p className="mt-2 text-sm text-slate-500">
+        We sent a 6-digit code to <span className="text-slate-300">{email}</span>.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>
-          <label htmlFor="code" className="mb-1 block text-xs font-medium text-neutral-400">
+          <label htmlFor="code" className="mb-1 block text-xs font-medium text-slate-400">
             Code
           </label>
           <input
@@ -106,13 +106,13 @@ function ResetPasswordForm() {
             autoFocus
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-            className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-center font-mono text-lg tracking-[0.5em] text-neutral-100 outline-none transition focus:border-amber-400/60"
+            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-center font-mono text-lg tracking-[0.5em] text-slate-100 outline-none transition focus:border-amber-400/60"
             placeholder="······"
           />
         </div>
 
         <div>
-          <label htmlFor="newPassword" className="mb-1 block text-xs font-medium text-neutral-400">
+          <label htmlFor="newPassword" className="mb-1 block text-xs font-medium text-slate-400">
             New password
           </label>
           <input
@@ -122,12 +122,12 @@ function ResetPasswordForm() {
             required
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none transition focus:border-amber-400/60"
+            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
           />
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="mb-1 block text-xs font-medium text-neutral-400">
+          <label htmlFor="confirmPassword" className="mb-1 block text-xs font-medium text-slate-400">
             Confirm new password
           </label>
           <input
@@ -137,7 +137,7 @@ function ResetPasswordForm() {
             required
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none transition focus:border-amber-400/60"
+            className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
           />
         </div>
 
@@ -147,7 +147,7 @@ function ResetPasswordForm() {
         <button
           type="submit"
           disabled={submitting || code.length !== 6}
-          className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Resetting…" : "Reset password"}
         </button>
@@ -156,7 +156,7 @@ function ResetPasswordForm() {
       <button
         type="button"
         onClick={handleResend}
-        className="mt-4 w-full text-center text-sm text-neutral-500 transition hover:text-amber-300"
+        className="mt-4 w-full text-center text-sm text-slate-500 transition hover:text-amber-300"
       >
         Didn&apos;t get a code? Resend
       </button>

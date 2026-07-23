@@ -67,7 +67,7 @@ function OptionButton({
       className={`w-full rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${
         selected
           ? "border-amber-400/60 bg-amber-400/10 text-amber-200"
-          : "border-neutral-800 bg-neutral-950 text-neutral-300 hover:border-neutral-700"
+          : "border-slate-800 bg-slate-950 text-slate-300 hover:border-slate-700"
       }`}
     >
       {label}
@@ -146,13 +146,13 @@ export function OnboardingWizard() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900/60 p-7"
+      className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/60 p-7"
     >
       <div className="mb-6 flex items-center gap-1.5">
         {STEP_TITLES.map((_, i) => (
           <div
             key={i}
-            className={`h-1 flex-1 rounded-full transition ${i <= step ? "bg-amber-400" : "bg-neutral-800"}`}
+            className={`h-1 flex-1 rounded-full transition ${i <= step ? "bg-amber-400" : "bg-slate-800"}`}
           />
         ))}
       </div>
@@ -160,21 +160,21 @@ export function OnboardingWizard() {
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">
         Step {step + 1} of {STEP_TITLES.length}
       </p>
-      <h1 className="mt-1.5 font-serif text-2xl text-neutral-50">{STEP_TITLES[step]}</h1>
-      <p className="mt-2 text-sm text-neutral-500">A few quick questions to personalize your dashboard.</p>
+      <h1 className="mt-1.5 font-serif text-2xl text-slate-50">{STEP_TITLES[step]}</h1>
+      <p className="mt-2 text-sm text-slate-500">A few quick questions to personalize your dashboard.</p>
 
       <AnimatePresence mode="wait">
         <motion.div key={step} variants={stepVariants} initial="enter" animate="center" exit="exit" className="mt-6 space-y-2">
           {step === 0 && (
-            <div className="flex items-center rounded-xl border border-neutral-800 bg-neutral-950 pl-4 focus-within:border-amber-400/60">
-              <span className="text-sm text-neutral-500">@</span>
+            <div className="flex items-center rounded-xl border border-slate-800 bg-slate-950 pl-4 focus-within:border-amber-400/60">
+              <span className="text-sm text-slate-500">@</span>
               <input
                 type="text"
                 autoFocus
                 value={username}
                 onChange={(e) => setUsernameValue(e.target.value)}
                 placeholder="yourname"
-                className="w-full bg-transparent px-2 py-3 text-sm text-neutral-100 outline-none"
+                className="w-full bg-transparent px-2 py-3 text-sm text-slate-100 outline-none"
               />
             </div>
           )}
@@ -225,7 +225,7 @@ export function OnboardingWizard() {
             type="button"
             onClick={handleBack}
             disabled={submitting}
-            className="rounded-xl border border-neutral-800 px-4 py-2.5 text-sm font-medium text-neutral-300 transition hover:border-neutral-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-xl border border-slate-800 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Back
           </button>
@@ -234,7 +234,7 @@ export function OnboardingWizard() {
           type="button"
           onClick={handleNext}
           disabled={!canAdvance || submitting || checkingUsername}
-          className="flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {checkingUsername ? "Checking…" : submitting ? "Saving…" : step < lastStep ? "Next" : "Finish"}
         </button>

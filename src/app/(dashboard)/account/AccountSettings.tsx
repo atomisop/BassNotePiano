@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { Suspense, useRef, useState, type FormEvent } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import type { BadgeCode, LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
-import { BadgeGrid } from "@/components/gamification/BadgeGrid";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
 import { CodeGate } from "./CodeGate";
 import {
   requestNameChangeAction,
@@ -32,7 +32,7 @@ interface AccountSettingsProps {
   initialImage: string | null;
   initialUsername: string | null;
   initialMusicProfile: MusicProfile;
-  earnedBadgeCodes: BadgeCode[];
+  isProMember: boolean;
   initialNotificationPreferences: NotificationPreferencesInput;
 }
 
@@ -69,6 +69,31 @@ const LEARNING_GOALS: { value: LearningGoal; label: string }[] = [
   { value: "HOBBYIST", label: "Just for fun (hobbyist)" },
 ];
 
+const TAB_ICONS = {
+  profile: "M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c0-4.4 3.6-8 8-8s8 3.6 8 8",
+  notifications:
+    "M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5zM9.5 19.5a2.5 2.5 0 005 0",
+  membership: "M3 8h18M3 6h18v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6zM7 15h4",
+  password: "M12 15v2M6 10V7a6 6 0 1112 0v3M5 10h14v10a1 1 0 01-1 1H6a1 1 0 01-1-1V10z",
+} as const;
+
+const TABS = [
+  { id: "profile", label: "Profile Settings", icon: TAB_ICONS.profile },
+  { id: "notifications", label: "Notifications", icon: TAB_ICONS.notifications },
+  { id: "membership", label: "Membership & Purchases", icon: TAB_ICONS.membership },
+  { id: "password", label: "Password", icon: TAB_ICONS.password },
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
+
+function TabIcon({ path }: { path: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px] shrink-0">
+      <path d={path} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function Pill({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
   return (
     <button
@@ -77,7 +102,7 @@ function Pill({ label, selected, onClick }: { label: string; selected: boolean; 
       className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
         selected
           ? "border-amber-400/60 bg-amber-400/10 text-amber-200"
-          : "border-neutral-800 bg-neutral-950 text-neutral-400 hover:border-neutral-700"
+          : "border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700"
       }`}
     >
       {label}
@@ -87,63 +112,74 @@ function Pill({ label, selected, onClick }: { label: string; selected: boolean; 
 
 function SectionCard({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6">
-      <h2 className="font-serif text-lg text-neutral-50">{title}</h2>
-      <p className="mt-1 text-sm text-neutral-500">{description}</p>
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+      <h2 className="font-serif text-lg text-slate-50">{title}</h2>
+      <p className="mt-1 text-sm text-slate-500">{description}</p>
       <div className="mt-4">{children}</div>
     </div>
   );
 }
 
-const SETTINGS_SECTIONS = [
-  { id: "profile", label: "Profile" },
-  { id: "username", label: "Username" },
-  { id: "music-profile", label: "Music profile" },
-  { id: "badges", label: "Badges" },
-  { id: "notifications", label: "Notifications" },
-  { id: "password", label: "Password" },
-];
-
-function SettingsNav() {
+function SettingsTabs({ activeTab, onSelect }: { activeTab: TabId; onSelect: (tab: TabId) => void }) {
   return (
     <>
       <nav className="mb-2 flex gap-2 overflow-x-auto pb-1 lg:hidden">
-        {SETTINGS_SECTIONS.map((s) => (
-          <a
-            key={s.id}
-            href={`#${s.id}`}
-            className="shrink-0 rounded-full border border-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-400 transition hover:border-amber-400/40 hover:text-amber-200"
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => onSelect(tab.id)}
+            className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+              activeTab === tab.id
+                ? "border-amber-400/50 bg-slate-900 text-amber-200"
+                : "border-slate-800 text-slate-400 hover:border-slate-700"
+            }`}
           >
-            {s.label}
-          </a>
+            {tab.label}
+          </button>
         ))}
       </nav>
-      <nav className="sticky top-6 hidden w-44 shrink-0 flex-col gap-1 self-start lg:flex">
-        {SETTINGS_SECTIONS.map((s) => (
-          <a
-            key={s.id}
-            href={`#${s.id}`}
-            className="rounded-lg px-3 py-2 text-sm text-neutral-400 transition hover:bg-neutral-900 hover:text-neutral-100"
+      <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start rounded-2xl border border-slate-800 bg-slate-900/60 p-2 lg:flex">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => onSelect(tab.id)}
+            className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm transition ${
+              activeTab === tab.id
+                ? "border-amber-400/40 bg-slate-800 text-slate-50"
+                : "border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+            }`}
           >
-            {s.label}
-          </a>
+            <TabIcon path={tab.icon} />
+            {tab.label}
+          </button>
         ))}
       </nav>
     </>
   );
 }
 
-export function AccountSettings({
+function AccountSettingsInner({
   email,
   initialName,
   initialImage,
   initialUsername,
   initialMusicProfile,
-  earnedBadgeCodes,
+  isProMember,
   initialNotificationPreferences,
 }: AccountSettingsProps) {
   const { update } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const initialTab: TabId = TABS.some((t) => t.id === requestedTab) ? (requestedTab as TabId) : "profile";
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+
+  function selectTab(tab: TabId) {
+    setActiveTab(tab);
+    router.replace(`/account?tab=${tab}`, { scroll: false });
+  }
 
   async function syncSession() {
     await update();
@@ -154,47 +190,72 @@ export function AccountSettings({
     <div className="mx-auto max-w-4xl">
       <div>
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Settings</p>
-        <h1 className="mt-1.5 font-serif text-2xl text-neutral-50">Account</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          Every change here is confirmed with a 6-digit code sent to <span className="text-neutral-300">{email}</span>.
+        <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Account</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Every change here is confirmed with a 6-digit code sent to <span className="text-slate-300">{email}</span>.
         </p>
       </div>
 
       <div className="mt-6 flex flex-col gap-8 lg:flex-row">
-        <SettingsNav />
+        <SettingsTabs activeTab={activeTab} onSelect={selectTab} />
 
         <div className="min-w-0 flex-1 space-y-6">
-          <div id="profile" className="scroll-mt-6 space-y-6">
-            <AvatarSection initialImage={initialImage} email={email} onDone={syncSession} />
-            <NameSection initialName={initialName} email={email} onDone={syncSession} />
-          </div>
+          {activeTab === "profile" && (
+            <>
+              <AvatarSection initialImage={initialImage} email={email} onDone={syncSession} />
+              <NameSection initialName={initialName} email={email} onDone={syncSession} />
+              <UsernameSection initialUsername={initialUsername} />
+              <MusicProfileSection initial={initialMusicProfile} />
+            </>
+          )}
 
-          <div id="username" className="scroll-mt-6">
-            <UsernameSection initialUsername={initialUsername} />
-          </div>
+          {activeTab === "notifications" && <NotificationSettingsSection initial={initialNotificationPreferences} />}
 
-          <div id="music-profile" className="scroll-mt-6">
-            <MusicProfileSection initial={initialMusicProfile} />
-          </div>
+          {activeTab === "membership" && <MembershipSection isProMember={isProMember} />}
 
-          <div id="badges" className="scroll-mt-6 rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6">
-            <h2 className="font-serif text-lg text-neutral-50">Badges</h2>
-            <p className="mt-1 text-sm text-neutral-500">Earned and locked achievements — hover a badge to see how to unlock it.</p>
-            <div className="mt-4">
-              <BadgeGrid earnedCodes={new Set(earnedBadgeCodes)} />
-            </div>
-          </div>
-
-          <div id="notifications" className="scroll-mt-6">
-            <NotificationSettingsSection initial={initialNotificationPreferences} />
-          </div>
-
-          <div id="password" className="scroll-mt-6">
-            <PasswordSection email={email} />
-          </div>
+          {activeTab === "password" && <PasswordSection email={email} />}
         </div>
       </div>
     </div>
+  );
+}
+
+export function AccountSettings(props: AccountSettingsProps) {
+  return (
+    <Suspense fallback={null}>
+      <AccountSettingsInner {...props} />
+    </Suspense>
+  );
+}
+
+function MembershipSection({ isProMember }: { isProMember: boolean }) {
+  return (
+    <SectionCard title="Membership & purchases" description="Your plan, payment history, and upgrade options.">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-800 p-4">
+        <div>
+          <p className="text-sm text-slate-100">{isProMember ? "Pro — Lifetime access" : "Pay-As-You-Go"}</p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            {isProMember ? "All six scale groups are unlocked, for good." : "Unlock scales one at a time, or upgrade anytime."}
+          </p>
+        </div>
+        {!isProMember && (
+          <Link
+            href="/billing/pro"
+            className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
+          >
+            Upgrade to Pro
+          </Link>
+        )}
+      </div>
+
+      <Link
+        href="/billing/history"
+        className="mt-3 flex items-center justify-between rounded-xl border border-slate-800 p-4 text-sm text-slate-200 transition hover:border-amber-400/30 hover:text-amber-200"
+      >
+        Payment history
+        <span className="text-slate-500">→</span>
+      </Link>
+    </SectionCard>
   );
 }
 
@@ -233,7 +294,7 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
     <SectionCard title="Music profile" description="Personalizes your dashboard — collected once during onboarding.">
       <div className="space-y-4">
         <div>
-          <p className="mb-1.5 text-xs font-medium text-neutral-400">Primary instrument</p>
+          <p className="mb-1.5 text-xs font-medium text-slate-400">Primary instrument</p>
           <div className="flex flex-wrap gap-2">
             {INSTRUMENTS.map((opt) => (
               <Pill key={opt.value} label={opt.label} selected={instrument === opt.value} onClick={() => setInstrument(opt.value)} />
@@ -241,7 +302,7 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
           </div>
         </div>
         <div>
-          <p className="mb-1.5 text-xs font-medium text-neutral-400">Skill level</p>
+          <p className="mb-1.5 text-xs font-medium text-slate-400">Skill level</p>
           <div className="flex flex-wrap gap-2">
             {SKILL_LEVELS.map((opt) => (
               <Pill key={opt.value} label={opt.label} selected={skillLevel === opt.value} onClick={() => setSkillLevel(opt.value)} />
@@ -249,7 +310,7 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
           </div>
         </div>
         <div>
-          <p className="mb-1.5 text-xs font-medium text-neutral-400">Genres</p>
+          <p className="mb-1.5 text-xs font-medium text-slate-400">Genres</p>
           <div className="flex flex-wrap gap-2">
             {GENRES.map((opt) => (
               <Pill key={opt.value} label={opt.label} selected={genres.includes(opt.value)} onClick={() => toggleGenre(opt.value)} />
@@ -257,7 +318,7 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
           </div>
         </div>
         <div>
-          <p className="mb-1.5 text-xs font-medium text-neutral-400">Learning goal</p>
+          <p className="mb-1.5 text-xs font-medium text-slate-400">Learning goal</p>
           <div className="flex flex-wrap gap-2">
             {LEARNING_GOALS.map((opt) => (
               <Pill key={opt.value} label={opt.label} selected={goal === opt.value} onClick={() => setGoal(opt.value)} />
@@ -273,7 +334,7 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
         type="button"
         onClick={handleSave}
         disabled={submitting}
-        className="mt-4 rounded-lg bg-amber-400 px-4 py-1.5 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-4 rounded-lg bg-amber-400 px-4 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? "Saving…" : "Save"}
       </button>
@@ -328,12 +389,12 @@ function AvatarSection({ initialImage, email, onDone }: { initialImage: string |
   return (
     <SectionCard title="Profile photo" description="Shown across your dashboard and the admin panel.">
       <div className="flex items-center gap-4">
-        <div className="h-16 w-16 overflow-hidden rounded-full border border-neutral-800 bg-neutral-800">
+        <div className="h-16 w-16 overflow-hidden rounded-full border border-slate-800 bg-slate-800">
           {image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={image} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs text-neutral-500">None</div>
+            <div className="flex h-full w-full items-center justify-center text-xs text-slate-500">None</div>
           )}
         </div>
         <div>
@@ -341,7 +402,7 @@ function AvatarSection({ initialImage, email, onDone }: { initialImage: string |
             type="button"
             disabled={uploading || awaitingCode}
             onClick={() => fileInputRef.current?.click()}
-            className="rounded-lg border border-neutral-700 px-3 py-1.5 text-xs font-medium text-neutral-300 transition hover:border-neutral-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {uploading ? "Preparing…" : "Choose new photo"}
           </button>
@@ -408,12 +469,12 @@ function NameSection({ initialName, email, onDone }: { initialName: string | nul
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={awaitingCode}
-          className="flex-1 rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+          className="flex-1 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
         />
         <button
           type="submit"
           disabled={submitting || awaitingCode || name.trim() === (initialName ?? "")}
-          className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Sending…" : "Save"}
         </button>
@@ -469,20 +530,20 @@ function UsernameSection({ initialUsername }: { initialUsername: string | null }
   return (
     <SectionCard title="Username" description="How friends find and add you on the Friends page.">
       <form onSubmit={handleSubmit} className="flex gap-2">
-        <div className="flex flex-1 items-center rounded-lg border border-neutral-800 bg-neutral-950 pl-3 focus-within:border-amber-400/60">
-          <span className="text-sm text-neutral-500">@</span>
+        <div className="flex flex-1 items-center rounded-lg border border-slate-800 bg-slate-950 pl-3 focus-within:border-amber-400/60">
+          <span className="text-sm text-slate-500">@</span>
           <input
             type="text"
             required
             value={username}
             onChange={(e) => setUsernameValue(e.target.value)}
-            className="w-full bg-transparent px-2 py-2 text-sm text-neutral-100 outline-none"
+            className="w-full bg-transparent px-2 py-2 text-sm text-slate-100 outline-none"
           />
         </div>
         <button
           type="submit"
           disabled={submitting || username.trim() === (initialUsername ?? "")}
-          className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Saving…" : "Save"}
         </button>
@@ -533,7 +594,7 @@ function PasswordSection({ email }: { email: string }) {
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
           disabled={awaitingCode}
-          className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+          className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
         />
         <input
           type="password"
@@ -543,7 +604,7 @@ function PasswordSection({ email }: { email: string }) {
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           disabled={awaitingCode}
-          className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+          className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
         />
         <input
           type="password"
@@ -553,7 +614,7 @@ function PasswordSection({ email }: { email: string }) {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           disabled={awaitingCode}
-          className="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+          className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
         />
 
         {error && <p className="text-xs text-red-400">{error}</p>}
@@ -562,7 +623,7 @@ function PasswordSection({ email }: { email: string }) {
         <button
           type="submit"
           disabled={submitting || awaitingCode}
-          className="w-full rounded-lg bg-amber-400 py-2 text-xs font-semibold text-neutral-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-lg bg-amber-400 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Sending…" : "Change password"}
         </button>
@@ -603,10 +664,10 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boo
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative h-5 w-9 shrink-0 rounded-full transition ${checked ? "bg-amber-400" : "bg-neutral-800"}`}
+      className={`relative h-5 w-9 shrink-0 rounded-full transition ${checked ? "bg-amber-400" : "bg-slate-800"}`}
     >
       <span
-        className={`absolute top-0.5 h-4 w-4 rounded-full bg-neutral-950 transition ${checked ? "left-[18px]" : "left-0.5"}`}
+        className={`absolute top-0.5 h-4 w-4 rounded-full bg-slate-950 transition ${checked ? "left-[18px]" : "left-0.5"}`}
       />
     </button>
   );
@@ -633,8 +694,8 @@ function NotificationSettingsSection({ initial }: { initial: NotificationPrefere
         {NOTIFICATION_TOGGLES.map((item) => (
           <div key={item.key} className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm text-neutral-200">{item.label}</p>
-              <p className="text-xs text-neutral-500">{item.description}</p>
+              <p className="text-sm text-slate-200">{item.label}</p>
+              <p className="text-xs text-slate-500">{item.description}</p>
             </div>
             <Toggle checked={prefs[item.key]} onChange={(value) => handleToggle(item.key, value)} />
           </div>

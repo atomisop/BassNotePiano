@@ -21,7 +21,7 @@ export function ScaleExplorer({ variants }: ScaleExplorerProps) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         {variants.length > 1 ? (
-          <div className="flex flex-wrap gap-1.5 rounded-full border border-neutral-800 p-1">
+          <div className="flex flex-wrap gap-1.5 rounded-full border border-slate-800 p-1">
             {variants.map((v, i) => (
               <button
                 key={v.name}
@@ -29,8 +29,8 @@ export function ScaleExplorer({ variants }: ScaleExplorerProps) {
                 onClick={() => setActiveVariantIndex(i)}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                   i === activeVariantIndex
-                    ? "bg-amber-400 text-neutral-950"
-                    : "text-neutral-400 hover:text-neutral-100"
+                    ? "bg-amber-400 text-slate-950"
+                    : "text-slate-400 hover:text-slate-100"
                 }`}
               >
                 {v.name}

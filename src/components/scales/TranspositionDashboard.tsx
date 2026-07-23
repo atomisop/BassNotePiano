@@ -16,10 +16,10 @@ export function TranspositionDashboard({ variant, root }: TranspositionDashboard
   const allKeys = useMemo(() => getScaleInAllKeys(variant.formula), [variant.formula]);
 
   return (
-    <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6">
+    <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Transposition Dashboard</p>
-      <h2 className="mt-1 font-serif text-xl text-neutral-50">{variant.name}</h2>
-      <p className="mt-2 font-mono text-xs text-neutral-500">{variant.formula.split("-").join(" – ")}</p>
+      <h2 className="mt-1 font-serif text-xl text-slate-50">{variant.name}</h2>
+      <p className="mt-2 font-mono text-xs text-slate-500">{variant.formula.split("-").join(" – ")}</p>
 
       <motion.div
         key={root + variant.name}
@@ -33,7 +33,7 @@ export function TranspositionDashboard({ variant, root }: TranspositionDashboard
             key={`${note}-${i}`}
             className="flex w-16 flex-col items-center rounded-xl border border-amber-400/25 bg-amber-400/5 py-3"
           >
-            <span className="font-serif text-lg text-neutral-50">{note}</span>
+            <span className="font-serif text-lg text-slate-50">{note}</span>
             <span className="mt-1 text-[11px] text-amber-300/80">{spelled.degrees[i]}</span>
           </div>
         ))}
@@ -42,7 +42,7 @@ export function TranspositionDashboard({ variant, root }: TranspositionDashboard
       <div className="mt-8 overflow-x-auto">
         <table className="w-full min-w-[560px] border-collapse text-sm">
           <thead>
-            <tr className="text-left text-[11px] tracking-wide text-neutral-500">
+            <tr className="text-left text-[11px] tracking-wide text-slate-500">
               <th className="pb-2 pr-4 font-medium uppercase">Key</th>
               {/* Degree tokens (b3, #4, ...) are case-sensitive — no uppercase transform here. */}
               {spelled.degrees.map((d, i) => (
@@ -54,12 +54,12 @@ export function TranspositionDashboard({ variant, root }: TranspositionDashboard
           </thead>
           <tbody>
             {ROOT_KEYS.map((key) => (
-              <tr key={key} className={`border-t border-neutral-900 ${key === root ? "bg-amber-400/5" : ""}`}>
-                <td className={`py-2 pr-4 font-medium ${key === root ? "text-amber-300" : "text-neutral-300"}`}>
+              <tr key={key} className={`border-t border-slate-900 ${key === root ? "bg-amber-400/5" : ""}`}>
+                <td className={`py-2 pr-4 font-medium ${key === root ? "text-amber-300" : "text-slate-300"}`}>
                   {key}
                 </td>
                 {allKeys[key].map((note, i) => (
-                  <td key={i} className="py-2 pr-4 text-neutral-400">
+                  <td key={i} className="py-2 pr-4 text-slate-400">
                     {note}
                   </td>
                 ))}

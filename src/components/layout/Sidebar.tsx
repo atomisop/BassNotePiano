@@ -7,15 +7,13 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export interface SidebarProps {
   name?: string | null;
-  email?: string | null;
-  isProMember: boolean;
   isAdmin: boolean;
   unreadMessageCount: number;
 }
 
 function NavIcon({ path }: { path: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px] shrink-0">
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 shrink-0">
       <path d={path} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -25,84 +23,99 @@ const ICON_PATHS = {
   roadmap: "M4 6h11a3 3 0 010 6H9a3 3 0 000 6h11M4 6l3-3M4 6l3 3M17 18l3 3M17 18l3-3",
   friends: "M8 11a3 3 0 100-6 3 3 0 000 6zM3 20c0-3.3 2.7-6 6-6M17 11a3 3 0 100-6 3 3 0 000 6zM13.5 14c2.9.3 5.5 2.8 5.5 6",
   messages: "M4 5h16v11H8l-4 4V5z",
-  payments: "M3 8h18M3 6h18v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6zM7 15h4",
-  pricing: "M4 4h6l10 10-6 6L4 10V4zM8.5 8.5h.01",
-  account: "M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c0-4.4 3.6-8 8-8s8 3.6 8 8",
+  profile: "M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c0-4.4 3.6-8 8-8s8 3.6 8 8",
   admin: "M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z",
+  settings:
+    "M10.3 3.3c.3-1 1.7-1 2 0l.2.7c.2.6.8 1 1.4.8l.7-.2c1-.3 1.8.7 1.3 1.6l-.4.6c-.3.5-.1 1.2.4 1.5l.6.4c.9.5.9 1.9 0 2.4l-.6.4c-.5.3-.7 1-.4 1.5l.4.6c.5.9-.3 1.9-1.3 1.6l-.7-.2c-.6-.2-1.2.2-1.4.8l-.2.7c-.3 1-1.7 1-2 0l-.2-.7c-.2-.6-.8-1-1.4-.8l-.7.2c-1 .3-1.8-.7-1.3-1.6l.4-.6c.3-.5.1-1.2-.4-1.5l-.6-.4c-.9-.5-.9-1.9 0-2.4l.6-.4c.5-.3.7-1 .4-1.5l-.4-.6c-.5-.9.3-1.9 1.3-1.6l.7.2c.6.2 1.2-.2 1.4-.8l.2-.7z",
+  logout: "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9",
 } as const;
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Roadmap", icon: ICON_PATHS.roadmap },
   { href: "/friends", label: "Friends", icon: ICON_PATHS.friends },
   { href: "/messages", label: "Messages", icon: ICON_PATHS.messages },
-  { href: "/billing/history", label: "Payment history", icon: ICON_PATHS.payments },
-  { href: "/pricing", label: "Pricing", icon: ICON_PATHS.pricing },
-  { href: "/account", label: "Account", icon: ICON_PATHS.account },
 ];
 
-export function Sidebar({ name, email, isProMember, isAdmin, unreadMessageCount }: SidebarProps) {
+function NavItem({
+  href,
+  label,
+  icon,
+  active,
+  badge,
+}: {
+  href: string;
+  label: string;
+  icon: string;
+  active: boolean;
+  badge?: number;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`relative flex flex-col items-center gap-1 rounded-xl px-2 py-2.5 text-center transition ${
+        active ? "bg-amber-400/10 text-amber-300" : "text-slate-500 hover:bg-slate-900 hover:text-slate-200"
+      }`}
+    >
+      <NavIcon path={icon} />
+      <span className="text-[10px] font-medium leading-none">{label}</span>
+      {Boolean(badge) && (
+        <span className="absolute right-1.5 top-1 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-amber-400 px-1 text-[9px] font-bold text-slate-950">
+          {badge! > 9 ? "9+" : badge}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+export function Sidebar({ name, isAdmin, unreadMessageCount }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-60 shrink-0 flex-col border-r border-neutral-900 bg-neutral-950/80 px-4 py-6">
-      <div className="flex items-center justify-between px-2">
-        <Link href="/" className="font-serif text-sm tracking-[0.2em] text-neutral-200">
-          BASS NOTE <span className="text-amber-400">PIANO</span>
-        </Link>
+    <aside className="flex h-screen w-24 shrink-0 flex-col items-center gap-1 border-r border-slate-900 bg-slate-950/80 py-5">
+      <Link
+        href="/"
+        aria-label="Bass Note Piano"
+        className="flex h-9 w-9 items-center justify-center rounded-full border border-amber-400/30 font-serif text-xs text-amber-300"
+      >
+        BN
+      </Link>
+
+      <div className="mt-3">
         <NotificationBell />
       </div>
 
-      <nav className="mt-8 flex flex-1 flex-col gap-1">
-        {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
-                active
-                  ? "bg-amber-400/10 text-amber-300"
-                  : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-100"
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <NavIcon path={item.icon} />
-                {item.label}
-              </span>
-              {item.href === "/messages" && unreadMessageCount > 0 && (
-                <span className="flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-neutral-950">
-                  {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
-                </span>
-              )}
-            </Link>
-          );
-        })}
+      <nav className="mt-6 flex w-full flex-col items-center gap-1 px-2">
+        {NAV_ITEMS.map((item) => (
+          <NavItem
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            icon={item.icon}
+            active={pathname === item.href}
+            badge={item.href === "/messages" ? unreadMessageCount : undefined}
+          />
+        ))}
         {isAdmin && (
-          <Link
-            href="/admin/payments"
-            className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
-              pathname.startsWith("/admin")
-                ? "bg-amber-400/10 text-amber-300"
-                : "text-neutral-400 hover:bg-neutral-900 hover:text-neutral-100"
-            }`}
-          >
-            <NavIcon path={ICON_PATHS.admin} />
-            Admin
-          </Link>
+          <NavItem href="/admin/payments" label="Admin" icon={ICON_PATHS.admin} active={pathname.startsWith("/admin")} />
         )}
       </nav>
 
-      <div className="mt-auto border-t border-neutral-900 pt-4">
-        <p className="truncate px-2 text-sm text-neutral-200">{name ?? email ?? "Student"}</p>
-        <p className="mt-0.5 px-2 text-xs text-neutral-500">
-          {isProMember ? "Pro · Lifetime access" : "Pay-As-You-Go"}
-        </p>
+      <div className="my-4 h-px w-8 bg-slate-900" />
+
+      <NavItem href="/profile" label="Profile" icon={ICON_PATHS.profile} active={pathname === "/profile"} />
+
+      <div className="flex-1" />
+
+      <div className="flex w-full flex-col items-center gap-1 px-2 pb-1">
+        <NavItem href="/account" label="Settings" icon={ICON_PATHS.settings} active={pathname === "/account"} />
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: "/" })}
-          className="mt-3 w-full rounded-lg border border-neutral-800 px-3 py-1.5 text-left text-xs font-medium text-neutral-400 transition hover:border-neutral-700 hover:text-neutral-100"
+          title={name ? `Sign out (${name})` : "Sign out"}
+          className="flex flex-col items-center gap-1 rounded-xl px-2 py-2.5 text-center text-slate-500 transition hover:bg-slate-900 hover:text-slate-200"
         >
-          Sign out
+          <NavIcon path={ICON_PATHS.logout} />
+          <span className="text-[10px] font-medium leading-none">Sign out</span>
         </button>
       </div>
     </aside>
