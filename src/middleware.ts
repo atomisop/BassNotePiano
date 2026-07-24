@@ -55,7 +55,7 @@ export async function middleware(req: NextRequest) {
   const targetIndex = scaleIndexFromSlug(slug);
   if (targetIndex === -1) return NextResponse.next(); // unknown slug — let the page 404
 
-  const isPro = Boolean(token.isProMember);
+  const hasCurriculumAccess = Boolean(token.hasCurriculumAccess);
   const unlocked = token.unlockedScaleSlugs ?? [];
   const completed = token.completedScaleSlugs ?? [];
 
@@ -66,19 +66,19 @@ export async function middleware(req: NextRequest) {
   const nextAllowedIndex = highestCompletedIndex + 1;
 
   const isAlreadyUnlocked = unlocked.includes(slug) || completed.includes(slug);
-  const isSequentialNext = targetIndex === nextAllowedIndex;
   const isOutOfOrder = targetIndex > nextAllowedIndex;
 
-  // Already paid for / completed — always allowed, no interception needed.
+  // Already unlocked (legacy per-scale grant, or completed) — always
+  // allowed, no interception needed.
   if (isAlreadyUnlocked) {
     return NextResponse.next();
   }
 
-  if (isPro) {
-    // Pro bypasses sequencing entirely, but jumping ahead out of order gets
-    // routed through a confirmation interstitial (the ProOverrideConfirmModal
-    // lives on that page — middleware can only redirect, it can't render a
-    // Framer Motion modal itself).
+  if (hasCurriculumAccess) {
+    // Curriculum access bypasses sequencing entirely, but jumping ahead out
+    // of order gets routed through a confirmation interstitial (the
+    // ProOverrideConfirmModal lives on that page — middleware can only
+    // redirect, it can't render a Framer Motion modal itself).
     if (isOutOfOrder) {
       const alreadyConfirmed = req.cookies.get(`override_${slug}`)?.value === "1";
       const justConfirmed = searchParams.get("override") === "confirmed";
@@ -103,19 +103,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Non-Pro (Pay-As-You-Go / free) students: strict sequencing, no override.
-  if (isSequentialNext) {
-    // This is the next scale in line, but no VERIFIED $25 payment exists for
-    // it yet — send them to the Zelle unlock gate instead of the content.
-    const billingUrl = new URL(`/billing/unlock/${slug}`, req.url);
-    billingUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(billingUrl);
-  }
-
-  // Anything further ahead than the next-in-line scale is a hard lock.
-  const roadmapUrl = new URL("/dashboard", req.url);
-  roadmapUrl.searchParams.set("locked", slug);
-  return NextResponse.redirect(roadmapUrl);
+  // No curriculum access and this scale was never individually unlocked
+  // (legacy grandfathered purchase) — the only way forward now is buying
+  // the full curriculum, regardless of where this scale sits in sequence
+  // (per-scale purchase no longer exists).
+  const billingUrl = new URL("/billing/curriculum", req.url);
+  billingUrl.searchParams.set("next", pathname);
+  return NextResponse.redirect(billingUrl);
 }
 
 export const config = {

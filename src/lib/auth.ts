@@ -9,7 +9,7 @@ import { recordLoginAndDetectNewLocation } from "@/lib/login-tracking";
 
 type Entitlements = {
   role: "STUDENT" | "ADMIN";
-  isProMember: boolean;
+  hasCurriculumAccess: boolean;
   unlockedScaleSlugs: string[];
   completedScaleSlugs: string[];
   name: string | null;
@@ -26,7 +26,7 @@ type Entitlements = {
 // genuinely new user skip mandatory onboarding entirely on unlucky timing.
 const DEFAULT_ENTITLEMENTS: Entitlements = {
   role: "STUDENT",
-  isProMember: false,
+  hasCurriculumAccess: false,
   unlockedScaleSlugs: [],
   completedScaleSlugs: [],
   name: null,
@@ -35,10 +35,11 @@ const DEFAULT_ENTITLEMENTS: Entitlements = {
 
 // Single source of truth for "what can this user see" — read by the jwt
 // callback below so it can be baked into the session token. Unlock comes
-// from two independent places: a verified $25 Zelle payment for that scale,
-// or a ScaleProgress row that already has unlockedAt set (covers Pro grants
-// and admin overrides, which stamp that field directly rather than creating
-// a ZellePayment).
+// from two independent places: a verified legacy per-scale Zelle payment
+// (Pay-As-You-Go, no longer purchasable but still honored for grandfathered
+// rows), or a ScaleProgress row that already has unlockedAt set (covers
+// curriculum-access grants and admin overrides, which stamp that field
+// directly rather than creating a ZellePayment).
 //
 // Deliberately does NOT select `image` — that column can hold a multi-KB
 // base64 data URI (the account settings avatar upload stores photos that
@@ -52,7 +53,7 @@ async function loadEntitlements(userId: string): Promise<Entitlements> {
   const [user, verifiedUnlocks, unlockedProgress] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
-      select: { role: true, isProMember: true, name: true, onboardedAt: true },
+      select: { role: true, hasCurriculumAccess: true, name: true, onboardedAt: true },
     }),
     prisma.zellePayment.findMany({
       where: { userId, purpose: "SCALE_UNLOCK", status: "VERIFIED", scaleGroupId: { not: null } },
@@ -77,7 +78,7 @@ async function loadEntitlements(userId: string): Promise<Entitlements> {
 
   return {
     role: user?.role ?? "STUDENT",
-    isProMember: user?.isProMember ?? false,
+    hasCurriculumAccess: user?.hasCurriculumAccess ?? false,
     unlockedScaleSlugs,
     completedScaleSlugs,
     name: user?.name ?? null,
@@ -170,7 +171,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           role: user.role,
-          isProMember: user.isProMember,
+          hasCurriculumAccess: user.hasCurriculumAccess,
         };
       },
     }),
@@ -187,7 +188,7 @@ export const authOptions: NextAuthOptions = {
 
       const entitlements = await loadEntitlementsBounded(token.sub);
       token.role = entitlements.role;
-      token.isProMember = entitlements.isProMember;
+      token.hasCurriculumAccess = entitlements.hasCurriculumAccess;
       token.unlockedScaleSlugs = entitlements.unlockedScaleSlugs;
       token.completedScaleSlugs = entitlements.completedScaleSlugs;
       token.name = entitlements.name;
@@ -200,7 +201,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.sub;
         session.user.name = token.name ?? null;
         session.user.role = token.role;
-        session.user.isProMember = token.isProMember;
+        session.user.hasCurriculumAccess = token.hasCurriculumAccess;
         session.user.unlockedScaleSlugs = token.unlockedScaleSlugs;
         session.user.completedScaleSlugs = token.completedScaleSlugs;
         session.user.onboarded = token.onboarded;

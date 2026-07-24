@@ -23,7 +23,7 @@ export default async function ScalePage({ params }: { params: { scaleSlug: strin
   if (!access) notFound();
 
   if (!access.canAccess) {
-    redirect(access.reason === "requires-payment" ? `/billing/unlock/${params.scaleSlug}` : "/dashboard");
+    redirect("/billing/curriculum");
   }
 
   const { scaleGroup } = access;

@@ -1,6 +1,7 @@
-import type { Prisma, ZellePaymentStatus } from "@prisma/client";
+import type { LessonType, Prisma, ZellePaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { AccessDeniedError, unlockScaleForUser, grantProLifetime } from "@/lib/access";
+import { AccessDeniedError, unlockScaleForUser, grantCurriculumAccess } from "@/lib/access";
+import { addLessonCredits, calculateLessonTotal } from "@/lib/lessons";
 import { createNotification } from "@/lib/notifications";
 
 /**
@@ -30,50 +31,81 @@ async function expireStalePendingPayments() {
 
 interface PendingPaymentParams {
   userId: string;
-  purpose: "SCALE_UNLOCK" | "PRO_LIFETIME";
-  scaleGroupId?: string;
+  purpose: "CURRICULUM" | "LESSON_PACKAGE";
   amountCents: number;
   zelleHandle: string;
+  lessonQuantity?: number;
+  lessonType?: LessonType;
 }
 
 /**
- * Finds the in-flight Zelle payment for this user+purpose (and scale, for
- * SCALE_UNLOCK) if one exists, or creates a fresh AWAITING_TRANSFER row.
- * Idempotent by design — the billing pages call this on every load, and a
- * page refresh shouldn't spawn a new row every time a student revisits
- * before submitting a reference code.
+ * Finds the in-flight Zelle payment for this user+purpose if one exists, or
+ * creates a fresh AWAITING_TRANSFER row. Idempotent by design — the billing
+ * pages call this on every load, and a page refresh shouldn't spawn a new
+ * row every time a student revisits before submitting a reference code.
+ *
+ * For LESSON_PACKAGE, quantity/type are part of the identity key rather
+ * than just being stored — a student who changes their quantity selector
+ * between visits should get a fresh pending row for the new total, not have
+ * their earlier in-flight row silently mutated. Any row left behind by an
+ * abandoned quantity choice self-expires via expireStalePendingPayments().
  */
 async function getOrCreatePendingZellePayment({
   userId,
   purpose,
-  scaleGroupId,
   amountCents,
   zelleHandle,
+  lessonQuantity,
+  lessonType,
 }: PendingPaymentParams) {
   await expireStalePendingPayments();
 
   const existing = await prisma.zellePayment.findFirst({
-    where: { userId, purpose, scaleGroupId: scaleGroupId ?? null, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
+    where: {
+      userId,
+      purpose,
+      lessonQuantity: lessonQuantity ?? null,
+      lessonType: lessonType ?? null,
+      status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] },
+    },
     orderBy: { createdAt: "desc" },
   });
-  if (existing) return existing;
+  // A reused row can predate a price change for this purpose (e.g. the
+  // curriculum price dropping from $200 to $99) — the billing page always
+  // displays the caller's freshly-computed amountCents, so keep the stored
+  // row in sync rather than letting it quietly settle at a stale price the
+  // admin queue and payment history would then show instead.
+  if (existing) {
+    if (existing.amountCents !== amountCents) {
+      return prisma.zellePayment.update({ where: { id: existing.id }, data: { amountCents } });
+    }
+    return existing;
+  }
 
   return prisma.zellePayment.create({
-    data: { userId, purpose, scaleGroupId, amountCents, zelleHandle, status: "AWAITING_TRANSFER" },
+    data: { userId, purpose, amountCents, zelleHandle, lessonQuantity, lessonType, status: "AWAITING_TRANSFER" },
   });
 }
 
-export function getOrCreatePendingScaleUnlockPayment(
-  userId: string,
-  scaleGroupId: string,
-  amountCents: number,
-  zelleHandle: string,
-) {
-  return getOrCreatePendingZellePayment({ userId, purpose: "SCALE_UNLOCK", scaleGroupId, amountCents, zelleHandle });
+export function getOrCreatePendingCurriculumPayment(userId: string, amountCents: number, zelleHandle: string) {
+  return getOrCreatePendingZellePayment({ userId, purpose: "CURRICULUM", amountCents, zelleHandle });
 }
 
-export function getOrCreatePendingProPayment(userId: string, amountCents: number, zelleHandle: string) {
-  return getOrCreatePendingZellePayment({ userId, purpose: "PRO_LIFETIME", amountCents, zelleHandle });
+export function getOrCreatePendingLessonPayment(
+  userId: string,
+  quantity: number,
+  lessonType: LessonType,
+  zelleHandle: string,
+) {
+  const { totalCents } = calculateLessonTotal(quantity, lessonType);
+  return getOrCreatePendingZellePayment({
+    userId,
+    purpose: "LESSON_PACKAGE",
+    amountCents: totalCents,
+    zelleHandle,
+    lessonQuantity: quantity,
+    lessonType,
+  });
 }
 
 export interface ZelleReferenceSubmission {
@@ -166,9 +198,10 @@ export async function getAdminPayments(status?: ZellePaymentStatus): Promise<Pen
 
 /**
  * Approves a pending payment and applies its real-world effect — granting
- * Pro lifetime access or unlocking the specific scale it was for. Both the
- * status flip and the entitlement grant happen here so the two can never
- * drift apart (a VERIFIED payment that never actually unlocked anything).
+ * curriculum access, adding lesson credits, or (for a legacy grandfathered
+ * row) unlocking the one scale it was for. Both the status flip and the
+ * entitlement grant happen here so the two can never drift apart (a
+ * VERIFIED payment that never actually unlocked anything).
  */
 export async function approveZellePayment(paymentId: string, reviewerId: string) {
   const payment = await prisma.zellePayment.findUniqueOrThrow({ where: { id: paymentId } });
@@ -182,13 +215,20 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
   });
 
   let notificationBody = "Your payment was verified.";
-  if (payment.purpose === "PRO_LIFETIME") {
-    await grantProLifetime(payment.userId);
-    notificationBody = "Your $200 lifetime Pro payment was verified — every scale is unlocked.";
+  if (payment.purpose === "CURRICULUM") {
+    await grantCurriculumAccess(payment.userId);
+    notificationBody = "Your $99 curriculum payment was verified — every scale is unlocked, for good.";
+  } else if (payment.purpose === "LESSON_PACKAGE" && payment.lessonQuantity && payment.lessonType) {
+    await addLessonCredits(payment.userId, payment.lessonType, payment.lessonQuantity);
+    const { discountCents } = calculateLessonTotal(payment.lessonQuantity, payment.lessonType);
+    const typeLabel = payment.lessonType === "ONLINE" ? "online" : "in-person";
+    const discountNote = discountCents > 0 ? " — 20% bundle discount applied" : "";
+    notificationBody = `Your ${payment.lessonQuantity} × ${typeLabel} lesson${payment.lessonQuantity === 1 ? "" : "s"} payment was verified${discountNote}. Credits are on your account.`;
   } else if (payment.scaleGroupId) {
+    // Legacy Pay-As-You-Go row from before per-scale purchase was retired.
     const scaleGroup = await prisma.scaleGroup.findUniqueOrThrow({ where: { id: payment.scaleGroupId } });
     await unlockScaleForUser(payment.userId, scaleGroup.slug);
-    notificationBody = `Your $25 payment for ${scaleGroup.code} — ${scaleGroup.title} was verified. It's unlocked now.`;
+    notificationBody = `Your payment for ${scaleGroup.code} — ${scaleGroup.title} was verified. It's unlocked now.`;
   }
 
   await createNotification({

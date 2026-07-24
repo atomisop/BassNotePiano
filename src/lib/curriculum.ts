@@ -9,26 +9,9 @@ export interface ScaleGroupMeta {
   title: string;
   kinitName: string | null;
   formula: string; // degree formula, e.g. "1-b3-4-5-b7"
-  /** How many named variants this chapter bundles (e.g. Bati = Major/Minor/Lydian = 3). Drives priceCents. */
-  sessionCount: number;
-  priceCents: number;
 }
 
-/**
- * Pay-As-You-Go price per named variant/session. A chapter that bundles
- * multiple variants (Bati = 3, Anchihoye/Mixolydian = 2) is priced as that
- * many sessions — unlocking Scale 3 costs 3× this, not a flat rate — even
- * though the checklist/progression gate still sits at the whole-chapter
- * level (one read/practice/quiz per ScaleGroup, matching the book's own
- * chapter structure and the "6 scale groups" sequencing requirement).
- * sessionCount here must stay in sync with the variant lists in
- * scale-content.ts (not imported directly — that module pulls in the full
- * chord/theory engine, which middleware.ts, an edge runtime, has no reason
- * to bundle just to read a price).
- */
-const PRICE_PER_SESSION_CENTS = 2500;
-
-const SCALE_GROUP_DEFS: Omit<ScaleGroupMeta, "priceCents">[] = [
+export const SCALE_GROUPS: ScaleGroupMeta[] = [
   {
     slug: "scale-0",
     order: 0,
@@ -36,7 +19,6 @@ const SCALE_GROUP_DEFS: Omit<ScaleGroupMeta, "priceCents">[] = [
     title: "Diatonic Scale, Chromatic Scale & the Seven Modes",
     kinitName: null,
     formula: "1-2-3-4-5-6-7", // W-W-H-W-W-W-H
-    sessionCount: 1,
   },
   {
     slug: "scale-1",
@@ -45,7 +27,6 @@ const SCALE_GROUP_DEFS: Omit<ScaleGroupMeta, "priceCents">[] = [
     title: "Major Pentatonic",
     kinitName: "Tizita Major (Full Tizita)",
     formula: "1-2-3-5-6",
-    sessionCount: 1,
   },
   {
     slug: "scale-2",
@@ -54,7 +35,6 @@ const SCALE_GROUP_DEFS: Omit<ScaleGroupMeta, "priceCents">[] = [
     title: "Minor Pentatonic",
     kinitName: "Bati Minor",
     formula: "1-b3-4-5-b7",
-    sessionCount: 1,
   },
   {
     slug: "scale-3",
@@ -63,7 +43,6 @@ const SCALE_GROUP_DEFS: Omit<ScaleGroupMeta, "priceCents">[] = [
     title: "Bati — Major, Minor & Lydian",
     kinitName: "Bati",
     formula: "1-3-4-5-7", // Bati Major; Minor and Lydian variants live on the module page
-    sessionCount: 3, // Bati Major, Bati Minor, Bati Lydian
   },
   {
     slug: "scale-4",
@@ -72,7 +51,6 @@ const SCALE_GROUP_DEFS: Omit<ScaleGroupMeta, "priceCents">[] = [
     title: "Anchihoye & Anchihoye Dorian",
     kinitName: "Anchihoye",
     formula: "1-b2-4-b5-6",
-    sessionCount: 2, // Anchihoye (Traditional), Anchihoye Dorian
   },
   {
     slug: "scale-5",
@@ -81,20 +59,13 @@ const SCALE_GROUP_DEFS: Omit<ScaleGroupMeta, "priceCents">[] = [
     title: "Mixolydian Pentatonic & Mixolydian Minor Pentatonic",
     kinitName: "Mixolydian Pentatonic",
     formula: "1-2-4-5-6",
-    sessionCount: 2, // Mixolydian Pentatonic, Mixolydian Minor Pentatonic
   },
 ];
 
-export const SCALE_GROUPS: ScaleGroupMeta[] = SCALE_GROUP_DEFS.map((def) => ({
-  ...def,
-  priceCents: def.sessionCount * PRICE_PER_SESSION_CENTS,
-}));
-
 export const SCALE_SLUGS = SCALE_GROUPS.map((s) => s.slug);
 
-export const TOTAL_PAY_AS_YOU_GO_CENTS = SCALE_GROUPS.reduce((sum, s) => sum + s.priceCents, 0);
-
-export const PRO_LIFETIME_PRICE_CENTS = 20000; // $200 — saves $50 vs. paying per session across all 6 chapters
+/** One-time purchase price for lifetime access to every scale group above. */
+export const CURRICULUM_PRICE_CENTS = 9900;
 
 export function scaleIndexFromSlug(slug: string): number {
   return SCALE_SLUGS.indexOf(slug);

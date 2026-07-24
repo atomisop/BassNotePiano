@@ -26,9 +26,17 @@ export interface ScaleAccessState {
   quizPassed: boolean;
   quizScore: number | null;
   canAccess: boolean;
-  reason: "unlocked" | "pro-bypass" | "requires-payment" | "locked";
-  /** Pro member skipping ahead of the next-in-line scale — the roadmap/link
-   *  should show ProOverrideConfirmModal before navigating here. */
+  /**
+   * "unlocked" — this specific scale was granted individually (legacy
+   * per-scale purchase, or an admin override). "curriculum-access" — the
+   * blanket $99 purchase bypasses gating entirely. "locked" — neither;
+   * there's exactly one way forward now (buy the curriculum), regardless of
+   * where this scale sits in the sequence, since per-scale purchase no
+   * longer exists.
+   */
+  reason: "unlocked" | "curriculum-access" | "locked";
+  /** Curriculum-access holder skipping ahead of the next-in-line scale — the
+   *  roadmap/link should show ProOverrideConfirmModal before navigating here. */
   requiresOverrideConfirm: boolean;
 }
 
@@ -42,13 +50,16 @@ export interface ScaleAccessState {
  */
 export async function getRoadmap(userId: string): Promise<ScaleAccessState[]> {
   const [user, scaleGroups, progressRows] = await Promise.all([
-    prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { isProMember: true } }),
+    prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { hasCurriculumAccess: true } }),
     prisma.scaleGroup.findMany({ orderBy: { order: "asc" } }),
     prisma.scaleProgress.findMany({ where: { userId } }),
   ]);
 
   const progressByGroupId = new Map(progressRows.map((p) => [p.scaleGroupId, p]));
 
+  // Still needed even though per-scale purchase is gone — a curriculum-access
+  // holder skipping ahead of their own completed scales still gets the
+  // "are you sure?" override nudge (a pedagogical prompt, not a payment gate).
   let highestCompletedIndex = -1;
   for (const group of scaleGroups) {
     if (progressByGroupId.get(group.id)?.status === "COMPLETED") {
@@ -60,7 +71,6 @@ export async function getRoadmap(userId: string): Promise<ScaleAccessState[]> {
   return scaleGroups.map((scaleGroup) => {
     const row = progressByGroupId.get(scaleGroup.id);
     const isUnlocked = Boolean(row?.unlockedAt);
-    const isSequentialNext = scaleGroup.order === nextAllowedIndex;
     const isOutOfOrder = scaleGroup.order > nextAllowedIndex;
 
     let canAccess: boolean;
@@ -70,13 +80,10 @@ export async function getRoadmap(userId: string): Promise<ScaleAccessState[]> {
     if (isUnlocked) {
       canAccess = true;
       reason = "unlocked";
-    } else if (user.isProMember) {
+    } else if (user.hasCurriculumAccess) {
       canAccess = true;
-      reason = "pro-bypass";
+      reason = "curriculum-access";
       requiresOverrideConfirm = isOutOfOrder;
-    } else if (isSequentialNext) {
-      canAccess = false;
-      reason = "requires-payment";
     } else {
       canAccess = false;
       reason = "locked";
@@ -172,11 +179,11 @@ export interface QuizSubmission {
 
 /**
  * Records a quiz attempt and, if it passes, ticks the checklist's quiz item.
- * Passing the final item of a Pay-As-You-Go scale's checklist intentionally
- * does NOT unlock the next scale — nothing here touches the next
- * ScaleGroup's ScaleProgress row, which is exactly the "freeze the routing
- * pathway" behavior the paid tier requires. The next scale only becomes
- * reachable once a ZellePayment for it is verified (unlockScaleForUser).
+ * Passing the final item of a scale's checklist intentionally does NOT
+ * unlock the next scale — nothing here touches the next ScaleGroup's
+ * ScaleProgress row. The next scale only becomes reachable once the student
+ * has curriculum access (or, for legacy accounts, an existing per-scale
+ * unlock from before Pay-As-You-Go was retired).
  */
 export async function recordQuizAttempt(userId: string, scaleSlug: string, submission: QuizSubmission) {
   const { scaleGroup } = await requireAccess(userId, scaleSlug);
@@ -214,14 +221,14 @@ export async function recordQuizAttempt(userId: string, scaleSlug: string, submi
 }
 
 // ---------------------------------------------------------------------------
-// Unlocking — Zelle-verified $25 sessions, Pro overrides, admin grants
+// Unlocking — legacy per-scale grants, curriculum access, admin overrides
 // ---------------------------------------------------------------------------
 
 /**
  * Grants access to one scale. Idempotent — if it's already unlocked, the
- * original unlockedAt is kept. Called from the Zelle verification route
- * once a SCALE_UNLOCK payment flips to VERIFIED, and from the Pro
- * out-of-order override confirmation flow.
+ * original unlockedAt is kept. Retained for legacy SCALE_UNLOCK payments
+ * (no longer purchasable, but old pending rows can still resolve through
+ * this) and admin manual-override grants.
  */
 export async function unlockScaleForUser(userId: string, scaleSlug: string) {
   const scaleGroup = await prisma.scaleGroup.findUniqueOrThrow({ where: { slug: scaleSlug } });
@@ -237,11 +244,11 @@ export async function unlockScaleForUser(userId: string, scaleSlug: string) {
   });
 }
 
-/** Grants full-platform lifetime access. Called once a PRO_LIFETIME payment flips to VERIFIED. */
-export async function grantProLifetime(userId: string) {
+/** Grants full-curriculum lifetime access. Called once a CURRICULUM payment flips to VERIFIED. */
+export async function grantCurriculumAccess(userId: string) {
   return prisma.user.update({
     where: { id: userId },
-    data: { isProMember: true, proUnlockedAt: new Date() },
+    data: { hasCurriculumAccess: true, curriculumUnlockedAt: new Date() },
   });
 }
 
@@ -261,16 +268,10 @@ export async function lockScaleForUser(userId: string, scaleSlug: string) {
   });
 }
 
-/** Admin-only counterpart to grantProLifetime — revokes lifetime access. */
-export async function revokeProLifetime(userId: string) {
+/** Admin-only counterpart to grantCurriculumAccess — revokes lifetime access. */
+export async function revokeCurriculumAccess(userId: string) {
   return prisma.user.update({
     where: { id: userId },
-    data: { isProMember: false, proUnlockedAt: null },
+    data: { hasCurriculumAccess: false, curriculumUnlockedAt: null },
   });
-}
-
-/** The next scale a non-Pro student needs to pay for, or null if none (all unlocked, or user is Pro). */
-export async function getNextUnlockableScale(userId: string): Promise<ScaleGroup | null> {
-  const roadmap = await getRoadmap(userId);
-  return roadmap.find((s) => s.reason === "requires-payment")?.scaleGroup ?? null;
 }

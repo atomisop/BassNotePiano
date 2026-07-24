@@ -19,7 +19,6 @@ async function main() {
         title: scale.title,
         kinitName: scale.kinitName,
         formula: scale.formula,
-        priceCents: scale.priceCents,
       },
       create: {
         slug: scale.slug,
@@ -28,7 +27,6 @@ async function main() {
         title: scale.title,
         kinitName: scale.kinitName,
         formula: scale.formula,
-        priceCents: scale.priceCents,
       },
     });
     console.log(`Seeded ${scale.code} — ${scale.title}`);

@@ -1,19 +1,29 @@
 "use client";
 
 import type { ConversationSummary } from "@/lib/messages";
+import type { GroupSummary } from "@/lib/groupMessages";
 import { PinnedGrid } from "./PinnedGrid";
 import { ConversationList } from "./ConversationList";
+import { GroupList } from "./GroupList";
 
 export function ConversationSidebar({
   conversations,
+  groups,
   activeFriendId,
+  activeGroupId,
   onSelect,
   onTogglePin,
+  onSelectGroup,
+  onNewGroup,
 }: {
   conversations: ConversationSummary[];
+  groups: GroupSummary[];
   activeFriendId: string | null;
+  activeGroupId: string | null;
   onSelect: (friendId: string) => void;
   onTogglePin: (friendId: string) => void;
+  onSelectGroup: (groupId: string) => void;
+  onNewGroup: () => void;
 }) {
   const pinned = conversations.filter((c) => c.isPinned).sort((a, b) => (a.pinOrder ?? 0) - (b.pinOrder ?? 0));
   const rest = conversations.filter((c) => !c.isPinned);
@@ -26,6 +36,7 @@ export function ConversationSidebar({
       </div>
       <PinnedGrid pinned={pinned} activeFriendId={activeFriendId} onSelect={onSelect} onTogglePin={onTogglePin} />
       <ConversationList conversations={rest} activeFriendId={activeFriendId} onSelect={onSelect} onTogglePin={onTogglePin} />
+      <GroupList groups={groups} activeGroupId={activeGroupId} onSelect={onSelectGroup} onNewGroup={onNewGroup} />
     </div>
   );
 }

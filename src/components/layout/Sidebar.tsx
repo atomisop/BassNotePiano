@@ -13,6 +13,7 @@ export interface SidebarProps {
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Roadmap", icon: ICON_PATHS.roadmap },
+  { href: "/lessons", label: "Lessons", icon: ICON_PATHS.lessons },
   { href: "/friends", label: "Friends", icon: ICON_PATHS.friends },
   { href: "/messages", label: "Messages", icon: ICON_PATHS.messages },
 ];

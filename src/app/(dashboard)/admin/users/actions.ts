@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { Role } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
-import { setUserRole, setProMembership } from "@/lib/admin";
+import { setUserRole, setCurriculumAccess } from "@/lib/admin";
 import { unlockScaleForUser, lockScaleForUser } from "@/lib/access";
 
 // Same pattern as admin/payments/actions.ts — the admin layout's redirect
@@ -28,9 +28,9 @@ export async function setUserRoleAction(targetUserId: string, role: Role) {
   revalidatePath("/admin/users");
 }
 
-export async function setProMembershipAction(targetUserId: string, isPro: boolean) {
+export async function setCurriculumAccessAction(targetUserId: string, hasAccess: boolean) {
   await requireAdmin();
-  await setProMembership(targetUserId, isPro);
+  await setCurriculumAccess(targetUserId, hasAccess);
   revalidatePath("/admin/users");
   revalidatePath("/admin");
 }

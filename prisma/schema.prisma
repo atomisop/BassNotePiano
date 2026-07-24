@@ -2,8 +2,8 @@
 // Bass Note Piano — Prisma schema
 // PostgreSQL (Neon in production, any Postgres locally). Covers auth
 // (NextAuth adapter), the six-scale curriculum, per-user progress gating,
-// and manual Zelle payment verification for both Pay-As-You-Go ($25/session)
-// and Pro lifetime ($200) purchases.
+// and manual Zelle payment verification for the one-time $99 curriculum
+// purchase and $50/30-minute live lesson add-ons.
 // ============================================================================
 
 generator client {
@@ -39,8 +39,20 @@ enum ProgressStatus {
 }
 
 enum PaymentPurpose {
-  PRO_LIFETIME // one-time $200 full-platform unlock
-  SCALE_UNLOCK // $25 Pay-As-You-Go unlock for a single ScaleGroup
+  CURRICULUM // one-time $99 full-curriculum unlock (renamed from PRO_LIFETIME)
+  SCALE_UNLOCK // legacy Pay-As-You-Go per-scale unlock — no longer purchasable, kept for historical rows
+  LESSON_PACKAGE // $50/30-min live lesson credits, Online or In-Person, bought in any quantity
+}
+
+enum LessonType {
+  ONLINE
+  IN_PERSON
+}
+
+enum LessonBookingStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELED
 }
 
 enum ZellePaymentStatus {
@@ -143,6 +155,11 @@ enum NotificationType {
   FRIEND_REQUEST_ACCEPTED // same dependency
   NEW_MESSAGE // same dependency
   PRACTICE_REMINDER
+  CLASS_REGISTRATION_RECEIVED // to admins, when someone submits the public class registration form
+  CLASS_REGISTRATION_APPROVED // to the registrant, if they have an account
+  CLASS_REGISTRATION_REJECTED // same
+  LESSON_BOOKING_RECEIVED // to admins, when a student books a live lesson using a credit
+  LESSON_BOOKING_CANCELED // to the student, when a booking is canceled and their credit is refunded
 }
 
 // The in-app inbox is the source of truth — always written regardless of
@@ -161,6 +178,45 @@ model Notification {
 
   @@index([userId, readAt])
   @@index([userId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Class registration — public lead-capture form, no account required
+// ---------------------------------------------------------------------------
+
+enum ClassRegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Deliberately not tied to an account — the public form works for visitors
+// who don't have (or don't yet want) a platform login. userId is filled in
+// opportunistically when the submitter happens to be signed in, purely so
+// an approval can also raise an in-app Notification for them; email is the
+// one contact channel guaranteed to exist for every registrant.
+model ClassRegistration {
+  id     String  @id @default(cuid())
+  userId String?
+  user   User?   @relation("ClassRegistrant", fields: [userId], references: [id], onDelete: SetNull)
+
+  fullName   String
+  email      String
+  phone      String
+  instrument PrimaryInstrument
+  skillLevel SkillLevel
+  notes      String?           @db.Text
+
+  status ClassRegistrationStatus @default(PENDING)
+
+  reviewedAt      DateTime?
+  reviewedById    String?
+  reviewedBy      User?     @relation("ClassRegistrationReviewer", fields: [reviewedById], references: [id])
+  rejectionReason String?
+
+  createdAt DateTime @default(now())
+
+  @@index([status, createdAt])
 }
 
 // ---------------------------------------------------------------------------
@@ -257,6 +313,49 @@ model TypingStatus {
   @@index([recipientId, updatedAt])
 }
 
+// Group chat — additive alongside the 1-on-1 Message model above, not a
+// replacement. Membership is friends-only at creation time (same trust
+// boundary as 1-on-1 messaging); there's no post-creation invite/kick, only
+// leaving, which keeps the moderation surface small for a first version.
+model GroupConversation {
+  id          String   @id @default(cuid())
+  name        String? // optional — the UI falls back to listing member names
+  createdById String
+  createdBy   User     @relation("GroupCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  members  GroupMember[]
+  messages GroupMessage[]
+}
+
+// unreadCount is derived at query time from lastReadAt rather than a
+// per-message read receipt row — there's no need to know exactly which
+// message a member has seen, just "how many landed since they last looked."
+model GroupMember {
+  id             String            @id @default(cuid())
+  conversationId String
+  conversation   GroupConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User              @relation("GroupMembership", fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt       DateTime          @default(now())
+  lastReadAt     DateTime?
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model GroupMessage {
+  id             String            @id @default(cuid())
+  conversationId String
+  conversation   GroupConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User              @relation("GroupMessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  body           String            @db.Text
+  createdAt      DateTime          @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
 // ---------------------------------------------------------------------------
 // Auth (NextAuth.js Prisma adapter shape)
 // ---------------------------------------------------------------------------
@@ -279,8 +378,14 @@ model User {
   // Derived/cached entitlement flags — kept in sync whenever a ZellePayment
   // transitions to VERIFIED. Read by the NextAuth JWT callback so middleware
   // can gate routes without a DB round trip on the edge.
-  isProMember   Boolean   @default(false)
-  proUnlockedAt DateTime?
+  hasCurriculumAccess  Boolean   @default(false)
+  curriculumUnlockedAt DateTime?
+
+  // Spent one at a time from /lessons when a student books a live session;
+  // refunded if the admin later cancels the booking. Incremented on
+  // approval of a LESSON_PACKAGE ZellePayment (see approveZellePayment).
+  lessonCreditsOnline   Int @default(0)
+  lessonCreditsInPerson Int @default(0)
 
   // Collected once by the mandatory post-registration wizard (middleware
   // redirects any signed-in-but-unonboarded user there). onboardedAt null
@@ -321,6 +426,7 @@ model User {
   quizAttempts     QuizAttempt[]
   zellePayments    ZellePayment[]  @relation("PaymentSubmitter")
   reviewedPayments ZellePayment[]  @relation("PaymentReviewer")
+  lessonBookings   LessonBooking[] @relation("LessonBookingStudent")
 
   verificationCodes VerificationCode[]
   trustedDevices    TrustedDevice[]
@@ -337,6 +443,13 @@ model User {
   pinnedByOthers         PinnedConversation[] @relation("PinnedFriend")
   typingStatusesSent     TypingStatus[]       @relation("TypingStatusSender")
   typingStatusesReceived TypingStatus[]       @relation("TypingStatusRecipient")
+
+  classRegistrations         ClassRegistration[] @relation("ClassRegistrant")
+  reviewedClassRegistrations ClassRegistration[] @relation("ClassRegistrationReviewer")
+
+  createdGroups     GroupConversation[] @relation("GroupCreator")
+  groupMemberships  GroupMember[]       @relation("GroupMembership")
+  groupMessagesSent GroupMessage[]      @relation("GroupMessageSender")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -458,7 +571,11 @@ model ScaleGroup {
   formula     String // degree formula, e.g. "1-b3-4-5-b7"
   description String? @db.Text
 
-  priceCents Int @default(2500) // $25.00 Pay-As-You-Go price for this module
+  // Vestigial — Pay-As-You-Go per-scale pricing was retired in favor of a
+  // single $99 curriculum purchase (see CURRICULUM_PRICE_CENTS in
+  // src/lib/curriculum.ts). Left in place rather than migrated away since
+  // nothing reads it anymore; not worth a destructive column drop for it.
+  priceCents Int @default(2500)
 
   progress      ScaleProgress[]
   quizAttempts  QuizAttempt[]
@@ -524,9 +641,10 @@ model QuizAttempt {
 // Commerce — Zelle manual verification
 // ---------------------------------------------------------------------------
 
-// Every Zelle transfer the platform expects to receive, whether it's a single
-// $25 scale unlock or the $200 lifetime Pro purchase. This is the row the
-// admin verification queue and the ZellePaymentModal both read/write.
+// Every Zelle transfer the platform expects to receive: the $99 curriculum
+// purchase, a lesson-credit package, or (historically) a $25 per-scale
+// unlock. This is the row the admin verification queue and the
+// ZellePaymentModal both read/write.
 model ZellePayment {
   id     String @id @default(cuid())
   userId String
@@ -534,9 +652,15 @@ model ZellePayment {
 
   purpose PaymentPurpose
 
-  // Only set when purpose == SCALE_UNLOCK
+  // Only set on legacy rows where purpose == SCALE_UNLOCK
   scaleGroupId String?
   scaleGroup   ScaleGroup? @relation(fields: [scaleGroupId], references: [id])
+
+  // Only set when purpose == LESSON_PACKAGE — the discount (if any) isn't
+  // stored, it's recomputed from these two at render time via
+  // calculateLessonTotal() so the admin queue can show it without drift.
+  lessonQuantity Int?
+  lessonType     LessonType?
 
   amountCents Int
   zelleHandle String // platform's receiving handle/email shown to the user at request time
@@ -561,4 +685,30 @@ model ZellePayment {
 
   @@index([status])
   @@index([userId])
+}
+
+// A student's request for a live lesson, spent from their lessonCredits*
+// balance. scheduledAt is the time the student asked for, not a confirmed
+// slot — there's no instructor-availability system in this app, so the
+// admin follows up out-of-band (phone/email, same as every other manual
+// workflow here) to actually lock in the time. Canceling refunds the credit.
+model LessonBooking {
+  id        String @id @default(cuid())
+  studentId String
+  student   User   @relation("LessonBookingStudent", fields: [studentId], references: [id], onDelete: Cascade)
+
+  type        LessonType
+  scheduledAt DateTime
+  meetingLink String? // filled in by the admin for ONLINE, once coordinated
+  location    String? // filled in by the admin for IN_PERSON, once coordinated
+  notes       String?    @db.Text
+
+  status         LessonBookingStatus @default(SCHEDULED)
+  canceledReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId, status])
+  @@index([status, scheduledAt])
 }

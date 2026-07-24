@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PendingZellePayment } from "@/lib/payments";
+import { calculateLessonTotal } from "@/lib/lessonPricing";
 
 export interface PaymentQueueProps {
   payments: PendingZellePayment[];
@@ -13,6 +14,22 @@ export interface PaymentQueueProps {
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+}
+
+function describePayment(payment: PendingZellePayment): { eyebrow: string; title: string } {
+  if (payment.purpose === "CURRICULUM") {
+    return { eyebrow: "Curriculum — $99", title: "Full platform unlock" };
+  }
+  if (payment.purpose === "LESSON_PACKAGE" && payment.lessonQuantity && payment.lessonType) {
+    const typeLabel = payment.lessonType === "ONLINE" ? "Online" : "In-Person";
+    const { discountCents } = calculateLessonTotal(payment.lessonQuantity, payment.lessonType);
+    return {
+      eyebrow: "Lesson credits",
+      title: `${payment.lessonQuantity} × ${typeLabel} lesson${payment.lessonQuantity === 1 ? "" : "s"}${discountCents > 0 ? " — 20% off applied" : ""}`,
+    };
+  }
+  // Legacy Pay-As-You-Go row from before per-scale purchase was retired.
+  return { eyebrow: payment.scaleGroup?.code ?? "Scale unlock", title: payment.scaleGroup?.title ?? "Scale unlock" };
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -75,16 +92,14 @@ export function PaymentQueue({
 
   return (
     <div className="space-y-3">
-      {payments.map((payment) => (
+      {payments.map((payment) => {
+        const { eyebrow, title } = describePayment(payment);
+        return (
         <div key={payment.id} className="glass-card p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">
-                {payment.purpose === "PRO_LIFETIME" ? "Pro — Lifetime" : payment.scaleGroup?.code}
-              </p>
-              <h3 className="mt-1 font-serif text-lg text-slate-50">
-                {payment.purpose === "PRO_LIFETIME" ? "Full platform unlock" : payment.scaleGroup?.title}
-              </h3>
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">{eyebrow}</p>
+              <h3 className="mt-1 font-serif text-lg text-slate-50">{title}</h3>
               <p className="mt-1 text-sm text-slate-500">{payment.user.name ?? payment.user.email}</p>
             </div>
             <div className="text-right">
@@ -172,7 +187,8 @@ export function PaymentQueue({
             </div>
           )}
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

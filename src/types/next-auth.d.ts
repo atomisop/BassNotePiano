@@ -8,8 +8,8 @@ import "next-auth/jwt";
 declare module "next-auth/jwt" {
   interface JWT {
     role: "STUDENT" | "ADMIN";
-    isProMember: boolean;
-    /** Slugs the user currently has access to (Pro grant, verified $25 unlock, or admin override). */
+    hasCurriculumAccess: boolean;
+    /** Slugs the user currently has access to (curriculum access, a legacy per-scale unlock, or an admin override). */
     unlockedScaleSlugs: string[];
     /** Slugs where the full read + practice + quiz checklist has been cleared. */
     completedScaleSlugs: string[];
@@ -25,7 +25,7 @@ declare module "next-auth" {
     user: {
       id: string;
       role: "STUDENT" | "ADMIN";
-      isProMember: boolean;
+      hasCurriculumAccess: boolean;
       unlockedScaleSlugs: string[];
       completedScaleSlugs: string[];
       onboarded: boolean;
@@ -34,6 +34,6 @@ declare module "next-auth" {
 
   interface User {
     role: "STUDENT" | "ADMIN";
-    isProMember: boolean;
+    hasCurriculumAccess: boolean;
   }
 }

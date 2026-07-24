@@ -33,10 +33,10 @@ const panelVariants = {
 };
 
 /**
- * Pro-tier "safe intercept" — shown when a lifetime member clicks a scale
- * further ahead than the next one they haven't completed. Confirming
- * navigates with ?override=confirmed, which middleware.ts whitelists for
- * this scale and remembers via a short-lived cookie.
+ * Curriculum-access "safe intercept" — shown when a curriculum holder
+ * clicks a scale further ahead than the next one they haven't completed.
+ * Confirming navigates with ?override=confirmed, which middleware.ts
+ * whitelists for this scale and remembers via a short-lived cookie.
  */
 export function ProOverrideConfirmModal({
   isOpen,
@@ -71,7 +71,7 @@ export function ProOverrideConfirmModal({
             exit="exit"
             className="relative w-full max-w-sm rounded-2xl border border-amber-400/20 bg-slate-900/80 backdrop-blur-2xl p-6 shadow-[0_0_60px_-15px_rgba(217,180,88,0.35)]"
           >
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Pro override</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Curriculum access</p>
             <h2 id="override-modal-title" className="mt-1.5 font-serif text-lg text-slate-50">
               Skip ahead?
             </h2>

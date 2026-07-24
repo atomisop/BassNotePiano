@@ -12,9 +12,15 @@ import {
   type NotificationPreferencesInput,
 } from "./actions";
 
+interface LessonCredits {
+  online: number;
+  inPerson: number;
+}
+
 interface AccountSettingsProps {
   email: string;
-  isProMember: boolean;
+  hasCurriculumAccess: boolean;
+  lessonCredits: LessonCredits;
   initialNotificationPreferences: NotificationPreferencesInput;
 }
 
@@ -100,20 +106,22 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
 function TabContent({
   tab,
   email,
-  isProMember,
+  hasCurriculumAccess,
+  lessonCredits,
   initialNotificationPreferences,
 }: {
   tab: TabId;
   email: string;
-  isProMember: boolean;
+  hasCurriculumAccess: boolean;
+  lessonCredits: LessonCredits;
   initialNotificationPreferences: NotificationPreferencesInput;
 }) {
   if (tab === "notifications") return <NotificationSettingsSection initial={initialNotificationPreferences} />;
-  if (tab === "membership") return <MembershipSection isProMember={isProMember} />;
+  if (tab === "membership") return <MembershipSection hasCurriculumAccess={hasCurriculumAccess} lessonCredits={lessonCredits} />;
   return <PasswordSection email={email} />;
 }
 
-function AccountSettingsInner({ email, isProMember, initialNotificationPreferences }: AccountSettingsProps) {
+function AccountSettingsInner({ email, hasCurriculumAccess, lessonCredits, initialNotificationPreferences }: AccountSettingsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
@@ -164,7 +172,13 @@ function AccountSettingsInner({ email, isProMember, initialNotificationPreferenc
         <MobileSettingsMenu onSelect={openMobileTab} />
 
         <div className="hidden min-w-0 flex-1 space-y-6 lg:block">
-          <TabContent tab={activeTab} email={email} isProMember={isProMember} initialNotificationPreferences={initialNotificationPreferences} />
+          <TabContent
+            tab={activeTab}
+            email={email}
+            hasCurriculumAccess={hasCurriculumAccess}
+            lessonCredits={lessonCredits}
+            initialNotificationPreferences={initialNotificationPreferences}
+          />
         </div>
       </div>
 
@@ -174,7 +188,13 @@ function AccountSettingsInner({ email, isProMember, initialNotificationPreferenc
         title={mobileOpenTab ? TABS.find((t) => t.id === mobileOpenTab)!.label : ""}
       >
         {mobileOpenTab && (
-          <TabContent tab={mobileOpenTab} email={email} isProMember={isProMember} initialNotificationPreferences={initialNotificationPreferences} />
+          <TabContent
+            tab={mobileOpenTab}
+            email={email}
+            hasCurriculumAccess={hasCurriculumAccess}
+            lessonCredits={lessonCredits}
+            initialNotificationPreferences={initialNotificationPreferences}
+          />
         )}
       </SlideOverPanel>
     </div>
@@ -189,24 +209,45 @@ export function AccountSettings(props: AccountSettingsProps) {
   );
 }
 
-function MembershipSection({ isProMember }: { isProMember: boolean }) {
+function MembershipSection({
+  hasCurriculumAccess,
+  lessonCredits,
+}: {
+  hasCurriculumAccess: boolean;
+  lessonCredits: { online: number; inPerson: number };
+}) {
   return (
-    <SectionCard title="Membership & purchases" description="Your plan, payment history, and upgrade options.">
+    <SectionCard title="Membership & purchases" description="Your plan, lesson credits, and payment history.">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 p-4">
         <div>
-          <p className="text-sm text-slate-100">{isProMember ? "Pro — Lifetime access" : "Pay-As-You-Go"}</p>
+          <p className="text-sm text-slate-100">{hasCurriculumAccess ? "Curriculum unlocked" : "Curriculum not yet purchased"}</p>
           <p className="mt-0.5 text-xs text-slate-500">
-            {isProMember ? "All six scale groups are unlocked, for good." : "Unlock scales one at a time, or upgrade anytime."}
+            {hasCurriculumAccess ? "All six scale groups are unlocked, for good." : "One-time $99 payment unlocks every scale, for good."}
           </p>
         </div>
-        {!isProMember && (
+        {!hasCurriculumAccess && (
           <Link
-            href="/billing/pro"
+            href="/billing/curriculum"
             className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
           >
-            Upgrade to Pro
+            Unlock — $99
           </Link>
         )}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 p-4">
+        <div>
+          <p className="text-sm text-slate-100">Live lesson credits</p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            {lessonCredits.online} online · {lessonCredits.inPerson} in-person remaining
+          </p>
+        </div>
+        <Link
+          href="/billing/lessons"
+          className="rounded-lg border border-white/15 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-200"
+        >
+          Buy lessons
+        </Link>
       </div>
 
       <Link

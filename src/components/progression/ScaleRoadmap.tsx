@@ -101,8 +101,7 @@ function StepMarker({ index, status, locked }: { index: number; status: Progress
 
 function ctaLabel(scale: ScaleAccessState): string {
   if (scale.requiresOverrideConfirm) return "Unlock ahead";
-  if (scale.reason === "requires-payment") return "Unlock — $25";
-  if (scale.reason === "locked") return "Complete previous scales first";
+  if (scale.reason === "locked") return "Unlock full curriculum — $99";
   if (scale.status === "COMPLETED") return "Review";
   if (scale.status === "IN_PROGRESS") return "Continue";
   return "Start";
@@ -123,19 +122,18 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
       router.push(`/scales/${scale.scaleGroup.slug}`);
       return;
     }
-    if (scale.reason === "requires-payment") {
-      router.push(`/billing/unlock/${scale.scaleGroup.slug}`);
-      return;
-    }
-    // reason === "locked" — no route to send them to, card is inert.
+    // Not accessible at all — the only way forward is buying the full
+    // curriculum, regardless of which scale was clicked (per-scale purchase
+    // no longer exists), so every locked card is a soft ad for /billing/curriculum.
+    router.push("/billing/curriculum");
   }
 
   async function handleConfirmOverride() {
     if (!pendingOverride) return;
     setConfirming(true);
     // Middleware gates /scales/[slug] off the JWT, not the DB — and that
-    // token can still say isProMember: false if it was minted before Pro
-    // access was granted. Without this refresh, the ?override=confirmed
+    // token can still say hasCurriculumAccess: false if it was minted before
+    // curriculum access was granted. Without this refresh, the ?override=confirmed
     // request middleware sees is built on stale claims, so it bounces the
     // navigation straight back here — looking like "Confirm" did nothing.
     await update();
@@ -148,22 +146,25 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
     <>
       <motion.div variants={gridContainer} initial="hidden" animate="visible" className="relative mx-auto max-w-2xl">
         {roadmap.map((scale, index) => {
-          const disabled = !scale.canAccess && scale.reason === "locked";
+          // "locked" is purely visual now — every card is clickable, since
+          // an inaccessible scale routes to /billing/curriculum rather than
+          // sitting inert (buying the curriculum unlocks all of them at
+          // once, so there's no reason to block the purchase entry point).
+          const locked = !scale.canAccess;
           const isLast = index === roadmap.length - 1;
           return (
             <motion.div key={scale.scaleGroup.slug} variants={gridItem} className="relative flex gap-4">
               <div className="flex flex-col items-center">
-                <StepMarker index={index} status={scale.status} locked={disabled} />
+                <StepMarker index={index} status={scale.status} locked={locked} />
                 {!isLast && <span className="w-px flex-1 border-l-2 border-dotted border-white/10" />}
               </div>
 
               <button
                 type="button"
                 onClick={() => handleCardClick(scale)}
-                disabled={disabled}
                 className={`group mb-4 flex-1 rounded-2xl border p-5 text-left transition ${
-                  disabled
-                    ? "cursor-not-allowed border-white/5 bg-slate-900/30 opacity-60"
+                  locked
+                    ? "border-white/10 bg-slate-900/40 hover:border-amber-400/30"
                     : "border-white/10 bg-white/[0.04] backdrop-blur-xl hover:border-amber-400/30"
                 }`}
               >
@@ -184,12 +185,8 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
 
                 <ChecklistDots scale={scale} />
 
-                <div
-                  className={`mt-5 flex items-center gap-1.5 text-sm font-medium ${
-                    disabled ? "text-slate-600" : "text-amber-300"
-                  }`}
-                >
-                  {disabled && <LockIcon />}
+                <div className="mt-5 flex items-center gap-1.5 text-sm font-medium text-amber-300">
+                  {locked && <LockIcon />}
                   {ctaLabel(scale)}
                 </div>
               </button>

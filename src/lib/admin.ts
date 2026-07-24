@@ -9,21 +9,21 @@ import { createNotification } from "@/lib/notifications";
 
 export interface OverviewStats {
   totalUsers: number;
-  proUsers: number;
+  curriculumUsers: number;
   pendingPayments: number;
   /** Sum of VERIFIED ZellePayment amounts — the only revenue this platform tracks. */
   totalRevenueCents: number;
 }
 
 export async function getOverviewStats(): Promise<OverviewStats> {
-  const [totalUsers, proUsers, pendingPayments, revenue] = await Promise.all([
+  const [totalUsers, curriculumUsers, pendingPayments, revenue] = await Promise.all([
     prisma.user.count(),
-    prisma.user.count({ where: { isProMember: true } }),
+    prisma.user.count({ where: { hasCurriculumAccess: true } }),
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
     prisma.zellePayment.aggregate({ where: { status: "VERIFIED" }, _sum: { amountCents: true } }),
   ]);
 
-  return { totalUsers, proUsers, pendingPayments, totalRevenueCents: revenue._sum.amountCents ?? 0 };
+  return { totalUsers, curriculumUsers, pendingPayments, totalRevenueCents: revenue._sum.amountCents ?? 0 };
 }
 
 // ---------------------------------------------------------------------------
@@ -62,7 +62,7 @@ export interface AdminUserRow {
   name: string | null;
   email: string;
   role: Role;
-  isProMember: boolean;
+  hasCurriculumAccess: boolean;
   createdAt: Date;
   /** One entry per curriculum scale, in order — drives the per-scale unlock chips in the admin UI. */
   scaleUnlocks: { slug: string; unlocked: boolean; completed: boolean }[];
@@ -89,7 +89,7 @@ export async function searchUsers(query: string): Promise<AdminUserRow[]> {
     name: user.name,
     email: user.email,
     role: user.role,
-    isProMember: user.isProMember,
+    hasCurriculumAccess: user.hasCurriculumAccess,
     createdAt: user.createdAt,
     scaleUnlocks: SCALE_SLUGS.map((slug) => {
       const progress = user.progress.find((p) => p.scaleGroup.slug === slug);
@@ -115,9 +115,11 @@ export async function setUserRole(userId: string, role: Role) {
   return updated;
 }
 
-export async function setProMembership(userId: string, isPro: boolean) {
+export async function setCurriculumAccess(userId: string, hasAccess: boolean) {
   return prisma.user.update({
     where: { id: userId },
-    data: isPro ? { isProMember: true, proUnlockedAt: new Date() } : { isProMember: false, proUnlockedAt: null },
+    data: hasAccess
+      ? { hasCurriculumAccess: true, curriculumUnlockedAt: new Date() }
+      : { hasCurriculumAccess: false, curriculumUnlockedAt: null },
   });
 }

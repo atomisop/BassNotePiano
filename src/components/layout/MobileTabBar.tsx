@@ -20,7 +20,8 @@ export function MobileTabBar({ isAdmin, unreadMessageCount }: { isAdmin: boolean
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
 
-  const inMoreSection = pathname.startsWith("/admin") || pathname === "/account" || pathname === "/about";
+  const inMoreSection =
+    pathname.startsWith("/admin") || pathname === "/account" || pathname === "/about" || pathname === "/lessons";
 
   return (
     <>

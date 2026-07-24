@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getTotalUnreadMessageCount } from "@/lib/messages";
+import { getTotalUnreadGroupMessageCount } from "@/lib/groupMessages";
 import { LATEST_ENTRY } from "@/lib/changelog";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
@@ -16,10 +17,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
 
-  const [unreadMessageCount, user] = await Promise.all([
+  const [directUnreadCount, groupUnreadCount, user] = await Promise.all([
     getTotalUnreadMessageCount(session.user.id),
+    getTotalUnreadGroupMessageCount(session.user.id),
     prisma.user.findUnique({ where: { id: session.user.id }, select: { lastSeenPatchNotesAt: true } }),
   ]);
+  const unreadMessageCount = directUnreadCount + groupUnreadCount;
 
   const shouldShowWhatsNew = !user?.lastSeenPatchNotesAt || !isSameUtcDay(user.lastSeenPatchNotesAt, new Date());
   const isAdmin = session.user.role === "ADMIN";

@@ -20,6 +20,7 @@ export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: 
   if (!mounted) return null;
 
   const items: MoreItem[] = [
+    { href: "/lessons", label: "Lessons", icon: ICON_PATHS.lessons },
     ...(isAdmin ? [{ href: "/admin/payments", label: "Admin", icon: ICON_PATHS.admin }] : []),
     { href: "/account", label: "Settings", icon: ICON_PATHS.settings },
     { href: "/about", label: "About", icon: ICON_PATHS.about },

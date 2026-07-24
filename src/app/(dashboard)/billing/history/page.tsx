@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { getUserPaymentHistory } from "@/lib/payments";
+import { calculateLessonTotal } from "@/lib/lessonPricing";
 
 const STATUS_LABEL: Record<string, string> = {
   AWAITING_TRANSFER: "Awaiting transfer",
@@ -22,6 +23,27 @@ function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
+function describePayment(payment: {
+  purpose: string;
+  lessonQuantity: number | null;
+  lessonType: string | null;
+  scaleGroup: { code: string; title: string } | null;
+}): { eyebrow: string; title: string } {
+  if (payment.purpose === "CURRICULUM") {
+    return { eyebrow: "Curriculum", title: "Full platform unlock" };
+  }
+  if (payment.purpose === "LESSON_PACKAGE" && payment.lessonQuantity && payment.lessonType) {
+    const typeLabel = payment.lessonType === "ONLINE" ? "Online" : "In-Person";
+    const { discountCents } = calculateLessonTotal(payment.lessonQuantity, payment.lessonType as "ONLINE" | "IN_PERSON");
+    return {
+      eyebrow: "Lesson credits",
+      title: `${payment.lessonQuantity} × ${typeLabel} lesson${payment.lessonQuantity === 1 ? "" : "s"}${discountCents > 0 ? " (20% off)" : ""}`,
+    };
+  }
+  // Legacy Pay-As-You-Go row from before per-scale purchase was retired.
+  return { eyebrow: payment.scaleGroup?.code ?? "Scale unlock", title: payment.scaleGroup?.title ?? "Scale unlock" };
+}
+
 export default async function BillingHistoryPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/history");
@@ -40,20 +62,18 @@ export default async function BillingHistoryPage() {
 
       {payments.length === 0 ? (
         <div className="mt-6 glass-card p-8 text-center text-sm text-slate-500">
-          Nothing here yet — unlock a scale or go Pro to see your payments listed here.
+          Nothing here yet — buy the curriculum or a lesson package to see your payments listed here.
         </div>
       ) : (
         <div className="mt-6 space-y-3">
-          {payments.map((payment) => (
+          {payments.map((payment) => {
+            const { eyebrow, title } = describePayment(payment);
+            return (
             <div key={payment.id} className="glass-card p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-amber-400/80">
-                    {payment.purpose === "PRO_LIFETIME" ? "Pro — Lifetime" : payment.scaleGroup?.code}
-                  </p>
-                  <p className="mt-1 text-slate-100">
-                    {payment.purpose === "PRO_LIFETIME" ? "Full platform unlock" : payment.scaleGroup?.title}
-                  </p>
+                  <p className="text-xs uppercase tracking-wide text-amber-400/80">{eyebrow}</p>
+                  <p className="mt-1 text-slate-100">{title}</p>
                   <p className="mt-1 text-xs text-slate-600">
                     {new Date(payment.createdAt).toLocaleDateString(undefined, {
                       year: "numeric",
@@ -79,7 +99,8 @@ export default async function BillingHistoryPage() {
                 <p className="mt-2 text-xs text-red-400">Reason: {payment.rejectionReason}</p>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

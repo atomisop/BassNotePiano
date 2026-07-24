@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
-import { SCALE_GROUPS, PRO_LIFETIME_PRICE_CENTS } from "@/lib/curriculum";
+import { SCALE_GROUPS, CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
+import { LESSON_PRICE_CENTS } from "@/lib/lessonPricing";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -45,6 +46,9 @@ export default function LandingPage() {
           BASS NOTE <span className="text-amber-400">PIANO</span>
         </span>
         <nav className="flex items-center gap-6 text-sm text-slate-400">
+          <Link href="/classes" className="transition hover:text-slate-100">
+            Classes
+          </Link>
           <Link href="/pricing" className="transition hover:text-slate-100">
             Pricing
           </Link>
@@ -67,7 +71,7 @@ export default function LandingPage() {
           variants={heroItem}
           className="mx-auto mb-5 w-fit rounded-full border border-amber-400/25 bg-amber-400/5 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-amber-300"
         >
-          Six scale groups · All 12 keys
+          Only {formatUsd(CURRICULUM_PRICE_CENTS)} · Lifetime access
         </motion.p>
         <motion.h1 variants={heroItem} className="font-serif text-4xl leading-tight text-slate-50 sm:text-5xl">
           Ethiopian Scales, <span className="text-amber-300">Rhythm</span> &amp; Chords
@@ -81,7 +85,7 @@ export default function LandingPage() {
             href={isLoggedIn ? "/dashboard" : "/register"}
             className="rounded-xl bg-amber-400 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
           >
-            {isLoggedIn ? "Go to dashboard" : "Start learning"}
+            {isLoggedIn ? "Go to dashboard" : `Start learning — ${formatUsd(CURRICULUM_PRICE_CENTS)}`}
           </Link>
           <Link
             href="/pricing"
@@ -122,20 +126,17 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ type: "spring", stiffness: 240, damping: 26 }}
-        className="relative mx-auto max-w-4xl px-6 pb-28"
+        className="relative mx-auto max-w-2xl px-6 pb-28 text-center"
       >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="glass-card p-6">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Pay-As-You-Go</p>
-            <p className="mt-2 font-serif text-3xl text-slate-50">$25</p>
-            <p className="mt-1 text-sm text-slate-500">per session, unlocked in order</p>
-          </div>
-          <div className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-6">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-300">Pro — Lifetime</p>
-            <p className="mt-2 font-serif text-3xl text-slate-50">{formatUsd(PRO_LIFETIME_PRICE_CENTS)}</p>
-            <p className="mt-1 text-sm text-amber-200/70">one-time · all six scale groups · saves $50</p>
-          </div>
+        <div className="rounded-3xl border border-amber-400/30 bg-amber-400/5 p-8 sm:p-10">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-300">Everything, once</p>
+          <p className="mt-3 font-serif text-5xl text-slate-50">{formatUsd(CURRICULUM_PRICE_CENTS)}</p>
+          <p className="mt-2 text-sm text-amber-200/70">One-time payment · every scale, forever · no subscriptions</p>
         </div>
+        <p className="mt-6 text-sm text-slate-500">
+          Want live coaching too? Add 30-minute lessons anytime for {formatUsd(LESSON_PRICE_CENTS)} each — Online or
+          In-Person, with 20% off In-Person bundles.
+        </p>
       </motion.section>
 
       <footer className="relative border-t border-white/5 px-6 py-8 text-center text-xs text-slate-600">

@@ -10,7 +10,7 @@ export interface UserManagementTableProps {
   users: AdminUserRow[];
   initialQuery: string;
   onSetRole: (userId: string, role: Role) => Promise<void>;
-  onSetPro: (userId: string, isPro: boolean) => Promise<void>;
+  onSetCurriculumAccess: (userId: string, hasAccess: boolean) => Promise<void>;
   onToggleScale: (userId: string, scaleSlug: string, unlock: boolean) => Promise<void>;
 }
 
@@ -18,7 +18,7 @@ export function UserManagementTable({
   users,
   initialQuery,
   onSetRole,
-  onSetPro,
+  onSetCurriculumAccess,
   onToggleScale,
 }: UserManagementTableProps) {
   const router = useRouter();
@@ -84,10 +84,10 @@ export function UserManagementTable({
                   </span>
                   <span
                     className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${
-                      user.isProMember ? "bg-emerald-400/15 text-emerald-300" : "bg-slate-800 text-slate-400"
+                      user.hasCurriculumAccess ? "bg-emerald-400/15 text-emerald-300" : "bg-slate-800 text-slate-400"
                     }`}
                   >
-                    {user.isProMember ? "Pro" : "Pay-As-You-Go"}
+                    {user.hasCurriculumAccess ? "Curriculum" : "No curriculum"}
                   </span>
                 </div>
               </div>
@@ -131,10 +131,10 @@ export function UserManagementTable({
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => withBusy(user.id, () => onSetPro(user.id, !user.isProMember))}
+                  onClick={() => withBusy(user.id, () => onSetCurriculumAccess(user.id, !user.hasCurriculumAccess))}
                   className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
                 >
-                  {user.isProMember ? "Revoke Pro" : "Grant Pro"}
+                  {user.hasCurriculumAccess ? "Revoke curriculum" : "Grant curriculum"}
                 </button>
               </div>
             </div>

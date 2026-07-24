@@ -2,10 +2,14 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import type { ConversationSummary } from "@/lib/messages";
+import type { GroupSummary } from "@/lib/groupMessages";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { ConversationSidebar } from "./components/ConversationSidebar";
 import { ChatWindow } from "./components/ChatWindow";
+import { GroupChatWindow } from "./components/GroupChatWindow";
+import { NewGroupPanel } from "./components/NewGroupPanel";
 import { EmptyState } from "./components/EmptyState";
 import {
   getConversationsAction,
@@ -13,28 +17,49 @@ import {
   sendMessageAction,
   markConversationReadAction,
   togglePinAction,
+  getGroupsAction,
+  getGroupMessagesAction,
+  sendGroupMessageAction,
+  markGroupReadAction,
+  createGroupAction,
+  leaveGroupAction,
   type MessageRow,
+  type GroupMessageRow,
 } from "./actions";
 
 const CONVERSATION_LIST_POLL_MS = 15_000;
 const ACTIVE_CONVERSATION_POLL_MS = 2_500;
 
-function MessagesInner({ initialConversations }: { initialConversations: ConversationSummary[] }) {
+function MessagesInner({
+  initialConversations,
+  initialGroups,
+}: {
+  initialConversations: ConversationSummary[];
+  initialGroups: GroupSummary[];
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const activeFriendId = searchParams.get("with");
+  const activeGroupId = searchParams.get("group");
 
   const [conversations, setConversations] = useState(initialConversations);
+  const [groups, setGroups] = useState(initialGroups);
   const [messages, setMessages] = useState<MessageRow[]>([]);
+  const [groupMessages, setGroupMessages] = useState<GroupMessageRow[]>([]);
+  const [newGroupOpen, setNewGroupOpen] = useState(false);
 
   // activeChatId is a real, intentional null state (no auto-selecting the
   // first conversation) — that's what makes the empty state and the mobile
   // sidebar/chat split meaningful.
   const active = conversations.find((c) => c.friendId === activeFriendId) ?? null;
+  const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
+  const hasActivePane = Boolean(activeFriendId || activeGroupId);
 
   useEffect(() => {
     const interval = setInterval(async () => {
       setConversations(await getConversationsAction());
+      setGroups(await getGroupsAction());
     }, CONVERSATION_LIST_POLL_MS);
     return () => clearInterval(interval);
   }, []);
@@ -71,8 +96,44 @@ function MessagesInner({ initialConversations }: { initialConversations: Convers
     };
   }, [active?.friendId]);
 
+  useEffect(() => {
+    if (!activeGroup) {
+      setGroupMessages([]);
+      return;
+    }
+
+    let cancelled = false;
+    let previousLastMessageId: string | null = null;
+
+    async function load() {
+      const rows = await getGroupMessagesAction(activeGroup!.id);
+      if (cancelled) return;
+
+      const newest = rows[rows.length - 1];
+      if (previousLastMessageId !== null && newest && newest.id !== previousLastMessageId && newest.senderId !== session?.user?.id) {
+        playNotificationSound();
+      }
+      previousLastMessageId = newest?.id ?? previousLastMessageId;
+
+      setGroupMessages(rows);
+      await markGroupReadAction(activeGroup!.id);
+      setGroups(await getGroupsAction());
+    }
+    load();
+
+    const interval = setInterval(load, ACTIVE_CONVERSATION_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [activeGroup?.id, session?.user?.id]);
+
   function handleSelect(friendId: string) {
     router.push(`/messages?with=${friendId}`);
+  }
+
+  function handleSelectGroup(groupId: string) {
+    router.push(`/messages?group=${groupId}`);
   }
 
   function handleMinimize() {
@@ -85,6 +146,16 @@ function MessagesInner({ initialConversations }: { initialConversations: Convers
     if (result.ok) {
       setMessages(await getConversationMessagesAction(active.friendId));
       setConversations(await getConversationsAction());
+    }
+    return result.ok;
+  }
+
+  async function handleSendGroup(body: string): Promise<boolean> {
+    if (!activeGroup) return false;
+    const result = await sendGroupMessageAction(activeGroup.id, body);
+    if (result.ok) {
+      setGroupMessages(await getGroupMessagesAction(activeGroup.id));
+      setGroups(await getGroupsAction());
     }
     return result.ok;
   }
@@ -106,7 +177,23 @@ function MessagesInner({ initialConversations }: { initialConversations: Convers
     setConversations(await getConversationsAction());
   }
 
-  if (conversations.length === 0) {
+  async function handleCreateGroup(name: string, memberUsernames: string[]) {
+    const result = await createGroupAction(name, memberUsernames);
+    if (!result.ok) return result;
+    setGroups(await getGroupsAction());
+    setNewGroupOpen(false);
+    router.push(`/messages?group=${result.groupId}`);
+    return { ok: true as const };
+  }
+
+  async function handleLeaveGroup() {
+    if (!activeGroup) return;
+    await leaveGroupAction(activeGroup.id);
+    setGroups(await getGroupsAction());
+    router.push("/messages");
+  }
+
+  if (conversations.length === 0 && groups.length === 0) {
     return (
       <div className="mx-auto max-w-xl">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Social</p>
@@ -124,30 +211,52 @@ function MessagesInner({ initialConversations }: { initialConversations: Convers
 
   return (
     <div className="glass-card flex h-[calc(100vh-9rem)] overflow-hidden">
-      <div className={`${activeFriendId ? "hidden md:flex" : "flex"} md:w-[350px] md:shrink-0`}>
+      <div className={`${hasActivePane ? "hidden md:flex" : "flex"} md:w-[350px] md:shrink-0`}>
         <ConversationSidebar
           conversations={conversations}
+          groups={groups}
           activeFriendId={activeFriendId}
+          activeGroupId={activeGroupId}
           onSelect={handleSelect}
           onTogglePin={handleTogglePin}
+          onSelectGroup={handleSelectGroup}
+          onNewGroup={() => setNewGroupOpen(true)}
         />
       </div>
 
-      <div className={`${activeFriendId ? "flex" : "hidden md:flex"} min-w-0 flex-1`}>
+      <div className={`${hasActivePane ? "flex" : "hidden md:flex"} min-w-0 flex-1`}>
         {active ? (
           <ChatWindow key={active.friendId} conversation={active} messages={messages} onSend={handleSend} onMinimize={handleMinimize} />
+        ) : activeGroup ? (
+          <GroupChatWindow
+            key={activeGroup.id}
+            group={activeGroup}
+            currentUserId={session?.user?.id ?? ""}
+            messages={groupMessages}
+            onSend={handleSendGroup}
+            onMinimize={handleMinimize}
+            onLeave={handleLeaveGroup}
+          />
         ) : (
           <EmptyState />
         )}
       </div>
+
+      <NewGroupPanel open={newGroupOpen} onClose={() => setNewGroupOpen(false)} onCreate={handleCreateGroup} />
     </div>
   );
 }
 
-export function MessagesClient({ initialConversations }: { initialConversations: ConversationSummary[] }) {
+export function MessagesClient({
+  initialConversations,
+  initialGroups,
+}: {
+  initialConversations: ConversationSummary[];
+  initialGroups: GroupSummary[];
+}) {
   return (
     <Suspense fallback={null}>
-      <MessagesInner initialConversations={initialConversations} />
+      <MessagesInner initialConversations={initialConversations} initialGroups={initialGroups} />
     </Suspense>
   );
 }
