@@ -5,6 +5,7 @@ import { getTotalUnreadMessageCount } from "@/lib/messages";
 import { LATEST_ENTRY } from "@/lib/changelog";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
+import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { WhatsNewModal } from "@/components/layout/WhatsNewModal";
 
 function isSameUtcDay(a: Date, b: Date): boolean {
@@ -21,18 +22,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
   ]);
 
   const shouldShowWhatsNew = !user?.lastSeenPatchNotesAt || !isSameUtcDay(user.lastSeenPatchNotesAt, new Date());
+  const isAdmin = session.user.role === "ADMIN";
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar
-        name={session.user.name}
-        isAdmin={session.user.role === "ADMIN"}
-        unreadMessageCount={unreadMessageCount}
-      />
+      <Sidebar name={session.user.name} isAdmin={isAdmin} unreadMessageCount={unreadMessageCount} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <TopBar />
-        <main className="flex-1 overflow-y-auto px-8 py-10">{children}</main>
+        <main className="flex-1 overflow-y-auto px-4 py-6 pb-24 md:px-8 md:py-10 md:pb-10">{children}</main>
       </div>
+      <MobileTabBar isAdmin={isAdmin} unreadMessageCount={unreadMessageCount} />
       <WhatsNewModal show={shouldShowWhatsNew} entry={LATEST_ENTRY} />
     </div>
   );

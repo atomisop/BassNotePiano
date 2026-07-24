@@ -1,12 +1,14 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { CHANGELOG, CURRENT_VERSION } from "@/lib/changelog";
 
 const TAB_ICONS = {
   about: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 7.5h.01",
   updates: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 3",
+  chevron: "M9 18l6-6-6-6",
 } as const;
 
 const TABS = [
@@ -16,51 +18,52 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-function TabIcon({ path }: { path: string }) {
+function TabIcon({ path, className = "h-[18px] w-[18px] shrink-0" }: { path: string; className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px] shrink-0">
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
       <path d={path} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-function AboutTabs({ activeTab, onSelect }: { activeTab: TabId; onSelect: (tab: TabId) => void }) {
+function DesktopAboutNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: (tab: TabId) => void }) {
   return (
-    <>
-      <nav className="mb-2 flex gap-2 overflow-x-auto pb-1 lg:hidden">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => onSelect(tab.id)}
-            className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-              activeTab === tab.id
-                ? "border-amber-400/50 bg-slate-900 text-amber-200"
-                : "border-white/10 text-slate-400 hover:border-white/20"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
-      <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start rounded-2xl border border-white/10 bg-slate-900/60 p-2 lg:flex">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => onSelect(tab.id)}
-            className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm transition ${
-              activeTab === tab.id
-                ? "border-amber-400/40 bg-slate-800 text-slate-50"
-                : "border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
-            }`}
-          >
-            <TabIcon path={tab.icon} />
-            {tab.label}
-          </button>
-        ))}
-      </nav>
-    </>
+    <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start glass-card p-2 lg:flex">
+      {TABS.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => onSelect(tab.id)}
+          className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm transition ${
+            activeTab === tab.id
+              ? "border-amber-400/40 bg-slate-800 text-slate-50"
+              : "border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+          }`}
+        >
+          <TabIcon path={tab.icon} />
+          {tab.label}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+function MobileAboutMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
+  return (
+    <div className="glass-card divide-y divide-white/10 lg:hidden">
+      {TABS.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => onSelect(tab.id)}
+          className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-white/5"
+        >
+          <TabIcon path={tab.icon} className="h-5 w-5 shrink-0 text-slate-400" />
+          <span className="flex-1 text-sm text-slate-100">{tab.label}</span>
+          <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-600" />
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -102,15 +105,34 @@ function UpdatesTab() {
   );
 }
 
+function TabContent({ tab }: { tab: TabId }) {
+  return tab === "about" ? <AboutTab /> : <UpdatesTab />;
+}
+
 function AboutClientInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
   const initialTab: TabId = TABS.some((t) => t.id === requestedTab) ? (requestedTab as TabId) : "about";
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+  const [mobileOpenTab, setMobileOpenTab] = useState<TabId | null>(null);
 
-  function selectTab(tab: TabId) {
+  useEffect(() => {
+    if (!requestedTab || !TABS.some((t) => t.id === requestedTab)) return;
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      setMobileOpenTab(requestedTab as TabId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function selectDesktopTab(tab: TabId) {
     setActiveTab(tab);
+    router.replace(`/about?tab=${tab}`, { scroll: false });
+  }
+
+  function openMobileTab(tab: TabId) {
+    setActiveTab(tab);
+    setMobileOpenTab(tab);
     router.replace(`/about?tab=${tab}`, { scroll: false });
   }
 
@@ -122,9 +144,20 @@ function AboutClientInner() {
       </div>
 
       <div className="mt-6 flex flex-col gap-8 lg:flex-row">
-        <AboutTabs activeTab={activeTab} onSelect={selectTab} />
-        <div className="min-w-0 flex-1">{activeTab === "about" ? <AboutTab /> : <UpdatesTab />}</div>
+        <DesktopAboutNav activeTab={activeTab} onSelect={selectDesktopTab} />
+        <MobileAboutMenu onSelect={openMobileTab} />
+        <div className="hidden min-w-0 flex-1 lg:block">
+          <TabContent tab={activeTab} />
+        </div>
       </div>
+
+      <SlideOverPanel
+        open={mobileOpenTab !== null}
+        onClose={() => setMobileOpenTab(null)}
+        title={mobileOpenTab ? TABS.find((t) => t.id === mobileOpenTab)!.label : ""}
+      >
+        {mobileOpenTab && <TabContent tab={mobileOpenTab} />}
+      </SlideOverPanel>
     </div>
   );
 }

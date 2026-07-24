@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { BadgeGrid } from "@/components/gamification/BadgeGrid";
 import { StreakDots } from "@/components/gamification/StreakDots";
 import { BADGES } from "@/lib/badges";
-import { ProfileEditor } from "./ProfileEditor";
+import { ProfileEditButton } from "./ProfileEditButton";
 
 export default async function ProfilePage() {
   const session = await getServerAuthSession();
@@ -45,11 +45,23 @@ export default async function ProfilePage() {
             </div>
           )}
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Profile</p>
           <h1 className="mt-1 font-serif text-2xl text-slate-50">{user.name ?? "Student"}</h1>
           {user.username && <p className="text-sm text-slate-500">@{user.username}</p>}
         </div>
+        <ProfileEditButton
+          email={user.email}
+          initialName={user.name}
+          initialImage={user.image}
+          initialUsername={user.username}
+          initialMusicProfile={{
+            primaryInstrument: user.primaryInstrument,
+            skillLevel: user.skillLevel,
+            genres: user.genres,
+            learningGoal: user.learningGoal,
+          }}
+        />
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -77,24 +89,6 @@ export default async function ProfilePage() {
         <p className="mt-1 text-sm text-slate-500">Earned and locked achievements — hover a badge to see how to unlock it.</p>
         <div className="mt-4 glass-card p-6">
           <BadgeGrid earnedCodes={new Set(earnedCodes)} />
-        </div>
-      </div>
-
-      <div className="mt-8">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Edit profile</p>
-        <div className="mt-4">
-          <ProfileEditor
-            email={user.email}
-            initialName={user.name}
-            initialImage={user.image}
-            initialUsername={user.username}
-            initialMusicProfile={{
-              primaryInstrument: user.primaryInstrument,
-              skillLevel: user.skillLevel,
-              genres: user.genres,
-              learningGoal: user.learningGoal,
-            }}
-          />
         </div>
       </div>
     </div>

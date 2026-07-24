@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { CodeGate } from "./CodeGate";
 import {
   requestPasswordChangeAction,
@@ -22,6 +23,7 @@ const TAB_ICONS = {
     "M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5zM9.5 19.5a2.5 2.5 0 005 0",
   membership: "M3 8h18M3 6h18v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6zM7 15h4",
   password: "M12 15v2M6 10V7a6 6 0 1112 0v3M5 10h14v10a1 1 0 01-1 1H6a1 1 0 01-1-1V10z",
+  chevron: "M9 18l6-6-6-6",
 } as const;
 
 const TABS = [
@@ -32,9 +34,9 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-function TabIcon({ path }: { path: string }) {
+function TabIcon({ path, className = "h-[18px] w-[18px] shrink-0" }: { path: string; className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px] shrink-0">
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
       <path d={path} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -50,44 +52,65 @@ function SectionCard({ title, description, children }: { title: string; descript
   );
 }
 
-function SettingsTabs({ activeTab, onSelect }: { activeTab: TabId; onSelect: (tab: TabId) => void }) {
+// lg+ only — a sticky always-visible nav beside the inline content, since
+// there's room for both without it feeling cluttered.
+function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: (tab: TabId) => void }) {
   return (
-    <>
-      <nav className="mb-2 flex gap-2 overflow-x-auto pb-1 lg:hidden">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => onSelect(tab.id)}
-            className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-              activeTab === tab.id
-                ? "border-amber-400/50 bg-slate-900 text-amber-200"
-                : "border-white/10 text-slate-400 hover:border-white/20"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
-      <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start glass-card p-2 lg:flex">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => onSelect(tab.id)}
-            className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm transition ${
-              activeTab === tab.id
-                ? "border-amber-400/40 bg-slate-800 text-slate-50"
-                : "border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
-            }`}
-          >
-            <TabIcon path={tab.icon} />
-            {tab.label}
-          </button>
-        ))}
-      </nav>
-    </>
+    <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start glass-card p-2 lg:flex">
+      {TABS.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => onSelect(tab.id)}
+          className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm transition ${
+            activeTab === tab.id
+              ? "border-amber-400/40 bg-slate-800 text-slate-50"
+              : "border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+          }`}
+        >
+          <TabIcon path={tab.icon} />
+          {tab.label}
+        </button>
+      ))}
+    </nav>
   );
+}
+
+// Below lg — a plain menu list, no content shown until tapped. Each row
+// pushes a full-screen SlideOverPanel instead of swapping content in place.
+function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
+  return (
+    <div className="glass-card divide-y divide-white/10 lg:hidden">
+      {TABS.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          onClick={() => onSelect(tab.id)}
+          className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-white/5"
+        >
+          <TabIcon path={tab.icon} className="h-5 w-5 shrink-0 text-slate-400" />
+          <span className="flex-1 text-sm text-slate-100">{tab.label}</span>
+          <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-600" />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function TabContent({
+  tab,
+  email,
+  isProMember,
+  initialNotificationPreferences,
+}: {
+  tab: TabId;
+  email: string;
+  isProMember: boolean;
+  initialNotificationPreferences: NotificationPreferencesInput;
+}) {
+  if (tab === "notifications") return <NotificationSettingsSection initial={initialNotificationPreferences} />;
+  if (tab === "membership") return <MembershipSection isProMember={isProMember} />;
+  return <PasswordSection email={email} />;
 }
 
 function AccountSettingsInner({ email, isProMember, initialNotificationPreferences }: AccountSettingsProps) {
@@ -96,9 +119,28 @@ function AccountSettingsInner({ email, isProMember, initialNotificationPreferenc
   const requestedTab = searchParams.get("tab");
   const initialTab: TabId = TABS.some((t) => t.id === requestedTab) ? (requestedTab as TabId) : "notifications";
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+  const [mobileOpenTab, setMobileOpenTab] = useState<TabId | null>(null);
 
-  function selectTab(tab: TabId) {
+  // Deep links (e.g. the notification bell's "Notification settings" link)
+  // land here with ?tab= set — on a narrow screen that should open the
+  // slide-over panel directly instead of silently doing nothing, since the
+  // menu list below shows no content on its own.
+  useEffect(() => {
+    if (!requestedTab || !TABS.some((t) => t.id === requestedTab)) return;
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      setMobileOpenTab(requestedTab as TabId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function selectDesktopTab(tab: TabId) {
     setActiveTab(tab);
+    router.replace(`/account?tab=${tab}`, { scroll: false });
+  }
+
+  function openMobileTab(tab: TabId) {
+    setActiveTab(tab);
+    setMobileOpenTab(tab);
     router.replace(`/account?tab=${tab}`, { scroll: false });
   }
 
@@ -118,16 +160,23 @@ function AccountSettingsInner({ email, isProMember, initialNotificationPreferenc
       </div>
 
       <div className="mt-6 flex flex-col gap-8 lg:flex-row">
-        <SettingsTabs activeTab={activeTab} onSelect={selectTab} />
+        <DesktopSettingsNav activeTab={activeTab} onSelect={selectDesktopTab} />
+        <MobileSettingsMenu onSelect={openMobileTab} />
 
-        <div className="min-w-0 flex-1 space-y-6">
-          {activeTab === "notifications" && <NotificationSettingsSection initial={initialNotificationPreferences} />}
-
-          {activeTab === "membership" && <MembershipSection isProMember={isProMember} />}
-
-          {activeTab === "password" && <PasswordSection email={email} />}
+        <div className="hidden min-w-0 flex-1 space-y-6 lg:block">
+          <TabContent tab={activeTab} email={email} isProMember={isProMember} initialNotificationPreferences={initialNotificationPreferences} />
         </div>
       </div>
+
+      <SlideOverPanel
+        open={mobileOpenTab !== null}
+        onClose={() => setMobileOpenTab(null)}
+        title={mobileOpenTab ? TABS.find((t) => t.id === mobileOpenTab)!.label : ""}
+      >
+        {mobileOpenTab && (
+          <TabContent tab={mobileOpenTab} email={email} isProMember={isProMember} initialNotificationPreferences={initialNotificationPreferences} />
+        )}
+      </SlideOverPanel>
     </div>
   );
 }

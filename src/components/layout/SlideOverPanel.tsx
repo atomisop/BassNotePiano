@@ -1,0 +1,78 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion";
+
+/**
+ * Shared "push navigation" panel — full-screen on phones, a right-anchored
+ * drawer on md+ so it never fully covers a spacious screen. Portaled to
+ * document.body for the same reason NotificationBell is: a backdrop-blur
+ * ancestor creates a CSS containing block that traps position:fixed
+ * descendants inside its own tiny box otherwise.
+ */
+export function SlideOverPanel({
+  open,
+  onClose,
+  title,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [open, onClose]);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <motion.div className="fixed inset-0 z-50 flex justify-end" initial="hidden" animate="visible" exit="hidden">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", stiffness: 320, damping: 34 }}
+            className="relative flex h-full w-full flex-col border-l border-white/10 bg-slate-950/98 backdrop-blur-2xl md:max-w-md"
+          >
+            <div className="flex items-center gap-4 border-b border-white/10 px-6 py-5">
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Back"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 text-slate-300 transition hover:border-white/20 hover:bg-white/5"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
+                  <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              <h1 className="truncate font-serif text-lg text-slate-50">{title}</h1>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">{children}</div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body,
+  );
+}
