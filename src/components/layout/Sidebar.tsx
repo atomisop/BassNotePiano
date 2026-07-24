@@ -26,6 +26,7 @@ const ICON_PATHS = {
   admin: "M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z",
   settings:
     "M10.3 3.3c.3-1 1.7-1 2 0l.2.7c.2.6.8 1 1.4.8l.7-.2c1-.3 1.8.7 1.3 1.6l-.4.6c-.3.5-.1 1.2.4 1.5l.6.4c.9.5.9 1.9 0 2.4l-.6.4c-.5.3-.7 1-.4 1.5l.4.6c.5.9-.3 1.9-1.3 1.6l-.7-.2c-.6-.2-1.2.2-1.4.8l-.2.7c-.3 1-1.7 1-2 0l-.2-.7c-.2-.6-.8-1-1.4-.8l-.7.2c-1 .3-1.8-.7-1.3-1.6l.4-.6c.3-.5.1-1.2-.4-1.5l-.6-.4c-.9-.5-.9-1.9 0-2.4l.6-.4c.5-.3.7-1 .4-1.5l-.4-.6c-.5-.9.3-1.9 1.3-1.6l.7.2c.6.2 1.2-.2 1.4-.8l.2-.7z",
+  about: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 7.5h.01",
   logout: "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9",
 } as const;
 
@@ -97,6 +98,7 @@ export function Sidebar({ name, isAdmin, unreadMessageCount }: SidebarProps) {
 
       <div className="flex w-full flex-col items-center gap-1 px-2 pb-1">
         <NavItem href="/account" label="Settings" icon={ICON_PATHS.settings} active={pathname === "/account"} />
+        <NavItem href="/about" label="About" icon={ICON_PATHS.about} active={pathname === "/about"} />
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: "/" })}

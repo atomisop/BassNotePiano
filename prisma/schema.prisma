@@ -307,6 +307,11 @@ model User {
   notifyEmailSocial      Boolean @default(true)
   notifyEmailReminders   Boolean @default(false)
 
+  // Drives the "What's new" popup — shown once per calendar day (compared
+  // in UTC) the first time a signed-in user hits any dashboard page, not on
+  // every login. Null means "never seen one," which also shows it.
+  lastSeenPatchNotesAt DateTime?
+
   accounts Account[]
   sessions Session[]
 
