@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
-import { LESSON_PRICE_CENTS, IN_PERSON_DISCOUNT_RATE, calculateLessonTotal } from "@/lib/lessonPricing";
+import { LESSON_PRICE_CENTS, LESSON_DISCOUNT_RATE, calculateLessonTotal } from "@/lib/lessonPricing";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -26,7 +26,7 @@ const CURRICULUM_BENEFITS = [
 ];
 
 export default function PricingPage() {
-  const examplePricing = calculateLessonTotal(2, "IN_PERSON");
+  const examplePricing = calculateLessonTotal(2);
 
   return (
     <div className="relative overflow-hidden">
@@ -113,32 +113,24 @@ export default function PricingPage() {
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Live lessons</p>
           <h2 className="mt-1.5 font-serif text-2xl text-slate-50">Add real-time coaching, anytime</h2>
           <p className="mt-2 text-sm text-slate-400">
-            Once you've got the curriculum, book 30-minute live lessons — Online or In-Person — in any quantity, on
-            top of your self-paced learning.
+            Once you've got the curriculum, book 30-minute live lessons — Online or In-Person, same price either
+            way — on top of your self-paced learning.
           </p>
 
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border border-white/10 p-5">
-              <p className="text-xs uppercase tracking-wide text-slate-500">Online</p>
-              <p className="mt-2 font-serif text-3xl text-slate-50">
-                {formatUsd(LESSON_PRICE_CENTS)}
-                <span className="text-base font-sans text-slate-500"> / 30 min</span>
-              </p>
-              <p className="mt-1 text-sm text-slate-500">Full price, any quantity</p>
-            </div>
-            <div className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-5">
-              <p className="text-xs uppercase tracking-wide text-amber-300">In-Person</p>
-              <p className="mt-2 font-serif text-3xl text-slate-50">
-                {formatUsd(LESSON_PRICE_CENTS)}
-                <span className="text-base font-sans text-amber-200/70"> / 30 min</span>
-              </p>
-              <p className="mt-1 text-sm text-amber-200/70">{Math.round(IN_PERSON_DISCOUNT_RATE * 100)}% off the total, any quantity</p>
-            </div>
+          <div className="mt-6 rounded-xl border border-amber-400/30 bg-amber-400/5 p-5 text-center">
+            <p className="font-serif text-3xl text-slate-50">
+              {formatUsd(LESSON_PRICE_CENTS)}
+              <span className="text-base font-sans text-amber-200/70"> / 30 min</span>
+            </p>
+            <p className="mt-1 text-sm text-amber-200/70">
+              Book 2 or more and save {Math.round(LESSON_DISCOUNT_RATE * 100)}% on the whole order — Online or In-Person
+            </p>
           </div>
 
           <p className="mt-5 text-sm text-slate-500">
-            Example: 2 In-Person lessons = {formatUsd(examplePricing.subtotalCents)} − {Math.round(IN_PERSON_DISCOUNT_RATE * 100)}%
-            ({formatUsd(examplePricing.discountCents)}) = <span className="text-slate-200">{formatUsd(examplePricing.totalCents)} total</span>.
+            Example: 2 lessons = {formatUsd(examplePricing.subtotalCents)} − {Math.round(LESSON_DISCOUNT_RATE * 100)}%
+            ({formatUsd(examplePricing.discountCents)}) = <span className="text-slate-200">{formatUsd(examplePricing.totalCents)} total</span>. A
+            single session stays {formatUsd(LESSON_PRICE_CENTS)}.
           </p>
 
           <Link

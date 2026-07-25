@@ -150,6 +150,32 @@ export async function sendNotificationEmail(to: string, title: string, body: str
   await sendEmail({ to, subject: `${title} — Bass Note Piano`, html, text });
 }
 
+/**
+ * Same as sendNotificationEmail, plus a single call-to-action button/link —
+ * e.g. nudging a not-yet-a-member registrant toward creating an account.
+ * This is the first link-based CTA in the app's email templates (everything
+ * else uses a 6-digit code), so the button styling is new but follows the
+ * same amber palette as codeBlockHtml above.
+ */
+export async function sendNotificationEmailWithCta(
+  to: string,
+  title: string,
+  body: string,
+  cta: { label: string; url: string },
+) {
+  const html = emailShell(
+    title,
+    `<p style="margin:0 0 20px;">${escapeHtml(body)}</p>
+     <div style="text-align:center;">
+       <a href="${cta.url}" style="display:inline-block;padding:12px 28px;border-radius:10px;background:#c79a3a;color:#1a1a1a;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;text-decoration:none;">
+         ${escapeHtml(cta.label)}
+       </a>
+     </div>`,
+  );
+  const text = `${body}\n\n${cta.label}: ${cta.url}`;
+  await sendEmail({ to, subject: `${title} — Bass Note Piano`, html, text });
+}
+
 export interface NewLocationAlertDetails {
   city: string | null;
   region: string | null;

@@ -34,7 +34,7 @@ function describePayment(payment: {
   }
   if (payment.purpose === "LESSON_PACKAGE" && payment.lessonQuantity && payment.lessonType) {
     const typeLabel = payment.lessonType === "ONLINE" ? "Online" : "In-Person";
-    const { discountCents } = calculateLessonTotal(payment.lessonQuantity, payment.lessonType as "ONLINE" | "IN_PERSON");
+    const { discountCents } = calculateLessonTotal(payment.lessonQuantity);
     return {
       eyebrow: "Lesson credits",
       title: `${payment.lessonQuantity} × ${typeLabel} lesson${payment.lessonQuantity === 1 ? "" : "s"}${discountCents > 0 ? " (20% off)" : ""}`,

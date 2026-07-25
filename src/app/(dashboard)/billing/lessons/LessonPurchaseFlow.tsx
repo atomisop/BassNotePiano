@@ -23,7 +23,7 @@ export function LessonPurchaseFlow({ zelleHandle }: { zelleHandle: string }) {
   const [payment, setPayment] = useState<PendingPayment | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const total = calculateLessonTotal(quantity, type);
+  const total = calculateLessonTotal(quantity);
 
   async function handleContinue() {
     setLoading(true);
@@ -46,9 +46,7 @@ export function LessonPurchaseFlow({ zelleHandle }: { zelleHandle: string }) {
           <p className="text-sm text-slate-100">
             {quantity} × {type === "ONLINE" ? "Online" : "In-Person"} lesson{quantity > 1 ? "s" : ""}
           </p>
-          {total.discountCents > 0 && (
-            <p className="mt-1 text-xs text-emerald-400">20% in-person bundle discount applied</p>
-          )}
+          {total.discountCents > 0 && <p className="mt-1 text-xs text-emerald-400">20% bundle discount applied</p>}
         </div>
         <ZelleUnlockGate
           status={payment.status}
@@ -92,9 +90,6 @@ export function LessonPurchaseFlow({ zelleHandle }: { zelleHandle: string }) {
             In-Person
           </button>
         </div>
-        {type === "IN_PERSON" && (
-          <p className="mt-1.5 text-xs text-emerald-400">20% off the lesson total, any quantity</p>
-        )}
       </div>
 
       <div>
@@ -118,6 +113,7 @@ export function LessonPurchaseFlow({ zelleHandle }: { zelleHandle: string }) {
             +
           </button>
         </div>
+        {quantity === 1 && <p className="mt-1.5 text-xs text-slate-600">Book 2 or more and save 20% on the whole order.</p>}
       </div>
 
       <div className="rounded-xl border border-white/10 p-4">
@@ -129,7 +125,7 @@ export function LessonPurchaseFlow({ zelleHandle }: { zelleHandle: string }) {
         </div>
         {total.discountCents > 0 && (
           <div className="mt-1 flex items-center justify-between text-sm text-emerald-400">
-            <span>In-person discount (20%)</span>
+            <span>Bundle discount (20%)</span>
             <span>−{formatUsd(total.discountCents)}</span>
           </div>
         )}

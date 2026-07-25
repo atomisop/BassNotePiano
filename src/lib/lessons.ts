@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { calculateLessonTotal } from "@/lib/lessonPricing";
 
-export { LESSON_PRICE_CENTS, IN_PERSON_DISCOUNT_RATE, calculateLessonTotal, type LessonTotal } from "@/lib/lessonPricing";
+export { LESSON_PRICE_CENTS, LESSON_DISCOUNT_RATE, calculateLessonTotal, type LessonTotal } from "@/lib/lessonPricing";
 
 export interface LessonCredits {
   online: number;

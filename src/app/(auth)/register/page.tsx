@@ -18,7 +18,7 @@ function RegisterForm() {
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);

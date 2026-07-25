@@ -14,6 +14,36 @@ import { playNotificationSound } from "@/lib/notification-sound";
 
 const POLL_INTERVAL_MS = 30_000;
 
+// Where clicking a notification should take you — kept close to the
+// component since it's purely presentation-layer routing, not shared
+// business logic. Falls back to no link (just marks read) for anything
+// unmapped, e.g. NEW_MESSAGE never reaches here (excluded upstream).
+function notificationHref(type: string): string | null {
+  switch (type) {
+    case "FRIEND_REQUEST_RECEIVED":
+      return "/friends#requests";
+    case "FRIEND_REQUEST_ACCEPTED":
+      return "/friends";
+    case "PAYMENT_APPROVED":
+    case "PAYMENT_REJECTED":
+      return "/billing/history";
+    case "ROLE_UPDATED":
+      return "/admin";
+    case "PRACTICE_REMINDER":
+      return "/dashboard";
+    case "CLASS_REGISTRATION_RECEIVED":
+    case "CLASS_REGISTRATION_APPROVED":
+    case "CLASS_REGISTRATION_REJECTED":
+      return "/admin/students";
+    case "LESSON_BOOKING_RECEIVED":
+      return "/admin/bookings";
+    case "LESSON_BOOKING_CANCELED":
+      return "/lessons";
+    default:
+      return null;
+  }
+}
+
 function relativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const minutes = Math.floor(diffMs / 60_000);
@@ -86,6 +116,7 @@ export function NotificationBell() {
   }
 
   async function handleNotificationClick(notification: NotificationRow) {
+    setOpen(false);
     if (notification.read) return;
     setNotifications((prev) => prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n)));
     setUnreadCount((prev) => Math.max(0, prev - 1));
@@ -167,21 +198,34 @@ export function NotificationBell() {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {notifications.map((n) => (
-                        <button
-                          key={n.id}
-                          type="button"
-                          onClick={() => handleNotificationClick(n)}
-                          className="flex w-full items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-left backdrop-blur-xl transition hover:bg-white/5"
-                        >
-                          <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-amber-400"}`} />
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-sm font-medium text-slate-100">{n.title}</span>
-                            {n.body && <span className="mt-0.5 block text-sm text-slate-500">{n.body}</span>}
-                            <span className="mt-1.5 block text-xs text-slate-600">{relativeTime(n.createdAt)}</span>
-                          </span>
-                        </button>
-                      ))}
+                      {notifications.map((n) => {
+                        const itemClassName =
+                          "flex w-full items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-left backdrop-blur-xl transition hover:bg-white/5";
+                        const inner = (
+                          <>
+                            <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-amber-400"}`} />
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-sm font-medium text-slate-100">{n.title}</span>
+                              {n.body && <span className="mt-0.5 block text-sm text-slate-500">{n.body}</span>}
+                              <span className="mt-1.5 block text-xs text-slate-600">{relativeTime(n.createdAt)}</span>
+                            </span>
+                          </>
+                        );
+                        const href = notificationHref(n.type);
+
+                        if (href) {
+                          return (
+                            <Link key={n.id} href={href} onClick={() => handleNotificationClick(n)} className={itemClassName}>
+                              {inner}
+                            </Link>
+                          );
+                        }
+                        return (
+                          <button key={n.id} type="button" onClick={() => handleNotificationClick(n)} className={itemClassName}>
+                            {inner}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

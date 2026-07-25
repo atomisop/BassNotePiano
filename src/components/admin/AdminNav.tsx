@@ -15,14 +15,14 @@ export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex gap-1.5 rounded-full border border-white/10 p-1">
+    <nav className="flex gap-1.5 overflow-x-auto rounded-full border border-white/10 p-1">
       {NAV_ITEMS.map((item) => {
         const active = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+            className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition ${
               active ? "bg-amber-400 text-slate-950" : "text-slate-400 hover:text-slate-100"
             }`}
           >

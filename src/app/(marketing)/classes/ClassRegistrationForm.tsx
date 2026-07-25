@@ -93,7 +93,7 @@ export function ClassRegistrationForm() {
             required
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            placeholder="Abebe Bikila"
+            placeholder="First name Last name"
             className={fieldClass()}
           />
         </div>

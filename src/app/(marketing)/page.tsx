@@ -135,7 +135,7 @@ export default function LandingPage() {
         </div>
         <p className="mt-6 text-sm text-slate-500">
           Want live coaching too? Add 30-minute lessons anytime for {formatUsd(LESSON_PRICE_CENTS)} each — Online or
-          In-Person, with 20% off In-Person bundles.
+          In-Person, with 20% off when you book 2 or more.
         </p>
       </motion.section>
 

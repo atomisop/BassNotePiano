@@ -13,8 +13,7 @@ export default async function BillingLessonsPage() {
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Live Lessons</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Buy lesson credits</h1>
       <p className="mt-2 text-sm text-slate-500">
-        $50 per 30-minute session — Online or In-Person, any quantity. In-Person bundles save 20% on the lesson
-        total, no matter how many you buy.
+        $50 per 30-minute session — Online or In-Person. Book 2 or more and save 20% on the whole order.
       </p>
 
       <div className="mt-6">

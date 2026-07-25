@@ -97,7 +97,7 @@ export function getOrCreatePendingLessonPayment(
   lessonType: LessonType,
   zelleHandle: string,
 ) {
-  const { totalCents } = calculateLessonTotal(quantity, lessonType);
+  const { totalCents } = calculateLessonTotal(quantity);
   return getOrCreatePendingZellePayment({
     userId,
     purpose: "LESSON_PACKAGE",
@@ -220,8 +220,8 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
     notificationBody = "Your $99 curriculum payment was verified — every scale is unlocked, for good.";
   } else if (payment.purpose === "LESSON_PACKAGE" && payment.lessonQuantity && payment.lessonType) {
     await addLessonCredits(payment.userId, payment.lessonType, payment.lessonQuantity);
-    const { discountCents } = calculateLessonTotal(payment.lessonQuantity, payment.lessonType);
     const typeLabel = payment.lessonType === "ONLINE" ? "online" : "in-person";
+    const { discountCents } = calculateLessonTotal(payment.lessonQuantity);
     const discountNote = discountCents > 0 ? " — 20% bundle discount applied" : "";
     notificationBody = `Your ${payment.lessonQuantity} × ${typeLabel} lesson${payment.lessonQuantity === 1 ? "" : "s"} payment was verified${discountNote}. Credits are on your account.`;
   } else if (payment.scaleGroupId) {

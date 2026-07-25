@@ -50,9 +50,19 @@ function ProfileLine({ profile }: { profile: PublicProfile }) {
   );
 }
 
-function SectionCard({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+function SectionCard({
+  title,
+  description,
+  children,
+  id,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  id?: string;
+}) {
   return (
-    <div className="glass-card p-6">
+    <div id={id} className="glass-card scroll-mt-24 p-6">
       <h2 className="font-serif text-lg text-slate-50">{title}</h2>
       {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
       <div className="mt-4">{children}</div>
@@ -176,7 +186,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
       </SectionCard>
 
       {receivedRequests.length > 0 && (
-        <SectionCard title="Friend requests">
+        <SectionCard id="requests" title="Friend requests">
           <div className="space-y-2">
             {receivedRequests.map((req) => (
               <div key={req.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 p-2.5">
