@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
+import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { ClassRegistrationForm } from "./ClassRegistrationForm";
 
 export default function ClassesPage() {
@@ -10,19 +10,7 @@ export default function ClassesPage() {
         <PhotoBackdrop src={BACKDROPS.classes} scrim="standard" priority sizes="100vw" />
       </div>
 
-      <header className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <Link href="/" className="font-serif text-sm tracking-[0.2em] text-slate-100">
-          BASS NOTE <span className="text-amber-400">PIANO</span>
-        </Link>
-        <nav className="flex items-center gap-6 text-sm text-slate-200">
-          <Link href="/pricing" className="transition hover:text-amber-300">
-            Pricing
-          </Link>
-          <Link href="/login" className="glass-pill px-4 py-1.5 text-slate-100 transition hover:text-amber-300">
-            Log in
-          </Link>
-        </nav>
-      </header>
+      <MarketingNav />
 
       <section className="relative mx-auto max-w-lg px-6 pb-24 pt-6">
         <div className="text-center">

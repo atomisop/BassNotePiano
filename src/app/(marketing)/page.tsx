@@ -8,6 +8,7 @@ import { LESSON_PRICE_CENTS } from "@/lib/lessonPricing";
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { TiltGlow } from "@/components/ui/TiltGlow";
+import { MarketingNav } from "@/components/marketing/MarketingNav";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -103,25 +104,7 @@ export default function LandingPage() {
       <section className="relative isolate flex min-h-screen flex-col overflow-hidden">
         <PhotoBackdrop src={BACKDROPS.marketingHero} scrim="light" parallax priority sizes="100vw" />
 
-        <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
-          <span className="font-serif text-sm tracking-[0.2em] text-slate-100">
-            BASS NOTE <span className="text-amber-400">PIANO</span>
-          </span>
-          <nav className="flex items-center gap-6 text-sm text-slate-200">
-            <Link href="/classes" className="transition hover:text-amber-300">
-              Classes
-            </Link>
-            <Link href="/pricing" className="transition hover:text-amber-300">
-              Pricing
-            </Link>
-            <Link
-              href={isLoggedIn ? "/dashboard" : "/login"}
-              className="glass-pill px-4 py-1.5 text-slate-100 transition hover:text-amber-300"
-            >
-              {isLoggedIn ? "Dashboard" : "Log in"}
-            </Link>
-          </nav>
-        </header>
+        <MarketingNav />
 
         <motion.div
           variants={heroContainer}
