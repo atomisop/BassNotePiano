@@ -58,7 +58,7 @@ export function PinnedGrid({
                   onTogglePin(c.friendId);
                 }}
                 aria-label="Unpin conversation"
-                className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-white/10 bg-slate-950 text-amber-400 shadow"
+                className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-white/10 bg-slate-950 text-amber-400 shadow transition hover:bg-slate-900 hover:text-amber-300"
               >
                 <PinIcon filled className="h-3 w-3" />
               </button>

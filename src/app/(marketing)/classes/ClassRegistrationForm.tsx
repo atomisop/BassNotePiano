@@ -72,7 +72,7 @@ export function ClassRegistrationForm() {
 
   if (success) {
     return (
-      <div className="glass-card p-8 text-center">
+      <div className="glass-surface-elevated p-8 text-center">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Request received</p>
         <h3 className="mt-2 font-serif text-xl text-slate-50">Thanks, {fullName.split(" ")[0]}.</h3>
         <p className="mt-2 text-sm text-slate-400">
@@ -84,7 +84,7 @@ export function ClassRegistrationForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="glass-card space-y-5 p-6 sm:p-8">
+    <form onSubmit={handleSubmit} className="glass-surface-elevated space-y-5 p-6 sm:p-8">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-xs font-medium text-slate-400">Full name</label>
@@ -156,7 +156,7 @@ export function ClassRegistrationForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full rounded-xl bg-amber-400 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+        className="cta-sheen w-full rounded-xl bg-amber-400 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? "Submitting…" : "Request to register"}
       </button>

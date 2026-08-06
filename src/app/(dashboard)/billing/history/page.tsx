@@ -61,7 +61,7 @@ export default async function BillingHistoryPage() {
       </p>
 
       {payments.length === 0 ? (
-        <div className="mt-6 glass-card p-8 text-center text-sm text-slate-500">
+        <div className="mt-6 glass-surface p-8 text-center text-sm text-slate-500">
           Nothing here yet — buy the curriculum or a lesson package to see your payments listed here.
         </div>
       ) : (
@@ -69,10 +69,10 @@ export default async function BillingHistoryPage() {
           {payments.map((payment) => {
             const { eyebrow, title } = describePayment(payment);
             return (
-            <div key={payment.id} className="glass-card p-5">
+            <div key={payment.id} className="glass-surface p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-amber-400/80">{eyebrow}</p>
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">{eyebrow}</p>
                   <p className="mt-1 text-slate-100">{title}</p>
                   <p className="mt-1 text-xs text-slate-600">
                     {new Date(payment.createdAt).toLocaleDateString(undefined, {

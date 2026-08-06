@@ -62,7 +62,7 @@ function SectionCard({
   id?: string;
 }) {
   return (
-    <div id={id} className="glass-card scroll-mt-24 p-6">
+    <div id={id} className="glass-surface scroll-mt-24 p-6">
       <h2 className="font-serif text-lg text-slate-50">{title}</h2>
       {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
       <div className="mt-4">{children}</div>
@@ -124,7 +124,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
         <SectionCard title="Set a username first" description="Needed so other students can find and add you.">
           <Link
             href="/profile"
-            className="inline-block rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
+            className="cta-sheen inline-block rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
           >
             Go to your profile
           </Link>
@@ -155,7 +155,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
           <button
             type="submit"
             disabled={searching || query.trim().length < 2}
-            className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {searching ? "Searching…" : "Search"}
           </button>

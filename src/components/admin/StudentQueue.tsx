@@ -69,13 +69,13 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
   }
 
   if (registrations.length === 0) {
-    return <div className="glass-card p-8 text-center text-sm text-slate-500">{emptyMessage}</div>;
+    return <div className="glass-surface backdrop-blur-2xl p-8 text-center text-sm text-slate-500">{emptyMessage}</div>;
   }
 
   return (
     <div className="space-y-3">
       {registrations.map((reg) => (
-        <div key={reg.id} className="glass-card p-5">
+        <div key={reg.id} className="glass-surface backdrop-blur-2xl p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-start gap-3">
               <Avatar image={reg.user?.image} name={reg.fullName} />
@@ -163,7 +163,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
                 type="button"
                 onClick={() => handleApprove(reg.id)}
                 disabled={busyId === reg.id}
-                className="flex-1 rounded-lg bg-amber-400 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                className="cta-sheen flex-1 rounded-lg bg-amber-400 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {busyId === reg.id ? "Approving…" : "Approve"}
               </button>

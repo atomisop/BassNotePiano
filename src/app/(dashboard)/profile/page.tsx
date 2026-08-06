@@ -65,13 +65,13 @@ export default async function ProfilePage() {
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="glass-card p-5">
+        <div className="glass-surface p-5">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">
             {user.currentStreak > 0 ? `${user.currentStreak} day streak` : "Streak"}
           </p>
           <StreakDots currentStreak={user.currentStreak} />
         </div>
-        <div className="glass-card p-5">
+        <div className="glass-surface p-5">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Longest streak</p>
           <p className="mt-2 font-serif text-2xl text-slate-50">
             {user.longestStreak} day{user.longestStreak === 1 ? "" : "s"}
@@ -87,7 +87,7 @@ export default async function ProfilePage() {
           </p>
         </div>
         <p className="mt-1 text-sm text-slate-500">Earned and locked achievements — hover a badge to see how to unlock it.</p>
-        <div className="mt-4 glass-card p-6">
+        <div className="mt-4 glass-surface p-6">
           <BadgeGrid earnedCodes={new Set(earnedCodes)} />
         </div>
       </div>

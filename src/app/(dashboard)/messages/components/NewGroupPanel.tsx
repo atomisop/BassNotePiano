@@ -124,7 +124,7 @@ export function NewGroupPanel({
             type="button"
             onClick={handleCreate}
             disabled={submitting || selected.size === 0}
-            className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? "Creating…" : `Create group${selected.size > 0 ? ` (${selected.size})` : ""}`}
           </button>

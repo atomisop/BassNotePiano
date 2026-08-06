@@ -50,7 +50,7 @@ function TabIcon({ path, className = "h-[18px] w-[18px] shrink-0" }: { path: str
 
 function SectionCard({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
-    <div className="glass-card p-6">
+    <div className="glass-surface p-6">
       <h2 className="font-serif text-lg text-slate-50">{title}</h2>
       <p className="mt-1 text-sm text-slate-500">{description}</p>
       <div className="mt-4">{children}</div>
@@ -62,7 +62,7 @@ function SectionCard({ title, description, children }: { title: string; descript
 // there's room for both without it feeling cluttered.
 function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: (tab: TabId) => void }) {
   return (
-    <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start glass-card p-2 lg:flex">
+    <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start glass-surface p-2 lg:flex">
       {TABS.map((tab) => (
         <button
           key={tab.id}
@@ -86,7 +86,7 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
 // pushes a full-screen SlideOverPanel instead of swapping content in place.
 function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
   return (
-    <div className="glass-card divide-y divide-white/10 lg:hidden">
+    <div className="glass-surface divide-y divide-white/10 lg:hidden">
       {TABS.map((tab) => (
         <button
           key={tab.id}
@@ -228,7 +228,7 @@ function MembershipSection({
         {!hasCurriculumAccess && (
           <Link
             href="/billing/curriculum"
-            className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
+            className="cta-sheen rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
           >
             Unlock — $99
           </Link>
@@ -330,7 +330,7 @@ function PasswordSection({ email }: { email: string }) {
         <button
           type="submit"
           disabled={submitting || awaitingCode}
-          className="w-full rounded-lg bg-amber-400 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen w-full rounded-lg bg-amber-400 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Sending…" : "Change password"}
         </button>
@@ -371,7 +371,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boo
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative h-5 w-9 shrink-0 rounded-full transition ${checked ? "bg-amber-400" : "bg-slate-800"}`}
+      className={`relative h-5 w-9 shrink-0 rounded-full transition ${checked ? "bg-amber-400 hover:bg-amber-300" : "bg-slate-800 hover:bg-slate-700"}`}
     >
       <span
         className={`absolute top-0.5 h-4 w-4 rounded-full bg-slate-950 transition ${checked ? "left-[18px]" : "left-0.5"}`}

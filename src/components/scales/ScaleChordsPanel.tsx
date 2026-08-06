@@ -17,7 +17,7 @@ export function ScaleChordsPanel({ variant, root }: ScaleChordsPanelProps) {
   );
 
   return (
-    <div className="glass-card p-6">
+    <div className="glass-surface p-6">
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Scale Chords</p>
       <h2 className="mt-1 font-serif text-xl text-slate-50">Native chords — {variant.name}</h2>
 

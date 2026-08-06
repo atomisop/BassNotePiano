@@ -4,6 +4,7 @@ import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
+import { useErrorShake } from "@/lib/useErrorShake";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -23,6 +24,7 @@ function RegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const shakeControls = useErrorShake(error);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -63,12 +65,12 @@ function RegisterForm() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-sm glass-card p-7"
+      className="w-full max-w-sm glass-surface-elevated p-7"
     >
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Start learning</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Create an account</h1>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">
         <div>
           <label htmlFor="name" className="mb-1 block text-xs font-medium text-slate-400">
             Name
@@ -108,8 +110,13 @@ function RegisterForm() {
             required
             minLength={MIN_PASSWORD_LENGTH}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setError(null);
+            }}
+            className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-amber-400/60 ${
+              error ? "border-red-400/60" : "border-white/10"
+            }`}
           />
         </div>
         <div>
@@ -123,8 +130,13 @@ function RegisterForm() {
             required
             minLength={MIN_PASSWORD_LENGTH}
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              setError(null);
+            }}
+            className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-amber-400/60 ${
+              error ? "border-red-400/60" : "border-white/10"
+            }`}
           />
         </div>
 
@@ -133,11 +145,11 @@ function RegisterForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Creating account…" : "Create account"}
         </button>
-      </form>
+      </motion.form>
 
       <p className="mt-6 text-center text-sm text-slate-500">
         Already have an account?{" "}

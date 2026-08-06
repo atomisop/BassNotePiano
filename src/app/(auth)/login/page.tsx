@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useErrorShake } from "@/lib/useErrorShake";
 import { loginStepOneAction, resendLoginCodeAction, createTrustedDeviceAction } from "./actions";
 
 const cardVariants = {
@@ -33,6 +34,7 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [resent, setResent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const shakeControls = useErrorShake(error);
 
   async function completeSignIn(codeToSubmit: string) {
     const result = await signIn("credentials", { email, code: codeToSubmit, redirect: false });
@@ -98,7 +100,7 @@ function LoginForm() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-sm glass-card p-7"
+      className="w-full max-w-sm glass-surface-elevated p-7"
     >
       <AnimatePresence mode="wait">
         {step === "password" ? (
@@ -106,7 +108,7 @@ function LoginForm() {
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Welcome back</p>
             <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Log in</h1>
 
-            <form onSubmit={handlePasswordSubmit} className="mt-6 space-y-4">
+            <motion.form onSubmit={handlePasswordSubmit} animate={shakeControls} className="mt-6 space-y-4">
               <div>
                 <label htmlFor="email" className="mb-1 block text-xs font-medium text-slate-400">
                   Email
@@ -118,8 +120,13 @@ function LoginForm() {
                   required
                   autoFocus
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError(null);
+                  }}
+                  className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-amber-400/60 ${
+                    error ? "border-red-400/60" : "border-white/10"
+                  }`}
                 />
               </div>
               <div>
@@ -137,8 +144,13 @@ function LoginForm() {
                   autoComplete="current-password"
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError(null);
+                  }}
+                  className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-amber-400/60 ${
+                    error ? "border-red-400/60" : "border-white/10"
+                  }`}
                 />
               </div>
 
@@ -147,11 +159,11 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                className="cta-sheen w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? "Checking…" : "Continue"}
               </button>
-            </form>
+            </motion.form>
 
             <p className="mt-6 text-center text-sm text-slate-500">
               New here?{" "}
@@ -168,7 +180,7 @@ function LoginForm() {
               We sent a 6-digit code to <span className="text-slate-300">{email}</span>.
             </p>
 
-            <form onSubmit={handleCodeSubmit} className="mt-6 space-y-4">
+            <motion.form onSubmit={handleCodeSubmit} animate={shakeControls} className="mt-6 space-y-4">
               <input
                 type="text"
                 inputMode="numeric"
@@ -177,17 +189,22 @@ function LoginForm() {
                 required
                 autoFocus
                 value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-center font-mono text-lg tracking-[0.5em] text-slate-100 outline-none transition focus:border-amber-400/60"
+                onChange={(e) => {
+                  setCode(e.target.value.replace(/\D/g, ""));
+                  setError(null);
+                }}
+                className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-center font-mono text-lg tracking-[0.5em] text-slate-100 outline-none transition-colors focus:border-amber-400/60 ${
+                  error ? "border-red-400/60" : "border-white/10"
+                }`}
                 placeholder="······"
               />
 
-              <label className="flex items-center gap-2 text-sm text-slate-400">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-400">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-white/15 bg-slate-950 accent-amber-400"
+                  className="h-4 w-4 cursor-pointer rounded border-white/15 bg-slate-950 accent-amber-400"
                 />
                 Remember me for 7 days
               </label>
@@ -198,11 +215,11 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={submitting || code.length !== 6}
-                className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                className="cta-sheen w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? "Logging in…" : "Log in"}
               </button>
-            </form>
+            </motion.form>
 
             <div className="mt-4 flex items-center justify-between text-sm">
               <button

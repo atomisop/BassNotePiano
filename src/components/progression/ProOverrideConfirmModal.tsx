@@ -93,7 +93,7 @@ export function ProOverrideConfirmModal({
                 type="button"
                 onClick={onConfirm}
                 disabled={isConfirming}
-                className="flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                className="cta-sheen flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isConfirming ? "Unlocking…" : "Confirm override"}
               </button>

@@ -28,7 +28,7 @@ function TabIcon({ path, className = "h-[18px] w-[18px] shrink-0" }: { path: str
 
 function DesktopAboutNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: (tab: TabId) => void }) {
   return (
-    <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start glass-card p-2 lg:flex">
+    <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start glass-surface p-2 lg:flex">
       {TABS.map((tab) => (
         <button
           key={tab.id}
@@ -50,7 +50,7 @@ function DesktopAboutNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: 
 
 function MobileAboutMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
   return (
-    <div className="glass-card divide-y divide-white/10 lg:hidden">
+    <div className="glass-surface divide-y divide-white/10 lg:hidden">
       {TABS.map((tab) => (
         <button
           key={tab.id}
@@ -69,7 +69,7 @@ function MobileAboutMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
 
 function AboutTab() {
   return (
-    <div className="glass-card p-6">
+    <div className="glass-surface p-6">
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Bass Note Piano</p>
       <p className="mt-1 font-serif text-2xl text-slate-50">Version {CURRENT_VERSION}</p>
       <p className="mt-3 max-w-md text-sm text-slate-400">
@@ -85,7 +85,7 @@ function UpdatesTab() {
   return (
     <div className="space-y-4">
       {CHANGELOG.map((entry) => (
-        <div key={entry.version} className="glass-card p-6">
+        <div key={entry.version} className="glass-surface p-6">
           <div className="flex items-baseline justify-between gap-4">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">v{entry.version}</p>
             <p className="text-xs text-slate-600">{entry.date}</p>

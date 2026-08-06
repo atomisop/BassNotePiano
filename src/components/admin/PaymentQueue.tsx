@@ -84,7 +84,7 @@ export function PaymentQueue({
 
   if (payments.length === 0) {
     return (
-      <div className="glass-card p-8 text-center text-sm text-slate-500">
+      <div className="glass-surface backdrop-blur-2xl p-8 text-center text-sm text-slate-500">
         {emptyMessage}
       </div>
     );
@@ -95,7 +95,7 @@ export function PaymentQueue({
       {payments.map((payment) => {
         const { eyebrow, title } = describePayment(payment);
         return (
-        <div key={payment.id} className="glass-card p-5">
+        <div key={payment.id} className="glass-surface backdrop-blur-2xl p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">{eyebrow}</p>
@@ -180,7 +180,7 @@ export function PaymentQueue({
                 type="button"
                 onClick={() => handleApprove(payment.id)}
                 disabled={busyId === payment.id}
-                className="flex-1 rounded-lg bg-amber-400 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                className="cta-sheen flex-1 rounded-lg bg-amber-400 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {busyId === payment.id ? "Approving…" : "Approve"}
               </button>

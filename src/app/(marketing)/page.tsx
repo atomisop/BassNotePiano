@@ -5,6 +5,9 @@ import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { SCALE_GROUPS, CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
 import { LESSON_PRICE_CENTS } from "@/lib/lessonPricing";
+import { BACKDROPS } from "@/lib/backdrops";
+import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
+import { TiltGlow } from "@/components/ui/TiltGlow";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -30,109 +33,224 @@ const gridItem = {
   visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 240, damping: 24 } },
 };
 
+// Real product visualization, not more mood photography — a static echo of
+// the actual in-app roadmap (src/components/progression/ScaleRoadmap.tsx),
+// same step-marker/checklist visual language, sample progress data local to
+// this section only. Deliberately NOT the live interactive component: its
+// cards navigate via next-auth session state, which would misbehave (dead
+// clicks) on a logged-out marketing page.
+const ROADMAP_PREVIEW = [
+  { code: "S0", title: "Diatonic Scale, Chromatic Scale & the Seven Modes", status: "completed" as const },
+  { code: "S1", title: "Major Pentatonic — Tizita Major", status: "in_progress" as const },
+  { code: "S2", title: "Minor Pentatonic — Bati Minor", status: "locked" as const },
+];
+
+function RoadmapPreviewMarker({ status }: { status: "completed" | "in_progress" | "locked" }) {
+  if (status === "completed") {
+    return (
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-400 text-slate-950">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M5 12l5 5L19 8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+    );
+  }
+  if (status === "locked") {
+    return (
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-white/10 bg-slate-950 text-slate-600">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="4" y="11" width="16" height="9" rx="2" />
+          <path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
+        </svg>
+      </div>
+    );
+  }
+  return (
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-amber-400 bg-amber-400/10 text-xs font-semibold text-amber-300">
+      2
+    </div>
+  );
+}
+
+const ROADMAP_STATUS_LABEL: Record<(typeof ROADMAP_PREVIEW)[number]["status"], string> = {
+  completed: "Completed",
+  in_progress: "In progress",
+  locked: "Locked",
+};
+
+const INSTRUMENT_SECTIONS = [
+  {
+    key: "guitar",
+    src: BACKDROPS.guitar,
+    label: "Guitar",
+    copy: "The same Tizita and Bati pentatonics you learn at the keys map directly onto six strings.",
+  },
+  {
+    key: "violin",
+    src: BACKDROPS.violin,
+    label: "Violin",
+    copy: "Anchihoye's bent intervals and Mixolydian's open fifths translate note-for-note to the bow.",
+  },
+];
+
 export default function LandingPage() {
   const { data: session } = useSession();
   const isLoggedIn = Boolean(session?.user);
 
   return (
-    <div className="relative overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[560px] bg-[radial-gradient(ellipse_at_top,_rgba(217,180,88,0.14),_transparent_60%)]"
-      />
+    <div className="relative overflow-hidden bg-slate-950">
+      {/* ============ Hero — full-bleed piano backdrop, full viewport height ============ */}
+      <section className="relative isolate flex min-h-screen flex-col overflow-hidden">
+        <PhotoBackdrop src={BACKDROPS.marketingHero} scrim="light" parallax priority sizes="100vw" />
 
-      <header className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <span className="font-serif text-sm tracking-[0.2em] text-slate-200">
-          BASS NOTE <span className="text-amber-400">PIANO</span>
-        </span>
-        <nav className="flex items-center gap-6 text-sm text-slate-400">
-          <Link href="/classes" className="transition hover:text-slate-100">
-            Classes
-          </Link>
-          <Link href="/pricing" className="transition hover:text-slate-100">
-            Pricing
-          </Link>
-          <Link
-            href={isLoggedIn ? "/dashboard" : "/login"}
-            className="rounded-full border border-white/10 px-4 py-1.5 text-slate-200 transition hover:border-amber-400/50 hover:text-amber-300"
-          >
-            {isLoggedIn ? "Dashboard" : "Log in"}
-          </Link>
-        </nav>
-      </header>
+        <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
+          <span className="font-serif text-sm tracking-[0.2em] text-slate-100">
+            BASS NOTE <span className="text-amber-400">PIANO</span>
+          </span>
+          <nav className="flex items-center gap-6 text-sm text-slate-200">
+            <Link href="/classes" className="transition hover:text-amber-300">
+              Classes
+            </Link>
+            <Link href="/pricing" className="transition hover:text-amber-300">
+              Pricing
+            </Link>
+            <Link
+              href={isLoggedIn ? "/dashboard" : "/login"}
+              className="glass-pill px-4 py-1.5 text-slate-100 transition hover:text-amber-300"
+            >
+              {isLoggedIn ? "Dashboard" : "Log in"}
+            </Link>
+          </nav>
+        </header>
 
-      <motion.section
-        variants={heroContainer}
-        initial="hidden"
-        animate="visible"
-        className="relative mx-auto max-w-3xl px-6 pb-20 pt-16 text-center sm:pt-24"
-      >
-        <motion.p
-          variants={heroItem}
-          className="mx-auto mb-5 w-fit rounded-full border border-amber-400/25 bg-amber-400/5 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-amber-300"
+        <motion.div
+          variants={heroContainer}
+          initial="hidden"
+          animate="visible"
+          className="relative z-10 mx-auto flex max-w-3xl flex-1 flex-col items-center justify-center px-6 pb-20 text-center"
         >
-          Only {formatUsd(CURRICULUM_PRICE_CENTS)} · Lifetime access
-        </motion.p>
-        <motion.h1 variants={heroItem} className="font-serif text-4xl leading-tight text-slate-50 sm:text-5xl">
-          Ethiopian Scales, <span className="text-amber-300">Rhythm</span> &amp; Chords
-        </motion.h1>
-        <motion.p variants={heroItem} className="mx-auto mt-5 max-w-xl text-balance text-base text-slate-400 sm:text-lg">
-          An interactive masterclass in the Ethiopian kiñit system — Tizita, Bati, Anchihoye, and Mixolydian
-          pentatonics — spelled correctly in every key, with native chords mapped for each one.
-        </motion.p>
-        <motion.div variants={heroItem} className="mt-9 flex flex-wrap items-center justify-center gap-3">
-          <Link
-            href={isLoggedIn ? "/dashboard" : "/register"}
-            className="rounded-xl bg-amber-400 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+          <motion.p
+            variants={heroItem}
+            className="glass-pill mx-auto mb-5 w-fit px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-amber-300"
           >
-            {isLoggedIn ? "Go to dashboard" : `Start learning — ${formatUsd(CURRICULUM_PRICE_CENTS)}`}
-          </Link>
-          <Link
-            href="/pricing"
-            className="rounded-xl border border-white/10 px-6 py-3 text-sm font-medium text-slate-200 transition hover:border-white/20 hover:bg-white/5"
-          >
-            See pricing
-          </Link>
+            Only {formatUsd(CURRICULUM_PRICE_CENTS)} · Lifetime access
+          </motion.p>
+          <motion.h1 variants={heroItem} className="font-serif text-4xl leading-tight text-slate-50 sm:text-5xl">
+            Ethiopian Scales, <span className="text-amber-300">Rhythm</span> &amp; Chords
+          </motion.h1>
+          <motion.p variants={heroItem} className="mx-auto mt-5 max-w-xl text-balance text-base text-slate-200 sm:text-lg">
+            An interactive masterclass in the Ethiopian kiñit system — Tizita, Bati, Anchihoye, and Mixolydian
+            pentatonics — spelled correctly in every key, with native chords mapped for each one.
+          </motion.p>
+          <motion.div variants={heroItem} className="mt-9 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href={isLoggedIn ? "/dashboard" : "/register"}
+              className="cta-sheen rounded-xl bg-amber-400 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+            >
+              {isLoggedIn ? "Go to dashboard" : `Start learning — ${formatUsd(CURRICULUM_PRICE_CENTS)}`}
+            </Link>
+            <Link
+              href="/pricing"
+              className="glass-pill px-6 py-3 text-sm font-medium text-slate-100 transition hover:text-amber-300"
+            >
+              See pricing
+            </Link>
+          </motion.div>
         </motion.div>
-      </motion.section>
+      </section>
 
+      {/* ============ Curriculum grid — its own backdrop, distinct from the hero, full viewport height ============ */}
       <motion.section
         variants={gridContainer}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: "-80px" }}
-        className="relative mx-auto max-w-6xl px-6 pb-24"
+        className="relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-16"
       >
-        <h2 className="mb-8 text-center font-serif text-2xl text-slate-100">The curriculum</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {SCALE_GROUPS.map((scale) => (
-            <motion.article
-              key={scale.slug}
-              variants={gridItem}
-              whileHover={{ y: -4 }}
-              className="group glass-card p-5 transition hover:border-amber-400/30"
-            >
-              <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">{scale.code}</p>
-              <h3 className="mt-2 font-serif text-lg text-slate-50">{scale.title}</h3>
-              {scale.kinitName && <p className="mt-1 text-sm text-slate-500">{scale.kinitName}</p>}
-              <p className="mt-4 font-mono text-xs text-slate-400">{scale.formula.split("-").join(" – ")}</p>
-            </motion.article>
-          ))}
+        <PhotoBackdrop src={BACKDROPS.curriculum} scrim="standard" sizes="100vw" />
+        <div className="relative z-10 mx-auto w-full max-w-6xl">
+          <h2 className="mb-3 text-center font-serif text-2xl text-slate-100">The curriculum</h2>
+          <p className="mx-auto mb-8 max-w-md text-center text-sm text-slate-300">
+            Here's what you're actually looking at — your roadmap, tracked scale by scale.
+          </p>
+
+          <div className="glass-surface-elevated mx-auto mb-10 max-w-lg p-6 sm:p-7">
+            {ROADMAP_PREVIEW.map((scale, i) => (
+              <div key={scale.code} className="flex gap-3.5">
+                <div className="flex flex-col items-center">
+                  <RoadmapPreviewMarker status={scale.status} />
+                  {i < ROADMAP_PREVIEW.length - 1 && (
+                    <span className="w-px flex-1 border-l-2 border-dotted border-white/10" />
+                  )}
+                </div>
+                <div className={i < ROADMAP_PREVIEW.length - 1 ? "pb-5" : ""}>
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">{scale.code}</p>
+                  <p className="mt-1 text-sm text-slate-100">{scale.title}</p>
+                  <p className="mt-1 text-xs text-slate-500">{ROADMAP_STATUS_LABEL[scale.status]}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {SCALE_GROUPS.map((scale) => (
+              <motion.article
+                key={scale.slug}
+                variants={gridItem}
+                whileHover={{ y: -4 }}
+                className="glass-surface group p-5 transition hover:border-amber-400/30"
+              >
+                <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">{scale.code}</p>
+                <h3 className="mt-2 font-serif text-lg text-slate-50">{scale.title}</h3>
+                {scale.kinitName && <p className="mt-1 text-sm text-slate-500">{scale.kinitName}</p>}
+                <p className="mt-4 font-mono text-xs text-slate-400">{scale.formula.split("-").join(" – ")}</p>
+              </motion.article>
+            ))}
+          </div>
         </div>
       </motion.section>
 
+      {/* ============ Every instrument — full-bleed sections ============ */}
+      {INSTRUMENT_SECTIONS.map((section, i) => (
+        <motion.section
+          key={section.key}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ type: "spring", stiffness: 240, damping: 26 }}
+          className="relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-16"
+        >
+          <PhotoBackdrop src={section.src} scrim="light" parallax sizes="100vw" />
+          {i === 0 && (
+            <p className="relative z-10 mx-auto mb-8 w-fit rounded-full px-3 py-1 text-center text-xs font-medium uppercase tracking-[0.2em] text-amber-300">
+              One theory, every instrument
+            </p>
+          )}
+          <div className="glass-surface-elevated relative z-10 mx-auto max-w-md px-7 py-8 text-center sm:px-8">
+            <span className="text-xs font-medium uppercase tracking-[0.2em] text-amber-300">{section.label}</span>
+            {i === 0 && (
+              <h2 className="mt-3 font-serif text-2xl text-slate-50 sm:text-3xl">
+                Kiñit is a language, not a piano trick
+              </h2>
+            )}
+            <p className="mt-3 text-sm text-slate-200 sm:text-base">{section.copy}</p>
+          </div>
+        </motion.section>
+      ))}
+
+      {/* ============ Pricing callout ============ */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ type: "spring", stiffness: 240, damping: 26 }}
-        className="relative mx-auto max-w-2xl px-6 pb-28 text-center"
+        className="relative mx-auto max-w-2xl px-6 py-28 text-center"
       >
-        <div className="rounded-3xl border border-amber-400/30 bg-amber-400/5 p-8 sm:p-10">
+        <TiltGlow className="glass-surface-elevated p-8 sm:p-10" maxTilt={4}>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-300">Everything, once</p>
           <p className="mt-3 font-serif text-5xl text-slate-50">{formatUsd(CURRICULUM_PRICE_CENTS)}</p>
           <p className="mt-2 text-sm text-amber-200/70">One-time payment · every scale, forever · no subscriptions</p>
-        </div>
+        </TiltGlow>
         <p className="mt-6 text-sm text-slate-500">
           Want live coaching too? Add 30-minute lessons anytime for {formatUsd(LESSON_PRICE_CENTS)} each — Online or
           In-Person, with 20% off when you book 2 or more.

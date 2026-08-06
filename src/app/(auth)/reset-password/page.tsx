@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
+import { useErrorShake } from "@/lib/useErrorShake";
 import { resetPasswordAction, resendResetCodeAction } from "./actions";
 
 const cardVariants = {
@@ -23,6 +24,7 @@ function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [resent, setResent] = useState(false);
+  const shakeControls = useErrorShake(error);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -65,7 +67,7 @@ function ResetPasswordForm() {
         variants={cardVariants}
         initial="hidden"
         animate="visible"
-        className="w-full max-w-sm glass-card p-7 text-center"
+        className="w-full max-w-sm glass-surface-elevated p-7 text-center"
       >
         <p className="text-sm text-slate-400">
           Missing email.{" "}
@@ -83,7 +85,7 @@ function ResetPasswordForm() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-sm glass-card p-7"
+      className="w-full max-w-sm glass-surface-elevated p-7"
     >
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Reset password</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Choose a new password</h1>
@@ -91,7 +93,7 @@ function ResetPasswordForm() {
         We sent a 6-digit code to <span className="text-slate-300">{email}</span>.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">
         <div>
           <label htmlFor="code" className="mb-1 block text-xs font-medium text-slate-400">
             Code
@@ -105,8 +107,13 @@ function ResetPasswordForm() {
             required
             autoFocus
             value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-center font-mono text-lg tracking-[0.5em] text-slate-100 outline-none transition focus:border-amber-400/60"
+            onChange={(e) => {
+              setCode(e.target.value.replace(/\D/g, ""));
+              setError(null);
+            }}
+            className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-center font-mono text-lg tracking-[0.5em] text-slate-100 outline-none transition-colors focus:border-amber-400/60 ${
+              error ? "border-red-400/60" : "border-white/10"
+            }`}
             placeholder="······"
           />
         </div>
@@ -121,8 +128,13 @@ function ResetPasswordForm() {
             autoComplete="new-password"
             required
             value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+            onChange={(e) => {
+              setNewPassword(e.target.value);
+              setError(null);
+            }}
+            className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-amber-400/60 ${
+              error ? "border-red-400/60" : "border-white/10"
+            }`}
           />
         </div>
 
@@ -136,8 +148,13 @@ function ResetPasswordForm() {
             autoComplete="new-password"
             required
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              setError(null);
+            }}
+            className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-amber-400/60 ${
+              error ? "border-red-400/60" : "border-white/10"
+            }`}
           />
         </div>
 
@@ -147,11 +164,11 @@ function ResetPasswordForm() {
         <button
           type="submit"
           disabled={submitting || code.length !== 6}
-          className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Resetting…" : "Reset password"}
         </button>
-      </form>
+      </motion.form>
 
       <button
         type="button"

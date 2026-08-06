@@ -88,28 +88,28 @@ export function LessonsClient({
       <p className="mt-2 text-sm text-slate-500">$50 per 30-minute session — Online or In-Person.</p>
 
       <div className="mt-6 grid grid-cols-2 gap-3">
-        <div className="glass-card p-4">
+        <div className="glass-surface p-4">
           <p className="text-xs uppercase tracking-wide text-slate-500">Online credits</p>
           <p className="mt-1 font-serif text-2xl text-slate-50">{credits.online}</p>
         </div>
-        <div className="glass-card p-4">
+        <div className="glass-surface p-4">
           <p className="text-xs uppercase tracking-wide text-slate-500">In-person credits</p>
           <p className="mt-1 font-serif text-2xl text-slate-50">{credits.inPerson}</p>
         </div>
       </div>
 
       {!hasAnyCredits ? (
-        <div className="mt-6 glass-card p-8 text-center">
+        <div className="mt-6 glass-surface p-8 text-center">
           <p className="text-sm text-slate-400">You don't have any lesson credits yet.</p>
           <Link
             href="/billing/lessons"
-            className="mt-4 inline-block rounded-xl bg-amber-400 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+            className="cta-sheen mt-4 inline-block rounded-xl bg-amber-400 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
           >
             Buy lesson credits
           </Link>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="mt-6 glass-card space-y-4 p-6">
+        <form onSubmit={handleSubmit} className="mt-6 glass-surface space-y-4 p-6">
           <div>
             <p className="mb-1.5 text-xs font-medium text-slate-400">Lesson type</p>
             <div className="flex gap-2">
@@ -173,7 +173,7 @@ export function LessonsClient({
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? "Requesting…" : "Request lesson"}
           </button>
@@ -187,7 +187,7 @@ export function LessonsClient({
         ) : (
           <div className="space-y-2">
             {bookings.map((b) => (
-              <div key={b.id} className="glass-card flex items-center justify-between gap-3 p-4">
+              <div key={b.id} className="glass-surface flex items-center justify-between gap-3 p-4">
                 <div>
                   <p className="text-sm text-slate-100">
                     {b.type === "ONLINE" ? "Online" : "In-Person"} — {formatDateTime(b.scheduledAt)}

@@ -210,7 +210,7 @@ function MessagesInner({
   }
 
   return (
-    <div className="glass-card flex h-[calc(100vh-9rem)] overflow-hidden">
+    <div className="glass-surface flex h-[calc(100vh-9rem)] overflow-hidden">
       <div className={`${hasActivePane ? "hidden md:flex" : "flex"} md:w-[350px] md:shrink-0`}>
         <ConversationSidebar
           conversations={conversations}

@@ -33,7 +33,7 @@ export function MobileTabBar({ isAdmin, unreadMessageCount }: { isAdmin: boolean
               key={tab.href}
               href={tab.href}
               className={`relative flex flex-1 flex-col items-center gap-1 py-2.5 text-center transition ${
-                active ? "text-amber-300" : "text-slate-500"
+                active ? "text-amber-300" : "text-slate-500 hover:text-slate-300"
               }`}
             >
               <NavIcon path={tab.icon} />
@@ -50,7 +50,7 @@ export function MobileTabBar({ isAdmin, unreadMessageCount }: { isAdmin: boolean
           type="button"
           onClick={() => setMoreOpen(true)}
           className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-center transition ${
-            inMoreSection ? "text-amber-300" : "text-slate-500"
+            inMoreSection ? "text-amber-300" : "text-slate-500 hover:text-slate-300"
           }`}
         >
           <NavIcon path={ICON_PATHS.more} />

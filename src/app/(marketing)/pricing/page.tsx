@@ -4,6 +4,9 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
 import { LESSON_PRICE_CENTS, LESSON_DISCOUNT_RATE, calculateLessonTotal } from "@/lib/lessonPricing";
+import { BACKDROPS } from "@/lib/backdrops";
+import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
+import { TiltGlow } from "@/components/ui/TiltGlow";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -29,24 +32,20 @@ export default function PricingPage() {
   const examplePricing = calculateLessonTotal(2);
 
   return (
-    <div className="relative overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(ellipse_at_top,_rgba(217,180,88,0.14),_transparent_60%)]"
-      />
+    <div className="relative min-h-screen overflow-hidden">
+      <div className="fixed inset-0 -z-10">
+        <PhotoBackdrop src={BACKDROPS.pricing} scrim="standard" priority sizes="100vw" />
+      </div>
 
       <header className="relative mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <Link href="/" className="font-serif text-sm tracking-[0.2em] text-slate-200">
+        <Link href="/" className="font-serif text-sm tracking-[0.2em] text-slate-100">
           BASS NOTE <span className="text-amber-400">PIANO</span>
         </Link>
-        <nav className="flex items-center gap-6 text-sm text-slate-400">
-          <Link href="/classes" className="transition hover:text-slate-100">
+        <nav className="flex items-center gap-6 text-sm text-slate-200">
+          <Link href="/classes" className="transition hover:text-amber-300">
             Classes
           </Link>
-          <Link
-            href="/login"
-            className="rounded-full border border-white/10 px-4 py-1.5 text-slate-200 transition hover:border-amber-400/50 hover:text-amber-300"
-          >
+          <Link href="/login" className="glass-pill px-4 py-1.5 text-slate-100 transition hover:text-amber-300">
             Log in
           </Link>
         </nav>
@@ -60,14 +59,14 @@ export default function PricingPage() {
       >
         <motion.p
           variants={item}
-          className="mx-auto mb-4 w-fit rounded-full border border-amber-400/25 bg-amber-400/5 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-amber-300"
+          className="glass-pill mx-auto mb-4 w-fit px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-amber-300"
         >
           Pricing
         </motion.p>
         <motion.h1 variants={item} className="font-serif text-4xl text-slate-50">
           One price. Every scale. Forever.
         </motion.h1>
-        <motion.p variants={item} className="mx-auto mt-4 max-w-lg text-base text-slate-400">
+        <motion.p variants={item} className="mx-auto mt-4 max-w-lg text-base text-slate-200">
           Every scale and its native chords, spelled correctly in all 12 keys — a single {formatUsd(CURRICULUM_PRICE_CENTS)}{" "}
           payment unlocks the whole curriculum for good.
         </motion.p>
@@ -79,12 +78,12 @@ export default function PricingPage() {
         animate="visible"
         className="relative mx-auto max-w-lg px-6 pb-16"
       >
-        <motion.div variants={item} className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-8 text-center">
+        <TiltGlow className="glass-surface-elevated p-8 text-center" maxTilt={4}>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-300">Curriculum — Lifetime</p>
           <p className="mt-3 font-serif text-5xl text-slate-50">{formatUsd(CURRICULUM_PRICE_CENTS)}</p>
           <p className="mt-1 text-sm text-amber-200/70">one-time payment · no subscriptions, ever</p>
 
-          <ul className="mt-6 space-y-2.5 text-left text-sm text-slate-200">
+          <ul className="mt-6 space-y-2.5 text-left text-sm text-slate-100">
             {CURRICULUM_BENEFITS.map((benefit) => (
               <li key={benefit} className="flex gap-2.5">
                 <span className="text-amber-400">→</span>
@@ -95,11 +94,11 @@ export default function PricingPage() {
 
           <Link
             href="/billing/curriculum"
-            className="mt-7 block w-full rounded-xl bg-amber-400 py-2.5 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+            className="cta-sheen mt-7 block w-full rounded-xl bg-amber-400 py-2.5 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
           >
             Unlock the curriculum
           </Link>
-        </motion.div>
+        </TiltGlow>
       </motion.section>
 
       <motion.section
@@ -109,15 +108,15 @@ export default function PricingPage() {
         transition={{ type: "spring", stiffness: 240, damping: 26 }}
         className="relative mx-auto max-w-2xl px-6 pb-28"
       >
-        <div className="glass-card p-7 sm:p-8">
+        <div className="glass-surface p-7 sm:p-8">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Live lessons</p>
           <h2 className="mt-1.5 font-serif text-2xl text-slate-50">Add real-time coaching, anytime</h2>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-slate-300">
             Once you've got the curriculum, book 30-minute live lessons — Online or In-Person, same price either
             way — on top of your self-paced learning.
           </p>
 
-          <div className="mt-6 rounded-xl border border-amber-400/30 bg-amber-400/5 p-5 text-center">
+          <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] p-5 text-center">
             <p className="font-serif text-3xl text-slate-50">
               {formatUsd(LESSON_PRICE_CENTS)}
               <span className="text-base font-sans text-amber-200/70"> / 30 min</span>
@@ -127,9 +126,9 @@ export default function PricingPage() {
             </p>
           </div>
 
-          <p className="mt-5 text-sm text-slate-500">
+          <p className="mt-5 text-sm text-slate-400">
             Example: 2 lessons = {formatUsd(examplePricing.subtotalCents)} − {Math.round(LESSON_DISCOUNT_RATE * 100)}%
-            ({formatUsd(examplePricing.discountCents)}) = <span className="text-slate-200">{formatUsd(examplePricing.totalCents)} total</span>. A
+            ({formatUsd(examplePricing.discountCents)}) = <span className="text-slate-100">{formatUsd(examplePricing.totalCents)} total</span>. A
             single session stays {formatUsd(LESSON_PRICE_CENTS)}.
           </p>
 
@@ -142,7 +141,7 @@ export default function PricingPage() {
         </div>
       </motion.section>
 
-      <footer className="relative border-t border-white/5 px-6 py-8 text-center text-xs text-slate-600">
+      <footer className="relative border-t border-white/10 px-6 py-8 text-center text-xs text-slate-400">
         Bass Note Piano — a digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book.
       </footer>
     </div>

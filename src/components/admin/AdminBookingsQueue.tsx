@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminLessonBooking } from "@/lib/lessons";
+import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
 
 export interface AdminBookingsQueueProps {
   bookings: AdminLessonBooking[];
@@ -52,12 +53,15 @@ export function AdminBookingsQueue({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  const [justCompletedId, setJustCompletedId] = useState<string | null>(null);
 
   async function handleComplete(id: string) {
     setBusyId(id);
     try {
       await onComplete(id);
+      setJustCompletedId(id);
       router.refresh();
+      window.setTimeout(() => setJustCompletedId(null), 1400);
     } finally {
       setBusyId(null);
     }
@@ -76,13 +80,14 @@ export function AdminBookingsQueue({
   }
 
   if (bookings.length === 0) {
-    return <div className="glass-card p-8 text-center text-sm text-slate-500">{emptyMessage}</div>;
+    return <div className="glass-surface backdrop-blur-2xl p-8 text-center text-sm text-slate-500">{emptyMessage}</div>;
   }
 
   return (
     <div className="space-y-3">
       {bookings.map((booking) => (
-        <div key={booking.id} className="glass-card p-5">
+        <div key={booking.id} className="glass-surface relative backdrop-blur-2xl p-5">
+          {justCompletedId === booking.id && <SuccessGlowPulse />}
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-start gap-3">
               <Avatar image={booking.student.image} name={booking.student.name ?? booking.student.username ?? "?"} />
@@ -155,7 +160,7 @@ export function AdminBookingsQueue({
                   type="button"
                   onClick={() => handleComplete(booking.id)}
                   disabled={busyId === booking.id}
-                  className="flex-1 rounded-lg bg-amber-400 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="cta-sheen flex-1 rounded-lg bg-amber-400 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {busyId === booking.id ? "Saving…" : "Mark completed"}
                 </button>

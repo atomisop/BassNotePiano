@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { motion } from "framer-motion";
 import type { ConversationSummary } from "@/lib/messages";
 import { Avatar } from "./Avatar";
 import { TypingIndicator } from "./TypingIndicator";
@@ -93,14 +94,17 @@ export function ChatWindow({
           const isMine = m.senderId !== conversation.friendId;
           return (
             <div key={m.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-              <div
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 250, damping: 25 }}
                 className={`max-w-[70%] rounded-2xl px-3.5 py-2 text-sm ${
                   isMine ? "bg-amber-400 text-slate-950" : "border border-white/10 bg-slate-950 text-slate-100"
                 }`}
               >
                 <p className="whitespace-pre-wrap break-words">{m.body}</p>
                 <p className={`mt-1 text-[10px] ${isMine ? "text-slate-950/60" : "text-slate-600"}`}>{relativeTime(m.createdAt)}</p>
-              </div>
+              </motion.div>
             </div>
           );
         })}
@@ -119,7 +123,7 @@ export function ChatWindow({
         <button
           type="submit"
           disabled={sending || !draft.trim()}
-          className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           Send
         </button>

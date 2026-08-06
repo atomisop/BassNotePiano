@@ -146,7 +146,7 @@ export function OnboardingWizard() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-md glass-card p-7"
+      className="w-full max-w-md glass-surface-elevated p-7"
     >
       <div className="mb-6 flex items-center gap-1.5">
         {STEP_TITLES.map((_, i) => (
@@ -234,7 +234,7 @@ export function OnboardingWizard() {
           type="button"
           onClick={handleNext}
           disabled={!canAdvance || submitting || checkingUsername}
-          className="flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {checkingUsername ? "Checking…" : submitting ? "Saving…" : step < lastStep ? "Next" : "Finish"}
         </button>

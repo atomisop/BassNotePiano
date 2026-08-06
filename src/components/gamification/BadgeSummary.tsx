@@ -9,7 +9,7 @@ interface BadgeSummaryProps {
 
 export function BadgeSummary({ earnedCount, currentStreak }: BadgeSummaryProps) {
   return (
-    <div className="flex flex-col gap-5 glass-card p-5 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-5 glass-surface p-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Badges</p>

@@ -80,7 +80,7 @@ function Pill({ label, selected, onClick }: { label: string; selected: boolean; 
 
 function SectionCard({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
-    <div className="glass-card p-6">
+    <div className="glass-surface p-6">
       <h2 className="font-serif text-lg text-slate-50">{title}</h2>
       <p className="mt-1 text-sm text-slate-500">{description}</p>
       <div className="mt-4">{children}</div>
@@ -182,7 +182,7 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
         type="button"
         onClick={handleSave}
         disabled={submitting}
-        className="mt-4 rounded-lg bg-amber-400 px-4 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+        className="cta-sheen mt-4 rounded-lg bg-amber-400 px-4 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? "Saving…" : "Save"}
       </button>
@@ -250,7 +250,7 @@ function AvatarSection({ initialImage, email, onDone }: { initialImage: string |
             type="button"
             disabled={uploading || awaitingCode}
             onClick={() => fileInputRef.current?.click()}
-            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {uploading ? "Preparing…" : "Choose new photo"}
           </button>
@@ -322,7 +322,7 @@ function NameSection({ initialName, email, onDone }: { initialName: string | nul
         <button
           type="submit"
           disabled={submitting || awaitingCode || name.trim() === (initialName ?? "")}
-          className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Sending…" : "Save"}
         </button>
@@ -391,7 +391,7 @@ function UsernameSection({ initialUsername }: { initialUsername: string | null }
         <button
           type="submit"
           disabled={submitting || username.trim() === (initialUsername ?? "")}
-          className="rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Saving…" : "Save"}
         </button>

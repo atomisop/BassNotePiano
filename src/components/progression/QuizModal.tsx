@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { PublicQuizQuestion, QuizAnswerSubmission } from "@/lib/quiz";
+import { CountUpNumber } from "@/components/ui/CountUpNumber";
+import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
 
 export interface QuizModalProps {
   isOpen: boolean;
@@ -110,8 +112,9 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit }: 
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="relative w-full max-w-md overflow-hidden rounded-2xl border border-amber-400/20 bg-slate-900/80 backdrop-blur-2xl shadow-[0_0_60px_-15px_rgba(217,180,88,0.35)]"
+            className="glass-surface-elevated relative w-full max-w-md overflow-hidden"
           >
+            {step === "result" && result?.passed && <SuccessGlowPulse />}
             <div className="h-1 w-full bg-gradient-to-r from-amber-500/40 via-amber-300 to-amber-500/40" />
 
             <div className="px-6 pb-6 pt-5">
@@ -197,7 +200,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit }: 
                           type="button"
                           onClick={handleSubmit}
                           disabled={!hasSelected || step === "submitting"}
-                          className="flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="cta-sheen flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {step === "submitting" ? "Grading…" : "Submit quiz"}
                         </button>
@@ -206,7 +209,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit }: 
                           type="button"
                           onClick={() => setCurrentIndex((i) => i + 1)}
                           disabled={!hasSelected}
-                          className="flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="cta-sheen flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           Next
                         </button>
@@ -250,7 +253,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit }: 
                       {result.passed ? "Quiz passed" : "Not quite yet"}
                     </h3>
                     <p className="mx-auto mt-1.5 max-w-xs text-sm text-slate-400">
-                      {result.score} of {result.total} correct
+                      <CountUpNumber value={result.score} /> of {result.total} correct
                       {result.passed ? " — this scale is complete once your other checklist items are done." : ". Review the formula and try again."}
                     </p>
                     <div className="mt-6 flex gap-2">
@@ -258,7 +261,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit }: 
                         <button
                           type="button"
                           onClick={handleRetake}
-                          className="flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+                          className="cta-sheen flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
                         >
                           Retake quiz
                         </button>

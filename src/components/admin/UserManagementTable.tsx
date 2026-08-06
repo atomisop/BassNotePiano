@@ -60,7 +60,7 @@ export function UserManagementTable({
 
       <div className="mt-5 space-y-3">
         {users.length === 0 && (
-          <div className="glass-card p-8 text-center text-sm text-slate-500">
+          <div className="glass-surface backdrop-blur-2xl p-8 text-center text-sm text-slate-500">
             No users found.
           </div>
         )}
@@ -68,7 +68,7 @@ export function UserManagementTable({
         {users.map((user) => {
           const busy = busyId === user.id;
           return (
-            <div key={user.id} className="glass-card p-5">
+            <div key={user.id} className="glass-surface backdrop-blur-2xl p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-slate-100">{user.name ?? "—"}</p>
@@ -105,9 +105,9 @@ export function UserManagementTable({
                       onClick={() => withBusy(user.id, () => onToggleScale(user.id, su.slug, !su.unlocked))}
                       className={`h-8 min-w-[2.25rem] rounded-lg border px-2 text-xs font-medium transition disabled:opacity-40 ${
                         su.completed
-                          ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                          ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20"
                           : su.unlocked
-                            ? "border-amber-400/30 bg-amber-400/10 text-amber-300"
+                            ? "border-amber-400/30 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20"
                             : "border-white/10 text-slate-500 hover:border-white/20"
                       }`}
                     >

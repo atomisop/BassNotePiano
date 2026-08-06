@@ -59,7 +59,7 @@ function VerifyEmailForm() {
         variants={cardVariants}
         initial="hidden"
         animate="visible"
-        className="w-full max-w-sm glass-card p-7 text-center"
+        className="w-full max-w-sm glass-surface-elevated p-7 text-center"
       >
         <p className="text-sm text-slate-400">
           Missing email.{" "}
@@ -77,7 +77,7 @@ function VerifyEmailForm() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-sm glass-card p-7"
+      className="w-full max-w-sm glass-surface-elevated p-7"
     >
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Almost there</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Verify your email</h1>
@@ -111,7 +111,7 @@ function VerifyEmailForm() {
         <button
           type="submit"
           disabled={submitting || code.length !== 6}
-          className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Verifying…" : "Verify"}
         </button>

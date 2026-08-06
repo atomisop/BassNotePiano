@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
 
 export interface ZellePaymentModalProps {
   isOpen: boolean;
@@ -135,8 +136,9 @@ export function ZellePaymentModal({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="relative w-full max-w-md overflow-hidden rounded-2xl border border-amber-400/20 bg-slate-900/80 backdrop-blur-2xl shadow-[0_0_60px_-15px_rgba(217,180,88,0.35)]"
+            className="glass-surface-elevated relative w-full max-w-md overflow-hidden"
           >
+            {step === "pending" && <SuccessGlowPulse />}
             <div className="h-1 w-full bg-gradient-to-r from-amber-500/40 via-amber-300 to-amber-500/40" />
 
             <div className="px-6 pb-6 pt-5">
@@ -202,7 +204,7 @@ export function ZellePaymentModal({
                     <button
                       type="button"
                       onClick={() => setStep("confirming")}
-                      className="mt-6 w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+                      className="cta-sheen mt-6 w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
                     >
                       I've sent the payment
                     </button>
@@ -257,7 +259,7 @@ export function ZellePaymentModal({
                           type="button"
                           onClick={handleSubmit}
                           disabled={submitting}
-                          className="flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="cta-sheen flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {submitting ? "Submitting…" : "Submit for review"}
                         </button>

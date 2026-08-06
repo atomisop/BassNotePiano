@@ -68,7 +68,7 @@ export function CodeGate({ email, onConfirm, onResend, onCancel, onSuccess }: Co
         <button
           type="submit"
           disabled={submitting || code.length !== 6}
-          className="rounded-lg bg-amber-400 px-4 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen rounded-lg bg-amber-400 px-4 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Confirming…" : "Confirm"}
         </button>

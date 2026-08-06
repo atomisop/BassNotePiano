@@ -63,7 +63,7 @@ export function LessonPurchaseFlow({ zelleHandle }: { zelleHandle: string }) {
   }
 
   return (
-    <div className="glass-card space-y-5 p-6">
+    <div className="glass-surface space-y-5 p-6">
       <div>
         <p className="mb-1.5 text-xs font-medium text-slate-400">Lesson type</p>
         <div className="flex gap-2">
@@ -139,7 +139,7 @@ export function LessonPurchaseFlow({ zelleHandle }: { zelleHandle: string }) {
         type="button"
         onClick={handleContinue}
         disabled={loading}
-        className="w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+        className="cta-sheen w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "Loading…" : "Continue to payment"}
       </button>
