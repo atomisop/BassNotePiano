@@ -10,9 +10,11 @@ export interface QuizLauncherProps {
   questions: PublicQuizQuestion[];
   buttonClassName: string;
   onSubmitQuiz: (answers: QuizAnswerSubmission[]) => Promise<{ passed: boolean; score: number; total: number }>;
+  /** 0-1 fraction — see QuizModalProps.passThreshold. */
+  passThreshold?: number;
 }
 
-export function QuizLauncher({ scaleTitle, questions, buttonClassName, onSubmitQuiz }: QuizLauncherProps) {
+export function QuizLauncher({ scaleTitle, questions, buttonClassName, onSubmitQuiz, passThreshold }: QuizLauncherProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -33,6 +35,7 @@ export function QuizLauncher({ scaleTitle, questions, buttonClassName, onSubmitQ
         scaleTitle={scaleTitle}
         questions={questions}
         onSubmit={handleSubmit}
+        passThreshold={passThreshold}
       />
     </>
   );

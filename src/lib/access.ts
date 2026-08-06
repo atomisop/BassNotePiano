@@ -1,6 +1,7 @@
 import type { Prisma, ProgressStatus, ScaleGroup } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { checkCourseBadges, recordPracticeActivity } from "@/lib/gamification";
+import { getLessonCompletionSummary } from "@/lib/courseContent";
 
 // Badge/streak bookkeeping is a best-effort side effect — a hiccup here
 // should never fail the actual checklist mutation the student is waiting on.
@@ -151,6 +152,20 @@ export async function markModuleRead(userId: string, scaleSlug: string) {
   const synced = await syncProgressStatus(row.id);
   await trackGamification(userId, row.status !== "COMPLETED" && synced.status === "COMPLETED");
   return synced;
+}
+
+/**
+ * Course-player equivalent of clicking the old manual "Mark module as
+ * read" button — call this after markLessonComplete() on the course-content
+ * side. No-ops until every uploaded Lesson for the scale group has a
+ * LessonProgress row for this user (a scale with zero lessons uploaded yet
+ * never silently completes). Reuses markModuleRead itself rather than
+ * duplicating its upsert/status-sync/gamification logic.
+ */
+export async function syncLessonCompletionToModuleRead(userId: string, scaleSlug: string) {
+  const summary = await getLessonCompletionSummary(userId, scaleSlug);
+  if (!summary.allComplete) return null;
+  return markModuleRead(userId, scaleSlug);
 }
 
 export async function markPracticeCompleted(userId: string, scaleSlug: string) {

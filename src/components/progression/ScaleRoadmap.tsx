@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import type { ProgressStatus } from "@prisma/client";
 import type { ScaleAccessState } from "@/lib/access";
+import { ctaLabel } from "@/lib/ctaLabel";
 import { ProOverrideConfirmModal } from "@/components/progression/ProOverrideConfirmModal";
 
 export interface ScaleRoadmapProps {
@@ -97,14 +98,6 @@ function StepMarker({ index, status, locked }: { index: number; status: Progress
       {index + 1}
     </div>
   );
-}
-
-function ctaLabel(scale: ScaleAccessState): string {
-  if (scale.requiresOverrideConfirm) return "Unlock ahead";
-  if (scale.reason === "locked") return "Unlock full curriculum — $99";
-  if (scale.status === "COMPLETED") return "Review";
-  if (scale.status === "IN_PROGRESS") return "Continue";
-  return "Start";
 }
 
 export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {

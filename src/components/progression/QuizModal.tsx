@@ -12,6 +12,14 @@ export interface QuizModalProps {
   scaleTitle: string;
   questions: PublicQuizQuestion[];
   onSubmit: (answers: QuizAnswerSubmission[]) => Promise<{ passed: boolean; score: number; total: number }>;
+  /**
+   * 0-1 fraction, e.g. 0.8 for "80% required" — threaded in as a prop
+   * rather than imported from src/lib/access.ts (QUIZ_PASS_THRESHOLD lives
+   * there), since that module pulls in Prisma/server-only code that can't
+   * cross into this client component's bundle. Defaults to the app-wide
+   * 0.8 threshold so existing callers that don't pass it keep working.
+   */
+  passThreshold?: number;
 }
 
 type Step = "question" | "submitting" | "result";
@@ -33,7 +41,7 @@ const stepVariants = {
   exit: { opacity: 0, x: -16, transition: { duration: 0.15 } },
 };
 
-export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit }: QuizModalProps) {
+export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, passThreshold = 0.8 }: QuizModalProps) {
   const [step, setStep] = useState<Step>("question");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selections, setSelections] = useState<Record<string, number>>({});
@@ -256,6 +264,13 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit }: 
                       <CountUpNumber value={result.score} /> of {result.total} correct
                       {result.passed ? " — this scale is complete once your other checklist items are done." : ". Review the formula and try again."}
                     </p>
+                    <div
+                      className={`mx-auto mt-3 w-fit rounded-full px-3 py-1 text-xs font-medium ${
+                        result.passed ? "bg-emerald-400/10 text-emerald-300" : "bg-slate-800 text-slate-400"
+                      }`}
+                    >
+                      Your score: {result.score}/{result.total} · {Math.round(passThreshold * 100)}% required
+                    </div>
                     <div className="mt-6 flex gap-2">
                       {!result.passed && (
                         <button

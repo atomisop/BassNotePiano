@@ -49,6 +49,15 @@ enum LessonType {
   IN_PERSON
 }
 
+// Admin-uploaded course content, distinct from LessonType/LessonBooking
+// above (those are the live-coaching booking system — different feature
+// entirely). "Lesson" here means a video or PDF module inside a scale
+// group's course player.
+enum LessonMediaType {
+  VIDEO
+  PDF
+}
+
 enum LessonBookingStatus {
   SCHEDULED
   COMPLETED
@@ -428,6 +437,9 @@ model User {
   reviewedPayments ZellePayment[]  @relation("PaymentReviewer")
   lessonBookings   LessonBooking[] @relation("LessonBookingStudent")
 
+  uploadedLessons Lesson[]
+  lessonProgress  LessonProgress[]
+
   verificationCodes VerificationCode[]
   trustedDevices    TrustedDevice[]
   loginEvents       LoginEvent[]
@@ -580,9 +592,55 @@ model ScaleGroup {
   progress      ScaleProgress[]
   quizAttempts  QuizAttempt[]
   zellePayments ZellePayment[]
+  lessons       Lesson[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Admin-authored course content (video or PDF) for one scale group's course
+// player. Ordered, sequentially gated in the UI (src/lib/courseContent.ts /
+// the /scales/[scaleSlug] course player) — not the same thing as
+// LessonBooking above (that's a student booking live 1:1 time with the
+// admin; this is pre-recorded/uploaded module content).
+model Lesson {
+  id              String          @id @default(cuid())
+  scaleGroupId    String
+  scaleGroup      ScaleGroup      @relation(fields: [scaleGroupId], references: [id], onDelete: Cascade)
+  order           Int
+  title           String
+  description     String?
+  type            LessonMediaType
+  fileUrl         String
+  fileName        String
+  fileSizeBytes   BigInt?
+  durationSeconds Int? // video only, read from the file client-side on upload; left null for PDFs
+  uploadedById    String
+  uploadedBy      User            @relation(fields: [uploadedById], references: [id])
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  progress LessonProgress[]
+
+  @@unique([scaleGroupId, order])
+  @@index([scaleGroupId])
+}
+
+// Per-user completion of one Lesson — separate from ScaleProgress's
+// moduleRead/practiceCompleted/quizPassed checklist so lesson-by-lesson
+// tracking doesn't collide with it. Once every Lesson for a scale group has
+// a row here for a given user, that's treated as equivalent to moduleRead
+// (see syncLessonCompletionToModuleRead in src/lib/access.ts).
+model LessonProgress {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  completedAt DateTime?
+
+  @@unique([userId, lessonId])
+  @@index([userId])
 }
 
 // Per-user, per-scale checklist + gating state.

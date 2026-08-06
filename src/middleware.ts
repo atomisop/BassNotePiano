@@ -95,10 +95,14 @@ export async function middleware(req: NextRequest) {
         return res;
       }
 
-      const interceptUrl = new URL(`/scales/${slug}/override`, req.url);
-      interceptUrl.searchParams.set("next", pathname + req.nextUrl.search);
-      interceptUrl.searchParams.set("targetLevel", String(targetIndex + 1));
-      return NextResponse.redirect(interceptUrl);
+      // No dedicated confirmation page exists — ProOverrideConfirmModal
+      // lives on the roadmap itself (src/components/progression/
+      // ScaleRoadmap.tsx), which re-navigates here with ?override=confirmed
+      // once the student confirms. A direct/bookmarked/back-button visit
+      // that skips that flow gets bounced to the roadmap to confirm there,
+      // rather than redirected to a page that doesn't exist (which used to
+      // loop: this same out-of-order check would re-fire on that URL too).
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
     return NextResponse.next();
   }
