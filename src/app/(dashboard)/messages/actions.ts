@@ -21,6 +21,7 @@ import {
   type GroupSummary,
 } from "@/lib/groupMessages";
 import { getFriendsList, SocialError } from "@/lib/social";
+import type { MessageRow } from "@/components/messaging/ChatWindow";
 
 async function requireUserId(): Promise<string> {
   const session = await getServerAuthSession();
@@ -28,12 +29,7 @@ async function requireUserId(): Promise<string> {
   return session.user.id;
 }
 
-export interface MessageRow {
-  id: string;
-  senderId: string;
-  body: string;
-  createdAt: string;
-}
+export type { MessageRow };
 
 export async function getConversationsAction(): Promise<ConversationSummary[]> {
   const userId = await requireUserId();

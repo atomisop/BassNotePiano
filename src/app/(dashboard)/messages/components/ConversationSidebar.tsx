@@ -2,8 +2,8 @@
 
 import type { ConversationSummary } from "@/lib/messages";
 import type { GroupSummary } from "@/lib/groupMessages";
-import { PinnedGrid } from "./PinnedGrid";
-import { ConversationList } from "./ConversationList";
+import { PinnedGrid } from "@/components/messaging/PinnedGrid";
+import { ConversationList } from "@/components/messaging/ConversationList";
 import { GroupList } from "./GroupList";
 
 export function ConversationSidebar({

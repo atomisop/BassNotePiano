@@ -10,6 +10,8 @@ const NAV_ITEMS = [
   { href: "/admin/students", label: "Students" },
   { href: "/admin/lessons", label: "Lessons" },
   { href: "/admin/users", label: "Users" },
+  { href: "/admin/messages", label: "Messages" },
+  { href: "/admin/announcements", label: "Announcements" },
 ];
 
 export function AdminNav() {

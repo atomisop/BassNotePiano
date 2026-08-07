@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
-import { Avatar } from "./Avatar";
+import { Avatar } from "@/components/messaging/Avatar";
 import { getFriendsListAction } from "../actions";
 
 interface Friend {

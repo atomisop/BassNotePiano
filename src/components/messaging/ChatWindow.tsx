@@ -5,7 +5,14 @@ import { motion } from "framer-motion";
 import type { ConversationSummary } from "@/lib/messages";
 import { Avatar } from "./Avatar";
 import { TypingIndicator } from "./TypingIndicator";
-import { setTypingAction, type MessageRow } from "../actions";
+
+/** Shared by both the student (/messages) and admin (/admin/messages) actions files — their exported MessageRow types match this shape structurally. */
+export interface MessageRow {
+  id: string;
+  senderId: string;
+  body: string;
+  createdAt: string;
+}
 
 function relativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -28,11 +35,14 @@ export function ChatWindow({
   messages,
   onSend,
   onMinimize,
+  onTyping,
 }: {
   conversation: ConversationSummary;
   messages: MessageRow[];
   onSend: (body: string) => Promise<boolean>;
   onMinimize: () => void;
+  /** Called (throttled below) as the user types — caller wires this to its own setTypingAction. */
+  onTyping: (friendId: string) => void;
 }) {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -48,7 +58,7 @@ export function ChatWindow({
     const now = Date.now();
     if (now - lastTypingPingRef.current > TYPING_PING_THROTTLE_MS) {
       lastTypingPingRef.current = now;
-      void setTypingAction(conversation.friendId);
+      onTyping(conversation.friendId);
     }
   }
 

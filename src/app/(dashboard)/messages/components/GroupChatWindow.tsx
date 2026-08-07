@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { motion } from "framer-motion";
 import type { GroupSummary } from "@/lib/groupMessages";
-import { Avatar } from "./Avatar";
+import { Avatar } from "@/components/messaging/Avatar";
 import { GroupAvatar } from "./GroupAvatar";
 import type { GroupMessageRow } from "../actions";
 

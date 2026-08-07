@@ -2,6 +2,7 @@
 
 import { getServerAuthSession } from "@/lib/auth";
 import { getUnreadCount, getRecentNotifications, markAllNotificationsRead, markNotificationRead } from "@/lib/notifications";
+import { dismissAnnouncement } from "@/lib/announcements";
 
 export interface NotificationRow {
   id: string;
@@ -44,4 +45,10 @@ export async function markNotificationReadAction(id: string): Promise<void> {
   const session = await getServerAuthSession();
   if (!session?.user) return;
   await markNotificationRead(session.user.id, id);
+}
+
+export async function dismissAnnouncementAction(announcementId: string): Promise<void> {
+  const session = await getServerAuthSession();
+  if (!session?.user) return;
+  await dismissAnnouncement(session.user.id, announcementId);
 }

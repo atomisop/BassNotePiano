@@ -39,6 +39,8 @@ function notificationHref(type: string): string | null {
       return "/admin/bookings";
     case "LESSON_BOOKING_CANCELED":
       return "/lessons";
+    case "ANNOUNCEMENT":
+      return "/dashboard";
     default:
       return null;
   }

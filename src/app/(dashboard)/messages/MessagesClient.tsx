@@ -7,16 +7,17 @@ import type { ConversationSummary } from "@/lib/messages";
 import type { GroupSummary } from "@/lib/groupMessages";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { ConversationSidebar } from "./components/ConversationSidebar";
-import { ChatWindow } from "./components/ChatWindow";
+import { ChatWindow } from "@/components/messaging/ChatWindow";
+import { EmptyState } from "@/components/messaging/EmptyState";
 import { GroupChatWindow } from "./components/GroupChatWindow";
 import { NewGroupPanel } from "./components/NewGroupPanel";
-import { EmptyState } from "./components/EmptyState";
 import {
   getConversationsAction,
   getConversationMessagesAction,
   sendMessageAction,
   markConversationReadAction,
   togglePinAction,
+  setTypingAction,
   getGroupsAction,
   getGroupMessagesAction,
   sendGroupMessageAction,
@@ -226,7 +227,14 @@ function MessagesInner({
 
       <div className={`${hasActivePane ? "flex" : "hidden md:flex"} min-w-0 flex-1`}>
         {active ? (
-          <ChatWindow key={active.friendId} conversation={active} messages={messages} onSend={handleSend} onMinimize={handleMinimize} />
+          <ChatWindow
+            key={active.friendId}
+            conversation={active}
+            messages={messages}
+            onSend={handleSend}
+            onMinimize={handleMinimize}
+            onTyping={(friendId) => void setTypingAction(friendId)}
+          />
         ) : activeGroup ? (
           <GroupChatWindow
             key={activeGroup.id}

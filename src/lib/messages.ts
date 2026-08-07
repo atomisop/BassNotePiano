@@ -22,16 +22,34 @@ async function isBlockedEitherWay(userIdA: string, userIdB: string): Promise<boo
   return Boolean(block);
 }
 
-// 1-on-1 messaging is restricted to friends, same as the spec groups it
-// under the friends system — also gives this a natural spam/safety
-// boundary without a separate moderation layer.
+/**
+ * Friendship gate, extended: an ADMIN can message (and be messaged back by)
+ * anyone, no friend request needed — this is what makes the admin
+ * messaging center work, and lets the recipient reply from their normal
+ * Messages inbox. Still respects blocks either way (see isBlockedEitherWay
+ * at each call site) — being an admin doesn't override a user's own choice
+ * to block that account.
+ */
+async function canConverse(userIdA: string, userIdB: string): Promise<boolean> {
+  const [a, b] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userIdA }, select: { role: true } }),
+    prisma.user.findUnique({ where: { id: userIdB }, select: { role: true } }),
+  ]);
+  if (a?.role === "ADMIN" || b?.role === "ADMIN") return true;
+  return isFriend(userIdA, userIdB);
+}
+
+// 1-on-1 messaging is restricted to friends — unless either party is an
+// admin, in which case it's always allowed (the admin messaging center
+// needs to reach anyone, not just friends). Also gives this a natural
+// spam/safety boundary without a separate moderation layer.
 export async function sendMessage(senderId: string, recipientId: string, body: string) {
   const trimmed = body.trim();
   if (!trimmed) throw new SocialError("Message can't be empty.");
   if (trimmed.length > MAX_MESSAGE_LENGTH) throw new SocialError(`Message is too long (${MAX_MESSAGE_LENGTH} characters max).`);
   if (senderId === recipientId) throw new SocialError("You can't message yourself.");
 
-  if (!(await isFriend(senderId, recipientId))) throw new SocialError("You can only message friends.");
+  if (!(await canConverse(senderId, recipientId))) throw new SocialError("You can only message friends.");
   if (await isBlockedEitherWay(senderId, recipientId)) throw new SocialError("You can't message this user.");
 
   const message = await prisma.message.create({ data: { senderId, recipientId, body: trimmed } });
@@ -68,10 +86,48 @@ export interface ConversationSummary {
   isTyping: boolean;
 }
 
-/** One row per friend, newest activity first — the conversation list view. */
+type ConversationPartner = { id: string; username: string | null; name: string | null; image: string | null };
+
+/**
+ * Conversation partners beyond friends: threads that exist only because an
+ * admin bypassed the friend gate (see canConverse above). For an admin
+ * caller this is "everyone they've ever exchanged a message with" — the
+ * admin messaging center's own inbox, since the admin typically has no
+ * friends of their own. For a regular user it's "any admin who has
+ * messaged them," so that conversation shows up in their normal Messages
+ * inbox even without a friend request. Derived from actual Message rows
+ * rather than a stored relation — there's no other durable record of an
+ * admin-initiated thread.
+ */
+async function getAdminThreadPartners(userId: string): Promise<ConversationPartner[]> {
+  const self = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+
+  const rows = await prisma.message.findMany({
+    where: { OR: [{ senderId: userId }, { recipientId: userId }] },
+    select: {
+      senderId: true,
+      recipientId: true,
+      sender: { select: { id: true, username: true, name: true, image: true, role: true } },
+      recipient: { select: { id: true, username: true, name: true, image: true, role: true } },
+    },
+  });
+
+  const partners = new Map<string, ConversationPartner>();
+  for (const row of rows) {
+    const other = row.senderId === userId ? row.recipient : row.sender;
+    if (other.id === userId) continue; // messaging yourself isn't possible, but guard anyway
+    // Admin caller: every actual partner counts. Regular caller: only admin partners.
+    if (self?.role !== "ADMIN" && other.role !== "ADMIN") continue;
+    partners.set(other.id, { id: other.id, username: other.username, name: other.name, image: other.image });
+  }
+  return Array.from(partners.values());
+}
+
+/** One row per friend (plus any admin-bypassed thread), newest activity first — the conversation list view. */
 export async function getConversations(userId: string): Promise<ConversationSummary[]> {
-  const [friends, pinnedRows, typingRows] = await Promise.all([
+  const [friends, adminPartners, pinnedRows, typingRows] = await Promise.all([
     getFriendsList(userId),
+    getAdminThreadPartners(userId),
     prisma.pinnedConversation.findMany({ where: { userId }, select: { friendId: true, pinOrder: true } }),
     prisma.typingStatus.findMany({
       where: { recipientId: userId, updatedAt: { gte: new Date(Date.now() - TYPING_STALE_MS) } },
@@ -79,11 +135,14 @@ export async function getConversations(userId: string): Promise<ConversationSumm
     }),
   ]);
 
+  const friendIds = new Set(friends.map((f) => f.id));
+  const partners: ConversationPartner[] = [...friends, ...adminPartners.filter((p) => !friendIds.has(p.id))];
+
   const pinnedByFriendId = new Map(pinnedRows.map((p) => [p.friendId, p.pinOrder]));
   const typingFriendIds = new Set(typingRows.map((t) => t.senderId));
 
   const summaries = await Promise.all(
-    friends.map(async (friend): Promise<ConversationSummary> => {
+    partners.map(async (friend): Promise<ConversationSummary> => {
       const [lastMessage, unreadCount] = await Promise.all([
         prisma.message.findFirst({
           where: {
@@ -120,7 +179,7 @@ export async function getTotalUnreadMessageCount(userId: string): Promise<number
 }
 
 export async function getConversationMessages(userId: string, friendId: string, limit = 100) {
-  if (!(await isFriend(userId, friendId))) throw new SocialError("Not friends with this user.");
+  if (!(await canConverse(userId, friendId))) throw new SocialError("Not friends with this user.");
 
   return prisma.message.findMany({
     where: {
@@ -143,7 +202,7 @@ export async function markConversationRead(userId: string, friendId: string): Pr
 
 /** Toggles pin state for a friend on the caller's own sidebar — not mutual. */
 export async function togglePin(userId: string, friendId: string): Promise<{ isPinned: boolean }> {
-  if (!(await isFriend(userId, friendId))) throw new SocialError("Not friends with this user.");
+  if (!(await canConverse(userId, friendId))) throw new SocialError("Not friends with this user.");
 
   const existing = await prisma.pinnedConversation.findUnique({
     where: { userId_friendId: { userId, friendId } },
@@ -163,10 +222,39 @@ export async function togglePin(userId: string, friendId: string): Promise<{ isP
 
 /** Upserted on a debounced keystroke in the composer; recency is the signal, not a boolean. */
 export async function setTyping(senderId: string, recipientId: string): Promise<void> {
-  if (!(await isFriend(senderId, recipientId))) return;
+  if (!(await canConverse(senderId, recipientId))) return;
   await prisma.typingStatus.upsert({
     where: { senderId_recipientId: { senderId, recipientId } },
     update: {},
     create: { senderId, recipientId },
   });
+}
+
+export interface MessageableUser {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
+}
+
+/**
+ * Powers the admin messaging center's "start a new conversation" search —
+ * deliberately by name/email, not username, since a user doesn't need one
+ * to be messaged this way (username is only required for the peer friend
+ * system). Excludes the searching admin themself.
+ */
+export async function searchUsersForMessaging(query: string, excludeUserId: string): Promise<MessageableUser[]> {
+  const trimmed = query.trim();
+  const users = await prisma.user.findMany({
+    where: {
+      id: { not: excludeUserId },
+      ...(trimmed
+        ? { OR: [{ email: { contains: trimmed, mode: "insensitive" } }, { name: { contains: trimmed, mode: "insensitive" } }] }
+        : {}),
+    },
+    select: { id: true, name: true, email: true, image: true },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
+  return users;
 }

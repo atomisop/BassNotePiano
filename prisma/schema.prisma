@@ -169,6 +169,7 @@ enum NotificationType {
   CLASS_REGISTRATION_REJECTED // same
   LESSON_BOOKING_RECEIVED // to admins, when a student books a live lesson using a credit
   LESSON_BOOKING_CANCELED // to the student, when a booking is canceled and their credit is refunded
+  ANNOUNCEMENT // fanned out to every user when an admin publishes an announcement
 }
 
 // The in-app inbox is the source of truth — always written regardless of
@@ -187,6 +188,38 @@ model Notification {
 
   @@index([userId, readAt])
   @@index([userId, createdAt])
+}
+
+// Admin-authored broadcast, shown to every signed-in user until they
+// dismiss it (swipeable banner/popup) — separate from the per-user
+// Notification fan-out below, which is the bell-entry copy of the same
+// announcement and has its own independent read/unread state.
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  createdBy String
+  admin     User     @relation("AnnouncementAuthor", fields: [createdBy], references: [id], onDelete: Cascade)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  dismissals AnnouncementDismissal[]
+
+  @@index([active, createdAt])
+}
+
+// One row per user who has swiped away / closed a given announcement's
+// banner — the absence of a row is what keeps it showing. Separate from
+// Notification.readAt (the bell entry), which tracks independently.
+model AnnouncementDismissal {
+  id             String       @id @default(cuid())
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation("AnnouncementDismissedBy", fields: [userId], references: [id], onDelete: Cascade)
+  dismissedAt    DateTime     @default(now())
+
+  @@unique([announcementId, userId])
 }
 
 // ---------------------------------------------------------------------------
@@ -430,6 +463,9 @@ model User {
   sessions Session[]
 
   notifications Notification[]
+
+  announcementsCreated   Announcement[]          @relation("AnnouncementAuthor")
+  announcementDismissals AnnouncementDismissal[] @relation("AnnouncementDismissedBy")
 
   progress         ScaleProgress[]
   quizAttempts     QuizAttempt[]
