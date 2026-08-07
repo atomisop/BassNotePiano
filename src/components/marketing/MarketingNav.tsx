@@ -34,20 +34,27 @@ export function MarketingNav() {
           first content block to reserve the space this removes from flow. */}
       {/* Floating "island" nav — a glass-pill capsule inset from the top and
           sides, rather than a bar docked flush to the viewport edge. */}
-      <div className="glass-pill mx-auto flex w-full items-center justify-between px-5 py-3 sm:px-6">
-        <Link href="/" className="flex items-center gap-2 font-serif text-sm tracking-[0.2em] text-slate-100">
-          <Image src="/logo-mark.png" alt="" width={26} height={26} className="h-[26px] w-[26px]" priority />
+      <div className="glass-pill mx-auto flex w-full items-center justify-between gap-3 px-3 py-2.5 sm:gap-4 sm:px-6 sm:py-3">
+        <Link
+          href="/"
+          className="flex shrink-0 items-center gap-1.5 whitespace-nowrap font-serif text-xs tracking-[0.1em] text-slate-100 sm:gap-2 sm:text-sm sm:tracking-[0.2em]"
+        >
+          <Image src="/logo-mark.png" alt="" width={26} height={26} className="h-[22px] w-[22px] sm:h-[26px] sm:w-[26px]" priority />
           BASS NOTE <span className="text-amber-400">PIANO</span>
         </Link>
-        <nav className="flex items-center gap-6 text-sm text-slate-200">
+        <nav className="flex shrink-0 items-center gap-3 text-sm text-slate-200 sm:gap-6">
+          {/* Secondary nav links hidden below sm — at mobile widths there's
+              only room for identity + the one primary CTA without wrapping;
+              Classes/Pricing stay reachable via the hero's own "See pricing"
+              link and elsewhere, not orphaned. */}
           {NAV_LINKS.filter((link) => link.href !== pathname).map((link) => (
-            <Link key={link.href} href={link.href} className="transition hover:text-amber-300">
+            <Link key={link.href} href={link.href} className="hidden whitespace-nowrap transition hover:text-amber-300 sm:inline">
               {link.label}
             </Link>
           ))}
           <Link
             href={isLoggedIn ? "/dashboard" : "/login"}
-            className="rounded-full border border-white/15 px-4 py-1.5 text-slate-100 transition hover:border-amber-400/40 hover:text-amber-300"
+            className="whitespace-nowrap rounded-full border border-white/15 px-3 py-1.5 text-xs text-slate-100 transition hover:border-amber-400/40 hover:text-amber-300 sm:px-4 sm:text-sm"
           >
             {isLoggedIn ? "Dashboard" : "Log in"}
           </Link>
