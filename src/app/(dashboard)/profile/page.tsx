@@ -15,7 +15,6 @@ export default async function ProfilePage() {
       where: { id: session.user.id },
       select: {
         name: true,
-        email: true,
         image: true,
         username: true,
         currentStreak: true,
@@ -51,7 +50,6 @@ export default async function ProfilePage() {
           {user.username && <p className="text-sm text-slate-500">@{user.username}</p>}
         </div>
         <ProfileEditButton
-          email={user.email}
           initialName={user.name}
           initialImage={user.image}
           initialUsername={user.username}

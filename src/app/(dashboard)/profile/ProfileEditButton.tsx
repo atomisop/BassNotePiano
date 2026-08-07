@@ -14,7 +14,6 @@ interface MusicProfile {
 }
 
 interface ProfileEditButtonProps {
-  email: string;
   initialName: string | null;
   initialImage: string | null;
   initialUsername: string | null;

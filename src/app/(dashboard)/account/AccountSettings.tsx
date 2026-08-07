@@ -4,13 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
-import { CodeGate } from "./CodeGate";
-import {
-  requestPasswordChangeAction,
-  confirmPasswordChangeAction,
-  updateNotificationPreferencesAction,
-  type NotificationPreferencesInput,
-} from "./actions";
+import { updatePasswordAction, updateNotificationPreferencesAction, type NotificationPreferencesInput } from "./actions";
 
 interface LessonCredits {
   online: number;
@@ -18,7 +12,6 @@ interface LessonCredits {
 }
 
 interface AccountSettingsProps {
-  email: string;
   hasCurriculumAccess: boolean;
   lessonCredits: LessonCredits;
   initialNotificationPreferences: NotificationPreferencesInput;
@@ -105,23 +98,21 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
 
 function TabContent({
   tab,
-  email,
   hasCurriculumAccess,
   lessonCredits,
   initialNotificationPreferences,
 }: {
   tab: TabId;
-  email: string;
   hasCurriculumAccess: boolean;
   lessonCredits: LessonCredits;
   initialNotificationPreferences: NotificationPreferencesInput;
 }) {
   if (tab === "notifications") return <NotificationSettingsSection initial={initialNotificationPreferences} />;
   if (tab === "membership") return <MembershipSection hasCurriculumAccess={hasCurriculumAccess} lessonCredits={lessonCredits} />;
-  return <PasswordSection email={email} />;
+  return <PasswordSection />;
 }
 
-function AccountSettingsInner({ email, hasCurriculumAccess, lessonCredits, initialNotificationPreferences }: AccountSettingsProps) {
+function AccountSettingsInner({ hasCurriculumAccess, lessonCredits, initialNotificationPreferences }: AccountSettingsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
@@ -158,8 +149,7 @@ function AccountSettingsInner({ email, hasCurriculumAccess, lessonCredits, initi
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Settings</p>
         <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Account</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Every change here is confirmed with a 6-digit code sent to <span className="text-slate-300">{email}</span>. Want to
-          edit your name, username, or photo? Head to{" "}
+          Want to edit your name, username, or photo? Head to{" "}
           <Link href="/profile" className="text-amber-300 hover:text-amber-200">
             your profile
           </Link>
@@ -174,7 +164,6 @@ function AccountSettingsInner({ email, hasCurriculumAccess, lessonCredits, initi
         <div className="hidden min-w-0 flex-1 space-y-6 lg:block">
           <TabContent
             tab={activeTab}
-            email={email}
             hasCurriculumAccess={hasCurriculumAccess}
             lessonCredits={lessonCredits}
             initialNotificationPreferences={initialNotificationPreferences}
@@ -190,7 +179,6 @@ function AccountSettingsInner({ email, hasCurriculumAccess, lessonCredits, initi
         {mobileOpenTab && (
           <TabContent
             tab={mobileOpenTab}
-            email={email}
             hasCurriculumAccess={hasCurriculumAccess}
             lessonCredits={lessonCredits}
             initialNotificationPreferences={initialNotificationPreferences}
@@ -261,11 +249,10 @@ function MembershipSection({
   );
 }
 
-function PasswordSection({ email }: { email: string }) {
+function PasswordSection() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [awaitingCode, setAwaitingCode] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -281,13 +268,16 @@ function PasswordSection({ email }: { email: string }) {
     }
 
     setSubmitting(true);
-    const result = await requestPasswordChangeAction(currentPassword, newPassword);
+    const result = await updatePasswordAction(currentPassword, newPassword);
     setSubmitting(false);
     if (!result.ok) {
       setError(result.error);
       return;
     }
-    setAwaitingCode(true);
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setSuccess(true);
   }
 
   return (
@@ -300,7 +290,7 @@ function PasswordSection({ email }: { email: string }) {
           required
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
-          disabled={awaitingCode}
+          disabled={submitting}
           className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
         />
         <input
@@ -310,7 +300,7 @@ function PasswordSection({ email }: { email: string }) {
           required
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
-          disabled={awaitingCode}
+          disabled={submitting}
           className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
         />
         <input
@@ -320,7 +310,7 @@ function PasswordSection({ email }: { email: string }) {
           required
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          disabled={awaitingCode}
+          disabled={submitting}
           className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
         />
 
@@ -329,30 +319,12 @@ function PasswordSection({ email }: { email: string }) {
 
         <button
           type="submit"
-          disabled={submitting || awaitingCode}
+          disabled={submitting}
           className="cta-sheen w-full rounded-lg bg-amber-400 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {submitting ? "Sending…" : "Change password"}
+          {submitting ? "Saving…" : "Change password"}
         </button>
       </form>
-
-      {awaitingCode && (
-        <CodeGate
-          email={email}
-          onConfirm={confirmPasswordChangeAction}
-          onResend={async () => {
-            await requestPasswordChangeAction(currentPassword, newPassword);
-          }}
-          onCancel={() => setAwaitingCode(false)}
-          onSuccess={async () => {
-            setAwaitingCode(false);
-            setCurrentPassword("");
-            setNewPassword("");
-            setConfirmPassword("");
-            setSuccess(true);
-          }}
-        />
-      )}
     </SectionCard>
   );
 }

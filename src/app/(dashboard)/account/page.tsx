@@ -12,7 +12,6 @@ export default async function AccountPage() {
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
-        email: true,
         notifyEmailPayments: true,
         notifyEmailRoleUpdates: true,
         notifyEmailSocial: true,
@@ -25,7 +24,6 @@ export default async function AccountPage() {
 
   return (
     <AccountSettings
-      email={user.email}
       hasCurriculumAccess={session.user.hasCurriculumAccess}
       lessonCredits={credits}
       initialNotificationPreferences={{

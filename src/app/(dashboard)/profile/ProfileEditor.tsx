@@ -4,15 +4,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
-import { CodeGate } from "../account/CodeGate";
-import {
-  requestNameChangeAction,
-  confirmNameChangeAction,
-  requestAvatarChangeAction,
-  confirmAvatarChangeAction,
-  updateMusicProfileAction,
-  updateUsernameAction,
-} from "../account/actions";
+import { updateNameAction, updateAvatarAction, updateMusicProfileAction, updateUsernameAction } from "../account/actions";
 
 interface MusicProfile {
   primaryInstrument: PrimaryInstrument | null;
@@ -22,7 +14,6 @@ interface MusicProfile {
 }
 
 interface ProfileEditorProps {
-  email: string;
   initialName: string | null;
   initialImage: string | null;
   initialUsername: string | null;
@@ -88,7 +79,7 @@ function SectionCard({ title, description, children }: { title: string; descript
   );
 }
 
-export function ProfileEditor({ email, initialName, initialImage, initialUsername, initialMusicProfile }: ProfileEditorProps) {
+export function ProfileEditor({ initialName, initialImage, initialUsername, initialMusicProfile }: ProfileEditorProps) {
   const { update } = useSession();
   const router = useRouter();
 
@@ -99,8 +90,8 @@ export function ProfileEditor({ email, initialName, initialImage, initialUsernam
 
   return (
     <div className="space-y-6">
-      <AvatarSection initialImage={initialImage} email={email} onDone={syncSession} />
-      <NameSection initialName={initialName} email={email} onDone={syncSession} />
+      <AvatarSection initialImage={initialImage} onDone={syncSession} />
+      <NameSection initialName={initialName} onDone={syncSession} />
       <UsernameSection initialUsername={initialUsername} />
       <MusicProfileSection initial={initialMusicProfile} />
     </div>
@@ -190,10 +181,8 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
   );
 }
 
-function AvatarSection({ initialImage, email, onDone }: { initialImage: string | null; email: string; onDone: () => Promise<void> }) {
+function AvatarSection({ initialImage, onDone }: { initialImage: string | null; onDone: () => Promise<void> }) {
   const [image, setImage] = useState(initialImage);
-  const [pendingDataUri, setPendingDataUri] = useState<string | null>(null);
-  const [awaitingCode, setAwaitingCode] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -218,14 +207,15 @@ function AvatarSection({ initialImage, email, onDone }: { initialImage: string |
     const reader = new FileReader();
     reader.onload = async () => {
       const dataUri = reader.result as string;
-      const result = await requestAvatarChangeAction(dataUri);
+      const result = await updateAvatarAction(dataUri);
       setUploading(false);
       if (!result.ok) {
         setError(result.error);
         return;
       }
-      setPendingDataUri(dataUri);
-      setAwaitingCode(true);
+      setImage(dataUri);
+      setSuccess(true);
+      await onDone();
     };
     reader.onerror = () => {
       setUploading(false);
@@ -248,11 +238,11 @@ function AvatarSection({ initialImage, email, onDone }: { initialImage: string |
         <div>
           <button
             type="button"
-            disabled={uploading || awaitingCode}
+            disabled={uploading}
             onClick={() => fileInputRef.current?.click()}
             className="cta-sheen rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {uploading ? "Preparing…" : "Choose new photo"}
+            {uploading ? "Uploading…" : "Choose new photo"}
           </button>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
         </div>
@@ -260,35 +250,12 @@ function AvatarSection({ initialImage, email, onDone }: { initialImage: string |
 
       {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
       {success && <p className="mt-2 text-xs text-emerald-400">Profile photo updated.</p>}
-
-      {awaitingCode && pendingDataUri && (
-        <CodeGate
-          email={email}
-          onConfirm={confirmAvatarChangeAction}
-          onResend={async () => {
-            await requestAvatarChangeAction(pendingDataUri);
-          }}
-          onCancel={() => {
-            setAwaitingCode(false);
-            setPendingDataUri(null);
-          }}
-          onSuccess={async () => {
-            setImage(pendingDataUri);
-            setAwaitingCode(false);
-            setPendingDataUri(null);
-            setSuccess(true);
-            await onDone();
-          }}
-        />
-      )}
     </SectionCard>
   );
 }
 
-function NameSection({ initialName, email, onDone }: { initialName: string | null; email: string; onDone: () => Promise<void> }) {
+function NameSection({ initialName, onDone }: { initialName: string | null; onDone: () => Promise<void> }) {
   const [name, setName] = useState(initialName ?? "");
-  const [pendingName, setPendingName] = useState<string | null>(null);
-  const [awaitingCode, setAwaitingCode] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -298,14 +265,14 @@ function NameSection({ initialName, email, onDone }: { initialName: string | nul
     setError(null);
     setSuccess(false);
     setSubmitting(true);
-    const result = await requestNameChangeAction(name);
+    const result = await updateNameAction(name);
     setSubmitting(false);
     if (!result.ok) {
       setError(result.error);
       return;
     }
-    setPendingName(name.trim());
-    setAwaitingCode(true);
+    setSuccess(true);
+    await onDone();
   }
 
   return (
@@ -316,40 +283,20 @@ function NameSection({ initialName, email, onDone }: { initialName: string | nul
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          disabled={awaitingCode}
+          disabled={submitting}
           className="flex-1 rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
         />
         <button
           type="submit"
-          disabled={submitting || awaitingCode || name.trim() === (initialName ?? "")}
+          disabled={submitting || name.trim() === (initialName ?? "")}
           className="cta-sheen rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {submitting ? "Sending…" : "Save"}
+          {submitting ? "Saving…" : "Save"}
         </button>
       </form>
 
       {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
       {success && <p className="mt-2 text-xs text-emerald-400">Name updated.</p>}
-
-      {awaitingCode && pendingName && (
-        <CodeGate
-          email={email}
-          onConfirm={confirmNameChangeAction}
-          onResend={async () => {
-            await requestNameChangeAction(pendingName);
-          }}
-          onCancel={() => {
-            setAwaitingCode(false);
-            setPendingName(null);
-          }}
-          onSuccess={async () => {
-            setAwaitingCode(false);
-            setPendingName(null);
-            setSuccess(true);
-            await onDone();
-          }}
-        />
-      )}
     </SectionCard>
   );
 }
