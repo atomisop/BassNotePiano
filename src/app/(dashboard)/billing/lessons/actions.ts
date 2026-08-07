@@ -2,20 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { LessonType } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import {
-  getOrCreatePendingLessonPayment,
+  getOrCreatePendingClassCreditsPayment,
   submitZellePaymentReference,
   type ZelleReferenceSubmission,
 } from "@/lib/payments";
 
-export async function createLessonPendingPaymentAction(quantity: number, type: LessonType) {
+export async function createClassCreditsPendingPaymentAction(quantity: number) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/lessons");
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
-  const payment = await getOrCreatePendingLessonPayment(session.user.id, quantity, type, zelleHandle);
+  const payment = await getOrCreatePendingClassCreditsPayment(session.user.id, quantity, zelleHandle);
 
   return {
     id: payment.id,
@@ -25,7 +24,7 @@ export async function createLessonPendingPaymentAction(quantity: number, type: L
   };
 }
 
-export async function submitLessonPaymentAction(paymentId: string, payload: ZelleReferenceSubmission) {
+export async function submitClassCreditsPaymentAction(paymentId: string, payload: ZelleReferenceSubmission) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/lessons");
 

@@ -1,0 +1,339 @@
+import type { AttendanceStatus, Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { createNotification } from "@/lib/notifications";
+
+export class ClassBookingError extends Error {}
+
+export const CLASS_CAPACITY = 10;
+export const CANCELLATION_CUTOFF_HOURS = 24;
+// How many upcoming weeks of each weekly slot to surface as bookable —
+// a fixed planning horizon rather than an unbounded "forever" list, since
+// the schedule itself repeats indefinitely.
+const OCCURRENCES_PER_SLOT = 4;
+const ET_ZONE = "America/New_York";
+
+// ---------------------------------------------------------------------------
+// ET wall-clock <-> UTC conversion
+//
+// The weekly schedule is authored in ET wall-clock time (e.g. "Monday
+// 11:00") and must resolve to the correct UTC instant on any given date,
+// correctly crossing DST (EST is UTC-5, EDT is UTC-4) — a fixed offset
+// would be wrong for roughly half the year. No date library needed: this
+// uses the standard Intl.DateTimeFormat round-trip trick, which is exact
+// for a fixed IANA zone like America/New_York.
+// ---------------------------------------------------------------------------
+
+function getEtOffsetMinutes(utcInstant: Date): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: ET_ZONE,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(utcInstant);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  const hour = get("hour") % 24; // some engines report midnight as "24"
+  const asUtc = Date.UTC(get("year"), get("month") - 1, get("day"), hour, get("minute"), get("second"));
+  return (asUtc - utcInstant.getTime()) / 60_000;
+}
+
+/** Converts an ET wall-clock date+time to the UTC instant it represents. */
+export function etWallTimeToUtc(year: number, month: number, day: number, hour: number, minute: number): Date {
+  const guess = new Date(Date.UTC(year, month - 1, day, hour, minute));
+  const offsetMinutes = getEtOffsetMinutes(guess); // negative for ET (e.g. -300 EST, -240 EDT)
+  return new Date(guess.getTime() - offsetMinutes * 60_000);
+}
+
+/** Today's calendar date as seen in ET, regardless of the server's own timezone. */
+function todayInEt(): { year: number; month: number; day: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: ET_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
+  return { year: get("year"), month: get("month"), day: get("day") };
+}
+
+function parseStartTime(startTime: string): { hour: number; minute: number } {
+  const [hour, minute] = startTime.split(":").map(Number);
+  return { hour, minute };
+}
+
+// ---------------------------------------------------------------------------
+// Occurrence derivation — a specific week's instance of a recurring slot,
+// identified by (scheduleId, occurrenceDate). occurrenceDate is stored as
+// UTC midnight of the ET calendar date; it's a grouping/uniqueness key, not
+// a real instant — scheduledAt is the real instant.
+// ---------------------------------------------------------------------------
+
+export interface ClassOccurrence {
+  scheduleId: string;
+  label: string | null;
+  dayOfWeek: number;
+  durationMin: number;
+  creditCost: number;
+  occurrenceDate: Date;
+  scheduledAt: Date;
+  seatsBooked: number;
+  seatsLeft: number;
+  isFull: boolean;
+}
+
+/** Every active weekly slot's next OCCURRENCES_PER_SLOT bookable occurrences, with live seat counts. */
+export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
+  const schedules = await prisma.classSchedule.findMany({ where: { active: true }, orderBy: { dayOfWeek: "asc" } });
+  if (schedules.length === 0) return [];
+
+  const { year, month, day } = todayInEt();
+  const todayUtcMidnight = Date.UTC(year, month - 1, day);
+  const now = Date.now();
+
+  const candidates: { schedule: (typeof schedules)[number]; occurrenceDate: Date; scheduledAt: Date }[] = [];
+
+  for (const schedule of schedules) {
+    const { hour, minute } = parseStartTime(schedule.startTime);
+    let found = 0;
+    // 8 weeks is comfortably more than enough to find OCCURRENCES_PER_SLOT
+    // matches for any weekday; this is just a safety bound, not a real limit.
+    for (let offsetDays = 0; offsetDays < 56 && found < OCCURRENCES_PER_SLOT; offsetDays++) {
+      const candidateUtcMidnight = todayUtcMidnight + offsetDays * 86_400_000;
+      const candidateDate = new Date(candidateUtcMidnight);
+      if (candidateDate.getUTCDay() !== schedule.dayOfWeek) continue;
+
+      const scheduledAt = etWallTimeToUtc(
+        candidateDate.getUTCFullYear(),
+        candidateDate.getUTCMonth() + 1,
+        candidateDate.getUTCDate(),
+        hour,
+        minute,
+      );
+      if (scheduledAt.getTime() <= now) continue; // today's slot already started/passed
+
+      candidates.push({ schedule, occurrenceDate: candidateDate, scheduledAt });
+      found++;
+    }
+  }
+
+  // One grouped count query instead of one-per-candidate.
+  const seatCounts = await prisma.classBooking.groupBy({
+    by: ["scheduleId", "occurrenceDate"],
+    where: {
+      status: "SCHEDULED",
+      OR: candidates.map((c) => ({ scheduleId: c.schedule.id, occurrenceDate: c.occurrenceDate })),
+    },
+    _count: { _all: true },
+  });
+  const seatsByKey = new Map(seatCounts.map((s) => [`${s.scheduleId}:${s.occurrenceDate.getTime()}`, s._count._all]));
+
+  return candidates
+    .map((c): ClassOccurrence => {
+      const seatsBooked = seatsByKey.get(`${c.schedule.id}:${c.occurrenceDate.getTime()}`) ?? 0;
+      return {
+        scheduleId: c.schedule.id,
+        label: c.schedule.label,
+        dayOfWeek: c.schedule.dayOfWeek,
+        durationMin: c.schedule.durationMin,
+        creditCost: c.schedule.creditCost,
+        occurrenceDate: c.occurrenceDate,
+        scheduledAt: c.scheduledAt,
+        seatsBooked,
+        seatsLeft: Math.max(0, CLASS_CAPACITY - seatsBooked),
+        isFull: seatsBooked >= CLASS_CAPACITY,
+      };
+    })
+    .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
+}
+
+// ---------------------------------------------------------------------------
+// Booking
+// ---------------------------------------------------------------------------
+
+/**
+ * Books a specific occurrence: verifies it's still in the future, spends
+ * the schedule's credit cost, and enforces the 10-seat cap — all inside one
+ * Serializable transaction so two students racing for the last seat can't
+ * both succeed (Postgres aborts the loser with a serialization failure,
+ * surfaced here as a friendly "just filled up" error rather than a crash).
+ */
+export async function bookClass(studentId: string, scheduleId: string, occurrenceDateMs: number) {
+  const schedule = await prisma.classSchedule.findUniqueOrThrow({ where: { id: scheduleId } });
+  if (!schedule.active) throw new ClassBookingError("This class is no longer offered.");
+
+  const occurrenceDate = new Date(occurrenceDateMs);
+  const { hour, minute } = parseStartTime(schedule.startTime);
+  const scheduledAt = etWallTimeToUtc(
+    occurrenceDate.getUTCFullYear(),
+    occurrenceDate.getUTCMonth() + 1,
+    occurrenceDate.getUTCDate(),
+    hour,
+    minute,
+  );
+  if (scheduledAt.getTime() <= Date.now()) {
+    throw new ClassBookingError("That class has already started or passed.");
+  }
+
+  try {
+    return await prisma.$transaction(
+      async (tx) => {
+        const seatsBooked = await tx.classBooking.count({ where: { scheduleId, occurrenceDate, status: "SCHEDULED" } });
+        if (seatsBooked >= CLASS_CAPACITY) throw new ClassBookingError("This class just filled up — pick another time.");
+
+        const spent = await tx.user.updateMany({
+          where: { id: studentId, classCredits: { gte: schedule.creditCost } },
+          data: { classCredits: { decrement: schedule.creditCost } },
+        });
+        if (spent.count === 0) {
+          throw new ClassBookingError(`You need ${schedule.creditCost} credits for this class.`);
+        }
+
+        return tx.classBooking.create({
+          data: { studentId, scheduleId, occurrenceDate, scheduledAt, creditsSpent: schedule.creditCost },
+        });
+      },
+      { isolationLevel: "Serializable" },
+    );
+  } catch (err) {
+    if (err instanceof ClassBookingError) throw err;
+    if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2002") {
+      throw new ClassBookingError("You've already booked this class.");
+    }
+    if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2034") {
+      throw new ClassBookingError("That seat was just taken — try again.");
+    }
+    throw err;
+  }
+}
+
+export async function getClassCreditBalance(userId: string): Promise<number> {
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { classCredits: true } });
+  return user.classCredits;
+}
+
+/** Called from approveZellePayment once a CLASS_CREDITS payment verifies. */
+export async function addClassCredits(userId: string, quantity: number): Promise<void> {
+  await prisma.user.update({ where: { id: userId }, data: { classCredits: { increment: quantity } } });
+}
+
+export async function getUserClassBookings(studentId: string) {
+  return prisma.classBooking.findMany({
+    where: { studentId },
+    include: { schedule: true },
+    orderBy: { scheduledAt: "desc" },
+  });
+}
+
+/**
+ * Self-serve cancellation. >=24h before the class start refunds the spent
+ * credits and frees the seat; anything closer (including a class that's
+ * already happened, functionally the same as a no-show) forfeits them.
+ */
+export async function cancelClassBooking(bookingId: string, studentId: string): Promise<{ refunded: boolean }> {
+  const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
+  if (booking.studentId !== studentId) throw new ClassBookingError("Not your booking.");
+  if (booking.status !== "SCHEDULED") throw new ClassBookingError("This booking isn't active.");
+
+  const hoursUntil = (booking.scheduledAt.getTime() - Date.now()) / 3_600_000;
+  const refunded = hoursUntil >= CANCELLATION_CUTOFF_HOURS;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.classBooking.update({ where: { id: bookingId }, data: { status: "CANCELED", refunded } });
+    if (refunded) {
+      await tx.user.update({ where: { id: studentId }, data: { classCredits: { increment: booking.creditsSpent } } });
+    }
+  });
+
+  await createNotification({
+    userId: studentId,
+    type: "LESSON_BOOKING_CANCELED",
+    title: "Class canceled",
+    body: refunded
+      ? `Your ${booking.scheduledAt.toLocaleString()} class was canceled and ${booking.creditsSpent} credit${booking.creditsSpent === 1 ? "" : "s"} were refunded.`
+      : `Your ${booking.scheduledAt.toLocaleString()} class was canceled within ${CANCELLATION_CUTOFF_HOURS} hours of start, so the ${booking.creditsSpent} credit${booking.creditsSpent === 1 ? "" : "s"} were forfeited.`,
+    emailCategory: "social",
+  });
+
+  return { refunded };
+}
+
+// ---------------------------------------------------------------------------
+// Admin: roster + attendance
+// ---------------------------------------------------------------------------
+
+export interface AdminOccurrenceRosterEntry {
+  bookingId: string;
+  studentId: string;
+  studentName: string | null;
+  studentEmail: string;
+  studentImage: string | null;
+  status: "SCHEDULED" | "CANCELED" | "COMPLETED";
+  attendance: AttendanceStatus | null;
+}
+
+export interface AdminOccurrenceGroup {
+  scheduleId: string;
+  label: string | null;
+  dayOfWeek: number;
+  occurrenceDate: Date;
+  scheduledAt: Date;
+  roster: AdminOccurrenceRosterEntry[];
+}
+
+const ADMIN_ROSTER_WINDOW_DAYS = 60;
+
+/** Every occurrence with at least one non-canceled booking, in the recent-past-to-future window, newest first. */
+export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
+  const windowStart = new Date(Date.now() - ADMIN_ROSTER_WINDOW_DAYS * 86_400_000);
+  const bookings = await prisma.classBooking.findMany({
+    where: { scheduledAt: { gte: windowStart }, status: { in: ["SCHEDULED", "COMPLETED"] } },
+    include: {
+      student: { select: { id: true, name: true, email: true, image: true } },
+      schedule: { select: { label: true, dayOfWeek: true } },
+    },
+    orderBy: { scheduledAt: "desc" },
+  });
+
+  const groups = new Map<string, AdminOccurrenceGroup>();
+  for (const b of bookings) {
+    const key = `${b.scheduleId}:${b.occurrenceDate.getTime()}`;
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        scheduleId: b.scheduleId,
+        label: b.schedule.label,
+        dayOfWeek: b.schedule.dayOfWeek,
+        occurrenceDate: b.occurrenceDate,
+        scheduledAt: b.scheduledAt,
+        roster: [],
+      };
+      groups.set(key, group);
+    }
+    group.roster.push({
+      bookingId: b.id,
+      studentId: b.student.id,
+      studentName: b.student.name,
+      studentEmail: b.student.email,
+      studentImage: b.student.image,
+      status: b.status,
+      attendance: b.attendance,
+    });
+  }
+
+  return Array.from(groups.values());
+}
+
+/**
+ * Marks attendance and finalizes the booking as COMPLETED — Present and
+ * No-show both keep the already-spent credit (there's no Zoom integration
+ * here, so this roster is the sole source of truth for who actually used
+ * their credits; a no-show is a forfeit, not a refund).
+ */
+export async function markAttendance(bookingId: string, attendance: AttendanceStatus): Promise<void> {
+  const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
+  if (booking.status === "CANCELED") throw new ClassBookingError("Can't mark attendance for a canceled booking.");
+  await prisma.classBooking.update({ where: { id: bookingId }, data: { attendance, status: "COMPLETED" } });
+}

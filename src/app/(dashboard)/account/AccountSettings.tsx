@@ -6,14 +6,9 @@ import Link from "next/link";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { updatePasswordAction, updateNotificationPreferencesAction, type NotificationPreferencesInput } from "./actions";
 
-interface LessonCredits {
-  online: number;
-  inPerson: number;
-}
-
 interface AccountSettingsProps {
   hasCurriculumAccess: boolean;
-  lessonCredits: LessonCredits;
+  classCredits: number;
   initialNotificationPreferences: NotificationPreferencesInput;
 }
 
@@ -99,20 +94,20 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
 function TabContent({
   tab,
   hasCurriculumAccess,
-  lessonCredits,
+  classCredits,
   initialNotificationPreferences,
 }: {
   tab: TabId;
   hasCurriculumAccess: boolean;
-  lessonCredits: LessonCredits;
+  classCredits: number;
   initialNotificationPreferences: NotificationPreferencesInput;
 }) {
   if (tab === "notifications") return <NotificationSettingsSection initial={initialNotificationPreferences} />;
-  if (tab === "membership") return <MembershipSection hasCurriculumAccess={hasCurriculumAccess} lessonCredits={lessonCredits} />;
+  if (tab === "membership") return <MembershipSection hasCurriculumAccess={hasCurriculumAccess} classCredits={classCredits} />;
   return <PasswordSection />;
 }
 
-function AccountSettingsInner({ hasCurriculumAccess, lessonCredits, initialNotificationPreferences }: AccountSettingsProps) {
+function AccountSettingsInner({ hasCurriculumAccess, classCredits, initialNotificationPreferences }: AccountSettingsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
@@ -165,7 +160,7 @@ function AccountSettingsInner({ hasCurriculumAccess, lessonCredits, initialNotif
           <TabContent
             tab={activeTab}
             hasCurriculumAccess={hasCurriculumAccess}
-            lessonCredits={lessonCredits}
+            classCredits={classCredits}
             initialNotificationPreferences={initialNotificationPreferences}
           />
         </div>
@@ -180,7 +175,7 @@ function AccountSettingsInner({ hasCurriculumAccess, lessonCredits, initialNotif
           <TabContent
             tab={mobileOpenTab}
             hasCurriculumAccess={hasCurriculumAccess}
-            lessonCredits={lessonCredits}
+            classCredits={classCredits}
             initialNotificationPreferences={initialNotificationPreferences}
           />
         )}
@@ -199,13 +194,13 @@ export function AccountSettings(props: AccountSettingsProps) {
 
 function MembershipSection({
   hasCurriculumAccess,
-  lessonCredits,
+  classCredits,
 }: {
   hasCurriculumAccess: boolean;
-  lessonCredits: { online: number; inPerson: number };
+  classCredits: number;
 }) {
   return (
-    <SectionCard title="Membership & purchases" description="Your plan, lesson credits, and payment history.">
+    <SectionCard title="Membership & purchases" description="Your plan, class credits, and payment history.">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 p-4">
         <div>
           <p className="text-sm text-slate-100">{hasCurriculumAccess ? "Curriculum unlocked" : "Curriculum not yet purchased"}</p>
@@ -225,16 +220,16 @@ function MembershipSection({
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 p-4">
         <div>
-          <p className="text-sm text-slate-100">Live lesson credits</p>
+          <p className="text-sm text-slate-100">Weekly class credits</p>
           <p className="mt-0.5 text-xs text-slate-500">
-            {lessonCredits.online} online · {lessonCredits.inPerson} in-person remaining
+            {classCredits} credit{classCredits === 1 ? "" : "s"} remaining · 1 credit = 30 min
           </p>
         </div>
         <Link
           href="/billing/lessons"
           className="rounded-lg border border-white/15 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-200"
         >
-          Buy lessons
+          Buy credits
         </Link>
       </div>
 

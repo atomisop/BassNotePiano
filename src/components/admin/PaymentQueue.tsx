@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PendingZellePayment } from "@/lib/payments";
-import { calculateLessonTotal } from "@/lib/lessonPricing";
+import { calculateClassCreditTotal } from "@/lib/classCreditPricing";
 
 export interface PaymentQueueProps {
   payments: PendingZellePayment[];
@@ -20,12 +20,21 @@ function describePayment(payment: PendingZellePayment): { eyebrow: string; title
   if (payment.purpose === "CURRICULUM") {
     return { eyebrow: "Curriculum — $99", title: "Full platform unlock" };
   }
-  if (payment.purpose === "LESSON_PACKAGE" && payment.lessonQuantity && payment.lessonType) {
-    const typeLabel = payment.lessonType === "ONLINE" ? "Online" : "In-Person";
-    const { discountCents } = calculateLessonTotal(payment.lessonQuantity);
+  if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
+    // A lessonType present means this is a historical row from the old
+    // 1:1 online/in-person lesson system, pre-dating the CLASS_CREDITS
+    // rename — shown with its original wording rather than relabeled.
+    if (payment.lessonType) {
+      const typeLabel = payment.lessonType === "ONLINE" ? "Online" : "In-Person";
+      return {
+        eyebrow: "Lesson credits (legacy)",
+        title: `${payment.lessonQuantity} × ${typeLabel} lesson${payment.lessonQuantity === 1 ? "" : "s"}`,
+      };
+    }
+    const { discountCents } = calculateClassCreditTotal(payment.lessonQuantity);
     return {
-      eyebrow: "Lesson credits",
-      title: `${payment.lessonQuantity} × ${typeLabel} lesson${payment.lessonQuantity === 1 ? "" : "s"}${discountCents > 0 ? " — 20% off applied" : ""}`,
+      eyebrow: "Class credits",
+      title: `${payment.lessonQuantity} credit${payment.lessonQuantity === 1 ? "" : "s"}${discountCents > 0 ? " — bundle discount applied" : ""}`,
     };
   }
   // Legacy Pay-As-You-Go row from before per-scale purchase was retired.

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { SCALE_GROUPS, CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
-import { LESSON_PRICE_CENTS } from "@/lib/lessonPricing";
+import { CREDIT_BASE_PRICE_CENTS } from "@/lib/classCreditPricing";
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { TiltGlow } from "@/components/ui/TiltGlow";
@@ -237,8 +237,8 @@ export default function LandingPage() {
           <p className="mt-2 text-sm text-amber-200/70">One-time payment · every scale, forever · no subscriptions</p>
         </TiltGlow>
         <p className="mt-6 text-sm text-slate-500">
-          Want live coaching too? Add 30-minute lessons anytime for {formatUsd(LESSON_PRICE_CENTS)} each — Online or
-          In-Person, with 20% off when you book 2 or more.
+          Want live coaching too? Join weekly group classes on Zoom — {formatUsd(CREDIT_BASE_PRICE_CENTS)} per
+          30-minute credit, with bundle discounts up to 30% off.
         </p>
       </motion.section>
 

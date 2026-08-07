@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
-import { LESSON_PRICE_CENTS, LESSON_DISCOUNT_RATE, calculateLessonTotal } from "@/lib/lessonPricing";
+import { CREDIT_BASE_PRICE_CENTS, PRESET_BUNDLES, calculateClassCreditTotal } from "@/lib/classCreditPricing";
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { TiltGlow } from "@/components/ui/TiltGlow";
@@ -30,8 +30,6 @@ const CURRICULUM_BENEFITS = [
 ];
 
 export default function PricingPage() {
-  const examplePricing = calculateLessonTotal(2);
-
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div className="fixed inset-0 -z-10">
@@ -98,34 +96,41 @@ export default function PricingPage() {
         className="relative mx-auto max-w-2xl px-6 pb-28"
       >
         <div className="glass-surface p-7 sm:p-8">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Live lessons</p>
-          <h2 className="mt-1.5 font-serif text-2xl text-slate-50">Add real-time coaching, anytime</h2>
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Weekly classes</p>
+          <h2 className="mt-1.5 font-serif text-2xl text-slate-50">Live group coaching on Zoom</h2>
           <p className="mt-2 text-sm text-slate-300">
-            Once you've got the curriculum, book 30-minute live lessons — Online or In-Person, same price either
-            way — on top of your self-paced learning.
+            Six recurring weekly classes, capped at 10 students each — on top of your self-paced curriculum. 1 credit
+            = 30 minutes of class, and that conversion never changes no matter which bundle you buy.
           </p>
 
           <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] p-5 text-center">
             <p className="font-serif text-3xl text-slate-50">
-              {formatUsd(LESSON_PRICE_CENTS)}
-              <span className="text-base font-sans text-amber-200/70"> / 30 min</span>
+              {formatUsd(CREDIT_BASE_PRICE_CENTS)}
+              <span className="text-base font-sans text-amber-200/70"> / credit</span>
             </p>
-            <p className="mt-1 text-sm text-amber-200/70">
-              Book 2 or more and save {Math.round(LESSON_DISCOUNT_RATE * 100)}% on the whole order — Online or In-Person
-            </p>
+            <p className="mt-1 text-sm text-amber-200/70">Bundle up and save up to 30% per credit</p>
           </div>
 
-          <p className="mt-5 text-sm text-slate-400">
-            Example: 2 lessons = {formatUsd(examplePricing.subtotalCents)} − {Math.round(LESSON_DISCOUNT_RATE * 100)}%
-            ({formatUsd(examplePricing.discountCents)}) = <span className="text-slate-100">{formatUsd(examplePricing.totalCents)} total</span>. A
-            single session stays {formatUsd(LESSON_PRICE_CENTS)}.
-          </p>
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            {PRESET_BUNDLES.map((bundle) => {
+              const total = calculateClassCreditTotal(bundle.quantity);
+              return (
+                <div key={bundle.id} className="rounded-lg border border-white/10 p-3 text-center">
+                  <p className="text-xs font-medium text-slate-200">{bundle.label}</p>
+                  <p className="mt-1 font-serif text-lg text-slate-50">{formatUsd(total.totalCents)}</p>
+                  <p className="mt-0.5 text-[11px] text-slate-500">
+                    {bundle.quantity} credits · {formatUsd(total.perCreditCents)}/ea
+                  </p>
+                </div>
+              );
+            })}
+          </div>
 
           <Link
             href="/billing/lessons"
             className="mt-6 block w-full rounded-xl border border-white/15 py-2.5 text-center text-sm font-semibold text-slate-100 transition hover:border-amber-400/40 hover:text-amber-300"
           >
-            Buy lesson credits
+            Buy class credits
           </Link>
         </div>
       </motion.section>

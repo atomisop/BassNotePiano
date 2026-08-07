@@ -41,9 +41,12 @@ enum ProgressStatus {
 enum PaymentPurpose {
   CURRICULUM // one-time $99 full-curriculum unlock (renamed from PRO_LIFETIME)
   SCALE_UNLOCK // legacy Pay-As-You-Go per-scale unlock — no longer purchasable, kept for historical rows
-  LESSON_PACKAGE // $50/30-min live lesson credits, Online or In-Person, bought in any quantity
+  CLASS_CREDITS // class-credit bundle purchase (renamed from LESSON_PACKAGE — the old 1:1 online/in-person lesson system was replaced by the weekly group-class schedule below)
 }
 
+// Kept only for LessonType/LessonBooking below, which are now historical —
+// the 1:1 online/in-person lesson system was replaced by the weekly
+// group-class schedule (see ClassSchedule/ClassBooking).
 enum LessonType {
   ONLINE
   IN_PERSON
@@ -423,11 +426,15 @@ model User {
   hasCurriculumAccess  Boolean   @default(false)
   curriculumUnlockedAt DateTime?
 
-  // Spent one at a time from /lessons when a student books a live session;
-  // refunded if the admin later cancels the booking. Incremented on
-  // approval of a LESSON_PACKAGE ZellePayment (see approveZellePayment).
-  lessonCreditsOnline   Int @default(0)
-  lessonCreditsInPerson Int @default(0)
+  // 1 credit = 30 minutes of class, fixed regardless of which bundle it was
+  // bought in — bundling only discounts the price paid, never the time
+  // value. Spent from /lessons when booking a weekly group-class occurrence
+  // (creditCost per ClassSchedule row), refunded on a >=24h-ahead
+  // cancellation, forfeited on a late cancellation or a marked no-show.
+  // Incremented on approval of a CLASS_CREDITS ZellePayment (see
+  // approveZellePayment). Replaces the old online/in-person split — the
+  // new weekly schedule is Zoom-only, one unified pool.
+  classCredits Int @default(0)
 
   // Collected once by the mandatory post-registration wizard (middleware
   // redirects any signed-in-but-unonboarded user there). onboardedAt null
@@ -471,7 +478,8 @@ model User {
   quizAttempts     QuizAttempt[]
   zellePayments    ZellePayment[]  @relation("PaymentSubmitter")
   reviewedPayments ZellePayment[]  @relation("PaymentReviewer")
-  lessonBookings   LessonBooking[] @relation("LessonBookingStudent")
+  lessonBookings   LessonBooking[] @relation("LessonBookingStudent") // historical — see LessonBooking model comment
+  classBookings    ClassBooking[]  @relation("ClassBookingStudent")
 
   uploadedLessons Lesson[]
   lessonProgress  LessonProgress[]
@@ -781,11 +789,11 @@ model ZellePayment {
   @@index([userId])
 }
 
-// A student's request for a live lesson, spent from their lessonCredits*
-// balance. scheduledAt is the time the student asked for, not a confirmed
-// slot — there's no instructor-availability system in this app, so the
-// admin follows up out-of-band (phone/email, same as every other manual
-// workflow here) to actually lock in the time. Canceling refunds the credit.
+// HISTORICAL — this 1:1 on-request lesson system (student picks any
+// date/time, admin coordinates out-of-band) was replaced by the weekly
+// group-class schedule below (ClassSchedule/ClassBooking). Left in place,
+// unwritten-to going forward, so past bookings/payments still resolve
+// correctly rather than orphaning old rows.
 model LessonBooking {
   id        String @id @default(cuid())
   studentId String
@@ -805,4 +813,77 @@ model LessonBooking {
 
   @@index([studentId, status])
   @@index([status, scheduledAt])
+}
+
+// ---------------------------------------------------------------------------
+// Weekly group classes — recurring schedule + per-occurrence bookings.
+// Replaces the 1:1 on-request LessonBooking system above.
+// ---------------------------------------------------------------------------
+
+enum ClassBookingStatus {
+  SCHEDULED
+  CANCELED
+  COMPLETED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  NO_SHOW
+}
+
+// One row per recurring weekly slot (e.g. "Monday 11:00am ET, 2 hours") —
+// the template, not any specific week's occurrence. Repeats indefinitely;
+// dayOfWeek/startTime are ET wall-clock, converted to real UTC instants
+// per-occurrence by src/lib/classSchedule.ts (DST-correct, not a fixed
+// offset — ET oscillates between EST/EDT across the year).
+model ClassSchedule {
+  id          String  @id @default(cuid())
+  dayOfWeek   Int // 0=Sunday..6=Saturday, matches JS Date#getDay() in ET
+  startTime   String // "HH:mm" 24h, ET wall-clock
+  durationMin Int
+  creditCost  Int // durationMin / 30 — 1 credit = 30 min, fixed regardless of how the credit was purchased
+  label       String?
+  active      Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  bookings ClassBooking[]
+
+  @@index([dayOfWeek, active])
+}
+
+// One row per student per class occurrence. (scheduleId, occurrenceDate)
+// together identify a specific week's instance of a recurring slot — that
+// pair is what capacity (hard-capped at 10 SCHEDULED bookings) is counted
+// against, and what the unique constraint below prevents double-booking.
+model ClassBooking {
+  id         String        @id @default(cuid())
+  studentId  String
+  student    User          @relation("ClassBookingStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  scheduleId String
+  schedule   ClassSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  // ET calendar date (stored at UTC midnight) identifying which week's
+  // occurrence this is — the capacity/uniqueness key, independent of DST.
+  occurrenceDate DateTime
+  // The actual UTC instant the class starts — what's shown to the student
+  // (converted to their local timezone client-side) and what the 24-hour
+  // cancellation cutoff and admin roster ordering are computed from.
+  scheduledAt    DateTime
+
+  // Snapshotted from ClassSchedule.creditCost at booking time so a later
+  // schedule edit never retroactively changes what a past booking cost.
+  creditsSpent Int
+
+  status         ClassBookingStatus @default(SCHEDULED)
+  attendance     AttendanceStatus? // set by admin after the class happens; null until marked
+  refunded       Boolean            @default(false) // true only for a >=24h-ahead self-cancellation
+  canceledReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, scheduleId, occurrenceDate])
+  @@index([scheduleId, occurrenceDate, status])
+  @@index([studentId, status])
 }

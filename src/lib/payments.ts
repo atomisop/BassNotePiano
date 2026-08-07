@@ -1,7 +1,8 @@
-import type { LessonType, Prisma, ZellePaymentStatus } from "@prisma/client";
+import type { Prisma, ZellePaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AccessDeniedError, unlockScaleForUser, grantCurriculumAccess } from "@/lib/access";
-import { addLessonCredits, calculateLessonTotal } from "@/lib/lessons";
+import { addClassCredits } from "@/lib/classSchedule";
+import { calculateClassCreditTotal } from "@/lib/classCreditPricing";
 import { createNotification } from "@/lib/notifications";
 
 /**
@@ -31,11 +32,14 @@ async function expireStalePendingPayments() {
 
 interface PendingPaymentParams {
   userId: string;
-  purpose: "CURRICULUM" | "LESSON_PACKAGE";
+  purpose: "CURRICULUM" | "CLASS_CREDITS";
   amountCents: number;
   zelleHandle: string;
+  // Field name kept as lessonQuantity in the DB (pre-dates the class-credit
+  // system, and the underlying meaning never changed — it's always been
+  // "count of 30-minute units") rather than adding another rename migration
+  // on top of the purpose rename this same change already makes.
   lessonQuantity?: number;
-  lessonType?: LessonType;
 }
 
 /**
@@ -44,10 +48,10 @@ interface PendingPaymentParams {
  * pages call this on every load, and a page refresh shouldn't spawn a new
  * row every time a student revisits before submitting a reference code.
  *
- * For LESSON_PACKAGE, quantity/type are part of the identity key rather
- * than just being stored — a student who changes their quantity selector
- * between visits should get a fresh pending row for the new total, not have
- * their earlier in-flight row silently mutated. Any row left behind by an
+ * For CLASS_CREDITS, quantity is part of the identity key rather than just
+ * being stored — a student who changes their quantity selector between
+ * visits should get a fresh pending row for the new total, not have their
+ * earlier in-flight row silently mutated. Any row left behind by an
  * abandoned quantity choice self-expires via expireStalePendingPayments().
  */
 async function getOrCreatePendingZellePayment({
@@ -56,7 +60,6 @@ async function getOrCreatePendingZellePayment({
   amountCents,
   zelleHandle,
   lessonQuantity,
-  lessonType,
 }: PendingPaymentParams) {
   await expireStalePendingPayments();
 
@@ -65,7 +68,6 @@ async function getOrCreatePendingZellePayment({
       userId,
       purpose,
       lessonQuantity: lessonQuantity ?? null,
-      lessonType: lessonType ?? null,
       status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] },
     },
     orderBy: { createdAt: "desc" },
@@ -83,7 +85,7 @@ async function getOrCreatePendingZellePayment({
   }
 
   return prisma.zellePayment.create({
-    data: { userId, purpose, amountCents, zelleHandle, lessonQuantity, lessonType, status: "AWAITING_TRANSFER" },
+    data: { userId, purpose, amountCents, zelleHandle, lessonQuantity, status: "AWAITING_TRANSFER" },
   });
 }
 
@@ -91,20 +93,14 @@ export function getOrCreatePendingCurriculumPayment(userId: string, amountCents:
   return getOrCreatePendingZellePayment({ userId, purpose: "CURRICULUM", amountCents, zelleHandle });
 }
 
-export function getOrCreatePendingLessonPayment(
-  userId: string,
-  quantity: number,
-  lessonType: LessonType,
-  zelleHandle: string,
-) {
-  const { totalCents } = calculateLessonTotal(quantity);
+export function getOrCreatePendingClassCreditsPayment(userId: string, quantity: number, zelleHandle: string) {
+  const { totalCents } = calculateClassCreditTotal(quantity);
   return getOrCreatePendingZellePayment({
     userId,
-    purpose: "LESSON_PACKAGE",
+    purpose: "CLASS_CREDITS",
     amountCents: totalCents,
     zelleHandle,
     lessonQuantity: quantity,
-    lessonType,
   });
 }
 
@@ -218,12 +214,11 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
   if (payment.purpose === "CURRICULUM") {
     await grantCurriculumAccess(payment.userId);
     notificationBody = "Your $99 curriculum payment was verified — every scale is unlocked, for good.";
-  } else if (payment.purpose === "LESSON_PACKAGE" && payment.lessonQuantity && payment.lessonType) {
-    await addLessonCredits(payment.userId, payment.lessonType, payment.lessonQuantity);
-    const typeLabel = payment.lessonType === "ONLINE" ? "online" : "in-person";
-    const { discountCents } = calculateLessonTotal(payment.lessonQuantity);
-    const discountNote = discountCents > 0 ? " — 20% bundle discount applied" : "";
-    notificationBody = `Your ${payment.lessonQuantity} × ${typeLabel} lesson${payment.lessonQuantity === 1 ? "" : "s"} payment was verified${discountNote}. Credits are on your account.`;
+  } else if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
+    await addClassCredits(payment.userId, payment.lessonQuantity);
+    const { discountCents } = calculateClassCreditTotal(payment.lessonQuantity);
+    const discountNote = discountCents > 0 ? " — bundle discount applied" : "";
+    notificationBody = `Your ${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} payment was verified${discountNote}. Credits are on your account.`;
   } else if (payment.scaleGroupId) {
     // Legacy Pay-As-You-Go row from before per-scale purchase was retired.
     const scaleGroup = await prisma.scaleGroup.findUniqueOrThrow({ where: { id: payment.scaleGroupId } });

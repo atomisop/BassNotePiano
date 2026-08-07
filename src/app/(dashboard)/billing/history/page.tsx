@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { getUserPaymentHistory } from "@/lib/payments";
-import { calculateLessonTotal } from "@/lib/lessonPricing";
+import { calculateClassCreditTotal } from "@/lib/classCreditPricing";
 
 const STATUS_LABEL: Record<string, string> = {
   AWAITING_TRANSFER: "Awaiting transfer",
@@ -32,12 +32,18 @@ function describePayment(payment: {
   if (payment.purpose === "CURRICULUM") {
     return { eyebrow: "Curriculum", title: "Full platform unlock" };
   }
-  if (payment.purpose === "LESSON_PACKAGE" && payment.lessonQuantity && payment.lessonType) {
-    const typeLabel = payment.lessonType === "ONLINE" ? "Online" : "In-Person";
-    const { discountCents } = calculateLessonTotal(payment.lessonQuantity);
+  if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
+    if (payment.lessonType) {
+      const typeLabel = payment.lessonType === "ONLINE" ? "Online" : "In-Person";
+      return {
+        eyebrow: "Lesson credits (legacy)",
+        title: `${payment.lessonQuantity} × ${typeLabel} lesson${payment.lessonQuantity === 1 ? "" : "s"}`,
+      };
+    }
+    const { discountCents } = calculateClassCreditTotal(payment.lessonQuantity);
     return {
-      eyebrow: "Lesson credits",
-      title: `${payment.lessonQuantity} × ${typeLabel} lesson${payment.lessonQuantity === 1 ? "" : "s"}${discountCents > 0 ? " (20% off)" : ""}`,
+      eyebrow: "Class credits",
+      title: `${payment.lessonQuantity} credit${payment.lessonQuantity === 1 ? "" : "s"}${discountCents > 0 ? " (bundle discount)" : ""}`,
     };
   }
   // Legacy Pay-As-You-Go row from before per-scale purchase was retired.
