@@ -158,7 +158,7 @@ export function ClassBookingClient({
               const insufficientCredits = credits < row.creditCost;
               const disabled = row.isFull || insufficientCredits || bookingKey !== null;
               return (
-                <div key={key} className="glass-surface flex flex-wrap items-center justify-between gap-3 p-4">
+                <div key={key} className="glass-surface flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm text-slate-100">
                       {row.label ?? "Class"} — {formatDateTime(row.scheduledAt)}
@@ -198,7 +198,7 @@ export function ClassBookingClient({
               const cancelEligible = b.status === "SCHEDULED" && hoursUntil >= cancellationCutoffHours;
               const stillCancelable = b.status === "SCHEDULED" && hoursUntil > 0;
               return (
-                <div key={b.id} className="glass-surface flex flex-wrap items-center justify-between gap-3 p-4">
+                <div key={b.id} className="glass-surface flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm text-slate-100">
                       {b.label ?? "Class"} — {formatDateTime(b.scheduledAt)}

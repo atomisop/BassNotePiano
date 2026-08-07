@@ -11,6 +11,17 @@ export interface ChangelogEntry {
 // truthful, not perfectly granular.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.3.0",
+    date: "2026-08-07",
+    title: "Weekly live classes, direct messages, and announcements",
+    items: [
+      "Live group classes on Zoom replace 1:1 lesson booking — pick from six recurring weekly slots, pay with simple credit bundles, and cancel 24+ hours ahead for a refund",
+      "We can now message you directly — replies land right in your existing Messages inbox",
+      "Site announcements show up as a dismissible banner and a bell notification, so you never miss the news",
+      "Logging in, and changing your password, name, or photo, no longer need a confirmation code — just your password",
+    ],
+  },
+  {
     version: "1.2.0",
     date: "2026-07-23",
     title: "A new look, and Messages gets smarter",

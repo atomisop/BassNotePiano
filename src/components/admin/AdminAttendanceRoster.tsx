@@ -73,7 +73,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance }: AdminAt
         const activeRoster = occ.roster.filter((r) => r.status !== "CANCELED");
         return (
           <div key={key} className="glass-surface backdrop-blur-2xl p-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="font-serif text-lg text-slate-50">{occ.label ?? "Class"}</h3>
                 <p className="mt-0.5 text-sm text-slate-500">{formatDateTime(occ.scheduledAt)}</p>
@@ -85,7 +85,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance }: AdminAt
 
             <div className="mt-4 space-y-2">
               {activeRoster.map((entry) => (
-                <div key={entry.bookingId} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 p-3">
+                <div key={entry.bookingId} className="flex flex-col gap-3 rounded-xl border border-white/10 p-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar image={entry.studentImage} name={entry.studentName ?? entry.studentEmail} />
                     <div>
