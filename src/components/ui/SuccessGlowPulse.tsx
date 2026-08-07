@@ -26,7 +26,7 @@ export function SuccessGlowPulse() {
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, 1, 0] }}
       transition={{ duration: 1.1, times: [0, 0.4, 1], repeat: 1, repeatDelay: 0.15 }}
-      style={{ boxShadow: "inset 0 0 50px 4px rgba(251, 191, 36, 0.35)" }}
+      style={{ boxShadow: "inset 0 0 50px 4px rgba(209, 160, 148, 0.35)" }}
     />
   );
 }

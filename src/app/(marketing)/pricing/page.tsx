@@ -44,7 +44,7 @@ export default function PricingPage() {
         variants={container}
         initial="hidden"
         animate="visible"
-        className="relative mx-auto max-w-3xl px-6 pb-12 pt-10 text-center"
+        className="relative mx-auto max-w-3xl px-6 pb-12 pt-24 text-center"
       >
         <motion.p
           variants={item}

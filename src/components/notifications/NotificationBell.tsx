@@ -161,7 +161,10 @@ export function NotificationBell() {
                       <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </button>
-                  <h1 className="font-serif text-lg text-slate-50">Notifications</h1>
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-amber-400/80">Inbox</p>
+                    <h1 className="font-serif text-lg text-slate-50">Notifications</h1>
+                  </div>
                   {unreadCount > 0 && (
                     <button
                       type="button"
@@ -187,7 +190,7 @@ export function NotificationBell() {
                           <path d="M9.5 19.5a2.5 2.5 0 005 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
                       </span>
-                      <p className="text-sm font-medium text-slate-400">No recent notifications</p>
+                      <p className="text-sm font-medium text-slate-400">You're all caught up — no notifications yet.</p>
                       <Link
                         href="/account?tab=notifications"
                         onClick={() => setOpen(false)}

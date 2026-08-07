@@ -67,8 +67,19 @@ function RegisterForm() {
       animate="visible"
       className="w-full max-w-sm glass-surface-elevated p-7"
     >
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Start learning</p>
-      <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Create an account</h1>
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-300">
+        <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+          <path
+            d="M9 11a4 4 0 100-8 4 4 0 000 8zM3 21a6 6 0 0112 0M19 8v6M22 11h-6"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+      <h1 className="text-center font-serif text-2xl text-slate-50">Create your account</h1>
+      <p className="mt-1.5 text-center text-sm text-slate-500">Sign up to get started.</p>
 
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">
         <div>

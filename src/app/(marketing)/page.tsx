@@ -9,6 +9,7 @@ import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { TiltGlow } from "@/components/ui/TiltGlow";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
+import { ScrollToTopButton } from "@/components/marketing/ScrollToTopButton";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -100,17 +101,17 @@ export default function LandingPage() {
 
   return (
     <div className="relative overflow-hidden bg-slate-950">
+      <MarketingNav />
+
       {/* ============ Hero — full-bleed piano backdrop, full viewport height ============ */}
       <section className="relative isolate flex min-h-screen flex-col overflow-hidden">
         <PhotoBackdrop src={BACKDROPS.marketingHero} scrim="light" parallax priority sizes="100vw" />
-
-        <MarketingNav />
 
         <motion.div
           variants={heroContainer}
           initial="hidden"
           animate="visible"
-          className="relative z-10 mx-auto flex max-w-3xl flex-1 flex-col items-center justify-center px-6 pb-20 text-center"
+          className="relative z-10 mx-auto flex max-w-3xl flex-1 flex-col items-center justify-center px-6 pb-20 pt-20 text-center"
         >
           <motion.p
             variants={heroItem}
@@ -152,9 +153,10 @@ export default function LandingPage() {
       >
         <PhotoBackdrop src={BACKDROPS.curriculum} scrim="standard" sizes="100vw" />
         <div className="relative z-10 mx-auto w-full max-w-6xl">
-          <h2 className="mb-3 text-center font-serif text-2xl text-slate-100">The curriculum</h2>
+          <h2 className="mb-3 text-center font-serif text-2xl text-slate-100">Six scales, one connected path</h2>
           <p className="mx-auto mb-8 max-w-md text-center text-sm text-slate-300">
-            Here's what you're actually looking at — your roadmap, tracked scale by scale.
+            Work through six chapters in sequence. Read the module, complete the practice, and pass an 80% quiz to
+            unlock the next stage — or unlock everything at once.
           </p>
 
           <div className="glass-surface-elevated mx-auto mb-10 max-w-lg p-6 sm:p-7">
@@ -243,6 +245,8 @@ export default function LandingPage() {
       <footer className="relative border-t border-white/5 px-6 py-8 text-center text-xs text-slate-600">
         Bass Note Piano — a digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book.
       </footer>
+
+      <ScrollToTopButton />
     </div>
   );
 }

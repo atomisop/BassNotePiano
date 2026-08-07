@@ -12,7 +12,7 @@ export default function ClassesPage() {
 
       <MarketingNav />
 
-      <section className="relative mx-auto max-w-lg px-6 pb-24 pt-6">
+      <section className="relative mx-auto max-w-lg px-6 pb-24 pt-24">
         <div className="text-center">
           <p className="glass-pill mx-auto mb-4 w-fit px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-amber-300">
             Register for classes

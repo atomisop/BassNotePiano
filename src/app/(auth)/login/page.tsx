@@ -106,7 +106,8 @@ function LoginForm() {
         {step === "password" ? (
           <motion.div key="password" variants={stepVariants} initial="enter" animate="center" exit="exit">
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Welcome back</p>
-            <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Log in</h1>
+            <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Log in to continue</h1>
+            <p className="mt-1.5 text-sm text-slate-500">Pick up your roadmap right where you left it.</p>
 
             <motion.form onSubmit={handlePasswordSubmit} animate={shakeControls} className="mt-6 space-y-4">
               <div>

@@ -23,7 +23,7 @@ export function TiltGlow({ children, className = "", maxTilt = 5 }: TiltGlowProp
   const rotateY = useSpring(0, { stiffness: 200, damping: 20 });
   const glowX = useMotionValue(50);
   const glowY = useMotionValue(50);
-  const glow = useMotionTemplate`radial-gradient(360px circle at ${glowX}% ${glowY}%, rgba(251,191,36,0.14), transparent 70%)`;
+  const glow = useMotionTemplate`radial-gradient(360px circle at ${glowX}% ${glowY}%, rgba(209,160,148,0.14), transparent 70%)`;
 
   function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
     if (prefersReducedMotion || !ref.current) return;
