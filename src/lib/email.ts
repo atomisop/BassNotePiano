@@ -176,27 +176,3 @@ export async function sendNotificationEmailWithCta(
   await sendEmail({ to, subject: `${title} — Bass Note Piano`, html, text });
 }
 
-export interface NewLocationAlertDetails {
-  city: string | null;
-  region: string | null;
-  country: string | null;
-  ip: string | null;
-  when: Date;
-}
-
-export async function sendNewLocationLoginAlert(to: string, details: NewLocationAlertDetails) {
-  const location = [details.city, details.region, details.country].filter(Boolean).join(", ") || "an unknown location";
-  const when = details.when.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" });
-
-  const html = emailShell(
-    "New login to your account",
-    `<p style="margin:0 0 12px;">We noticed a login to your Bass Note Piano account from a location we haven't seen before:</p>
-     <p style="margin:0 0 4px;"><strong>Location:</strong> ${location}</p>
-     ${details.ip ? `<p style="margin:0 0 4px;"><strong>IP address:</strong> ${details.ip}</p>` : ""}
-     <p style="margin:0 0 16px;"><strong>Time:</strong> ${when}</p>
-     <p style="margin:0;color:#777;font-size:13px;">If this was you, no action is needed. If it wasn't, reset your password right away.</p>`,
-  );
-  const text = `New login to your Bass Note Piano account.\n\nLocation: ${location}\n${details.ip ? `IP: ${details.ip}\n` : ""}Time: ${when}\n\nIf this wasn't you, reset your password right away.`;
-
-  await sendEmail({ to, subject: "New login location detected — Bass Note Piano", html, text });
-}
