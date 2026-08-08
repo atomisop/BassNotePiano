@@ -89,8 +89,29 @@ export async function createPresignedLessonUpload(
   return { uploadUrl, key, publicUrl };
 }
 
-/** Best-effort — called when an admin deletes a Lesson row, so the bucket doesn't accumulate orphaned files. Failure here shouldn't block the DB delete. */
-export async function deleteLessonFile(key: string): Promise<void> {
+/** Namespaced under avatars/<userId>/ so a user's old versions are easy to find/audit, and so one user's uploads can never collide with another's key. */
+export async function createPresignedAvatarUpload(
+  userId: string,
+  fileName: string,
+  contentType: string,
+): Promise<PresignedUpload> {
+  const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const key = `avatars/${userId}/${Date.now()}-${safeName}`;
+
+  const command = new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET_NAME,
+    Key: key,
+    ContentType: contentType,
+  });
+
+  const uploadUrl = await getSignedUrl(getClient(), command, { expiresIn: 600 });
+  const publicUrl = `${process.env.R2_PUBLIC_URL!.replace(/\/$/, "")}/${key}`;
+
+  return { uploadUrl, key, publicUrl };
+}
+
+/** Best-effort delete of any object by key — failure here should never block whatever DB change triggered it (a Lesson delete, an avatar replacement, etc). */
+export async function deleteObject(key: string): Promise<void> {
   try {
     await getClient().send(new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key }));
   } catch (err) {

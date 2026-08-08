@@ -11,6 +11,14 @@ export interface ChangelogEntry {
 // truthful, not perfectly granular.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.0",
+    date: "2026-08-08",
+    title: "Bigger profile photos",
+    items: [
+      "Profile photo uploads now accept images up to 10MB — resized automatically in your browser first, so it still uploads fast",
+    ],
+  },
+  {
     version: "1.3.0",
     date: "2026-08-07",
     title: "Weekly live classes, direct messages, and announcements",

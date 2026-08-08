@@ -17,6 +17,7 @@ interface ProfileEditButtonProps {
   initialName: string | null;
   initialImage: string | null;
   initialUsername: string | null;
+  storageConfigured: boolean;
   initialMusicProfile: MusicProfile;
 }
 

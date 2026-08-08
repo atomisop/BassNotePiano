@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isObjectStorageConfigured } from "@/lib/storage";
 import { BadgeGrid } from "@/components/gamification/BadgeGrid";
 import { StreakDots } from "@/components/gamification/StreakDots";
 import { BADGES } from "@/lib/badges";
@@ -53,6 +54,7 @@ export default async function ProfilePage() {
           initialName={user.name}
           initialImage={user.image}
           initialUsername={user.username}
+          storageConfigured={isObjectStorageConfigured()}
           initialMusicProfile={{
             primaryInstrument: user.primaryInstrument,
             skillLevel: user.skillLevel,

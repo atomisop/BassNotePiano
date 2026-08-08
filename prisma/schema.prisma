@@ -173,6 +173,7 @@ enum NotificationType {
   LESSON_BOOKING_RECEIVED // to admins, when a student books a live lesson using a credit
   LESSON_BOOKING_CANCELED // to the student, when a booking is canceled and their credit is refunded
   ANNOUNCEMENT // fanned out to every user when an admin publishes an announcement
+  CREDIT_ADJUSTED // to the student, when an admin manually grants or deducts class credits
 }
 
 // The in-app inbox is the source of truth — always written regardless of
@@ -480,6 +481,9 @@ model User {
   reviewedPayments ZellePayment[]  @relation("PaymentReviewer")
   lessonBookings   LessonBooking[] @relation("LessonBookingStudent") // historical — see LessonBooking model comment
   classBookings    ClassBooking[]  @relation("ClassBookingStudent")
+
+  creditAdjustmentsReceived CreditAdjustment[] @relation("CreditAdjustmentRecipient")
+  creditAdjustmentsGranted  CreditAdjustment[] @relation("CreditAdjustmentGrantedBy")
 
   uploadedLessons Lesson[]
   lessonProgress  LessonProgress[]
@@ -886,4 +890,26 @@ model ClassBooking {
   @@unique([studentId, scheduleId, occurrenceDate])
   @@index([scheduleId, occurrenceDate, status])
   @@index([studentId, status])
+}
+
+// Audit trail for every manual admin change to a student's classCredits
+// balance (grants, corrections, refunds outside the normal 24h-cutoff
+// flow). amount is signed — positive for a grant, negative for a
+// deduction — so the running total is just a sum of this table, and
+// reasonNote is required at the call-site (never blank) so every entry is
+// self-explanatory months later without cross-referencing anything else.
+model CreditAdjustment {
+  id           String @id @default(cuid())
+  userId       String
+  user         User   @relation("CreditAdjustmentRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  adjustedById String
+  adjustedBy   User   @relation("CreditAdjustmentGrantedBy", fields: [adjustedById], references: [id], onDelete: Cascade)
+
+  amount     Int // signed: +N grants, -N deducts
+  reasonNote String
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }

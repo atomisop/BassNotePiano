@@ -4,7 +4,13 @@ import { useRef, useState, type FormEvent } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
-import { updateNameAction, updateAvatarAction, updateMusicProfileAction, updateUsernameAction } from "../account/actions";
+import {
+  updateNameAction,
+  updateAvatarAction,
+  updateMusicProfileAction,
+  updateUsernameAction,
+  requestAvatarUploadUrlAction,
+} from "../account/actions";
 
 interface MusicProfile {
   primaryInstrument: PrimaryInstrument | null;
@@ -17,10 +23,75 @@ interface ProfileEditorProps {
   initialName: string | null;
   initialImage: string | null;
   initialUsername: string | null;
+  storageConfigured: boolean;
   initialMusicProfile: MusicProfile;
 }
 
-const MAX_AVATAR_BYTES = 1_800_000;
+// Accepted straight from the file picker — modern phone-camera photos
+// routinely land in the 5-15MB range. What's actually stored is far
+// smaller: resizeAvatarImage below re-encodes to a capped JPEG before
+// anything is uploaded, so this cap is just a sanity ceiling on the
+// source file, not a reflection of what ends up in the bucket.
+const MAX_AVATAR_SOURCE_BYTES = 10_000_000;
+const AVATAR_MAX_DIMENSION = 512;
+const AVATAR_JPEG_QUALITY = 0.85;
+
+/**
+ * Downscales to AVATAR_MAX_DIMENSION on the longer edge and re-encodes as
+ * JPEG — runs entirely in the browser before the upload ever starts, so a
+ * large source photo never has to pass through the app server (which would
+ * hit Netlify's serverless body-size ceiling well before 10MB) and never
+ * bloats storage with a full-resolution image nobody needs for an avatar.
+ */
+function resizeAvatarImage(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let { width, height } = img;
+      if (width > height && width > AVATAR_MAX_DIMENSION) {
+        height = Math.round((height * AVATAR_MAX_DIMENSION) / width);
+        width = AVATAR_MAX_DIMENSION;
+      } else if (height > AVATAR_MAX_DIMENSION) {
+        width = Math.round((width * AVATAR_MAX_DIMENSION) / height);
+        height = AVATAR_MAX_DIMENSION;
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Couldn't process that image."));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error("Couldn't process that image."))),
+        "image/jpeg",
+        AVATAR_JPEG_QUALITY,
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Couldn't read that image."));
+    };
+    img.src = objectUrl;
+  });
+}
+
+/** PUT straight to the presigned R2 URL — the app server never sees the image bytes. */
+function uploadToR2(uploadUrl: string, blob: Blob, contentType: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", uploadUrl, true);
+    xhr.setRequestHeader("Content-Type", contentType);
+    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload failed (${xhr.status}).`)));
+    xhr.onerror = () => reject(new Error("Upload failed — check your connection and try again."));
+    xhr.send(blob);
+  });
+}
 
 const INSTRUMENTS: { value: PrimaryInstrument; label: string }[] = [
   { value: "PIANO_KEYBOARD", label: "Piano / Keyboard" },
@@ -79,7 +150,7 @@ function SectionCard({ title, description, children }: { title: string; descript
   );
 }
 
-export function ProfileEditor({ initialName, initialImage, initialUsername, initialMusicProfile }: ProfileEditorProps) {
+export function ProfileEditor({ initialName, initialImage, initialUsername, storageConfigured, initialMusicProfile }: ProfileEditorProps) {
   const { update } = useSession();
   const router = useRouter();
 
@@ -90,7 +161,7 @@ export function ProfileEditor({ initialName, initialImage, initialUsername, init
 
   return (
     <div className="space-y-6">
-      <AvatarSection initialImage={initialImage} onDone={syncSession} />
+      <AvatarSection initialImage={initialImage} storageConfigured={storageConfigured} onDone={syncSession} />
       <NameSection initialName={initialName} onDone={syncSession} />
       <UsernameSection initialUsername={initialUsername} />
       <MusicProfileSection initial={initialMusicProfile} />
@@ -181,14 +252,22 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
   );
 }
 
-function AvatarSection({ initialImage, onDone }: { initialImage: string | null; onDone: () => Promise<void> }) {
+function AvatarSection({
+  initialImage,
+  storageConfigured,
+  onDone,
+}: {
+  initialImage: string | null;
+  storageConfigured: boolean;
+  onDone: () => Promise<void>;
+}) {
   const [image, setImage] = useState(initialImage);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  function handleFileChange(e: FormEvent<HTMLInputElement>) {
+  async function handleFileChange(e: FormEvent<HTMLInputElement>) {
     setError(null);
     setSuccess(false);
     const file = e.currentTarget.files?.[0];
@@ -198,30 +277,30 @@ function AvatarSection({ initialImage, onDone }: { initialImage: string | null; 
       setError("Choose an image file.");
       return;
     }
-    if (file.size > MAX_AVATAR_BYTES) {
-      setError("Image must be under 1.8MB.");
+    if (file.size > MAX_AVATAR_SOURCE_BYTES) {
+      setError("Image must be under 10MB.");
       return;
     }
 
     setUploading(true);
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUri = reader.result as string;
-      const result = await updateAvatarAction(dataUri);
-      setUploading(false);
+    try {
+      const resized = await resizeAvatarImage(file);
+      const { uploadUrl, publicUrl } = await requestAvatarUploadUrlAction(file.name, "image/jpeg");
+      await uploadToR2(uploadUrl, resized, "image/jpeg");
+      const result = await updateAvatarAction(publicUrl);
       if (!result.ok) {
         setError(result.error);
         return;
       }
-      setImage(dataUri);
+      setImage(result.image);
       setSuccess(true);
       await onDone();
-    };
-    reader.onerror = () => {
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
       setUploading(false);
-      setError("Couldn't read that file.");
-    };
-    reader.readAsDataURL(file);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   }
 
   return (
@@ -238,7 +317,7 @@ function AvatarSection({ initialImage, onDone }: { initialImage: string | null; 
         <div>
           <button
             type="button"
-            disabled={uploading}
+            disabled={uploading || !storageConfigured}
             onClick={() => fileInputRef.current?.click()}
             className="cta-sheen rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -248,6 +327,7 @@ function AvatarSection({ initialImage, onDone }: { initialImage: string | null; 
         </div>
       </div>
 
+      {!storageConfigured && <p className="mt-2 text-xs text-slate-500">Image upload isn't configured yet.</p>}
       {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
       {success && <p className="mt-2 text-xs text-emerald-400">Profile photo updated.</p>}
     </SectionCard>

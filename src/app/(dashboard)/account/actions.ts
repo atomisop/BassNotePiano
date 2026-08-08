@@ -5,9 +5,9 @@ import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@p
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { setUsername, SocialError } from "@/lib/social";
+import { createPresignedAvatarUpload, deleteObject, keyFromPublicUrl, isObjectStorageConfigured } from "@/lib/storage";
 
 const MIN_PASSWORD_LENGTH = 8;
-const MAX_AVATAR_DATA_URI_LENGTH = 2_500_000; // ~1.8MB image, base64-inflated
 
 /** Every action here operates on the signed-in user only — never on an email passed by the client. */
 async function requireSession() {
@@ -61,16 +61,41 @@ export async function updatePasswordAction(currentPassword: string, newPassword:
 }
 
 // ---------------------------------------------------------------------------
-// Avatar
+// Avatar — stored on R2 (like lesson content), not inline in Postgres.
+// The browser resizes the image client-side and uploads it directly to R2
+// via a short-lived presigned URL; the app server only ever handles the
+// resulting small URL, never the image bytes themselves.
 // ---------------------------------------------------------------------------
 
-export async function updateAvatarAction(dataUri: string) {
-  if (!dataUri.startsWith("data:image/") || dataUri.length > MAX_AVATAR_DATA_URI_LENGTH) {
-    return { ok: false as const, error: "Choose an image under ~1.8MB." };
+export async function checkAvatarStorageAction() {
+  return isObjectStorageConfigured();
+}
+
+export async function requestAvatarUploadUrlAction(fileName: string, contentType: string) {
+  const { id } = await requireSession();
+  if (!contentType.startsWith("image/")) throw new Error("Only image files are supported.");
+  return createPresignedAvatarUpload(id, fileName, contentType);
+}
+
+export async function updateAvatarAction(publicUrl: string) {
+  const { id } = await requireSession();
+
+  // The key is namespaced avatars/<userId>/... — checking that prefix means
+  // a user can only ever point their own image at something they actually
+  // just uploaded themselves, not at another user's file.
+  const key = keyFromPublicUrl(publicUrl);
+  if (!key || !key.startsWith(`avatars/${id}/`)) {
+    return { ok: false as const, error: "Invalid image upload." };
   }
 
-  const { id } = await requireSession();
-  const updated = await prisma.user.update({ where: { id }, data: { image: dataUri }, select: { image: true } });
+  const previous = await prisma.user.findUnique({ where: { id }, select: { image: true } });
+  const updated = await prisma.user.update({ where: { id }, data: { image: publicUrl }, select: { image: true } });
+
+  // Best-effort cleanup of the previous avatar so the bucket doesn't
+  // accumulate orphaned files — never blocks the update itself.
+  const previousKey = previous?.image ? keyFromPublicUrl(previous.image) : null;
+  if (previousKey) await deleteObject(previousKey);
+
   return { ok: true as const, image: updated.image };
 }
 
