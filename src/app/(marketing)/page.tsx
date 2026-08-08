@@ -87,12 +87,6 @@ const INSTRUMENT_SECTIONS = [
     label: "Guitar",
     copy: "The same Tizita and Bati pentatonics you learn at the keys map directly onto six strings.",
   },
-  {
-    key: "violin",
-    src: BACKDROPS.violin,
-    label: "Violin",
-    copy: "Anchihoye's bent intervals and Mixolydian's open fifths translate note-for-note to the bow.",
-  },
 ];
 
 export default function LandingPage() {

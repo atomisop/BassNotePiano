@@ -1,6 +1,6 @@
 import { getAdminOccurrences, CLASS_CAPACITY } from "@/lib/classSchedule";
 import { AdminAttendanceRoster } from "@/components/admin/AdminAttendanceRoster";
-import { markAttendanceAction } from "./actions";
+import { markAttendanceAction, adminCancelBookingAction } from "./actions";
 
 export default async function AdminBookingsPage() {
   const occurrences = await getAdminOccurrences();
@@ -10,7 +10,8 @@ export default async function AdminBookingsPage() {
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Admin</p>
       <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Class attendance</h1>
       <p className="mt-2 text-sm text-slate-500">
-        Every occurrence with a booking, past and upcoming — mark Present or No-show once a class has happened.
+        Every occurrence with a booking, past and upcoming — mark Present or No-show once a class has happened, or
+        cancel a booking (with a refund) any time before then.
       </p>
 
       <div className="mt-6">
@@ -25,6 +26,7 @@ export default async function AdminBookingsPage() {
             roster: o.roster,
           }))}
           onMarkAttendance={markAttendanceAction}
+          onCancelBooking={adminCancelBookingAction}
         />
       </div>
     </div>

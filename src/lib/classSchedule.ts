@@ -183,12 +183,40 @@ export async function bookClass(studentId: string, scheduleId: string, occurrenc
         const seatsBooked = await tx.classBooking.count({ where: { scheduleId, occurrenceDate, status: "SCHEDULED" } });
         if (seatsBooked >= CLASS_CAPACITY) throw new ClassBookingError("This class just filled up — pick another time.");
 
+        // (studentId, scheduleId, occurrenceDate) is unique, so a student who
+        // previously booked this exact occurrence and then canceled already
+        // has a row here — CANCELED, not absent. A plain create() would hit
+        // that unique constraint and fail with a confusing "already booked"
+        // error even though the booking is inactive. Reuse that row (flip it
+        // back to SCHEDULED) instead of inserting a second one; only a
+        // genuinely still-SCHEDULED existing row should block a rebook.
+        const existing = await tx.classBooking.findUnique({
+          where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId, occurrenceDate } },
+        });
+        if (existing?.status === "SCHEDULED") {
+          throw new ClassBookingError("You've already booked this class.");
+        }
+
         const spent = await tx.user.updateMany({
           where: { id: studentId, classCredits: { gte: schedule.creditCost } },
           data: { classCredits: { decrement: schedule.creditCost } },
         });
         if (spent.count === 0) {
           throw new ClassBookingError(`You need ${schedule.creditCost} credits for this class.`);
+        }
+
+        if (existing) {
+          return tx.classBooking.update({
+            where: { id: existing.id },
+            data: {
+              status: "SCHEDULED",
+              scheduledAt,
+              creditsSpent: schedule.creditCost,
+              attendance: null,
+              refunded: false,
+              canceledReason: null,
+            },
+          });
         }
 
         return tx.classBooking.create({
@@ -339,4 +367,37 @@ export async function markAttendance(bookingId: string, attendance: AttendanceSt
   const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
   if (booking.status === "CANCELED") throw new ClassBookingError("Can't mark attendance for a canceled booking.");
   await prisma.classBooking.update({ where: { id: bookingId }, data: { attendance, status: "COMPLETED" } });
+}
+
+/**
+ * Admin-initiated cancel — unlike the student's self-serve cancelClassBooking,
+ * this has no 24-hour cutoff (an admin can free a seat or fix a mistake any
+ * time before the class happens) and always refunds the credit, since a
+ * human made the call here rather than the strict self-serve rule. This is
+ * the "manual, case-by-case" refund path the terms page points students to
+ * support for.
+ */
+export async function adminCancelClassBooking(bookingId: string, reason?: string): Promise<void> {
+  const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
+  if (booking.status !== "SCHEDULED") throw new ClassBookingError("This booking isn't active.");
+
+  const trimmedReason = reason?.trim() || null;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.classBooking.update({
+      where: { id: bookingId },
+      data: { status: "CANCELED", refunded: true, canceledReason: trimmedReason },
+    });
+    await tx.user.update({ where: { id: booking.studentId }, data: { classCredits: { increment: booking.creditsSpent } } });
+  });
+
+  await createNotification({
+    userId: booking.studentId,
+    type: "LESSON_BOOKING_CANCELED",
+    title: "Class canceled",
+    body: trimmedReason
+      ? `Your ${booking.scheduledAt.toLocaleString()} class was canceled by the studio (${trimmedReason}) and ${booking.creditsSpent} credit${booking.creditsSpent === 1 ? "" : "s"} were refunded.`
+      : `Your ${booking.scheduledAt.toLocaleString()} class was canceled by the studio and ${booking.creditsSpent} credit${booking.creditsSpent === 1 ? "" : "s"} were refunded.`,
+    emailCategory: "social",
+  });
 }

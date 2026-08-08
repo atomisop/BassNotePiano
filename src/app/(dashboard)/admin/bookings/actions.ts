@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { AttendanceStatus } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
-import { markAttendance } from "@/lib/classSchedule";
+import { markAttendance, adminCancelClassBooking, ClassBookingError } from "@/lib/classSchedule";
 
 // The admin layout's redirect only protects rendering — Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
@@ -20,4 +20,15 @@ export async function markAttendanceAction(bookingId: string, attendance: Attend
   await requireAdmin();
   await markAttendance(bookingId, attendance);
   revalidatePath("/admin/bookings");
+}
+
+export async function adminCancelBookingAction(bookingId: string, reason?: string) {
+  await requireAdmin();
+  try {
+    await adminCancelClassBooking(bookingId, reason);
+    revalidatePath("/admin/bookings");
+    return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+  }
 }

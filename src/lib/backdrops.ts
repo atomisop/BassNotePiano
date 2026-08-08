@@ -11,8 +11,6 @@ export const BACKDROPS = {
   marketingHero: unsplash("photo-1513883049090-d0b7439799bf"),
   /** Marketing "every instrument" section — acoustic guitar, golden-hour light. */
   guitar: unsplash("photo-1573603088895-d399fbee9653"),
-  /** Marketing "every instrument" section — close-up hand on violin strings, warm tone. */
-  violin: unsplash("photo-1566913485242-694e995731b4"),
   /** Marketing homepage "The curriculum" section — grand piano in an atmospheric room, distinct from the hero's close-up shot. */
   curriculum: unsplash("photo-1571553693721-b9500d685594"),
   /** Classes page — vintage sheet music, warm prism light. */
