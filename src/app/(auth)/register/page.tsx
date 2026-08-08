@@ -22,6 +22,7 @@ function RegisterForm() {
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const shakeControls = useErrorShake(error);
@@ -36,6 +37,10 @@ function RegisterForm() {
     }
     if (password !== confirmPassword) {
       setError("Passwords don't match.");
+      return;
+    }
+    if (!agreedToTerms) {
+      setError("Please agree to the Terms & refund policy to continue.");
       return;
     }
 
@@ -150,6 +155,25 @@ function RegisterForm() {
             }`}
           />
         </div>
+
+        <label className="flex cursor-pointer items-start gap-2.5 text-xs text-slate-400">
+          <input
+            type="checkbox"
+            checked={agreedToTerms}
+            onChange={(e) => {
+              setAgreedToTerms(e.target.checked);
+              setError(null);
+            }}
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-white/15 bg-slate-950 accent-amber-400"
+          />
+          <span>
+            I agree to the{" "}
+            <Link href="/terms" target="_blank" className="text-amber-300 underline transition hover:text-amber-200">
+              Terms &amp; refund policy
+            </Link>
+            .
+          </span>
+        </label>
 
         {error && <p className="text-xs text-red-400">{error}</p>}
 

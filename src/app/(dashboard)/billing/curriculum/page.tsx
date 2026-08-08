@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { getOrCreatePendingCurriculumPayment } from "@/lib/payments";
 import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
-import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
+import { CurriculumConsentGate } from "@/components/billing/CurriculumConsentGate";
 import { submitCurriculumPaymentAction } from "./actions";
 
 const BENEFITS = [
@@ -11,13 +11,19 @@ const BENEFITS = [
   "One-time payment — lifetime access, no recurring fees",
 ];
 
-export default async function BillingCurriculumPage() {
+const NEXT_STEP_REASON: Record<string, string> = {
+  credits: "Class credits are an add-on to the curriculum — grab the curriculum first, then credits.",
+  lessons: "Booking a live class requires curriculum access first.",
+};
+
+export default async function BillingCurriculumPage({ searchParams }: { searchParams: { next?: string } }) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/curriculum");
   if (session.user.hasCurriculumAccess) redirect("/dashboard");
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
   const payment = await getOrCreatePendingCurriculumPayment(session.user.id, CURRICULUM_PRICE_CENTS, zelleHandle);
+  const redirectReason = searchParams.next ? NEXT_STEP_REASON[searchParams.next] : undefined;
 
   return (
     <div className="w-full max-w-sm">
@@ -26,6 +32,12 @@ export default async function BillingCurriculumPage() {
       <p className="mt-2 text-sm text-slate-500">
         One-time ${(CURRICULUM_PRICE_CENTS / 100).toFixed(0)} payment via Zelle — every scale, forever.
       </p>
+
+      {redirectReason && (
+        <p className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/5 px-3.5 py-2.5 text-xs text-amber-200">
+          {redirectReason}
+        </p>
+      )}
 
       <ul className="mt-5 space-y-2">
         {BENEFITS.map((benefit) => (
@@ -37,7 +49,7 @@ export default async function BillingCurriculumPage() {
       </ul>
 
       <div className="mt-6">
-        <ZelleUnlockGate
+        <CurriculumConsentGate
           status={payment.status}
           rejectionReason={payment.rejectionReason}
           scaleCode="Curriculum"

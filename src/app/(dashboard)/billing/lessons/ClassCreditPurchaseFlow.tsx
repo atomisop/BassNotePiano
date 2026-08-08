@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { ZellePaymentStatus } from "@prisma/client";
 import {
   CREDIT_BASE_PRICE_CENTS,
@@ -166,8 +167,12 @@ export function ClassCreditPurchaseFlow({ zelleHandle }: { zelleHandle: string }
         />
         <span>
           I understand money spent on class credits is <span className="font-medium text-amber-200">non-refundable</span>.
-          Only unused credits from a cancellation made 24+ hours before a class refund back to my balance — never as
-          cash.
+          The only way a credit comes back is canceling a booking 24+ hours before it starts — inside that window,
+          self-cancellation is off and any refund is a manual, case-by-case call. Full{" "}
+          <Link href="/terms" target="_blank" className="text-amber-300 underline hover:text-amber-200">
+            terms &amp; refund policy
+          </Link>
+          .
         </span>
       </label>
 

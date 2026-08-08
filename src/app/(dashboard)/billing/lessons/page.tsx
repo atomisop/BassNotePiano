@@ -5,6 +5,9 @@ import { ClassCreditPurchaseFlow } from "./ClassCreditPurchaseFlow";
 export default async function BillingLessonsPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/lessons");
+  // Class credits are an add-on to the curriculum, not a standalone
+  // purchase — buy the $99 curriculum first, credits after.
+  if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=credits");
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
 

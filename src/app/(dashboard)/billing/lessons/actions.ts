@@ -12,6 +12,9 @@ import {
 export async function createClassCreditsPendingPaymentAction(quantity: number) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/lessons");
+  // Mirrors the page-level redirect — re-checked here since this Server
+  // Action is its own RPC endpoint, not something the page redirect covers.
+  if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=credits");
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
   const payment = await getOrCreatePendingClassCreditsPayment(session.user.id, quantity, zelleHandle);

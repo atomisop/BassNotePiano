@@ -115,6 +115,18 @@ export async function setUserRole(userId: string, role: Role) {
   return updated;
 }
 
+/**
+ * The account a "Message support" link should open a conversation with —
+ * the longest-standing admin account, so it stays stable even if more
+ * admins are added later. Returns null in the (shouldn't-happen-in-prod)
+ * case of no admin existing yet, so callers can hide the link instead of
+ * linking somewhere broken.
+ */
+export async function getSupportContactId(): Promise<string | null> {
+  const admin = await prisma.user.findFirst({ where: { role: "ADMIN" }, orderBy: { createdAt: "asc" }, select: { id: true } });
+  return admin?.id ?? null;
+}
+
 export async function setCurriculumAccess(userId: string, hasAccess: boolean) {
   return prisma.user.update({
     where: { id: userId },

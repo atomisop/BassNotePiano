@@ -228,36 +228,39 @@ export async function getUserClassBookings(studentId: string) {
 }
 
 /**
- * Self-serve cancellation. >=24h before the class start refunds the spent
- * credits and frees the seat; anything closer (including a class that's
- * already happened, functionally the same as a no-show) forfeits them.
+ * Self-serve cancellation — >=24h before the class start only. Always
+ * refunds the spent credits and frees the seat (there's no other outcome:
+ * self-cancel simply isn't offered once inside the window). A student who
+ * needs to cancel inside 24h has to message support instead; any refund at
+ * that point is a manual, discretionary admin credit adjustment, not
+ * something this function grants automatically.
  */
-export async function cancelClassBooking(bookingId: string, studentId: string): Promise<{ refunded: boolean }> {
+export async function cancelClassBooking(bookingId: string, studentId: string): Promise<{ refunded: true }> {
   const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
   if (booking.studentId !== studentId) throw new ClassBookingError("Not your booking.");
   if (booking.status !== "SCHEDULED") throw new ClassBookingError("This booking isn't active.");
 
   const hoursUntil = (booking.scheduledAt.getTime() - Date.now()) / 3_600_000;
-  const refunded = hoursUntil >= CANCELLATION_CUTOFF_HOURS;
+  if (hoursUntil < CANCELLATION_CUTOFF_HOURS) {
+    throw new ClassBookingError(
+      `Too close to class time to cancel yourself (inside ${CANCELLATION_CUTOFF_HOURS} hours) — message us and we'll help.`,
+    );
+  }
 
   await prisma.$transaction(async (tx) => {
-    await tx.classBooking.update({ where: { id: bookingId }, data: { status: "CANCELED", refunded } });
-    if (refunded) {
-      await tx.user.update({ where: { id: studentId }, data: { classCredits: { increment: booking.creditsSpent } } });
-    }
+    await tx.classBooking.update({ where: { id: bookingId }, data: { status: "CANCELED", refunded: true } });
+    await tx.user.update({ where: { id: studentId }, data: { classCredits: { increment: booking.creditsSpent } } });
   });
 
   await createNotification({
     userId: studentId,
     type: "LESSON_BOOKING_CANCELED",
     title: "Class canceled",
-    body: refunded
-      ? `Your ${booking.scheduledAt.toLocaleString()} class was canceled and ${booking.creditsSpent} credit${booking.creditsSpent === 1 ? "" : "s"} were refunded.`
-      : `Your ${booking.scheduledAt.toLocaleString()} class was canceled within ${CANCELLATION_CUTOFF_HOURS} hours of start, so the ${booking.creditsSpent} credit${booking.creditsSpent === 1 ? "" : "s"} were forfeited.`,
+    body: `Your ${booking.scheduledAt.toLocaleString()} class was canceled and ${booking.creditsSpent} credit${booking.creditsSpent === 1 ? "" : "s"} were refunded.`,
     emailCategory: "social",
   });
 
-  return { refunded };
+  return { refunded: true };
 }
 
 // ---------------------------------------------------------------------------

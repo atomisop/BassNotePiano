@@ -8,6 +8,9 @@ import { bookClass, cancelClassBooking, ClassBookingError } from "@/lib/classSch
 export async function bookClassAction(scheduleId: string, occurrenceDateMs: number) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
+  // Mirrors the page-level redirect — re-checked here since this Server
+  // Action is its own RPC endpoint, not something the page redirect covers.
+  if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=lessons");
 
   try {
     const booking = await bookClass(session.user.id, scheduleId, occurrenceDateMs);

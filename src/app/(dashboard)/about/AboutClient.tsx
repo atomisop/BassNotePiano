@@ -3,17 +3,20 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
+import { TermsContent, TERMS_LAST_UPDATED } from "@/components/legal/TermsContent";
 import { CHANGELOG, CURRENT_VERSION } from "@/lib/changelog";
 
 const TAB_ICONS = {
   about: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 7.5h.01",
   updates: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 3",
+  terms: "M9 12h6M9 16h6M9 8h1M7 3h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z",
   chevron: "M9 18l6-6-6-6",
 } as const;
 
 const TABS = [
   { id: "about", label: "About", icon: TAB_ICONS.about },
   { id: "updates", label: "Update notes", icon: TAB_ICONS.updates },
+  { id: "terms", label: "Terms & refunds", icon: TAB_ICONS.terms },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -105,8 +108,26 @@ function UpdatesTab() {
   );
 }
 
+function TermsTab() {
+  return (
+    <div className="glass-surface space-y-6 p-6">
+      <div>
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Legal</p>
+        <p className="mt-1 font-serif text-2xl text-slate-50">Terms &amp; refund policy</p>
+        <p className="mt-2 text-sm text-slate-500">
+          Last updated {TERMS_LAST_UPDATED}. Also shown before you create an account and before your first purchase —
+          this page is just here so you can find it again later.
+        </p>
+      </div>
+      <TermsContent />
+    </div>
+  );
+}
+
 function TabContent({ tab }: { tab: TabId }) {
-  return tab === "about" ? <AboutTab /> : <UpdatesTab />;
+  if (tab === "about") return <AboutTab />;
+  if (tab === "updates") return <UpdatesTab />;
+  return <TermsTab />;
 }
 
 function AboutClientInner() {

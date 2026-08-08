@@ -51,11 +51,13 @@ function formatDuration(min: number) {
 export function ClassBookingClient({
   initialCredits,
   cancellationCutoffHours,
+  supportContactId,
   occurrences,
   initialBookings,
 }: {
   initialCredits: number;
   cancellationCutoffHours: number;
+  supportContactId: string | null;
   occurrences: OccurrenceRow[];
   initialBookings: BookingRow[];
 }) {
@@ -116,11 +118,9 @@ export function ClassBookingClient({
       return;
     }
 
-    setBookings((prev) =>
-      prev.map((b) => (b.id === booking.id ? { ...b, status: "CANCELED", refunded: result.refunded } : b)),
-    );
-    if (result.refunded) setCredits((c) => c + booking.creditsSpent);
-    setSuccess(result.refunded ? "Canceled — credits refunded." : "Canceled — credits were forfeited (inside the cutoff).");
+    setBookings((prev) => prev.map((b) => (b.id === booking.id ? { ...b, status: "CANCELED", refunded: true } : b)));
+    setCredits((c) => c + booking.creditsSpent);
+    setSuccess("Canceled — credits refunded.");
   }
 
   return (
@@ -195,8 +195,11 @@ export function ClassBookingClient({
           <div className="space-y-2">
             {bookings.map((b) => {
               const hoursUntil = (new Date(b.scheduledAt).getTime() - Date.now()) / 3_600_000;
+              // Self-cancel only exists >=24h out — inside that window there's
+              // no button at all (see cancelClassBooking), just a way to
+              // reach support for a manual, case-by-case call.
               const cancelEligible = b.status === "SCHEDULED" && hoursUntil >= cancellationCutoffHours;
-              const stillCancelable = b.status === "SCHEDULED" && hoursUntil > 0;
+              const pastSelfServeWindow = b.status === "SCHEDULED" && hoursUntil > 0 && hoursUntil < cancellationCutoffHours;
               return (
                 <div key={b.id} className="glass-surface flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -208,8 +211,8 @@ export function ClassBookingClient({
                       {b.status === "SCHEDULED" &&
                         (cancelEligible
                           ? ` · Cancel by ${new Date(new Date(b.scheduledAt).getTime() - cancellationCutoffHours * 3_600_000).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} for a refund`
-                          : stillCancelable
-                            ? " · Canceling now forfeits your credits"
+                          : pastSelfServeWindow
+                            ? " · Too close to class time to self-cancel"
                             : "")}
                     </p>
                     {b.status === "COMPLETED" && b.attendance && (
@@ -218,13 +221,17 @@ export function ClassBookingClient({
                       </p>
                     )}
                     {b.status === "CANCELED" && (
+                      // refunded can still be false on bookings canceled before
+                      // this policy tightened to "self-cancel is 24h+ only" —
+                      // kept accurate for that historical data, even though
+                      // every new cancellation is always refunded now.
                       <p className={`mt-0.5 text-xs ${b.refunded ? "text-emerald-400" : "text-red-400"}`}>
                         {b.refunded ? "Credits refunded" : "Credits forfeited"}
                       </p>
                     )}
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    {stillCancelable && (
+                    {cancelEligible && (
                       <button
                         type="button"
                         onClick={() => handleCancel(b)}
@@ -233,6 +240,14 @@ export function ClassBookingClient({
                       >
                         {cancelingId === b.id ? "Canceling…" : "Cancel"}
                       </button>
+                    )}
+                    {pastSelfServeWindow && supportContactId && (
+                      <Link
+                        href={`/messages?with=${supportContactId}`}
+                        className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-amber-400/40 hover:text-amber-200"
+                      >
+                        Message support
+                      </Link>
                     )}
                     <span
                       className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${STATUS_STYLE[b.status]}`}
