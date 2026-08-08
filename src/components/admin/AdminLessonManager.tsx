@@ -196,7 +196,7 @@ export function AdminLessonManager({
       </div>
 
       {showForm && (
-        <form onSubmit={handleUpload} className="glass-surface backdrop-blur-2xl space-y-3.5 p-5">
+        <form onSubmit={handleUpload} className="glass-surface space-y-3.5 p-5">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-400">Title</label>
             <input
@@ -250,13 +250,13 @@ export function AdminLessonManager({
       )}
 
       {lessons.length === 0 ? (
-        <div className="glass-surface backdrop-blur-2xl p-8 text-center text-sm text-slate-500">
+        <div className="glass-surface p-8 text-center text-sm text-slate-500">
           No lessons uploaded yet for this scale.
         </div>
       ) : (
         <div className="space-y-3">
           {lessons.map((lesson, index) => (
-            <div key={lesson.id} className="glass-surface backdrop-blur-2xl p-5">
+            <div key={lesson.id} className="glass-surface p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-amber-400/30 bg-amber-400/10 text-xs font-semibold text-amber-300">
@@ -318,7 +318,7 @@ export function AdminLessonManager({
                       type="button"
                       onClick={() => handleDelete(lesson.id)}
                       disabled={busy}
-                      className="flex-1 rounded-lg bg-red-500/90 py-2 text-sm font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex-1 rounded-lg bg-red-500/95 py-2 text-sm font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {busy ? "Deleting…" : "Confirm delete"}
                     </button>

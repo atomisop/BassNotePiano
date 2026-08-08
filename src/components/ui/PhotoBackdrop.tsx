@@ -30,6 +30,18 @@ interface PhotoBackdropProps {
  * backdrop, or a `relative` section for a marketing backdrop scoped to that
  * section.
  */
+function ParallaxImage({ src, priority, sizes }: { src: string; priority: boolean; sizes: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
+  const y = useTransform(scrollYProgress, [0, 1], ["-6%", "6%"]);
+
+  return (
+    <motion.div ref={ref} style={{ y, willChange: "transform" }} className="absolute inset-[-6%]">
+      <Image src={src} alt="" fill priority={priority} sizes={sizes} className="object-cover" />
+    </motion.div>
+  );
+}
+
 export function PhotoBackdrop({
   src,
   scrim = "standard",
@@ -38,20 +50,24 @@ export function PhotoBackdrop({
   sizes = "100vw",
   className = "",
 }: PhotoBackdropProps) {
-  const ref = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
+  // Every non-marketing page (the whole dashboard shell, auth, classes,
+  // pricing) renders this with parallax off — those callers used to still
+  // pay for a permanent useScroll() listener + per-frame transform write
+  // that only ever produced "0%, unchanged". Skipping useScroll entirely
+  // when parallax is off removes that dead scroll listener from every page
+  // it's not needed on, instead of just clamping its output to a no-op.
   const activeParallax = parallax && !prefersReducedMotion;
-  const y = useTransform(scrollYProgress, [0, 1], activeParallax ? ["-6%", "6%"] : ["0%", "0%"]);
 
   return (
-    <div ref={ref} aria-hidden className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}>
-      <motion.div style={{ y }} className="absolute inset-[-6%]">
-        <Image src={src} alt="" fill priority={priority} sizes={sizes} className="object-cover" />
-      </motion.div>
+    <div aria-hidden className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}>
+      {activeParallax ? (
+        <ParallaxImage src={src} priority={priority} sizes={sizes} />
+      ) : (
+        <div className="absolute inset-[-6%]">
+          <Image src={src} alt="" fill priority={priority} sizes={sizes} className="object-cover" />
+        </div>
+      )}
       <div className={`absolute inset-0 ${SCRIM_CLASS[scrim]}`} />
       {/* Warm glow-smoke dissolve at both edges — see .backdrop-glow-smoke-*.
           Symmetric on purpose: this is what makes two stacked <PhotoBackdrop>

@@ -150,7 +150,17 @@ export function NotificationBell() {
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", stiffness: 320, damping: 34 }}
-                className="fixed inset-0 z-50 flex flex-col bg-slate-950/98 backdrop-blur-2xl"
+                // No backdrop-blur: 95% opaque already reads solid, and this
+                // panel scrolls its own notification list underneath it, so
+                // dropping the blur removes a heavy repaint on every scroll
+                // frame in here, not just during the slide-in. (Was
+                // bg-slate-950/98 — that opacity value silently produced no
+                // CSS at all in this Tailwind setup, so the panel was
+                // actually fully transparent this whole time and only
+                // "looked" solid because of the blur; /95 is a real, working
+                // value and fixes that too.)
+                style={{ willChange: "transform" }}
+                className="fixed inset-0 z-50 flex flex-col bg-slate-950/95"
               >
                 <div className="flex items-center gap-4 border-b border-white/10 px-6 py-5">
                   <button
@@ -204,8 +214,13 @@ export function NotificationBell() {
                   ) : (
                     <div className="space-y-2">
                       {notifications.map((n) => {
+                        // No backdrop-blur — this row sits inside the already
+                        // near-opaque panel above, so there's nothing left
+                        // behind it to blur. Each row paid full blur cost for
+                        // zero visible frosting; with up to 15 rows in a
+                        // scrolling list, that added up fast.
                         const itemClassName =
-                          "flex w-full items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-left backdrop-blur-xl transition hover:bg-white/5";
+                          "flex w-full items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-left transition hover:bg-white/5";
                         const inner = (
                           <>
                             <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-amber-400"}`} />

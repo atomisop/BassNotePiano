@@ -60,7 +60,7 @@ export function UserManagementTable({
 
       <div className="mt-5 space-y-3">
         {users.length === 0 && (
-          <div className="glass-surface backdrop-blur-2xl p-8 text-center text-sm text-slate-500">
+          <div className="glass-surface p-8 text-center text-sm text-slate-500">
             No users found.
           </div>
         )}
@@ -68,7 +68,7 @@ export function UserManagementTable({
         {users.map((user) => {
           const busy = busyId === user.id;
           return (
-            <div key={user.id} className="glass-surface backdrop-blur-2xl p-5">
+            <div key={user.id} className="glass-surface p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-slate-100">{user.name ?? "—"}</p>

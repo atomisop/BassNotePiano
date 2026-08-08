@@ -62,7 +62,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance }: AdminAt
   }
 
   if (occurrences.length === 0) {
-    return <div className="glass-surface backdrop-blur-2xl p-8 text-center text-sm text-slate-500">No bookings in the last 60 days.</div>;
+    return <div className="glass-surface p-8 text-center text-sm text-slate-500">No bookings in the last 60 days.</div>;
   }
 
   return (
@@ -72,7 +72,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance }: AdminAt
         const hasHappened = new Date(occ.scheduledAt).getTime() <= Date.now();
         const activeRoster = occ.roster.filter((r) => r.status !== "CANCELED");
         return (
-          <div key={key} className="glass-surface backdrop-blur-2xl p-5">
+          <div key={key} className="glass-surface p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="font-serif text-lg text-slate-50">{occ.label ?? "Class"}</h3>

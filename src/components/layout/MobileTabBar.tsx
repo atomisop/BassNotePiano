@@ -25,7 +25,12 @@ export function MobileTabBar({ isAdmin, unreadMessageCount }: { isAdmin: boolean
 
   return (
     <>
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-white/10 bg-slate-950/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl md:hidden">
+      {/* No backdrop-blur here on purpose: this bar is `fixed` directly over
+          actively-scrolling page content on every mobile screen, which is
+          the single worst place to pay for a blur recompute — the browser
+          has to reblur whatever's moving underneath it on every scroll
+          frame. bg-slate-950/95 reads just as solid without that cost. */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-white/10 bg-slate-950/95 pb-[env(safe-area-inset-bottom)] md:hidden">
         {TABS.map((tab) => {
           const active = pathname === tab.href;
           return (

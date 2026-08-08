@@ -81,9 +81,15 @@ body {
   /* Base frosted panel — replaces the old .glass-card/.glass-panel.
      Light direction is deliberate: a bright highlight top/left, a soft shadow
      bottom/right, so it reads as an actual pane of glass rather than a flat
-     semi-transparent box with a uniform 1px border. */
+     semi-transparent box with a uniform 1px border.
+
+     Blur radius trimmed from the original backdrop-blur-xl (24px) to -lg
+     (16px) — this class renders on nearly every card, in every scrollable
+     list, on every page, so its cost compounds more than any other single
+     style in the app. -lg keeps the frosted look while meaningfully cutting
+     the GPU work every scroll frame has to redo. */
   .glass-surface {
-    @apply rounded-2xl backdrop-blur-xl;
+    @apply rounded-2xl backdrop-blur-lg;
     background: linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
     border-top: 1px solid rgba(255, 255, 255, 0.16);
     border-left: 1px solid rgba(255, 255, 255, 0.1);
@@ -99,7 +105,7 @@ body {
      (was the amber-tinted accent card). Stronger blur, brighter edge
      highlight, faint amber-400 inner glow. Don't use more than once per view. */
   .glass-surface-elevated {
-    @apply rounded-2xl backdrop-blur-2xl;
+    @apply rounded-2xl backdrop-blur-xl;
     background: linear-gradient(160deg, rgba(255, 255, 255, 0.13), rgba(209, 160, 148, 0.06));
     border-top: 1px solid rgba(255, 255, 255, 0.3);
     border-left: 1px solid rgba(255, 255, 255, 0.18);

@@ -34,9 +34,7 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
           <motion.div
             key={card.label}
             variants={item}
-            className={`p-5 backdrop-blur-2xl ${
-              card.highlight ? "glass-surface-elevated" : "glass-surface"
-            }`}
+            className={`p-5 ${card.highlight ? "glass-surface-elevated" : "glass-surface"}`}
           >
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">{card.label}</p>
             <p className={`mt-2 font-serif text-3xl ${card.highlight ? "text-amber-300" : "text-slate-50"}`}>
@@ -70,7 +68,7 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
       <motion.div variants={item}>
         <h2 className="mb-1 font-serif text-xl text-slate-100">Module health</h2>
         <p className="mb-4 text-sm text-slate-500">Unlocks and completions across the whole user base.</p>
-        <div className="overflow-hidden glass-surface backdrop-blur-2xl">
+        <div className="overflow-hidden glass-surface">
           {moduleHealth.map((row, i) => {
             const rate = row.unlockedCount === 0 ? 0 : Math.round((row.completedCount / row.unlockedCount) * 100);
             return (

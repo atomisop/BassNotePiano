@@ -89,7 +89,7 @@ export function GroupChatWindow({
               type="button"
               onClick={handleLeave}
               disabled={leaving}
-              className="rounded-lg bg-red-500/90 px-2.5 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-red-500 disabled:opacity-50"
+              className="rounded-lg bg-red-500/95 px-2.5 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-red-500 disabled:opacity-50"
             >
               {leaving ? "Leaving…" : "Leave group"}
             </button>

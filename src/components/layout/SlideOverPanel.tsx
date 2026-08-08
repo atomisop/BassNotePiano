@@ -53,7 +53,14 @@ export function SlideOverPanel({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 320, damping: 34 }}
-            className="relative flex h-full w-full flex-col border-l border-white/10 bg-slate-950/98 backdrop-blur-2xl md:max-w-md"
+            // No backdrop-blur: at 95% opacity there's almost nothing behind
+            // this panel left to blur, so the blur cost bought no visible
+            // frosting — just a heavier repaint on every frame of the slide-in
+            // spring, which is exactly the "framy when I open something" feel.
+            // (Was bg-slate-950/98 — that value never actually compiled to
+            // real CSS, see NotificationBell.tsx for the full explanation.)
+            style={{ willChange: "transform" }}
+            className="relative flex h-full w-full flex-col border-l border-white/10 bg-slate-950/95 md:max-w-md"
           >
             <div className="flex items-center gap-4 border-b border-white/10 px-6 py-5">
               <button

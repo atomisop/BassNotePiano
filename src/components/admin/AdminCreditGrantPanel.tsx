@@ -165,7 +165,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
         </div>
 
         {selected && (
-          <div className="glass-surface backdrop-blur-2xl mt-5 p-5">
+          <div className="glass-surface mt-5 p-5">
             <p className="text-sm text-slate-100">{selected.name ?? selected.email}</p>
             <p className="mt-0.5 text-xs text-slate-500">
               Current balance: <span className="text-slate-300">{selected.classCredits} credits</span>
@@ -240,10 +240,10 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Recent activity — all students</p>
         <div className="mt-2 space-y-2">
           {recentAdjustments.length === 0 && (
-            <div className="glass-surface backdrop-blur-2xl p-6 text-center text-sm text-slate-500">No adjustments yet.</div>
+            <div className="glass-surface p-6 text-center text-sm text-slate-500">No adjustments yet.</div>
           )}
           {recentAdjustments.map((row) => (
-            <div key={row.id} className="glass-surface backdrop-blur-2xl p-4">
+            <div key={row.id} className="glass-surface p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate text-sm text-slate-100">{row.userName ?? row.userEmail}</p>

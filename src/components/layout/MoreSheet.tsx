@@ -43,7 +43,14 @@ export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: 
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 340, damping: 34 }}
-            className="relative w-full rounded-t-3xl border-t border-white/10 bg-slate-950/98 pb-[calc(env(safe-area-inset-bottom)+1rem)] backdrop-blur-2xl"
+            // No backdrop-blur — same reasoning as SlideOverPanel: 95% opaque
+            // already reads solid, and dropping the blur removes a heavy
+            // per-frame repaint during the spring animation (this is what
+            // opens on every mobile "More" tap). (Was bg-slate-950/98 —
+            // that value never actually compiled to real CSS, see
+            // NotificationBell.tsx for the full explanation.)
+            style={{ willChange: "transform" }}
+            className="relative w-full rounded-t-3xl border-t border-white/10 bg-slate-950/95 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
           >
             <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-white/15" />
             <div className="p-3">
