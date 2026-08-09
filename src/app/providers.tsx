@@ -2,6 +2,7 @@
 
 import { SessionProvider } from "next-auth/react";
 import { MotionConfig } from "framer-motion";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -11,7 +12,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
           automatically — a blanket safety net on top of the manual useReducedMotion()
           checks in components with genuinely different reduced-motion behavior
           (PhotoBackdrop's parallax, TiltGlow's tilt, etc.), not a replacement for them. */}
-      <MotionConfig reducedMotion="user">{children}</MotionConfig>
+      <MotionConfig reducedMotion="user">
+        <ThemeProvider>{children}</ThemeProvider>
+      </MotionConfig>
     </SessionProvider>
   );
 }

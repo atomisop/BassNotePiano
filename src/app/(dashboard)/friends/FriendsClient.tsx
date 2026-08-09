@@ -28,7 +28,7 @@ interface FriendsClientProps {
 
 function Avatar({ profile }: { profile: PublicProfile }) {
   return (
-    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-white/10 bg-slate-800">
+    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-ink/10 bg-slate-800">
       {profile.image ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={profile.image} alt="" className="h-full w-full object-cover" />
@@ -150,7 +150,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search @username"
-            className="flex-1 rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+            className="flex-1 rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
           />
           <button
             type="submit"
@@ -166,7 +166,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
         {results.length > 0 && (
           <div className="mt-4 space-y-2">
             {results.map((profile) => (
-              <div key={profile.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 p-2.5">
+              <div key={profile.id} className="flex items-center justify-between gap-3 rounded-lg border border-ink/10 p-2.5">
                 <div className="flex items-center gap-3">
                   <Avatar profile={profile} />
                   <ProfileLine profile={profile} />
@@ -175,7 +175,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                   type="button"
                   onClick={() => handleAddFriend(profile)}
                   disabled={sentTo.has(profile.id)}
-                  className="shrink-0 rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-amber-400/50 hover:text-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="shrink-0 rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-amber-400/50 hover:text-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {sentTo.has(profile.id) ? "Sent" : "Add friend"}
                 </button>
@@ -189,7 +189,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
         <SectionCard id="requests" title="Friend requests">
           <div className="space-y-2">
             {receivedRequests.map((req) => (
-              <div key={req.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 p-2.5">
+              <div key={req.id} className="flex items-center justify-between gap-3 rounded-lg border border-ink/10 p-2.5">
                 <div className="flex items-center gap-3">
                   <Avatar profile={req.sender} />
                   <ProfileLine profile={req.sender} />
@@ -205,7 +205,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                   <button
                     type="button"
                     onClick={() => handleRespond(req.id, false)}
-                    className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-slate-600"
+                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-slate-600"
                   >
                     Reject
                   </button>
@@ -220,7 +220,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
         <SectionCard title="Sent requests">
           <div className="space-y-2">
             {sentRequests.map((req) => (
-              <div key={req.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 p-2.5">
+              <div key={req.id} className="flex items-center justify-between gap-3 rounded-lg border border-ink/10 p-2.5">
                 <div className="flex items-center gap-3">
                   <Avatar profile={req.receiver} />
                   <ProfileLine profile={req.receiver} />
@@ -238,7 +238,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
         ) : (
           <div className="space-y-2">
             {friends.map((friend) => (
-              <div key={friend.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 p-2.5">
+              <div key={friend.id} className="flex items-center justify-between gap-3 rounded-lg border border-ink/10 p-2.5">
                 <div className="flex items-center gap-3">
                   <Avatar profile={friend} />
                   <ProfileLine profile={friend} />
@@ -246,14 +246,14 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                 <div className="flex shrink-0 gap-2">
                   <Link
                     href={`/messages?with=${friend.id}`}
-                    className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-amber-400/50 hover:text-amber-300"
+                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-amber-400/50 hover:text-amber-300"
                   >
                     Message
                   </Link>
                   <button
                     type="button"
                     onClick={() => handleBlock(friend.id)}
-                    className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:border-red-900 hover:text-red-400"
+                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:border-red-900 hover:text-red-400"
                   >
                     Block
                   </button>
@@ -268,7 +268,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
         <SectionCard title="Blocked">
           <div className="space-y-2">
             {blocked.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between gap-3 rounded-lg border border-white/10 p-2.5">
+              <div key={entry.id} className="flex items-center justify-between gap-3 rounded-lg border border-ink/10 p-2.5">
                 <div className="flex items-center gap-3">
                   <Avatar profile={entry.user} />
                   <ProfileLine profile={entry.user} />
@@ -276,7 +276,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                 <button
                   type="button"
                   onClick={() => handleUnblock(entry.user.id)}
-                  className="shrink-0 rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-600"
+                  className="shrink-0 rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-600"
                 >
                   Unblock
                 </button>

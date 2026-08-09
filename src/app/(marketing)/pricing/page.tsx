@@ -8,6 +8,7 @@ import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { TiltGlow } from "@/components/ui/TiltGlow";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
+import { SiteFooter } from "@/components/marketing/SiteFooter";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -103,7 +104,7 @@ export default function PricingPage() {
             = 30 minutes of class, and that conversion never changes no matter which bundle you buy.
           </p>
 
-          <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] p-5 text-center">
+          <div className="mt-6 rounded-xl border border-ink/10 bg-surface p-5 text-center">
             <p className="font-serif text-3xl text-slate-50">
               {formatUsd(CREDIT_BASE_PRICE_CENTS)}
               <span className="text-base font-sans text-amber-200/70"> / credit</span>
@@ -115,7 +116,7 @@ export default function PricingPage() {
             {PRESET_BUNDLES.map((bundle) => {
               const total = calculateClassCreditTotal(bundle.quantity);
               return (
-                <div key={bundle.id} className="rounded-lg border border-white/10 p-3 text-center">
+                <div key={bundle.id} className="rounded-lg border border-ink/10 p-3 text-center">
                   <p className="text-xs font-medium text-slate-200">{bundle.label}</p>
                   <p className="mt-1 font-serif text-lg text-slate-50">{formatUsd(total.totalCents)}</p>
                   <p className="mt-0.5 text-[11px] text-slate-500">
@@ -128,16 +129,14 @@ export default function PricingPage() {
 
           <Link
             href="/billing/lessons"
-            className="mt-6 block w-full rounded-xl border border-white/15 py-2.5 text-center text-sm font-semibold text-slate-100 transition hover:border-amber-400/40 hover:text-amber-300"
+            className="mt-6 block w-full rounded-xl border border-ink/10 py-2.5 text-center text-sm font-semibold text-slate-100 transition hover:border-amber-400/40 hover:text-amber-300"
           >
             Buy class credits
           </Link>
         </div>
       </motion.section>
 
-      <footer className="relative border-t border-white/10 px-6 py-8 text-center text-xs text-slate-400">
-        Bass Note Piano — a digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book.
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

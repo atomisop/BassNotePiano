@@ -53,7 +53,7 @@ function ComposeForm({ onPublished }: { onPublished: () => void }) {
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Title — e.g. New scale added: Bati"
           maxLength={120}
-          className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
         />
         <textarea
           value={body}
@@ -61,7 +61,7 @@ function ComposeForm({ onPublished }: { onPublished: () => void }) {
           placeholder="Message…"
           maxLength={1000}
           rows={3}
-          className="w-full resize-none rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+          className="w-full resize-none rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
         />
       </div>
 
@@ -98,7 +98,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
   }
 
   return (
-    <div className="rounded-xl border border-white/10 p-4">
+    <div className="rounded-xl border border-ink/10 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -123,7 +123,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
           type="button"
           onClick={handleToggleActive}
           disabled={busy}
-          className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-ink/20 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {announcement.active ? "Deactivate" : "Reactivate"}
         </button>

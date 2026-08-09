@@ -25,8 +25,8 @@ export function AdminConversationSidebar({
   const rest = conversations.filter((c) => !c.isPinned);
 
   return (
-    <div className="flex h-full w-full flex-col overflow-y-auto md:w-[350px] md:shrink-0 md:border-r md:border-white/10">
-      <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
+    <div className="flex h-full w-full flex-col overflow-y-auto md:w-[350px] md:shrink-0 md:border-r md:border-ink/10">
+      <div className="flex items-center justify-between border-b border-ink/10 px-4 py-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Admin</p>
           <h1 className="mt-1 font-serif text-xl text-slate-50">Messages</h1>

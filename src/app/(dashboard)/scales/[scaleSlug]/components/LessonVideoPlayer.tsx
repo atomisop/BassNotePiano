@@ -156,7 +156,7 @@ export function LessonVideoPlayer({
               type="button"
               onClick={() => seek(-15)}
               aria-label="Back 15 seconds"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/5 hover:text-slate-100"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" strokeLinecap="round" strokeLinejoin="round" />
@@ -166,7 +166,7 @@ export function LessonVideoPlayer({
               type="button"
               onClick={() => seek(15)}
               aria-label="Forward 15 seconds"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/5 hover:text-slate-100"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5" strokeLinecap="round" strokeLinejoin="round" />
@@ -183,7 +183,7 @@ export function LessonVideoPlayer({
                 type="button"
                 onClick={toggleMute}
                 aria-label={muted ? "Unmute" : "Mute"}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/5 hover:text-slate-100"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
               >
                 {muted || volume === 0 ? (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -212,7 +212,7 @@ export function LessonVideoPlayer({
               type="button"
               onClick={toggleFullscreen}
               aria-label={fullscreen ? "Exit fullscreen" : "Fullscreen"}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-white/5 hover:text-slate-100"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" strokeLinecap="round" strokeLinejoin="round" />

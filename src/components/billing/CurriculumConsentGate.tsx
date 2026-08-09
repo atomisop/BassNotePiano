@@ -22,7 +22,7 @@ export function CurriculumConsentGate(props: ZelleUnlockGateProps) {
         <input
           type="checkbox"
           onChange={(e) => setAcknowledged(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-white/15 bg-slate-950 accent-amber-400"
+          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-amber-400"
         />
         <span>
           I understand the ${(props.amountCents / 100).toFixed(0)} curriculum purchase is{" "}

@@ -108,7 +108,7 @@ export function SectionRow({
     >
       <span
         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-          status === "completed" ? "bg-emerald-400 text-slate-950" : "border border-white/10 text-slate-400"
+          status === "completed" ? "bg-emerald-400 text-slate-950" : "border border-ink/10 text-slate-400"
         }`}
       >
         {status === "completed" ? <CheckIcon /> : status === "locked" ? <LockIcon /> : status === "ready" ? <PlayIcon /> : <Icon />}

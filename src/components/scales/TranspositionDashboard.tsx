@@ -54,7 +54,7 @@ export function TranspositionDashboard({ variant, root }: TranspositionDashboard
           </thead>
           <tbody>
             {ROOT_KEYS.map((key) => (
-              <tr key={key} className={`border-t border-white/5 ${key === root ? "bg-amber-400/5" : ""}`}>
+              <tr key={key} className={`border-t border-ink/5 ${key === root ? "bg-amber-400/5" : ""}`}>
                 <td className={`py-2 pr-4 font-medium ${key === root ? "text-amber-300" : "text-slate-300"}`}>
                   {key}
                 </td>

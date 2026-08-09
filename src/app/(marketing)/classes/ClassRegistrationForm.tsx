@@ -27,7 +27,7 @@ function Pill({ label, selected, onClick }: { label: string; selected: boolean; 
       className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
         selected
           ? "border-amber-400/60 bg-amber-400/10 text-amber-200"
-          : "border-white/10 bg-slate-950 text-slate-400 hover:border-white/20"
+          : "border-ink/10 bg-slate-950 text-slate-400 hover:border-ink/15"
       }`}
     >
       {label}
@@ -36,7 +36,7 @@ function Pill({ label, selected, onClick }: { label: string; selected: boolean; 
 }
 
 function fieldClass() {
-  return "w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-amber-400/60";
+  return "w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-amber-400/60";
 }
 
 export function ClassRegistrationForm() {

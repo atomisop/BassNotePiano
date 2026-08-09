@@ -17,7 +17,7 @@ export function BadgeSummary({ earnedCount, currentStreak }: BadgeSummaryProps) 
             {earnedCount} of {BADGES.length} earned
           </p>
         </div>
-        <div className="sm:border-l sm:border-white/10 sm:pl-6">
+        <div className="sm:border-l sm:border-ink/10 sm:pl-6">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">
             {currentStreak > 0 ? `${currentStreak} day streak` : "Streak"}
           </p>

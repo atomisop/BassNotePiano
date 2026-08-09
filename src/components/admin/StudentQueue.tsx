@@ -26,7 +26,7 @@ const STATUS_STYLE: Record<string, string> = {
 
 function Avatar({ image, name }: { image: string | null | undefined; name: string }) {
   return (
-    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-white/10 bg-slate-800">
+    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-ink/10 bg-slate-800">
       {image ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={image} alt="" className="h-full w-full object-cover" />
@@ -125,7 +125,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Why isn't this a fit right now?"
                 rows={2}
-                className="w-full resize-none rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-red-400/60"
+                className="w-full resize-none rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-red-400/60"
               />
               <div className="flex gap-2">
                 <button
@@ -135,7 +135,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
                     setReason("");
                   }}
                   disabled={busyId === reg.id}
-                  className="flex-1 rounded-lg border border-white/10 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                  className="flex-1 rounded-lg border border-ink/10 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -155,7 +155,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
                 type="button"
                 onClick={() => setRejectingId(reg.id)}
                 disabled={busyId === reg.id}
-                className="flex-1 rounded-lg border border-white/10 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                className="flex-1 rounded-lg border border-ink/10 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
               >
                 Reject
               </button>

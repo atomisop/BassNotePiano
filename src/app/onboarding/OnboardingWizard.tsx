@@ -67,7 +67,7 @@ function OptionButton({
       className={`w-full rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${
         selected
           ? "border-amber-400/60 bg-amber-400/10 text-amber-200"
-          : "border-white/10 bg-slate-950 text-slate-300 hover:border-white/20"
+          : "border-ink/10 bg-slate-950 text-slate-300 hover:border-ink/15"
       }`}
     >
       {label}
@@ -166,7 +166,7 @@ export function OnboardingWizard() {
       <AnimatePresence mode="wait">
         <motion.div key={step} variants={stepVariants} initial="enter" animate="center" exit="exit" className="mt-6 space-y-2">
           {step === 0 && (
-            <div className="flex items-center rounded-xl border border-white/10 bg-slate-950 pl-4 focus-within:border-amber-400/60">
+            <div className="flex items-center rounded-xl border border-ink/10 bg-slate-950 pl-4 focus-within:border-amber-400/60">
               <span className="text-sm text-slate-500">@</span>
               <input
                 type="text"
@@ -225,7 +225,7 @@ export function OnboardingWizard() {
             type="button"
             onClick={handleBack}
             disabled={submitting}
-            className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-white/20 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-ink/15 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Back
           </button>

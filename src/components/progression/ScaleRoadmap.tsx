@@ -82,7 +82,7 @@ function StepMarker({ index, status, locked }: { index: number; status: Progress
   }
   if (locked) {
     return (
-      <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white/10 bg-slate-950 text-slate-600">
+      <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink/10 bg-slate-950 text-slate-600">
         <LockIcon />
       </div>
     );
@@ -92,7 +92,7 @@ function StepMarker({ index, status, locked }: { index: number; status: Progress
       className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-semibold ${
         status === "IN_PROGRESS"
           ? "border-amber-400 bg-amber-400/10 text-amber-300"
-          : "border-white/15 bg-slate-950 text-slate-400"
+          : "border-ink/10 bg-slate-950 text-slate-400"
       }`}
     >
       {index + 1}
@@ -149,7 +149,7 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
             <motion.div key={scale.scaleGroup.slug} variants={gridItem} className="relative flex gap-4">
               <div className="flex flex-col items-center">
                 <StepMarker index={index} status={scale.status} locked={locked} />
-                {!isLast && <span className="w-px flex-1 border-l-2 border-dotted border-white/10" />}
+                {!isLast && <span className="w-px flex-1 border-l-2 border-dotted border-ink/10" />}
               </div>
 
               <button
@@ -157,8 +157,8 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
                 onClick={() => handleCardClick(scale)}
                 className={`group mb-4 flex-1 rounded-2xl border p-5 text-left transition ${
                   locked
-                    ? "border-white/10 bg-slate-900/40 hover:border-amber-400/30"
-                    : "border-white/10 bg-white/[0.04] backdrop-blur-xl hover:border-amber-400/30"
+                    ? "border-ink/10 bg-ink/5 hover:border-amber-400/30"
+                    : "border-ink/10 bg-surface hover:border-amber-400/30"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -178,9 +178,17 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
 
                 <ChecklistDots scale={scale} />
 
-                <div className="mt-5 flex items-center gap-1.5 text-sm font-medium text-amber-300">
+                {/* Reads as a control, not a stray coloured word. The whole
+                    card is the click target, so this is an affordance rather
+                    than a separate button — hence the group-hover tie-in. */}
+                <div className="mt-5 inline-flex items-center gap-1.5 rounded-lg border border-amber-400/40 px-3 py-1.5 text-sm font-medium text-amber-300 transition group-hover:border-amber-400 group-hover:bg-amber-400/10">
                   {locked && <LockIcon />}
                   {ctaLabel(scale)}
+                  {!locked && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                      <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
                 </div>
               </button>
             </motion.div>

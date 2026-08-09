@@ -32,7 +32,7 @@ export function ProfileEditButton(props: ProfileEditButtonProps) {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Edit profile"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 text-slate-400 transition hover:border-white/20 hover:bg-white/5 hover:text-amber-300"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-ink/10 text-slate-400 transition hover:border-ink/15 hover:bg-ink/5 hover:text-amber-300"
       >
         <NavIcon path={ICON_PATHS.edit} className="h-4 w-4" />
       </button>

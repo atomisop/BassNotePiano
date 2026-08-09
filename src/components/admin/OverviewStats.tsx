@@ -47,19 +47,19 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
       <motion.div variants={item} className="flex flex-wrap gap-3">
         <Link
           href="/admin/payments"
-          className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-300"
+          className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-300"
         >
           Review pending payments{stats.pendingPayments > 0 ? ` (${stats.pendingPayments})` : ""} →
         </Link>
         <Link
           href="/admin/bookings"
-          className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-300"
+          className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-300"
         >
           Lesson bookings →
         </Link>
         <Link
           href="/admin/users"
-          className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-300"
+          className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-300"
         >
           Manage users →
         </Link>
@@ -75,7 +75,7 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
               <div
                 key={row.slug}
                 className={`flex flex-wrap items-center justify-between gap-4 px-6 py-4 ${
-                  i > 0 ? "border-t border-white/5" : ""
+                  i > 0 ? "border-t border-ink/5" : ""
                 }`}
               >
                 <div>

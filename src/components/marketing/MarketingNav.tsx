@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
+import { ThemeMenuButton } from "@/components/theme/ThemeMenuButton";
 
 // Shared across every marketing page (/, /classes, /pricing) so the
 // logged-in-vs-logged-out check only has to be correct in one place —
@@ -73,9 +74,10 @@ export function MarketingNav() {
               </svg>
             </button>
           )}
+          <ThemeMenuButton />
           <Link
             href={isLoggedIn ? "/dashboard" : "/login"}
-            className="whitespace-nowrap rounded-full border border-white/15 px-3 py-1.5 text-xs text-slate-100 transition hover:border-amber-400/40 hover:text-amber-300 sm:px-4 sm:text-sm"
+            className="whitespace-nowrap rounded-full border border-ink/10 px-3 py-1.5 text-xs text-slate-100 transition hover:border-amber-400/40 hover:text-amber-300 sm:px-4 sm:text-sm"
           >
             {isLoggedIn ? "Dashboard" : "Log in"}
           </Link>
@@ -98,7 +100,7 @@ export function MarketingNav() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className="rounded-lg px-4 py-2 text-sm text-slate-200 transition hover:bg-white/5 hover:text-amber-300"
+                className="rounded-lg px-4 py-2 text-sm text-slate-200 transition hover:bg-ink/5 hover:text-amber-300"
               >
                 {link.label}
               </Link>

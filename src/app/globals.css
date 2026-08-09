@@ -1,132 +1,178 @@
 @tailwind base;
 @tailwind components;
+@import "./themes.css";
 @tailwind utilities;
-
-:root {
-  color-scheme: dark;
-}
 
 body {
   @apply bg-slate-950 text-slate-100 antialiased;
+
+  /* A whisper of tooth so a large flat field doesn't read as a raw digital
+     background. Each theme supplies its own; costs nothing (no filter, no
+     image). */
+  background-image: var(--page-texture);
+  background-attachment: fixed;
+}
+
+/* Themes change the entire palette at once, so without this every colour on
+   screen hard-cuts. Excluded from transform/opacity so it never interferes
+   with Framer Motion's entrance animations. */
+@media (prefers-reduced-motion: no-preference) {
+  body,
+  body * {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 220ms;
+    transition-timing-function: ease;
+  }
+}
+
+/* ==========================================================================
+   Page transitions
+   --------------------------------------------------------------------------
+   Driven by Next's `template.tsx`, which re-mounts on every navigation (a
+   layout would not), so the animation replays per route without any
+   AnimatePresence/exit choreography — App Router swaps the route before an
+   exit animation could finish, so enter-only is the honest thing to do here.
+
+   Two variants, and the difference is not cosmetic: `page-enter-fade` moves
+   nothing. The marketing header is `position: fixed`, and a transform on ANY
+   ancestor makes that ancestor the containing block, which would peel the
+   nav off the viewport and scroll it away mid-transition. Opacity alone
+   creates a stacking context but not a containing block, so it's safe there.
+   ========================================================================== */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes page-enter-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.page-enter {
+  animation: page-enter 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.page-enter-fade {
+  animation: page-enter-fade 260ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .page-enter-fade {
+    animation: none;
+  }
 }
 
 @layer components {
   /* ============================================================
-     Dynamic Glass — material system
-     Photography is the environment; glass floats above it. See
-     design-system/bass-note-piano/MASTER.md for the full spec.
+     Material system
+     Every value here comes from the active theme (see themes.css),
+     so a card is a flat white panel under Editorial Paper and a
+     frosted translucent pane under Midnight Glass without any
+     component knowing the difference.
      ============================================================ */
 
-  /* Scrims — sit between a <PhotoBackdrop> photo and any content above it.
-     This is what guarantees WCAG AA text contrast over a photo; never skip it.
-     Three strengths, chosen per context (see PhotoBackdrop's `scrim` prop):
-     - light:    marketing/auth hero — let more of the photo read through
-     - standard: default
-     - dense:    admin / data-dense surfaces — backdrop stays texture only
+  /* The default surface. */
+  .glass-surface {
+    background: var(--surface-bg);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--surface-radius);
+    box-shadow: var(--surface-shadow);
+    backdrop-filter: blur(var(--surface-blur));
+  }
 
-     Symmetric vignette, not a one-way fade: fully-opaque rgba(2,6,23,1) —
-     exactly bg-slate-950 — at BOTH the top and bottom edge, easing to a
-     readable plateau in the middle. When one <PhotoBackdrop> section sits
-     directly above another, the opaque top edge of the lower one meets the
-     opaque bottom edge of the upper one — the two photos blend through a
-     shared dark zone instead of one cutting straight into the other. Pair
-     with .backdrop-glow-smoke (top and bottom) for a warm dissolve, not a
-     flat fade to black. */
+  /* Reserved for the ONE primary element per screen. Distinguished by an
+     accent hairline and a deeper lift, not a different material — using it
+     twice on a screen stops it meaning "the important one". */
+  .glass-surface-elevated {
+    background: var(--elev-bg);
+    border: 1px solid var(--elev-border);
+    border-radius: var(--surface-radius);
+    box-shadow: var(--elev-shadow);
+    backdrop-filter: blur(var(--elev-blur));
+  }
+
+  /* Chips, nav pills, filter tags, badges. */
+  .glass-pill {
+    @apply rounded-full;
+    background: var(--surface-bg);
+    border: 1px solid var(--surface-border);
+    box-shadow: var(--surface-shadow);
+    backdrop-filter: blur(var(--surface-blur));
+  }
+
+  /* Full-measure hairline, the way a rule separates sections in print. */
+  .rule {
+    border-top: 1px solid var(--surface-border);
+  }
+
+  /* The recurring kicker above a heading — centralised so every page gets
+     the same treatment instead of re-declaring the tracking each time. */
+  .eyebrow {
+    @apply text-xs font-medium uppercase tracking-[0.18em] text-amber-300;
+  }
+
+  /* ---- Photography ---------------------------------------------------- */
+
+  /* Scrims dissolve a photo into the page ground. Both the colour and the
+     strength come from the theme: a dark theme wants a light veil so pale
+     text stays readable, a light theme needs a much heavier one, because
+     ink text over a half-visible photo lands on whatever tone happens to
+     sit behind each glyph. */
   .backdrop-scrim-light {
     background: linear-gradient(
       to bottom,
-      rgba(2, 6, 23, 1) 0%,
-      rgba(2, 6, 23, 0.45) 14%,
-      rgba(2, 6, 23, 0.22) 32%,
-      rgba(2, 6, 23, 0.22) 68%,
-      rgba(2, 6, 23, 0.5) 86%,
-      rgba(2, 6, 23, 1) 100%
+      rgb(var(--scrim-rgb) / 1) 0%,
+      rgb(var(--scrim-rgb) / var(--scrim-light)) 18%,
+      rgb(var(--scrim-rgb) / calc(var(--scrim-light) * 0.92)) 50%,
+      rgb(var(--scrim-rgb) / calc(var(--scrim-light) * 1.08)) 82%,
+      rgb(var(--scrim-rgb) / 1) 100%
     );
   }
   .backdrop-scrim {
     background: linear-gradient(
       to bottom,
-      rgba(2, 6, 23, 1) 0%,
-      rgba(2, 6, 23, 0.66) 14%,
-      rgba(2, 6, 23, 0.42) 32%,
-      rgba(2, 6, 23, 0.42) 68%,
-      rgba(2, 6, 23, 0.72) 86%,
-      rgba(2, 6, 23, 1) 100%
+      rgb(var(--scrim-rgb) / 1) 0%,
+      rgb(var(--scrim-rgb) / var(--scrim-standard)) 18%,
+      rgb(var(--scrim-rgb) / calc(var(--scrim-standard) * 0.96)) 50%,
+      rgb(var(--scrim-rgb) / calc(var(--scrim-standard) * 1.04)) 82%,
+      rgb(var(--scrim-rgb) / 1) 100%
     );
   }
   .backdrop-scrim-dense {
     background: linear-gradient(
       to bottom,
-      rgba(2, 6, 23, 1) 0%,
-      rgba(2, 6, 23, 0.84) 14%,
-      rgba(2, 6, 23, 0.66) 32%,
-      rgba(2, 6, 23, 0.66) 68%,
-      rgba(2, 6, 23, 0.87) 86%,
-      rgba(2, 6, 23, 1) 100%
+      rgb(var(--scrim-rgb) / 1) 0%,
+      rgb(var(--scrim-rgb) / var(--scrim-dense)) 18%,
+      rgb(var(--scrim-rgb) / calc(var(--scrim-dense) * 0.98)) 50%,
+      rgb(var(--scrim-rgb) / calc(var(--scrim-dense) * 1.02)) 82%,
+      rgb(var(--scrim-rgb) / 1) 100%
     );
   }
 
-  /* Soft warm glow layered into the scrim's opaque top/bottom zones — light
-     diffusing into smoke rather than a photo being sliced off. Two
-     instances per <PhotoBackdrop> (top + bottom, see the component). */
   .backdrop-glow-smoke-top {
-    background: radial-gradient(60% 80% at 50% 0%, rgba(209, 160, 148, 0.12), transparent 70%);
+    background: radial-gradient(60% 80% at 50% 0%, rgb(var(--c-a-400) / 0.1), transparent 70%);
     filter: blur(40px);
   }
   .backdrop-glow-smoke-bottom {
-    background: radial-gradient(60% 80% at 50% 100%, rgba(209, 160, 148, 0.14), transparent 70%);
+    background: radial-gradient(60% 80% at 50% 100%, rgb(var(--c-a-400) / 0.12), transparent 70%);
     filter: blur(40px);
   }
 
-  /* Base frosted panel — replaces the old .glass-card/.glass-panel.
-     Light direction is deliberate: a bright highlight top/left, a soft shadow
-     bottom/right, so it reads as an actual pane of glass rather than a flat
-     semi-transparent box with a uniform 1px border.
+  /* ---- Motion --------------------------------------------------------- */
 
-     Blur radius trimmed from the original backdrop-blur-xl (24px) to -lg
-     (16px) — this class renders on nearly every card, in every scrollable
-     list, on every page, so its cost compounds more than any other single
-     style in the app. -lg keeps the frosted look while meaningfully cutting
-     the GPU work every scroll frame has to redo. */
-  .glass-surface {
-    @apply rounded-2xl backdrop-blur-lg;
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
-    border-top: 1px solid rgba(255, 255, 255, 0.16);
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow:
-      0 20px 40px -20px rgba(0, 0, 0, 0.65),
-      0 2px 10px -2px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
-  }
-
-  /* Elevated — reserved for the ONE primary/highlighted element per screen
-     (was the amber-tinted accent card). Stronger blur, brighter edge
-     highlight, faint amber-400 inner glow. Don't use more than once per view. */
-  .glass-surface-elevated {
-    @apply rounded-2xl backdrop-blur-xl;
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.13), rgba(209, 160, 148, 0.06));
-    border-top: 1px solid rgba(255, 255, 255, 0.3);
-    border-left: 1px solid rgba(255, 255, 255, 0.18);
-    border-right: 1px solid rgba(209, 160, 148, 0.14);
-    border-bottom: 1px solid rgba(209, 160, 148, 0.14);
-    box-shadow:
-      0 24px 60px -20px rgba(0, 0, 0, 0.7),
-      0 4px 18px -4px rgba(0, 0, 0, 0.5),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
-      inset 0 0 44px 0 rgba(209, 160, 148, 0.06);
-  }
-
-  .glass-pill {
-    @apply rounded-full backdrop-blur-md;
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
-    border: 1px solid rgba(255, 255, 255, 0.15);
-  }
-
-  /* One-shot sheen sweep for primary CTA buttons. Pure CSS, no JS — apply
-     alongside a button's existing classes. Fully inert under reduced motion
-     (the band never moves, so nothing is visible to sweep). */
+  /* One-shot sheen across the primary CTA. Inert under reduced motion. */
   .cta-sheen {
     position: relative;
     overflow: hidden;
@@ -136,7 +182,7 @@ body {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.4) 42%, transparent 64%);
+    background: linear-gradient(115deg, transparent 20%, rgba(255, 245, 235, 0.3) 42%, transparent 64%);
     transform: translateX(-120%);
     pointer-events: none;
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 
@@ -14,7 +14,7 @@ const SCRIM_CLASS: Record<Scrim, string> = {
 
 interface PhotoBackdropProps {
   src: string;
-  /** Purely decorative — the scrim + glass above it carry all real content, so this stays out of the a11y tree. */
+  /** Purely decorative — the scrim + surfaces above it carry all real content, so this stays out of the a11y tree. */
   scrim?: Scrim;
   /** Section-scoped backdrop that drifts slower than page scroll (marketing sections). Leave off for a static shell/auth backdrop. */
   parallax?: boolean;
@@ -24,12 +24,37 @@ interface PhotoBackdropProps {
 }
 
 /**
- * Full-bleed photographic backdrop + scrim, in one implementation every page
- * consumes instead of copy-pasting markup. Always renders `absolute inset-0`
- * — wrap it in a `fixed inset-0` container for a persistent shell/auth
- * backdrop, or a `relative` section for a marketing backdrop scoped to that
- * section.
+ * The photo itself, with the load handled explicitly.
+ *
+ * Navigating to a page used to leave this area empty until the image
+ * decoded, then snap it in — the "background pops in a second late" effect.
+ * Two things fix that, and both are needed:
+ *
+ *   1. The wrapper is painted in the page ground colour, so before the photo
+ *      arrives the area already looks like the finished page rather than a
+ *      hole. Nothing visibly "appears" where there was blankness.
+ *   2. The photo fades up over 700ms once decoded instead of swapping in on
+ *      one frame, so even a genuinely slow load reads as the image settling
+ *      rather than a flash.
+ *
+ * Cached images fire onLoad effectively immediately, so a revisit still
+ * looks instant — the fade only shows itself when there's a real wait.
  */
+function BackdropImage({ src, priority, sizes }: { src: string; priority: boolean; sizes: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <Image
+      src={src}
+      alt=""
+      fill
+      priority={priority}
+      sizes={sizes}
+      onLoad={() => setLoaded(true)}
+      className={`object-cover transition-opacity duration-700 ease-out ${loaded ? "opacity-100" : "opacity-0"}`}
+    />
+  );
+}
+
 function ParallaxImage({ src, priority, sizes }: { src: string; priority: boolean; sizes: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
@@ -37,11 +62,18 @@ function ParallaxImage({ src, priority, sizes }: { src: string; priority: boolea
 
   return (
     <motion.div ref={ref} style={{ y, willChange: "transform" }} className="absolute inset-[-6%]">
-      <Image src={src} alt="" fill priority={priority} sizes={sizes} className="object-cover" />
+      <BackdropImage src={src} priority={priority} sizes={sizes} />
     </motion.div>
   );
 }
 
+/**
+ * Full-bleed photographic backdrop + scrim, in one implementation every page
+ * consumes instead of copy-pasting markup. Always renders `absolute inset-0`
+ * — wrap it in a `fixed inset-0` container for a persistent shell/auth
+ * backdrop, or a `relative` section for a marketing backdrop scoped to that
+ * section.
+ */
 export function PhotoBackdrop({
   src,
   scrim = "standard",
@@ -60,18 +92,18 @@ export function PhotoBackdrop({
   const activeParallax = parallax && !prefersReducedMotion;
 
   return (
-    <div aria-hidden className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}>
+    <div aria-hidden className={`pointer-events-none absolute inset-0 overflow-hidden bg-slate-950 ${className}`}>
       {activeParallax ? (
         <ParallaxImage src={src} priority={priority} sizes={sizes} />
       ) : (
         <div className="absolute inset-[-6%]">
-          <Image src={src} alt="" fill priority={priority} sizes={sizes} className="object-cover" />
+          <BackdropImage src={src} priority={priority} sizes={sizes} />
         </div>
       )}
       <div className={`absolute inset-0 ${SCRIM_CLASS[scrim]}`} />
       {/* Warm glow-smoke dissolve at both edges — see .backdrop-glow-smoke-*.
           Symmetric on purpose: this is what makes two stacked <PhotoBackdrop>
-          sections blend into each other, not just this one fade to black. */}
+          sections blend into each other, not just this one fade out. */}
       <div className="backdrop-glow-smoke-top absolute inset-x-0 top-0 h-1/2" />
       <div className="backdrop-glow-smoke-bottom absolute inset-x-0 bottom-0 h-2/3" />
     </div>

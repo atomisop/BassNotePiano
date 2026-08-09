@@ -72,7 +72,7 @@ function RegisterForm() {
       animate="visible"
       className="w-full max-w-sm glass-surface-elevated p-7"
     >
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-300">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-ink/10 bg-ink/5 text-slate-300">
         <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
           <path
             d="M9 11a4 4 0 100-8 4 4 0 000 8zM3 21a6 6 0 0112 0M19 8v6M22 11h-6"
@@ -98,7 +98,7 @@ function RegisterForm() {
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+            className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
           />
         </div>
         <div>
@@ -112,7 +112,7 @@ function RegisterForm() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+            className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
           />
         </div>
         <div>
@@ -131,7 +131,7 @@ function RegisterForm() {
               setError(null);
             }}
             className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-amber-400/60 ${
-              error ? "border-red-400/60" : "border-white/10"
+              error ? "border-red-400/60" : "border-ink/10"
             }`}
           />
         </div>
@@ -151,7 +151,7 @@ function RegisterForm() {
               setError(null);
             }}
             className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-amber-400/60 ${
-              error ? "border-red-400/60" : "border-white/10"
+              error ? "border-red-400/60" : "border-ink/10"
             }`}
           />
         </div>
@@ -164,7 +164,7 @@ function RegisterForm() {
               setAgreedToTerms(e.target.checked);
               setError(null);
             }}
-            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-white/15 bg-slate-950 accent-amber-400"
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-amber-400"
           />
           <span>
             I agree to the{" "}

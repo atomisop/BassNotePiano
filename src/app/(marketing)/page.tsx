@@ -61,7 +61,7 @@ function RoadmapPreviewMarker({ status }: { status: "completed" | "in_progress" 
   }
   if (status === "locked") {
     return (
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-white/10 bg-slate-950 text-slate-600">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-ink/10 bg-slate-950 text-slate-600">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="4" y="11" width="16" height="9" rx="2" />
           <path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
@@ -169,7 +169,7 @@ export default function LandingPage() {
                 <div className="flex flex-col items-center">
                   <RoadmapPreviewMarker status={scale.status} />
                   {i < ROADMAP_PREVIEW.length - 1 && (
-                    <span className="w-px flex-1 border-l-2 border-dotted border-white/10" />
+                    <span className="w-px flex-1 border-l-2 border-dotted border-ink/10" />
                   )}
                 </div>
                 <div className={i < ROADMAP_PREVIEW.length - 1 ? "pb-5" : ""}>
@@ -233,16 +233,14 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ type: "spring", stiffness: 240, damping: 26 }}
-        className="relative mx-auto max-w-6xl px-0 py-20 text-center sm:px-6"
+        className="relative mx-auto max-w-6xl px-6 py-20 text-center"
       >
-        <p className="mx-auto mb-3 w-fit px-3 text-xs font-medium uppercase tracking-[0.2em] text-amber-300">
-          See it in action
-        </p>
-        <h2 className="mx-auto max-w-lg px-6 font-serif text-2xl text-slate-50 sm:text-3xl">
+        <p className="eyebrow mb-3">See it in action</p>
+        <h2 className="mx-auto max-w-lg font-serif text-2xl text-slate-50 sm:text-3xl">
           Your roadmap, badges, and classes — all in your pocket
         </h2>
-        <p className="mx-auto mt-3 mb-10 max-w-md px-6 text-sm text-slate-400">
-          Real screens from inside Bass Note Piano — no mockups.
+        <p className="mx-auto mb-12 mt-3 max-w-md text-sm text-slate-400">
+          Real screens from inside Bass Note Piano — drag or tap to explore.
         </p>
         <PhoneCarousel images={APP_SCREENSHOTS} />
       </motion.section>
@@ -255,11 +253,36 @@ export default function LandingPage() {
         transition={{ type: "spring", stiffness: 240, damping: 26 }}
         className="relative mx-auto max-w-2xl px-6 py-28 text-center"
       >
-        <TiltGlow className="glass-surface-elevated p-8 sm:p-10" maxTilt={4}>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-300">Everything, once</p>
-          <p className="mt-3 font-serif text-5xl text-slate-50">{formatUsd(CURRICULUM_PRICE_CENTS)}</p>
-          <p className="mt-2 text-sm text-amber-200/70">One-time payment · every scale, forever · no subscriptions</p>
-        </TiltGlow>
+        {/* The whole card is the link, not just the price. A bare text node is
+            a poor click target, and everything in here — the eyebrow, the
+            number, the terms — is about the same one destination. */}
+        <Link href="/pricing" className="group block" aria-label="See full pricing">
+          <TiltGlow
+            className="glass-surface-elevated p-8 transition-colors group-hover:border-amber-400/60 sm:p-10"
+            maxTilt={4}
+          >
+            <p className="eyebrow">Everything, once</p>
+            <p className="mt-3 font-serif text-5xl text-slate-50">{formatUsd(CURRICULUM_PRICE_CENTS)}</p>
+            <p className="mt-2 text-sm text-amber-200/70">One-time payment · every scale, forever · no subscriptions</p>
+            {/* Without this the card looks like a static stat — there was
+                nothing at all signalling it could be clicked. */}
+            <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-amber-300">
+              See full pricing
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden
+                className="transition-transform group-hover:translate-x-1"
+              >
+                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          </TiltGlow>
+        </Link>
         <p className="mt-6 text-sm text-slate-500">
           Want live coaching too? Join weekly group classes on Zoom — {formatUsd(CREDIT_BASE_PRICE_CENTS)} per
           30-minute credit, with bundle discounts up to 30% off.

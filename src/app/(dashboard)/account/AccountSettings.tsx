@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
+import { ThemePicker } from "@/components/theme/ThemePicker";
 import { updatePasswordAction, updateNotificationPreferencesAction, type NotificationPreferencesInput } from "./actions";
 
 interface AccountSettingsProps {
@@ -18,6 +19,8 @@ const TAB_ICONS = {
   membership: "M3 8h18M3 6h18v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6zM7 15h4",
   password: "M12 15v2M6 10V7a6 6 0 1112 0v3M5 10h14v10a1 1 0 01-1 1H6a1 1 0 01-1-1V10z",
   tutorials: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 3",
+  appearance:
+    "M12 3a9 9 0 000 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1-.24-.27-.39-.62-.39-1 0-.83.67-1.5 1.5-1.5H16a5 5 0 005-5c0-4.42-4.03-8-9-8zM7.5 11a1 1 0 100-2 1 1 0 000 2zm3-3a1 1 0 100-2 1 1 0 000 2zm5 0a1 1 0 100-2 1 1 0 000 2z",
   chevron: "M9 18l6-6-6-6",
 } as const;
 
@@ -25,6 +28,7 @@ const TABS = [
   { id: "notifications", label: "Notifications", icon: TAB_ICONS.notifications },
   { id: "membership", label: "Membership & Purchases", icon: TAB_ICONS.membership },
   { id: "password", label: "Password", icon: TAB_ICONS.password },
+  { id: "appearance", label: "Themes & Appearance", icon: TAB_ICONS.appearance },
   { id: "tutorials", label: "Tutorials", icon: TAB_ICONS.tutorials },
 ] as const;
 
@@ -76,13 +80,13 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
 // pushes a full-screen SlideOverPanel instead of swapping content in place.
 function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
   return (
-    <div className="glass-surface divide-y divide-white/10 lg:hidden">
+    <div className="glass-surface divide-y divide-ink/10 lg:hidden">
       {TABS.map((tab) => (
         <button
           key={tab.id}
           type="button"
           onClick={() => onSelect(tab.id)}
-          className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-white/5"
+          className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-ink/5"
         >
           <TabIcon path={tab.icon} className="h-5 w-5 shrink-0 text-slate-400" />
           <span className="flex-1 text-sm text-slate-100">{tab.label}</span>
@@ -106,8 +110,23 @@ function TabContent({
 }) {
   if (tab === "notifications") return <NotificationSettingsSection initial={initialNotificationPreferences} />;
   if (tab === "membership") return <MembershipSection hasCurriculumAccess={hasCurriculumAccess} classCredits={classCredits} />;
+  if (tab === "appearance") return <AppearanceSection />;
   if (tab === "tutorials") return <TutorialsSection />;
   return <PasswordSection />;
+}
+
+function AppearanceSection() {
+  return (
+    <section>
+      <h2 className="font-serif text-xl text-slate-50">Themes &amp; appearance</h2>
+      <p className="mt-1.5 text-sm text-slate-500">
+        Change how Bass Note Piano looks for you. Nothing here affects what anyone else sees.
+      </p>
+      <div className="mt-6">
+        <ThemePicker />
+      </div>
+    </section>
+  );
 }
 
 function AccountSettingsInner({ hasCurriculumAccess, classCredits, initialNotificationPreferences }: AccountSettingsProps) {
@@ -204,7 +223,7 @@ function MembershipSection({
 }) {
   return (
     <SectionCard title="Membership & purchases" description="Your plan, class credits, and payment history.">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink/10 p-4">
         <div>
           <p className="text-sm text-slate-100">{hasCurriculumAccess ? "Curriculum unlocked" : "Curriculum not yet purchased"}</p>
           <p className="mt-0.5 text-xs text-slate-500">
@@ -221,7 +240,7 @@ function MembershipSection({
         )}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 p-4">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink/10 p-4">
         <div>
           <p className="text-sm text-slate-100">Weekly class credits</p>
           <p className="mt-0.5 text-xs text-slate-500">
@@ -230,7 +249,7 @@ function MembershipSection({
         </div>
         <Link
           href="/billing/lessons"
-          className="rounded-lg border border-white/15 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-200"
+          className="rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-200"
         >
           Buy credits
         </Link>
@@ -238,7 +257,7 @@ function MembershipSection({
 
       <Link
         href="/billing/history"
-        className="mt-3 flex items-center justify-between rounded-xl border border-white/10 p-4 text-sm text-slate-200 transition hover:border-amber-400/30 hover:text-amber-200"
+        className="mt-3 flex items-center justify-between rounded-xl border border-ink/10 p-4 text-sm text-slate-200 transition hover:border-amber-400/30 hover:text-amber-200"
       >
         Payment history
         <span className="text-slate-500">→</span>
@@ -289,7 +308,7 @@ function PasswordSection() {
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
           disabled={submitting}
-          className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
         />
         <input
           type="password"
@@ -299,7 +318,7 @@ function PasswordSection() {
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           disabled={submitting}
-          className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
         />
         <input
           type="password"
@@ -309,7 +328,7 @@ function PasswordSection() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           disabled={submitting}
-          className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
         />
 
         {error && <p className="text-xs text-red-400">{error}</p>}

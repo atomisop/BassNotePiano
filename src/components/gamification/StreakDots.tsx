@@ -37,7 +37,7 @@ export function StreakDots({ currentStreak }: { currentStreak: number }) {
               className={`relative flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold transition ${
                 day.isFilled
                   ? "bg-amber-400 text-slate-950"
-                  : `border text-slate-600 ${day.isToday ? "border-amber-400/50" : "border-white/10"}`
+                  : `border text-slate-600 ${day.isToday ? "border-amber-400/50" : "border-ink/10"}`
               }`}
             >
               {day.letter}

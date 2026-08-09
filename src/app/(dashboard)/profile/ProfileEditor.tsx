@@ -132,7 +132,7 @@ function Pill({ label, selected, onClick }: { label: string; selected: boolean; 
       className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
         selected
           ? "border-amber-400/60 bg-amber-400/10 text-amber-200"
-          : "border-white/10 bg-slate-950 text-slate-400 hover:border-white/20"
+          : "border-ink/10 bg-slate-950 text-slate-400 hover:border-ink/15"
       }`}
     >
       {label}
@@ -306,7 +306,7 @@ function AvatarSection({
   return (
     <SectionCard title="Profile photo" description="Shown across your dashboard and the admin panel.">
       <div className="flex items-center gap-4">
-        <div className="h-16 w-16 overflow-hidden rounded-full border border-white/10 bg-slate-800">
+        <div className="h-16 w-16 overflow-hidden rounded-full border border-ink/10 bg-slate-800">
           {image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={image} alt="" className="h-full w-full object-cover" />
@@ -319,7 +319,7 @@ function AvatarSection({
             type="button"
             disabled={uploading || !storageConfigured}
             onClick={() => fileInputRef.current?.click()}
-            className="cta-sheen rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-ink/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {uploading ? "Uploading…" : "Choose new photo"}
           </button>
@@ -364,7 +364,7 @@ function NameSection({ initialName, onDone }: { initialName: string | null; onDo
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={submitting}
-          className="flex-1 rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+          className="flex-1 rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
         />
         <button
           type="submit"
@@ -405,7 +405,7 @@ function UsernameSection({ initialUsername }: { initialUsername: string | null }
   return (
     <SectionCard title="Username" description="How friends find and add you on the Friends page.">
       <form onSubmit={handleSubmit} className="flex gap-2">
-        <div className="flex flex-1 items-center rounded-lg border border-white/10 bg-slate-950 pl-3 focus-within:border-amber-400/60">
+        <div className="flex flex-1 items-center rounded-lg border border-ink/10 bg-slate-950 pl-3 focus-within:border-amber-400/60">
           <span className="text-sm text-slate-500">@</span>
           <input
             type="text"

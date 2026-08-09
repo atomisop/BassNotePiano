@@ -52,7 +52,7 @@ export function ClassCreditPurchaseFlow({ zelleHandle }: { zelleHandle: string }
         >
           ← Change quantity
         </button>
-        <div className="mb-4 rounded-xl border border-white/10 p-4">
+        <div className="mb-4 rounded-xl border border-ink/10 p-4">
           <p className="text-sm text-slate-100">
             {quantity} class credit{quantity > 1 ? "s" : ""}
           </p>
@@ -88,7 +88,7 @@ export function ClassCreditPurchaseFlow({ zelleHandle }: { zelleHandle: string }
                 type="button"
                 onClick={() => setSelectedId(bundle.id)}
                 className={`rounded-lg border px-3 py-2.5 text-left transition ${
-                  active ? "border-amber-400/60 bg-amber-400/10" : "border-white/10 hover:border-white/20"
+                  active ? "border-amber-400/60 bg-amber-400/10" : "border-ink/10 hover:border-ink/15"
                 }`}
               >
                 <p className={`text-sm font-medium ${active ? "text-amber-200" : "text-slate-100"}`}>{bundle.label}</p>
@@ -102,7 +102,7 @@ export function ClassCreditPurchaseFlow({ zelleHandle }: { zelleHandle: string }
             type="button"
             onClick={() => setSelectedId("custom")}
             className={`rounded-lg border px-3 py-2.5 text-left transition ${
-              isCustom ? "border-amber-400/60 bg-amber-400/10" : "border-white/10 hover:border-white/20"
+              isCustom ? "border-amber-400/60 bg-amber-400/10" : "border-ink/10 hover:border-ink/15"
             }`}
           >
             <p className={`text-sm font-medium ${isCustom ? "text-amber-200" : "text-slate-100"}`}>Custom</p>
@@ -119,7 +119,7 @@ export function ClassCreditPurchaseFlow({ zelleHandle }: { zelleHandle: string }
               type="button"
               onClick={() => setCustomQuantity((q) => Math.max(MIN_CUSTOM_QUANTITY, q - 1))}
               aria-label="Fewer credits"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-lg text-slate-300 transition hover:border-white/20"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-ink/10 text-lg text-slate-300 transition hover:border-ink/15"
             >
               −
             </button>
@@ -128,7 +128,7 @@ export function ClassCreditPurchaseFlow({ zelleHandle }: { zelleHandle: string }
               type="button"
               onClick={() => setCustomQuantity((q) => Math.min(MAX_CUSTOM_QUANTITY, q + 1))}
               aria-label="More credits"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-lg text-slate-300 transition hover:border-white/20"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-ink/10 text-lg text-slate-300 transition hover:border-ink/15"
             >
               +
             </button>
@@ -139,7 +139,7 @@ export function ClassCreditPurchaseFlow({ zelleHandle }: { zelleHandle: string }
         </div>
       )}
 
-      <div className="rounded-xl border border-white/10 p-4">
+      <div className="rounded-xl border border-ink/10 p-4">
         <div className="flex items-center justify-between text-sm text-slate-400">
           <span>
             {quantity} × {formatUsd(CREDIT_BASE_PRICE_CENTS)}
@@ -152,7 +152,7 @@ export function ClassCreditPurchaseFlow({ zelleHandle }: { zelleHandle: string }
             <span>−{formatUsd(total.discountCents)}</span>
           </div>
         )}
-        <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2 text-base font-semibold text-slate-50">
+        <div className="mt-2 flex items-center justify-between border-t border-ink/10 pt-2 text-base font-semibold text-slate-50">
           <span>Total</span>
           <span>{formatUsd(total.totalCents)}</span>
         </div>
@@ -163,7 +163,7 @@ export function ClassCreditPurchaseFlow({ zelleHandle }: { zelleHandle: string }
           type="checkbox"
           checked={acknowledged}
           onChange={(e) => setAcknowledged(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-white/15 bg-slate-950 accent-amber-400"
+          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-amber-400"
         />
         <span>
           I understand money spent on class credits is <span className="font-medium text-amber-200">non-refundable</span>.

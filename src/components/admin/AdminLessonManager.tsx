@@ -204,7 +204,7 @@ export function AdminLessonManager({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Reading the Bati formula"
               disabled={uploading}
-              className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+              className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
             />
           </div>
           <div>
@@ -214,7 +214,7 @@ export function AdminLessonManager({
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               disabled={uploading}
-              className="w-full resize-none rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+              className="w-full resize-none rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
             />
           </div>
           <div>
@@ -224,7 +224,7 @@ export function AdminLessonManager({
               type="file"
               accept="video/*,application/pdf"
               disabled={uploading}
-              className="w-full cursor-pointer rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-300 outline-none transition file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-amber-400/15 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-amber-300 focus:border-amber-400/60 disabled:opacity-60"
+              className="w-full cursor-pointer rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-300 outline-none transition file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-amber-400/15 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-amber-300 focus:border-amber-400/60 disabled:opacity-60"
             />
           </div>
 
@@ -283,7 +283,7 @@ export function AdminLessonManager({
                     onClick={() => handleMove(index, -1)}
                     disabled={busy || index === 0}
                     aria-label="Move up"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-slate-400 transition hover:border-white/20 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-ink/10 text-slate-400 transition hover:border-ink/15 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 19V5M5 12l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" />
@@ -294,7 +294,7 @@ export function AdminLessonManager({
                     onClick={() => handleMove(index, 1)}
                     disabled={busy || index === lessons.length - 1}
                     aria-label="Move down"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-slate-400 transition hover:border-white/20 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-ink/10 text-slate-400 transition hover:border-ink/15 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 5v14M5 12l7 7 7-7" strokeLinecap="round" strokeLinejoin="round" />
@@ -310,7 +310,7 @@ export function AdminLessonManager({
                       type="button"
                       onClick={() => setDeletingId(null)}
                       disabled={busy}
-                      className="flex-1 rounded-lg border border-white/10 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                      className="flex-1 rounded-lg border border-ink/10 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
                     >
                       Cancel
                     </button>
@@ -327,7 +327,7 @@ export function AdminLessonManager({
                   <button
                     type="button"
                     onClick={() => setDeletingId(lesson.id)}
-                    className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-red-400/30 hover:text-red-300"
+                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-red-400/30 hover:text-red-300"
                   >
                     Delete
                   </button>

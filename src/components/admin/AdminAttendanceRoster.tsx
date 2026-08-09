@@ -31,7 +31,7 @@ export interface AdminAttendanceRosterProps {
 
 function Avatar({ image, name }: { image: string | null; name: string }) {
   return (
-    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-white/10 bg-slate-800">
+    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-ink/10 bg-slate-800">
       {image ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={image} alt="" className="h-full w-full object-cover" />
@@ -100,7 +100,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                 <h3 className="font-serif text-lg text-slate-50">{occ.label ?? "Class"}</h3>
                 <p className="mt-0.5 text-sm text-slate-500">{formatDateTime(occ.scheduledAt)}</p>
               </div>
-              <span className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+              <span className="rounded-full border border-ink/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
                 {activeRoster.length} / {occ.capacity} booked
               </span>
             </div>
@@ -111,7 +111,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                 const canCancel = entry.status === "SCHEDULED";
                 const canMarkAttendance = entry.status === "SCHEDULED" && hasHappened;
                 return (
-                  <div key={entry.bookingId} className="rounded-xl border border-white/10 p-3">
+                  <div key={entry.bookingId} className="rounded-xl border border-ink/10 p-3">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-3">
                         <Avatar image={entry.studentImage} name={entry.studentName ?? entry.studentEmail} />
@@ -152,7 +152,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                             </>
                           )}
                           {!canMarkAttendance && !hasHappened && (
-                            <span className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                            <span className="rounded-full border border-ink/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
                               Upcoming
                             </span>
                           )}
@@ -165,7 +165,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                 setCancelingId(entry.bookingId);
                               }}
                               disabled={busyId === entry.bookingId}
-                              className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               Cancel booking
                             </button>
@@ -175,7 +175,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                     </div>
 
                     {isCanceling && (
-                      <div className="mt-3 space-y-2 border-t border-white/10 pt-3">
+                      <div className="mt-3 space-y-2 border-t border-ink/10 pt-3">
                         <p className="text-xs text-slate-500">
                           This refunds {entry.studentName ?? "the student"}&apos;s credit and notifies them — no 24-hour
                           cutoff applies to a cancellation you make.
@@ -186,7 +186,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                           value={reason}
                           onChange={(e) => setReason(e.target.value)}
                           placeholder="Reason (optional, shown to the student)"
-                          className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-red-400/60"
+                          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-red-400/60"
                         />
                         <div className="flex gap-2">
                           <button
@@ -196,7 +196,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                               setReason("");
                             }}
                             disabled={busyId === entry.bookingId}
-                            className="flex-1 rounded-lg border border-white/10 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                            className="flex-1 rounded-lg border border-ink/10 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
                           >
                             Never mind
                           </button>

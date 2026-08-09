@@ -20,7 +20,7 @@ export function KeySelector({ value, onChange }: KeySelectorProps) {
           className={`h-9 min-w-[2.5rem] rounded-lg border px-2 text-sm font-medium transition ${
             key === value
               ? "border-amber-400 bg-amber-400/10 text-amber-300"
-              : "border-white/10 text-slate-400 hover:border-white/20 hover:text-slate-100"
+              : "border-ink/10 text-slate-400 hover:border-ink/15 hover:text-slate-100"
           }`}
         >
           {key}
