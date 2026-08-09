@@ -17,6 +17,7 @@ const TAB_ICONS = {
     "M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5zM9.5 19.5a2.5 2.5 0 005 0",
   membership: "M3 8h18M3 6h18v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6zM7 15h4",
   password: "M12 15v2M6 10V7a6 6 0 1112 0v3M5 10h14v10a1 1 0 01-1 1H6a1 1 0 01-1-1V10z",
+  tutorials: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 3",
   chevron: "M9 18l6-6-6-6",
 } as const;
 
@@ -24,6 +25,7 @@ const TABS = [
   { id: "notifications", label: "Notifications", icon: TAB_ICONS.notifications },
   { id: "membership", label: "Membership & Purchases", icon: TAB_ICONS.membership },
   { id: "password", label: "Password", icon: TAB_ICONS.password },
+  { id: "tutorials", label: "Tutorials", icon: TAB_ICONS.tutorials },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -104,6 +106,7 @@ function TabContent({
 }) {
   if (tab === "notifications") return <NotificationSettingsSection initial={initialNotificationPreferences} />;
   if (tab === "membership") return <MembershipSection hasCurriculumAccess={hasCurriculumAccess} classCredits={classCredits} />;
+  if (tab === "tutorials") return <TutorialsSection />;
   return <PasswordSection />;
 }
 
@@ -320,6 +323,25 @@ function PasswordSection() {
           {submitting ? "Saving…" : "Change password"}
         </button>
       </form>
+    </SectionCard>
+  );
+}
+
+function TutorialsSection() {
+  const router = useRouter();
+  return (
+    <SectionCard title="Tutorials" description="Replay the app walkthrough — the same spotlight tour shown once when you first joined.">
+      <p className="text-sm text-slate-400">
+        A quick tour of the roadmap, online lessons, friends, messages, notifications, your profile, and settings —
+        with a &quot;Skip tour&quot; option on every step if you want out early.
+      </p>
+      <button
+        type="button"
+        onClick={() => router.push("/dashboard?tour=1")}
+        className="cta-sheen mt-4 rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
+      >
+        Replay app tour
+      </button>
     </SectionCard>
   );
 }

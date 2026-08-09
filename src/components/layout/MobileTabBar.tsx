@@ -7,10 +7,10 @@ import { NavIcon, ICON_PATHS } from "./navIcons";
 import { MoreSheet } from "./MoreSheet";
 
 const TABS = [
-  { href: "/dashboard", label: "Roadmap", icon: ICON_PATHS.roadmap },
-  { href: "/friends", label: "Friends", icon: ICON_PATHS.friends },
-  { href: "/messages", label: "Messages", icon: ICON_PATHS.messages },
-  { href: "/profile", label: "Profile", icon: ICON_PATHS.profile },
+  { href: "/dashboard", label: "Roadmap", icon: ICON_PATHS.roadmap, dataTour: "nav-roadmap" },
+  { href: "/friends", label: "Friends", icon: ICON_PATHS.friends, dataTour: "nav-friends" },
+  { href: "/messages", label: "Messages", icon: ICON_PATHS.messages, dataTour: "nav-messages" },
+  { href: "/profile", label: "Profile", icon: ICON_PATHS.profile, dataTour: "nav-profile" },
 ];
 
 // The only nav surface below md — Sidebar doesn't render at all there.
@@ -37,6 +37,7 @@ export function MobileTabBar({ isAdmin, unreadMessageCount }: { isAdmin: boolean
             <Link
               key={tab.href}
               href={tab.href}
+              data-tour={tab.dataTour}
               className={`relative flex flex-1 flex-col items-center gap-1 py-2.5 text-center transition ${
                 active ? "text-amber-300" : "text-slate-500 hover:text-slate-300"
               }`}

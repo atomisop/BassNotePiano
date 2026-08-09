@@ -131,6 +131,7 @@ export function NotificationBell() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Notifications"
+        data-tour="notification-bell"
         className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-slate-400 backdrop-blur-md transition hover:border-white/20 hover:bg-white/5 hover:text-slate-200"
       >
         <BellIcon />

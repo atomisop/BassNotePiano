@@ -467,6 +467,13 @@ model User {
   // every login. Null means "never seen one," which also shows it.
   lastSeenPatchNotesAt DateTime?
 
+  // Drives the interactive spotlight walkthrough — shown automatically
+  // exactly once (right after onboarding wizard + first login), never
+  // again on its own after that. Null means "never seen it." Replayable
+  // anytime from Settings → Tutorials, which doesn't touch this column —
+  // only the automatic one-time trigger reads it.
+  onboardingTourSeenAt DateTime?
+
   accounts Account[]
   sessions Session[]
 

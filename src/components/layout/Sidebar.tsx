@@ -12,10 +12,10 @@ export interface SidebarProps {
 }
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Roadmap", icon: ICON_PATHS.roadmap },
-  { href: "/lessons", label: "Lessons", icon: ICON_PATHS.lessons },
-  { href: "/friends", label: "Friends", icon: ICON_PATHS.friends },
-  { href: "/messages", label: "Messages", icon: ICON_PATHS.messages },
+  { href: "/dashboard", label: "Roadmap", icon: ICON_PATHS.roadmap, dataTour: "nav-roadmap" },
+  { href: "/lessons", label: "Online Lessons", icon: ICON_PATHS.lessons, dataTour: "nav-lessons" },
+  { href: "/friends", label: "Friends", icon: ICON_PATHS.friends, dataTour: "nav-friends" },
+  { href: "/messages", label: "Messages", icon: ICON_PATHS.messages, dataTour: "nav-messages" },
 ];
 
 function NavItem({
@@ -24,16 +24,19 @@ function NavItem({
   icon,
   active,
   badge,
+  dataTour,
 }: {
   href: string;
   label: string;
   icon: string;
   active: boolean;
   badge?: number;
+  dataTour?: string;
 }) {
   return (
     <Link
       href={href}
+      data-tour={dataTour}
       className={`relative flex flex-col items-center gap-1 rounded-xl border px-2 py-2.5 text-center transition ${
         active
           ? "border-amber-400/20 bg-amber-400/10 text-amber-300"
@@ -67,6 +70,7 @@ export function Sidebar({ name, isAdmin, unreadMessageCount }: SidebarProps) {
             icon={item.icon}
             active={pathname === item.href}
             badge={item.href === "/messages" ? unreadMessageCount : undefined}
+            dataTour={item.dataTour}
           />
         ))}
         {isAdmin && (
@@ -76,12 +80,12 @@ export function Sidebar({ name, isAdmin, unreadMessageCount }: SidebarProps) {
 
       <div className="my-4 h-px w-8 shrink-0 bg-white/10" />
 
-      <NavItem href="/profile" label="Profile" icon={ICON_PATHS.profile} active={pathname === "/profile"} />
+      <NavItem href="/profile" label="Profile" icon={ICON_PATHS.profile} active={pathname === "/profile"} dataTour="nav-profile" />
 
       <div className="flex-1" />
 
       <div className="flex w-full shrink-0 flex-col items-center gap-1 px-2 pb-1">
-        <NavItem href="/account" label="Settings" icon={ICON_PATHS.settings} active={pathname === "/account"} />
+        <NavItem href="/account" label="Settings" icon={ICON_PATHS.settings} active={pathname === "/account"} dataTour="nav-settings" />
         <NavItem href="/about" label="About" icon={ICON_PATHS.about} active={pathname === "/about"} />
         <button
           type="button"

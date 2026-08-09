@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendEmailIfEnabled } from "@/lib/notifications";
+import { getAppUrl } from "@/lib/email";
 import { isFriend, normalizeUsername, SocialError } from "@/lib/social";
 
 const MAX_MESSAGE_LENGTH = 2000;
@@ -166,6 +167,7 @@ export async function sendGroupMessage(senderId: string, groupId: string, body: 
         "social",
         "New group message",
         `${sender?.name ?? (sender?.username ? `@${sender.username}` : "Someone")} sent a message in your group chat.`,
+        { label: "Click here to reply", url: getAppUrl(`/messages?group=${groupId}`) },
       ),
     ),
   );

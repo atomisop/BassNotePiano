@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -12,6 +13,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { WhatsNewModal } from "@/components/layout/WhatsNewModal";
 import { AnnouncementBanner } from "@/components/layout/AnnouncementBanner";
+import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 
 function isSameUtcDay(a: Date, b: Date): boolean {
   return a.getUTCFullYear() === b.getUTCFullYear() && a.getUTCMonth() === b.getUTCMonth() && a.getUTCDate() === b.getUTCDate();
@@ -24,12 +26,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const [directUnreadCount, groupUnreadCount, user, activeAnnouncement] = await Promise.all([
     getTotalUnreadMessageCount(session.user.id),
     getTotalUnreadGroupMessageCount(session.user.id),
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { lastSeenPatchNotesAt: true } }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { lastSeenPatchNotesAt: true, onboardingTourSeenAt: true } }),
     getActiveAnnouncementForUser(session.user.id),
   ]);
   const unreadMessageCount = directUnreadCount + groupUnreadCount;
 
-  const shouldShowWhatsNew = !user?.lastSeenPatchNotesAt || !isSameUtcDay(user.lastSeenPatchNotesAt, new Date());
+  const shouldShowTour = !user?.onboardingTourSeenAt;
+  // Deferred until the tour's been seen once — a brand-new account
+  // shouldn't get the spotlight tour and the "what's new" popup stacked on
+  // top of each other on the very first dashboard visit.
+  const shouldShowWhatsNew = !shouldShowTour && (!user?.lastSeenPatchNotesAt || !isSameUtcDay(user.lastSeenPatchNotesAt, new Date()));
   const isAdmin = session.user.role === "ADMIN";
 
   return (
@@ -49,6 +55,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </div>
       <MobileTabBar isAdmin={isAdmin} unreadMessageCount={unreadMessageCount} />
       <WhatsNewModal show={shouldShowWhatsNew} entry={LATEST_ENTRY} />
+      <Suspense fallback={null}>
+        <OnboardingTour autoShow={shouldShowTour} />
+      </Suspense>
     </div>
   );
 }

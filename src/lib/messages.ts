@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendEmailIfEnabled } from "@/lib/notifications";
+import { getAppUrl } from "@/lib/email";
 import { isFriend, getFriendsList, SocialError } from "@/lib/social";
 
 const MAX_MESSAGE_LENGTH = 2000;
@@ -68,6 +69,7 @@ export async function sendMessage(senderId: string, recipientId: string, body: s
     "social",
     "New message",
     `${sender?.name ?? (sender?.username ? `@${sender.username}` : "Someone")} sent you a message.`,
+    { label: "Click here to reply", url: getAppUrl(`/messages?with=${senderId}`) },
   );
 
   return message;

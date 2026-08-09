@@ -11,6 +11,7 @@ interface MoreItem {
   href: string;
   label: string;
   icon: string;
+  dataTour?: string;
 }
 
 export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: () => void; isAdmin: boolean }) {
@@ -20,9 +21,9 @@ export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: 
   if (!mounted) return null;
 
   const items: MoreItem[] = [
-    { href: "/lessons", label: "Lessons", icon: ICON_PATHS.lessons },
+    { href: "/lessons", label: "Online Lessons", icon: ICON_PATHS.lessons, dataTour: "nav-lessons" },
     ...(isAdmin ? [{ href: "/admin/payments", label: "Admin", icon: ICON_PATHS.admin }] : []),
-    { href: "/account", label: "Settings", icon: ICON_PATHS.settings },
+    { href: "/account", label: "Settings", icon: ICON_PATHS.settings, dataTour: "nav-settings" },
     { href: "/about", label: "About", icon: ICON_PATHS.about },
   ];
 
@@ -59,6 +60,7 @@ export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: 
                   key={item.href}
                   href={item.href}
                   onClick={onClose}
+                  data-tour={item.dataTour}
                   className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm text-slate-200 transition hover:bg-white/5"
                 >
                   <NavIcon path={item.icon} className="h-5 w-5 text-slate-400" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { bookClassAction, cancelClassBookingAction } from "./actions";
 
@@ -48,6 +48,166 @@ function formatDuration(min: number) {
   return min >= 60 ? `${min / 60} hr${min > 60 ? "s" : ""}` : `${min} min`;
 }
 
+function monthKey(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function monthLabel(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+}
+
+/** Groups already-desc-sorted bookings into consecutive per-month buckets, preserving order. */
+function groupByMonth(list: BookingRow[]): { key: string; label: string; bookings: BookingRow[] }[] {
+  const groups: { key: string; label: string; bookings: BookingRow[] }[] = [];
+  for (const b of list) {
+    const key = monthKey(b.scheduledAt);
+    const last = groups[groups.length - 1];
+    if (last?.key === key) {
+      last.bookings.push(b);
+    } else {
+      groups.push({ key, label: monthLabel(b.scheduledAt), bookings: [b] });
+    }
+  }
+  return groups;
+}
+
+function BookingCard({
+  booking,
+  cancellationCutoffHours,
+  supportContactId,
+  cancelingId,
+  onCancel,
+}: {
+  booking: BookingRow;
+  cancellationCutoffHours: number;
+  supportContactId: string | null;
+  cancelingId: string | null;
+  onCancel: (booking: BookingRow) => void;
+}) {
+  const b = booking;
+  const hoursUntil = (new Date(b.scheduledAt).getTime() - Date.now()) / 3_600_000;
+  // Self-cancel only exists >=24h out — inside that window there's
+  // no button at all (see cancelClassBooking), just a way to
+  // reach support for a manual, case-by-case call.
+  const cancelEligible = b.status === "SCHEDULED" && hoursUntil >= cancellationCutoffHours;
+  const pastSelfServeWindow = b.status === "SCHEDULED" && hoursUntil > 0 && hoursUntil < cancellationCutoffHours;
+  return (
+    <div className="glass-surface flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="text-sm text-slate-100">
+          {b.label ?? "Class"} — {formatDateTime(b.scheduledAt)}
+        </p>
+        <p className="mt-0.5 text-xs text-slate-500">
+          {b.creditsSpent} credit{b.creditsSpent === 1 ? "" : "s"}
+          {b.status === "SCHEDULED" &&
+            (cancelEligible
+              ? ` · Cancel by ${new Date(new Date(b.scheduledAt).getTime() - cancellationCutoffHours * 3_600_000).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} for a refund`
+              : pastSelfServeWindow
+                ? " · Too close to class time to self-cancel"
+                : "")}
+        </p>
+        {b.status === "COMPLETED" && b.attendance && (
+          <p className={`mt-0.5 text-xs ${b.attendance === "PRESENT" ? "text-emerald-400" : "text-red-400"}`}>
+            {b.attendance === "PRESENT" ? "Attended" : "Marked no-show"}
+          </p>
+        )}
+        {b.status === "CANCELED" && (
+          // refunded can still be false on bookings canceled before
+          // this policy tightened to "self-cancel is 24h+ only" —
+          // kept accurate for that historical data, even though
+          // every new cancellation is always refunded now.
+          <p className={`mt-0.5 text-xs ${b.refunded ? "text-emerald-400" : "text-red-400"}`}>
+            {b.refunded ? "Credits refunded" : "Credits forfeited"}
+          </p>
+        )}
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        {cancelEligible && (
+          <button
+            type="button"
+            onClick={() => onCancel(b)}
+            disabled={cancelingId === b.id}
+            className="rounded-lg border border-red-400/20 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {cancelingId === b.id ? "Canceling…" : "Cancel"}
+          </button>
+        )}
+        {pastSelfServeWindow && supportContactId && (
+          <Link
+            href={`/messages?with=${supportContactId}`}
+            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-amber-400/40 hover:text-amber-200"
+          >
+            Message support
+          </Link>
+        )}
+        <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${STATUS_STYLE[b.status]}`}>
+          {STATUS_LABEL[b.status]}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`}
+    >
+      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function MonthGroup({
+  group,
+  defaultOpen,
+  cancellationCutoffHours,
+  supportContactId,
+  cancelingId,
+  onCancel,
+}: {
+  group: { key: string; label: string; bookings: BookingRow[] };
+  defaultOpen: boolean;
+  cancellationCutoffHours: number;
+  supportContactId: string | null;
+  cancelingId: string | null;
+  onCancel: (booking: BookingRow) => void;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="glass-surface overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-white/5"
+      >
+        <span className="text-sm font-medium text-slate-200">{group.label}</span>
+        <span className="flex items-center gap-2 text-xs text-slate-500">
+          {group.bookings.length} booking{group.bookings.length === 1 ? "" : "s"}
+          <ChevronIcon open={open} />
+        </span>
+      </button>
+      {open && (
+        <div className="space-y-2 border-t border-white/10 p-3">
+          {group.bookings.map((b) => (
+            <BookingCard
+              key={b.id}
+              booking={b}
+              cancellationCutoffHours={cancellationCutoffHours}
+              supportContactId={supportContactId}
+              cancelingId={cancelingId}
+              onCancel={onCancel}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ClassBookingClient({
   initialCredits,
   cancellationCutoffHours,
@@ -68,6 +228,14 @@ export function ClassBookingClient({
   const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Split into "needs your attention" (still scheduled) vs. an archived,
+  // collapsible-by-month history — a flat list of every booking ever made
+  // was turning into an endless scroll for anyone with more than a couple
+  // months of history.
+  const upcoming = useMemo(() => bookings.filter((b) => b.status === "SCHEDULED"), [bookings]);
+  const history = useMemo(() => bookings.filter((b) => b.status !== "SCHEDULED"), [bookings]);
+  const historyGroups = useMemo(() => groupByMonth(history), [history]);
 
   async function handleBook(row: OccurrenceRow) {
     const key = `${row.scheduleId}:${row.occurrenceDateMs}`;
@@ -188,76 +356,49 @@ export function ClassBookingClient({
       </div>
 
       <div className="mt-8">
-        <h2 className="mb-3 font-serif text-lg text-slate-100">Your bookings</h2>
-        {bookings.length === 0 ? (
-          <p className="text-sm text-slate-600">No bookings yet.</p>
+        <h2 className="mb-3 font-serif text-lg text-slate-100">Upcoming bookings</h2>
+        {upcoming.length === 0 ? (
+          <p className="text-sm text-slate-600">No upcoming bookings.</p>
         ) : (
           <div className="space-y-2">
-            {bookings.map((b) => {
-              const hoursUntil = (new Date(b.scheduledAt).getTime() - Date.now()) / 3_600_000;
-              // Self-cancel only exists >=24h out — inside that window there's
-              // no button at all (see cancelClassBooking), just a way to
-              // reach support for a manual, case-by-case call.
-              const cancelEligible = b.status === "SCHEDULED" && hoursUntil >= cancellationCutoffHours;
-              const pastSelfServeWindow = b.status === "SCHEDULED" && hoursUntil > 0 && hoursUntil < cancellationCutoffHours;
-              return (
-                <div key={b.id} className="glass-surface flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-slate-100">
-                      {b.label ?? "Class"} — {formatDateTime(b.scheduledAt)}
-                    </p>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      {b.creditsSpent} credit{b.creditsSpent === 1 ? "" : "s"}
-                      {b.status === "SCHEDULED" &&
-                        (cancelEligible
-                          ? ` · Cancel by ${new Date(new Date(b.scheduledAt).getTime() - cancellationCutoffHours * 3_600_000).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} for a refund`
-                          : pastSelfServeWindow
-                            ? " · Too close to class time to self-cancel"
-                            : "")}
-                    </p>
-                    {b.status === "COMPLETED" && b.attendance && (
-                      <p className={`mt-0.5 text-xs ${b.attendance === "PRESENT" ? "text-emerald-400" : "text-red-400"}`}>
-                        {b.attendance === "PRESENT" ? "Attended" : "Marked no-show"}
-                      </p>
-                    )}
-                    {b.status === "CANCELED" && (
-                      // refunded can still be false on bookings canceled before
-                      // this policy tightened to "self-cancel is 24h+ only" —
-                      // kept accurate for that historical data, even though
-                      // every new cancellation is always refunded now.
-                      <p className={`mt-0.5 text-xs ${b.refunded ? "text-emerald-400" : "text-red-400"}`}>
-                        {b.refunded ? "Credits refunded" : "Credits forfeited"}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {cancelEligible && (
-                      <button
-                        type="button"
-                        onClick={() => handleCancel(b)}
-                        disabled={cancelingId === b.id}
-                        className="rounded-lg border border-red-400/20 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {cancelingId === b.id ? "Canceling…" : "Cancel"}
-                      </button>
-                    )}
-                    {pastSelfServeWindow && supportContactId && (
-                      <Link
-                        href={`/messages?with=${supportContactId}`}
-                        className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-amber-400/40 hover:text-amber-200"
-                      >
-                        Message support
-                      </Link>
-                    )}
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${STATUS_STYLE[b.status]}`}
-                    >
-                      {STATUS_LABEL[b.status]}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+            {upcoming.map((b) => (
+              <BookingCard
+                key={b.id}
+                booking={b}
+                cancellationCutoffHours={cancellationCutoffHours}
+                supportContactId={supportContactId}
+                cancelingId={cancelingId}
+                onCancel={handleCancel}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-8">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="font-serif text-lg text-slate-100">History</h2>
+          {history.length > 0 && (
+            <span className="text-xs text-slate-600">
+              {history.length} past booking{history.length === 1 ? "" : "s"}
+            </span>
+          )}
+        </div>
+        {historyGroups.length === 0 ? (
+          <p className="text-sm text-slate-600">No past bookings yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {historyGroups.map((group, i) => (
+              <MonthGroup
+                key={group.key}
+                group={group}
+                defaultOpen={i === 0}
+                cancellationCutoffHours={cancellationCutoffHours}
+                supportContactId={supportContactId}
+                cancelingId={cancelingId}
+                onCancel={handleCancel}
+              />
+            ))}
           </div>
         )}
       </div>

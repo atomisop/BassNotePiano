@@ -3,6 +3,11 @@ import type { VerificationPurpose } from "@prisma/client";
 
 const EMAIL_FROM = process.env.EMAIL_FROM ?? "Bass Note Piano <noreply@bassnotepiano.com>";
 
+/** Builds an absolute in-app URL for an email link — NEXTAUTH_URL has no trailing slash (matches every other usage of it in this codebase). */
+export function getAppUrl(path: string): string {
+  return `${process.env.NEXTAUTH_URL}${path}`;
+}
+
 // Lazily constructed — a missing key shouldn't crash module load (import
 // happens on every server boot, including local dev where no key is set).
 function getResendClient(): Resend | null {
@@ -51,28 +56,58 @@ async function sendEmail({ to, subject, html, text }: SendEmailParams): Promise<
   }
 }
 
-function emailShell(title: string, bodyHtml: string): string {
+// Accent per email "kind" — same gold used everywhere by default; a
+// cancellation/rejection reads a touch warmer (amber-red) without going
+// full alarm-red, matching the site's restrained palette.
+const SHELL_ACCENT = {
+  default: { bar: "linear-gradient(90deg,#c79a3a,#e8d9a8,#c79a3a)", dot: "#c79a3a" },
+  notice: { bar: "linear-gradient(90deg,#c17a4a,#e8bf9a,#c17a4a)", dot: "#c17a4a" },
+} as const;
+
+interface EmailShellOptions {
+  kind?: keyof typeof SHELL_ACCENT;
+  /** Overrides the default "manage preferences" footer line — used by code emails, which have a different (ignore-if-not-you) concern. */
+  footerNote?: string;
+}
+
+function emailShell(title: string, bodyHtml: string, options: EmailShellOptions = {}): string {
+  const accent = SHELL_ACCENT[options.kind ?? "default"];
+  const footerNote =
+    options.footerNote ??
+    `You're getting this because you have a Bass Note Piano account. <a href="${getAppUrl("/account?tab=notifications")}" style="color:#8a6d1f;text-decoration:underline;">Manage email preferences</a>.`;
+
   return `
-    <div style="background:#f4f4f2;padding:32px 16px;font-family:Georgia,'Times New Roman',serif;">
-      <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e1d8;">
+    <div style="background:#f4f4f2;padding:40px 16px;font-family:Helvetica,Arial,sans-serif;">
+      <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e5e1d8;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
         <tr>
-          <td style="height:4px;background:linear-gradient(90deg,#c79a3a,#e8d9a8,#c79a3a);"></td>
+          <td style="height:4px;background:${accent.bar};"></td>
         </tr>
         <tr>
-          <td style="padding:32px 32px 8px;">
-            <p style="margin:0 0 4px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#c79a3a;font-family:Helvetica,Arial,sans-serif;">
-              Bass Note Piano
-            </p>
-            <h1 style="margin:0 0 16px;font-size:22px;color:#1a1a1a;">${title}</h1>
-            <div style="font-size:15px;line-height:1.6;color:#333333;font-family:Helvetica,Arial,sans-serif;">
+          <td style="padding:28px 32px 0;">
+            <table role="presentation">
+              <tr>
+                <td style="vertical-align:middle;padding-right:9px;">
+                  <span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#faf6ea;border:1px solid #e8d9a8;color:#8a6d1f;font-size:14px;">♪</span>
+                </td>
+                <td style="vertical-align:middle;">
+                  <span style="font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:#8a6d1f;font-weight:bold;">Bass Note Piano</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 32px 8px;">
+            <h1 style="margin:0 0 16px;font-size:21px;font-family:Georgia,'Times New Roman',serif;color:#1a1a1a;">${title}</h1>
+            <div style="font-size:15px;line-height:1.65;color:#3a3a3a;">
               ${bodyHtml}
             </div>
           </td>
         </tr>
         <tr>
-          <td style="padding:20px 32px 28px;border-top:1px solid #efece4;">
-            <p style="margin:0;font-size:12px;color:#999999;font-family:Helvetica,Arial,sans-serif;">
-              If you didn't request this, you can safely ignore this email.
+          <td style="padding:22px 32px 28px;border-top:1px solid #efece4;">
+            <p style="margin:0;font-size:12px;line-height:1.6;color:#999999;">
+              ${footerNote}
             </p>
           </td>
         </tr>
@@ -129,6 +164,9 @@ export async function sendVerificationCodeEmail(to: string, purpose: Verificatio
   const html = emailShell(
     copy.heading,
     `<p style="margin:0 0 4px;">${copy.intro}</p>${codeBlockHtml(code)}<p style="margin:0;color:#777;font-size:13px;">This code expires in 10 minutes.</p>`,
+    // Codes are a different concern than a "manage preferences" footer — the
+    // relevant reassurance here is "someone else can't get in", not "opt out".
+    { footerNote: "If you didn't request this, you can safely ignore this email — your account is still secure." },
   );
   const text = `${copy.intro}\n\nYour code: ${code}\n\nThis code expires in 10 minutes.`;
   await sendEmail({ to, subject: copy.subject, html, text });
@@ -144,35 +182,47 @@ function escapeHtml(text: string): string {
 }
 
 /** Generic notification email — payment approvals, role changes, practice reminders, etc. */
-export async function sendNotificationEmail(to: string, title: string, body: string) {
-  const html = emailShell(title, `<p style="margin:0;">${escapeHtml(body)}</p>`);
+export async function sendNotificationEmail(to: string, title: string, body: string, kind: "default" | "notice" = "default") {
+  const html = emailShell(title, `<p style="margin:0;">${escapeHtml(body)}</p>`, { kind });
   const text = body;
   await sendEmail({ to, subject: `${title} — Bass Note Piano`, html, text });
 }
 
+function ctaButtonHtml(cta: { label: string; url: string }): string {
+  return `
+    <div style="text-align:center;margin-top:4px;">
+      <a href="${cta.url}" style="display:inline-block;padding:13px 30px;border-radius:10px;background:#c79a3a;color:#1a1a1a;font-size:14px;font-weight:bold;text-decoration:none;">
+        ${escapeHtml(cta.label)}
+      </a>
+    </div>
+  `;
+}
+
 /**
- * Same as sendNotificationEmail, plus a single call-to-action button/link —
- * e.g. nudging a not-yet-a-member registrant toward creating an account.
- * This is the first link-based CTA in the app's email templates (everything
- * else uses a 6-digit code), so the button styling is new but follows the
- * same amber palette as codeBlockHtml above.
+ * Same as sendNotificationEmail, plus a single call-to-action button/link
+ * tailored to what the notification is about — e.g. "Click here to reply"
+ * deep-linked to the actual thread, not just a generic "open the app."
  */
 export async function sendNotificationEmailWithCta(
   to: string,
   title: string,
   body: string,
   cta: { label: string; url: string },
+  kind: "default" | "notice" = "default",
 ) {
-  const html = emailShell(
-    title,
-    `<p style="margin:0 0 20px;">${escapeHtml(body)}</p>
-     <div style="text-align:center;">
-       <a href="${cta.url}" style="display:inline-block;padding:12px 28px;border-radius:10px;background:#c79a3a;color:#1a1a1a;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;text-decoration:none;">
-         ${escapeHtml(cta.label)}
-       </a>
-     </div>`,
-  );
+  const html = emailShell(title, `<p style="margin:0 0 20px;">${escapeHtml(body)}</p>${ctaButtonHtml(cta)}`, { kind });
   const text = `${body}\n\n${cta.label}: ${cta.url}`;
   await sendEmail({ to, subject: `${title} — Bass Note Piano`, html, text });
+}
+
+/** First-time-only welcome email, fired the moment email verification succeeds (see verify-email/actions.ts). */
+export async function sendWelcomeEmail(to: string, name: string | null) {
+  const firstName = name?.trim().split(" ")[0];
+  const greeting = firstName ? `Welcome, ${escapeHtml(firstName)}!` : "Welcome!";
+  const body =
+    "Your account is verified and ready to go. Explore the six-scale Ethiopian kiñit curriculum, book a live Zoom class, or just look around — here's a quick tour of what's here.";
+  const html = emailShell(greeting, `<p style="margin:0 0 20px;">${body}</p>${ctaButtonHtml({ label: "Learn more about Bass Note Piano", url: getAppUrl("/about") })}`);
+  const text = `${greeting}\n\n${body}\n\nLearn more: ${getAppUrl("/about")}`;
+  await sendEmail({ to, subject: "Welcome to Bass Note Piano 🎹", html, text });
 }
 

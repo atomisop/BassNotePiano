@@ -1,8 +1,9 @@
 import type { NotificationType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { sendNotificationEmail } from "@/lib/email";
+import { sendNotificationEmail, sendNotificationEmailWithCta, getAppUrl } from "@/lib/email";
 
 type EmailCategory = "payments" | "roleUpdates" | "social" | "reminders";
+type EmailKind = "default" | "notice";
 
 export interface CreateNotificationParams {
   userId: string;
@@ -12,6 +13,35 @@ export interface CreateNotificationParams {
   /** If set, also emails the user provided their matching notifyEmail* preference is on. */
   emailCategory?: EmailCategory;
 }
+
+interface NotificationCta {
+  label: string;
+  url: string;
+  kind: EmailKind;
+}
+
+// One deep-link per notification type, so the emailed version of a
+// notification always lands you exactly where the in-app bell would —
+// never just a generic "open the app" link. NEW_MESSAGE isn't here: it
+// never goes through createNotification (see the comment below), so its
+// CTA ("Click here to reply", deep-linked to the actual sender) is built
+// by the caller in messages.ts/groupMessages.ts instead, where the
+// senderId is actually known.
+const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
+  PAYMENT_APPROVED: { label: "View your purchase", url: getAppUrl("/billing/history"), kind: "default" },
+  PAYMENT_REJECTED: { label: "Review & resubmit", url: getAppUrl("/billing/history"), kind: "notice" },
+  ROLE_UPDATED: { label: "Go to admin panel", url: getAppUrl("/admin"), kind: "default" },
+  FRIEND_REQUEST_RECEIVED: { label: "View request", url: getAppUrl("/friends#requests"), kind: "default" },
+  FRIEND_REQUEST_ACCEPTED: { label: "Say hello", url: getAppUrl("/friends"), kind: "default" },
+  PRACTICE_REMINDER: { label: "Continue learning", url: getAppUrl("/dashboard"), kind: "default" },
+  CLASS_REGISTRATION_RECEIVED: { label: "Review registration", url: getAppUrl("/admin/students"), kind: "default" },
+  CLASS_REGISTRATION_APPROVED: { label: "Go to your dashboard", url: getAppUrl("/dashboard"), kind: "default" },
+  CLASS_REGISTRATION_REJECTED: { label: "View details", url: getAppUrl("/dashboard"), kind: "notice" },
+  LESSON_BOOKING_RECEIVED: { label: "Review booking", url: getAppUrl("/admin/bookings"), kind: "default" },
+  LESSON_BOOKING_CANCELED: { label: "View your bookings", url: getAppUrl("/lessons"), kind: "notice" },
+  ANNOUNCEMENT: { label: "See announcement", url: getAppUrl("/dashboard"), kind: "default" },
+  CREDIT_ADJUSTED: { label: "View your credits", url: getAppUrl("/lessons"), kind: "default" },
+};
 
 /**
  * Always writes the in-app notification (that's the source of truth the
@@ -25,7 +55,8 @@ export async function createNotification(params: CreateNotificationParams) {
   });
 
   if (params.emailCategory) {
-    await maybeSendEmail(params.userId, params.emailCategory, params.title, params.body).catch((err) =>
+    const cta = NOTIFICATION_CTA[params.type];
+    await maybeSendEmail(params.userId, params.emailCategory, params.title, params.body, cta).catch((err) =>
       console.error("Notification email failed (non-blocking):", err),
     );
   }
@@ -33,7 +64,13 @@ export async function createNotification(params: CreateNotificationParams) {
   return notification;
 }
 
-async function maybeSendEmail(userId: string, category: EmailCategory, title: string, body?: string) {
+async function maybeSendEmail(
+  userId: string,
+  category: EmailCategory,
+  title: string,
+  body?: string,
+  cta?: NotificationCta,
+) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -54,7 +91,11 @@ async function maybeSendEmail(userId: string, category: EmailCategory, title: st
   };
   if (!enabled[category]) return;
 
-  await sendNotificationEmail(user.email, title, body ?? "");
+  if (cta) {
+    await sendNotificationEmailWithCta(user.email, title, body ?? "", { label: cta.label, url: cta.url }, cta.kind);
+  } else {
+    await sendNotificationEmail(user.email, title, body ?? "");
+  }
 }
 
 /**
@@ -64,8 +105,14 @@ async function maybeSendEmail(userId: string, category: EmailCategory, title: st
  * per-conversation counts), and would otherwise duplicate into the general
  * bell too. Failure here is non-blocking, same as createNotification.
  */
-export async function sendEmailIfEnabled(userId: string, category: EmailCategory, title: string, body?: string): Promise<void> {
-  await maybeSendEmail(userId, category, title, body).catch((err) =>
+export async function sendEmailIfEnabled(
+  userId: string,
+  category: EmailCategory,
+  title: string,
+  body?: string,
+  cta?: { label: string; url: string },
+): Promise<void> {
+  await maybeSendEmail(userId, category, title, body, cta ? { ...cta, kind: "default" } : undefined).catch((err) =>
     console.error("Notification email failed (non-blocking):", err),
   );
 }
