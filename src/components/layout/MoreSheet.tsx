@@ -36,7 +36,7 @@ export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-ink/40"
+            className="absolute inset-0 bg-scrim/40"
             onClick={onClose}
           />
           <motion.div
@@ -48,7 +48,7 @@ export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: 
             // is the one that opens on every mobile "More" tap, so it's the
             // most sensitive to per-frame repaint cost.
             style={{ willChange: "transform" }}
-            className="relative w-full rounded-t-3xl border-t border-ink/10 bg-white pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+            className="relative w-full rounded-t-3xl border-t border-ink/10 bg-surface pb-[calc(env(safe-area-inset-bottom)+1rem)]"
           >
             <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-ink/10" />
             <div className="p-3">

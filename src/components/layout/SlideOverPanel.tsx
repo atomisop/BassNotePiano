@@ -45,7 +45,7 @@ export function SlideOverPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-ink/40"
+            className="absolute inset-0 bg-scrim/40"
             onClick={onClose}
           />
           <motion.div
@@ -58,7 +58,7 @@ export function SlideOverPanel({
             // whatever moved underneath on every frame of the spring, which
             // was exactly the "framy when I open something" feel.
             style={{ willChange: "transform" }}
-            className="relative flex h-full w-full flex-col border-l border-ink/10 bg-white md:max-w-md"
+            className="relative flex h-full w-full flex-col border-l border-ink/10 bg-surface md:max-w-md"
           >
             <div className="flex items-center gap-4 border-b border-ink/10 px-6 py-5">
               <button

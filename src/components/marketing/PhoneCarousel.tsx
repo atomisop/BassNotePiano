@@ -26,7 +26,7 @@ function PhoneFrame({ src, alt }: PhoneScreenshot) {
         <div className="absolute left-1/2 top-0 z-10 h-5 w-24 -translate-x-1/2 rounded-b-2xl bg-[#2A2521]" />
         {/* Side button */}
         <div className="absolute -right-[7px] top-24 h-12 w-[3px] rounded-full bg-[#4A423C]" />
-        <div className="relative aspect-[9/19.5] w-full overflow-hidden rounded-[2rem] bg-white">
+        <div className="relative aspect-[9/19.5] w-full overflow-hidden rounded-[2rem] bg-surface">
           <Image src={src} alt={alt} fill sizes="260px" className="object-cover object-top" />
         </div>
       </div>

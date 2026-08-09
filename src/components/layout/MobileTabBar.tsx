@@ -29,7 +29,7 @@ export function MobileTabBar({ isAdmin, unreadMessageCount }: { isAdmin: boolean
           scrolling content on every mobile screen, the single worst place to
           pay for a blur recompute — the browser would have to reblur whatever
           moves underneath it on every scroll frame. */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-ink/10 bg-white pb-[env(safe-area-inset-bottom)] md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-ink/10 bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
         {TABS.map((tab) => {
           const active = pathname === tab.href;
           return (

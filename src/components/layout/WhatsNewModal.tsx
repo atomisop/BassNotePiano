@@ -48,7 +48,7 @@ export function WhatsNewModal({ show, entry }: { show: boolean; entry: Changelog
           <motion.div
             variants={backdropVariants}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-ink/60"
+            className="absolute inset-0 bg-scrim/60"
             onClick={handleClose}
           />
 

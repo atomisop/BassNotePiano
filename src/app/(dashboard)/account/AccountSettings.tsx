@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
+import { ThemePicker } from "@/components/theme/ThemePicker";
 import { updatePasswordAction, updateNotificationPreferencesAction, type NotificationPreferencesInput } from "./actions";
 
 interface AccountSettingsProps {
@@ -18,6 +19,8 @@ const TAB_ICONS = {
   membership: "M3 8h18M3 6h18v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6zM7 15h4",
   password: "M12 15v2M6 10V7a6 6 0 1112 0v3M5 10h14v10a1 1 0 01-1 1H6a1 1 0 01-1-1V10z",
   tutorials: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 3",
+  appearance:
+    "M12 3a9 9 0 000 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1-.24-.27-.39-.62-.39-1 0-.83.67-1.5 1.5-1.5H16a5 5 0 005-5c0-4.42-4.03-8-9-8zM7.5 11a1 1 0 100-2 1 1 0 000 2zm3-3a1 1 0 100-2 1 1 0 000 2zm5 0a1 1 0 100-2 1 1 0 000 2z",
   chevron: "M9 18l6-6-6-6",
 } as const;
 
@@ -25,6 +28,7 @@ const TABS = [
   { id: "notifications", label: "Notifications", icon: TAB_ICONS.notifications },
   { id: "membership", label: "Membership & Purchases", icon: TAB_ICONS.membership },
   { id: "password", label: "Password", icon: TAB_ICONS.password },
+  { id: "appearance", label: "Themes & Appearance", icon: TAB_ICONS.appearance },
   { id: "tutorials", label: "Tutorials", icon: TAB_ICONS.tutorials },
 ] as const;
 
@@ -106,8 +110,23 @@ function TabContent({
 }) {
   if (tab === "notifications") return <NotificationSettingsSection initial={initialNotificationPreferences} />;
   if (tab === "membership") return <MembershipSection hasCurriculumAccess={hasCurriculumAccess} classCredits={classCredits} />;
+  if (tab === "appearance") return <AppearanceSection />;
   if (tab === "tutorials") return <TutorialsSection />;
   return <PasswordSection />;
+}
+
+function AppearanceSection() {
+  return (
+    <section>
+      <h2 className="font-serif text-xl text-slate-50">Themes &amp; appearance</h2>
+      <p className="mt-1.5 text-sm text-slate-500">
+        Change how Bass Note Piano looks for you. Nothing here affects what anyone else sees.
+      </p>
+      <div className="mt-6">
+        <ThemePicker />
+      </div>
+    </section>
+  );
 }
 
 function AccountSettingsInner({ hasCurriculumAccess, classCredits, initialNotificationPreferences }: AccountSettingsProps) {

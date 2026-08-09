@@ -71,7 +71,7 @@ export function BadgeGrid({ earnedCodes }: BadgeGridProps) {
                       className={`flex h-16 w-16 flex-col items-center justify-center rounded-2xl border text-center transition ${
                         earned
                           ? "border-amber-400/50 bg-amber-400/10 text-amber-300"
-                          : "border-ink/10 bg-white text-slate-600 opacity-50"
+                          : "border-ink/10 bg-surface text-slate-600 opacity-50"
                       }`}
                     >
                       {earned ? <AwardIcon /> : <LockIcon />}

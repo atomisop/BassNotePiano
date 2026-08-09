@@ -253,7 +253,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
           }}
         />
       ) : (
-        <div className="fixed inset-0 bg-ink/60" onClick={handleSkip} />
+        <div className="fixed inset-0 bg-scrim/60" onClick={handleSkip} />
       )}
 
       {/* Coiled connector — only drawn when there's a real target to point at. */}

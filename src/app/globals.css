@@ -1,149 +1,129 @@
 @tailwind base;
 @tailwind components;
+@import "./themes.css";
 @tailwind utilities;
-
-:root {
-  color-scheme: light;
-
-  /* Page ground. Mirrors slate-950 in tailwind.config.ts — kept here too so
-     raw CSS (scrims, textures) can reference it without hardcoding. */
-  --paper: #faf6ec;
-  --paper-card: #ffffff;
-  --ink: #1a150f;
-  --rule: rgba(26, 21, 15, 0.1);
-  --rule-strong: rgba(26, 21, 15, 0.18);
-}
 
 body {
   @apply bg-slate-950 text-slate-100 antialiased;
 
-  /* A whisper of paper tooth. Two offset radial gradients at ~2% opacity —
-     enough to keep a large cream field from reading as flat #FFF-adjacent
-     digital background, cheap enough to cost nothing (no filter, no image). */
-  background-image:
-    radial-gradient(circle at 15% 20%, rgba(160, 78, 30, 0.025), transparent 45%),
-    radial-gradient(circle at 85% 75%, rgba(26, 21, 15, 0.02), transparent 40%);
+  /* A whisper of tooth so a large flat field doesn't read as a raw digital
+     background. Each theme supplies its own; costs nothing (no filter, no
+     image). */
+  background-image: var(--page-texture);
   background-attachment: fixed;
+}
+
+/* Themes change the entire palette at once, so without this every colour on
+   screen hard-cuts. Excluded from transform/opacity so it never interferes
+   with Framer Motion's entrance animations. */
+@media (prefers-reduced-motion: no-preference) {
+  body,
+  body * {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-duration: 220ms;
+    transition-timing-function: ease;
+  }
 }
 
 @layer components {
   /* ============================================================
-     Editorial Paper — material system
-     Depth comes from hairlines, a white card lifted off a warm
-     ground, and a tight warm shadow. Deliberately NO backdrop-filter
-     anywhere: the previous glass system's blur was the single largest
-     scroll cost in the app (it sat on every card, in every list) and
-     had to be walked back once already for jank. Paper has no such
-     cost. See design-system/bass-note-piano/MASTER.md.
+     Material system
+     Every value here comes from the active theme (see themes.css),
+     so a card is a flat white panel under Editorial Paper and a
+     frosted translucent pane under Midnight Glass without any
+     component knowing the difference.
      ============================================================ */
 
-  /* The default surface: a crisp white card on warm paper. The contrast
-     between #FFFFFF and the #FAF6EC ground is what creates elevation —
-     no blur, no heavy shadow needed.
-
-     Borders/shadows are raw rgba rather than Tailwind opacity utilities on
-     purpose: this project has a reproducible quirk where some arbitrary
-     opacity modifiers compile to nothing, and these three classes back every
-     surface in the app — they must not depend on that resolving. */
+  /* The default surface. */
   .glass-surface {
-    @apply rounded-xl bg-white;
-    border: 1px solid var(--rule);
-    box-shadow:
-      0 1px 2px rgba(26, 21, 15, 0.04),
-      0 4px 12px -4px rgba(26, 21, 15, 0.06);
+    background: var(--surface-bg);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--surface-radius);
+    box-shadow: var(--surface-shadow);
+    backdrop-filter: blur(var(--surface-blur));
   }
 
   /* Reserved for the ONE primary element per screen. Distinguished by an
-     accent hairline and a slightly deeper lift, not by a different material —
-     using it twice on a screen stops it meaning "the important one". */
+     accent hairline and a deeper lift, not a different material — using it
+     twice on a screen stops it meaning "the important one". */
   .glass-surface-elevated {
-    @apply rounded-xl bg-white;
-    border: 1px solid rgba(160, 78, 30, 0.28);
-    box-shadow:
-      0 2px 4px rgba(26, 21, 15, 0.05),
-      0 12px 28px -8px rgba(26, 21, 15, 0.1);
+    background: var(--elev-bg);
+    border: 1px solid var(--elev-border);
+    border-radius: var(--surface-radius);
+    box-shadow: var(--elev-shadow);
+    backdrop-filter: blur(var(--elev-blur));
   }
 
   /* Chips, nav pills, filter tags, badges. */
   .glass-pill {
-    @apply rounded-full bg-white;
-    border: 1px solid var(--rule);
-    box-shadow: 0 1px 2px rgba(26, 21, 15, 0.04);
+    @apply rounded-full;
+    background: var(--surface-bg);
+    border: 1px solid var(--surface-border);
+    box-shadow: var(--surface-shadow);
+    backdrop-filter: blur(var(--surface-blur));
   }
 
-  /* ---- Editorial furniture ------------------------------------------- */
-
-  /* Full-measure hairline used to separate sections, the way a rule does in
-     print. */
+  /* Full-measure hairline, the way a rule separates sections in print. */
   .rule {
-    border-top: 1px solid var(--rule);
+    border-top: 1px solid var(--surface-border);
   }
 
-  /* The recurring kicker above a heading. Centralised so every page gets the
-     same treatment instead of re-declaring the tracking each time. */
+  /* The recurring kicker above a heading — centralised so every page gets
+     the same treatment instead of re-declaring the tracking each time. */
   .eyebrow {
     @apply text-xs font-medium uppercase tracking-[0.18em] text-amber-300;
   }
 
   /* ---- Photography ---------------------------------------------------- */
 
-  /* Scrims still exist because <PhotoBackdrop> consumes them, but on paper
-     their job is inverted: they dissolve a photo INTO the cream ground
-     rather than darkening it for white text. Anything set over a photo now
-     sits on its own card, so the scrim no longer carries contrast duty. */
-  /* These are deliberately much stronger than the dark system's scrims. On a
-     dark page, light text over a lightly-veiled photo is legible because the
-     photo's midtones are darker than the type. Inverted, that stops being
-     true: ink text over a half-visible photo lands on whatever tone happens
-     to be behind each glyph. So on paper the photo is pushed down to a ghost
-     — a texture the type sits on top of, never competes with. */
+  /* Scrims dissolve a photo into the page ground. Both the colour and the
+     strength come from the theme: a dark theme wants a light veil so pale
+     text stays readable, a light theme needs a much heavier one, because
+     ink text over a half-visible photo lands on whatever tone happens to
+     sit behind each glyph. */
   .backdrop-scrim-light {
     background: linear-gradient(
       to bottom,
-      rgba(250, 246, 236, 1) 0%,
-      rgba(250, 246, 236, 0.78) 18%,
-      rgba(250, 246, 236, 0.72) 50%,
-      rgba(250, 246, 236, 0.84) 82%,
-      rgba(250, 246, 236, 1) 100%
+      rgb(var(--scrim-rgb) / 1) 0%,
+      rgb(var(--scrim-rgb) / var(--scrim-light)) 18%,
+      rgb(var(--scrim-rgb) / calc(var(--scrim-light) * 0.92)) 50%,
+      rgb(var(--scrim-rgb) / calc(var(--scrim-light) * 1.08)) 82%,
+      rgb(var(--scrim-rgb) / 1) 100%
     );
   }
   .backdrop-scrim {
     background: linear-gradient(
       to bottom,
-      rgba(250, 246, 236, 1) 0%,
-      rgba(250, 246, 236, 0.88) 18%,
-      rgba(250, 246, 236, 0.85) 50%,
-      rgba(250, 246, 236, 0.91) 82%,
-      rgba(250, 246, 236, 1) 100%
+      rgb(var(--scrim-rgb) / 1) 0%,
+      rgb(var(--scrim-rgb) / var(--scrim-standard)) 18%,
+      rgb(var(--scrim-rgb) / calc(var(--scrim-standard) * 0.96)) 50%,
+      rgb(var(--scrim-rgb) / calc(var(--scrim-standard) * 1.04)) 82%,
+      rgb(var(--scrim-rgb) / 1) 100%
     );
   }
   .backdrop-scrim-dense {
     background: linear-gradient(
       to bottom,
-      rgba(250, 246, 236, 1) 0%,
-      rgba(250, 246, 236, 0.95) 18%,
-      rgba(250, 246, 236, 0.93) 50%,
-      rgba(250, 246, 236, 0.96) 82%,
-      rgba(250, 246, 236, 1) 100%
+      rgb(var(--scrim-rgb) / 1) 0%,
+      rgb(var(--scrim-rgb) / var(--scrim-dense)) 18%,
+      rgb(var(--scrim-rgb) / calc(var(--scrim-dense) * 0.98)) 50%,
+      rgb(var(--scrim-rgb) / calc(var(--scrim-dense) * 1.02)) 82%,
+      rgb(var(--scrim-rgb) / 1) 100%
     );
   }
 
-  /* Warm bloom bled into the scrim's opaque edges so a photo dissolves into
-     light rather than ending on a hard line. */
   .backdrop-glow-smoke-top {
-    background: radial-gradient(60% 80% at 50% 0%, rgba(250, 246, 236, 0.5), transparent 70%);
+    background: radial-gradient(60% 80% at 50% 0%, rgb(var(--c-a-400) / 0.1), transparent 70%);
     filter: blur(40px);
   }
   .backdrop-glow-smoke-bottom {
-    background: radial-gradient(60% 80% at 50% 100%, rgba(250, 246, 236, 0.55), transparent 70%);
+    background: radial-gradient(60% 80% at 50% 100%, rgb(var(--c-a-400) / 0.12), transparent 70%);
     filter: blur(40px);
   }
 
   /* ---- Motion --------------------------------------------------------- */
 
-  /* One-shot sheen across the primary CTA. Retuned for a dark rust fill on a
-     light page: a warm light band rather than the old white one, which would
-     blow out against paper. Inert under reduced motion. */
+  /* One-shot sheen across the primary CTA. Inert under reduced motion. */
   .cta-sheen {
     position: relative;
     overflow: hidden;
@@ -153,7 +133,7 @@ body {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(115deg, transparent 20%, rgba(255, 236, 214, 0.28) 42%, transparent 64%);
+    background: linear-gradient(115deg, transparent 20%, rgba(255, 245, 235, 0.3) 42%, transparent 64%);
     transform: translateX(-120%);
     pointer-events: none;
   }

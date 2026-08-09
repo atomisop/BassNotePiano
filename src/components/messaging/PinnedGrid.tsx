@@ -44,7 +44,7 @@ export function PinnedGrid({
               {showBadge && (
                 <span
                   className={`absolute -right-2 -top-1 flex max-w-[6rem] items-center justify-center rounded-full border border-ink/10 px-2 py-1 text-[10px] font-medium shadow-lg ${
-                    c.isTyping ? "bg-amber-400 text-slate-950" : "bg-white text-slate-100"
+                    c.isTyping ? "bg-amber-400 text-slate-950" : "bg-surface text-slate-100"
                   }`}
                 >
                   {c.isTyping ? <TypingIndicator /> : truncateSnippet(c.lastMessageBody ?? "")}

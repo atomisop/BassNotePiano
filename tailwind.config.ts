@@ -1,30 +1,48 @@
 import type { Config } from "tailwindcss";
 
 /**
- * "Editorial Paper" — the design system for Bass Note Piano.
+ * Bass Note Piano — themeable design tokens.
  *
- * The product is a digital companion to a printed curriculum book, so the
- * interface is built like fine print: warm paper ground, ink text, one rust
- * accent, and depth from hairlines and restrained shadow rather than blur.
+ * Every colour resolves through a CSS custom property rather than a literal
+ * hex, so the whole palette can be swapped at runtime by setting
+ * `data-theme` / `data-accent` on <html>. The actual values live in
+ * globals.css; this file only wires Tailwind's utility generation to them.
  *
- * ── Why the palettes are overridden rather than renamed ──────────────────
- * The codebase already uses `slate-*` and `amber-*` semantically and
- * consistently (slate = ground↔text ramp, amber = the single accent), across
- * ~1,450 utility usages in 113 files. Redefining the two ramps here converts
- * every one of them coherently, instead of hand-editing each file and
- * inevitably missing some. This is the same technique the previous system
- * already used to turn "amber" into a dusty rose — extended, not invented.
+ * ── Why the ramps are still called `slate` and `amber` ───────────────────
+ * The codebase uses both semantically and consistently — `slate` as the
+ * ground↔text ramp, `amber` as the single accent — across ~1,450 utility
+ * usages in 113 files. Keeping the names means every existing className
+ * (`text-slate-500`, `bg-amber-400`, …) keeps working and simply re-points
+ * at whichever theme is active. Renaming them would have meant editing all
+ * 113 files to gain nothing.
  *
- * Both ramps are INVERTED relative to a dark theme: in the old system a low
- * number meant "brighter than the ground"; here it means "darker than the
- * ground". So `text-slate-50` is still the strongest text and `bg-slate-950`
- * is still the page, and every existing className keeps its intended meaning.
+ * The ramp's *meaning* is fixed regardless of theme: a LOW number is always
+ * the strongest text, a HIGH number is always the page ground. In a light
+ * theme that means low = dark; in a dark theme, low = light. Each theme in
+ * globals.css fills the ramp accordingly, so `text-slate-50` is "the
+ * strongest heading colour" everywhere and never needs a per-theme override
+ * at the call site.
  *
- * Every value below is contrast-checked against the page ground (#FAF6EC).
- * Ratios are noted inline; nothing used for text falls under WCAG AA 4.5:1.
+ * The `<alpha-value>` placeholder is what keeps opacity modifiers working
+ * (`bg-amber-400/10`), so the variables store space-separated RGB channels
+ * rather than a hex string.
  */
+const ramp = (name: string) => ({
+  50: `rgb(var(--c-${name}-50) / <alpha-value>)`,
+  100: `rgb(var(--c-${name}-100) / <alpha-value>)`,
+  200: `rgb(var(--c-${name}-200) / <alpha-value>)`,
+  300: `rgb(var(--c-${name}-300) / <alpha-value>)`,
+  400: `rgb(var(--c-${name}-400) / <alpha-value>)`,
+  500: `rgb(var(--c-${name}-500) / <alpha-value>)`,
+  600: `rgb(var(--c-${name}-600) / <alpha-value>)`,
+  700: `rgb(var(--c-${name}-700) / <alpha-value>)`,
+  800: `rgb(var(--c-${name}-800) / <alpha-value>)`,
+  900: `rgb(var(--c-${name}-900) / <alpha-value>)`,
+  950: `rgb(var(--c-${name}-950) / <alpha-value>)`,
+});
+
 const config: Config = {
-  darkMode: "class",
+  darkMode: ["selector", '[data-mode="dark"]'],
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
@@ -33,49 +51,36 @@ const config: Config = {
         sans: ["var(--font-body)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
-        // Ground → ink. High numbers are paper, low numbers are text.
-        slate: {
-          50: "#1A150F", // 17.1:1 — display headings
-          100: "#262119", // 14.8:1 — primary text
-          200: "#35302A", // 12.3:1 — strong body
-          300: "#453E36", // 9.9:1  — body
-          400: "#574F45", // 7.5:1  — secondary
-          500: "#655C51", // 6.1:1  — meta
-          600: "#736A5E", // 5.0:1  — faintest text still passing AA
-          700: "#D5CAB4", // structural: strong rule / inactive marker
-          800: "#E8E0CE", // structural: fills, borders
-          900: "#F3EDE0", // structural: tinted panel
-          950: "#FAF6EC", // the page itself — and text set on the accent
-        },
-        // The one accent: rust. Works as a fill (paper text on it) and as
-        // text (on paper) at the same ratio, which is what lets the existing
-        // `bg-amber-400` / `text-amber-400` usages both stay legible.
+        slate: ramp("s"),
         amber: {
-          100: "#5A2A0C", // 11.0:1 — inline emphasis
-          200: "#6B330F", // 9.3:1
-          300: "#7F3D14", // 7.6:1  — hover (darker), eyebrow text
-          400: "#A04E1E", // 5.4:1  — the workhorse accent
-          500: "#C2691F", // decorative gradient stops only
+          100: "rgb(var(--c-a-100) / <alpha-value>)",
+          200: "rgb(var(--c-a-200) / <alpha-value>)",
+          300: "rgb(var(--c-a-300) / <alpha-value>)",
+          400: "rgb(var(--c-a-400) / <alpha-value>)",
+          500: "rgb(var(--c-a-500) / <alpha-value>)",
         },
-        // Semantic states, re-cut for a light ground.
         emerald: {
-          300: "#145C33",
-          400: "#1F7A45", // 5.0:1 both as fill and as text
+          300: "rgb(var(--c-em-300) / <alpha-value>)",
+          400: "rgb(var(--c-em-400) / <alpha-value>)",
         },
         red: {
-          300: "#8F1B12",
-          400: "#B32318", // 6.1:1
-          500: "#C2321F", // 5.2:1 — destructive fill
+          300: "rgb(var(--c-rd-300) / <alpha-value>)",
+          400: "rgb(var(--c-rd-400) / <alpha-value>)",
+          500: "rgb(var(--c-rd-500) / <alpha-value>)",
         },
-        // Hairlines and tints. Replaces the old `white/N` alphas, which are
-        // invisible on paper.
-        ink: "#1A150F",
+        // Hairlines and subtle tints. Flips to white on dark themes, which is
+        // why it can't double as the modal scrim — see `scrim` below.
+        ink: "rgb(var(--c-ink) / <alpha-value>)",
+        // Opaque chrome surface (nav rails, sheets, tab bar, panels).
+        surface: "rgb(var(--c-surface-solid) / <alpha-value>)",
+        // Modal/sheet overlays. Always dark, in every theme: an overlay's job
+        // is to push the page back, and a white wash on a dark theme would do
+        // the opposite.
+        scrim: "rgb(var(--c-scrim) / <alpha-value>)",
       },
       boxShadow: {
-        // Warm, tight, low-opacity — print shadow, not UI drop shadow.
-        card: "0 1px 2px rgba(26, 21, 15, 0.04), 0 4px 12px -4px rgba(26, 21, 15, 0.06)",
-        "card-lifted":
-          "0 2px 4px rgba(26, 21, 15, 0.05), 0 12px 28px -8px rgba(26, 21, 15, 0.10)",
+        card: "var(--surface-shadow)",
+        "card-lifted": "var(--elev-shadow)",
       },
     },
   },

@@ -4,7 +4,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 export function TopBar() {
   return (
-    <header className="flex h-16 shrink-0 items-center justify-between border-b border-ink/10 bg-white px-8">
+    <header className="flex h-16 shrink-0 items-center justify-between border-b border-ink/10 bg-surface px-8">
       <Link href="/" className="flex items-center gap-2.5 font-serif text-sm tracking-[0.2em] text-slate-200">
         <Image src="/logo-mark.png" alt="" width={28} height={28} className="h-7 w-7" priority />
         BASS NOTE <span className="text-amber-400">PIANO</span>

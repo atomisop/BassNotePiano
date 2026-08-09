@@ -132,7 +132,7 @@ export function NotificationBell() {
         onClick={() => setOpen(true)}
         aria-label="Notifications"
         data-tour="notification-bell"
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-ink/10 bg-white text-slate-400 transition hover:border-ink/15 hover:bg-ink/5 hover:text-slate-200"
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-ink/10 bg-surface text-slate-400 transition hover:border-ink/15 hover:bg-ink/5 hover:text-slate-200"
       >
         <BellIcon />
         {unreadCount > 0 && (
@@ -155,7 +155,7 @@ export function NotificationBell() {
                 // list, so a blur here would have cost a repaint on every
                 // scroll frame inside the panel, not just during the slide-in.
                 style={{ willChange: "transform" }}
-                className="fixed inset-0 z-50 flex flex-col bg-white"
+                className="fixed inset-0 z-50 flex flex-col bg-surface"
               >
                 <div className="flex items-center gap-4 border-b border-ink/10 px-6 py-5">
                   <button
@@ -215,7 +215,7 @@ export function NotificationBell() {
                         // zero visible frosting; with up to 15 rows in a
                         // scrolling list, that added up fast.
                         const itemClassName =
-                          "flex w-full items-start gap-3 rounded-xl border border-ink/10 bg-white px-4 py-3.5 text-left transition hover:bg-ink/5";
+                          "flex w-full items-start gap-3 rounded-xl border border-ink/10 bg-surface px-4 py-3.5 text-left transition hover:bg-ink/5";
                         const inner = (
                           <>
                             <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-amber-400"}`} />

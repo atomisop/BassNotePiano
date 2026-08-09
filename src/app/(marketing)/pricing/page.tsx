@@ -104,7 +104,7 @@ export default function PricingPage() {
             = 30 minutes of class, and that conversion never changes no matter which bundle you buy.
           </p>
 
-          <div className="mt-6 rounded-xl border border-ink/10 bg-white p-5 text-center">
+          <div className="mt-6 rounded-xl border border-ink/10 bg-surface p-5 text-center">
             <p className="font-serif text-3xl text-slate-50">
               {formatUsd(CREDIT_BASE_PRICE_CENTS)}
               <span className="text-base font-sans text-amber-200/70"> / credit</span>

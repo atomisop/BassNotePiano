@@ -65,7 +65,7 @@ export function Sidebar({ name, isAdmin, unreadMessageCount }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden h-full w-28 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-ink/10 bg-white py-5 md:flex">
+    <aside className="hidden h-full w-28 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-ink/10 bg-surface py-5 md:flex">
       <nav className="flex w-full flex-col items-center gap-1 px-2">
         {NAV_ITEMS.map((item) => (
           <NavItem

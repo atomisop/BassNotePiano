@@ -158,7 +158,7 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
                 className={`group mb-4 flex-1 rounded-2xl border p-5 text-left transition ${
                   locked
                     ? "border-ink/10 bg-ink/5 hover:border-amber-400/30"
-                    : "border-ink/10 bg-white hover:border-amber-400/30"
+                    : "border-ink/10 bg-surface hover:border-amber-400/30"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
