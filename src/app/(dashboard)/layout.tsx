@@ -6,8 +6,6 @@ import { getTotalUnreadMessageCount } from "@/lib/messages";
 import { getTotalUnreadGroupMessageCount } from "@/lib/groupMessages";
 import { getActiveAnnouncementForUser } from "@/lib/announcements";
 import { LATEST_ENTRY } from "@/lib/changelog";
-import { BACKDROPS } from "@/lib/backdrops";
-import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { MobileTabBar } from "@/components/layout/MobileTabBar";
@@ -39,14 +37,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isAdmin = session.user.role === "ADMIN";
 
   return (
-    <div className="relative flex h-screen overflow-hidden">
-      {/* One backdrop, shared by every authenticated page via this layout — never
-          re-rendered on navigation within (dashboard), so it doesn't flash between
-          routes. Dense scrim: this frame holds text-heavy UI everywhere (tables,
-          forms, chat), so the photo has to stay atmospheric texture, not compete. */}
-      <div className="fixed inset-0 -z-10">
-        <PhotoBackdrop src={BACKDROPS.appShell} scrim="dense" priority sizes="100vw" />
-      </div>
+    <div className="relative flex h-screen overflow-hidden bg-slate-950">
+      {/* No photographic backdrop behind the app shell, deliberately. The
+          previous system wallpapered every authenticated page with a piano
+          photo; on paper that reads as a smudge under the text rather than
+          atmosphere, and it forced a heavy scrim that muddied every surface
+          sitting on it. Photography now appears only where it is the subject
+          (the marketing pages), never as a bed for UI. */}
       <Sidebar name={session.user.name} isAdmin={isAdmin} unreadMessageCount={unreadMessageCount} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <TopBar />

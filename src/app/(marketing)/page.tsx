@@ -61,7 +61,7 @@ function RoadmapPreviewMarker({ status }: { status: "completed" | "in_progress" 
   }
   if (status === "locked") {
     return (
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-white/10 bg-slate-950 text-slate-600">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-ink/10 bg-slate-950 text-slate-600">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="4" y="11" width="16" height="9" rx="2" />
           <path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
@@ -169,7 +169,7 @@ export default function LandingPage() {
                 <div className="flex flex-col items-center">
                   <RoadmapPreviewMarker status={scale.status} />
                   {i < ROADMAP_PREVIEW.length - 1 && (
-                    <span className="w-px flex-1 border-l-2 border-dotted border-white/10" />
+                    <span className="w-px flex-1 border-l-2 border-dotted border-ink/10" />
                   )}
                 </div>
                 <div className={i < ROADMAP_PREVIEW.length - 1 ? "pb-5" : ""}>

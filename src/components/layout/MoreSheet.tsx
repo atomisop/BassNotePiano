@@ -36,7 +36,7 @@ export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-ink/40"
             onClick={onClose}
           />
           <motion.div
@@ -44,16 +44,13 @@ export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: 
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 340, damping: 34 }}
-            // No backdrop-blur — same reasoning as SlideOverPanel: 95% opaque
-            // already reads solid, and dropping the blur removes a heavy
-            // per-frame repaint during the spring animation (this is what
-            // opens on every mobile "More" tap). (Was bg-slate-950/98 —
-            // that value never actually compiled to real CSS, see
-            // NotificationBell.tsx for the full explanation.)
+            // Opaque white sheet, same reasoning as SlideOverPanel — and this
+            // is the one that opens on every mobile "More" tap, so it's the
+            // most sensitive to per-frame repaint cost.
             style={{ willChange: "transform" }}
-            className="relative w-full rounded-t-3xl border-t border-white/10 bg-slate-950/95 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+            className="relative w-full rounded-t-3xl border-t border-ink/10 bg-white pb-[calc(env(safe-area-inset-bottom)+1rem)]"
           >
-            <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-white/15" />
+            <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-ink/10" />
             <div className="p-3">
               {items.map((item) => (
                 <Link
@@ -61,7 +58,7 @@ export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: 
                   href={item.href}
                   onClick={onClose}
                   data-tour={item.dataTour}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm text-slate-200 transition hover:bg-white/5"
+                  className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm text-slate-200 transition hover:bg-ink/5"
                 >
                   <NavIcon path={item.icon} className="h-5 w-5 text-slate-400" />
                   {item.label}
@@ -70,7 +67,7 @@ export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: 
               <button
                 type="button"
                 onClick={() => signOut({ callbackUrl: "/" })}
-                className="flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm text-slate-200 transition hover:bg-white/5"
+                className="flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-left text-sm text-slate-200 transition hover:bg-ink/5"
               >
                 <NavIcon path={ICON_PATHS.logout} className="h-5 w-5 text-slate-400" />
                 Sign out

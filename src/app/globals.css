@@ -3,130 +3,147 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
+
+  /* Page ground. Mirrors slate-950 in tailwind.config.ts — kept here too so
+     raw CSS (scrims, textures) can reference it without hardcoding. */
+  --paper: #faf6ec;
+  --paper-card: #ffffff;
+  --ink: #1a150f;
+  --rule: rgba(26, 21, 15, 0.1);
+  --rule-strong: rgba(26, 21, 15, 0.18);
 }
 
 body {
   @apply bg-slate-950 text-slate-100 antialiased;
+
+  /* A whisper of paper tooth. Two offset radial gradients at ~2% opacity —
+     enough to keep a large cream field from reading as flat #FFF-adjacent
+     digital background, cheap enough to cost nothing (no filter, no image). */
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(160, 78, 30, 0.025), transparent 45%),
+    radial-gradient(circle at 85% 75%, rgba(26, 21, 15, 0.02), transparent 40%);
+  background-attachment: fixed;
 }
 
 @layer components {
   /* ============================================================
-     Dynamic Glass — material system
-     Photography is the environment; glass floats above it. See
-     design-system/bass-note-piano/MASTER.md for the full spec.
+     Editorial Paper — material system
+     Depth comes from hairlines, a white card lifted off a warm
+     ground, and a tight warm shadow. Deliberately NO backdrop-filter
+     anywhere: the previous glass system's blur was the single largest
+     scroll cost in the app (it sat on every card, in every list) and
+     had to be walked back once already for jank. Paper has no such
+     cost. See design-system/bass-note-piano/MASTER.md.
      ============================================================ */
 
-  /* Scrims — sit between a <PhotoBackdrop> photo and any content above it.
-     This is what guarantees WCAG AA text contrast over a photo; never skip it.
-     Three strengths, chosen per context (see PhotoBackdrop's `scrim` prop):
-     - light:    marketing/auth hero — let more of the photo read through
-     - standard: default
-     - dense:    admin / data-dense surfaces — backdrop stays texture only
+  /* The default surface: a crisp white card on warm paper. The contrast
+     between #FFFFFF and the #FAF6EC ground is what creates elevation —
+     no blur, no heavy shadow needed.
 
-     Symmetric vignette, not a one-way fade: fully-opaque rgba(2,6,23,1) —
-     exactly bg-slate-950 — at BOTH the top and bottom edge, easing to a
-     readable plateau in the middle. When one <PhotoBackdrop> section sits
-     directly above another, the opaque top edge of the lower one meets the
-     opaque bottom edge of the upper one — the two photos blend through a
-     shared dark zone instead of one cutting straight into the other. Pair
-     with .backdrop-glow-smoke (top and bottom) for a warm dissolve, not a
-     flat fade to black. */
+     Borders/shadows are raw rgba rather than Tailwind opacity utilities on
+     purpose: this project has a reproducible quirk where some arbitrary
+     opacity modifiers compile to nothing, and these three classes back every
+     surface in the app — they must not depend on that resolving. */
+  .glass-surface {
+    @apply rounded-xl bg-white;
+    border: 1px solid var(--rule);
+    box-shadow:
+      0 1px 2px rgba(26, 21, 15, 0.04),
+      0 4px 12px -4px rgba(26, 21, 15, 0.06);
+  }
+
+  /* Reserved for the ONE primary element per screen. Distinguished by an
+     accent hairline and a slightly deeper lift, not by a different material —
+     using it twice on a screen stops it meaning "the important one". */
+  .glass-surface-elevated {
+    @apply rounded-xl bg-white;
+    border: 1px solid rgba(160, 78, 30, 0.28);
+    box-shadow:
+      0 2px 4px rgba(26, 21, 15, 0.05),
+      0 12px 28px -8px rgba(26, 21, 15, 0.1);
+  }
+
+  /* Chips, nav pills, filter tags, badges. */
+  .glass-pill {
+    @apply rounded-full bg-white;
+    border: 1px solid var(--rule);
+    box-shadow: 0 1px 2px rgba(26, 21, 15, 0.04);
+  }
+
+  /* ---- Editorial furniture ------------------------------------------- */
+
+  /* Full-measure hairline used to separate sections, the way a rule does in
+     print. */
+  .rule {
+    border-top: 1px solid var(--rule);
+  }
+
+  /* The recurring kicker above a heading. Centralised so every page gets the
+     same treatment instead of re-declaring the tracking each time. */
+  .eyebrow {
+    @apply text-xs font-medium uppercase tracking-[0.18em] text-amber-300;
+  }
+
+  /* ---- Photography ---------------------------------------------------- */
+
+  /* Scrims still exist because <PhotoBackdrop> consumes them, but on paper
+     their job is inverted: they dissolve a photo INTO the cream ground
+     rather than darkening it for white text. Anything set over a photo now
+     sits on its own card, so the scrim no longer carries contrast duty. */
+  /* These are deliberately much stronger than the dark system's scrims. On a
+     dark page, light text over a lightly-veiled photo is legible because the
+     photo's midtones are darker than the type. Inverted, that stops being
+     true: ink text over a half-visible photo lands on whatever tone happens
+     to be behind each glyph. So on paper the photo is pushed down to a ghost
+     — a texture the type sits on top of, never competes with. */
   .backdrop-scrim-light {
     background: linear-gradient(
       to bottom,
-      rgba(2, 6, 23, 1) 0%,
-      rgba(2, 6, 23, 0.45) 14%,
-      rgba(2, 6, 23, 0.22) 32%,
-      rgba(2, 6, 23, 0.22) 68%,
-      rgba(2, 6, 23, 0.5) 86%,
-      rgba(2, 6, 23, 1) 100%
+      rgba(250, 246, 236, 1) 0%,
+      rgba(250, 246, 236, 0.78) 18%,
+      rgba(250, 246, 236, 0.72) 50%,
+      rgba(250, 246, 236, 0.84) 82%,
+      rgba(250, 246, 236, 1) 100%
     );
   }
   .backdrop-scrim {
     background: linear-gradient(
       to bottom,
-      rgba(2, 6, 23, 1) 0%,
-      rgba(2, 6, 23, 0.66) 14%,
-      rgba(2, 6, 23, 0.42) 32%,
-      rgba(2, 6, 23, 0.42) 68%,
-      rgba(2, 6, 23, 0.72) 86%,
-      rgba(2, 6, 23, 1) 100%
+      rgba(250, 246, 236, 1) 0%,
+      rgba(250, 246, 236, 0.88) 18%,
+      rgba(250, 246, 236, 0.85) 50%,
+      rgba(250, 246, 236, 0.91) 82%,
+      rgba(250, 246, 236, 1) 100%
     );
   }
   .backdrop-scrim-dense {
     background: linear-gradient(
       to bottom,
-      rgba(2, 6, 23, 1) 0%,
-      rgba(2, 6, 23, 0.84) 14%,
-      rgba(2, 6, 23, 0.66) 32%,
-      rgba(2, 6, 23, 0.66) 68%,
-      rgba(2, 6, 23, 0.87) 86%,
-      rgba(2, 6, 23, 1) 100%
+      rgba(250, 246, 236, 1) 0%,
+      rgba(250, 246, 236, 0.95) 18%,
+      rgba(250, 246, 236, 0.93) 50%,
+      rgba(250, 246, 236, 0.96) 82%,
+      rgba(250, 246, 236, 1) 100%
     );
   }
 
-  /* Soft warm glow layered into the scrim's opaque top/bottom zones — light
-     diffusing into smoke rather than a photo being sliced off. Two
-     instances per <PhotoBackdrop> (top + bottom, see the component). */
+  /* Warm bloom bled into the scrim's opaque edges so a photo dissolves into
+     light rather than ending on a hard line. */
   .backdrop-glow-smoke-top {
-    background: radial-gradient(60% 80% at 50% 0%, rgba(209, 160, 148, 0.12), transparent 70%);
+    background: radial-gradient(60% 80% at 50% 0%, rgba(250, 246, 236, 0.5), transparent 70%);
     filter: blur(40px);
   }
   .backdrop-glow-smoke-bottom {
-    background: radial-gradient(60% 80% at 50% 100%, rgba(209, 160, 148, 0.14), transparent 70%);
+    background: radial-gradient(60% 80% at 50% 100%, rgba(250, 246, 236, 0.55), transparent 70%);
     filter: blur(40px);
   }
 
-  /* Base frosted panel — replaces the old .glass-card/.glass-panel.
-     Light direction is deliberate: a bright highlight top/left, a soft shadow
-     bottom/right, so it reads as an actual pane of glass rather than a flat
-     semi-transparent box with a uniform 1px border.
+  /* ---- Motion --------------------------------------------------------- */
 
-     Blur radius trimmed from the original backdrop-blur-xl (24px) to -lg
-     (16px) — this class renders on nearly every card, in every scrollable
-     list, on every page, so its cost compounds more than any other single
-     style in the app. -lg keeps the frosted look while meaningfully cutting
-     the GPU work every scroll frame has to redo. */
-  .glass-surface {
-    @apply rounded-2xl backdrop-blur-lg;
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
-    border-top: 1px solid rgba(255, 255, 255, 0.16);
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    box-shadow:
-      0 20px 40px -20px rgba(0, 0, 0, 0.65),
-      0 2px 10px -2px rgba(0, 0, 0, 0.4),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
-  }
-
-  /* Elevated — reserved for the ONE primary/highlighted element per screen
-     (was the amber-tinted accent card). Stronger blur, brighter edge
-     highlight, faint amber-400 inner glow. Don't use more than once per view. */
-  .glass-surface-elevated {
-    @apply rounded-2xl backdrop-blur-xl;
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.13), rgba(209, 160, 148, 0.06));
-    border-top: 1px solid rgba(255, 255, 255, 0.3);
-    border-left: 1px solid rgba(255, 255, 255, 0.18);
-    border-right: 1px solid rgba(209, 160, 148, 0.14);
-    border-bottom: 1px solid rgba(209, 160, 148, 0.14);
-    box-shadow:
-      0 24px 60px -20px rgba(0, 0, 0, 0.7),
-      0 4px 18px -4px rgba(0, 0, 0, 0.5),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
-      inset 0 0 44px 0 rgba(209, 160, 148, 0.06);
-  }
-
-  .glass-pill {
-    @apply rounded-full backdrop-blur-md;
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
-    border: 1px solid rgba(255, 255, 255, 0.15);
-  }
-
-  /* One-shot sheen sweep for primary CTA buttons. Pure CSS, no JS — apply
-     alongside a button's existing classes. Fully inert under reduced motion
-     (the band never moves, so nothing is visible to sweep). */
+  /* One-shot sheen across the primary CTA. Retuned for a dark rust fill on a
+     light page: a warm light band rather than the old white one, which would
+     blow out against paper. Inert under reduced motion. */
   .cta-sheen {
     position: relative;
     overflow: hidden;
@@ -136,7 +153,7 @@ body {
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.4) 42%, transparent 64%);
+    background: linear-gradient(115deg, transparent 20%, rgba(255, 236, 214, 0.28) 42%, transparent 64%);
     transform: translateX(-120%);
     pointer-events: none;
   }

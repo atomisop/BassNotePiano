@@ -68,7 +68,7 @@ export function NewGroupPanel({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Tizita crew"
-              className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+              className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
             />
           </div>
           <p className="text-xs font-medium text-slate-400">Add friends</p>
@@ -92,7 +92,7 @@ export function NewGroupPanel({
                     disabled={!f.username}
                     onClick={() => toggle(f.username)}
                     className={`flex w-full items-center gap-2.5 rounded-lg p-2.5 text-left transition ${
-                      checked ? "bg-amber-400/10" : "hover:bg-white/5"
+                      checked ? "bg-amber-400/10" : "hover:bg-ink/5"
                     } disabled:opacity-40`}
                   >
                     <Avatar image={f.image} label={f.name ?? f.username ?? "?"} className="h-8 w-8 text-xs" />
@@ -102,7 +102,7 @@ export function NewGroupPanel({
                     </div>
                     <div
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-                        checked ? "border-amber-400 bg-amber-400 text-slate-950" : "border-white/20"
+                        checked ? "border-amber-400 bg-amber-400 text-slate-950" : "border-ink/15"
                       }`}
                     >
                       {checked && (
@@ -118,7 +118,7 @@ export function NewGroupPanel({
           )}
         </div>
 
-        <div className="border-t border-white/10 p-4">
+        <div className="border-t border-ink/10 p-4">
           {error && <p className="mb-2 text-xs text-red-400">{error}</p>}
           <button
             type="button"

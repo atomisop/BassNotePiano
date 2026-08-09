@@ -48,6 +48,40 @@ function formatDuration(min: number) {
   return min >= 60 ? `${min / 60} hr${min > 60 ? "s" : ""}` : `${min} min`;
 }
 
+/** Weekday + date only — the time is shown separately as its own column. */
+function formatOccurrenceDay(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+}
+
+function formatOccurrenceTime(iso: string) {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
+/**
+ * Buckets upcoming occurrences into "This week" / "Next week" / "Later".
+ * A flat list of seven near-identical rows gave the reader nothing to
+ * navigate by; a week boundary is the unit people actually plan in.
+ */
+function groupOccurrencesByWeek(rows: OccurrenceRow[]): { key: string; label: string; rows: OccurrenceRow[] }[] {
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const WEEK = 7 * 24 * 60 * 60 * 1000;
+
+  const buckets: Record<string, OccurrenceRow[]> = { this: [], next: [], later: [] };
+  for (const row of rows) {
+    const delta = new Date(row.scheduledAt).getTime() - startOfToday;
+    if (delta < WEEK) buckets.this.push(row);
+    else if (delta < WEEK * 2) buckets.next.push(row);
+    else buckets.later.push(row);
+  }
+
+  return [
+    { key: "this", label: "This week", rows: buckets.this },
+    { key: "next", label: "Next week", rows: buckets.next },
+    { key: "later", label: "Later", rows: buckets.later },
+  ].filter((g) => g.rows.length > 0);
+}
+
 function monthKey(iso: string): string {
   const d = new Date(iso);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -136,7 +170,7 @@ function BookingCard({
         {pastSelfServeWindow && supportContactId && (
           <Link
             href={`/messages?with=${supportContactId}`}
-            className="rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-amber-400/40 hover:text-amber-200"
+            className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-amber-400/40 hover:text-amber-200"
           >
             Message support
           </Link>
@@ -182,7 +216,7 @@ function MonthGroup({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-white/5"
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-ink/5"
       >
         <span className="text-sm font-medium text-slate-200">{group.label}</span>
         <span className="flex items-center gap-2 text-xs text-slate-500">
@@ -191,7 +225,7 @@ function MonthGroup({
         </span>
       </button>
       {open && (
-        <div className="space-y-2 border-t border-white/10 p-3">
+        <div className="space-y-2 border-t border-ink/10 p-3">
           {group.bookings.map((b) => (
             <BookingCard
               key={b.id}
@@ -233,6 +267,7 @@ export function ClassBookingClient({
   // collapsible-by-month history — a flat list of every booking ever made
   // was turning into an endless scroll for anyone with more than a couple
   // months of history.
+  const occurrenceGroups = useMemo(() => groupOccurrencesByWeek(rows), [rows]);
   const upcoming = useMemo(() => bookings.filter((b) => b.status === "SCHEDULED"), [bookings]);
   const history = useMemo(() => bookings.filter((b) => b.status !== "SCHEDULED"), [bookings]);
   const historyGroups = useMemo(() => groupByMonth(history), [history]);
@@ -306,7 +341,7 @@ export function ClassBookingClient({
         </div>
         <Link
           href="/billing/lessons"
-          className="rounded-lg border border-white/15 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-200"
+          className="rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-200"
         >
           Buy credits
         </Link>
@@ -320,37 +355,51 @@ export function ClassBookingClient({
         {rows.length === 0 ? (
           <p className="text-sm text-slate-600">No classes scheduled right now — check back soon.</p>
         ) : (
-          <div className="space-y-2">
-            {rows.map((row) => {
-              const key = `${row.scheduleId}:${row.occurrenceDateMs}`;
-              const insufficientCredits = credits < row.creditCost;
-              const disabled = row.isFull || insufficientCredits || bookingKey !== null;
-              return (
-                <div key={key} className="glass-surface flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-slate-100">
-                      {row.label ?? "Class"} — {formatDateTime(row.scheduledAt)}
-                    </p>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      {formatDuration(row.durationMin)} · {row.creditCost} credit{row.creditCost === 1 ? "" : "s"} ·{" "}
-                      {row.isFull ? (
-                        <span className="text-red-400">Full</span>
-                      ) : (
-                        `${row.seatsLeft} seat${row.seatsLeft === 1 ? "" : "s"} left`
-                      )}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleBook(row)}
-                    disabled={disabled}
-                    className="cta-sheen shrink-0 rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    {bookingKey === key ? "Booking…" : row.isFull ? "Full" : insufficientCredits ? "Not enough credits" : "Book"}
-                  </button>
+          /* One card per week with divided rows, rather than a stack of
+             separate floating cards: seven identical shadowed pills read as
+             seven equally-urgent things. The week heading gives the eye
+             somewhere to land, and the Book control is a quiet outline —
+             repeating a solid accent fill down the page made the accent
+             mean nothing. */
+          <div className="space-y-6">
+            {occurrenceGroups.map((group) => (
+              <section key={group.key}>
+                <h3 className="eyebrow mb-2">{group.label}</h3>
+                <div className="glass-surface divide-y divide-ink/10 overflow-hidden">
+                  {group.rows.map((row) => {
+                    const key = `${row.scheduleId}:${row.occurrenceDateMs}`;
+                    const insufficientCredits = credits < row.creditCost;
+                    const disabled = row.isFull || insufficientCredits || bookingKey !== null;
+                    return (
+                      <div key={key} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-6">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-slate-100">{formatOccurrenceDay(row.scheduledAt)}</p>
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            {formatOccurrenceTime(row.scheduledAt)} · {formatDuration(row.durationMin)} ·{" "}
+                            {row.creditCost} credit{row.creditCost === 1 ? "" : "s"}
+                          </p>
+                        </div>
+                        <p className="shrink-0 text-xs tabular-nums text-slate-500 sm:w-24 sm:text-right">
+                          {row.isFull ? (
+                            <span className="text-red-400">Full</span>
+                          ) : (
+                            `${row.seatsLeft} seat${row.seatsLeft === 1 ? "" : "s"} left`
+                          )}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handleBook(row)}
+                          disabled={disabled}
+                          className="shrink-0 rounded-lg border border-amber-400/40 px-4 py-2 text-xs font-semibold text-amber-300 transition hover:border-amber-400 hover:bg-amber-400/10 disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
+                        >
+                          {bookingKey === key ? "Booking…" : row.isFull ? "Full" : insufficientCredits ? "Not enough credits" : "Book"}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
+              </section>
+            ))}
           </div>
         )}
       </div>

@@ -108,7 +108,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
           <motion.div
             variants={backdropVariants}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+            className="absolute inset-0 bg-ink/60"
             onClick={handleClose}
           />
 
@@ -181,7 +181,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
                             className={`w-full rounded-xl border px-4 py-2.5 text-left text-sm font-medium transition ${
                               selected
                                 ? "border-amber-400 bg-amber-400/10 text-amber-300"
-                                : "border-white/10 text-slate-300 hover:border-white/20 hover:bg-slate-800/60"
+                                : "border-ink/10 text-slate-300 hover:border-ink/15 hover:bg-slate-800/60"
                             }`}
                           >
                             {choice}
@@ -198,7 +198,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
                           type="button"
                           onClick={() => setCurrentIndex((i) => i - 1)}
                           disabled={step === "submitting"}
-                          className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                          className="flex-1 rounded-xl border border-ink/10 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
                         >
                           Back
                         </button>
@@ -284,7 +284,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
                       <button
                         type="button"
                         onClick={handleClose}
-                        className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+                        className="flex-1 rounded-xl border border-ink/10 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
                       >
                         Done
                       </button>

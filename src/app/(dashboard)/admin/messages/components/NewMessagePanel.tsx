@@ -52,7 +52,7 @@ export function NewMessagePanel({
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
             placeholder="Search by name or email…"
-            className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+            className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
           />
         </div>
 
@@ -68,7 +68,7 @@ export function NewMessagePanel({
                   key={u.id}
                   type="button"
                   onClick={() => handleSelect(u)}
-                  className="flex w-full items-center gap-2.5 rounded-lg p-2.5 text-left transition hover:bg-white/5"
+                  className="flex w-full items-center gap-2.5 rounded-lg p-2.5 text-left transition hover:bg-ink/5"
                 >
                   <Avatar image={u.image} label={u.name ?? u.email} className="h-8 w-8 text-xs" />
                   <div className="min-w-0 flex-1">

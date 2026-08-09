@@ -24,7 +24,7 @@ export function PinnedGrid({
   if (pinned.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-3 gap-x-2 gap-y-4 border-b border-white/10 p-3">
+    <div className="grid grid-cols-3 gap-x-2 gap-y-4 border-b border-ink/10 p-3">
       {pinned.map((c) => {
         const showBadge = c.isTyping || c.unreadCount > 0;
         const active = activeFriendId === c.friendId;
@@ -35,7 +35,7 @@ export function PinnedGrid({
                 type="button"
                 onClick={() => onSelect(c.friendId)}
                 className={`overflow-hidden rounded-full border-2 transition ${
-                  active ? "border-amber-400" : "border-white/10 hover:border-white/25"
+                  active ? "border-amber-400" : "border-ink/10 hover:border-ink/20"
                 }`}
               >
                 <Avatar image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-16 w-16 text-lg" />
@@ -43,8 +43,8 @@ export function PinnedGrid({
 
               {showBadge && (
                 <span
-                  className={`absolute -right-2 -top-1 flex max-w-[6rem] items-center justify-center rounded-full border border-white/10 px-2 py-1 text-[10px] font-medium shadow-lg ${
-                    c.isTyping ? "bg-amber-400 text-slate-950" : "bg-slate-900/95 text-slate-100 backdrop-blur"
+                  className={`absolute -right-2 -top-1 flex max-w-[6rem] items-center justify-center rounded-full border border-ink/10 px-2 py-1 text-[10px] font-medium shadow-lg ${
+                    c.isTyping ? "bg-amber-400 text-slate-950" : "bg-white text-slate-100"
                   }`}
                 >
                   {c.isTyping ? <TypingIndicator /> : truncateSnippet(c.lastMessageBody ?? "")}
@@ -58,7 +58,7 @@ export function PinnedGrid({
                   onTogglePin(c.friendId);
                 }}
                 aria-label="Unpin conversation"
-                className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-white/10 bg-slate-950 text-amber-400 shadow transition hover:bg-slate-900 hover:text-amber-300"
+                className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 bg-slate-950 text-amber-400 shadow transition hover:bg-slate-900 hover:text-amber-300"
               >
                 <PinIcon filled className="h-3 w-3" />
               </button>

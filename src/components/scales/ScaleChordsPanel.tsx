@@ -23,7 +23,7 @@ export function ScaleChordsPanel({ variant, root }: ScaleChordsPanelProps) {
 
       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {chords.map(({ spec, chord }, i) => (
-          <div key={`${spec.label}-${i}`} className="rounded-xl border border-white/10 bg-slate-950/60 p-4">
+          <div key={`${spec.label}-${i}`} className="rounded-xl border border-ink/10 bg-slate-900 p-4">
             {/* Roman-numeral casing is meaningful here (I vs i signals major vs minor quality) — no uppercase transform. */}
             <p className="text-xs font-medium tracking-wide text-slate-500">{spec.label}</p>
             <p className="mt-1 font-serif text-2xl text-amber-300">{chord.symbol}</p>

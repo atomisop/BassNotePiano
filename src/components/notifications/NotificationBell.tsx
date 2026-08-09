@@ -132,7 +132,7 @@ export function NotificationBell() {
         onClick={() => setOpen(true)}
         aria-label="Notifications"
         data-tour="notification-bell"
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-slate-400 backdrop-blur-md transition hover:border-white/20 hover:bg-white/5 hover:text-slate-200"
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-ink/10 bg-white text-slate-400 transition hover:border-ink/15 hover:bg-ink/5 hover:text-slate-200"
       >
         <BellIcon />
         {unreadCount > 0 && (
@@ -151,24 +151,18 @@ export function NotificationBell() {
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", stiffness: 320, damping: 34 }}
-                // No backdrop-blur: 95% opaque already reads solid, and this
-                // panel scrolls its own notification list underneath it, so
-                // dropping the blur removes a heavy repaint on every scroll
-                // frame in here, not just during the slide-in. (Was
-                // bg-slate-950/98 — that opacity value silently produced no
-                // CSS at all in this Tailwind setup, so the panel was
-                // actually fully transparent this whole time and only
-                // "looked" solid because of the blur; /95 is a real, working
-                // value and fixes that too.)
+                // Opaque white panel. This one scrolls its own notification
+                // list, so a blur here would have cost a repaint on every
+                // scroll frame inside the panel, not just during the slide-in.
                 style={{ willChange: "transform" }}
-                className="fixed inset-0 z-50 flex flex-col bg-slate-950/95"
+                className="fixed inset-0 z-50 flex flex-col bg-white"
               >
-                <div className="flex items-center gap-4 border-b border-white/10 px-6 py-5">
+                <div className="flex items-center gap-4 border-b border-ink/10 px-6 py-5">
                   <button
                     type="button"
                     onClick={() => setOpen(false)}
                     aria-label="Back"
-                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-slate-300 transition hover:border-white/20 hover:bg-white/5"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-ink/10 text-slate-300 transition hover:border-ink/15 hover:bg-ink/5"
                   >
                     <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
                       <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
@@ -192,7 +186,7 @@ export function NotificationBell() {
                 <div className="mx-auto w-full max-w-xl flex-1 overflow-y-auto px-6 py-6">
                   {notifications.length === 0 ? (
                     <div className="flex flex-col items-center gap-3 pt-20 text-center">
-                      <span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/10 text-slate-600">
+                      <span className="flex h-14 w-14 items-center justify-center rounded-full border border-ink/10 text-slate-600">
                         <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
                           <path
                             d="M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5z"
@@ -221,7 +215,7 @@ export function NotificationBell() {
                         // zero visible frosting; with up to 15 rows in a
                         // scrolling list, that added up fast.
                         const itemClassName =
-                          "flex w-full items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-left transition hover:bg-white/5";
+                          "flex w-full items-start gap-3 rounded-xl border border-ink/10 bg-white px-4 py-3.5 text-left transition hover:bg-ink/5";
                         const inner = (
                           <>
                             <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-amber-400"}`} />

@@ -22,7 +22,7 @@ export function SiteFooter() {
   const isLoggedIn = Boolean(session?.user);
 
   return (
-    <GradientFooter className="relative border-t border-white/5">
+    <GradientFooter className="relative border-t border-ink/5">
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pt-16">
         <div className="grid grid-cols-1 gap-10 pb-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-2">
@@ -83,7 +83,7 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="border-t border-white/5 py-6 text-center text-xs text-slate-600">
+        <div className="border-t border-ink/5 py-6 text-center text-xs text-slate-600">
           © {new Date().getFullYear()} Bass Note Piano.
         </div>
       </div>

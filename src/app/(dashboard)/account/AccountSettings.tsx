@@ -76,13 +76,13 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
 // pushes a full-screen SlideOverPanel instead of swapping content in place.
 function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
   return (
-    <div className="glass-surface divide-y divide-white/10 lg:hidden">
+    <div className="glass-surface divide-y divide-ink/10 lg:hidden">
       {TABS.map((tab) => (
         <button
           key={tab.id}
           type="button"
           onClick={() => onSelect(tab.id)}
-          className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-white/5"
+          className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-ink/5"
         >
           <TabIcon path={tab.icon} className="h-5 w-5 shrink-0 text-slate-400" />
           <span className="flex-1 text-sm text-slate-100">{tab.label}</span>
@@ -204,7 +204,7 @@ function MembershipSection({
 }) {
   return (
     <SectionCard title="Membership & purchases" description="Your plan, class credits, and payment history.">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink/10 p-4">
         <div>
           <p className="text-sm text-slate-100">{hasCurriculumAccess ? "Curriculum unlocked" : "Curriculum not yet purchased"}</p>
           <p className="mt-0.5 text-xs text-slate-500">
@@ -221,7 +221,7 @@ function MembershipSection({
         )}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 p-4">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink/10 p-4">
         <div>
           <p className="text-sm text-slate-100">Weekly class credits</p>
           <p className="mt-0.5 text-xs text-slate-500">
@@ -230,7 +230,7 @@ function MembershipSection({
         </div>
         <Link
           href="/billing/lessons"
-          className="rounded-lg border border-white/15 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-200"
+          className="rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-200"
         >
           Buy credits
         </Link>
@@ -238,7 +238,7 @@ function MembershipSection({
 
       <Link
         href="/billing/history"
-        className="mt-3 flex items-center justify-between rounded-xl border border-white/10 p-4 text-sm text-slate-200 transition hover:border-amber-400/30 hover:text-amber-200"
+        className="mt-3 flex items-center justify-between rounded-xl border border-ink/10 p-4 text-sm text-slate-200 transition hover:border-amber-400/30 hover:text-amber-200"
       >
         Payment history
         <span className="text-slate-500">→</span>
@@ -289,7 +289,7 @@ function PasswordSection() {
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
           disabled={submitting}
-          className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
         />
         <input
           type="password"
@@ -299,7 +299,7 @@ function PasswordSection() {
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           disabled={submitting}
-          className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
         />
         <input
           type="password"
@@ -309,7 +309,7 @@ function PasswordSection() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           disabled={submitting}
-          className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
         />
 
         {error && <p className="text-xs text-red-400">{error}</p>}

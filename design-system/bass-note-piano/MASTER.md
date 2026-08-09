@@ -1,92 +1,101 @@
 # Bass Note Piano — Design System (Master)
 
-**Dynamic Glass.** This replaces the retired "Modern Dark" system (flat `slate-950` background, three blurred ambient color orbs, instrument photography boxed into small thumbnails). That system is gone — nothing here carries its imagery pattern or ambient-orb background forward.
+**Editorial Paper.** This replaces the retired "Dynamic Glass" system (full-bleed photographic backdrops behind every screen, frosted `backdrop-filter` panels floating on top, near-black `slate-950` ground). That system is gone. Nothing here carries its wallpaper-photography pattern or its blur-based material forward.
 
-Core idea: **photography is the environment, not decoration inside furniture.** Every screen sits on a full-bleed photographic backdrop — piano keys, guitar, violin, sheet music, vinyl — graded warm and desaturated. Real glass floats above it: frosted panels that pick up light and blur from the photo behind them, not from a flat color.
+Core idea: **the product is a digital companion to a printed curriculum book, so it is built like fine print.** A warm paper ground, ink text, one rust accent, and depth that comes from hairlines and a crisp white card lifted off the paper — never from blur.
 
-Generated with the `ui-ux-pro-max` skill (which independently validated the existing Playfair Display + Inter pairing and glassmorphism direction as "elegant, editorial, luxury" — this rebuild changes what's *behind* the glass and how the glass itself is built, not the typographic/color identity). Source of truth for every page. Page-specific overrides, if ever needed, go in `pages/<name>.md` and win over this file.
+Generated with the `ui-ux-pro-max` skill, which independently returned *Editorial Grid / Magazine* as the style and *"Warm ink + amber accent on cream"* as the palette for this product type, and re-validated the existing Playfair Display + Inter pairing. The typographic identity is unchanged; what changed is the **ground** (dark → paper), the **material** (glass → card), and the **role of photography** (wallpaper → subject).
 
-## Color tokens (unchanged from before — these were never the problem)
+## Why the palettes are overridden rather than renamed
 
-| Token | Value | Usage |
-|---|---|---|
-| `--bg` | `slate-950` (#020617) | Base fallback color, page background where no backdrop is present |
-| `--fg` | `slate-100` | Primary text |
-| `--fg-muted` | `slate-300` / `slate-400` | Secondary text over photo backdrops (lighter than the old system — needs more contrast against imagery) |
-| `--fg-faint` | `slate-500` / `slate-600` | Tertiary/meta text, only ever over the solid `bg-slate-950` base, never directly over a photo |
-| `--accent` | `amber-400` (#fbbf24) | The one accent — CTAs, active states, links, prices, glow tints. No `gold-*`/`orange-*`/`yellow-*` substitutes, ever. |
-| `--accent-strong` | `amber-300` (#fcd34d) | Accent hover/emphasis |
-| `--positive` | `emerald-400` | Success, discounts, verified states |
-| `--negative` | `red-400` | Errors, rejections |
+`tailwind.config.ts` redefines the `slate` and `amber` ramps in place. The codebase already used both semantically and consistently across ~1,450 utility usages in 113 files — `slate` as the ground↔text ramp, `amber` as the single accent. Redefining the ramps converts all of them coherently instead of hand-editing every file and inevitably missing some. This is the same technique the previous system already used to turn "amber" into a dusty rose; it was extended, not invented.
+
+Both ramps are **inverted** relative to a dark theme. In the old system a low number meant "brighter than the ground"; here it means "darker than the ground." So `text-slate-50` is still the strongest text and `bg-slate-950` is still the page — every existing className kept its intended meaning through the flip.
+
+**Consequence to know about:** changing `tailwind.config.ts` requires a full dev-server restart. Hot reload silently serves the previous palette and you will chase a bug that isn't there.
+
+## Color tokens
+
+Every value is contrast-checked against the page ground `#FAF6EC`. Nothing used for text falls below WCAG AA 4.5:1.
+
+| Token | Value | Ratio | Usage |
+|---|---|---|---|
+| `slate-950` | `#FAF6EC` | — | The page. Also the text colour set *on* the accent. |
+| `slate-900` | `#F3EDE0` | — | Tinted panel |
+| `slate-800` | `#E8E0CE` | — | Fills, borders |
+| `slate-700` | `#D5CAB4` | — | Strong rule, inactive marker |
+| `slate-600` | `#736A5E` | 5.0:1 | Faintest text that still passes AA |
+| `slate-500` | `#655C51` | 6.1:1 | Meta |
+| `slate-400` | `#574F45` | 7.5:1 | Secondary |
+| `slate-300` | `#453E36` | 9.9:1 | Body |
+| `slate-200` | `#35302A` | 12.3:1 | Strong body |
+| `slate-100` | `#262119` | 14.8:1 | Primary text |
+| `slate-50` | `#1A150F` | 17.1:1 | Display headings |
+| `amber-400` | `#A04E1E` | 5.4:1 | **The accent.** Works as a fill (paper text on it) and as text (on paper) at the same ratio — which is what lets `bg-amber-400` and `text-amber-400` both stay legible. |
+| `amber-300` | `#7F3D14` | 7.6:1 | Hover (darker), eyebrow text |
+| `amber-200/100` | `#6B330F` / `#5A2A0C` | 9.3 / 11.0:1 | Inline emphasis |
+| `amber-500` | `#C2691F` | — | Decorative gradient stops only |
+| `emerald-400` | `#1F7A45` | 5.0:1 | Success, as fill and as text |
+| `red-400` / `red-500` | `#B32318` / `#C2321F` | 6.1 / 5.2:1 | Error, destructive fill |
+| `ink` | `#1A150F` | — | Hairlines and tints, via `ink/5`–`ink/60`. Replaces the old `white/N` alphas, which are invisible on paper. |
 
 ## Typography (unchanged)
 
 - Display/headings: `font-serif` → Playfair Display, weights 500–700.
-- Body/UI: `font-sans` (default) → Inter.
-- Eyebrow labels: `text-xs font-medium uppercase tracking-[0.2em] text-amber-300` (over photos) or `text-amber-400/80` (over solid backgrounds) — the recurring "kicker" pattern above section headings.
+- Body/UI: `font-sans` → Inter.
+- Eyebrow: use the `.eyebrow` class, not a hand-rolled `text-xs uppercase tracking-…` each time.
 
-## Photography — the environment
+## Material primitives (`src/app/globals.css`)
 
-Every backdrop is registered in `src/lib/backdrops.ts` (`BACKDROPS` object) — no page hardcodes a raw Unsplash URL. All warm, desaturated, cinematic, no visible third-party brand logos. Assigned by **context**, not by page, so navigating between pages that share a context never flashes a different photo:
+**There is no `backdrop-filter` anywhere in this system, by design.** The previous system's blur sat on every card, in every scrollable list, and was the single largest scroll cost in the app — it had already been walked back once for jank. Paper has no such cost.
 
-| Context | Image | Where it's rendered |
-|---|---|---|
-| Marketing hero | B&W grand piano, hand on keys, warm bokeh | `(marketing)/page.tsx` hero section, scroll-scoped |
-| Marketing — curriculum | Grand piano in an atmospheric room — distinct from the hero's close-up shot | `(marketing)/page.tsx` "The curriculum" section, scroll-scoped |
-| Marketing — guitar | Acoustic guitar, golden-hour light | `(marketing)/page.tsx` "every instrument" section, scroll-scoped |
-| Marketing — violin | Close-up hand on strings, warm tone | `(marketing)/page.tsx` "every instrument" section, scroll-scoped |
-| Classes page | Vintage sheet music, warm prism light | `(marketing)/classes/page.tsx`, fixed for that page |
-| Pricing page | Vinyl record, warm and dark | `(marketing)/pricing/page.tsx`, fixed for that page |
-| Auth (all 5 screens) | Moody upright piano, dim warm room | `(auth)/layout.tsx`, fixed — shared across login/register/forgot/reset/verify so switching screens never re-flashes a photo |
-| App shell (every authenticated page) | Piano keys close-up, warm, even tone | `(dashboard)/layout.tsx`, fixed — shared across dashboard/lessons/friends/messages/profile/billing/admin/everything behind auth |
+- **`.glass-surface`** — the default surface: a crisp white card on warm paper. Elevation comes from the tonal step between `#FFFFFF` and `#FAF6EC` plus a tight warm shadow. (Name kept so the ~78 existing usages didn't all need touching.)
+- **`.glass-surface-elevated`** — the ONE primary element per screen. Distinguished by an accent hairline and a slightly deeper lift, not a different material. Using it twice on a screen stops it meaning "the important one."
+- **`.glass-pill`** — chips, nav pills, filter tags, badges.
+- **`.rule`** — full-measure hairline, the way a rule separates sections in print.
+- **`.eyebrow`** — the recurring kicker above a heading.
 
-Marketing pages get **multiple** backdrops (one per section, parallax-scoped to that section as the user scrolls through). Auth and the app shell each get **one** backdrop, rendered once in their layout and left alone — persistent, not re-triggered on navigation.
+Borders and shadows on these three surfaces are raw `rgba`, not Tailwind opacity utilities: this project has a reproducible quirk where some arbitrary opacity modifiers compile to nothing, and these classes back every surface in the app.
 
-## Material primitives (`src/app/globals.css`, replaces the old `.glass-card`/`.glass-panel`)
+## Photography — the subject, never the bed
 
-- **`.glass-surface`** — the default frosted panel. `backdrop-blur-xl`, light direction is deliberate (bright highlight top/left border, soft shadow bottom/right) so it reads as an actual pane of glass, not a flat semi-transparent box with a uniform border.
-- **`.glass-surface-elevated`** — reserved for the **one** primary/highlighted element per screen (was the amber-tinted accent-card pattern). Stronger blur (`backdrop-blur-2xl`), brighter edge highlight, faint amber-400 inner glow. Using it twice on the same screen defeats the point — it stops meaning "the important one."
-- **`.glass-pill`** — nav pills, chips, badges, filter tags. Same material language, `backdrop-blur-md`, rounded-full.
-- **Dense variant**: for admin pages and other data-dense surfaces, add `backdrop-blur-2xl` alongside `.glass-surface`/`.glass-surface-elevated` (e.g. `className="glass-surface backdrop-blur-2xl p-5"`) so the backdrop photo stays atmospheric texture and never competes with table rows or dense text for attention.
+The old system wallpapered every screen, including the whole authenticated app, with a piano photo. On paper that reads as a smudge under the text, and it forced a heavy scrim that muddied every surface above it. Now:
 
-### Scrims (`.backdrop-scrim-light` / `.backdrop-scrim` / `.backdrop-scrim-dense`)
+- **App shell and auth: no photographic backdrop at all.** Removed from `(dashboard)/layout.tsx` and `(auth)/layout.tsx`.
+- **Marketing pages keep `<PhotoBackdrop>`,** but the scrims are far stronger than the dark system's. On a dark page, light text over a lightly-veiled photo is legible because the photo's midtones are darker than the type. Inverted, that stops being true — ink text over a half-visible photo lands on whatever tone happens to sit behind each glyph. So the photo is pushed to a ghost the type sits on, never competes with.
+- Anything that must be genuinely dark regardless of theme — a phone bezel, the onboarding spotlight scrim — is hardcoded, not tokenised. A phone chassis is a real object, not a themed surface.
 
-Non-negotiable, not a style choice — this is what guarantees WCAG AA text contrast (4.5:1 body, 3:1 large text) over a photo. Three strengths, set via `<PhotoBackdrop scrim="...">`:
-- `light` — marketing/auth hero, let more of the photo read through.
-- `standard` — default.
-- `dense` — admin / data-dense surfaces; used for the app-shell backdrop specifically, since it sits behind every kind of UI including tables and forms.
+## Layout & hierarchy rules
 
-All three gradients reach fully-opaque `rgba(2,6,23,1)` — exactly `bg-slate-950` — by ~80–85% down the backdrop, paired with `.backdrop-glow-smoke` (a blurred, amber-tinted radial glow layered into that opaque tail). A `<PhotoBackdrop>` section dissolves into whatever follows it — a solid section, or the next photo — instead of visibly cutting off at a hard rectangular edge. This is baked into `<PhotoBackdrop>` itself; every usage gets it for free.
-
-### `<PhotoBackdrop>` (`src/components/ui/PhotoBackdrop.tsx`)
-
-The one implementation every page consumes instead of copy-pasted markup. `next/image` with `fill` + `object-cover`, scrim baked in as a stacked layer, optional scroll-linked parallax (`parallax` prop — on for marketing sections, off for the persistent auth/app-shell backdrops). Always renders `absolute inset-0` — the calling code decides whether its positioned parent is `fixed inset-0` (persistent shell/auth backdrop) or a `relative` section (marketing, scoped to that section). Respects `prefers-reduced-motion` by disabling the parallax transform entirely.
+- **Lists are one card with divided rows**, not a stack of separate floating cards. Seven identically-shadowed pills read as seven equally-urgent things.
+- **Group long lists by the unit the reader plans in** — the class schedule groups by "This week / Next week / Later"; booking history groups by month.
+- **One solid accent fill per screen, maximum.** Repeated solid-accent buttons down a page make the accent mean nothing; secondary actions use the outline treatment (`border-amber-400/40 text-amber-300`).
+- **A card's primary action must look like a control** — bordered, with an arrow if it navigates. Not a bare coloured word.
 
 ## Motion
 
-- Entrance pattern (unchanged, still correct): fade + rise, spring `stiffness 240–260, damping 24–26`, `0.06–0.12s` stagger via Framer Motion `variants`.
-- **`<TiltGlow>`** (`src/components/ui/TiltGlow.tsx`) — cursor-reactive tilt + a specular highlight that follows the pointer, for hero-level `.glass-surface-elevated` panels. Small tilt range (±4–5°) deliberately — reads as a physical material reacting to light, not a gimmick. One per screen, same rule as `.glass-surface-elevated` itself. Fully inert under `prefers-reduced-motion` (tilt locks to 0, glow stops following).
-- **`.cta-sheen`** — one-shot light-band sweep across primary CTA buttons on hover. Pure CSS, no JS. Apply to the single primary action per form/card, not every button. Inert under `prefers-reduced-motion` (the band never moves).
-- **`<ContainerScroll>`** (`src/components/ui/container-scroll-animation.tsx`) — a scroll-linked 3D tilt/scale primitive for a floating `.glass-surface-elevated` panel. Not currently used on the homepage hero (removed — a content-light "Scale 0/1/2…" summary panel there was redundant with the full curriculum grid directly below it, and the hero reads better full-width with nothing floating on top of the photo). Still available for a future single-panel-over-photo moment. Its `offset: ["start start", "end start"]` on `useScroll` is deliberate — the default offset pairing breaks (pins the transform near its end value at rest) when the scrolling section sits at the very top of the page or is shorter than the viewport. Settles flat under `prefers-reduced-motion`.
-- Marketing section backdrops parallax at a modest drift (±6%) as the page scrolls, always slower than the foreground content — never under `prefers-reduced-motion`.
-- Hover: 150–300ms ease transitions on every clickable surface; `cursor-pointer` on anything clickable that isn't natively a `<button>`/`<a>`.
-- Focus rings stay visible for keyboard nav everywhere — never strip `outline` without a replacement focus-visible ring.
+- Entrance: fade + rise, spring `stiffness 240–260, damping 24–26`, `0.06–0.12s` stagger via Framer Motion variants.
+- `<TiltGlow>` — cursor-reactive tilt with a warm rust wash (a light-on-light highlight is invisible on a white card). One per screen.
+- `.cta-sheen` — one-shot warm light band across the single primary CTA per form/card.
+- Marketing backdrops parallax at ±6%, never under `prefers-reduced-motion`.
+- Hover 150–300ms on every clickable surface; focus rings always intact.
 
-## Layout scale (unchanged)
+## Verification notes
 
-- Density: standard — `p-5`/`p-6`/`p-8` cards, `gap-3`/`gap-4` grids, `py-16`–`py-36` section rhythm on marketing pages (full-bleed backdrop sections run taller, `py-28`–`py-36`, to give the photo room to read).
-- Max widths: `max-w-6xl` marketing sections, `max-w-3xl`/`max-w-2xl` copy-focused sections, `max-w-lg`/`max-w-sm` dashboard forms — unchanged.
+- **Screenshot with Playwright, not the in-app preview pane.** That pane does not run framer-motion's mount animations, so `initial="hidden"` content photographs as blank and looks like a rendering bug. Playwright renders it correctly.
+- For full-page captures, scroll the page first so `whileInView` sections animate in — otherwise the capture shows holes where those sections are.
 
-## Pre-delivery checklist (applies to every page touched)
+## Pre-delivery checklist
 
-- [ ] Cards/panels use `.glass-surface` (or `.glass-surface-elevated` for the ONE primary element on that screen) — no ad-hoc `bg-slate-900 border` one-offs, no leftover `.glass-card`/`.glass-panel` references
-- [ ] Every photo backdrop has a scrim; text over it hits WCAG AA contrast against the scrim, not the raw photo
-- [ ] Admin/dense surfaces add `backdrop-blur-2xl`
+- [ ] Cards use `.glass-surface` (or `.glass-surface-elevated` for the ONE primary element) — no ad-hoc `bg-white border` one-offs
+- [ ] No `backdrop-filter` anywhere
+- [ ] No `white/N` alphas — hairlines are `ink/N`
+- [ ] Text tokens only from the table above; nothing lighter than `slate-600` used for text
+- [ ] At most one solid `bg-amber-400` action per screen
 - [ ] No emoji-as-icon — SVG only
 - [ ] `cursor-pointer` on every clickable non-native element
-- [ ] Hover states, 150–300ms transition; primary CTAs get `.cta-sheen`
-- [ ] Focus rings intact for keyboard nav
-- [ ] `prefers-reduced-motion` respected everywhere motion was added (parallax, tilt-glow, sheen, ContainerScroll)
+- [ ] Hover states, 150–300ms; focus rings intact
+- [ ] `prefers-reduced-motion` respected
 - [ ] No horizontal scroll at 375px
-- [ ] Headings use `font-serif`, body uses default sans
-- [ ] Accent color is `amber-*` only
+- [ ] Headings `font-serif`, body default sans
+- [ ] Accent is `amber-*` only

@@ -40,7 +40,7 @@ function NavItem({
       className={`relative flex flex-col items-center gap-1 rounded-xl border px-2 py-2.5 text-center transition ${
         active
           ? "border-amber-400/20 bg-amber-400/10 text-amber-300"
-          : "border-transparent text-slate-500 hover:border-white/10 hover:bg-white/5 hover:text-slate-200"
+          : "border-transparent text-slate-500 hover:border-ink/10 hover:bg-ink/5 hover:text-slate-200"
       }`}
     >
       <NavIcon path={icon} />
@@ -56,11 +56,16 @@ function NavItem({
 
 // Below md, the MobileTabBar takes over navigation entirely — this rail
 // only renders from md up, where there's room for it without clutter.
+//
+// A white rail against the cream page: the separation comes from the tonal
+// step plus a single hairline, the way a sidebar column is set off in print.
+// Widened from w-24 — "Online Lessons" wrapped to two cramped lines at the
+// old width.
 export function Sidebar({ name, isAdmin, unreadMessageCount }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden h-full w-24 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-white/10 bg-slate-950/40 py-5 backdrop-blur-lg md:flex">
+    <aside className="hidden h-full w-28 shrink-0 flex-col items-center gap-1 overflow-y-auto border-r border-ink/10 bg-white py-5 md:flex">
       <nav className="flex w-full flex-col items-center gap-1 px-2">
         {NAV_ITEMS.map((item) => (
           <NavItem
@@ -78,7 +83,7 @@ export function Sidebar({ name, isAdmin, unreadMessageCount }: SidebarProps) {
         )}
       </nav>
 
-      <div className="my-4 h-px w-8 shrink-0 bg-white/10" />
+      <div className="my-4 h-px w-8 shrink-0 bg-ink/5" />
 
       <NavItem href="/profile" label="Profile" icon={ICON_PATHS.profile} active={pathname === "/profile"} dataTour="nav-profile" />
 
@@ -91,7 +96,7 @@ export function Sidebar({ name, isAdmin, unreadMessageCount }: SidebarProps) {
           type="button"
           onClick={() => signOut({ callbackUrl: "/" })}
           title={name ? `Sign out (${name})` : "Sign out"}
-          className="flex flex-col items-center gap-1 rounded-xl border border-transparent px-2 py-2.5 text-center text-slate-500 transition hover:border-white/10 hover:bg-white/5 hover:text-slate-200"
+          className="flex flex-col items-center gap-1 rounded-xl border border-transparent px-2 py-2.5 text-center text-slate-500 transition hover:border-ink/10 hover:bg-ink/5 hover:text-slate-200"
         >
           <NavIcon path={ICON_PATHS.logout} />
           <span className="text-[10px] font-medium leading-none">Sign out</span>

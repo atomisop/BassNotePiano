@@ -57,7 +57,7 @@ export function ProOverrideConfirmModal({
           <motion.div
             variants={backdropVariants}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+            className="absolute inset-0 bg-ink/60"
             onClick={isConfirming ? undefined : onCancel}
           />
 
@@ -69,7 +69,7 @@ export function ProOverrideConfirmModal({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="relative w-full max-w-sm rounded-2xl border border-amber-400/20 bg-slate-900/80 backdrop-blur-2xl p-6 shadow-[0_0_60px_-15px_rgba(217,180,88,0.35)]"
+            className="glass-surface-elevated relative w-full max-w-sm p-6"
           >
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Curriculum access</p>
             <h2 id="override-modal-title" className="mt-1.5 font-serif text-lg text-slate-50">
@@ -85,7 +85,7 @@ export function ProOverrideConfirmModal({
                 type="button"
                 onClick={onCancel}
                 disabled={isConfirming}
-                className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex-1 rounded-xl border border-ink/10 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Go back
               </button>

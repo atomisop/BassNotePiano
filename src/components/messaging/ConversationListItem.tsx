@@ -17,7 +17,7 @@ export function ConversationListItem({
 }) {
   const c = conversation;
   return (
-    <div className={`group flex items-center gap-1 rounded-lg transition ${active ? "bg-amber-400/10" : "hover:bg-white/5"}`}>
+    <div className={`group flex items-center gap-1 rounded-lg transition ${active ? "bg-amber-400/10" : "hover:bg-ink/5"}`}>
       <button type="button" onClick={onSelect} className="flex min-w-0 flex-1 items-center gap-2.5 p-2.5 text-left">
         <Avatar image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-9 w-9 text-xs" />
         <div className="min-w-0 flex-1">
@@ -38,7 +38,7 @@ export function ConversationListItem({
         type="button"
         onClick={onTogglePin}
         aria-label="Pin conversation"
-        className="mr-1.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-500 opacity-40 transition hover:bg-white/10 hover:text-amber-300 hover:opacity-100 group-hover:opacity-100"
+        className="mr-1.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-500 opacity-40 transition hover:bg-ink/5 hover:text-amber-300 hover:opacity-100 group-hover:opacity-100"
       >
         <PinIcon />
       </button>

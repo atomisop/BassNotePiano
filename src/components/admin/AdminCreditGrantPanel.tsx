@@ -127,7 +127,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search students by name or email…"
-          className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
         />
 
         <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">
@@ -141,7 +141,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 type="button"
                 onClick={() => selectUser(user)}
                 className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${
-                  active ? "border-amber-400/50 bg-amber-400/10" : "border-white/10 hover:border-white/20 hover:bg-white/5"
+                  active ? "border-amber-400/50 bg-amber-400/10" : "border-ink/10 hover:border-ink/15 hover:bg-ink/5"
                 }`}
               >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-amber-400/15 text-sm font-medium text-amber-300">
@@ -183,7 +183,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="e.g. 4 or -2"
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+                  className="mt-1 w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
                 />
               </div>
               <div>
@@ -196,7 +196,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   onChange={(e) => setReason(e.target.value)}
                   rows={2}
                   placeholder="e.g. Paid via Venmo instead of Zelle"
-                  className="mt-1 w-full resize-none rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+                  className="mt-1 w-full resize-none rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
                 />
               </div>
 
@@ -218,7 +218,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 {historyLoading && <p className="text-xs text-slate-500">Loading…</p>}
                 {!historyLoading && history.length === 0 && <p className="text-xs text-slate-500">No adjustments yet.</p>}
                 {history.map((row) => (
-                  <div key={row.id} className="rounded-lg border border-white/10 px-3 py-2 text-xs">
+                  <div key={row.id} className="rounded-lg border border-ink/10 px-3 py-2 text-xs">
                     <div className="flex items-center justify-between gap-2">
                       <span className={row.amount > 0 ? "font-medium text-emerald-300" : "font-medium text-red-300"}>
                         {formatSigned(row.amount)} credits

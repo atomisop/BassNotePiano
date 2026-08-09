@@ -1,6 +1,7 @@
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
+import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { TermsContent, TERMS_LAST_UPDATED } from "@/components/legal/TermsContent";
 
 // Public and auth-independent on purpose — this is what registration and
@@ -26,9 +27,7 @@ export default function TermsPage() {
         </div>
       </section>
 
-      <footer className="relative border-t border-white/10 px-6 py-8 text-center text-xs text-slate-400">
-        Bass Note Piano — a digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book.
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

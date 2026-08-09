@@ -245,18 +245,21 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
             left: targetRect.left - SPOTLIGHT_PAD,
             width: targetRect.width + SPOTLIGHT_PAD * 2,
             height: targetRect.height + SPOTLIGHT_PAD * 2,
-            boxShadow: "0 0 0 9999px rgba(2,6,23,0.78)",
-            border: "2px solid rgba(251,191,36,0.6)",
+            // Ink scrim, not navy: the spotlight still has to darken a light
+            // page to isolate its target, so this is one of the few places
+            // that stays genuinely dark in the paper system.
+            boxShadow: "0 0 0 9999px rgba(26,21,15,0.62)",
+            border: "2px solid rgba(160,78,30,0.85)",
           }}
         />
       ) : (
-        <div className="fixed inset-0 bg-slate-950/80" onClick={handleSkip} />
+        <div className="fixed inset-0 bg-ink/60" onClick={handleSkip} />
       )}
 
       {/* Coiled connector — only drawn when there's a real target to point at. */}
       {targetRect && layout && (
         <svg className="pointer-events-none fixed inset-0 h-full w-full" aria-hidden>
-          <path d={layout.path} fill="none" stroke="rgba(251,191,36,0.55)" strokeWidth="2" strokeDasharray="1 7" strokeLinecap="round" />
+          <path d={layout.path} fill="none" stroke="rgba(232,180,140,0.9)" strokeWidth="2" strokeDasharray="1 7" strokeLinecap="round" />
         </svg>
       )}
 
@@ -300,7 +303,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
               <button
                 type="button"
                 onClick={goBack}
-                className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/5"
+                className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-ink/5"
               >
                 Back
               </button>

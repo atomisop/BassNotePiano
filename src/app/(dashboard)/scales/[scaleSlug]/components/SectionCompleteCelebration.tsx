@@ -50,7 +50,7 @@ export function SectionCompleteCelebration({
         <button
           type="button"
           onClick={onCourseDetails}
-          className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+          className="flex-1 rounded-xl border border-ink/10 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
         >
           Course Details
         </button>

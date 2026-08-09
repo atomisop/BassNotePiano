@@ -53,13 +53,13 @@ function DesktopAboutNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: 
 
 function MobileAboutMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
   return (
-    <div className="glass-surface divide-y divide-white/10 lg:hidden">
+    <div className="glass-surface divide-y divide-ink/10 lg:hidden">
       {TABS.map((tab) => (
         <button
           key={tab.id}
           type="button"
           onClick={() => onSelect(tab.id)}
-          className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-white/5"
+          className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-ink/5"
         >
           <TabIcon path={tab.icon} className="h-5 w-5 shrink-0 text-slate-400" />
           <span className="flex-1 text-sm text-slate-100">{tab.label}</span>

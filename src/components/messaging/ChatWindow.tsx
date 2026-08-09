@@ -75,7 +75,7 @@ export function ChatWindow({
 
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col">
-      <div className="flex items-center gap-2.5 border-b border-white/10 p-4">
+      <div className="flex items-center gap-2.5 border-b border-ink/10 p-4">
         <Avatar image={conversation.friendImage} label={conversation.friendName ?? conversation.friendUsername ?? "?"} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm text-slate-100">{conversation.friendName ?? "Unnamed"}</p>
@@ -91,7 +91,7 @@ export function ChatWindow({
           type="button"
           onClick={onMinimize}
           aria-label="Minimize chat"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/10 text-slate-400 transition hover:border-white/20 hover:bg-white/5 hover:text-slate-200"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-ink/10 text-slate-400 transition hover:border-ink/15 hover:bg-ink/5 hover:text-slate-200"
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
             <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
@@ -109,7 +109,7 @@ export function ChatWindow({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ type: "spring", stiffness: 250, damping: 25 }}
                 className={`max-w-[70%] rounded-2xl px-3.5 py-2 text-sm ${
-                  isMine ? "bg-amber-400 text-slate-950" : "border border-white/10 bg-slate-950 text-slate-100"
+                  isMine ? "bg-amber-400 text-slate-950" : "border border-ink/10 bg-slate-950 text-slate-100"
                 }`}
               >
                 <p className="whitespace-pre-wrap break-words">{m.body}</p>
@@ -121,14 +121,14 @@ export function ChatWindow({
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={handleSubmit} className="flex min-w-0 gap-2 border-t border-white/10 p-3">
+      <form onSubmit={handleSubmit} className="flex min-w-0 gap-2 border-t border-ink/10 p-3">
         <input
           type="text"
           value={draft}
           onChange={(e) => handleDraftChange(e.target.value)}
           placeholder="Write a message…"
           maxLength={2000}
-          className="min-w-0 flex-1 rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+          className="min-w-0 flex-1 rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
         />
         <button
           type="submit"

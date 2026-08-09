@@ -16,19 +16,18 @@ type Stop = { offset: number; color: string };
 const VBW = 1271;
 const VBH = 599;
 
-// Warmed slightly toward the site's amber palette (vs. a colder blue-heavy
-// original) so the glow reads as a signature accent rather than a generic
-// rainbow: dark ember floor -> warm gold -> near-white -> amber -> red-orange
-// -> magenta -> transparent pink at the top.
+// Retuned for paper. The original was built to glow out of a near-black
+// page, so its dark ember floor and magenta top read as a bruise on cream.
+// This is the same technique — a soft band rising from the floor — but as a
+// warm sunrise wash in the rust/amber family, dissolving into the paper
+// rather than into black.
 const DEFAULT_STOPS: Stop[] = [
-  { offset: 0, color: "#2a1608" },
-  { offset: 0.2, color: "#b8806f" },
-  { offset: 0.32, color: "#d1a094" },
-  { offset: 0.45, color: "#f5e6e0" },
-  { offset: 0.6, color: "#e8bf5a" },
-  { offset: 0.72, color: "#e0562a" },
-  { offset: 0.85, color: "#c73d8f" },
-  { offset: 1, color: "#c73d8f00" },
+  { offset: 0, color: "#B4581C" },
+  { offset: 0.22, color: "#CE7A2E" },
+  { offset: 0.42, color: "#E0A063" },
+  { offset: 0.62, color: "#EDC49B" },
+  { offset: 0.82, color: "#F6E2CB" },
+  { offset: 1, color: "#FAF6EC00" },
 ];
 
 function bellHeights(n: number, peak: number, valley: number): number[] {

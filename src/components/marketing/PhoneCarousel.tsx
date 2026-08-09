@@ -18,12 +18,15 @@ export interface PhoneScreenshot {
 function PhoneFrame({ src, alt }: PhoneScreenshot) {
   return (
     <div className="relative shrink-0 snap-center" style={{ width: 260 }}>
-      <div className="relative rounded-[2.5rem] border-[6px] border-slate-800 bg-slate-800 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.6)]">
+      {/* The bezel is hardcoded dark rather than tokenised: a phone's chassis
+          is a real object, not a themed surface, so it must not invert with
+          the rest of the palette. */}
+      <div className="relative rounded-[2.5rem] border-[6px] border-[#2A2521] bg-[#2A2521] shadow-[0_24px_48px_-18px_rgba(26,21,15,0.35)]">
         {/* Notch */}
-        <div className="absolute left-1/2 top-0 z-10 h-5 w-24 -translate-x-1/2 rounded-b-2xl bg-slate-800" />
+        <div className="absolute left-1/2 top-0 z-10 h-5 w-24 -translate-x-1/2 rounded-b-2xl bg-[#2A2521]" />
         {/* Side button */}
-        <div className="absolute -right-[7px] top-24 h-12 w-[3px] rounded-full bg-slate-700" />
-        <div className="relative aspect-[9/19.5] w-full overflow-hidden rounded-[2rem] bg-slate-950">
+        <div className="absolute -right-[7px] top-24 h-12 w-[3px] rounded-full bg-[#4A423C]" />
+        <div className="relative aspect-[9/19.5] w-full overflow-hidden rounded-[2rem] bg-white">
           <Image src={src} alt={alt} fill sizes="260px" className="object-cover object-top" />
         </div>
       </div>
