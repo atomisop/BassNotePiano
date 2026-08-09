@@ -10,6 +10,7 @@ import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { TiltGlow } from "@/components/ui/TiltGlow";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { ScrollToTopButton } from "@/components/marketing/ScrollToTopButton";
+import { SiteFooter } from "@/components/marketing/SiteFooter";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -236,9 +237,7 @@ export default function LandingPage() {
         </p>
       </motion.section>
 
-      <footer className="relative border-t border-white/5 px-6 py-8 text-center text-xs text-slate-600">
-        Bass Note Piano — a digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book.
-      </footer>
+      <SiteFooter />
 
       <ScrollToTopButton />
     </div>
