@@ -11,6 +11,7 @@ import { TiltGlow } from "@/components/ui/TiltGlow";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { ScrollToTopButton } from "@/components/marketing/ScrollToTopButton";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
+import { PhoneCarousel, type PhoneScreenshot } from "@/components/marketing/PhoneCarousel";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -80,6 +81,14 @@ const ROADMAP_STATUS_LABEL: Record<(typeof ROADMAP_PREVIEW)[number]["status"], s
   in_progress: "In progress",
   locked: "Locked",
 };
+
+// Real in-app screens, not staged mockups — captured directly from a
+// logged-in account (see public/screenshots/).
+const APP_SCREENSHOTS: PhoneScreenshot[] = [
+  { src: "/screenshots/dashboard.png", alt: "Roadmap dashboard showing scale progress, badges, and practice streak" },
+  { src: "/screenshots/lessons.png", alt: "Weekly class booking screen with credit balance and upcoming classes" },
+  { src: "/screenshots/profile.png", alt: "Profile page showing streak history and earned badges" },
+];
 
 const INSTRUMENT_SECTIONS = [
   {
@@ -217,6 +226,26 @@ export default function LandingPage() {
           </div>
         </motion.section>
       ))}
+
+      {/* ============ The app itself — real screens, phone-framed ============ */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ type: "spring", stiffness: 240, damping: 26 }}
+        className="relative mx-auto max-w-6xl px-0 py-20 text-center sm:px-6"
+      >
+        <p className="mx-auto mb-3 w-fit px-3 text-xs font-medium uppercase tracking-[0.2em] text-amber-300">
+          See it in action
+        </p>
+        <h2 className="mx-auto max-w-lg px-6 font-serif text-2xl text-slate-50 sm:text-3xl">
+          Your roadmap, badges, and classes — all in your pocket
+        </h2>
+        <p className="mx-auto mt-3 mb-10 max-w-md px-6 text-sm text-slate-400">
+          Real screens from inside Bass Note Piano — no mockups.
+        </p>
+        <PhoneCarousel images={APP_SCREENSHOTS} />
+      </motion.section>
 
       {/* ============ Pricing callout ============ */}
       <motion.section
