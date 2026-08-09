@@ -25,6 +25,55 @@ body {
   }
 }
 
+/* ==========================================================================
+   Page transitions
+   --------------------------------------------------------------------------
+   Driven by Next's `template.tsx`, which re-mounts on every navigation (a
+   layout would not), so the animation replays per route without any
+   AnimatePresence/exit choreography — App Router swaps the route before an
+   exit animation could finish, so enter-only is the honest thing to do here.
+
+   Two variants, and the difference is not cosmetic: `page-enter-fade` moves
+   nothing. The marketing header is `position: fixed`, and a transform on ANY
+   ancestor makes that ancestor the containing block, which would peel the
+   nav off the viewport and scroll it away mid-transition. Opacity alone
+   creates a stacking context but not a containing block, so it's safe there.
+   ========================================================================== */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes page-enter-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.page-enter {
+  animation: page-enter 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.page-enter-fade {
+  animation: page-enter-fade 260ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .page-enter-fade {
+    animation: none;
+  }
+}
+
 @layer components {
   /* ============================================================
      Material system
