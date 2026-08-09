@@ -253,11 +253,36 @@ export default function LandingPage() {
         transition={{ type: "spring", stiffness: 240, damping: 26 }}
         className="relative mx-auto max-w-2xl px-6 py-28 text-center"
       >
-        <TiltGlow className="glass-surface-elevated p-8 sm:p-10" maxTilt={4}>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-300">Everything, once</p>
-          <p className="mt-3 font-serif text-5xl text-slate-50">{formatUsd(CURRICULUM_PRICE_CENTS)}</p>
-          <p className="mt-2 text-sm text-amber-200/70">One-time payment · every scale, forever · no subscriptions</p>
-        </TiltGlow>
+        {/* The whole card is the link, not just the price. A bare text node is
+            a poor click target, and everything in here — the eyebrow, the
+            number, the terms — is about the same one destination. */}
+        <Link href="/pricing" className="group block" aria-label="See full pricing">
+          <TiltGlow
+            className="glass-surface-elevated p-8 transition-colors group-hover:border-amber-400/60 sm:p-10"
+            maxTilt={4}
+          >
+            <p className="eyebrow">Everything, once</p>
+            <p className="mt-3 font-serif text-5xl text-slate-50">{formatUsd(CURRICULUM_PRICE_CENTS)}</p>
+            <p className="mt-2 text-sm text-amber-200/70">One-time payment · every scale, forever · no subscriptions</p>
+            {/* Without this the card looks like a static stat — there was
+                nothing at all signalling it could be clicked. */}
+            <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-amber-300">
+              See full pricing
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden
+                className="transition-transform group-hover:translate-x-1"
+              >
+                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          </TiltGlow>
+        </Link>
         <p className="mt-6 text-sm text-slate-500">
           Want live coaching too? Join weekly group classes on Zoom — {formatUsd(CREDIT_BASE_PRICE_CENTS)} per
           30-minute credit, with bundle discounts up to 30% off.
