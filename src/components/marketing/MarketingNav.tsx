@@ -92,7 +92,7 @@ export function MarketingNav() {
             initial={{ opacity: 0, y: -8, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.97 }}
-            transition={{ type: "spring", stiffness: 320, damping: 30 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.32 }}
             className="glass-surface-elevated absolute right-4 top-[calc(100%+8px)] flex flex-col gap-1 p-2 sm:hidden"
           >
             {otherLinks.map((link) => (

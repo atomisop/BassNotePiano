@@ -25,7 +25,7 @@ export function TranspositionDashboard({ variant, root }: TranspositionDashboard
         key={root + variant.name}
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 28 }}
+        transition={{ type: "spring", bounce: 0, duration: 0.36 }}
         className="mt-6 flex flex-wrap gap-3"
       >
         {spelled.notes.map((note, i) => (

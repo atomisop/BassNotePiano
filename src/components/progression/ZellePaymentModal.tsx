@@ -36,7 +36,7 @@ const panelVariants = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { type: "spring", stiffness: 320, damping: 28 },
+    transition: { type: "spring", bounce: 0, duration: 0.32 },
   },
   exit: {
     opacity: 0,
@@ -48,7 +48,7 @@ const panelVariants = {
 
 const stepVariants = {
   enter: { opacity: 0, x: 16 },
-  center: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
+  center: { opacity: 1, x: 0, transition: { type: "spring", bounce: 0, duration: 0.36 } },
   exit: { opacity: 0, x: -16, transition: { duration: 0.15 } },
 };
 
@@ -273,7 +273,7 @@ export function ZellePaymentModal({
                     <motion.div
                       initial={{ scale: 0.6, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.05 }}
+                      transition={{ type: "spring", bounce: 0.35, duration: 0.5, delay: 0.05 }}
                       className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-400/10"
                     >
                       <motion.svg

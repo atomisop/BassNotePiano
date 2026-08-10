@@ -126,7 +126,7 @@ export function GroupChatWindow({
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ type: "spring", stiffness: 250, damping: 25 }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.4 }}
                   className={`rounded-2xl px-3.5 py-2 text-sm ${
                     isMine ? "bg-amber-400 text-slate-950" : "border border-ink/10 bg-slate-950 text-slate-100"
                   }`}

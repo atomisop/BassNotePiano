@@ -43,7 +43,7 @@ export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: 
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            transition={{ type: "spring", stiffness: 340, damping: 34 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.3 }}
             // Opaque white sheet, same reasoning as SlideOverPanel — and this
             // is the one that opens on every mobile "More" tap, so it's the
             // most sensitive to per-frame repaint cost.

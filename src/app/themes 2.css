@@ -1,0 +1,253 @@
+/* ==========================================================================
+   Theme definitions
+   --------------------------------------------------------------------------
+   Each theme fills the same contract, so no component ever needs to know
+   which theme is active:
+
+     --c-s-50 … --c-s-950   ground↔text ramp. LOW = strongest text,
+                            HIGH = the page ground. Always. In a light theme
+                            low is dark; in a dark theme low is light.
+     --c-a-100 … --c-a-500  the accent (set separately, by data-accent)
+     --c-em-* / --c-rd-*    success / error
+     --c-ink                hairlines and subtle tints
+     --c-scrim              modal overlays — dark in EVERY theme
+     --surface- and --elev-  the card material
+
+   Channels are space-separated RGB so Tailwind's `/opacity` modifiers work.
+
+   Contrast: every ramp step used for text is checked against that theme's
+   own ground; nothing used for text sits below WCAG AA 4.5:1.
+   ========================================================================== */
+
+/* ── Editorial Paper (light, default) ───────────────────────────────────── */
+:root,
+[data-theme="paper"] {
+  --c-s-50: 26 21 15; /* 17.1:1 */
+  --c-s-100: 38 33 25; /* 14.8:1 */
+  --c-s-200: 53 48 42; /* 12.3:1 */
+  --c-s-300: 69 62 54; /* 9.9:1  */
+  --c-s-400: 87 79 69; /* 7.5:1  */
+  --c-s-500: 101 92 81; /* 6.1:1  */
+  --c-s-600: 115 106 94; /* 5.0:1  */
+  --c-s-700: 213 202 180;
+  --c-s-800: 232 224 206;
+  --c-s-900: 243 237 224;
+  --c-s-950: 250 246 236;
+
+  --c-em-300: 20 92 51;
+  --c-em-400: 31 122 69;
+  --c-rd-300: 143 27 18;
+  --c-rd-400: 179 35 24;
+  --c-rd-500: 194 50 31;
+
+  --c-ink: 26 21 15;
+  --c-scrim: 26 21 15;
+
+  --page-texture:
+    radial-gradient(circle at 15% 20%, rgba(160, 78, 30, 0.025), transparent 45%),
+    radial-gradient(circle at 85% 75%, rgba(26, 21, 15, 0.02), transparent 40%);
+
+  --c-surface-solid: 255 255 255;
+  --surface-bg: #ffffff;
+  --surface-border: rgba(26, 21, 15, 0.1);
+  --surface-shadow: 0 1px 2px rgba(26, 21, 15, 0.04), 0 4px 12px -4px rgba(26, 21, 15, 0.06);
+  --surface-blur: 0px;
+  --surface-radius: 0.75rem;
+
+  --elev-bg: #ffffff;
+  --elev-border: rgb(var(--c-a-400) / 0.28);
+  --elev-shadow: 0 2px 4px rgba(26, 21, 15, 0.05), 0 12px 28px -8px rgba(26, 21, 15, 0.1);
+  --elev-blur: 0px;
+
+  /* How strongly marketing photo backdrops read through. Paper keeps them a
+     ghost: ink text over a half-visible photo lands on whatever tone happens
+     to sit behind each glyph. */
+  --scrim-light: 0.78;
+  --scrim-standard: 0.88;
+  --scrim-dense: 0.95;
+  --scrim-rgb: 250 246 236;
+}
+
+/* ── Editorial Ink (dark) ───────────────────────────────────────────────────
+   The paper system after dark: same material discipline (flat cards, real
+   hairlines, no blur), warm rather than blue-black. */
+[data-theme="ink"] {
+  --c-s-50: 250 247 242; /* 17.2:1 */
+  --c-s-100: 238 233 225; /* 15.4:1 */
+  --c-s-200: 224 218 208; /* 13.4:1 */
+  --c-s-300: 205 197 185; /* 11.0:1 */
+  --c-s-400: 186 176 162; /* 8.8:1  */
+  --c-s-500: 163 152 138; /* 6.7:1  */
+  --c-s-600: 138 128 115; /* 4.9:1  */
+  --c-s-700: 58 51 43;
+  --c-s-800: 40 35 29;
+  --c-s-900: 28 24 20;
+  --c-s-950: 20 17 14;
+
+  --c-em-300: 134 213 164;
+  --c-em-400: 74 190 118;
+  --c-rd-300: 246 173 166;
+  --c-rd-400: 240 122 111;
+  --c-rd-500: 224 90 78;
+
+  --c-ink: 255 255 255;
+  --c-scrim: 8 6 5;
+
+  --page-texture:
+    radial-gradient(circle at 15% 20%, rgba(217, 142, 90, 0.05), transparent 45%),
+    radial-gradient(circle at 85% 75%, rgba(255, 255, 255, 0.02), transparent 40%);
+
+  --c-surface-solid: 28 24 20;
+  --surface-bg: #1c1814;
+  --surface-border: rgba(255, 255, 255, 0.09);
+  --surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 12px -4px rgba(0, 0, 0, 0.45);
+  --surface-blur: 0px;
+  --surface-radius: 0.75rem;
+
+  --elev-bg: #211c17;
+  --elev-border: rgb(var(--c-a-400) / 0.35);
+  --elev-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 12px 28px -8px rgba(0, 0, 0, 0.55);
+  --elev-blur: 0px;
+
+  --scrim-light: 0.42;
+  --scrim-standard: 0.62;
+  --scrim-dense: 0.82;
+  --scrim-rgb: 20 17 14;
+}
+
+/* ── Midnight Glass (dark) ──────────────────────────────────────────────────
+   The system this app shipped with before the paper redesign: blue-black
+   ground, frosted translucent panels, a visible photographic environment.
+   Kept as a real choice rather than deleted. Note it is the one theme that
+   pays for `backdrop-filter`, which is measurably the most expensive thing
+   in the app to scroll — that cost is the reason it isn't the default. */
+[data-theme="glass"] {
+  --c-s-50: 248 250 252;
+  --c-s-100: 241 245 249;
+  --c-s-200: 226 232 240;
+  --c-s-300: 203 213 225;
+  --c-s-400: 148 163 184;
+  --c-s-500: 122 138 161; /* lifted from the original 100/116/139 — that was 4.1:1 on this ground, under AA */
+  --c-s-600: 105 121 145; /* same reason */
+  --c-s-700: 51 65 85;
+  --c-s-800: 30 41 59;
+  --c-s-900: 15 23 42;
+  --c-s-950: 2 6 23;
+
+  --c-em-300: 134 239 172;
+  --c-em-400: 74 222 128;
+  --c-rd-300: 252 165 165;
+  --c-rd-400: 248 113 113;
+  --c-rd-500: 239 68 68;
+
+  --c-ink: 255 255 255;
+  --c-scrim: 2 6 23;
+
+  --page-texture:
+    radial-gradient(circle at 15% 20%, rgba(209, 160, 148, 0.07), transparent 45%),
+    radial-gradient(circle at 85% 75%, rgba(148, 163, 184, 0.05), transparent 40%);
+
+  /* Chrome (nav rails, sheets, tab bar) needs one opaque colour even in a
+     translucent theme — a see-through fixed tab bar over scrolling content is
+     unreadable. */
+  --c-surface-solid: 15 23 42;
+  --surface-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03));
+  --surface-border: rgba(255, 255, 255, 0.14);
+  --surface-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.65), 0 2px 10px -2px rgba(0, 0, 0, 0.4);
+  --surface-blur: 16px;
+  --surface-radius: 1rem;
+
+  --elev-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.13), rgb(var(--c-a-400) / 0.08));
+  --elev-border: rgb(var(--c-a-400) / 0.3);
+  --elev-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.7), 0 4px 18px -4px rgba(0, 0, 0, 0.5);
+  --elev-blur: 24px;
+
+  --scrim-light: 0.3;
+  --scrim-standard: 0.52;
+  --scrim-dense: 0.78;
+  --scrim-rgb: 2 6 23;
+}
+
+/* ==========================================================================
+   Accents
+   --------------------------------------------------------------------------
+   Keyed on data-mode rather than data-theme: an accent has to clear 4.5:1
+   against the ground it sits on, and that requirement is the same for every
+   dark theme and every light one. Two sets, not one per theme.
+
+   Each accent's 400 step is the workhorse — it has to work BOTH as a fill
+   (with the ground colour set on it) and as text on the ground, which is
+   what lets `bg-amber-400` and `text-amber-400` both stay legible.
+   ========================================================================== */
+
+[data-mode="light"] {
+  --c-a-100: 90 42 12;
+  --c-a-200: 107 51 15;
+  --c-a-300: 127 61 20;
+  --c-a-400: 160 78 30; /* rust — 5.4:1 */
+  --c-a-500: 194 105 31;
+}
+[data-mode="light"][data-accent="rose"] {
+  --c-a-100: 92 39 52;
+  --c-a-200: 110 47 62;
+  --c-a-300: 130 56 74;
+  --c-a-400: 163 74 94; /* 5.4:1 */
+  --c-a-500: 192 95 116;
+}
+[data-mode="light"][data-accent="gold"] {
+  --c-a-100: 77 58 11;
+  --c-a-200: 92 70 13;
+  --c-a-300: 110 84 16;
+  --c-a-400: 138 106 18; /* 5.3:1 */
+  --c-a-500: 169 130 26;
+}
+[data-mode="light"][data-accent="sage"] {
+  --c-a-100: 41 60 33;
+  --c-a-200: 49 72 40;
+  --c-a-300: 58 85 48;
+  --c-a-400: 74 107 61; /* 5.6:1 */
+  --c-a-500: 92 132 76;
+}
+[data-mode="light"][data-accent="indigo"] {
+  --c-a-100: 43 45 94;
+  --c-a-200: 51 54 113;
+  --c-a-300: 59 63 134;
+  --c-a-400: 74 79 168; /* 5.9:1 */
+  --c-a-500: 92 97 196;
+}
+
+[data-mode="dark"] {
+  --c-a-100: 247 220 197;
+  --c-a-200: 240 192 155;
+  --c-a-300: 232 168 122;
+  --c-a-400: 217 142 90; /* rust, lifted for a dark ground */
+  --c-a-500: 184 115 64;
+}
+[data-mode="dark"][data-accent="rose"] {
+  --c-a-100: 245 230 224;
+  --c-a-200: 236 208 198;
+  --c-a-300: 223 183 172;
+  --c-a-400: 209 160 148; /* the original Dynamic Glass dusty rose */
+  --c-a-500: 184 128 111;
+}
+[data-mode="dark"][data-accent="gold"] {
+  --c-a-100: 247 237 197;
+  --c-a-200: 240 220 155;
+  --c-a-300: 232 203 122;
+  --c-a-400: 217 182 90;
+  --c-a-500: 184 151 64;
+}
+[data-mode="dark"][data-accent="sage"] {
+  --c-a-100: 221 235 213;
+  --c-a-200: 194 218 180;
+  --c-a-300: 168 201 150;
+  --c-a-400: 143 184 122;
+  --c-a-500: 116 155 96;
+}
+[data-mode="dark"][data-accent="indigo"] {
+  --c-a-100: 226 228 248;
+  --c-a-200: 203 206 242;
+  --c-a-300: 180 184 234;
+  --c-a-400: 155 160 224;
+  --c-a-500: 127 132 196;
+}

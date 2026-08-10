@@ -16,7 +16,7 @@ function formatUsd(cents: number) {
 const container = { hidden: {}, visible: { transition: { staggerChildren: 0.06 } } };
 const item = {
   hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 260, damping: 26 } },
+  visible: { opacity: 1, y: 0, transition: { type: "spring", bounce: 0, duration: 0.4 } },
 };
 
 export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {

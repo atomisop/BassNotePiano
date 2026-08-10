@@ -19,8 +19,8 @@ export function TiltGlow({ children, className = "", maxTilt = 5 }: TiltGlowProp
   const ref = useRef<HTMLDivElement>(null);
   const prefersReducedMotion = useReducedMotion();
 
-  const rotateX = useSpring(0, { stiffness: 200, damping: 20 });
-  const rotateY = useSpring(0, { stiffness: 200, damping: 20 });
+  const rotateX = useSpring(0, { bounce: 0, duration: 0.45 });
+  const rotateY = useSpring(0, { bounce: 0, duration: 0.45 });
   const glowX = useMotionValue(50);
   const glowY = useMotionValue(50);
   // A warm rust wash rather than the old light bloom: on a white card a

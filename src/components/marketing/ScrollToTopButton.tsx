@@ -34,7 +34,7 @@ export function ScrollToTopButton() {
           initial={{ opacity: 0, y: 12, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 12, scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 300, damping: 28 }}
+          transition={{ type: "spring", bounce: 0, duration: 0.36 }}
           className="glass-pill fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center text-slate-200 transition-colors hover:text-amber-300"
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">

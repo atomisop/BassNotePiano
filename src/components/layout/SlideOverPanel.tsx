@@ -52,7 +52,7 @@ export function SlideOverPanel({
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", stiffness: 320, damping: 34 }}
+            transition={{ type: "spring", bounce: 0, duration: 0.3 }}
             // Fully opaque white sheet — no backdrop-blur anywhere in the
             // paper system. Blur behind a sliding panel meant re-blurring
             // whatever moved underneath on every frame of the spring, which

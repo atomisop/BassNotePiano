@@ -39,7 +39,7 @@ function LockIcon() {
 // moment is meant to feel like a reward, not just another item settling in.
 const earnedTileVariants = {
   hidden: { opacity: 0, scale: 0.5 },
-  visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 300, damping: 15 } },
+  visible: { opacity: 1, scale: 1, transition: { type: "spring", bounce: 0.35, duration: 0.5 } },
 };
 
 const lockedTileVariants = {

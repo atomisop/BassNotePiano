@@ -24,7 +24,7 @@ const heroContainer = {
 
 const heroItem = {
   hidden: { opacity: 0, y: 18 },
-  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 260, damping: 26 } },
+  visible: { opacity: 1, y: 0, transition: { type: "spring", bounce: 0, duration: 0.4 } },
 };
 
 const gridContainer = {
@@ -34,7 +34,7 @@ const gridContainer = {
 
 const gridItem = {
   hidden: { opacity: 0, y: 24, scale: 0.97 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 240, damping: 24 } },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", bounce: 0, duration: 0.4 } },
 };
 
 // Real product visualization, not more mood photography — a static echo of
@@ -206,7 +206,7 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
-          transition={{ type: "spring", stiffness: 240, damping: 26 }}
+          transition={{ type: "spring", bounce: 0, duration: 0.4 }}
           className="relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-16"
         >
           <PhotoBackdrop src={section.src} scrim="light" parallax sizes="100vw" />
@@ -232,7 +232,7 @@ export default function LandingPage() {
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
-        transition={{ type: "spring", stiffness: 240, damping: 26 }}
+        transition={{ type: "spring", bounce: 0, duration: 0.4 }}
         className="relative mx-auto max-w-6xl px-6 py-20 text-center"
       >
         <p className="eyebrow mb-3">See it in action</p>
@@ -250,7 +250,7 @@ export default function LandingPage() {
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
-        transition={{ type: "spring", stiffness: 240, damping: 26 }}
+        transition={{ type: "spring", bounce: 0, duration: 0.4 }}
         className="relative mx-auto max-w-2xl px-6 py-28 text-center"
       >
         {/* The whole card is the link, not just the price. A bare text node is

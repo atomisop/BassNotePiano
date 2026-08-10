@@ -8,7 +8,7 @@ import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
 // brief. Spring values match the rest of the app's entrance pattern.
 const panelVariants = {
   hidden: { opacity: 0, y: 24, scale: 0.96 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 260, damping: 26 } },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", bounce: 0, duration: 0.4 } },
 };
 
 export function SectionCompleteCelebration({
@@ -26,7 +26,7 @@ export function SectionCompleteCelebration({
       <motion.div
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.05 }}
+        transition={{ type: "spring", bounce: 0.35, duration: 0.5, delay: 0.05 }}
         className="relative mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-400/10"
       >
         <motion.svg

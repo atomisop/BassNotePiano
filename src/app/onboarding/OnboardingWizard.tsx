@@ -9,12 +9,12 @@ import { saveOnboardingAction, checkUsernameAvailableAction } from "./actions";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 260, damping: 26 } },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", bounce: 0, duration: 0.4 } },
 };
 
 const stepVariants = {
   enter: { opacity: 0, x: 16 },
-  center: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
+  center: { opacity: 1, x: 0, transition: { type: "spring", bounce: 0, duration: 0.36 } },
   exit: { opacity: 0, x: -16, transition: { duration: 0.15 } },
 };
 

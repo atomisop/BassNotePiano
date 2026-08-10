@@ -21,7 +21,7 @@ const container = {
 
 const item = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 260, damping: 26 } },
+  visible: { opacity: 1, y: 0, transition: { type: "spring", bounce: 0, duration: 0.4 } },
 };
 
 const CURRICULUM_BENEFITS = [
@@ -93,7 +93,7 @@ export default function PricingPage() {
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
-        transition={{ type: "spring", stiffness: 240, damping: 26 }}
+        transition={{ type: "spring", bounce: 0, duration: 0.4 }}
         className="relative mx-auto max-w-2xl px-6 pb-28"
       >
         <div className="glass-surface p-7 sm:p-8">

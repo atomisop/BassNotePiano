@@ -26,6 +26,61 @@ body {
 }
 
 /* ==========================================================================
+   Optical typography
+   --------------------------------------------------------------------------
+   Tracking is size-specific, never one value for everything. Letterforms read
+   progressively further apart as they grow, so display text needs negative
+   tracking to hold together, and small text needs a touch of positive to stay
+   legible. A single fixed letter-spacing is wrong at one end or the other.
+
+   These sit in @layer base so any explicit `tracking-*` utility still wins —
+   the eyebrow's `tracking-[0.2em]` is a deliberate style, not an oversight.
+   ========================================================================== */
+@layer base {
+  .text-6xl,
+  .text-7xl {
+    letter-spacing: -0.028em;
+  }
+  .text-4xl,
+  .text-5xl {
+    letter-spacing: -0.022em;
+  }
+  .text-2xl,
+  .text-3xl {
+    letter-spacing: -0.015em;
+  }
+  .text-xl {
+    letter-spacing: -0.008em;
+  }
+  /* Body sits at 0 — the default — and only the smallest sizes open up. */
+  .text-xs,
+  .text-\[11px\],
+  .text-\[10px\] {
+    letter-spacing: 0.006em;
+  }
+}
+
+/* ==========================================================================
+   Press response
+   --------------------------------------------------------------------------
+   Feedback belongs on pointer-DOWN, not on release: waiting for click to
+   acknowledge a press is the moment directness "falls off a cliff". `:active`
+   fires on press, so this is the cheapest correct version of that.
+
+   Deliberately excludes elements Framer Motion drives — it writes `transform`
+   inline, which would beat this rule anyway, and those components carry their
+   own press states.
+   ========================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  button:not(:disabled):not([style*="transform"]):active,
+  a:not([style*="transform"]):active,
+  [role="button"]:not([style*="transform"]):active {
+    transform: scale(0.978);
+    transition: transform 90ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+/* ==========================================================================
    Page transitions
    --------------------------------------------------------------------------
    Driven by Next's `template.tsx`, which re-mounts on every navigation (a
@@ -71,6 +126,41 @@ body {
   .page-enter,
   .page-enter-fade {
     animation: none;
+  }
+}
+
+/* ==========================================================================
+   Accessibility preferences beyond reduced-motion
+   --------------------------------------------------------------------------
+   Reduced motion was the only one of these the app honoured. Both of the
+   others are real user settings that a translucent, low-contrast-hairline
+   design gets wrong by default.
+   ========================================================================== */
+
+/* Frost the translucency rather than blurring it: people who turn this on
+   generally do so because layered semi-transparent surfaces are hard to
+   parse, so the fix is opacity, not a different blur radius. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-surface,
+  .glass-surface-elevated,
+  .glass-pill {
+    background: rgb(var(--c-surface-solid));
+    backdrop-filter: none;
+  }
+}
+
+/* Hairlines are the first thing to disappear at high contrast. Give every
+   surface a defined, contrasting edge and drop the tinted fills that rely on
+   subtle luminance differences to read. */
+@media (prefers-contrast: more) {
+  .glass-surface,
+  .glass-surface-elevated,
+  .glass-pill {
+    border-color: rgb(var(--c-s-100));
+    box-shadow: none;
+  }
+  .rule {
+    border-top-color: rgb(var(--c-s-100));
   }
 }
 

@@ -9,7 +9,7 @@ import { verifyEmailAction, resendVerificationEmailAction } from "./actions";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 260, damping: 26 } },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", bounce: 0, duration: 0.4 } },
 };
 
 function VerifyEmailForm() {

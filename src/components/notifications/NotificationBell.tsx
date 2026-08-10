@@ -150,7 +150,7 @@ export function NotificationBell() {
                 initial={{ x: "100%" }}
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
-                transition={{ type: "spring", stiffness: 320, damping: 34 }}
+                transition={{ type: "spring", bounce: 0, duration: 0.3 }}
                 // Opaque white panel. This one scrolls its own notification
                 // list, so a blur here would have cost a repaint on every
                 // scroll frame inside the panel, not just during the slide-in.
