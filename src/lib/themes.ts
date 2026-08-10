@@ -166,23 +166,36 @@ export function isDaisyTheme(id: ThemeId): id is DaisyThemeId {
 }
 
 /**
- * The logged-out storefront (home, classes, pricing, terms) doesn't offer a
- * theme picker — MarketingNav used to render one and no longer does. It's
- * locked to Luxury instead: every visitor sees the same pitch, and there's
- * nothing to keep in sync with a control that isn't there. `isMarketingPath`
- * is an exact-match allow-list (not a prefix check) so a future nested route
- * under one of these — e.g. a dynamic `/classes/[id]` — doesn't silently
- * inherit the lock without a deliberate decision to add it here.
+ * Nobody signed in gets a theme picker — not on the storefront (home,
+ * classes, pricing, terms), and not on the road to actually signing in
+ * (login, register, forgot/reset password, verify email) either. All nine
+ * are locked to Luxury: every visitor sees the same look right up until
+ * they're actually inside the app, at which point ThemeProvider switches to
+ * whatever they picked at Settings → Themes & Appearance. `/onboarding` is
+ * deliberately excluded — it's behind `middleware.ts`'s auth check, so
+ * reaching it means a real session already exists; it should look like the
+ * app, not like the pitch for it.
  *
- * Once someone logs in, ThemeProvider goes right back to whatever they
- * actually picked at Settings → Themes & Appearance — this only overrides
- * the four public pages.
+ * `isLoggedOutPath` is an exact-match allow-list (not a prefix check) so a
+ * future nested route under one of these — e.g. a dynamic `/classes/[id]`
+ * — doesn't silently inherit the lock without a deliberate decision to add
+ * it here.
  */
-export const MARKETING_THEME: ThemeId = "luxury";
-export const MARKETING_PATHS = ["/", "/classes", "/pricing", "/terms"] as const;
+export const LOGGED_OUT_THEME: ThemeId = "luxury";
+export const LOGGED_OUT_PATHS = [
+  "/",
+  "/classes",
+  "/pricing",
+  "/terms",
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+] as const;
 
-export function isMarketingPath(pathname: string | null | undefined): boolean {
-  return pathname != null && (MARKETING_PATHS as readonly string[]).includes(pathname);
+export function isLoggedOutPath(pathname: string | null | undefined): boolean {
+  return pathname != null && (LOGGED_OUT_PATHS as readonly string[]).includes(pathname);
 }
 
 /**
@@ -194,17 +207,21 @@ export function isMarketingPath(pathname: string | null | undefined): boolean {
  * theme and then snaps to the stored one, which is the classic dark-mode
  * flash. Wrapped in try/catch because localStorage throws outright in
  * Safari's private mode rather than returning null.
+ *
+ * The logged-out lock (see `isLoggedOutPath` above) has to be duplicated
+ * here as a plain array rather than imported, same reason the rest of this
+ * script is inlined: it runs ahead of the bundle.
  */
 export const THEME_BOOT_SCRIPT = `
 (function(){
   try {
     var d = document.documentElement;
-    var marketingPaths = ${JSON.stringify(MARKETING_PATHS)};
-    if (marketingPaths.indexOf(window.location.pathname) !== -1) {
-      d.setAttribute('data-theme', '${MARKETING_THEME}');
-      d.setAttribute('data-mode', '${themeMode(MARKETING_THEME)}');
-      d.setAttribute('data-accent', '${MARKETING_THEME}');
-      d.style.colorScheme = '${themeMode(MARKETING_THEME)}';
+    var loggedOutPaths = ${JSON.stringify(LOGGED_OUT_PATHS)};
+    if (loggedOutPaths.indexOf(window.location.pathname) !== -1) {
+      d.setAttribute('data-theme', '${LOGGED_OUT_THEME}');
+      d.setAttribute('data-mode', '${themeMode(LOGGED_OUT_THEME)}');
+      d.setAttribute('data-accent', '${LOGGED_OUT_THEME}');
+      d.style.colorScheme = '${themeMode(LOGGED_OUT_THEME)}';
       return;
     }
     var ids = ${JSON.stringify(THEME_IDS)};

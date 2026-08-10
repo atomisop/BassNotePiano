@@ -6,11 +6,11 @@ import {
   ACCENT_STORAGE_KEY,
   DEFAULT_ACCENT,
   DEFAULT_THEME,
-  MARKETING_THEME,
+  LOGGED_OUT_THEME,
   THEME_STORAGE_KEY,
   isAccentId,
   isDaisyTheme,
-  isMarketingPath,
+  isLoggedOutPath,
   isThemeId,
   themeMode,
   type AccentId,
@@ -89,16 +89,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => mq.removeEventListener("change", onChange);
   }, [theme]);
 
-  // The single place <html> actually gets written to. Marketing pages (the
-  // logged-out storefront — home, classes, pricing, terms) have no picker
-  // and are locked to Luxury regardless of what's stored, so this is also
-  // the one spot that lock needs to live. A layout effect, not a plain one,
-  // so switching between a marketing page and the dashboard resolves before
-  // the browser paints — matching THEME_BOOT_SCRIPT's no-flash guarantee on
-  // first load, now also true for client-side navigation between the two.
+  // The single place <html> actually gets written to. Every logged-out page
+  // — the storefront (home, classes, pricing, terms) and the road to
+  // signing in (login, register, forgot/reset password, verify email) —
+  // has no picker and is locked to Luxury regardless of what's stored, so
+  // this is also the one spot that lock needs to live. A layout effect, not
+  // a plain one, so switching between a locked page and the real app
+  // resolves before the browser paints — matching THEME_BOOT_SCRIPT's
+  // no-flash guarantee on first load, now also true for client-side
+  // navigation between the two.
   useLayoutEffect(() => {
-    if (isMarketingPath(pathname)) {
-      applyToDocument(MARKETING_THEME, DEFAULT_ACCENT);
+    if (isLoggedOutPath(pathname)) {
+      applyToDocument(LOGGED_OUT_THEME, DEFAULT_ACCENT);
     } else {
       applyToDocument(resolvedTheme, accent);
     }
