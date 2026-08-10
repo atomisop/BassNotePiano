@@ -33,8 +33,12 @@ const CURRICULUM_BENEFITS = [
 export default function PricingPage() {
   return (
     <div className="relative min-h-screen overflow-hidden">
+      {/* Vignette: the H1 below is the only thing floating unprotected on
+          this photo. Everything after it — the price card, the classes
+          card — is its own opaque surface, so the vinyl record gets to read
+          as a photograph around and between them instead of a pale wash. */}
       <div className="fixed inset-0 -z-10">
-        <PhotoBackdrop src={BACKDROPS.pricing} scrim="standard" priority sizes="100vw" />
+        <PhotoBackdrop src={BACKDROPS.pricing} scrim="vignette" priority sizes="100vw" />
       </div>
 
       <MarketingNav />
@@ -43,18 +47,15 @@ export default function PricingPage() {
         variants={container}
         initial="hidden"
         animate="visible"
-        className="relative mx-auto max-w-3xl px-6 pb-12 pt-24 text-center"
+        className="relative mx-auto max-w-3xl px-6 pb-16 pt-28 text-center"
       >
-        <motion.p
+        <motion.h1
           variants={item}
-          className="glass-pill mx-auto mb-4 w-fit px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-amber-300"
+          className="text-balance font-serif text-5xl leading-[1.02] tracking-[-0.025em] text-slate-50 sm:text-6xl"
         >
-          Pricing
-        </motion.p>
-        <motion.h1 variants={item} className="font-serif text-4xl text-slate-50">
           One price. Every scale. Forever.
         </motion.h1>
-        <motion.p variants={item} className="mx-auto mt-4 max-w-lg text-base text-slate-200">
+        <motion.p variants={item} className="mx-auto mt-5 max-w-lg text-base text-slate-200 sm:text-lg">
           Every scale and its native chords, spelled correctly in all 12 keys — a single {formatUsd(CURRICULUM_PRICE_CENTS)}{" "}
           payment unlocks the whole curriculum for good.
         </motion.p>
@@ -64,14 +65,14 @@ export default function PricingPage() {
         variants={container}
         initial="hidden"
         animate="visible"
-        className="relative mx-auto max-w-lg px-6 pb-16"
+        className="relative mx-auto max-w-lg px-6 pb-20"
       >
-        <TiltGlow className="glass-surface-elevated p-8 text-center" maxTilt={4}>
+        <TiltGlow className="glass-surface-elevated p-9 text-center sm:p-11" maxTilt={4}>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-300">Curriculum — Lifetime</p>
-          <p className="mt-3 font-serif text-5xl text-slate-50">{formatUsd(CURRICULUM_PRICE_CENTS)}</p>
-          <p className="mt-1 text-sm text-amber-200/70">one-time payment · no subscriptions, ever</p>
+          <p className="mt-4 font-serif text-7xl tabular-nums text-slate-50">{formatUsd(CURRICULUM_PRICE_CENTS)}</p>
+          <p className="mt-2 text-sm text-amber-200/70">one-time payment · no subscriptions, ever</p>
 
-          <ul className="mt-6 space-y-2.5 text-left text-sm text-slate-100">
+          <ul className="mt-7 space-y-2.5 text-left text-sm text-slate-100">
             {CURRICULUM_BENEFITS.map((benefit) => (
               <li key={benefit} className="flex gap-2.5">
                 <span className="text-amber-400">→</span>
@@ -82,7 +83,7 @@ export default function PricingPage() {
 
           <Link
             href="/billing/curriculum"
-            className="cta-sheen mt-7 block w-full rounded-xl bg-amber-400 py-2.5 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+            className="cta-sheen mt-8 block w-full rounded-xl bg-amber-400 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
           >
             Unlock the curriculum
           </Link>
@@ -94,31 +95,48 @@ export default function PricingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-        className="relative mx-auto max-w-2xl px-6 pb-28"
+        className="relative mx-auto max-w-2xl px-6 pb-32"
       >
-        <div className="glass-surface p-7 sm:p-8">
+        <div className="glass-surface p-7 sm:p-9">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Weekly classes</p>
-          <h2 className="mt-1.5 font-serif text-2xl text-slate-50">Live group coaching on Zoom</h2>
-          <p className="mt-2 text-sm text-slate-300">
+          <h2 className="mt-1.5 font-serif text-3xl text-slate-50">Live group coaching on Zoom</h2>
+          <p className="mt-2.5 text-sm text-slate-300">
             Six recurring weekly classes, capped at 10 students each — on top of your self-paced curriculum. 1 credit
             = 30 minutes of class, and that conversion never changes no matter which bundle you buy.
           </p>
 
-          <div className="mt-6 rounded-xl border border-ink/10 bg-surface p-5 text-center">
-            <p className="font-serif text-3xl text-slate-50">
+          <div className="mt-7 rounded-xl border border-ink/10 bg-surface p-6 text-center">
+            <p className="font-serif text-4xl tabular-nums text-slate-50">
               {formatUsd(CREDIT_BASE_PRICE_CENTS)}
               <span className="text-base font-sans text-amber-200/70"> / credit</span>
             </p>
-            <p className="mt-1 text-sm text-amber-200/70">Bundle up and save up to 30% per credit</p>
+            <p className="mt-1.5 text-sm text-amber-200/70">Bundle up and save up to 30% per credit</p>
           </div>
 
-          <div className="mt-5 grid grid-cols-3 gap-2">
+          {/* Three equal boxes was the flattest reading of this data: the
+              recommended bundle now carries its own accent border and a
+              small flag, rather than being visually identical to the other
+              two and only distinguishable by reading the numbers. */}
+          <div className="mt-5 grid grid-cols-3 gap-2.5">
             {PRESET_BUNDLES.map((bundle) => {
               const total = calculateClassCreditTotal(bundle.quantity);
+              const isBest = bundle.id === "best-value";
               return (
-                <div key={bundle.id} className="rounded-lg border border-ink/10 p-3 text-center">
-                  <p className="text-xs font-medium text-slate-200">{bundle.label}</p>
-                  <p className="mt-1 font-serif text-lg text-slate-50">{formatUsd(total.totalCents)}</p>
+                <div
+                  key={bundle.id}
+                  className={`relative rounded-lg p-3.5 text-center ${
+                    isBest ? "border-2 border-amber-400/70 bg-amber-400/[0.06]" : "border border-ink/10"
+                  }`}
+                >
+                  {isBest && (
+                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-950">
+                      Best value
+                    </span>
+                  )}
+                  <p className="mt-1 text-xs font-medium text-slate-200">{bundle.label}</p>
+                  <p className={`mt-1 font-serif tabular-nums text-slate-50 ${isBest ? "text-2xl" : "text-lg"}`}>
+                    {formatUsd(total.totalCents)}
+                  </p>
                   <p className="mt-0.5 text-[11px] text-slate-500">
                     {bundle.quantity} credits · {formatUsd(total.perCreditCents)}/ea
                   </p>
@@ -129,7 +147,7 @@ export default function PricingPage() {
 
           <Link
             href="/billing/lessons"
-            className="mt-6 block w-full rounded-xl border border-ink/10 py-2.5 text-center text-sm font-semibold text-slate-100 transition hover:border-amber-400/40 hover:text-amber-300"
+            className="mt-7 block w-full rounded-xl border border-ink/10 py-2.5 text-center text-sm font-semibold text-slate-100 transition hover:border-amber-400/40 hover:text-amber-300"
           >
             Buy class credits
           </Link>

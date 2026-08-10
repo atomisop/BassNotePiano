@@ -4,12 +4,16 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 
-type Scrim = "light" | "standard" | "dense";
+type Scrim = "light" | "standard" | "dense" | "vignette" | "minimal";
 
 const SCRIM_CLASS: Record<Scrim, string> = {
   light: "backdrop-scrim-light",
   standard: "backdrop-scrim",
   dense: "backdrop-scrim-dense",
+  // Shaped, not just weighted — see the two extra classes in globals.css for
+  // why these exist alongside the three flat washes above.
+  vignette: "backdrop-scrim-vignette",
+  minimal: "backdrop-scrim-minimal",
 };
 
 interface PhotoBackdropProps {

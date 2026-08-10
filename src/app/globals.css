@@ -281,6 +281,55 @@ body {
     );
   }
 
+  /* Two more scrim shapes, additive to the three above — nothing here
+     changes their tiers or usages.
+
+     Both exist because the linear washes are a blanket decision: protect
+     the WHOLE frame at one strength, whether or not anything in it actually
+     floats unprotected on the photo. Most sections don't need that — their
+     text already sits inside an opaque card, and the flat wash was just
+     erasing the photo for no contrast benefit. These two shapes ask "where
+     does text actually touch the photo" instead of protecting everything. */
+
+  /* For a heading/paragraph that floats directly on the photo (no card under
+     it), roughly centered in its section. Full protection in a radial core
+     right behind the text; the rest of the frame — corners, edges, whatever
+     sits beside a centered column — opens up to the photo. Thin opaque bands
+     at the very top/bottom are kept so stacked <PhotoBackdrop> sections still
+     dissolve into each other instead of hard-cutting. */
+  .backdrop-scrim-vignette {
+    background:
+      radial-gradient(
+        46% 42% at 50% 50%,
+        rgb(var(--scrim-rgb) / var(--scrim-standard)) 0%,
+        rgb(var(--scrim-rgb) / calc(var(--scrim-standard) * 0.5)) 62%,
+        rgb(var(--scrim-rgb) / 0) 100%
+      ),
+      linear-gradient(
+        to bottom,
+        rgb(var(--scrim-rgb) / 1) 0%,
+        rgb(var(--scrim-rgb) / 0.1) 12%,
+        rgb(var(--scrim-rgb) / 0.06) 50%,
+        rgb(var(--scrim-rgb) / 0.1) 88%,
+        rgb(var(--scrim-rgb) / 1) 100%
+      );
+  }
+
+  /* For a section where every line of text already sits inside its own
+     opaque card — the backdrop's only job left is the top/bottom dissolve
+     into whatever's above and below it, so the photo can be almost fully
+     visible everywhere in between. */
+  .backdrop-scrim-minimal {
+    background: linear-gradient(
+      to bottom,
+      rgb(var(--scrim-rgb) / 1) 0%,
+      rgb(var(--scrim-rgb) / 0.08) 14%,
+      rgb(var(--scrim-rgb) / 0.05) 50%,
+      rgb(var(--scrim-rgb) / 0.08) 86%,
+      rgb(var(--scrim-rgb) / 1) 100%
+    );
+  }
+
   .backdrop-glow-smoke-top {
     background: radial-gradient(60% 80% at 50% 0%, rgb(var(--c-a-400) / 0.1), transparent 70%);
     filter: blur(40px);
