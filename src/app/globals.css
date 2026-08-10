@@ -130,6 +130,36 @@ body {
 }
 
 /* ==========================================================================
+   Chrome material
+   --------------------------------------------------------------------------
+   Nav rails, the top bar and the mobile tab bar. Translucency here is a
+   hierarchy signal — chrome floats above content that scrolls underneath it,
+   rather than consuming an opaque strip of the page.
+
+   It is scoped to Midnight Glass on purpose. Blur is genuinely expensive on
+   fixed chrome sitting over scrolling content (that was the original jank,
+   and it's why Editorial Paper is opaque), so the cost is only paid on the
+   one theme whose entire premise is a translucent material. Paper and Ink
+   get the same structure with none of the cost.
+   ========================================================================== */
+.chrome {
+  background: rgb(var(--c-surface-solid));
+}
+
+[data-theme="glass"] .chrome {
+  background: rgb(var(--c-surface-solid) / 0.72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* The bright top edge is light catching the lip of the material. Only shows
+   on the translucent variant — on an opaque bar it just reads as a stray
+   line. */
+[data-theme="glass"] .chrome-top-edge {
+  border-top: 1px solid rgb(255 255 255 / 0.12);
+}
+
+/* ==========================================================================
    Accessibility preferences beyond reduced-motion
    --------------------------------------------------------------------------
    Reduced motion was the only one of these the app honoured. Both of the

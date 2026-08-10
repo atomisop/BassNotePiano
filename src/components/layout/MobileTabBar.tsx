@@ -25,11 +25,12 @@ export function MobileTabBar({ isAdmin, unreadMessageCount }: { isAdmin: boolean
 
   return (
     <>
-      {/* Opaque by design: this bar is `fixed` directly over actively-
-          scrolling content on every mobile screen, the single worst place to
-          pay for a blur recompute — the browser would have to reblur whatever
-          moves underneath it on every scroll frame. */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-ink/10 bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
+      {/* `.chrome` is opaque on Paper and Ink, translucent only on Midnight
+          Glass. This bar is `fixed` directly over actively-scrolling content
+          on every mobile screen — the single worst place to pay for a blur
+          recompute — so that cost is only spent on the one theme whose whole
+          premise is a translucent material. */}
+      <nav className="chrome chrome-top-edge fixed inset-x-0 bottom-0 z-40 flex border-t border-ink/10 pb-[env(safe-area-inset-bottom)] md:hidden">
         {TABS.map((tab) => {
           const active = pathname === tab.href;
           return (

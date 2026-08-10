@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { useDismissDrag } from "@/lib/useDismissDrag";
 
 /**
  * Shared "push navigation" panel — full-screen on phones, a right-anchored
@@ -24,6 +25,20 @@ export function SlideOverPanel({
 }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // The panel is full-width on phones and capped at md:max-w-md above that,
+  // so the dismiss distance has to be measured rather than assumed.
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [panelWidth, setPanelWidth] = useState(420);
+  useLayoutEffect(() => {
+    if (open && panelRef.current) setPanelWidth(panelRef.current.offsetWidth || 420);
+  }, [open]);
+
+  const dismiss = useDismissDrag({ axis: "x", size: panelWidth, onDismiss: onClose });
+
+  useEffect(() => {
+    if (open) dismiss.offset.set(0);
+  }, [open, dismiss.offset]);
 
   useEffect(() => {
     if (!open) return;
@@ -49,6 +64,7 @@ export function SlideOverPanel({
             onClick={onClose}
           />
           <motion.div
+            ref={panelRef}
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
@@ -58,8 +74,19 @@ export function SlideOverPanel({
             // whatever moved underneath on every frame of the spring, which
             // was exactly the "framy when I open something" feel.
             style={{ willChange: "transform" }}
-            className="relative flex h-full w-full flex-col border-l border-ink/10 bg-surface md:max-w-md"
+            className="relative h-full w-full md:max-w-md"
           >
+            {/* Enter/exit on the parent, drag offset here — the panel leaves
+                the way it arrived, so pushing it right is the same path the
+                close button animates along. */}
+            <motion.div
+              style={{ x: dismiss.offset, willChange: "transform" }}
+              onPointerDown={dismiss.onPointerDown}
+              onPointerMove={dismiss.onPointerMove}
+              onPointerUp={dismiss.onPointerUp}
+              onPointerCancel={dismiss.onPointerUp}
+              className="relative flex h-full w-full flex-col border-l border-ink/10 bg-surface"
+            >
             <div className="flex items-center gap-4 border-b border-ink/10 px-6 py-5">
               <button
                 type="button"
@@ -73,7 +100,8 @@ export function SlideOverPanel({
               </button>
               <h1 className="truncate font-serif text-lg text-slate-50">{title}</h1>
             </div>
-            <div className="flex-1 overflow-y-auto p-6">{children}</div>
+            <div data-sheet-scroll className="flex-1 overflow-y-auto p-6">{children}</div>
+            </motion.div>
           </motion.div>
         </motion.div>
       )}

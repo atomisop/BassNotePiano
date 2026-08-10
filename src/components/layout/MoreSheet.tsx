@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { signOut } from "next-auth/react";
 import { NavIcon, ICON_PATHS } from "./navIcons";
+import { useDismissDrag } from "@/lib/useDismissDrag";
 
 interface MoreItem {
   href: string;
@@ -17,6 +18,23 @@ interface MoreItem {
 export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: () => void; isAdmin: boolean }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // Measured rather than guessed: the dismiss threshold and the resistance
+  // curve are both fractions of the sheet's own height, and the admin item
+  // makes that height vary.
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [sheetHeight, setSheetHeight] = useState(320);
+  useLayoutEffect(() => {
+    if (open && sheetRef.current) setSheetHeight(sheetRef.current.offsetHeight || 320);
+  }, [open]);
+
+  const dismiss = useDismissDrag({ axis: "y", size: sheetHeight, onDismiss: onClose });
+
+  // Reopening must start from rest — otherwise the sheet returns still
+  // holding wherever the last dismiss left it.
+  useEffect(() => {
+    if (open) dismiss.offset.set(0);
+  }, [open, dismiss.offset]);
 
   if (!mounted) return null;
 
@@ -48,9 +66,22 @@ export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: 
             // is the one that opens on every mobile "More" tap, so it's the
             // most sensitive to per-frame repaint cost.
             style={{ willChange: "transform" }}
-            className="relative w-full rounded-t-3xl border-t border-ink/10 bg-surface pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+            className="w-full"
           >
-            <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-ink/10" />
+            {/* Enter/exit lives on the parent; the drag offset lives here, so
+                the two transforms compose instead of fighting over `y`. */}
+            <motion.div
+              ref={sheetRef}
+              style={{ y: dismiss.offset, willChange: "transform" }}
+              onPointerDown={dismiss.onPointerDown}
+              onPointerMove={dismiss.onPointerMove}
+              onPointerUp={dismiss.onPointerUp}
+              onPointerCancel={dismiss.onPointerUp}
+              className="relative w-full touch-none rounded-t-3xl border-t border-ink/10 bg-surface pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+            >
+            {/* Not decoration — this is the affordance that says the sheet can
+                be pushed away, so it has to be true. */}
+            <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-ink/20" />
             <div className="p-3">
               {items.map((item) => (
                 <Link
@@ -73,6 +104,7 @@ export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: 
                 Sign out
               </button>
             </div>
+            </motion.div>
           </motion.div>
         </motion.div>
       )}
