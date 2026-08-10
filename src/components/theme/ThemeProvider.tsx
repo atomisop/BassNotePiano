@@ -7,6 +7,7 @@ import {
   DEFAULT_THEME,
   THEME_STORAGE_KEY,
   isAccentId,
+  isDaisyTheme,
   isThemeId,
   themeMode,
   type AccentId,
@@ -39,7 +40,14 @@ function apply(theme: ThemeId, accent: AccentId) {
   const el = document.documentElement;
   el.setAttribute("data-theme", theme);
   el.setAttribute("data-mode", themeMode(theme));
-  el.setAttribute("data-accent", accent);
+  // A daisyUI-sourced theme carries its own baked-in accent (see themes.css)
+  // and never matches rust/rose/gold/sage/indigo, so writing the theme's own
+  // id here means no [data-mode][data-accent="…"] rule matches at all — only
+  // the theme's own [data-theme="…"] block sets --c-a-*. `accent` state
+  // itself is untouched, so switching back to a curated theme immediately
+  // shows whichever accent was actually picked, not whatever a daisyUI theme
+  // last wrote.
+  el.setAttribute("data-accent", isDaisyTheme(theme) ? theme : accent);
   el.style.colorScheme = themeMode(theme);
 }
 
