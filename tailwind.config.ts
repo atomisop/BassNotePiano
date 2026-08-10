@@ -84,7 +84,32 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // daisyUI, installed at the user's request for its full theme library.
+    // Scoped so it cannot touch the site's own ~113 hand-styled components:
+    //
+    //   - `base: false` — daisyUI's base layer restyles native elements
+    //     (checkboxes, radios, range inputs) even without an explicit daisyUI
+    //     class. This project has raw <input type="checkbox|radio|range">
+    //     in a few places; base:false means those keep rendering exactly as
+    //     the site's own CSS already styles them.
+    //   - Nothing here sets `data-theme` anywhere. daisyUI and this site's
+    //     own ThemeProvider (see themes.css) both key off that one
+    //     attribute on <html> — setting it to a daisyUI theme name would
+    //     blank out every `--c-*` custom property the real app depends on.
+    //     So daisyUI's palettes are compiled and available, but only ever
+    //     applied on a scoped wrapper (the theme gallery), never on <html>.
+    //
+    // `themes: true` compiles every one of daisyUI's built-in themes, which
+    // is the literal ask — "install all of daisyUI's themes."
+    require("daisyui"),
+  ],
+  daisyui: {
+    themes: true,
+    base: false,
+    styled: true,
+    utils: true,
+  },
 };
 
 export default config;
