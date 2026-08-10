@@ -166,6 +166,26 @@ export function isDaisyTheme(id: ThemeId): id is DaisyThemeId {
 }
 
 /**
+ * The logged-out storefront (home, classes, pricing, terms) doesn't offer a
+ * theme picker — MarketingNav used to render one and no longer does. It's
+ * locked to Luxury instead: every visitor sees the same pitch, and there's
+ * nothing to keep in sync with a control that isn't there. `isMarketingPath`
+ * is an exact-match allow-list (not a prefix check) so a future nested route
+ * under one of these — e.g. a dynamic `/classes/[id]` — doesn't silently
+ * inherit the lock without a deliberate decision to add it here.
+ *
+ * Once someone logs in, ThemeProvider goes right back to whatever they
+ * actually picked at Settings → Themes & Appearance — this only overrides
+ * the four public pages.
+ */
+export const MARKETING_THEME: ThemeId = "luxury";
+export const MARKETING_PATHS = ["/", "/classes", "/pricing", "/terms"] as const;
+
+export function isMarketingPath(pathname: string | null | undefined): boolean {
+  return pathname != null && (MARKETING_PATHS as readonly string[]).includes(pathname);
+}
+
+/**
  * Runs before first paint, inlined into <head> — see RootLayout.
  *
  * This has to be a string of plain ES5-ish JS rather than an imported
@@ -178,6 +198,15 @@ export function isDaisyTheme(id: ThemeId): id is DaisyThemeId {
 export const THEME_BOOT_SCRIPT = `
 (function(){
   try {
+    var d = document.documentElement;
+    var marketingPaths = ${JSON.stringify(MARKETING_PATHS)};
+    if (marketingPaths.indexOf(window.location.pathname) !== -1) {
+      d.setAttribute('data-theme', '${MARKETING_THEME}');
+      d.setAttribute('data-mode', '${themeMode(MARKETING_THEME)}');
+      d.setAttribute('data-accent', '${MARKETING_THEME}');
+      d.style.colorScheme = '${themeMode(MARKETING_THEME)}';
+      return;
+    }
     var ids = ${JSON.stringify(THEME_IDS)};
     var daisy = ${JSON.stringify(DAISY_THEME_IDS)};
     var modes = ${JSON.stringify(Object.fromEntries(THEMES.map((t) => [t.id, t.mode])))};
@@ -190,7 +219,6 @@ export const THEME_BOOT_SCRIPT = `
     if (['rust','rose','gold','sage','indigo'].indexOf(a) === -1) a = 'rust';
     var mode = modes[t] || 'light';
     var isDaisy = daisy.indexOf(t) !== -1;
-    var d = document.documentElement;
     d.setAttribute('data-theme', t);
     d.setAttribute('data-mode', mode);
     d.setAttribute('data-accent', isDaisy ? t : a);
