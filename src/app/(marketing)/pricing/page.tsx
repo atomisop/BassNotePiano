@@ -33,12 +33,19 @@ const CURRICULUM_BENEFITS = [
 export default function PricingPage() {
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Vignette: the H1 below is the only thing floating unprotected on
-          this photo. Everything after it — the price card, the classes
-          card — is its own opaque surface, so the vinyl record gets to read
-          as a photograph around and between them instead of a pale wash. */}
+      {/* "dense" (flat, strongest wash), not "vignette": vignette darkens a
+          radial core centred on the fixed backdrop's own box — the full
+          viewport height, not this section — so its dark centre lands
+          roughly mid-viewport, well below the H1 anchored near the top
+          under the nav. The H1 was landing outside the protected zone,
+          directly on whatever the photo happens to be there — measured
+          pixel-for-pixel, this particular photo's warm-toned patch there
+          still left individual letters under 4.5:1 even at "standard"
+          strength. Everything after the H1+paragraph — the price card, the
+          classes card — is its own opaque surface either way, so this
+          doesn't change how they read. */}
       <div className="fixed inset-0 -z-10">
-        <PhotoBackdrop src={BACKDROPS.pricing} scrim="vignette" priority sizes="100vw" />
+        <PhotoBackdrop src={BACKDROPS.pricing} scrim="dense" priority sizes="100vw" />
       </div>
 
       <MarketingNav />
@@ -55,7 +62,12 @@ export default function PricingPage() {
         >
           One price. Every scale. Forever.
         </motion.h1>
-        <motion.p variants={item} className="mx-auto mt-5 max-w-lg text-base text-slate-200 sm:text-lg">
+        {/* text-slate-50, not text-slate-200: -200 measured under 4.5:1 at
+            the worst point behind it even with the "dense" scrim above —
+            same issue as the homepage curriculum section, see that comment
+            for the full measurement. -50 matches the H1 and actually clears
+            it. */}
+        <motion.p variants={item} className="mx-auto mt-5 max-w-lg text-base text-slate-50 sm:text-lg">
           Every scale and its native chords, spelled correctly in all 12 keys — a single {formatUsd(CURRICULUM_PRICE_CENTS)}{" "}
           payment unlocks the whole curriculum for good.
         </motion.p>

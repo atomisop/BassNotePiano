@@ -122,13 +122,33 @@ export default function LandingPage() {
         viewport={{ once: true, margin: "-80px" }}
         className="relative isolate overflow-hidden px-6 py-32 sm:py-40"
       >
-        <PhotoBackdrop src={BACKDROPS.curriculum} scrim="vignette" sizes="100vw" />
+        {/* "dense" (flat, full-bleed, strongest wash), not "vignette": vignette
+            darkens a radial core at the section's vertical *centre*, which is
+            fine when text is centred in the section — it isn't here. This
+            section's card grid pushes its real height well past the
+            heading/paragraph up top, so the vignette's dark core landed below
+            the text, leaving it to sit directly on whatever the photo happens
+            to be at that spot. Measured it: this particular photo has a
+            50/50 mix of dark shadow and near-white window light right where
+            the text sits (luminance swinging from 0 to 0.92 within the same
+            few square inches), so even "standard" strength still left
+            individual letters unreadable wherever they crossed a bright
+            patch. "dense" is what actually holds up regardless of which part
+            of the photo ends up behind the text. */}
+        <PhotoBackdrop src={BACKDROPS.curriculum} scrim="dense" sizes="100vw" />
         <div className="relative z-10 mx-auto w-full max-w-5xl">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-balance font-serif text-4xl leading-[1.05] tracking-[-0.02em] text-slate-50 sm:text-5xl">
               Six scales, one connected path
             </h2>
-            <p className="mx-auto mt-4 max-w-md text-base text-slate-300">
+            {/* text-slate-50, not the text-slate-300 every other subhead on
+                this page uses: -300 is a deliberately muted tone, sized for
+                sitting on a solid card. Measured pixel-for-pixel against this
+                photo's brightest patch, "dense" scrim + -300 only reached
+                3.5:1 — below the 4.5:1 floor. -100 got closer but still fell
+                short of it at the single worst pixel (4.08:1); -50 is what
+                actually clears 4.5:1 even there. */}
+            <p className="mx-auto mt-4 max-w-md text-base text-slate-50">
               Work through six chapters in sequence. Read the module, complete the practice, and pass an 80% quiz to
               unlock the next stage — or unlock everything at once.
             </p>
