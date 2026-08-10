@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { bookClassAction, cancelClassBookingAction } from "./actions";
+import { BookingCalendar, dayKey } from "./BookingCalendar";
 
 interface OccurrenceRow {
   scheduleId: string;
@@ -262,12 +263,21 @@ export function ClassBookingClient({
   const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // Set by clicking a lit day in BookingCalendar — narrows the list below to
+  // just that date. The calendar and this list read the same `rows`, so a
+  // day only ever lights up when it genuinely has something to show here.
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+
+  const displayRows = useMemo(
+    () => (selectedDateKey ? rows.filter((r) => dayKey(r.occurrenceDateMs) === selectedDateKey) : rows),
+    [rows, selectedDateKey],
+  );
 
   // Split into "needs your attention" (still scheduled) vs. an archived,
   // collapsible-by-month history — a flat list of every booking ever made
   // was turning into an endless scroll for anyone with more than a couple
   // months of history.
-  const occurrenceGroups = useMemo(() => groupOccurrencesByWeek(rows), [rows]);
+  const occurrenceGroups = useMemo(() => groupOccurrencesByWeek(displayRows), [displayRows]);
   const upcoming = useMemo(() => bookings.filter((b) => b.status === "SCHEDULED"), [bookings]);
   const history = useMemo(() => bookings.filter((b) => b.status !== "SCHEDULED"), [bookings]);
   const historyGroups = useMemo(() => groupByMonth(history), [history]);
@@ -350,10 +360,33 @@ export function ClassBookingClient({
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
       {success && <p className="mt-4 text-sm text-emerald-400">{success}</p>}
 
+      {rows.length > 0 && (
+        <div className="mt-8">
+          <BookingCalendar occurrences={rows} selectedDateKey={selectedDateKey} onSelectDate={setSelectedDateKey} />
+        </div>
+      )}
+
       <div className="mt-8">
-        <h2 className="mb-3 font-serif text-lg text-slate-100">Upcoming classes</h2>
+        <div className="mb-3 flex items-baseline justify-between gap-3">
+          <h2 className="font-serif text-lg text-slate-100">
+            {selectedDateKey
+              ? `Classes on ${new Date(selectedDateKey).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })}`
+              : "Upcoming classes"}
+          </h2>
+          {selectedDateKey && (
+            <button
+              type="button"
+              onClick={() => setSelectedDateKey(null)}
+              className="shrink-0 text-xs font-medium text-slate-500 transition hover:text-amber-300"
+            >
+              Show all
+            </button>
+          )}
+        </div>
         {rows.length === 0 ? (
           <p className="text-sm text-slate-600">No classes scheduled right now — check back soon.</p>
+        ) : displayRows.length === 0 ? (
+          <p className="text-sm text-slate-600">No classes left on that day — someone else just took the last seat. Try another date.</p>
         ) : (
           /* One card per week with divided rows, rather than a stack of
              separate floating cards: seven identical shadowed pills read as
