@@ -5,7 +5,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { AnimatePresence, motion } from "framer-motion";
+import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
+import { NavIcon, ICON_PATHS } from "@/components/layout/navIcons";
+
+// One icon per NAV_LINKS entry, keyed by href — the mobile slide-over lists
+// these with an icon the way every other in-app nav list already does
+// (MoreSheet, AccountSettings' mobile tab list); the desktop bar below
+// doesn't use these at all, plain text links there matches the rest of the
+// floating pill.
+const LINK_ICON: Record<string, string> = {
+  "/classes": ICON_PATHS.lessons,
+  "/pricing": ICON_PATHS.pricing,
+};
 
 // Shared across every marketing page (/, /classes, /pricing) so the
 // logged-in-vs-logged-out check only has to be correct in one place —
@@ -82,30 +93,33 @@ export function MarketingNav() {
         </nav>
       </div>
 
-      {/* Anchored to <header>, which is itself position:fixed and so already
-          a containing block for this — no extra `relative` wrapper needed. */}
-      <AnimatePresence>
-        {menuOpen && otherLinks.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.97 }}
-            transition={{ type: "spring", bounce: 0, duration: 0.32 }}
-            className="glass-surface-elevated absolute right-4 top-[calc(100%+8px)] flex flex-col gap-1 p-2 sm:hidden"
+      {/* Full slide-over instead of a small anchored dropdown — same panel
+          every other in-app menu list already uses (MoreSheet's dashboard
+          equivalent, AccountSettings' mobile tabs), so this reads as the
+          same app rather than a lighter-weight marketing-only menu. */}
+      <SlideOverPanel open={menuOpen} onClose={() => setMenuOpen(false)} title="Menu">
+        <div className="-m-6 space-y-1 p-3">
+          {otherLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm text-slate-200 transition hover:bg-ink/5"
+            >
+              <NavIcon path={LINK_ICON[link.href]} className="h-5 w-5 shrink-0 text-slate-400" />
+              {link.label}
+            </Link>
+          ))}
+          <Link
+            href={isLoggedIn ? "/dashboard" : "/login"}
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-sm text-slate-200 transition hover:bg-ink/5"
           >
-            {otherLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMenuOpen(false)}
-                className="rounded-lg px-4 py-2 text-sm text-slate-200 transition hover:bg-ink/5 hover:text-amber-300"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <NavIcon path={ICON_PATHS.profile} className="h-5 w-5 shrink-0 text-slate-400" />
+            {isLoggedIn ? "Dashboard" : "Log in"}
+          </Link>
+        </div>
+      </SlideOverPanel>
     </header>
   );
 }
