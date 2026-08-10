@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
-import { CREDIT_BASE_PRICE_CENTS, PRESET_BUNDLES, calculateClassCreditTotal } from "@/lib/classCreditPricing";
+import { CREDIT_BASE_PRICE_CENTS } from "@/lib/classCreditPricing";
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { TiltGlow } from "@/components/ui/TiltGlow";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
+import { PricingTierGrid } from "@/components/marketing/PricingTierGrid";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -107,62 +108,20 @@ export default function PricingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-        className="relative mx-auto max-w-2xl px-6 pb-32"
+        className="relative mx-auto max-w-5xl px-6 pb-32"
       >
-        <div className="glass-surface p-7 sm:p-9">
+        <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Weekly classes</p>
           <h2 className="mt-1.5 font-serif text-3xl text-slate-50">Live group coaching on Zoom</h2>
-          <p className="mt-2.5 text-sm text-slate-300">
+          <p className="mx-auto mt-2.5 max-w-md text-sm text-slate-300">
             Six recurring weekly classes, capped at 10 students each — on top of your self-paced curriculum. 1 credit
-            = 30 minutes of class, and that conversion never changes no matter which bundle you buy.
+            = {formatUsd(CREDIT_BASE_PRICE_CENTS)}, and that never changes no matter which bundle you buy — bigger
+            bundles just knock the per-credit rate down.
           </p>
+        </div>
 
-          <div className="mt-7 rounded-xl border border-ink/10 bg-surface p-6 text-center">
-            <p className="font-serif text-4xl tabular-nums text-slate-50">
-              {formatUsd(CREDIT_BASE_PRICE_CENTS)}
-              <span className="text-base font-sans text-amber-200/70"> / credit</span>
-            </p>
-            <p className="mt-1.5 text-sm text-amber-200/70">Bundle up and save up to 30% per credit</p>
-          </div>
-
-          {/* Three equal boxes was the flattest reading of this data: the
-              recommended bundle now carries its own accent border and a
-              small flag, rather than being visually identical to the other
-              two and only distinguishable by reading the numbers. */}
-          <div className="mt-5 grid grid-cols-3 gap-2.5">
-            {PRESET_BUNDLES.map((bundle) => {
-              const total = calculateClassCreditTotal(bundle.quantity);
-              const isBest = bundle.id === "best-value";
-              return (
-                <div
-                  key={bundle.id}
-                  className={`relative rounded-lg p-3.5 text-center ${
-                    isBest ? "border-2 border-amber-400/70 bg-amber-400/[0.06]" : "border border-ink/10"
-                  }`}
-                >
-                  {isBest && (
-                    <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-950">
-                      Best value
-                    </span>
-                  )}
-                  <p className="mt-1 text-xs font-medium text-slate-200">{bundle.label}</p>
-                  <p className={`mt-1 font-serif tabular-nums text-slate-50 ${isBest ? "text-2xl" : "text-lg"}`}>
-                    {formatUsd(total.totalCents)}
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-slate-500">
-                    {bundle.quantity} credits · {formatUsd(total.perCreditCents)}/ea
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-
-          <Link
-            href="/billing/lessons"
-            className="mt-7 block w-full rounded-xl border border-ink/10 py-2.5 text-center text-sm font-semibold text-slate-100 transition hover:border-amber-400/40 hover:text-amber-300"
-          >
-            Buy class credits
-          </Link>
+        <div className="mt-10">
+          <PricingTierGrid />
         </div>
       </motion.section>
 
