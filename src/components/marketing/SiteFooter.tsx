@@ -8,7 +8,7 @@ import { GradientFooter } from "./GradientFooter";
 // Every link here maps to a route that actually exists on this site —
 // no invented Docs/Blog/Careers/Status columns, no email-signup box with
 // nowhere real for it to go. "Account" swaps to a single Dashboard link
-// once signed in, same logic MarketingNav already uses.
+// once signed in, same logic SiteNavbar already uses.
 const EXPLORE_LINKS = [
   { href: "/", label: "Home" },
   { href: "/classes", label: "Live classes" },

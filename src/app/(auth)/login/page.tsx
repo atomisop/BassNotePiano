@@ -5,6 +5,11 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { loginStepOneAction } from "./actions";
 
@@ -67,59 +72,57 @@ function LoginForm() {
 
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">
         <div>
-          <label htmlFor="email" className="mb-1 block text-xs font-medium text-slate-400">
+          <Label htmlFor="email" className={fieldLabel}>
             Email
-          </label>
-          <input
+          </Label>
+          <Input
             id="email"
             type="email"
             autoComplete="email"
             required
             autoFocus
+            aria-invalid={Boolean(error)}
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
               setError(null);
             }}
-            className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-amber-400/60 ${
-              error ? "border-red-400/60" : "border-ink/10"
-            }`}
+            className={cn(error && fieldInvalid)}
           />
         </div>
         <div>
           <div className="mb-1 flex items-center justify-between">
-            <label htmlFor="password" className="block text-xs font-medium text-slate-400">
+            <Label htmlFor="password" className={fieldLabel}>
               Password
-            </label>
+            </Label>
             <Link href="/forgot-password" className="text-xs text-slate-500 transition hover:text-amber-300">
               Forgot?
             </Link>
           </div>
-          <input
+          <Input
             id="password"
             type="password"
             autoComplete="current-password"
             required
+            aria-invalid={Boolean(error)}
             value={password}
             onChange={(e) => {
               setPassword(e.target.value);
               setError(null);
             }}
-            className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-amber-400/60 ${
-              error ? "border-red-400/60" : "border-ink/10"
-            }`}
+            className={cn(error && fieldInvalid)}
           />
         </div>
 
-        {error && <p className="text-xs text-red-400">{error}</p>}
+        {error && (
+          <p role="alert" className="text-xs text-red-400">
+            {error}
+          </p>
+        )}
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="cta-sheen w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <Button type="submit" disabled={submitting} className="cta-sheen w-full">
           {submitting ? "Logging in…" : "Continue"}
-        </button>
+        </Button>
       </motion.form>
 
       <p className="mt-6 text-center text-sm text-slate-500">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { smoothScrollTo } from "@/components/scroll/SmoothScrollProvider";
 
 /** Floating "back to top" pill — appears once the visitor has scrolled past
  * roughly one viewport height, since the homepage is a long single-page
@@ -21,7 +22,12 @@ export function ScrollToTopButton() {
 
   function handleClick() {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+    // Routed through Lenis rather than window.scrollTo. With smooth scrolling
+    // running, the native call is doubly broken: Lenis sets
+    // `scroll-behavior: auto !important`, so "smooth" degrades to a hard jump,
+    // and Lenis then eases from its own stale target and overshoots. The
+    // helper falls back to the native call when Lenis isn't running.
+    smoothScrollTo(0, reduceMotion);
   }
 
   return (

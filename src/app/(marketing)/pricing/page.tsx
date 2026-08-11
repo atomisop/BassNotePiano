@@ -7,7 +7,7 @@ import { CREDIT_BASE_PRICE_CENTS } from "@/lib/classCreditPricing";
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { TiltGlow } from "@/components/ui/TiltGlow";
-import { MarketingNav } from "@/components/marketing/MarketingNav";
+import { SiteNavbar } from "@/components/marketing/SiteNavbar";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { PricingTierGrid } from "@/components/marketing/PricingTierGrid";
 
@@ -49,7 +49,7 @@ export default function PricingPage() {
         <PhotoBackdrop src={BACKDROPS.pricing} scrim="dense" priority sizes="100vw" />
       </div>
 
-      <MarketingNav />
+      <SiteNavbar />
 
       <motion.section
         variants={container}

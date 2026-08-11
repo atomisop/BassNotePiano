@@ -1,6 +1,6 @@
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
-import { MarketingNav } from "@/components/marketing/MarketingNav";
+import { SiteNavbar } from "@/components/marketing/SiteNavbar";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { ClassRegistrationForm } from "./ClassRegistrationForm";
 
@@ -16,7 +16,7 @@ export default function ClassesPage() {
         <PhotoBackdrop src={BACKDROPS.classes} scrim="vignette" priority sizes="100vw" />
       </div>
 
-      <MarketingNav />
+      <SiteNavbar />
 
       <section className="relative mx-auto max-w-lg px-6 pb-24 pt-28">
         <div className="text-center">

@@ -1,6 +1,6 @@
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
-import { MarketingNav } from "@/components/marketing/MarketingNav";
+import { SiteNavbar } from "@/components/marketing/SiteNavbar";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { TermsContent, TERMS_LAST_UPDATED } from "@/components/legal/TermsContent";
 
@@ -15,7 +15,7 @@ export default function TermsPage() {
         <PhotoBackdrop src={BACKDROPS.pricing} scrim="dense" priority sizes="100vw" />
       </div>
 
-      <MarketingNav />
+      <SiteNavbar />
 
       <section className="relative mx-auto max-w-2xl px-6 pb-24 pt-16 sm:pt-24">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Legal</p>
