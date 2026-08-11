@@ -65,6 +65,35 @@ The old system wallpapered every screen, including the whole authenticated app, 
 - **Marketing pages keep `<PhotoBackdrop>`,** but the scrims are far stronger than the dark system's. On a dark page, light text over a lightly-veiled photo is legible because the photo's midtones are darker than the type. Inverted, that stops being true — ink text over a half-visible photo lands on whatever tone happens to sit behind each glyph. So the photo is pushed to a ghost the type sits on, never competes with.
 - Anything that must be genuinely dark regardless of theme — a phone bezel, the onboarding spotlight scrim — is hardcoded, not tokenised. A phone chassis is a real object, not a themed surface.
 
+### Exception: the homepage is a scroll-driven film (2026-08-11)
+
+The rule above — media as subject, never as bed — **no longer holds for `/`**. The homepage's ground is now a single piece of studio footage in `<ScrollVideoBackground>`, fixed to the viewport, with the page's scroll progress driving the playhead instead of playback. `<PhotoBackdrop>` was removed from that route entirely; every other marketing page still follows the rule as written.
+
+This is a deliberate override, not drift, and it survives the original objection for one reason: the objection was about *contrast roulette* — type landing on whatever tone happens to sit behind each glyph. That is answered by measurement rather than by avoidance. The clip is sampled frame by frame for its brightest pixel (`rgb(243,223,191)`), and protection is set against that worst case rather than the average frame.
+
+### Two-layer protection, not one wash
+
+The first implementation used a single flat 84% scrim. The number was correct for a single global layer, but the shape was wrong: it spent the contrast budget over the whole frame, including the large regions carrying no text, which veiled the footage everywhere and made a 4K source look soft. Protection is now split:
+
+1. **A light base tint** (`bg-slate-950/60`) that only keeps midtones in range.
+2. **`<TextShelf>`** — a local pool (`pool`) or edge ramp (`edge`) of shade under each block of type, falling off to nothing at its edges. This does the AA work.
+
+The result is vivid footage in the open and guaranteed contrast under type. This mirrors the reasoning already applied to photographs in `.backdrop-scrim-vignette`: ask where text actually touches the image instead of protecting the whole frame.
+
+Rules for anything built on top of it:
+
+- **Body copy over footage is `slate-300` or lighter**, and sits on a `<TextShelf>` or inside a filled card. `slate-400` fails against the worst frame.
+- **Cards over footage carry their own fill** (`bg-slate-950/68`), because a near-transparent card lets highlights travel through the text and makes contrast vary frame to frame — unmeasurable by definition.
+- **Never stack three opaque layers** (base tint + stage wash + shelf). That flattens the image to black, which is the failure this system exists to avoid.
+
+### Encoding requirements for any replacement clip
+
+- **H.264, 8-bit** (`-pix_fmt yuv420p`). HEVC does not decode in Firefox, and the 10-bit master decodes almost nowhere.
+- **Short GOP** (`-g 6 -bf 0`). Seeking a normal GOP measured ~538ms per seek against a 16.7ms frame budget — a slideshow. `-g 6` measured 6.9ms, `-g 1` 5.2ms; the size saving of `-g 6` is worth the 1.7ms.
+- **60fps, interpolated if the source is lower** (`minterpolate=fps=60:mi_mode=mci`). For scrubbing, what matters is *frames per scroll-pixel*: 24fps over this page is ~27px of scroll per frame and reads as stepping. 60fps is ~11px.
+- **~2560px wide.** Retina displays render a full-bleed background at roughly 2× CSS pixels, so a 1440px encode visibly softens.
+- Re-measure the brightest pixel and re-check contrast after any swap.
+
 ## Layout & hierarchy rules
 
 - **Lists are one card with divided rows**, not a stack of separate floating cards. Seven identically-shadowed pills read as seven equally-urgent things.

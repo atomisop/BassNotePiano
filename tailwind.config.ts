@@ -41,10 +41,30 @@ const ramp = (name: string) => ({
   950: `rgb(var(--c-${name}-950) / <alpha-value>)`,
 });
 
+/**
+ * The shadcn/ui colour vocabulary, aliased onto the same themed variables
+ * everything else here uses. The CSS values live in globals.css' token
+ * bridge; this only generates the utilities (`bg-background`, `border-input`,
+ * `text-muted-foreground`, …) that shadcn components are written against.
+ *
+ * Same `<alpha-value>` treatment as the ramps above, so `bg-primary/90` — the
+ * default Button's hover state — actually produces a translucent accent
+ * rather than being dropped.
+ */
+const token = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
+
 const config: Config = {
   darkMode: ["selector", '[data-mode="dark"]'],
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
+    // shadcn blocks lay themselves out inside `.container`. Tailwind's stock
+    // container has no centring and no gutter, so without this the navbar
+    // would sit flush against the left edge on wide screens.
+    container: {
+      center: true,
+      padding: "1.5rem",
+      screens: { "2xl": "1400px" },
+    },
     extend: {
       fontFamily: {
         serif: ["var(--font-display)", "ui-serif", "Georgia", "serif"],
@@ -77,14 +97,84 @@ const config: Config = {
         // is to push the page back, and a white wash on a dark theme would do
         // the opposite.
         scrim: "rgb(var(--c-scrim) / <alpha-value>)",
+
+        // ---- shadcn/ui vocabulary (see `token` above) --------------------
+        background: token("background"),
+        foreground: token("foreground"),
+        border: token("border"),
+        input: token("input"),
+        ring: token("ring"),
+        primary: {
+          DEFAULT: token("primary"),
+          foreground: token("primary-foreground"),
+        },
+        secondary: {
+          DEFAULT: token("secondary"),
+          foreground: token("secondary-foreground"),
+        },
+        muted: {
+          DEFAULT: token("muted"),
+          foreground: token("muted-foreground"),
+        },
+        accent: {
+          DEFAULT: token("accent"),
+          foreground: token("accent-foreground"),
+        },
+        destructive: {
+          DEFAULT: token("destructive"),
+          foreground: token("destructive-foreground"),
+        },
+        card: {
+          DEFAULT: token("card"),
+          foreground: token("card-foreground"),
+        },
+        popover: {
+          DEFAULT: token("popover"),
+          foreground: token("popover-foreground"),
+        },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+      // shadcn components write bare `border` / `border-b` / `border-l` and
+      // expect the default to be the themed hairline. Tailwind's stock default
+      // is gray-200, which on a dark theme draws a near-white outline — that
+      // is what the navigation-menu panel and the sheet's edge were getting.
+      // shadcn's own setup does this with a global `* { @apply border-border }`;
+      // as a theme default it stays scoped to elements that ask for a border
+      // and never specify a colour. Nothing else in this app does — every
+      // existing border here names its own colour.
+      borderColor: {
+        DEFAULT: token("border"),
       },
       boxShadow: {
         card: "var(--surface-shadow)",
         "card-lifted": "var(--elev-shadow)",
       },
+      // Radix measures the panel and exposes its height as a variable; the
+      // keyframes animate to that. Without them the accordion in the mobile
+      // menu snaps open instead of expanding.
+      keyframes: {
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
+        },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+      },
+      animation: {
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+      },
     },
   },
-  plugins: [],
+  // Supplies the `animate-in` / `data-[state=open]:…` enter-exit utilities the
+  // sheet and navigation-menu are written against.
+  plugins: [require("tailwindcss-animate")],
 };
 
 export default config;

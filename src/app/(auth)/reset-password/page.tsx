@@ -5,6 +5,11 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { resetPasswordAction, resendResetCodeAction } from "./actions";
 
@@ -95,10 +100,12 @@ function ResetPasswordForm() {
 
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">
         <div>
-          <label htmlFor="code" className="mb-1 block text-xs font-medium text-slate-400">
+          <Label htmlFor="code" className={fieldLabel}>
             Code
-          </label>
-          <input
+          </Label>
+          {/* Same taller mono treatment as /verify-email — both screens ask
+              for the identical 6-digit code, so they read identically. */}
+          <Input
             id="code"
             type="text"
             inputMode="numeric"
@@ -106,68 +113,72 @@ function ResetPasswordForm() {
             maxLength={6}
             required
             autoFocus
+            aria-invalid={Boolean(error)}
             value={code}
             onChange={(e) => {
               setCode(e.target.value.replace(/\D/g, ""));
               setError(null);
             }}
-            className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-center font-mono text-lg tracking-[0.5em] text-slate-100 outline-none transition-colors focus:border-amber-400/60 ${
-              error ? "border-red-400/60" : "border-ink/10"
-            }`}
+            className={cn(
+              "h-12 text-center font-mono text-lg tracking-[0.5em]",
+              error && fieldInvalid,
+            )}
             placeholder="······"
           />
         </div>
 
         <div>
-          <label htmlFor="newPassword" className="mb-1 block text-xs font-medium text-slate-400">
+          <Label htmlFor="newPassword" className={fieldLabel}>
             New password
-          </label>
-          <input
+          </Label>
+          <Input
             id="newPassword"
             type="password"
             autoComplete="new-password"
             required
+            aria-invalid={Boolean(error)}
             value={newPassword}
             onChange={(e) => {
               setNewPassword(e.target.value);
               setError(null);
             }}
-            className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-amber-400/60 ${
-              error ? "border-red-400/60" : "border-ink/10"
-            }`}
+            className={cn(error && fieldInvalid)}
           />
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="mb-1 block text-xs font-medium text-slate-400">
+          <Label htmlFor="confirmPassword" className={fieldLabel}>
             Confirm new password
-          </label>
-          <input
+          </Label>
+          <Input
             id="confirmPassword"
             type="password"
             autoComplete="new-password"
             required
+            aria-invalid={Boolean(error)}
             value={confirmPassword}
             onChange={(e) => {
               setConfirmPassword(e.target.value);
               setError(null);
             }}
-            className={`w-full rounded-lg border bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition-colors focus:border-amber-400/60 ${
-              error ? "border-red-400/60" : "border-ink/10"
-            }`}
+            className={cn(error && fieldInvalid)}
           />
         </div>
 
-        {error && <p className="text-xs text-red-400">{error}</p>}
-        {resent && <p className="text-xs text-emerald-400">New code sent.</p>}
+        {error && (
+          <p role="alert" className="text-xs text-red-400">
+            {error}
+          </p>
+        )}
+        {resent && (
+          <p role="status" className="text-xs text-emerald-400">
+            New code sent.
+          </p>
+        )}
 
-        <button
-          type="submit"
-          disabled={submitting || code.length !== 6}
-          className="cta-sheen w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <Button type="submit" disabled={submitting || code.length !== 6} className="cta-sheen w-full">
           {submitting ? "Resetting…" : "Reset password"}
-        </button>
+        </Button>
       </motion.form>
 
       <button

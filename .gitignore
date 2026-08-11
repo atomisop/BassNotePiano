@@ -11,6 +11,10 @@
 # env files — never commit real secrets, .env.example is the template
 .env
 .env*.local
+# timestamped backups made before editing .env — these contain real secrets and
+# matched none of the patterns above, so they were one `git add -A` from being
+# committed. .env.example stays tracked because it holds only placeholders.
+.env.backup-*
 
 # misc
 .DS_Store
@@ -26,3 +30,15 @@ next-env.d.ts
 
 # local tool config (Claude Code) — machine-specific, not app code
 /.claude
+
+# other local agent/tooling state — same reasoning as /.claude above: these are
+# per-machine scratch directories, not application code
+/.agents
+/.codex
+/.impeccable
+/skills-lock.json
+
+# Homepage scroll-video source assets — ~31MB, served from Cloudflare R2.
+# URLs live in src/lib/media-manifest.ts; re-upload with `npm run upload:media`.
+# Kept locally as a fallback, deliberately never committed.
+/public/video

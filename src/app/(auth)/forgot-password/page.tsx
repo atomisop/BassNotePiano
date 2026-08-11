@@ -4,6 +4,10 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { fieldLabel } from "@/lib/form-styles";
 import { requestPasswordResetAction } from "./actions";
 
 const cardVariants = {
@@ -38,10 +42,10 @@ export default function ForgotPasswordPage() {
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>
-          <label htmlFor="email" className="mb-1 block text-xs font-medium text-slate-400">
+          <Label htmlFor="email" className={fieldLabel}>
             Email
-          </label>
-          <input
+          </Label>
+          <Input
             id="email"
             type="email"
             autoComplete="email"
@@ -49,17 +53,12 @@ export default function ForgotPasswordPage() {
             autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="cta-sheen w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <Button type="submit" disabled={submitting} className="cta-sheen w-full">
           {submitting ? "Sending…" : "Send code"}
-        </button>
+        </Button>
       </form>
 
       <p className="mt-6 text-center text-sm text-slate-500">

@@ -3,6 +3,66 @@
 @import "./themes.css";
 @tailwind utilities;
 
+/* ==========================================================================
+   shadcn/ui token bridge
+   --------------------------------------------------------------------------
+   shadcn components are written against a fixed vocabulary — `bg-background`,
+   `text-muted-foreground`, `border-input`, `ring-ring` — and the usual setup
+   hardcodes a light and a dark palette for those names. This app already has
+   35 themes, so a second hardcoded palette would mean shadcn components stay
+   grey while the rest of the page turns into Dracula or Editorial Paper.
+
+   Instead every shadcn name is an alias onto the ramp contract themes.css
+   already fills (see its header). Nothing is duplicated and nothing needs a
+   per-theme override: these are declared once on :root, and because
+   `[data-theme="…"]` also matches <html>, `var(--c-s-950)` resolves to
+   whichever theme is live at the time.
+
+   The two foreground pairs that sit on colour rather than on the ground —
+   primary and destructive — both resolve to `--c-s-950`, the page ground.
+   That reads odd but is exactly right in every theme: the ramp's 950 is
+   always the ground, and a theme's accent is always pitched against its own
+   ground (dark rust on light paper, warm amber on dark ink). So "the ground
+   colour" is always the readable text on top of the accent, in both
+   directions, without a light/dark branch here.
+   ========================================================================== */
+:root {
+  --background: var(--c-s-950);
+  --foreground: var(--c-s-50);
+
+  /* Cards and popovers use the opaque chrome surface, not the ground, so a
+     navigation-menu dropdown or a sheet is legible over page content. */
+  --card: var(--c-surface-solid);
+  --card-foreground: var(--c-s-50);
+  --popover: var(--c-surface-solid);
+  --popover-foreground: var(--c-s-50);
+
+  --primary: var(--c-a-400);
+  --primary-foreground: var(--c-s-950);
+
+  --secondary: var(--c-s-900);
+  --secondary-foreground: var(--c-s-50);
+
+  /* 900 is the ramp step just off the ground — subtle enough for a hover
+     wash, distinct enough to read as one. 500 clears AA on the ground in
+     every theme, which is what makes it safe for muted *text*. */
+  --muted: var(--c-s-900);
+  --muted-foreground: var(--c-s-500);
+  --accent: var(--c-s-900);
+  --accent-foreground: var(--c-s-50);
+
+  --destructive: var(--c-rd-400);
+  --destructive-foreground: var(--c-s-950);
+
+  --border: var(--c-s-700);
+  --input: var(--c-s-700);
+  --ring: var(--c-a-400);
+
+  /* Corner radius follows the active theme's own card radius rather than
+     shadcn's fixed 0.5rem, so a Button matches the panels beside it. */
+  --radius: var(--surface-radius, 0.75rem);
+}
+
 body {
   @apply bg-slate-950 text-slate-100 antialiased;
 
@@ -58,6 +118,28 @@ body {
   .text-\[10px\] {
     letter-spacing: 0.006em;
   }
+}
+
+/* ==========================================================================
+   Lenis page physics
+   --------------------------------------------------------------------------
+   Lenis drives the real window scroll position (see SmoothScrollProvider for
+   why that matters), so it needs the document to stop fighting it: native
+   `scroll-behavior: smooth` would apply a second, competing easing on top of
+   Lenis's own, and a locked `height` on <html> breaks its distance maths.
+   These are the three rules the library actually requires — nothing else.
+   ========================================================================== */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
 }
 
 /* ==========================================================================
@@ -235,6 +317,47 @@ body {
   /* Full-measure hairline, the way a rule separates sections in print. */
   .rule {
     border-top: 1px solid var(--surface-border);
+  }
+
+  /* ---- Cards over the homepage scroll video --------------------------- */
+
+  /* Declared here in raw rgba rather than as Tailwind utilities on the
+     elements, matching how the surface classes above are written.
+
+     The practical reason: when these same values lived in a utility string
+     inside a newly created `.ts` module, Tailwind's watcher never scanned the
+     file and the classes were missing from the compiled stylesheet — the cards
+     kept their radius and padding and rendered fully transparent. That failure
+     is silent, and since this fill is the measured floor holding body copy at
+     4.5:1 against the video's brightest frame, it costs contrast rather than
+     just appearance. A class in a stylesheet the build already tracks cannot
+     fail that way.
+
+     (Opacity utilities are not broken in this project generally — every one
+     currently in source compiles correctly.) */
+  .card-surface {
+    border-radius: 1rem;
+    border: 1px solid rgb(var(--c-s-50) / 0.09);
+    background: rgb(var(--c-s-950) / 0.68);
+    box-shadow:
+      inset 0 1px 0 0 rgb(var(--c-s-50) / 0.06),
+      inset 0 -24px 48px -32px rgb(var(--c-s-950) / 0.9);
+    transition: border-color 300ms ease;
+  }
+
+  .card-surface-hover:hover {
+    border-color: rgb(var(--c-s-50) / 0.17);
+  }
+
+  /* The small token chips — spelled notes, transposition cells. */
+  .chip-accent {
+    border: 1px solid rgb(var(--c-a-400) / 0.25);
+    background: rgb(var(--c-a-400) / 0.08);
+  }
+
+  .chip-neutral {
+    border: 1px solid rgb(var(--c-s-50) / 0.08);
+    background: rgb(var(--c-s-50) / 0.04);
   }
 
   /* The recurring kicker above a heading — centralised so every page gets
