@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { motion, AnimatePresence } from "framer-motion";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { NavIcon, ICON_PATHS } from "@/components/layout/navIcons";
 
@@ -35,6 +36,11 @@ export function MarketingNav() {
   const pathname = usePathname();
   const isLoggedIn = Boolean(session?.user);
   const [menuOpen, setMenuOpen] = useState(false);
+  // Desktop-only: which link is currently hovered, so a single shared pill
+  // can glide between them via layoutId instead of each link getting its
+  // own static hover background — the motion itself is what reads as
+  // "alive" rather than a hover state anyone would just take for granted.
+  const [hoveredHref, setHoveredHref] = useState<string | null>(null);
 
   // Excludes whichever of Classes/Pricing matches the current page — same
   // filter the inline sm:+ links use below, reused here so the mobile menu
@@ -67,7 +73,25 @@ export function MarketingNav() {
               The hamburger button below is the mobile equivalent, so these
               stay reachable rather than just disappearing. */}
           {otherLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="hidden whitespace-nowrap transition hover:text-amber-300 sm:inline">
+            <Link
+              key={link.href}
+              href={link.href}
+              onMouseEnter={() => setHoveredHref(link.href)}
+              onMouseLeave={() => setHoveredHref((h) => (h === link.href ? null : h))}
+              className="relative hidden whitespace-nowrap px-3 py-1.5 transition hover:text-amber-300 sm:inline"
+            >
+              <AnimatePresence>
+                {hoveredHref === link.href && (
+                  <motion.span
+                    layoutId="nav-hover-pill"
+                    className="absolute inset-0 -z-10 rounded-full bg-amber-400/10"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ type: "spring", bounce: 0, duration: 0.35 }}
+                  />
+                )}
+              </AnimatePresence>
               {link.label}
             </Link>
           ))}

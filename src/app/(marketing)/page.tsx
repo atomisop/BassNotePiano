@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
+import NumberFlow from "@number-flow/react";
 import { SCALE_GROUPS, CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
-import { CREDIT_BASE_PRICE_CENTS } from "@/lib/classCreditPricing";
+import { PRESET_BUNDLES, calculateClassCreditTotal } from "@/lib/classCreditPricing";
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { TiltGlow } from "@/components/ui/TiltGlow";
@@ -279,7 +280,7 @@ export default function LandingPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-        className="relative mx-auto max-w-2xl px-6 py-28 text-center"
+        className="relative mx-auto max-w-4xl px-6 py-28 text-center"
       >
         {/* The whole card is the link, not just the price. A bare text node
             is a poor click target, and everything in here — the number, the
@@ -291,7 +292,10 @@ export default function LandingPage() {
           >
             <p className="text-sm font-medium uppercase tracking-[0.2em] text-amber-300">Everything, once</p>
             <p className="mt-4 font-serif text-7xl tabular-nums text-slate-50 sm:text-8xl">
-              {formatUsd(CURRICULUM_PRICE_CENTS)}
+              <NumberFlow
+                value={CURRICULUM_PRICE_CENTS / 100}
+                format={{ style: "currency", currency: "USD", trailingZeroDisplay: "stripIfInteger" }}
+              />
             </p>
             <p className="mt-3 text-base text-amber-200/70">One-time payment · every scale, forever · no subscriptions</p>
             {/* Without this the card looks like a static stat — there was
@@ -313,10 +317,37 @@ export default function LandingPage() {
             </span>
           </TiltGlow>
         </Link>
-        <p className="mt-6 text-sm text-slate-500">
-          Want live coaching too? Join weekly group classes on Zoom — {formatUsd(CREDIT_BASE_PRICE_CENTS)} per
-          30-minute credit, with bundle discounts up to 30% off.
-        </p>
+
+        {/* Compact taste of the same tier cards /pricing builds out in full —
+            three chips instead of a footnote sentence, so "bundle discounts
+            up to 30% off" is a number you can actually see land, not just a
+            claim you have to click through to verify. */}
+        <div className="mx-auto mt-6 grid max-w-2xl grid-cols-3 gap-3">
+          {PRESET_BUNDLES.map((bundle) => {
+            const total = calculateClassCreditTotal(bundle.quantity);
+            const isBest = bundle.id === "best-value";
+            return (
+              <Link
+                key={bundle.id}
+                href="/pricing"
+                className={`group/chip rounded-xl p-4 transition ${
+                  isBest ? "bg-slate-50 hover:brightness-95" : "glass-surface hover:border-amber-400/40"
+                }`}
+              >
+                <p className={`text-[11px] font-medium uppercase tracking-[0.1em] ${isBest ? "text-neutral-600" : "text-slate-500"}`}>
+                  {bundle.label}
+                </p>
+                <p className={`mt-1 font-serif text-2xl tabular-nums ${isBest ? "text-neutral-950" : "text-slate-50"}`}>
+                  <NumberFlow value={total.totalCents / 100} format={{ style: "currency", currency: "USD", trailingZeroDisplay: "stripIfInteger" }} />
+                </p>
+                <p className={`mt-0.5 text-[11px] ${isBest ? "text-neutral-500" : "text-slate-500"}`}>
+                  {Math.round(total.discountRate * 100)}% off · {bundle.quantity} credits
+                </p>
+              </Link>
+            );
+          })}
+        </div>
+        <p className="mt-5 text-sm text-slate-500">Live group classes on Zoom — see the full breakdown on the pricing page.</p>
       </motion.section>
 
       <SiteFooter />
