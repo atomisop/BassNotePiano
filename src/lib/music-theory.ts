@@ -68,6 +68,20 @@ function parseNote(note: string): { letter: string; semitone: number } {
   return { letter, semitone };
 }
 
+/**
+ * The pitch class (0-11, C = 0) a spelled note sounds at.
+ *
+ * Spelling and sound are deliberately different things in this file — the
+ * whole point of spellDegree is that Gb and F# are different *names*. This is
+ * the one place that collapses that distinction, because a loudspeaker cannot
+ * tell them apart. Exported for the audio engine (src/lib/audio-engine.ts),
+ * which needs a frequency for a name this module produced; nothing about
+ * scale or chord spelling should ever route through it.
+ */
+export function pitchClassOf(note: string): number {
+  return parseNote(note).semitone;
+}
+
 // Major-scale semitone offsets for unaltered degrees 1-7. Extended chord
 // degrees (9, 11, 13) fold back onto 2, 4, 6 — a 9th is a 2nd an octave up.
 const DEGREE_OFFSETS: Record<number, number> = { 1: 0, 2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 11 };

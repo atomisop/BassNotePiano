@@ -1,8 +1,20 @@
+import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/site";
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { SiteNavbar } from "@/components/marketing/SiteNavbar";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { TermsContent, TERMS_LAST_UPDATED } from "@/components/legal/TermsContent";
+
+// noIndex rather than a robots.ts disallow: this page has to stay
+// crawlable-by-link (it's the consent target for registration and both
+// purchase flows) but it should never rank in place of a marketing page.
+export const metadata: Metadata = pageMetadata({
+  title: "Terms & refund policy",
+  description: "The terms of use and refund policy for Bass Note Piano.",
+  path: "/terms",
+  noIndex: true,
+});
 
 // Public and auth-independent on purpose — this is what registration and
 // both purchase flows link to for their required consent checkbox, so it

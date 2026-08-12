@@ -7,7 +7,7 @@
 // Empty strings mean "not uploaded yet" — <ScrollVideoBackground> then falls
 // back to the local /video/* copies, so the page works either way.
 export const MEDIA = {
-  video: "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/marketing/studio.62b961cf8d.mp4",
-  videoMobile: "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/marketing/studio-mobile.2c49ea6210.mp4",
-  poster: "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/marketing/studio-poster.87cc1dbe8a.jpg",
+  video: "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/marketing/studio.6c815b0a91.mp4",
+  videoMobile: "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/marketing/studio-mobile.bd7e18c4d0.mp4",
+  poster: "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/marketing/studio-poster.aec5649c7d.jpg",
 } as const;
