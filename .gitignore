@@ -38,7 +38,19 @@ next-env.d.ts
 /.impeccable
 /skills-lock.json
 
+# graphify skill output — a regenerable code-analysis cache (graph.json,
+# manifest.json with per-file mtimes/hashes), not application code. Found
+# unreferenced by any src/config file during the Step 2 dead-code audit;
+# ignored here so a future `graphify` run never becomes a 3.8MB accidental
+# commit. The existing on-disk copy needs `rm -rf graphify-out` to actually
+# remove it — that command was blocked by the permission classifier.
+/graphify-out
+
 # Homepage scroll-video source assets — ~31MB, served from Cloudflare R2.
 # URLs live in src/lib/media-manifest.ts; re-upload with `npm run upload:media`.
 # Kept locally as a fallback, deliberately never committed.
 /public/video
+
+# 3D piano model (Step 6 feasibility work) — licensing was never confirmed
+# (see Step 1's audit). Local-only until that's resolved; do not commit.
+/public/models
