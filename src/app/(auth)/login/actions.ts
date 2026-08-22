@@ -2,7 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { createAndSendCode, createSilentCode } from "@/lib/verification";
+import { createAndSendCode, createSilentCode, RateLimitError } from "@/lib/verification";
 
 export type LoginStepOneResult =
   | { ok: false; error: string }
@@ -34,12 +34,17 @@ export async function loginStepOneAction(email: string, password: string): Promi
   const validPassword = await bcrypt.compare(password, user.passwordHash);
   if (!validPassword) return { ok: false, error: GENERIC_CREDENTIALS_ERROR };
 
-  if (!user.emailVerified) {
-    const sendResult = await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
-    if (!sendResult.ok) return { ok: false, error: "Couldn't send the verification email. Try again in a moment." };
-    return { ok: true, needsEmailVerification: true };
-  }
+  try {
+    if (!user.emailVerified) {
+      const sendResult = await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
+      if (!sendResult.ok) return { ok: false, error: "Couldn't send the verification email. Try again in a moment." };
+      return { ok: true, needsEmailVerification: true };
+    }
 
-  const { code } = await createSilentCode({ email: user.email, userId: user.id, purpose: "LOGIN_2FA" });
-  return { ok: true, needsEmailVerification: false, autoCode: code };
+    const { code } = await createSilentCode({ email: user.email, userId: user.id, purpose: "LOGIN_2FA" });
+    return { ok: true, needsEmailVerification: false, autoCode: code };
+  } catch (err) {
+    if (err instanceof RateLimitError) return { ok: false, error: err.message };
+    throw err;
+  }
 }

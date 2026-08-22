@@ -42,6 +42,11 @@ function AdminMessagesInner({ initialConversations }: { initialConversations: Co
       : conversations;
 
   const active = merged.find((c) => c.friendId === activeUserId) ?? null;
+  // Captured as its own primitive so the polling effect below can depend on
+  // (and reference) only this, never `active` itself — `merged`/`active` are
+  // recomputed fresh every render, so depending on the object would poll on
+  // every unrelated re-render instead of only when the active chat changes.
+  const activeConversationId = active?.friendId ?? null;
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -51,26 +56,30 @@ function AdminMessagesInner({ initialConversations }: { initialConversations: Co
   }, []);
 
   useEffect(() => {
-    if (!active) {
+    if (!activeConversationId) {
       setMessages([]);
       return;
     }
 
+    // TS narrowing from the guard above doesn't cross into `load`, a
+    // separately-declared nested function — recapture as a definitely-string
+    // local so the action calls below don't need a `!` on every use.
+    const friendId = activeConversationId;
     let cancelled = false;
     let previousLastMessageId: string | null = null; // null = haven't loaded yet, don't chime on first load
 
     async function load() {
-      const rows = await getAdminConversationMessagesAction(active!.friendId);
+      const rows = await getAdminConversationMessagesAction(friendId);
       if (cancelled) return;
 
       const newest = rows[rows.length - 1];
-      if (previousLastMessageId !== null && newest && newest.id !== previousLastMessageId && newest.senderId === active!.friendId) {
+      if (previousLastMessageId !== null && newest && newest.id !== previousLastMessageId && newest.senderId === friendId) {
         playNotificationSound();
       }
       previousLastMessageId = newest?.id ?? previousLastMessageId;
 
       setMessages(rows);
-      await markAdminConversationReadAction(active!.friendId);
+      await markAdminConversationReadAction(friendId);
       setConversations(await getAdminConversationsAction());
     }
     load();
@@ -80,7 +89,7 @@ function AdminMessagesInner({ initialConversations }: { initialConversations: Co
       cancelled = true;
       clearInterval(interval);
     };
-  }, [active?.friendId]);
+  }, [activeConversationId]);
 
   function handleSelect(userId: string) {
     router.push(`/admin/messages?with=${userId}`);

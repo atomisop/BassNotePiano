@@ -64,6 +64,66 @@ export interface PresignedUpload {
   publicUrl: string; // what fileUrl should be set to once the upload succeeds
 }
 
+// ---------------------------------------------------------------------------
+// Upload validation
+// ---------------------------------------------------------------------------
+//
+// Both presign functions below used to accept `contentType` from the caller
+// with no server-side check at all — the admin lesson form and the avatar
+// form each validated it client-side before calling in, but a Server Action
+// is a real callable RPC endpoint, not gated by whichever UI happens to call
+// it normally. Anyone with a valid session could call
+// `requestLessonUploadUrlAction`/`requestAvatarUploadUrlAction` directly with
+// an arbitrary content type or a fabricated size and get a legitimately
+// signed URL for it. Flagged in the Step 4 security audit; fixed here.
+//
+// The size limit is enforced two ways, not one:
+//   1. Rejected here, before a URL is ever minted, against MAX_*_BYTES.
+//   2. Signed into the presigned URL itself via `ContentLength`. S3-compatible
+//      signing (R2 included) covers ContentLength when it's passed to
+//      PutObjectCommand, so the actual PUT the browser performs must match
+//      the declared size exactly or R2 rejects it — a caller can't request a
+//      URL for a small file and then stream something larger through it.
+//      This is why both call sites now pass the size of what is ACTUALLY
+//      uploaded (the resized avatar blob, not the original source file) —
+//      signing the wrong number would just break real uploads.
+
+const MB = 1024 * 1024;
+
+const LESSON_CONTENT_TYPES = new Set([
+  "video/mp4",
+  "video/quicktime",
+  "video/webm",
+  "video/x-m4v",
+  "application/pdf",
+]);
+/** Generous on purpose — real lesson videos are long, high-quality files. */
+const MAX_LESSON_VIDEO_BYTES = 3 * 1024 * MB; // 3 GB
+const MAX_LESSON_PDF_BYTES = 100 * MB;
+
+const AVATAR_CONTENT_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+/** Well above what a resized profile photo needs — this is the server-side
+ *  backstop behind the client's own resize step, not the primary size logic. */
+const MAX_AVATAR_BYTES = 8 * MB;
+
+function assertValidUpload(
+  contentType: string,
+  fileSize: number,
+  allowedTypes: Set<string>,
+  maxBytes: number,
+  label: string,
+) {
+  if (!allowedTypes.has(contentType)) {
+    throw new Error(`Unsupported ${label} type: "${contentType}".`);
+  }
+  if (!Number.isFinite(fileSize) || fileSize <= 0) {
+    throw new Error(`Missing or invalid file size for this ${label} upload.`);
+  }
+  if (fileSize > maxBytes) {
+    throw new Error(`That ${label} is too large — max ${Math.round(maxBytes / MB)} MB.`);
+  }
+}
+
 /**
  * Issues a short-lived (10 min) presigned PUT URL for a direct browser →
  * R2 upload. `key` is namespaced under lessons/<scaleGroupSlug>/ so files
@@ -73,7 +133,11 @@ export async function createPresignedLessonUpload(
   scaleGroupSlug: string,
   fileName: string,
   contentType: string,
+  fileSize: number,
 ): Promise<PresignedUpload> {
+  const maxBytes = contentType === "application/pdf" ? MAX_LESSON_PDF_BYTES : MAX_LESSON_VIDEO_BYTES;
+  assertValidUpload(contentType, fileSize, LESSON_CONTENT_TYPES, maxBytes, "lesson file");
+
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
   const key = `lessons/${scaleGroupSlug}/${Date.now()}-${safeName}`;
 
@@ -81,6 +145,14 @@ export async function createPresignedLessonUpload(
     Bucket: process.env.R2_BUCKET_NAME,
     Key: key,
     ContentType: contentType,
+    ContentLength: fileSize,
+    // STEP 22: no CacheControl was set at all before this — every request
+    // for a lesson video/PDF, including repeat views by the same student,
+    // hit R2 directly rather than the CDN edge cache in front of it. Safe
+    // to cache forever because the key already encodes a timestamp
+    // (Date.now() above) — the object at this exact key never changes
+    // content, a re-upload gets a brand new key instead of overwriting.
+    CacheControl: "public, max-age=31536000, immutable",
   });
 
   const uploadUrl = await getSignedUrl(getClient(), command, { expiresIn: 600 });
@@ -94,7 +166,10 @@ export async function createPresignedAvatarUpload(
   userId: string,
   fileName: string,
   contentType: string,
+  fileSize: number,
 ): Promise<PresignedUpload> {
+  assertValidUpload(contentType, fileSize, AVATAR_CONTENT_TYPES, MAX_AVATAR_BYTES, "avatar image");
+
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
   const key = `avatars/${userId}/${Date.now()}-${safeName}`;
 
@@ -102,6 +177,12 @@ export async function createPresignedAvatarUpload(
     Bucket: process.env.R2_BUCKET_NAME,
     Key: key,
     ContentType: contentType,
+    ContentLength: fileSize,
+    // STEP 22: same reasoning as the lesson upload above — the key is
+    // timestamped, so it's immutable; a new avatar gets a new key rather
+    // than overwriting this one, and the DB row pointing at "current
+    // avatar" is what actually changes.
+    CacheControl: "public, max-age=31536000, immutable",
   });
 
   const uploadUrl = await getSignedUrl(getClient(), command, { expiresIn: 600 });

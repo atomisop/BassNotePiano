@@ -127,7 +127,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search students by name or email…"
-          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+          className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
         />
 
         <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">
@@ -141,10 +141,10 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 type="button"
                 onClick={() => selectUser(user)}
                 className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${
-                  active ? "border-amber-400/50 bg-amber-400/10" : "border-ink/10 hover:border-ink/15 hover:bg-ink/5"
+                  active ? "border-[rgb(var(--c-a-400)/0.5)] bg-[rgb(var(--c-a-400)/0.1)]" : "border-ink/10 hover:border-ink/15 hover:bg-ink/5"
                 }`}
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-amber-400/15 text-sm font-medium text-amber-300">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[rgb(var(--c-a-400)/0.15)] text-sm font-medium text-[rgb(var(--c-a-300))]">
                   {user.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={user.image} alt="" className="h-full w-full object-cover" />
@@ -183,7 +183,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="e.g. 4 or -2"
-                  className="mt-1 w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
                 />
               </div>
               <div>
@@ -196,7 +196,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   onChange={(e) => setReason(e.target.value)}
                   rows={2}
                   placeholder="e.g. Paid via Venmo instead of Zelle"
-                  className="mt-1 w-full resize-none rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+                  className="mt-1 w-full resize-none glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
                 />
               </div>
 
@@ -206,7 +206,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full rounded-lg bg-amber-400 px-3 py-2 text-sm font-medium text-slate-950 transition hover:bg-amber-300 disabled:opacity-40"
+                className="cta-sheen cta-fill w-full rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-40"
               >
                 {submitting ? "Applying…" : "Apply adjustment"}
               </button>

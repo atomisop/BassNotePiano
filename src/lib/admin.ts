@@ -30,6 +30,135 @@ export async function getOverviewStats(): Promise<OverviewStats> {
 // Curriculum / module health
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Trends — real time-series for the overview sparklines
+// ---------------------------------------------------------------------------
+
+export interface TrendPoint {
+  label: string;
+  value: number;
+}
+
+export interface OverviewTrends {
+  signups: TrendPoint[];
+  revenue: TrendPoint[];
+}
+
+/**
+ * Signups and verified revenue bucketed by calendar month, for the last
+ * `months` months including the current one.
+ *
+ * Computed from real rows — User.createdAt and VERIFIED ZellePayment.amountCents
+ * — rather than seeded or smoothed. Months with no activity return 0 instead of
+ * being dropped, so the sparkline shows a genuine flat stretch rather than
+ * silently compressing time and implying steady growth that didn't happen.
+ *
+ * Bucketing is done in JS over the fetched rows rather than in SQL: the volumes
+ * here are small (one studio's students), and a raw `$queryRaw` with
+ * date_trunc would tie this to Postgres and bypass Prisma's typing for no
+ * measurable gain at this scale.
+ */
+export async function getOverviewTrends(months = 6): Promise<OverviewTrends> {
+  const now = new Date();
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (months - 1), 1));
+
+  const [users, payments] = await Promise.all([
+    prisma.user.findMany({
+      where: { createdAt: { gte: start } },
+      select: { createdAt: true },
+    }),
+    prisma.zellePayment.findMany({
+      where: { status: "VERIFIED", updatedAt: { gte: start } },
+      select: { updatedAt: true, amountCents: true },
+    }),
+  ]);
+
+  const buckets: { key: string; label: string; signups: number; revenueCents: number }[] = [];
+  for (let i = 0; i < months; i++) {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (months - 1) + i, 1));
+    buckets.push({
+      key: `${d.getUTCFullYear()}-${d.getUTCMonth()}`,
+      label: d.toLocaleString("en-US", { month: "short", timeZone: "UTC" }),
+      signups: 0,
+      revenueCents: 0,
+    });
+  }
+  const index = new Map(buckets.map((b, i) => [b.key, i]));
+  const keyOf = (d: Date) => `${d.getUTCFullYear()}-${d.getUTCMonth()}`;
+
+  for (const u of users) {
+    const i = index.get(keyOf(u.createdAt));
+    if (i !== undefined) buckets[i].signups += 1;
+  }
+  for (const p of payments) {
+    const i = index.get(keyOf(p.updatedAt));
+    if (i !== undefined) buckets[i].revenueCents += p.amountCents;
+  }
+
+  return {
+    signups: buckets.map((b) => ({ label: b.label, value: b.signups })),
+    revenue: buckets.map((b) => ({ label: b.label, value: Math.round(b.revenueCents / 100) })),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Student roster — one sortable row per student
+// ---------------------------------------------------------------------------
+
+export interface StudentRosterRow {
+  id: string;
+  name: string;
+  email: string;
+  hasCurriculumAccess: boolean;
+  scalesCompleted: number;
+  classCredits: number;
+  currentStreak: number;
+  /** ms since epoch, or null. A number so the table can sort it. */
+  lastActivityAt: number | null;
+  joinedAt: number;
+}
+
+/**
+ * Every student, with the handful of figures a teacher actually scans for.
+ *
+ * Admins are excluded — this is the roster of people being taught, and mixing
+ * staff accounts into it makes counts like "how many students have curriculum
+ * access" wrong.
+ *
+ * scalesCompleted is counted from ScaleProgress rows with status COMPLETED
+ * rather than stored on the user, so it can't drift from the checklist the
+ * student actually sees.
+ */
+export async function getStudentRoster(): Promise<StudentRosterRow[]> {
+  const users = await prisma.user.findMany({
+    where: { role: "STUDENT" },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      hasCurriculumAccess: true,
+      classCredits: true,
+      currentStreak: true,
+      lastActivityDate: true,
+      createdAt: true,
+      progress: { where: { status: "COMPLETED" }, select: { id: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return users.map((u) => ({
+    id: u.id,
+    name: u.name ?? "—",
+    email: u.email,
+    hasCurriculumAccess: u.hasCurriculumAccess,
+    scalesCompleted: u.progress.length,
+    classCredits: u.classCredits,
+    currentStreak: u.currentStreak,
+    lastActivityAt: u.lastActivityDate ? u.lastActivityDate.getTime() : null,
+    joinedAt: u.createdAt.getTime(),
+  }));
+}
+
 export interface ModuleHealthRow {
   slug: string;
   code: string;

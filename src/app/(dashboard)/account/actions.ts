@@ -71,10 +71,13 @@ export async function checkAvatarStorageAction() {
   return isObjectStorageConfigured();
 }
 
-export async function requestAvatarUploadUrlAction(fileName: string, contentType: string) {
+export async function requestAvatarUploadUrlAction(fileName: string, contentType: string, fileSize: number) {
   const { id } = await requireSession();
+  // The real allowlist/size enforcement now lives in createPresignedAvatarUpload
+  // (see storage.ts) — this early check just keeps the existing fast, specific
+  // error message for the common case rather than storage.ts's generic one.
   if (!contentType.startsWith("image/")) throw new Error("Only image files are supported.");
-  return createPresignedAvatarUpload(id, fileName, contentType);
+  return createPresignedAvatarUpload(id, fileName, contentType, fileSize);
 }
 
 export async function updateAvatarAction(publicUrl: string) {

@@ -18,17 +18,17 @@ export function CurriculumConsentGate(props: ZelleUnlockGateProps) {
 
   return (
     <div className="glass-surface space-y-4 p-6">
-      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-amber-400/20 bg-amber-400/5 p-3.5 text-xs text-slate-300">
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[rgb(var(--c-a-400)/0.2)] bg-[rgb(var(--c-a-400)/0.05)] p-3.5 text-xs text-slate-300">
         <input
           type="checkbox"
           onChange={(e) => setAcknowledged(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-amber-400"
+          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-a-400))]"
         />
         <span>
           I understand the ${(props.amountCents / 100).toFixed(0)} curriculum purchase is{" "}
-          <span className="font-medium text-amber-200">final and non-refundable</span> once bought — access is
+          <span className="font-medium text-[rgb(var(--c-a-200))]">final and non-refundable</span> once bought — access is
           granted right away, for good. Full{" "}
-          <Link href="/terms" target="_blank" className="text-amber-300 underline hover:text-amber-200">
+          <Link href="/terms" target="_blank" className="text-[rgb(var(--c-a-300))] underline hover:text-[rgb(var(--c-a-200))]">
             terms &amp; refund policy
           </Link>
           .

@@ -6,6 +6,7 @@ import type { ScaleVariant } from "@/lib/scale-content";
 import { KeySelector } from "@/components/scales/KeySelector";
 import { TranspositionDashboard } from "@/components/scales/TranspositionDashboard";
 import { ScaleChordsPanel } from "@/components/scales/ScaleChordsPanel";
+import { useScalePlayer, useStopOnChange } from "@/components/scales/useScalePlayer";
 
 export interface ScaleExplorerProps {
   variants: ScaleVariant[];
@@ -17,6 +18,15 @@ export function ScaleExplorer({ variants }: ScaleExplorerProps) {
   const [root, setRoot] = useState<RootKey>("C");
   const variant = variants[activeVariantIndex];
 
+  // One player for the whole explorer, not one per panel: there is a single
+  // pair of speakers, so a chord and a scale run must be able to interrupt
+  // each other. Two independent hooks would happily play over one another.
+  const player = useScalePlayer();
+
+  // Changing key or variant mid-run would leave a scale sounding in the key
+  // the user just navigated away from.
+  useStopOnChange(player.stop, `${root}-${activeVariantIndex}`);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -27,9 +37,10 @@ export function ScaleExplorer({ variants }: ScaleExplorerProps) {
                 key={v.name}
                 type="button"
                 onClick={() => setActiveVariantIndex(i)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                aria-pressed={i === activeVariantIndex}
+                className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition ${
                   i === activeVariantIndex
-                    ? "bg-amber-400 text-slate-950"
+                    ? "bg-[rgb(var(--c-a-400))] text-slate-950"
                     : "text-slate-400 hover:text-slate-100"
                 }`}
               >
@@ -43,8 +54,8 @@ export function ScaleExplorer({ variants }: ScaleExplorerProps) {
         <KeySelector value={root} onChange={setRoot} />
       </div>
 
-      <TranspositionDashboard variant={variant} root={root} />
-      <ScaleChordsPanel variant={variant} root={root} />
+      <TranspositionDashboard variant={variant} root={root} player={player} />
+      <ScaleChordsPanel variant={variant} root={root} player={player} />
     </div>
   );
 }

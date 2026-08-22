@@ -45,7 +45,7 @@ export function SectionCompleteCelebration({
         </motion.svg>
       </motion.div>
       <h3 className="relative font-serif text-xl text-slate-50">Congratulations!</h3>
-      <p className="relative mx-auto mt-1.5 max-w-xs text-sm text-slate-400">You've finished this section.</p>
+      <p className="relative mx-auto mt-1.5 max-w-xs text-sm text-slate-400">You&apos;ve finished this section.</p>
       <div className="relative mt-6 flex gap-2">
         <button
           type="button"
@@ -58,7 +58,7 @@ export function SectionCompleteCelebration({
           <button
             type="button"
             onClick={onNextSection}
-            className="cta-sheen flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+            className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-sm font-semibold"
           >
             Next Section
           </button>

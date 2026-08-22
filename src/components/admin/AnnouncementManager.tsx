@@ -53,7 +53,7 @@ function ComposeForm({ onPublished }: { onPublished: () => void }) {
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Title — e.g. New scale added: Bati"
           maxLength={120}
-          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+          className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
         />
         <textarea
           value={body}
@@ -61,7 +61,7 @@ function ComposeForm({ onPublished }: { onPublished: () => void }) {
           placeholder="Message…"
           maxLength={1000}
           rows={3}
-          className="w-full resize-none rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+          className="w-full resize-none glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
         />
       </div>
 
@@ -71,7 +71,7 @@ function ComposeForm({ onPublished }: { onPublished: () => void }) {
         type="button"
         onClick={handleSubmit}
         disabled={submitting || !title.trim() || !body.trim()}
-        className="cta-sheen mt-4 rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+        className="cta-sheen cta-fill mt-4 rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? "Publishing…" : "Publish to everyone"}
       </button>
@@ -159,7 +159,7 @@ export function AnnouncementManager({
 
       <div className="glass-surface p-6">
         <h2 className="font-serif text-lg text-slate-50">History</h2>
-        <p className="mt-1 text-sm text-slate-500">Deactivating stops showing it to anyone who hasn't seen it yet — it doesn't recall it from users who already have.</p>
+        <p className="mt-1 text-sm text-slate-500">Deactivating stops showing it to anyone who hasn&apos;t seen it yet — it doesn&apos;t recall it from users who already have.</p>
 
         <div className="mt-4 space-y-3">
           {initialAnnouncements.length === 0 ? (

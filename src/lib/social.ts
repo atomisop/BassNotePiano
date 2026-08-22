@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { checkSocialBadges } from "@/lib/gamification";
+import { assertRateLimit } from "@/lib/rateLimit";
 
 export class SocialError extends Error {}
 
@@ -89,6 +90,14 @@ export async function sendFriendRequest(senderId: string, receiverUsername: stri
   if (await isBlockedEitherWay(senderId, receiver.id)) {
     throw new SocialError("You can't send a request to this user.");
   }
+
+  // STEP 20: 20/hour is generous for genuine friend-adding while blocking
+  // mass friend-request spam across many accounts.
+  await assertRateLimit(
+    prisma.friendRequest.count,
+    { senderId },
+    { windowMinutes: 60, max: 20, message: "You're sending friend requests too fast — please wait a bit and try again." },
+  );
 
   // They already sent us a pending request — accept theirs instead of creating a mirrored duplicate.
   const reverse = await prisma.friendRequest.findUnique({

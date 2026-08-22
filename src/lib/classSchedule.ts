@@ -1,6 +1,7 @@
 import type { AttendanceStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
+import { assertRateLimit } from "@/lib/rateLimit";
 
 export class ClassBookingError extends Error {}
 
@@ -177,6 +178,15 @@ export async function bookClass(studentId: string, scheduleId: string, occurrenc
     throw new ClassBookingError("That class has already started or passed.");
   }
 
+  // STEP 20: a real student booking their week's classes might reasonably
+  // book several in a row — 20/hour covers that comfortably while still
+  // stopping a scripted attempt to hammer capacity/credit checks.
+  await assertRateLimit(
+    prisma.classBooking.count,
+    { studentId },
+    { windowMinutes: 60, max: 20, message: "You're booking too fast — please wait a bit and try again." },
+  );
+
   try {
     return await prisma.$transaction(
       async (tx) => {
@@ -242,9 +252,16 @@ export async function getClassCreditBalance(userId: string): Promise<number> {
   return user.classCredits;
 }
 
-/** Called from approveZellePayment once a CLASS_CREDITS payment verifies. */
-export async function addClassCredits(userId: string, quantity: number): Promise<void> {
-  await prisma.user.update({ where: { id: userId }, data: { classCredits: { increment: quantity } } });
+/** Called from approveZellePayment once a CLASS_CREDITS payment verifies.
+ *  `db` defaults to the plain client but accepts a transaction client — see
+ *  the STEP 19 comment on unlockScaleForUser/grantCurriculumAccess in
+ *  access.ts for why. */
+export async function addClassCredits(
+  userId: string,
+  quantity: number,
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+): Promise<void> {
+  await db.user.update({ where: { id: userId }, data: { classCredits: { increment: quantity } } });
 }
 
 export async function getUserClassBookings(studentId: string) {

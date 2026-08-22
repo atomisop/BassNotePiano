@@ -136,7 +136,7 @@ export function NotificationBell() {
       >
         <BellIcon />
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-slate-950">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] px-1 text-[10px] font-bold text-slate-950">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -169,14 +169,14 @@ export function NotificationBell() {
                     </svg>
                   </button>
                   <div>
-                    <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-amber-400/80">Inbox</p>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Inbox</p>
                     <h1 className="font-serif text-lg text-slate-50">Notifications</h1>
                   </div>
                   {unreadCount > 0 && (
                     <button
                       type="button"
                       onClick={handleMarkAllRead}
-                      className="ml-auto text-xs text-amber-300 transition hover:text-amber-200"
+                      className="ml-auto text-xs text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))]"
                     >
                       Mark all read
                     </button>
@@ -197,11 +197,11 @@ export function NotificationBell() {
                           <path d="M9.5 19.5a2.5 2.5 0 005 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
                       </span>
-                      <p className="text-sm font-medium text-slate-400">You're all caught up — no notifications yet.</p>
+                      <p className="text-sm font-medium text-slate-400">You&apos;re all caught up — no notifications yet.</p>
                       <Link
                         href="/account?tab=notifications"
                         onClick={() => setOpen(false)}
-                        className="text-xs text-amber-300 transition hover:text-amber-200"
+                        className="text-xs text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))]"
                       >
                         Notification settings
                       </Link>
@@ -218,7 +218,7 @@ export function NotificationBell() {
                           "flex w-full items-start gap-3 rounded-xl border border-ink/10 bg-surface px-4 py-3.5 text-left transition hover:bg-ink/5";
                         const inner = (
                           <>
-                            <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-amber-400"}`} />
+                            <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-[rgb(var(--c-a-400))]"}`} />
                             <span className="min-w-0 flex-1">
                               <span className="block text-sm font-medium text-slate-100">{n.title}</span>
                               {n.body && <span className="mt-0.5 block text-sm text-slate-500">{n.body}</span>}

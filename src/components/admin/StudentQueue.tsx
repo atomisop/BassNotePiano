@@ -19,7 +19,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_STYLE: Record<string, string> = {
-  PENDING: "bg-amber-400/15 text-amber-300",
+  PENDING: "bg-[rgb(var(--c-a-400)/0.15)] text-[rgb(var(--c-a-300))]",
   APPROVED: "bg-emerald-400/15 text-emerald-300",
   REJECTED: "bg-red-400/15 text-red-300",
 };
@@ -31,7 +31,7 @@ function Avatar({ image, name }: { image: string | null | undefined; name: strin
         // eslint-disable-next-line @next/next/no-img-element
         <img src={image} alt="" className="h-full w-full object-cover" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center font-serif text-lg text-amber-300">
+        <div className="flex h-full w-full items-center justify-center font-serif text-lg text-[rgb(var(--c-a-300))]">
           {name.charAt(0).toUpperCase()}
         </div>
       )}
@@ -125,7 +125,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Why isn't this a fit right now?"
                 rows={2}
-                className="w-full resize-none rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-red-400/60"
+                className="w-full resize-none glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-red-400/60"
               />
               <div className="flex gap-2">
                 <button
@@ -163,7 +163,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
                 type="button"
                 onClick={() => handleApprove(reg.id)}
                 disabled={busyId === reg.id}
-                className="cta-sheen flex-1 rounded-lg bg-amber-400 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                className="cta-sheen cta-fill flex-1 rounded-lg py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {busyId === reg.id ? "Approving…" : "Approve"}
               </button>

@@ -20,13 +20,6 @@ const STATUS_LABEL: Record<ProgressStatus, string> = {
   COMPLETED: "Completed",
 };
 
-const STATUS_DOT: Record<ProgressStatus, string> = {
-  LOCKED: "bg-slate-700",
-  AVAILABLE: "bg-slate-500",
-  IN_PROGRESS: "bg-amber-400",
-  COMPLETED: "bg-emerald-400",
-};
-
 const gridContainer = {
   hidden: {},
   visible: { transition: { staggerChildren: 0.06 } },
@@ -37,27 +30,66 @@ const gridItem = {
   visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", bounce: 0, duration: 0.4 } },
 };
 
-function ChecklistDots({ scale }: { scale: ScaleAccessState }) {
+/**
+ * The three-item checklist, drawn as a segmented bar rather than three loose
+ * dots. A scale is 2/3 done or it isn't — a bar says that at a glance, where
+ * three separate dots make the reader count.
+ */
+function Checklist({ scale, emphasised }: { scale: ScaleAccessState; emphasised: boolean }) {
   const items = [
-    { label: "Read", done: scale.moduleRead },
+    { label: "Module", done: scale.moduleRead },
     { label: "Practice", done: scale.practiceCompleted },
     { label: "Quiz", done: scale.quizPassed },
   ];
+  const doneCount = items.filter((i) => i.done).length;
+
   return (
-    <div className="mt-4 flex items-center gap-3">
-      {items.map((item) => (
-        <div key={item.label} className="flex items-center gap-1.5">
-          <span className={`h-1.5 w-1.5 rounded-full ${item.done ? "bg-amber-400" : "bg-slate-700"}`} />
-          <span className={`text-[11px] ${item.done ? "text-slate-300" : "text-slate-600"}`}>{item.label}</span>
+    <div className="mt-4">
+      <div className="flex items-center gap-1.5">
+        {items.map((item) => (
+          <span
+            key={item.label}
+            className={`h-1 flex-1 rounded-full transition-colors ${
+              item.done
+                ? scale.status === "COMPLETED"
+                  ? "bg-emerald-400"
+                  : "bg-[rgb(var(--c-a-400))]"
+                : "bg-slate-800"
+            }`}
+          />
+        ))}
+      </div>
+      <div className="mt-2 flex items-center justify-between">
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          {items.map((item) => (
+            <span
+              key={item.label}
+              className={`text-[11px] ${
+                item.done ? "text-slate-300" : emphasised ? "text-slate-500" : "text-slate-600"
+              }`}
+            >
+              {item.label}
+            </span>
+          ))}
         </div>
-      ))}
+        <span className="text-[11px] tabular-nums text-slate-500">{doneCount}/3</span>
+      </div>
     </div>
   );
 }
 
 function LockIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className="shrink-0"
+      aria-hidden
+    >
       <rect x="4" y="11" width="16" height="9" rx="2" />
       <path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
     </svg>
@@ -66,13 +98,32 @@ function LockIcon() {
 
 function CheckIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="shrink-0">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      className="shrink-0"
+      aria-hidden
+    >
       <path d="M5 12l5 5L19 8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-function StepMarker({ index, status, locked }: { index: number; status: ProgressStatus; locked: boolean }) {
+function StepMarker({
+  index,
+  status,
+  locked,
+  isCurrent,
+}: {
+  index: number;
+  status: ProgressStatus;
+  locked: boolean;
+  isCurrent: boolean;
+}) {
   if (status === "COMPLETED") {
     return (
       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-400 text-slate-950">
@@ -87,14 +138,17 @@ function StepMarker({ index, status, locked }: { index: number; status: Progress
       </div>
     );
   }
+  // The current step is the only filled marker on the spine, so the eye lands
+  // on it before reading any of the cards.
+  if (isCurrent) {
+    return (
+      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] text-sm font-semibold text-slate-950">
+        {index + 1}
+      </div>
+    );
+  }
   return (
-    <div
-      className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-semibold ${
-        status === "IN_PROGRESS"
-          ? "border-amber-400 bg-amber-400/10 text-amber-300"
-          : "border-ink/10 bg-slate-950 text-slate-400"
-      }`}
-    >
+    <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-ink/10 bg-slate-950 text-sm font-semibold text-slate-400">
       {index + 1}
     </div>
   );
@@ -105,6 +159,11 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
   const { update } = useSession();
   const [pendingOverride, setPendingOverride] = useState<ScaleAccessState | null>(null);
   const [confirming, setConfirming] = useState(false);
+
+  // "Current" is the same scale the dashboard's next-step card points at: the
+  // first reachable, unfinished one. Exactly one card may carry the emphasised
+  // treatment — that is what stops six cards reading as six equal demands.
+  const currentIndex = roadmap.findIndex((s) => s.canAccess && s.status !== "COMPLETED");
 
   function handleCardClick(scale: ScaleAccessState) {
     if (scale.requiresOverrideConfirm) {
@@ -137,7 +196,12 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
 
   return (
     <>
-      <motion.div variants={gridContainer} initial="hidden" animate="visible" className="relative mx-auto max-w-2xl">
+      <motion.ol
+        variants={gridContainer}
+        initial="hidden"
+        animate="visible"
+        className="relative mx-auto max-w-2xl"
+      >
         {roadmap.map((scale, index) => {
           // "locked" is purely visual now — every card is clickable, since
           // an inaccessible scale routes to /billing/curriculum rather than
@@ -145,56 +209,119 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
           // once, so there's no reason to block the purchase entry point).
           const locked = !scale.canAccess;
           const isLast = index === roadmap.length - 1;
+          const isCurrent = index === currentIndex;
+          const isCompleted = scale.status === "COMPLETED";
+
           return (
-            <motion.div key={scale.scaleGroup.slug} variants={gridItem} className="relative flex gap-4">
+            <motion.li key={scale.scaleGroup.slug} variants={gridItem} className="relative flex gap-4">
               <div className="flex flex-col items-center">
-                <StepMarker index={index} status={scale.status} locked={locked} />
-                {!isLast && <span className="w-px flex-1 border-l-2 border-dotted border-ink/10" />}
+                <StepMarker
+                  index={index}
+                  status={scale.status}
+                  locked={locked}
+                  isCurrent={isCurrent}
+                />
+                {/* The spine carries progress: solid behind finished steps,
+                    dotted ahead of them. A uniformly dotted line describes the
+                    curriculum; this one describes the student's place in it. */}
+                {!isLast && (
+                  <span
+                    className={`w-px flex-1 ${
+                      isCompleted
+                        ? "border-l-2 border-solid border-emerald-400/40"
+                        : "border-l-2 border-dotted border-ink/10"
+                    }`}
+                  />
+                )}
               </div>
 
               <button
                 type="button"
                 onClick={() => handleCardClick(scale)}
-                className={`group mb-4 flex-1 rounded-2xl border p-5 text-left transition ${
-                  locked
-                    ? "border-ink/10 bg-ink/5 hover:border-amber-400/30"
-                    : "border-ink/10 bg-surface hover:border-amber-400/30"
+                aria-current={isCurrent ? "step" : undefined}
+                className={`group mb-4 flex-1 cursor-pointer rounded-2xl border p-5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-a-400)/0.7)] ${
+                  isCurrent
+                    ? // `shadow-card` (the theme's own --surface-shadow) rather
+                      // than a hand-rolled arbitrary shadow: this project has a
+                      // reproducible quirk where some arbitrary opacity
+                      // modifiers compile to nothing, and a lift that silently
+                      // vanishes would take the current step's emphasis with
+                      // it. Not `.glass-surface-elevated` — the dashboard
+                      // already spends that on the next-step card, and using it
+                      // twice on a screen stops it meaning "the important one".
+                      "border-[rgb(var(--c-a-400)/0.5)] bg-surface shadow-card"
+                    : locked
+                      ? "border-ink/10 bg-ink/5 hover:border-[rgb(var(--c-a-400)/0.3)]"
+                      : "border-ink/10 bg-surface hover:border-[rgb(var(--c-a-400)/0.3)]"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">
                     {scale.scaleGroup.code}
                   </p>
-                  <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                    <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[scale.status]}`} />
-                    {STATUS_LABEL[scale.status]}
-                  </span>
+                  {/* One badge, and only the current step gets the accent
+                      version — status text alone is enough for the rest. */}
+                  {isCurrent ? (
+                    <span className="rounded-full bg-[rgb(var(--c-a-400)/0.15)] px-2 py-0.5 text-[11px] font-medium text-[rgb(var(--c-a-300))]">
+                      You&apos;re here
+                    </span>
+                  ) : (
+                    <span
+                      className={`text-[11px] ${
+                        isCompleted ? "text-emerald-400" : "text-slate-500"
+                      }`}
+                    >
+                      {STATUS_LABEL[scale.status]}
+                    </span>
+                  )}
                 </div>
 
-                <h3 className="mt-2 font-serif text-lg text-slate-50">{scale.scaleGroup.title}</h3>
+                <h3
+                  className={`mt-2 font-serif text-slate-50 ${isCurrent ? "text-xl" : "text-lg"}`}
+                >
+                  {scale.scaleGroup.title}
+                </h3>
                 {scale.scaleGroup.kinitName && (
                   <p className="mt-1 text-sm text-slate-500">{scale.scaleGroup.kinitName}</p>
                 )}
 
-                <ChecklistDots scale={scale} />
+                {/* A locked scale has no progress to report — showing an empty
+                    checklist on it just reads as failure rather than as
+                    "not bought yet". */}
+                {!locked && <Checklist scale={scale} emphasised={isCurrent} />}
 
                 {/* Reads as a control, not a stray coloured word. The whole
                     card is the click target, so this is an affordance rather
                     than a separate button — hence the group-hover tie-in. */}
-                <div className="mt-5 inline-flex items-center gap-1.5 rounded-lg border border-amber-400/40 px-3 py-1.5 text-sm font-medium text-amber-300 transition group-hover:border-amber-400 group-hover:bg-amber-400/10">
+                <div
+                  className={`mt-5 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                    isCurrent
+                      ? "cta-fill group-hover:brightness-110"
+                      : "border border-[rgb(var(--c-a-400)/0.4)] text-[rgb(var(--c-a-300))] group-hover:border-[rgb(var(--c-a-400))] group-hover:bg-[rgb(var(--c-a-400)/0.1)]"
+                  }`}
+                >
                   {locked && <LockIcon />}
                   {ctaLabel(scale)}
                   {!locked && (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden
+                      className="transition-transform group-hover:translate-x-0.5"
+                    >
                       <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   )}
                 </div>
               </button>
-            </motion.div>
+            </motion.li>
           );
         })}
-      </motion.div>
+      </motion.ol>
 
       <ProOverrideConfirmModal
         isOpen={pendingOverride !== null}

@@ -118,13 +118,13 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
     return (
       <div className="mx-auto max-w-xl space-y-6">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Social</p>
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Social</p>
           <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Friends</h1>
         </div>
         <SectionCard title="Set a username first" description="Needed so other students can find and add you.">
           <Link
             href="/profile"
-            className="cta-sheen inline-block rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
+            className="cta-sheen cta-fill inline-block rounded-lg px-4 py-2 text-xs font-semibold"
           >
             Go to your profile
           </Link>
@@ -136,10 +136,10 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <div>
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Social</p>
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Social</p>
         <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Friends</h1>
         <p className="mt-1 text-sm text-slate-500">
-          You're <span className="text-slate-300">@{username}</span>.
+          You&apos;re <span className="text-slate-300">@{username}</span>.
         </p>
       </div>
 
@@ -150,12 +150,12 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search @username"
-            className="flex-1 rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+            className="flex-1 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
           />
           <button
             type="submit"
             disabled={searching || query.trim().length < 2}
-            className="cta-sheen rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen cta-fill rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
             {searching ? "Searching…" : "Search"}
           </button>
@@ -175,7 +175,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                   type="button"
                   onClick={() => handleAddFriend(profile)}
                   disabled={sentTo.has(profile.id)}
-                  className="shrink-0 rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-amber-400/50 hover:text-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="shrink-0 rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-[rgb(var(--c-a-400)/0.5)] hover:text-[rgb(var(--c-a-300))] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {sentTo.has(profile.id) ? "Sent" : "Add friend"}
                 </button>
@@ -198,7 +198,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                   <button
                     type="button"
                     onClick={() => handleRespond(req.id, true)}
-                    className="rounded-lg bg-amber-400 px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
+                    className="cta-sheen cta-fill rounded-lg px-3 py-1.5 text-xs font-semibold"
                   >
                     Accept
                   </button>
@@ -246,7 +246,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                 <div className="flex shrink-0 gap-2">
                   <Link
                     href={`/messages?with=${friend.id}`}
-                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-amber-400/50 hover:text-amber-300"
+                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-[rgb(var(--c-a-400)/0.5)] hover:text-[rgb(var(--c-a-300))]"
                   >
                     Message
                   </Link>

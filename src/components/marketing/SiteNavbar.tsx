@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, FileText, Music4 } from "lucide-react";
+import { CalendarDays, Music4 } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { Navbar1, type MenuItem } from "@/components/blocks/shadcnblocks-com-navbar1";

@@ -37,10 +37,10 @@ export function ZelleUnlockGate({
 
   if (status === "PENDING_REVIEW") {
     return (
-      <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-6 text-center">
-        <p className="text-sm text-amber-200/80">
-          Your payment confirmation is in — we're verifying it now. You'll get access to{" "}
-          <span className="text-amber-100">{scaleTitle}</span> as soon as it clears review.
+      <div className="rounded-2xl border border-[rgb(var(--c-a-400)/0.2)] bg-[rgb(var(--c-a-400)/0.05)] p-6 text-center">
+        <p className="text-sm text-[rgb(var(--c-a-200)/0.8)]">
+          Your payment confirmation is in — we&apos;re verifying it now. You&apos;ll get access to{" "}
+          <span className="text-[rgb(var(--c-a-100))]">{scaleTitle}</span> as soon as it clears review.
         </p>
       </div>
     );
@@ -58,7 +58,7 @@ export function ZelleUnlockGate({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="cta-sheen w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+        className="cta-sheen cta-fill w-full rounded-xl py-2.5 text-sm font-semibold"
       >
         {status === "REJECTED" ? "Resubmit payment" : "Pay with Zelle"}
       </button>

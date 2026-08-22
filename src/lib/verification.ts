@@ -6,6 +6,36 @@ import { sendVerificationCodeEmail } from "@/lib/email";
 const CODE_EXPIRY_MINUTES = 10;
 const MAX_VERIFICATION_ATTEMPTS = 5;
 
+// Throttles how often a NEW code can be requested for the same email+purpose
+// — separate from MAX_VERIFICATION_ATTEMPTS above, which throttles GUESSES
+// against one already-issued code. That guess limit was already solid (5
+// wrong guesses invalidates the code); this was the real gap the Step 4
+// security audit found — nothing stopped repeated calls to
+// createAndSendCode()/createSilentCode() itself, which register, login, and
+// password reset all funnel through. Fixing it here, in the one shared
+// choke point, covers all three flows without duplicating logic three times
+// or standing up a new rate-limit table (this reuses the [email, purpose]
+// index the VerificationCode model already has).
+const RATE_LIMIT_WINDOW_MINUTES = 15;
+const RATE_LIMIT_MAX_ISSUANCES = 5;
+
+export class RateLimitError extends Error {
+  constructor() {
+    super("Too many codes requested for this email — please wait a few minutes and try again.");
+    this.name = "RateLimitError";
+  }
+}
+
+async function assertNotRateLimited(email: string, purpose: VerificationPurpose) {
+  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000);
+  const recentCount = await prisma.verificationCode.count({
+    where: { email: email.toLowerCase(), purpose, createdAt: { gte: windowStart } },
+  });
+  if (recentCount >= RATE_LIMIT_MAX_ISSUANCES) {
+    throw new RateLimitError();
+  }
+}
+
 function generateCode(): string {
   return randomInt(0, 1_000_000).toString().padStart(6, "0");
 }
@@ -25,6 +55,8 @@ export interface CreateCodeParams {
 /** Shared row-creation logic — invalidates any still-open code for the same email+purpose first, so only the most recently issued code is ever valid. */
 async function issueCode({ email, userId, purpose, payload }: CreateCodeParams) {
   const normalizedEmail = email.toLowerCase();
+
+  await assertNotRateLimited(normalizedEmail, purpose);
 
   await prisma.verificationCode.updateMany({
     where: { email: normalizedEmail, purpose, consumedAt: null },

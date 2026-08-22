@@ -2,7 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { verifyCode, createSilentCode, createAndSendCode, type VerifyCodeResult } from "@/lib/verification";
+import { verifyCode, createSilentCode, createAndSendCode, RateLimitError, type VerifyCodeResult } from "@/lib/verification";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -40,12 +40,23 @@ export async function resetPasswordAction(email: string, code: string, newPasswo
     return updated;
   });
 
-  const { code: autoCode } = await createSilentCode({ email: user.email, userId: user.id, purpose: "LOGIN_2FA" });
-  return { ok: true as const, autoCode };
+  try {
+    const { code: autoCode } = await createSilentCode({ email: user.email, userId: user.id, purpose: "LOGIN_2FA" });
+    return { ok: true as const, autoCode };
+  } catch (err) {
+    if (err instanceof RateLimitError) return { ok: false as const, error: err.message };
+    throw err;
+  }
 }
 
+/** Doesn't leak account existence — a RateLimitError is swallowed for the
+ *  same reason as forgot-password's requestPasswordResetAction. */
 export async function resendResetCodeAction(email: string) {
   const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
   if (!user?.passwordHash) return;
-  await createAndSendCode({ email: user.email, userId: user.id, purpose: "PASSWORD_RESET" });
+  try {
+    await createAndSendCode({ email: user.email, userId: user.id, purpose: "PASSWORD_RESET" });
+  } catch (err) {
+    if (!(err instanceof RateLimitError)) throw err;
+  }
 }

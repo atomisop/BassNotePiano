@@ -88,12 +88,12 @@ export function PricingTierGrid() {
               isPremium
                 ? "bg-slate-50 text-slate-950"
                 : isPopular
-                  ? "glass-surface-elevated border-amber-400/50"
+                  ? "glass-surface-elevated border-[rgb(var(--c-a-400)/0.5)]"
                   : "glass-surface"
             }`}
           >
             {isPopular && (
-              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-950">
+              <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[rgb(var(--c-a-400))] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-950">
                 Most popular
               </span>
             )}
@@ -104,16 +104,16 @@ export function PricingTierGrid() {
               treatment) — so its text can't use the slate-* ramp the way
               every other card here does. That ramp is calibrated against
               the current theme's own ground (dark, since these pages are
-              locked to Luxury); on this card's deliberately-inverted light
+              locked to Paper); on this card's deliberately-inverted light
               background those same tones ran too light to read. neutral-*
               is Tailwind's untouched literal scale — not themed, not
-              overridden in tailwind.config.ts — so it stays correctly dark
-              on this always-light card no matter what theme the rest of
-              the page is in.
+              overridden in the `@theme` block in globals.css — so it stays
+              correctly dark on this always-light card no matter what theme
+              the rest of the page is in.
             */}
             <p
               className={`text-xs font-medium uppercase tracking-[0.14em] ${
-                isPremium ? "text-neutral-600" : "text-amber-300"
+                isPremium ? "text-neutral-600" : "text-[rgb(var(--c-a-300))]"
               }`}
             >
               {tier.label}
@@ -164,8 +164,8 @@ export function PricingTierGrid() {
                 isPremium
                   ? "bg-neutral-950 text-neutral-50 hover:bg-neutral-800"
                   : isPopular
-                    ? "cta-sheen bg-amber-400 text-slate-950 hover:bg-amber-300"
-                    : "border border-ink/10 text-slate-100 hover:border-amber-400/40 hover:text-amber-300"
+                    ? "cta-sheen cta-fill"
+                    : "border border-ink/10 text-slate-100 hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))]"
               }`}
             >
               Buy credits

@@ -9,13 +9,13 @@ export const alt = `${SITE_NAME} — an interactive masterclass in the Ethiopian
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Editorial Paper inverted for social: the card is competing for attention in
-// a feed against mostly-white chrome, so it leads with the dark ink ground and
-// the rust accent rather than the paper ground the app itself uses.
-const INK = "#1A150F";
-const PAPER = "#FAF6EC";
-const RUST = "#C2691F";
-const MUTED = "#A9A093";
+// Dark card for social: the card is competing for attention in a feed
+// against mostly-white chrome, so it leads with the near-black ground and
+// the vivid signal-green accent the app itself now uses everywhere.
+const INK = "#1A1A1A";
+const PAPER = "#F5F5F5";
+const RUST = "#05E901";
+const MUTED = "#999999";
 
 /**
  * Satori (which backs ImageResponse) cannot use a CSS-declared webfont — it
@@ -58,14 +58,12 @@ export default async function OpengraphImage() {
     "Spelled correctly in all twelve keys, with the native chords mapped for each one.TizitaBatiAnchihoyeAmbassel" +
     SITE_NAME;
 
-  // The product's type pairing is Playfair Display for display and Inter for
-  // everything else. Satori treats the FIRST entry in `fonts` as the default
-  // face for any node that doesn't name one, so Inter has to lead — otherwise
-  // the supporting copy and the kiñit chips silently render in Playfair too,
-  // which reads as one undifferentiated serif block instead of the pairing.
-  const [inter, playfair] = await Promise.all([
-    loadGoogleFont("Inter", 400, supporting),
-    loadGoogleFont("Playfair Display", 700, headline),
+  // The product now uses one family, Sora, for everything — no separate
+  // display/body pairing to keep straight here, so both loads request the
+  // same font at the two weights the card actually uses.
+  const [soraBody, soraDisplay] = await Promise.all([
+    loadGoogleFont("Sora", 400, supporting),
+    loadGoogleFont("Sora", 700, headline),
   ]);
 
   return new ImageResponse(
@@ -88,7 +86,7 @@ export default async function OpengraphImage() {
           // its parser with "Missing comma before color stops" — which surfaces
           // as a prerender error that fails the whole build, not a silent
           // style fallback.
-          backgroundImage: `radial-gradient(circle at 8% 108%, rgba(194,105,31,0.32) 0%, rgba(194,105,31,0) 62%)`,
+          backgroundImage: `radial-gradient(circle at 8% 108%, rgba(5,233,1,0.28) 0%, rgba(5,233,1,0) 62%)`,
         }}
       >
         {/* Wordmark rail */}
@@ -112,7 +110,12 @@ export default async function OpengraphImage() {
           <div
             style={{
               display: "flex",
-              fontFamily: playfair ? "Playfair" : undefined,
+              fontFamily: soraDisplay ? "Sora" : undefined,
+              // Both registered Sora weights share one family name now
+              // (see the `fonts` array below) — without this, Satori has
+              // nothing to disambiguate 400 from 700 by and would default
+              // to normal weight here.
+              fontWeight: 700,
               fontSize: 92,
               lineHeight: 1.04,
               letterSpacing: "-0.03em",
@@ -146,7 +149,7 @@ export default async function OpengraphImage() {
                 display: "flex",
                 padding: "11px 24px",
                 borderRadius: 999,
-                border: `1px solid rgba(250,246,236,0.20)`,
+                border: `1px solid rgba(245,245,245,0.20)`,
                 color: PAPER,
                 fontSize: 25,
               }}
@@ -159,13 +162,17 @@ export default async function OpengraphImage() {
     ),
     {
       ...size,
-      // Order matters — see the comment where these are loaded.
+      // Same family name, two weights — Satori matches on `weight`, so the
+      // 700 registration is what `fontFamily: "Sora"` + this node's own
+      // `fontSize`/no explicit weight resolves against for the headline,
+      // while everything else (no `fontFamily` set) falls through to the
+      // first entry, same "first font is the default face" rule as before.
       fonts: [
-        ...(inter
-          ? [{ name: "Inter", data: inter, style: "normal" as const, weight: 400 as const }]
+        ...(soraBody
+          ? [{ name: "Sora", data: soraBody, style: "normal" as const, weight: 400 as const }]
           : []),
-        ...(playfair
-          ? [{ name: "Playfair", data: playfair, style: "normal" as const, weight: 700 as const }]
+        ...(soraDisplay
+          ? [{ name: "Sora", data: soraDisplay, style: "normal" as const, weight: 700 as const }]
           : []),
       ],
     },

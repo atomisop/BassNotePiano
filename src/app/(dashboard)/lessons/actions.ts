@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { bookClass, cancelClassBooking, ClassBookingError } from "@/lib/classSchedule";
+import { RateLimitError } from "@/lib/rateLimit";
 
 export async function bookClassAction(scheduleId: string, occurrenceDateMs: number) {
   const session = await getServerAuthSession();
@@ -17,7 +18,7 @@ export async function bookClassAction(scheduleId: string, occurrenceDateMs: numb
     revalidatePath("/lessons");
     return { ok: true as const, id: booking.id };
   } catch (err) {
-    return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+    return { ok: false as const, error: err instanceof ClassBookingError || err instanceof RateLimitError ? err.message : "Something went wrong." };
   }
 }
 
@@ -30,6 +31,6 @@ export async function cancelClassBookingAction(bookingId: string) {
     revalidatePath("/lessons");
     return { ok: true as const, refunded: result.refunded };
   } catch (err) {
-    return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+    return { ok: false as const, error: err instanceof ClassBookingError || err instanceof RateLimitError ? err.message : "Something went wrong." };
   }
 }

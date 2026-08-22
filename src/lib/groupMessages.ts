@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { sendEmailIfEnabled } from "@/lib/notifications";
 import { getAppUrl } from "@/lib/email";
 import { isFriend, normalizeUsername, SocialError } from "@/lib/social";
+import { assertRateLimit } from "@/lib/rateLimit";
 
 const MAX_MESSAGE_LENGTH = 2000;
 // Creator + up to 23 friends — generous headroom over a normal friend-group
@@ -29,6 +30,14 @@ export async function createGroup({ creatorId, name, memberUsernames }: CreateGr
 
   const members = found.filter((u) => u.id !== creatorId);
   if (members.length === 0) throw new SocialError("Add at least one friend to the group.");
+
+  // STEP 20: creating a group is rare for genuine use — 10/hour is
+  // generous headroom while blocking scripted mass-group creation.
+  await assertRateLimit(
+    prisma.groupConversation.count,
+    { createdById: creatorId },
+    { windowMinutes: 60, max: 10, message: "You're creating groups too fast — please wait a bit and try again." },
+  );
 
   for (const member of members) {
     if (!(await isFriend(creatorId, member.id))) {
@@ -147,6 +156,13 @@ export async function sendGroupMessage(senderId: string, groupId: string, body: 
   if (trimmed.length > MAX_MESSAGE_LENGTH) throw new SocialError(`Message is too long (${MAX_MESSAGE_LENGTH} characters max).`);
 
   const membership = await requireMembership(senderId, groupId);
+
+  // STEP 20: same reasoning/limit as 1-on-1 sendMessage.
+  await assertRateLimit(
+    prisma.groupMessage.count,
+    { senderId },
+    { windowMinutes: 1, max: 30, message: "You're sending messages too fast — please slow down." },
+  );
 
   const [message] = await prisma.$transaction([
     prisma.groupMessage.create({ data: { conversationId: groupId, senderId, body: trimmed } }),

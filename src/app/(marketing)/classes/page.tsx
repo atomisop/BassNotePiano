@@ -33,7 +33,7 @@ export default function ClassesPage() {
             Learn with us in person
           </h1>
           <p className="mx-auto mt-4 max-w-md text-base text-slate-200">
-            Tell us what you'd like to learn and where you're starting from — we'll follow up by phone or email to
+            Tell us what you&apos;d like to learn and where you&apos;re starting from — we&apos;ll follow up by phone or email to
             get you scheduled.
           </p>
         </div>

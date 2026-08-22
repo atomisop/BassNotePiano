@@ -10,6 +10,7 @@ import {
   unblockUser,
   SocialError,
 } from "@/lib/social";
+import { RateLimitError } from "@/lib/rateLimit";
 
 async function requireUserId(): Promise<string> {
   const session = await getServerAuthSession();
@@ -29,7 +30,7 @@ export async function sendFriendRequestAction(receiverUsername: string) {
     revalidatePath("/friends");
     return { ok: true as const };
   } catch (err) {
-    return { ok: false as const, error: err instanceof SocialError ? err.message : "Something went wrong." };
+    return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
   }
 }
 
@@ -40,7 +41,7 @@ export async function respondToFriendRequestAction(requestId: string, accept: bo
     revalidatePath("/friends");
     return { ok: true as const };
   } catch (err) {
-    return { ok: false as const, error: err instanceof SocialError ? err.message : "Something went wrong." };
+    return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
   }
 }
 

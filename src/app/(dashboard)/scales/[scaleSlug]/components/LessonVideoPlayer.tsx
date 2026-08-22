@@ -131,7 +131,7 @@ export function LessonVideoPlayer({
           value={currentTime}
           onChange={handleScrub}
           aria-label="Seek"
-          className="h-1.5 w-full cursor-pointer accent-amber-400"
+          className="h-1.5 w-full cursor-pointer accent-[rgb(var(--c-a-400))]"
         />
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -139,7 +139,7 @@ export function LessonVideoPlayer({
               type="button"
               onClick={togglePlay}
               aria-label={playing ? "Pause" : "Play"}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-400 text-slate-950 transition hover:bg-amber-300"
+              className="cta-sheen cta-fill flex h-8 w-8 items-center justify-center rounded-full"
             >
               {playing ? (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -205,7 +205,7 @@ export function LessonVideoPlayer({
                 value={muted ? 0 : volume}
                 onChange={handleVolumeChange}
                 aria-label="Volume"
-                className="h-1 w-16 cursor-pointer accent-amber-400"
+                className="h-1 w-16 cursor-pointer accent-[rgb(var(--c-a-400))]"
               />
             </div>
             <button

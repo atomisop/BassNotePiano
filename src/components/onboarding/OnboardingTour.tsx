@@ -282,7 +282,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
         }
       >
         <div className="flex items-start justify-between gap-3">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">
             {visibleIndex} of {visibleTotal}
           </p>
           <button type="button" onClick={handleSkip} aria-label="Skip tour" className="shrink-0 text-slate-500 transition hover:text-slate-200">
@@ -311,7 +311,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
             <button
               type="button"
               onClick={goNext}
-              className="cta-sheen rounded-lg bg-amber-400 px-4 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
+              className="cta-sheen cta-fill rounded-lg px-4 py-1.5 text-xs font-semibold"
             >
               {isLast ? "Finish" : "Next"}
             </button>

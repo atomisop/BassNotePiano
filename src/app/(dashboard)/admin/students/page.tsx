@@ -19,7 +19,7 @@ export default async function AdminStudentsPage({ searchParams }: { searchParams
 
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Admin</p>
+      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Admin</p>
       <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Students</h1>
       <p className="mt-2 text-sm text-slate-500">
         {registrations.length} registration{registrations.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
@@ -31,7 +31,7 @@ export default async function AdminStudentsPage({ searchParams }: { searchParams
             key={filter.value}
             href={filter.value === "PENDING" ? "/admin/students" : `/admin/students?status=${filter.value}`}
             className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-              activeFilter === filter.value ? "bg-amber-400 text-slate-950" : "text-slate-400 hover:text-slate-100"
+              activeFilter === filter.value ? "bg-[rgb(var(--c-a-400))] text-slate-950" : "text-slate-400 hover:text-slate-100"
             }`}
           >
             {filter.label}

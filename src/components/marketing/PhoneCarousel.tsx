@@ -275,7 +275,7 @@ export function PhoneCarousel({ images }: { images: PhoneScreenshot[] }) {
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
-        className="relative mx-auto flex cursor-grab touch-pan-y items-center justify-center rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 active:cursor-grabbing"
+        className="relative mx-auto flex cursor-grab touch-pan-y items-center justify-center rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-a-400)/0.5)] active:cursor-grabbing"
         style={{ height: stageHeight, perspective: PERSPECTIVE, transformStyle: "preserve-3d" }}
       >
         {images.map((img, i) => (
@@ -300,7 +300,7 @@ export function PhoneCarousel({ images }: { images: PhoneScreenshot[] }) {
           onClick={() => goTo(Math.max(0, active - 1))}
           disabled={active === 0}
           aria-label="Previous screen"
-          className="glass-pill flex h-9 w-9 items-center justify-center text-slate-500 transition hover:text-amber-300 disabled:cursor-not-allowed disabled:opacity-35"
+          className="glass-pill flex h-9 w-9 items-center justify-center text-slate-500 transition hover:text-[rgb(var(--c-a-300))] disabled:cursor-not-allowed disabled:opacity-35"
         >
           <ArrowIcon dir={-1} />
         </button>
@@ -314,7 +314,7 @@ export function PhoneCarousel({ images }: { images: PhoneScreenshot[] }) {
               aria-label={`Show ${img.alt}`}
               aria-current={i === active}
               className={`h-1.5 rounded-full transition-all ${
-                i === active ? "w-6 bg-amber-400" : "w-1.5 bg-ink/20 hover:bg-ink/40"
+                i === active ? "w-6 bg-[rgb(var(--c-a-400))]" : "w-1.5 bg-ink/20 hover:bg-ink/40"
               }`}
             />
           ))}
@@ -325,7 +325,7 @@ export function PhoneCarousel({ images }: { images: PhoneScreenshot[] }) {
           onClick={() => goTo(Math.min(maxIndex, active + 1))}
           disabled={active === maxIndex}
           aria-label="Next screen"
-          className="glass-pill flex h-9 w-9 items-center justify-center text-slate-500 transition hover:text-amber-300 disabled:cursor-not-allowed disabled:opacity-35"
+          className="glass-pill flex h-9 w-9 items-center justify-center text-slate-500 transition hover:text-[rgb(var(--c-a-300))] disabled:cursor-not-allowed disabled:opacity-35"
         >
           <ArrowIcon dir={1} />
         </button>

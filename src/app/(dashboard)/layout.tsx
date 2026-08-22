@@ -6,12 +6,12 @@ import { getTotalUnreadMessageCount } from "@/lib/messages";
 import { getTotalUnreadGroupMessageCount } from "@/lib/groupMessages";
 import { getActiveAnnouncementForUser } from "@/lib/announcements";
 import { LATEST_ENTRY } from "@/lib/changelog";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { AppDock } from "@/components/layout/AppDock";
 import { TopBar } from "@/components/layout/TopBar";
-import { MobileTabBar } from "@/components/layout/MobileTabBar";
 import { WhatsNewModal } from "@/components/layout/WhatsNewModal";
 import { AnnouncementBanner } from "@/components/layout/AnnouncementBanner";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
+import { CommandMenu } from "@/components/layout/CommandMenu";
 
 function isSameUtcDay(a: Date, b: Date): boolean {
   return a.getUTCFullYear() === b.getUTCFullYear() && a.getUTCMonth() === b.getUTCMonth() && a.getUTCDate() === b.getUTCDate();
@@ -44,13 +44,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
           atmosphere, and it forced a heavy scrim that muddied every surface
           sitting on it. Photography now appears only where it is the subject
           (the marketing pages), never as a bed for UI. */}
-      <Sidebar name={session.user.name} isAdmin={isAdmin} unreadMessageCount={unreadMessageCount} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <TopBar />
         <AnnouncementBanner announcement={activeAnnouncement} />
-        <main className="flex-1 overflow-y-auto px-4 py-6 pb-24 md:px-8 md:py-10 md:pb-10">{children}</main>
+        {/* pb-28 at every width, not just md: — the floating AppDock now
+            covers phone widths too (fixed, not in flow), so this reserved
+            clearance is no longer a desktop-only concern. */}
+        <main className="flex-1 overflow-y-auto px-4 py-6 pb-28 md:px-8 md:py-10">{children}</main>
       </div>
-      <MobileTabBar isAdmin={isAdmin} unreadMessageCount={unreadMessageCount} />
+      <AppDock isAdmin={isAdmin} unreadMessageCount={unreadMessageCount} />
+      <CommandMenu isAdmin={isAdmin} />
       <WhatsNewModal show={shouldShowWhatsNew} entry={LATEST_ENTRY} />
       <Suspense fallback={null}>
         <OnboardingTour autoShow={shouldShowTour} />

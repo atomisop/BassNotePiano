@@ -10,7 +10,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
       <header className="relative flex items-center gap-2.5 px-6 py-6">
         <Image src="/logo-mark.png" alt="" width={26} height={26} className="h-[26px] w-[26px]" priority />
         <span className="font-serif text-sm tracking-[0.2em] text-slate-200">
-          BASS NOTE <span className="text-amber-400">PIANO</span>
+          BASS NOTE <span className="text-[rgb(var(--c-a-400))]">PIANO</span>
         </span>
       </header>
       <main className="relative flex flex-1 items-center justify-center px-6 pb-16">{children}</main>

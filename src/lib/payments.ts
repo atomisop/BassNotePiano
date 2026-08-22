@@ -4,6 +4,7 @@ import { AccessDeniedError, unlockScaleForUser, grantCurriculumAccess } from "@/
 import { addClassCredits } from "@/lib/classSchedule";
 import { calculateClassCreditTotal } from "@/lib/classCreditPricing";
 import { createNotification } from "@/lib/notifications";
+import { assertRateLimit } from "@/lib/rateLimit";
 
 /**
  * A student who opens the payment modal but never actually confirms a
@@ -129,6 +130,17 @@ export async function submitZellePaymentReference(
     throw new Error(`Payment ${paymentId} is not open for submission (status: ${payment.status})`);
   }
 
+  // STEP 20: submission (unlike most other rate-limited actions here)
+  // updates an existing row rather than inserting a new one, so this counts
+  // against `submittedAt`, not `createdAt` — see assertRateLimit's
+  // `timestampField` option. 10/hour is well above any real "I mistyped my
+  // reference code" resubmission rate.
+  await assertRateLimit(
+    prisma.zellePayment.count,
+    { userId },
+    { windowMinutes: 60, max: 10, timestampField: "submittedAt", message: "Too many submissions — please wait a bit and try again." },
+  );
+
   return prisma.zellePayment.update({
     where: { id: paymentId },
     data: {
@@ -200,29 +212,49 @@ export async function getAdminPayments(status?: ZellePaymentStatus): Promise<Pen
  * VERIFIED payment that never actually unlocked anything).
  */
 export async function approveZellePayment(paymentId: string, reviewerId: string) {
-  const payment = await prisma.zellePayment.findUniqueOrThrow({ where: { id: paymentId } });
-  if (payment.status !== "PENDING_REVIEW") {
-    throw new Error(`Payment ${paymentId} is not pending review (status: ${payment.status})`);
-  }
+  // STEP 19: the status flip and the entitlement grant used to be two (or
+  // three, counting the legacy-scale read) separate, un-transacted writes.
+  // The docstring above already says the point is that they "can never
+  // drift apart" — a crash or a thrown error between the update and the
+  // grant used to be able to produce exactly that: a VERIFIED payment that
+  // never actually unlocked anything. Wrapping the read-check through the
+  // entitlement grant in one `$transaction` makes that state unreachable —
+  // either the whole thing commits, or none of it does. The notification
+  // stays outside: it's a best-effort side effect, not part of what has to
+  // be atomic, and a notification failure shouldn't roll back a real grant.
+  const payment = await prisma.$transaction(async (tx) => {
+    const payment = await tx.zellePayment.findUniqueOrThrow({ where: { id: paymentId } });
+    if (payment.status !== "PENDING_REVIEW") {
+      throw new Error(`Payment ${paymentId} is not pending review (status: ${payment.status})`);
+    }
 
-  await prisma.zellePayment.update({
-    where: { id: paymentId },
-    data: { status: "VERIFIED", reviewedAt: new Date(), reviewedById: reviewerId },
+    await tx.zellePayment.update({
+      where: { id: paymentId },
+      data: { status: "VERIFIED", reviewedAt: new Date(), reviewedById: reviewerId },
+    });
+
+    if (payment.purpose === "CURRICULUM") {
+      await grantCurriculumAccess(payment.userId, tx);
+    } else if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
+      await addClassCredits(payment.userId, payment.lessonQuantity, tx);
+    } else if (payment.scaleGroupId) {
+      // Legacy Pay-As-You-Go row from before per-scale purchase was retired.
+      const scaleGroup = await tx.scaleGroup.findUniqueOrThrow({ where: { id: payment.scaleGroupId } });
+      await unlockScaleForUser(payment.userId, scaleGroup.slug, tx);
+    }
+
+    return payment;
   });
 
   let notificationBody = "Your payment was verified.";
   if (payment.purpose === "CURRICULUM") {
-    await grantCurriculumAccess(payment.userId);
     notificationBody = "Your $99 curriculum payment was verified — every scale is unlocked, for good.";
   } else if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
-    await addClassCredits(payment.userId, payment.lessonQuantity);
     const { discountCents } = calculateClassCreditTotal(payment.lessonQuantity);
     const discountNote = discountCents > 0 ? " — bundle discount applied" : "";
     notificationBody = `Your ${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} payment was verified${discountNote}. Credits are on your account.`;
   } else if (payment.scaleGroupId) {
-    // Legacy Pay-As-You-Go row from before per-scale purchase was retired.
     const scaleGroup = await prisma.scaleGroup.findUniqueOrThrow({ where: { id: payment.scaleGroupId } });
-    await unlockScaleForUser(payment.userId, scaleGroup.slug);
     notificationBody = `Your payment for ${scaleGroup.code} — ${scaleGroup.title} was verified. It's unlocked now.`;
   }
 

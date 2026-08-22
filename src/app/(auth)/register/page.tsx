@@ -165,11 +165,11 @@ function RegisterForm() {
               setAgreedToTerms(e.target.checked);
               setError(null);
             }}
-            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-amber-400"
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-a-400))]"
           />
           <span>
             I agree to the{" "}
-            <Link href="/terms" target="_blank" className="text-amber-300 underline transition hover:text-amber-200">
+            <Link href="/terms" target="_blank" className="text-[rgb(var(--c-a-300))] underline transition hover:text-[rgb(var(--c-a-200))]">
               Terms &amp; refund policy
             </Link>
             .
@@ -189,7 +189,7 @@ function RegisterForm() {
 
       <p className="mt-6 text-center text-sm text-slate-500">
         Already have an account?{" "}
-        <Link href="/login" className="text-amber-300 transition hover:text-amber-200">
+        <Link href="/login" className="text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))]">
           Log in
         </Link>
       </p>

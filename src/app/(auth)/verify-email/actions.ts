@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { verifyCode, createAndSendCode, createSilentCode, type VerifyCodeResult } from "@/lib/verification";
+import { verifyCode, createAndSendCode, createSilentCode, RateLimitError, type VerifyCodeResult } from "@/lib/verification";
 import { sendWelcomeEmail } from "@/lib/email";
 
 const REASON_MESSAGES: Record<string, string> = {
@@ -36,12 +36,27 @@ export async function verifyEmailAction(email: string, code: string) {
   // Verifying the email is itself proof enough to log in immediately —
   // issue a fresh LOGIN_2FA code silently (never emailed) so the client can
   // turn around and sign in with it in the same flow, no second code needed.
-  const { code: autoCode } = await createSilentCode({ email: user.email, userId: user.id, purpose: "LOGIN_2FA" });
-  return { ok: true as const, autoCode };
+  // Rate-limiting this specific call would only trip on repeated verify+
+  // auto-login cycles for one address in a short window — an edge case, but
+  // still handled rather than left to crash.
+  try {
+    const { code: autoCode } = await createSilentCode({ email: user.email, userId: user.id, purpose: "LOGIN_2FA" });
+    return { ok: true as const, autoCode };
+  } catch (err) {
+    if (err instanceof RateLimitError) return { ok: false as const, error: err.message };
+    throw err;
+  }
 }
 
+/** Doesn't leak account existence — nothing to resend if already verified, and
+ *  a RateLimitError is swallowed for the same reason (see forgot-password's
+ *  requestPasswordResetAction for the full reasoning). */
 export async function resendVerificationEmailAction(email: string) {
   const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
-  if (!user || user.emailVerified) return; // don't leak account existence; nothing to resend if already verified
-  await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
+  if (!user || user.emailVerified) return;
+  try {
+    await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
+  } catch (err) {
+    if (!(err instanceof RateLimitError)) throw err;
+  }
 }

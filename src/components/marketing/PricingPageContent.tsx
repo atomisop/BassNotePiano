@@ -81,14 +81,14 @@ export function PricingPageContent() {
         className="relative mx-auto max-w-lg px-6 pb-20"
       >
         <TiltGlow className="glass-surface-elevated p-9 text-center sm:p-11" maxTilt={4}>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-300">Curriculum — Lifetime</p>
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-300))]">Curriculum — Lifetime</p>
           <p className="mt-4 font-serif text-7xl tabular-nums text-slate-50">{formatUsd(CURRICULUM_PRICE_CENTS)}</p>
-          <p className="mt-2 text-sm text-amber-200/70">one-time payment · no subscriptions, ever</p>
+          <p className="mt-2 text-sm text-[rgb(var(--c-a-200)/0.7)]">one-time payment · no subscriptions, ever</p>
 
           <ul className="mt-7 space-y-2.5 text-left text-sm text-slate-100">
             {CURRICULUM_BENEFITS.map((benefit) => (
               <li key={benefit} className="flex gap-2.5">
-                <span className="text-amber-400">→</span>
+                <span className="text-[rgb(var(--c-a-400))]">→</span>
                 {benefit}
               </li>
             ))}
@@ -96,7 +96,7 @@ export function PricingPageContent() {
 
           <Link
             href="/billing/curriculum"
-            className="cta-sheen mt-8 block w-full rounded-xl bg-amber-400 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+            className="cta-sheen cta-fill mt-8 block w-full rounded-xl py-3 text-center text-sm font-semibold"
           >
             Unlock the curriculum
           </Link>
@@ -111,7 +111,7 @@ export function PricingPageContent() {
         className="relative mx-auto max-w-5xl px-6 pb-32"
       >
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Weekly classes</p>
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Weekly classes</p>
           <h2 className="mt-1.5 font-serif text-3xl text-slate-50">Live group coaching on Zoom</h2>
           <p className="mx-auto mt-2.5 max-w-md text-sm text-slate-300">
             Six recurring weekly classes, capped at 10 students each — on top of your self-paced curriculum. 1 credit

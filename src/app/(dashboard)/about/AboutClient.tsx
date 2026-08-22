@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { TermsContent, TERMS_LAST_UPDATED } from "@/components/legal/TermsContent";
 import { CHANGELOG, CURRENT_VERSION } from "@/lib/changelog";
+import { CheckIcon } from "@/components/ui/icons";
 
 const TAB_ICONS = {
   about: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 7.5h.01",
@@ -39,7 +40,7 @@ function DesktopAboutNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: 
           onClick={() => onSelect(tab.id)}
           className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm transition ${
             activeTab === tab.id
-              ? "border-amber-400/40 bg-slate-800 text-slate-50"
+              ? "border-[rgb(var(--c-a-400)/0.4)] bg-slate-800 text-slate-50"
               : "border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
           }`}
         >
@@ -73,7 +74,7 @@ function MobileAboutMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
 function AboutTab() {
   return (
     <div className="glass-surface p-6">
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Bass Note Piano</p>
+      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Bass Note Piano</p>
       <p className="mt-1 font-serif text-2xl text-slate-50">Version {CURRENT_VERSION}</p>
       <p className="mt-3 max-w-md text-sm text-slate-400">
         An interactive masterclass in the Ethiopian kiñit system — Tizita, Bati, Anchihoye, and Mixolydian
@@ -90,14 +91,14 @@ function UpdatesTab() {
       {CHANGELOG.map((entry) => (
         <div key={entry.version} className="glass-surface p-6">
           <div className="flex items-baseline justify-between gap-4">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">v{entry.version}</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">v{entry.version}</p>
             <p className="text-xs text-slate-600">{entry.date}</p>
           </div>
           <h2 className="mt-1.5 font-serif text-lg text-slate-50">{entry.title}</h2>
           <ul className="mt-3 space-y-1.5">
             {entry.items.map((item) => (
               <li key={item} className="flex gap-2.5 text-sm text-slate-300">
-                <span className="mt-0.5 shrink-0 text-amber-400">✓</span>
+                <CheckIcon className="mt-1 shrink-0 text-[rgb(var(--c-a-400))]" />
                 {item}
               </li>
             ))}
@@ -112,7 +113,7 @@ function TermsTab() {
   return (
     <div className="glass-surface space-y-6 p-6">
       <div>
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Legal</p>
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Legal</p>
         <p className="mt-1 font-serif text-2xl text-slate-50">Terms &amp; refund policy</p>
         <p className="mt-2 text-sm text-slate-500">
           Last updated {TERMS_LAST_UPDATED}. Also shown before you create an account and before your first purchase —
@@ -160,7 +161,7 @@ function AboutClientInner() {
   return (
     <div className="mx-auto max-w-4xl">
       <div>
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Info</p>
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Info</p>
         <h1 className="mt-1.5 font-serif text-2xl text-slate-50">About</h1>
       </div>
 

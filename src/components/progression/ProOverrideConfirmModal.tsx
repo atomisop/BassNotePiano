@@ -71,7 +71,7 @@ export function ProOverrideConfirmModal({
             exit="exit"
             className="glass-surface-elevated relative w-full max-w-sm p-6"
           >
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Curriculum access</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Curriculum access</p>
             <h2 id="override-modal-title" className="mt-1.5 font-serif text-lg text-slate-50">
               Skip ahead?
             </h2>
@@ -93,7 +93,7 @@ export function ProOverrideConfirmModal({
                 type="button"
                 onClick={onConfirm}
                 disabled={isConfirming}
-                className="cta-sheen flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isConfirming ? "Unlocking…" : "Confirm override"}
               </button>

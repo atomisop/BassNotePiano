@@ -245,14 +245,24 @@ export async function recordQuizAttempt(userId: string, scaleSlug: string, submi
  * (no longer purchasable, but old pending rows can still resolve through
  * this) and admin manual-override grants.
  */
-export async function unlockScaleForUser(userId: string, scaleSlug: string) {
-  const scaleGroup = await prisma.scaleGroup.findUniqueOrThrow({ where: { slug: scaleSlug } });
-  const existing = await prisma.scaleProgress.findUnique({
+// STEP 19: both functions below now take an optional `db` — the plain
+// `prisma` client by default (every existing call site keeps working
+// unchanged), or a `Prisma.TransactionClient` when the caller needs this
+// write to commit atomically alongside another one. approveZellePayment is
+// exactly that caller: see its own comment for why the payment-status flip
+// and the entitlement grant have to succeed or fail together.
+export async function unlockScaleForUser(
+  userId: string,
+  scaleSlug: string,
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+) {
+  const scaleGroup = await db.scaleGroup.findUniqueOrThrow({ where: { slug: scaleSlug } });
+  const existing = await db.scaleProgress.findUnique({
     where: { userId_scaleGroupId: { userId, scaleGroupId: scaleGroup.id } },
   });
   if (existing?.unlockedAt) return existing;
 
-  return prisma.scaleProgress.upsert({
+  return db.scaleProgress.upsert({
     where: { userId_scaleGroupId: { userId, scaleGroupId: scaleGroup.id } },
     update: { unlockedAt: new Date(), status: "AVAILABLE" },
     create: { userId, scaleGroupId: scaleGroup.id, unlockedAt: new Date(), status: "AVAILABLE" },
@@ -260,8 +270,8 @@ export async function unlockScaleForUser(userId: string, scaleSlug: string) {
 }
 
 /** Grants full-curriculum lifetime access. Called once a CURRICULUM payment flips to VERIFIED. */
-export async function grantCurriculumAccess(userId: string) {
-  return prisma.user.update({
+export async function grantCurriculumAccess(userId: string, db: Prisma.TransactionClient | typeof prisma = prisma) {
+  return db.user.update({
     where: { id: userId },
     data: { hasCurriculumAccess: true, curriculumUnlockedAt: new Date() },
   });

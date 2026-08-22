@@ -1,6 +1,6 @@
 "use client";
 
-import { ACCENTS, DAISY_THEME_IDS, THEMES, isDaisyTheme, type ThemeChoice, type ThemeId } from "@/lib/themes";
+import { ACCENTS, THEMES, type ThemeChoice } from "@/lib/themes";
 import { useTheme } from "./ThemeProvider";
 
 function CheckIcon() {
@@ -30,7 +30,6 @@ function ThemeSwatch({ swatch }: { swatch: [string, string, string] }) {
 }
 
 const CURATED_THEMES = THEMES.filter((t) => t.source === "curated");
-const DAISY_THEMES = THEMES.filter((t) => t.source === "daisyui");
 
 /**
  * `compact` is for the marketing popover, where vertical space is tight and
@@ -43,13 +42,6 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
     ...CURATED_THEMES.map((t) => ({ id: t.id as ThemeChoice, label: t.label })),
     { id: "system", label: "Match system" },
   ];
-
-  // Once a daisyUI theme is picked, `theme` is a DaisyThemeId, not "system"
-  // or one of the three curated ids — so none of the curated cards or the
-  // "Match system" card should read as selected, and the accent axis (which
-  // that theme doesn't participate in) should say so rather than silently
-  // doing nothing.
-  const daisyActive = typeof theme === "string" && isDaisyTheme(theme as ThemeId);
 
   return (
     <div className={compact ? "w-64 p-3" : ""}>
@@ -67,14 +59,14 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
                 aria-pressed={selected}
                 className={`w-full rounded-lg border p-2.5 text-left transition ${
                   selected
-                    ? "border-amber-400 bg-amber-400/10"
-                    : "border-ink/10 hover:border-amber-400/40 hover:bg-ink/5"
+                    ? "border-[rgb(var(--c-a-400))] bg-[rgb(var(--c-a-400)/0.1)]"
+                    : "border-ink/10 hover:border-[rgb(var(--c-a-400)/0.4)] hover:bg-ink/5"
                 }`}
               >
                 <span className="flex items-center justify-between gap-2">
                   <span className="text-sm font-medium text-slate-100">{opt.label}</span>
                   {selected && (
-                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-400 text-slate-950">
+                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] text-slate-950">
                       <CheckIcon />
                     </span>
                   )}
@@ -98,89 +90,36 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
         </div>
       </fieldset>
 
-      {/* The daisyUI batch: 32 complete looks, each with colour baked in, so
-          a compact swatch grid rather than 32 repeats of the description
-          card above — that would make this panel unusable. */}
       <fieldset className={compact ? "mt-3 border-t border-ink/10 pt-3" : "mt-8"}>
-        <legend className={compact ? "sr-only" : "eyebrow mb-3"}>More themes</legend>
-        {!compact && (
-          <p className="mb-3 text-xs leading-relaxed text-slate-500">
-            32 complete looks — each one is its own thing, colour and accent together, not mixed with the accents
-            below.
-          </p>
-        )}
-        <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8">
-          {DAISY_THEMES.map((t) => {
-            const selected = theme === t.id;
+        <legend className={compact ? "sr-only" : "eyebrow mb-3"}>Accent</legend>
+        <div className="flex flex-wrap gap-2">
+          {ACCENTS.map((a) => {
+            const selected = accent === a.id;
+            const dot = resolvedTheme === "paper" ? a.light : a.dark;
             return (
               <button
-                key={t.id}
+                key={a.id}
                 type="button"
-                onClick={() => setTheme(t.id)}
+                onClick={() => setAccent(a.id)}
                 aria-pressed={selected}
-                title={t.label}
-                className={`group flex flex-col items-center gap-1 rounded-lg border p-1.5 transition ${
-                  selected ? "border-amber-400" : "border-ink/10 hover:border-amber-400/40"
+                title={a.label}
+                className={`flex items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3 text-xs font-medium transition ${
+                  selected
+                    ? "border-[rgb(var(--c-a-400))] text-slate-100"
+                    : "border-ink/10 text-slate-500 hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-slate-200"
                 }`}
               >
                 <span
-                  className="relative flex h-8 w-full items-center justify-center overflow-hidden rounded"
-                  style={{ background: t.swatch[0] }}
-                  aria-hidden
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: dot, color: resolvedTheme === "paper" ? "#fff" : "#14110E" }}
                 >
-                  <span className="h-3 w-3 rounded-full" style={{ background: t.swatch[2] }} />
-                  {selected && (
-                    <span className="absolute inset-0 flex items-center justify-center bg-black/25 text-white">
-                      <CheckIcon />
-                    </span>
-                  )}
+                  {selected && <CheckIcon />}
                 </span>
-                <span className="w-full truncate text-[10px] font-medium text-slate-400 group-hover:text-slate-200">
-                  {t.label}
-                </span>
+                {a.label}
               </button>
             );
           })}
         </div>
-      </fieldset>
-
-      <fieldset className={compact ? "mt-3 border-t border-ink/10 pt-3" : "mt-8"}>
-        <legend className={compact ? "sr-only" : "eyebrow mb-3"}>Accent</legend>
-        {daisyActive ? (
-          <p className="text-xs leading-relaxed text-slate-500">
-            {DAISY_THEMES.find((t) => t.id === theme)?.label} brings its own accent — switch to Editorial Paper, Ink,
-            or Midnight Glass to pick one of these instead.
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {ACCENTS.map((a) => {
-              const selected = accent === a.id;
-              const dot = resolvedTheme === "paper" ? a.light : a.dark;
-              return (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => setAccent(a.id)}
-                  aria-pressed={selected}
-                  title={a.label}
-                  className={`flex items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3 text-xs font-medium transition ${
-                    selected
-                      ? "border-amber-400 text-slate-100"
-                      : "border-ink/10 text-slate-500 hover:border-amber-400/40 hover:text-slate-200"
-                  }`}
-                >
-                  <span
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-                    style={{ background: dot, color: resolvedTheme === "paper" ? "#fff" : "#14110E" }}
-                  >
-                    {selected && <CheckIcon />}
-                  </span>
-                  {a.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
       </fieldset>
 
       {!compact && (

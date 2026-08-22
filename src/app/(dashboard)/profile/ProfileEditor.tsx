@@ -131,7 +131,7 @@ function Pill({ label, selected, onClick }: { label: string; selected: boolean; 
       onClick={onClick}
       className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
         selected
-          ? "border-amber-400/60 bg-amber-400/10 text-amber-200"
+          ? "border-[rgb(var(--c-a-400)/0.6)] bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-200))]"
           : "border-ink/10 bg-slate-950 text-slate-400 hover:border-ink/15"
       }`}
     >
@@ -244,7 +244,7 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
         type="button"
         onClick={handleSave}
         disabled={submitting}
-        className="cta-sheen mt-4 rounded-lg bg-amber-400 px-4 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+        className="cta-sheen cta-fill mt-4 rounded-lg px-4 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? "Saving…" : "Save"}
       </button>
@@ -285,7 +285,10 @@ function AvatarSection({
     setUploading(true);
     try {
       const resized = await resizeAvatarImage(file);
-      const { uploadUrl, publicUrl } = await requestAvatarUploadUrlAction(file.name, "image/jpeg");
+      // resized.size, not file.size — the presigned URL is signed with an
+      // exact ContentLength (see storage.ts), and it's `resized` that
+      // actually gets uploaded a few lines down, not the original file.
+      const { uploadUrl, publicUrl } = await requestAvatarUploadUrlAction(file.name, "image/jpeg", resized.size);
       await uploadToR2(uploadUrl, resized, "image/jpeg");
       const result = await updateAvatarAction(publicUrl);
       if (!result.ok) {
@@ -327,7 +330,7 @@ function AvatarSection({
         </div>
       </div>
 
-      {!storageConfigured && <p className="mt-2 text-xs text-slate-500">Image upload isn't configured yet.</p>}
+      {!storageConfigured && <p className="mt-2 text-xs text-slate-500">Image upload isn&apos;t configured yet.</p>}
       {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
       {success && <p className="mt-2 text-xs text-emerald-400">Profile photo updated.</p>}
     </SectionCard>
@@ -364,12 +367,12 @@ function NameSection({ initialName, onDone }: { initialName: string | null; onDo
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={submitting}
-          className="flex-1 rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+          className="flex-1 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
         />
         <button
           type="submit"
           disabled={submitting || name.trim() === (initialName ?? "")}
-          className="cta-sheen rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen cta-fill rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Saving…" : "Save"}
         </button>
@@ -405,7 +408,7 @@ function UsernameSection({ initialUsername }: { initialUsername: string | null }
   return (
     <SectionCard title="Username" description="How friends find and add you on the Friends page.">
       <form onSubmit={handleSubmit} className="flex gap-2">
-        <div className="flex flex-1 items-center rounded-lg border border-ink/10 bg-slate-950 pl-3 focus-within:border-amber-400/60">
+        <div className="flex flex-1 items-center glass-surface-subtle pl-3 focus-within:border-[rgb(var(--c-a-400)/0.6)]">
           <span className="text-sm text-slate-500">@</span>
           <input
             type="text"
@@ -418,7 +421,7 @@ function UsernameSection({ initialUsername }: { initialUsername: string | null }
         <button
           type="submit"
           disabled={submitting || username.trim() === (initialUsername ?? "")}
-          className="cta-sheen rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen cta-fill rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Saving…" : "Save"}
         </button>

@@ -70,13 +70,13 @@ export function BadgeGrid({ earnedCodes }: BadgeGridProps) {
                       transition={prefersReducedMotion ? { duration: 0 } : earned ? { delay: index * 0.04 } : undefined}
                       className={`flex h-16 w-16 flex-col items-center justify-center rounded-2xl border text-center transition ${
                         earned
-                          ? "border-amber-400/50 bg-amber-400/10 text-amber-300"
+                          ? "border-[rgb(var(--c-a-400)/0.5)] bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-300))]"
                           : "border-ink/10 bg-surface text-slate-600 opacity-50"
                       }`}
                     >
                       {earned ? <AwardIcon /> : <LockIcon />}
                     </motion.div>
-                    <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-44 -translate-x-1/2 rounded-lg border border-ink/10 bg-slate-950 p-2.5 text-center opacity-0 shadow-lg transition group-hover:opacity-100">
+                    <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-44 -translate-x-1/2 glass-surface-subtle p-2.5 text-center opacity-0 shadow-lg transition group-hover:opacity-100">
                       <p className="text-xs font-medium text-slate-100">{badge.label}</p>
                       <p className="mt-0.5 text-[11px] text-slate-500">{badge.description}</p>
                     </div>

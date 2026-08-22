@@ -1,16 +1,36 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Inter } from "next/font/google";
+import { Sora, JetBrains_Mono } from "next/font/google";
 import { Providers } from "./providers";
 import { THEME_BOOT_SCRIPT } from "@/lib/themes";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
-const display = Playfair_Display({
+// One family for both display and body — the black/signal-green system
+// this replaces Playfair Display + Inter with is deliberately not an
+// editorial serif-plus-humanist-sans pairing; it's a single geometric
+// sans doing every job, the same way the reference spec only ever
+// names one font.
+const sora = Sora({
   subsets: ["latin"],
   variable: "--font-display",
-  weight: ["500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700"],
 });
-const body = Inter({ subsets: ["latin"], variable: "--font-body" });
+const body = Sora({
+  subsets: ["latin"],
+  variable: "--font-body",
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+// The marketing pages' label voice — eyebrows, scale degrees, formulas, key
+// names. System mono resolves to SF Mono / Consolas / DejaVu depending on the
+// visitor's OS, which is three different designs for what is a signature
+// element of the marketing surface. Two weights only, so the cost stays to a
+// single woff2 subset.
+const mono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  weight: ["400", "500"],
+});
 
 // metadataBase is what turns every relative `openGraph.images` / canonical
 // path in the app into an absolute URL. Without it Next emits relative OG
@@ -78,7 +98,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     // data-mode / data-accent on this element before React hydrates, so the
     // server-rendered markup deliberately won't match. It's the only element
     // affected.
-    <html lang="en" className={`${display.variable} ${body.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${sora.variable} ${body.variable} ${mono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         {/* Applies the saved theme before first paint. Without this the page
             renders in the default theme and then snaps to the stored one —

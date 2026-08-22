@@ -56,6 +56,13 @@ function MessagesInner({
   const active = conversations.find((c) => c.friendId === activeFriendId) ?? null;
   const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
   const hasActivePane = Boolean(activeFriendId || activeGroupId);
+  // Captured as their own primitives so the two polling effects below can
+  // depend on (and reference) only these, never `active`/`activeGroup`
+  // themselves — both are recomputed fresh every render, so depending on
+  // the objects would poll on every unrelated re-render instead of only
+  // when the active chat/group actually changes.
+  const activeConversationId = active?.friendId ?? null;
+  const activeGroupPollId = activeGroup?.id ?? null;
 
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -66,26 +73,30 @@ function MessagesInner({
   }, []);
 
   useEffect(() => {
-    if (!active) {
+    if (!activeConversationId) {
       setMessages([]);
       return;
     }
 
+    // TS narrowing from the guard above doesn't cross into `load`, a
+    // separately-declared nested function — recapture as a definitely-string
+    // local so the action calls below don't need a `!` on every use.
+    const friendId = activeConversationId;
     let cancelled = false;
     let previousLastMessageId: string | null = null; // null = haven't loaded yet, don't chime on first load
 
     async function load() {
-      const rows = await getConversationMessagesAction(active!.friendId);
+      const rows = await getConversationMessagesAction(friendId);
       if (cancelled) return;
 
       const newest = rows[rows.length - 1];
-      if (previousLastMessageId !== null && newest && newest.id !== previousLastMessageId && newest.senderId === active!.friendId) {
+      if (previousLastMessageId !== null && newest && newest.id !== previousLastMessageId && newest.senderId === friendId) {
         playNotificationSound();
       }
       previousLastMessageId = newest?.id ?? previousLastMessageId;
 
       setMessages(rows);
-      await markConversationReadAction(active!.friendId);
+      await markConversationReadAction(friendId);
       setConversations(await getConversationsAction());
     }
     load();
@@ -95,19 +106,22 @@ function MessagesInner({
       cancelled = true;
       clearInterval(interval);
     };
-  }, [active?.friendId]);
+  }, [activeConversationId]);
 
   useEffect(() => {
-    if (!activeGroup) {
+    if (!activeGroupPollId) {
       setGroupMessages([]);
       return;
     }
 
+    // Same reasoning as the conversation effect above: recaptured so `load`
+    // gets a definitely-string local instead of the nullable outer one.
+    const groupId = activeGroupPollId;
     let cancelled = false;
     let previousLastMessageId: string | null = null;
 
     async function load() {
-      const rows = await getGroupMessagesAction(activeGroup!.id);
+      const rows = await getGroupMessagesAction(groupId);
       if (cancelled) return;
 
       const newest = rows[rows.length - 1];
@@ -117,7 +131,7 @@ function MessagesInner({
       previousLastMessageId = newest?.id ?? previousLastMessageId;
 
       setGroupMessages(rows);
-      await markGroupReadAction(activeGroup!.id);
+      await markGroupReadAction(groupId);
       setGroups(await getGroupsAction());
     }
     load();
@@ -127,7 +141,7 @@ function MessagesInner({
       cancelled = true;
       clearInterval(interval);
     };
-  }, [activeGroup?.id, session?.user?.id]);
+  }, [activeGroupPollId, session?.user?.id]);
 
   function handleSelect(friendId: string) {
     router.push(`/messages?with=${friendId}`);
@@ -197,11 +211,11 @@ function MessagesInner({
   if (conversations.length === 0 && groups.length === 0) {
     return (
       <div className="mx-auto max-w-xl">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Social</p>
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Social</p>
         <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Messages</h1>
         <p className="mt-4 text-sm text-slate-500">
-          You don't have any friends to message yet. Add some on the{" "}
-          <a href="/friends" className="text-amber-300 hover:text-amber-200">
+          You don&apos;t have any friends to message yet. Add some on the{" "}
+          <a href="/friends" className="text-[rgb(var(--c-a-300))] hover:text-[rgb(var(--c-a-200))]">
             Friends
           </a>{" "}
           page first.

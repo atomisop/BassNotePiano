@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: "/admin/payments", label: "Payments" },
   { href: "/admin/bookings", label: "Bookings" },
   { href: "/admin/students", label: "Students" },
+  { href: "/admin/roster", label: "Roster" },
   { href: "/admin/lessons", label: "Lessons" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/credits", label: "Credits" },
@@ -27,7 +28,7 @@ export function AdminNav() {
             key={item.href}
             href={item.href}
             className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition ${
-              active ? "bg-amber-400 text-slate-950" : "text-slate-400 hover:text-slate-100"
+              active ? "bg-[rgb(var(--c-a-400))] text-slate-950" : "text-slate-400 hover:text-slate-100"
             }`}
           >
             {item.label}

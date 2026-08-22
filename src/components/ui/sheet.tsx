@@ -31,7 +31,12 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName
 
 const sheetVariants = cva(
-  "fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
+  // Edge-attached (flush to a screen side), unlike a floating card, so no
+  // border-radius here — `glass-surface`'s own radius would look wrong on
+  // the edges touching the viewport boundary. Same real backdrop-filter
+  // material `.chrome` (nav/tab bar) uses for the same reason, expressed
+  // directly since `.chrome` is named for navigation specifically.
+  "fixed z-50 gap-4 bg-surface/80 backdrop-blur-xl p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
   {
     variants: {
       side: {

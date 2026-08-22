@@ -1,9 +1,429 @@
-@tailwind base;
-@tailwind components;
-@import "./themes.css";
-@tailwind utilities;
+@import 'tailwindcss';
+@import './themes.css' layer(components);
+@plugin 'tailwindcss-animate';
 
-/* ==========================================================================
+@custom-variant dark (&:where([data-mode="dark"], [data-mode="dark"] *));
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+  @media (width >= --theme(--breakpoint-sm)) {
+    max-width: none;
+  }
+  @media (width >= 1400px) {
+    max-width: 1400px;
+  }
+}
+
+@theme {
+  --font-serif: var(--font-display), ui-serif, Georgia, serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-slate-50: rgb(var(--c-s-50));
+  --color-slate-100: rgb(var(--c-s-100));
+  --color-slate-200: rgb(var(--c-s-200));
+  --color-slate-300: rgb(var(--c-s-300));
+  --color-slate-400: rgb(var(--c-s-400));
+  --color-slate-500: rgb(var(--c-s-500));
+  --color-slate-600: rgb(var(--c-s-600));
+  --color-slate-700: rgb(var(--c-s-700));
+  --color-slate-800: rgb(var(--c-s-800));
+  --color-slate-900: rgb(var(--c-s-900));
+  --color-slate-950: rgb(var(--c-s-950));
+
+  --color-amber-100: rgb(var(--c-a-100));
+  --color-amber-200: rgb(var(--c-a-200));
+  --color-amber-300: rgb(var(--c-a-300));
+  --color-amber-400: rgb(var(--c-a-400));
+  --color-amber-500: rgb(var(--c-a-500));
+
+  --color-emerald-300: rgb(var(--c-em-300));
+  --color-emerald-400: rgb(var(--c-em-400));
+
+  --color-red-300: rgb(var(--c-rd-300));
+  --color-red-400: rgb(var(--c-rd-400));
+  --color-red-500: rgb(var(--c-rd-500));
+
+  --color-ink: rgb(var(--c-ink));
+  --color-surface: rgb(var(--c-surface-solid));
+  --color-scrim: rgb(var(--c-scrim));
+  --color-background: rgb(var(--background));
+  --color-foreground: rgb(var(--foreground));
+  --color-border: rgb(var(--border));
+  --color-input: rgb(var(--input));
+  --color-ring: rgb(var(--ring));
+
+  --color-primary: rgb(var(--primary));
+  --color-primary-foreground: rgb(var(--primary-foreground));
+
+  --color-secondary: rgb(var(--secondary));
+  --color-secondary-foreground: rgb(var(--secondary-foreground));
+
+  --color-muted: rgb(var(--muted));
+  --color-muted-foreground: rgb(var(--muted-foreground));
+
+  --color-accent: rgb(var(--accent));
+  --color-accent-foreground: rgb(var(--accent-foreground));
+
+  --color-destructive: rgb(var(--destructive));
+  --color-destructive-foreground: rgb(var(--destructive-foreground));
+
+  --color-card: rgb(var(--card));
+  --color-card-foreground: rgb(var(--card-foreground));
+
+  --color-popover: rgb(var(--popover));
+  --color-popover-foreground: rgb(var(--popover-foreground));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --shadow-card: var(--surface-shadow);
+  --shadow-card-lifted: var(--elev-shadow);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-fade-up: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-fade-in: fade-in 0.5s ease-out forwards;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+      filter: blur(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+
+  `<alpha-value>` (the codemod's own first draft here) is a v3-only, JS-config
+  convention — v3's config compiler textually substituted it when a color was
+  used inside `theme.colors`, but there's no such processing for a plain CSS
+  declaration in v4. Left as literal text, `<alpha-value>` isn't a valid CSS
+  alpha token, so the whole `rgb()` was invalid and silently dropped — every
+  bare-bordered element was actually falling through to v4's real default
+  (`currentColor`), not this theme's border color. No opacity modifier is
+  actually needed here anyway: this shim's only job is a solid themed
+  default, not a translucent one. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: rgb(var(--border));
+  }
+}
+
+@utility glass-surface {
+  /* ============================================================
+     Material system
+     Every value here comes from the active theme (see themes.css),
+     so a card is a flat white panel under Editorial Paper and a
+     frosted translucent pane under Midnight Glass without any
+     component knowing the difference.
+     ============================================================ */
+
+  /* The default surface. */
+  background: var(--surface-bg);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--surface-radius);
+  box-shadow: var(--surface-shadow);
+  backdrop-filter: blur(var(--surface-blur));
+}
+
+@utility glass-surface-subtle {
+  /* Level 1 of the material system — quieter than `.glass-surface`, for
+     things that shouldn't compete with real content: nav pills, secondary
+     chips, minor inline surfaces. Every theme defines `--subtle-*`, either
+     explicitly (paper/ink/glass) or via the ramp-relative fallback on
+     `:root` (every daisyUI theme), so this never renders unstyled. No
+     shadow — a shadow reads as "raised", and Level 1 is deliberately the
+     opposite of that. */
+  background: var(--subtle-bg);
+  border: 1px solid var(--subtle-border);
+  border-radius: var(--surface-radius);
+  backdrop-filter: blur(var(--subtle-blur));
+}
+
+@utility glass-surface-elevated {
+  /* Reserved for the ONE primary element per screen. Distinguished by an
+     accent hairline and a deeper lift, not a different material — using it
+     twice on a screen stops it meaning "the important one". */
+  background: var(--elev-bg);
+  border: 1px solid var(--elev-border);
+  border-radius: var(--surface-radius);
+  box-shadow: var(--elev-shadow);
+  backdrop-filter: blur(var(--elev-blur));
+}
+
+@utility glass-pill {
+  /* Chips, nav pills, filter tags, badges. */
+  @apply rounded-full;
+  background: var(--surface-bg);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--surface-shadow);
+  backdrop-filter: blur(var(--surface-blur));
+}
+
+@utility rule {
+  /* Full-measure hairline, the way a rule separates sections in print. */
+  border-top: 1px solid var(--surface-border);
+}
+
+@utility card-surface {
+  /* ---- Cards over the homepage scroll video --------------------------- */
+
+  /* Declared here in raw rgba rather than as Tailwind utilities on the
+     elements, matching how the surface classes above are written.
+
+     The practical reason: when these same values lived in a utility string
+     inside a newly created `.ts` module, Tailwind's watcher never scanned the
+     file and the classes were missing from the compiled stylesheet — the cards
+     kept their radius and padding and rendered fully transparent. That failure
+     is silent, and since this fill is the measured floor holding body copy at
+     4.5:1 against the video's brightest frame, it costs contrast rather than
+     just appearance. A class in a stylesheet the build already tracks cannot
+     fail that way.
+
+     (Opacity utilities are not broken in this project generally — every one
+     currently in source compiles correctly.) */
+  border-radius: 1rem;
+  border: 1px solid rgb(var(--c-s-50) / 0.09);
+  background: rgb(var(--c-s-950) / 0.68);
+  box-shadow:
+    inset 0 1px 0 0 rgb(var(--c-s-50) / 0.06),
+    inset 0 -24px 48px -32px rgb(var(--c-s-950) / 0.9);
+  transition: border-color 300ms ease;
+}
+
+@utility card-surface-hover {
+  &:hover {
+    border-color: rgb(var(--c-s-50) / 0.17);
+  }
+}
+
+@utility chip-accent {
+  /* The small token chips — spelled notes, transposition cells. */
+  border: 1px solid rgb(var(--c-a-400) / 0.25);
+  background: rgb(var(--c-a-400) / 0.08);
+}
+
+@utility chip-neutral {
+  border: 1px solid rgb(var(--c-s-50) / 0.08);
+  background: rgb(var(--c-s-50) / 0.04);
+}
+
+@utility eyebrow {
+  /* The recurring kicker above a heading — centralised so every page gets
+     the same treatment instead of re-declaring the tracking each time. */
+  @apply text-xs font-medium uppercase tracking-[0.18em] text-amber-300;
+}
+
+@utility backdrop-scrim-light {
+  /* ---- Photography ---------------------------------------------------- */
+
+  /* Scrims dissolve a photo into the page ground. Both the colour and the
+     strength come from the theme: a dark theme wants a light veil so pale
+     text stays readable, a light theme needs a much heavier one, because
+     ink text over a half-visible photo lands on whatever tone happens to
+     sit behind each glyph. */
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--scrim-rgb) / 1) 0%,
+    rgb(var(--scrim-rgb) / var(--scrim-light)) 18%,
+    rgb(var(--scrim-rgb) / calc(var(--scrim-light) * 0.92)) 50%,
+    rgb(var(--scrim-rgb) / calc(var(--scrim-light) * 1.08)) 82%,
+    rgb(var(--scrim-rgb) / 1) 100%
+  );
+}
+
+@utility backdrop-scrim {
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--scrim-rgb) / 1) 0%,
+    rgb(var(--scrim-rgb) / var(--scrim-standard)) 18%,
+    rgb(var(--scrim-rgb) / calc(var(--scrim-standard) * 0.96)) 50%,
+    rgb(var(--scrim-rgb) / calc(var(--scrim-standard) * 1.04)) 82%,
+    rgb(var(--scrim-rgb) / 1) 100%
+  );
+}
+
+@utility backdrop-scrim-dense {
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--scrim-rgb) / 1) 0%,
+    rgb(var(--scrim-rgb) / var(--scrim-dense)) 18%,
+    rgb(var(--scrim-rgb) / calc(var(--scrim-dense) * 0.98)) 50%,
+    rgb(var(--scrim-rgb) / calc(var(--scrim-dense) * 1.02)) 82%,
+    rgb(var(--scrim-rgb) / 1) 100%
+  );
+}
+
+@utility backdrop-scrim-vignette {
+  /* Two more scrim shapes, additive to the three above — nothing here
+     changes their tiers or usages.
+
+     Both exist because the linear washes are a blanket decision: protect
+     the WHOLE frame at one strength, whether or not anything in it actually
+     floats unprotected on the photo. Most sections don't need that — their
+     text already sits inside an opaque card, and the flat wash was just
+     erasing the photo for no contrast benefit. These two shapes ask "where
+     does text actually touch the photo" instead of protecting everything. */
+
+  /* For a heading/paragraph that floats directly on the photo (no card under
+     it), roughly centered in its section. Full protection in a radial core
+     right behind the text; the rest of the frame — corners, edges, whatever
+     sits beside a centered column — opens up to the photo. Thin opaque bands
+     at the very top/bottom are kept so stacked <PhotoBackdrop> sections still
+     dissolve into each other instead of hard-cutting. */
+  background:
+    radial-gradient(
+      46% 42% at 50% 50%,
+      rgb(var(--scrim-rgb) / var(--scrim-standard)) 0%,
+      rgb(var(--scrim-rgb) / calc(var(--scrim-standard) * 0.5)) 62%,
+      rgb(var(--scrim-rgb) / 0) 100%
+    ),
+    linear-gradient(
+      to bottom,
+      rgb(var(--scrim-rgb) / 1) 0%,
+      rgb(var(--scrim-rgb) / 0.1) 12%,
+      rgb(var(--scrim-rgb) / 0.06) 50%,
+      rgb(var(--scrim-rgb) / 0.1) 88%,
+      rgb(var(--scrim-rgb) / 1) 100%
+    );
+}
+
+@utility backdrop-scrim-minimal {
+  /* For a section where every line of text already sits inside its own
+     opaque card — the backdrop's only job left is the top/bottom dissolve
+     into whatever's above and below it, so the photo can be almost fully
+     visible everywhere in between. */
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--scrim-rgb) / 1) 0%,
+    rgb(var(--scrim-rgb) / 0.08) 14%,
+    rgb(var(--scrim-rgb) / 0.05) 50%,
+    rgb(var(--scrim-rgb) / 0.08) 86%,
+    rgb(var(--scrim-rgb) / 1) 100%
+  );
+}
+
+@utility backdrop-glow-smoke-top {
+  background: radial-gradient(
+    60% 80% at 50% 0%,
+    rgb(var(--c-a-400) / 0.1),
+    transparent 70%
+  );
+  filter: blur(40px);
+}
+
+@utility backdrop-glow-smoke-bottom {
+  background: radial-gradient(
+    60% 80% at 50% 100%,
+    rgb(var(--c-a-400) / 0.12),
+    transparent 70%
+  );
+  filter: blur(40px);
+}
+
+@utility cta-fill {
+  /* ---- Motion --------------------------------------------------------- */
+
+  /* Same liquid-glass chemistry as the `Button` primitive's `default`
+     variant and marketing's `.btn-primary` — gradient fill, layered inset
+     highlight + outer shadow, brighten on hover/press. A separate class
+     from `.cta-sheen` below (motion only) rather than merged into it,
+     because `.cta-sheen` is also applied directly to the shared `<Button>`
+     component in five places (the auth forms' submit buttons) — those
+     already get this exact background from Button's own `default` variant,
+     so a second background declaration on `.cta-sheen` itself would fight
+     the one Button already sets. Raw `<button>`/`<a>`/`<Link>` call sites
+     (not the Button component) add `.cta-fill` alongside `.cta-sheen` to
+     get both material and motion. */
+  background-image: linear-gradient(rgb(var(--c-a-400)), rgb(var(--c-a-500)));
+  border: 1px solid rgb(var(--c-a-500) / 0.5);
+  color: rgb(var(--c-s-950));
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.25),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.12),
+    0 6px 16px -6px rgba(0, 0, 0, 0.4);
+  transition: filter 150ms ease;
+  &:hover {
+    filter: brightness(1.1);
+  }
+  &:active {
+    filter: brightness(0.95);
+  }
+}
+
+@utility cta-sheen {
+  /* One-shot sheen across the primary CTA. Inert under reduced motion. */
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      115deg,
+      transparent 20%,
+      rgba(255, 245, 235, 0.3) 42%,
+      transparent 64%
+    );
+    transform: translateX(-120%);
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    &::after {
+      transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    &:hover::after {
+      transform: translateX(120%);
+    }
+  }
+}
+
+@layer utilities {
+  /* ==========================================================================
    shadcn/ui token bridge
    --------------------------------------------------------------------------
    shadcn components are written against a fixed vocabulary — `bg-background`,
@@ -26,66 +446,66 @@
    colour" is always the readable text on top of the accent, in both
    directions, without a light/dark branch here.
    ========================================================================== */
-:root {
-  --background: var(--c-s-950);
-  --foreground: var(--c-s-50);
+  :root {
+    --background: var(--c-s-950);
+    --foreground: var(--c-s-50);
 
-  /* Cards and popovers use the opaque chrome surface, not the ground, so a
+    /* Cards and popovers use the opaque chrome surface, not the ground, so a
      navigation-menu dropdown or a sheet is legible over page content. */
-  --card: var(--c-surface-solid);
-  --card-foreground: var(--c-s-50);
-  --popover: var(--c-surface-solid);
-  --popover-foreground: var(--c-s-50);
+    --card: var(--c-surface-solid);
+    --card-foreground: var(--c-s-50);
+    --popover: var(--c-surface-solid);
+    --popover-foreground: var(--c-s-50);
 
-  --primary: var(--c-a-400);
-  --primary-foreground: var(--c-s-950);
+    --primary: var(--c-a-400);
+    --primary-foreground: var(--c-s-950);
 
-  --secondary: var(--c-s-900);
-  --secondary-foreground: var(--c-s-50);
+    --secondary: var(--c-s-900);
+    --secondary-foreground: var(--c-s-50);
 
-  /* 900 is the ramp step just off the ground — subtle enough for a hover
+    /* 900 is the ramp step just off the ground — subtle enough for a hover
      wash, distinct enough to read as one. 500 clears AA on the ground in
      every theme, which is what makes it safe for muted *text*. */
-  --muted: var(--c-s-900);
-  --muted-foreground: var(--c-s-500);
-  --accent: var(--c-s-900);
-  --accent-foreground: var(--c-s-50);
+    --muted: var(--c-s-900);
+    --muted-foreground: var(--c-s-500);
+    --accent: var(--c-s-900);
+    --accent-foreground: var(--c-s-50);
 
-  --destructive: var(--c-rd-400);
-  --destructive-foreground: var(--c-s-950);
+    --destructive: var(--c-rd-400);
+    --destructive-foreground: var(--c-s-950);
 
-  --border: var(--c-s-700);
-  --input: var(--c-s-700);
-  --ring: var(--c-a-400);
+    --border: var(--c-s-700);
+    --input: var(--c-s-700);
+    --ring: var(--c-a-400);
 
-  /* Corner radius follows the active theme's own card radius rather than
+    /* Corner radius follows the active theme's own card radius rather than
      shadcn's fixed 0.5rem, so a Button matches the panels beside it. */
-  --radius: var(--surface-radius, 0.75rem);
-}
+    --radius: var(--surface-radius, 0.75rem);
+  }
 
-body {
-  @apply bg-slate-950 text-slate-100 antialiased;
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased;
 
-  /* A whisper of tooth so a large flat field doesn't read as a raw digital
+    /* A whisper of tooth so a large flat field doesn't read as a raw digital
      background. Each theme supplies its own; costs nothing (no filter, no
      image). */
-  background-image: var(--page-texture);
-  background-attachment: fixed;
-}
+    background-image: var(--page-texture);
+    background-attachment: fixed;
+  }
 
-/* Themes change the entire palette at once, so without this every colour on
+  /* Themes change the entire palette at once, so without this every colour on
    screen hard-cuts. Excluded from transform/opacity so it never interferes
    with Framer Motion's entrance animations. */
-@media (prefers-reduced-motion: no-preference) {
-  body,
-  body * {
-    transition-property: background-color, border-color, color, fill, stroke;
-    transition-duration: 220ms;
-    transition-timing-function: ease;
+  @media (prefers-reduced-motion: no-preference) {
+    body,
+    body * {
+      transition-property: background-color, border-color, color, fill, stroke;
+      transition-duration: 220ms;
+      transition-timing-function: ease;
+    }
   }
-}
 
-/* ==========================================================================
+  /* ==========================================================================
    Optical typography
    --------------------------------------------------------------------------
    Tracking is size-specific, never one value for everything. Letterforms read
@@ -96,6 +516,7 @@ body {
    These sit in @layer base so any explicit `tracking-*` utility still wins —
    the eyebrow's `tracking-[0.2em]` is a deliberate style, not an oversight.
    ========================================================================== */
+}
 @layer base {
   .text-6xl,
   .text-7xl {
@@ -120,7 +541,8 @@ body {
   }
 }
 
-/* ==========================================================================
+@layer utilities {
+  /* ==========================================================================
    Lenis page physics
    --------------------------------------------------------------------------
    Lenis drives the real window scroll position (see SmoothScrollProvider for
@@ -129,20 +551,20 @@ body {
    Lenis's own, and a locked `height` on <html> breaks its distance maths.
    These are the three rules the library actually requires — nothing else.
    ========================================================================== */
-html.lenis,
-html.lenis body {
-  height: auto;
-}
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
 
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
 
-.lenis.lenis-stopped {
-  overflow: hidden;
-}
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
 
-/* ==========================================================================
+  /* ==========================================================================
    Press response
    --------------------------------------------------------------------------
    Feedback belongs on pointer-DOWN, not on release: waiting for click to
@@ -153,16 +575,16 @@ html.lenis body {
    inline, which would beat this rule anyway, and those components carry their
    own press states.
    ========================================================================== */
-@media (prefers-reduced-motion: no-preference) {
-  button:not(:disabled):not([style*="transform"]):active,
-  a:not([style*="transform"]):active,
-  [role="button"]:not([style*="transform"]):active {
-    transform: scale(0.978);
-    transition: transform 90ms cubic-bezier(0.22, 1, 0.36, 1);
+  @media (prefers-reduced-motion: no-preference) {
+    button:not(:disabled):not([style*='transform']):active,
+    a:not([style*='transform']):active,
+    [role='button']:not([style*='transform']):active {
+      transform: scale(0.978);
+      transition: transform 90ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
   }
-}
 
-/* ==========================================================================
+  /* ==========================================================================
    Page transitions
    --------------------------------------------------------------------------
    Driven by Next's `template.tsx`, which re-mounts on every navigation (a
@@ -176,72 +598,85 @@ html.lenis body {
    nav off the viewport and scroll it away mid-transition. Opacity alone
    creates a stacking context but not a containing block, so it's safe there.
    ========================================================================== */
-@keyframes page-enter {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
+  @keyframes page-enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  @keyframes page-enter-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
-}
 
-@keyframes page-enter-fade {
-  from {
-    opacity: 0;
+  .page-enter {
+    animation: page-enter 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
-  to {
-    opacity: 1;
-  }
-}
 
-.page-enter {
-  animation: page-enter 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.page-enter-fade {
-  animation: page-enter-fade 260ms ease-out both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .page-enter,
   .page-enter-fade {
-    animation: none;
+    animation: page-enter-fade 260ms ease-out both;
   }
-}
 
-/* ==========================================================================
+  @media (prefers-reduced-motion: reduce) {
+    .page-enter,
+    .page-enter-fade {
+      animation: none;
+    }
+    /* `animate-fade-up`/`animate-fade-in` (the @theme tokens above) don't
+       get the `motion-safe:` treatment at each call site the way framer-
+       motion components do here — gated centrally instead, so any future
+       use of these two Tailwind-generated classes is reduced-motion-safe
+       by default rather than by each caller remembering to add the
+       prefix. */
+    .animate-fade-up,
+    .animate-fade-in {
+      animation: none;
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
+  }
+
+  /* ==========================================================================
    Chrome material
    --------------------------------------------------------------------------
    Nav rails, the top bar and the mobile tab bar. Translucency here is a
    hierarchy signal — chrome floats above content that scrolls underneath it,
    rather than consuming an opaque strip of the page.
 
-   It is scoped to Midnight Glass on purpose. Blur is genuinely expensive on
-   fixed chrome sitting over scrolling content (that was the original jank,
-   and it's why Editorial Paper is opaque), so the cost is only paid on the
-   one theme whose entire premise is a translucent material. Paper and Ink
-   get the same structure with none of the cost.
-   ========================================================================== */
-.chrome {
-  background: rgb(var(--c-surface-solid));
-}
+   Used to be scoped to Midnight Glass only — blur is genuinely expensive on
+   fixed chrome sitting over scrolling content, so the cost was paid on just
+   the one theme whose entire premise was a translucent material. Glass is
+   now universal (by direct instruction, a deliberate reversal of that
+   original performance-first stance — see themes.css's own header comment),
+   so every theme pays the same real, measurable scroll cost here. The
+   opacity/blur numbers themselves are unchanged from what Glass alone used
+   to carry. */
+  .chrome {
+    background: rgb(var(--c-surface-solid) / 0.72);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
 
-[data-theme="glass"] .chrome {
-  background: rgb(var(--c-surface-solid) / 0.72);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-}
+  /* The bright top edge is light catching the lip of the material — a
+   theme-aware highlight (`--c-ink` flips dark-on-light/white-on-dark per
+   theme) rather than a hardcoded white line, since Editorial Paper's own
+   chrome is now translucent too and a literal white edge would vanish
+   against its light ground. */
+  .chrome-top-edge {
+    border-top: 1px solid rgb(var(--c-ink) / 0.12);
+  }
 
-/* The bright top edge is light catching the lip of the material. Only shows
-   on the translucent variant — on an opaque bar it just reads as a stray
-   line. */
-[data-theme="glass"] .chrome-top-edge {
-  border-top: 1px solid rgb(255 255 255 / 0.12);
-}
-
-/* ==========================================================================
+  /* ==========================================================================
    Accessibility preferences beyond reduced-motion
    --------------------------------------------------------------------------
    Reduced motion was the only one of these the app honoured. Both of the
@@ -249,241 +684,33 @@ html.lenis body {
    design gets wrong by default.
    ========================================================================== */
 
-/* Frost the translucency rather than blurring it: people who turn this on
+  /* Frost the translucency rather than blurring it: people who turn this on
    generally do so because layered semi-transparent surfaces are hard to
    parse, so the fix is opacity, not a different blur radius. */
-@media (prefers-reduced-transparency: reduce) {
-  .glass-surface,
-  .glass-surface-elevated,
-  .glass-pill {
-    background: rgb(var(--c-surface-solid));
-    backdrop-filter: none;
+  @media (prefers-reduced-transparency: reduce) {
+    .glass-surface,
+    .glass-surface-elevated,
+    .glass-surface-subtle,
+    .glass-pill,
+    .chrome {
+      background: rgb(var(--c-surface-solid));
+      backdrop-filter: none;
+    }
   }
-}
 
-/* Hairlines are the first thing to disappear at high contrast. Give every
+  /* Hairlines are the first thing to disappear at high contrast. Give every
    surface a defined, contrasting edge and drop the tinted fills that rely on
    subtle luminance differences to read. */
-@media (prefers-contrast: more) {
-  .glass-surface,
-  .glass-surface-elevated,
-  .glass-pill {
-    border-color: rgb(var(--c-s-100));
-    box-shadow: none;
-  }
-  .rule {
-    border-top-color: rgb(var(--c-s-100));
-  }
-}
-
-@layer components {
-  /* ============================================================
-     Material system
-     Every value here comes from the active theme (see themes.css),
-     so a card is a flat white panel under Editorial Paper and a
-     frosted translucent pane under Midnight Glass without any
-     component knowing the difference.
-     ============================================================ */
-
-  /* The default surface. */
-  .glass-surface {
-    background: var(--surface-bg);
-    border: 1px solid var(--surface-border);
-    border-radius: var(--surface-radius);
-    box-shadow: var(--surface-shadow);
-    backdrop-filter: blur(var(--surface-blur));
-  }
-
-  /* Reserved for the ONE primary element per screen. Distinguished by an
-     accent hairline and a deeper lift, not a different material — using it
-     twice on a screen stops it meaning "the important one". */
-  .glass-surface-elevated {
-    background: var(--elev-bg);
-    border: 1px solid var(--elev-border);
-    border-radius: var(--surface-radius);
-    box-shadow: var(--elev-shadow);
-    backdrop-filter: blur(var(--elev-blur));
-  }
-
-  /* Chips, nav pills, filter tags, badges. */
-  .glass-pill {
-    @apply rounded-full;
-    background: var(--surface-bg);
-    border: 1px solid var(--surface-border);
-    box-shadow: var(--surface-shadow);
-    backdrop-filter: blur(var(--surface-blur));
-  }
-
-  /* Full-measure hairline, the way a rule separates sections in print. */
-  .rule {
-    border-top: 1px solid var(--surface-border);
-  }
-
-  /* ---- Cards over the homepage scroll video --------------------------- */
-
-  /* Declared here in raw rgba rather than as Tailwind utilities on the
-     elements, matching how the surface classes above are written.
-
-     The practical reason: when these same values lived in a utility string
-     inside a newly created `.ts` module, Tailwind's watcher never scanned the
-     file and the classes were missing from the compiled stylesheet — the cards
-     kept their radius and padding and rendered fully transparent. That failure
-     is silent, and since this fill is the measured floor holding body copy at
-     4.5:1 against the video's brightest frame, it costs contrast rather than
-     just appearance. A class in a stylesheet the build already tracks cannot
-     fail that way.
-
-     (Opacity utilities are not broken in this project generally — every one
-     currently in source compiles correctly.) */
-  .card-surface {
-    border-radius: 1rem;
-    border: 1px solid rgb(var(--c-s-50) / 0.09);
-    background: rgb(var(--c-s-950) / 0.68);
-    box-shadow:
-      inset 0 1px 0 0 rgb(var(--c-s-50) / 0.06),
-      inset 0 -24px 48px -32px rgb(var(--c-s-950) / 0.9);
-    transition: border-color 300ms ease;
-  }
-
-  .card-surface-hover:hover {
-    border-color: rgb(var(--c-s-50) / 0.17);
-  }
-
-  /* The small token chips — spelled notes, transposition cells. */
-  .chip-accent {
-    border: 1px solid rgb(var(--c-a-400) / 0.25);
-    background: rgb(var(--c-a-400) / 0.08);
-  }
-
-  .chip-neutral {
-    border: 1px solid rgb(var(--c-s-50) / 0.08);
-    background: rgb(var(--c-s-50) / 0.04);
-  }
-
-  /* The recurring kicker above a heading — centralised so every page gets
-     the same treatment instead of re-declaring the tracking each time. */
-  .eyebrow {
-    @apply text-xs font-medium uppercase tracking-[0.18em] text-amber-300;
-  }
-
-  /* ---- Photography ---------------------------------------------------- */
-
-  /* Scrims dissolve a photo into the page ground. Both the colour and the
-     strength come from the theme: a dark theme wants a light veil so pale
-     text stays readable, a light theme needs a much heavier one, because
-     ink text over a half-visible photo lands on whatever tone happens to
-     sit behind each glyph. */
-  .backdrop-scrim-light {
-    background: linear-gradient(
-      to bottom,
-      rgb(var(--scrim-rgb) / 1) 0%,
-      rgb(var(--scrim-rgb) / var(--scrim-light)) 18%,
-      rgb(var(--scrim-rgb) / calc(var(--scrim-light) * 0.92)) 50%,
-      rgb(var(--scrim-rgb) / calc(var(--scrim-light) * 1.08)) 82%,
-      rgb(var(--scrim-rgb) / 1) 100%
-    );
-  }
-  .backdrop-scrim {
-    background: linear-gradient(
-      to bottom,
-      rgb(var(--scrim-rgb) / 1) 0%,
-      rgb(var(--scrim-rgb) / var(--scrim-standard)) 18%,
-      rgb(var(--scrim-rgb) / calc(var(--scrim-standard) * 0.96)) 50%,
-      rgb(var(--scrim-rgb) / calc(var(--scrim-standard) * 1.04)) 82%,
-      rgb(var(--scrim-rgb) / 1) 100%
-    );
-  }
-  .backdrop-scrim-dense {
-    background: linear-gradient(
-      to bottom,
-      rgb(var(--scrim-rgb) / 1) 0%,
-      rgb(var(--scrim-rgb) / var(--scrim-dense)) 18%,
-      rgb(var(--scrim-rgb) / calc(var(--scrim-dense) * 0.98)) 50%,
-      rgb(var(--scrim-rgb) / calc(var(--scrim-dense) * 1.02)) 82%,
-      rgb(var(--scrim-rgb) / 1) 100%
-    );
-  }
-
-  /* Two more scrim shapes, additive to the three above — nothing here
-     changes their tiers or usages.
-
-     Both exist because the linear washes are a blanket decision: protect
-     the WHOLE frame at one strength, whether or not anything in it actually
-     floats unprotected on the photo. Most sections don't need that — their
-     text already sits inside an opaque card, and the flat wash was just
-     erasing the photo for no contrast benefit. These two shapes ask "where
-     does text actually touch the photo" instead of protecting everything. */
-
-  /* For a heading/paragraph that floats directly on the photo (no card under
-     it), roughly centered in its section. Full protection in a radial core
-     right behind the text; the rest of the frame — corners, edges, whatever
-     sits beside a centered column — opens up to the photo. Thin opaque bands
-     at the very top/bottom are kept so stacked <PhotoBackdrop> sections still
-     dissolve into each other instead of hard-cutting. */
-  .backdrop-scrim-vignette {
-    background:
-      radial-gradient(
-        46% 42% at 50% 50%,
-        rgb(var(--scrim-rgb) / var(--scrim-standard)) 0%,
-        rgb(var(--scrim-rgb) / calc(var(--scrim-standard) * 0.5)) 62%,
-        rgb(var(--scrim-rgb) / 0) 100%
-      ),
-      linear-gradient(
-        to bottom,
-        rgb(var(--scrim-rgb) / 1) 0%,
-        rgb(var(--scrim-rgb) / 0.1) 12%,
-        rgb(var(--scrim-rgb) / 0.06) 50%,
-        rgb(var(--scrim-rgb) / 0.1) 88%,
-        rgb(var(--scrim-rgb) / 1) 100%
-      );
-  }
-
-  /* For a section where every line of text already sits inside its own
-     opaque card — the backdrop's only job left is the top/bottom dissolve
-     into whatever's above and below it, so the photo can be almost fully
-     visible everywhere in between. */
-  .backdrop-scrim-minimal {
-    background: linear-gradient(
-      to bottom,
-      rgb(var(--scrim-rgb) / 1) 0%,
-      rgb(var(--scrim-rgb) / 0.08) 14%,
-      rgb(var(--scrim-rgb) / 0.05) 50%,
-      rgb(var(--scrim-rgb) / 0.08) 86%,
-      rgb(var(--scrim-rgb) / 1) 100%
-    );
-  }
-
-  .backdrop-glow-smoke-top {
-    background: radial-gradient(60% 80% at 50% 0%, rgb(var(--c-a-400) / 0.1), transparent 70%);
-    filter: blur(40px);
-  }
-  .backdrop-glow-smoke-bottom {
-    background: radial-gradient(60% 80% at 50% 100%, rgb(var(--c-a-400) / 0.12), transparent 70%);
-    filter: blur(40px);
-  }
-
-  /* ---- Motion --------------------------------------------------------- */
-
-  /* One-shot sheen across the primary CTA. Inert under reduced motion. */
-  .cta-sheen {
-    position: relative;
-    overflow: hidden;
-    isolation: isolate;
-  }
-  .cta-sheen::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(115deg, transparent 20%, rgba(255, 245, 235, 0.3) 42%, transparent 64%);
-    transform: translateX(-120%);
-    pointer-events: none;
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .cta-sheen::after {
-      transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  @media (prefers-contrast: more) {
+    .glass-surface,
+    .glass-surface-elevated,
+    .glass-surface-subtle,
+    .glass-pill {
+      border-color: rgb(var(--c-s-100));
+      box-shadow: none;
     }
-    .cta-sheen:hover::after {
-      transform: translateX(120%);
+    .rule {
+      border-top-color: rgb(var(--c-s-100));
     }
   }
 }

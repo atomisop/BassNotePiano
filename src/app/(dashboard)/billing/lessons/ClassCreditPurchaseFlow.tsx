@@ -88,10 +88,10 @@ export function ClassCreditPurchaseFlow({ zelleHandle }: { zelleHandle: string }
                 type="button"
                 onClick={() => setSelectedId(bundle.id)}
                 className={`rounded-lg border px-3 py-2.5 text-left transition ${
-                  active ? "border-amber-400/60 bg-amber-400/10" : "border-ink/10 hover:border-ink/15"
+                  active ? "border-[rgb(var(--c-a-400)/0.6)] bg-[rgb(var(--c-a-400)/0.1)]" : "border-ink/10 hover:border-ink/15"
                 }`}
               >
-                <p className={`text-sm font-medium ${active ? "text-amber-200" : "text-slate-100"}`}>{bundle.label}</p>
+                <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-a-200))]" : "text-slate-100"}`}>{bundle.label}</p>
                 <p className="mt-0.5 text-xs text-slate-500">
                   {bundle.quantity} credits · {formatUsd(bundleTotal.perCreditCents)}/credit
                 </p>
@@ -102,10 +102,10 @@ export function ClassCreditPurchaseFlow({ zelleHandle }: { zelleHandle: string }
             type="button"
             onClick={() => setSelectedId("custom")}
             className={`rounded-lg border px-3 py-2.5 text-left transition ${
-              isCustom ? "border-amber-400/60 bg-amber-400/10" : "border-ink/10 hover:border-ink/15"
+              isCustom ? "border-[rgb(var(--c-a-400)/0.6)] bg-[rgb(var(--c-a-400)/0.1)]" : "border-ink/10 hover:border-ink/15"
             }`}
           >
-            <p className={`text-sm font-medium ${isCustom ? "text-amber-200" : "text-slate-100"}`}>Custom</p>
+            <p className={`text-sm font-medium ${isCustom ? "text-[rgb(var(--c-a-200))]" : "text-slate-100"}`}>Custom</p>
             <p className="mt-0.5 text-xs text-slate-500">Pick your own quantity</p>
           </button>
         </div>
@@ -158,18 +158,18 @@ export function ClassCreditPurchaseFlow({ zelleHandle }: { zelleHandle: string }
         </div>
       </div>
 
-      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-amber-400/20 bg-amber-400/5 p-3.5 text-xs text-slate-300">
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[rgb(var(--c-a-400)/0.2)] bg-[rgb(var(--c-a-400)/0.05)] p-3.5 text-xs text-slate-300">
         <input
           type="checkbox"
           checked={acknowledged}
           onChange={(e) => setAcknowledged(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-amber-400"
+          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-a-400))]"
         />
         <span>
-          I understand money spent on class credits is <span className="font-medium text-amber-200">non-refundable</span>.
+          I understand money spent on class credits is <span className="font-medium text-[rgb(var(--c-a-200))]">non-refundable</span>.
           The only way a credit comes back is canceling a booking 24+ hours before it starts — inside that window,
           self-cancellation is off and any refund is a manual, case-by-case call. Full{" "}
-          <Link href="/terms" target="_blank" className="text-amber-300 underline hover:text-amber-200">
+          <Link href="/terms" target="_blank" className="text-[rgb(var(--c-a-300))] underline hover:text-[rgb(var(--c-a-200))]">
             terms &amp; refund policy
           </Link>
           .
@@ -180,7 +180,7 @@ export function ClassCreditPurchaseFlow({ zelleHandle }: { zelleHandle: string }
         type="button"
         onClick={handleContinue}
         disabled={loading || !acknowledged}
-        className="cta-sheen w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+        className="cta-sheen cta-fill w-full rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "Loading…" : "Continue to payment"}
       </button>

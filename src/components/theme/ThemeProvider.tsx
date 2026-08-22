@@ -9,7 +9,6 @@ import {
   LOGGED_OUT_THEME,
   THEME_STORAGE_KEY,
   isAccentId,
-  isDaisyTheme,
   isLoggedOutPath,
   isThemeId,
   themeMode,
@@ -44,11 +43,7 @@ function applyToDocument(theme: ThemeId, accent: AccentId) {
   const el = document.documentElement;
   el.setAttribute("data-theme", theme);
   el.setAttribute("data-mode", themeMode(theme));
-  // A daisyUI-sourced theme carries its own baked-in accent (see themes.css)
-  // and never matches rust/rose/gold/sage/indigo, so writing the theme's own
-  // id here means no [data-mode][data-accent="…"] rule matches at all — only
-  // the theme's own [data-theme="…"] block sets --c-a-*.
-  el.setAttribute("data-accent", isDaisyTheme(theme) ? theme : accent);
+  el.setAttribute("data-accent", accent);
   el.style.colorScheme = themeMode(theme);
 }
 

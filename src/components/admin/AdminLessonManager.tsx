@@ -1,9 +1,11 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { LessonMediaType } from "@prisma/client";
 import type { CourseLesson } from "@/lib/courseContent";
+import { FileDropzone } from "@/components/ui/FileDropzone";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 interface PresignedUpload {
   uploadUrl: string;
@@ -27,7 +29,12 @@ export interface AdminLessonManagerProps {
   scaleGroupLabel: string;
   lessons: CourseLesson[];
   storageConfigured: boolean;
-  onRequestUploadUrl: (scaleGroupSlug: string, fileName: string, contentType: string) => Promise<PresignedUpload>;
+  onRequestUploadUrl: (
+    scaleGroupSlug: string,
+    fileName: string,
+    contentType: string,
+    fileSize: number,
+  ) => Promise<PresignedUpload>;
   onCreateLesson: (input: CreateLessonPayload) => Promise<CourseLesson>;
   onDeleteLesson: (lessonId: string, scaleGroupSlug: string) => Promise<void>;
   onReorder: (scaleGroupSlug: string, orderedLessonIds: string[]) => Promise<void>;
@@ -90,11 +97,11 @@ export function AdminLessonManager({
   onReorder,
 }: AdminLessonManagerProps) {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -105,14 +112,15 @@ export function AdminLessonManager({
     setTitle("");
     setDescription("");
     setProgress(0);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    setFile(null);
   }
 
   async function handleUpload(e: FormEvent) {
     e.preventDefault();
     setError(null);
 
-    const file = fileInputRef.current?.files?.[0];
+    // Held in state by <FileDropzone> rather than read off a ref, so drag-and-
+    // drop and click-to-choose land in the same place.
     if (!file) {
       setError("Choose a video or PDF file.");
       return;
@@ -131,7 +139,7 @@ export function AdminLessonManager({
     setProgress(0);
     try {
       const durationSeconds = type === "VIDEO" ? await readVideoDuration(file) : null;
-      const { uploadUrl, publicUrl } = await onRequestUploadUrl(scaleGroupSlug, file.name, file.type);
+      const { uploadUrl, publicUrl } = await onRequestUploadUrl(scaleGroupSlug, file.name, file.type, file.size);
       await uploadWithProgress(uploadUrl, file, file.type, setProgress);
       await onCreateLesson({
         scaleGroupSlug,
@@ -189,7 +197,7 @@ export function AdminLessonManager({
           type="button"
           onClick={() => setShowForm((v) => !v)}
           disabled={!storageConfigured}
-          className="cta-sheen rounded-xl bg-amber-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
+          className="cta-sheen cta-fill rounded-xl px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
         >
           {showForm ? "Cancel" : "Upload a lesson"}
         </button>
@@ -204,7 +212,7 @@ export function AdminLessonManager({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Reading the Bati formula"
               disabled={uploading}
-              className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+              className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
             />
           </div>
           <div>
@@ -214,35 +222,30 @@ export function AdminLessonManager({
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               disabled={uploading}
-              className="w-full resize-none rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+              className="w-full resize-none glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-400">Video or PDF file</label>
-            <input
-              ref={fileInputRef}
-              type="file"
+            <p className="mb-1 block text-xs font-medium text-slate-400">Video or PDF file</p>
+            {/* The dropzone owns both the picker and the progress bar, so the
+                separate `{uploading && …}` block below it is gone — one place
+                shows what file is queued and how far along it is. */}
+            <FileDropzone
               accept="video/*,application/pdf"
+              file={file}
+              onFileSelected={setFile}
+              progress={uploading ? progress : null}
               disabled={uploading}
-              className="w-full cursor-pointer rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-300 outline-none transition file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-amber-400/15 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-amber-300 focus:border-amber-400/60 disabled:opacity-60"
+              hint="MP4 or PDF · drag it in, or click to browse"
             />
           </div>
-
-          {uploading && (
-            <div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
-                <div className="h-full rounded-full bg-amber-400 transition-all" style={{ width: `${progress}%` }} />
-              </div>
-              <p className="mt-1.5 text-xs text-slate-500">Uploading… {progress}%</p>
-            </div>
-          )}
 
           {error && <p className="text-xs text-red-400">{error}</p>}
 
           <button
             type="submit"
             disabled={uploading}
-            className="cta-sheen w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen cta-fill w-full rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
             {uploading ? "Uploading…" : "Upload"}
           </button>
@@ -250,16 +253,17 @@ export function AdminLessonManager({
       )}
 
       {lessons.length === 0 ? (
-        <div className="glass-surface p-8 text-center text-sm text-slate-500">
-          No lessons uploaded yet for this scale.
-        </div>
+        <EmptyState
+          title="No lessons for this scale yet"
+          description="Upload a video or PDF and it becomes the first module students work through. They unlock in the order you set here."
+        />
       ) : (
         <div className="space-y-3">
           {lessons.map((lesson, index) => (
             <div key={lesson.id} className="glass-surface p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-amber-400/30 bg-amber-400/10 text-xs font-semibold text-amber-300">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.1)] text-xs font-semibold text-[rgb(var(--c-a-300))]">
                     {index + 1}
                   </span>
                   <div>

@@ -123,12 +123,12 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
             className="glass-surface-elevated relative w-full max-w-md overflow-hidden"
           >
             {step === "result" && result?.passed && <SuccessGlowPulse />}
-            <div className="h-1 w-full bg-gradient-to-r from-amber-500/40 via-amber-300 to-amber-500/40" />
+            <div className="h-1 w-full bg-gradient-to-r from-[rgb(var(--c-a-500)/0.4)] via-[rgb(var(--c-a-300))] to-[rgb(var(--c-a-500)/0.4)]" />
 
             <div className="px-6 pb-6 pt-5">
               <div className="mb-5 flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">
                     Scale-Spelling Quiz
                   </p>
                   <h2 id="quiz-modal-title" className="mt-1 font-serif text-lg text-slate-50">
@@ -157,9 +157,9 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
                           key={q.id}
                           className={`h-1 flex-1 rounded-full ${
                             i < currentIndex || (i === currentIndex && selections[q.id] !== undefined)
-                              ? "bg-amber-400"
+                              ? "bg-[rgb(var(--c-a-400))]"
                               : i === currentIndex
-                                ? "bg-amber-400/40"
+                                ? "bg-[rgb(var(--c-a-400)/0.4)]"
                                 : "bg-slate-800"
                           }`}
                         />
@@ -180,7 +180,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
                             onClick={() => selectChoice(i)}
                             className={`w-full rounded-xl border px-4 py-2.5 text-left text-sm font-medium transition ${
                               selected
-                                ? "border-amber-400 bg-amber-400/10 text-amber-300"
+                                ? "border-[rgb(var(--c-a-400))] bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-300))]"
                                 : "border-ink/10 text-slate-300 hover:border-ink/15 hover:bg-slate-800/60"
                             }`}
                           >
@@ -208,7 +208,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
                           type="button"
                           onClick={handleSubmit}
                           disabled={!hasSelected || step === "submitting"}
-                          className="cta-sheen flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {step === "submitting" ? "Grading…" : "Submit quiz"}
                         </button>
@@ -217,7 +217,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
                           type="button"
                           onClick={() => setCurrentIndex((i) => i + 1)}
                           disabled={!hasSelected}
-                          className="cta-sheen flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           Next
                         </button>
@@ -276,7 +276,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
                         <button
                           type="button"
                           onClick={handleRetake}
-                          className="cta-sheen flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+                          className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-sm font-semibold"
                         >
                           Retake quiz
                         </button>

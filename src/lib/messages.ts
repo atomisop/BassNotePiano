@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { sendEmailIfEnabled } from "@/lib/notifications";
 import { getAppUrl } from "@/lib/email";
 import { isFriend, getFriendsList, SocialError } from "@/lib/social";
+import { assertRateLimit } from "@/lib/rateLimit";
 
 const MAX_MESSAGE_LENGTH = 2000;
 
@@ -53,6 +54,14 @@ export async function sendMessage(senderId: string, recipientId: string, body: s
   if (!(await canConverse(senderId, recipientId))) throw new SocialError("You can only message friends.");
   if (await isBlockedEitherWay(senderId, recipientId)) throw new SocialError("You can't message this user.");
 
+  // STEP 20: 30/minute is well above any real conversation's pace but stops
+  // a compromised or scripted account from flooding a recipient's inbox.
+  await assertRateLimit(
+    prisma.message.count,
+    { senderId },
+    { windowMinutes: 1, max: 30, message: "You're sending messages too fast — please slow down." },
+  );
+
   const message = await prisma.message.create({ data: { senderId, recipientId, body: trimmed } });
 
   // A message landing is a much stronger signal than "typing" — clear it
@@ -101,11 +110,22 @@ type ConversationPartner = { id: string; username: string | null; name: string |
  * rather than a stored relation — there's no other durable record of an
  * admin-initiated thread.
  */
+// STEP 19: this used to be `findMany` with no `take` at all — for an admin
+// account with years of message history, every single message they've ever
+// sent or received got pulled into memory just to derive a distinct list of
+// partner IDs. 2000 most-recent messages is a generous bound for "who has
+// this account talked to" in a studio this size; a partner whose only
+// contact was further back than that would simply not resurface here, which
+// is an acceptable trade for not scanning an unbounded table on every load.
+const ADMIN_THREAD_SCAN_LIMIT = 2000;
+
 async function getAdminThreadPartners(userId: string): Promise<ConversationPartner[]> {
   const self = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
 
   const rows = await prisma.message.findMany({
     where: { OR: [{ senderId: userId }, { recipientId: userId }] },
+    orderBy: { createdAt: "desc" },
+    take: ADMIN_THREAD_SCAN_LIMIT,
     select: {
       senderId: true,
       recipientId: true,
@@ -143,35 +163,58 @@ export async function getConversations(userId: string): Promise<ConversationSumm
   const pinnedByFriendId = new Map(pinnedRows.map((p) => [p.friendId, p.pinOrder]));
   const typingFriendIds = new Set(typingRows.map((t) => t.senderId));
 
-  const summaries = await Promise.all(
-    partners.map(async (friend): Promise<ConversationSummary> => {
-      const [lastMessage, unreadCount] = await Promise.all([
-        prisma.message.findFirst({
+  // STEP 19: this used to fire 2 queries PER partner (a findFirst for their
+  // last message, a count for unread) inside the map below — a genuine N+1,
+  // 2N round trips for a conversation list of N friends. Replaced with
+  // exactly 2 queries total, independent of how many partners there are:
+  // one findMany covering every partner's messages at once (capped, same
+  // reasoning as ADMIN_THREAD_SCAN_LIMIT above — recent activity is what a
+  // conversation list needs), reduced to "first occurrence per partner" in
+  // memory since it's already ordered newest-first; and one groupBy that
+  // does the unread counting DB-side instead of one COUNT per partner.
+  const partnerIds = partners.map((p) => p.id);
+  const [recentMessages, unreadGroups] = partnerIds.length
+    ? await Promise.all([
+        prisma.message.findMany({
           where: {
             OR: [
-              { senderId: userId, recipientId: friend.id },
-              { senderId: friend.id, recipientId: userId },
+              { senderId: userId, recipientId: { in: partnerIds } },
+              { senderId: { in: partnerIds }, recipientId: userId },
             ],
           },
           orderBy: { createdAt: "desc" },
+          take: 2000,
         }),
-        prisma.message.count({ where: { senderId: friend.id, recipientId: userId, readAt: null } }),
-      ]);
+        prisma.message.groupBy({
+          by: ["senderId"],
+          where: { senderId: { in: partnerIds }, recipientId: userId, readAt: null },
+          _count: { _all: true },
+        }),
+      ])
+    : [[], []];
 
-      return {
-        friendId: friend.id,
-        friendUsername: friend.username,
-        friendName: friend.name,
-        friendImage: friend.image,
-        lastMessageBody: lastMessage?.body ?? null,
-        lastMessageAt: lastMessage?.createdAt ?? null,
-        unreadCount,
-        isPinned: pinnedByFriendId.has(friend.id),
-        pinOrder: pinnedByFriendId.get(friend.id) ?? null,
-        isTyping: typingFriendIds.has(friend.id),
-      };
-    }),
-  );
+  const lastMessageByPartner = new Map<string, (typeof recentMessages)[number]>();
+  for (const m of recentMessages) {
+    const partnerId = m.senderId === userId ? m.recipientId : m.senderId;
+    if (!lastMessageByPartner.has(partnerId)) lastMessageByPartner.set(partnerId, m);
+  }
+  const unreadByPartner = new Map(unreadGroups.map((g) => [g.senderId, g._count._all]));
+
+  const summaries: ConversationSummary[] = partners.map((friend) => {
+    const lastMessage = lastMessageByPartner.get(friend.id);
+    return {
+      friendId: friend.id,
+      friendUsername: friend.username,
+      friendName: friend.name,
+      friendImage: friend.image,
+      lastMessageBody: lastMessage?.body ?? null,
+      lastMessageAt: lastMessage?.createdAt ?? null,
+      unreadCount: unreadByPartner.get(friend.id) ?? 0,
+      isPinned: pinnedByFriendId.has(friend.id),
+      pinOrder: pinnedByFriendId.get(friend.id) ?? null,
+      isTyping: typingFriendIds.has(friend.id),
+    };
+  });
 
   return summaries.sort((a, b) => (b.lastMessageAt?.getTime() ?? 0) - (a.lastMessageAt?.getTime() ?? 0));
 }

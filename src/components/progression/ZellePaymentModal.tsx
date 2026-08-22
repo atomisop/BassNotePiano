@@ -139,12 +139,12 @@ export function ZellePaymentModal({
             className="glass-surface-elevated relative w-full max-w-md overflow-hidden"
           >
             {step === "pending" && <SuccessGlowPulse />}
-            <div className="h-1 w-full bg-gradient-to-r from-amber-500/40 via-amber-300 to-amber-500/40" />
+            <div className="h-1 w-full bg-gradient-to-r from-[rgb(var(--c-a-500)/0.4)] via-[rgb(var(--c-a-300))] to-[rgb(var(--c-a-500)/0.4)]" />
 
             <div className="px-6 pb-6 pt-5">
               <div className="mb-5 flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">
                     {scaleCode} · {eyebrowLabel}
                   </p>
                   <h2 id="zelle-modal-title" className="mt-1 font-serif text-lg text-slate-50">
@@ -168,7 +168,7 @@ export function ZellePaymentModal({
                 {step === "instructions" && (
                   <motion.div key="instructions" variants={stepVariants} initial="enter" animate="center" exit="exit">
                     <p className="text-sm text-slate-400">
-                      Send <span className="font-semibold text-amber-300">{formatUsd(amountCents)}</span> via Zelle to
+                      Send <span className="font-semibold text-[rgb(var(--c-a-300))]">{formatUsd(amountCents)}</span> via Zelle to
                       unlock {scaleTitle}, then confirm below.
                     </p>
 
@@ -180,7 +180,7 @@ export function ZellePaymentModal({
                       <button
                         type="button"
                         onClick={handleCopyHandle}
-                        className="shrink-0 rounded-lg border border-amber-400/30 px-3 py-1.5 text-xs font-medium text-amber-300 transition hover:bg-amber-400/10"
+                        className="shrink-0 rounded-lg border border-[rgb(var(--c-a-400)/0.3)] px-3 py-1.5 text-xs font-medium text-[rgb(var(--c-a-300))] transition hover:bg-[rgb(var(--c-a-400)/0.1)]"
                       >
                         {copied ? "Copied" : "Copy"}
                       </button>
@@ -188,15 +188,15 @@ export function ZellePaymentModal({
 
                     <ol className="mt-5 space-y-2.5 text-sm text-slate-300">
                       <li className="flex gap-2.5">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-400/15 text-[11px] font-semibold text-amber-300">1</span>
-                        Open your bank's Zelle transfer and send {formatUsd(amountCents)} to the handle above.
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-a-400)/0.15)] text-[11px] font-semibold text-[rgb(var(--c-a-300))]">1</span>
+                        Open your bank&apos;s Zelle transfer and send {formatUsd(amountCents)} to the handle above.
                       </li>
                       <li className="flex gap-2.5">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-400/15 text-[11px] font-semibold text-amber-300">2</span>
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-a-400)/0.15)] text-[11px] font-semibold text-[rgb(var(--c-a-300))]">2</span>
                         Copy the confirmation/reference code your bank gives you.
                       </li>
                       <li className="flex gap-2.5">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-400/15 text-[11px] font-semibold text-amber-300">3</span>
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-a-400)/0.15)] text-[11px] font-semibold text-[rgb(var(--c-a-300))]">3</span>
                         Submit it here — access unlocks once we verify the transfer.
                       </li>
                     </ol>
@@ -204,9 +204,9 @@ export function ZellePaymentModal({
                     <button
                       type="button"
                       onClick={() => setStep("confirming")}
-                      className="cta-sheen mt-6 w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+                      className="cta-sheen cta-fill mt-6 w-full rounded-xl py-2.5 text-sm font-semibold"
                     >
-                      I've sent the payment
+                      I&apos;ve sent the payment
                     </button>
                   </motion.div>
                 )}
@@ -221,7 +221,7 @@ export function ZellePaymentModal({
                           value={senderName}
                           onChange={(e) => setSenderName(e.target.value)}
                           placeholder="Jordan Alemu"
-                          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+                          className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
                         />
                       </div>
                       <div>
@@ -230,7 +230,7 @@ export function ZellePaymentModal({
                           value={referenceCode}
                           onChange={(e) => setReferenceCode(e.target.value)}
                           placeholder="e.g. ZL2K9F71M"
-                          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 font-mono text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+                          className="w-full glass-surface-subtle px-3 py-2 font-mono text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
                         />
                       </div>
                       <div>
@@ -240,7 +240,7 @@ export function ZellePaymentModal({
                           onChange={(e) => setNote(e.target.value)}
                           rows={2}
                           placeholder="Anything that helps us match the transfer"
-                          className="w-full resize-none rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+                          className="w-full resize-none glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
                         />
                       </div>
 
@@ -259,7 +259,7 @@ export function ZellePaymentModal({
                           type="button"
                           onClick={handleSubmit}
                           disabled={submitting}
-                          className="cta-sheen flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {submitting ? "Submitting…" : "Submit for review"}
                         </button>
@@ -274,7 +274,7 @@ export function ZellePaymentModal({
                       initial={{ scale: 0.6, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ type: "spring", bounce: 0.35, duration: 0.5, delay: 0.05 }}
-                      className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-400/10"
+                      className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgb(var(--c-a-400)/0.1)]"
                     >
                       <motion.svg
                         width="26"
@@ -283,7 +283,7 @@ export function ZellePaymentModal({
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="2"
-                        className="text-amber-300"
+                        className="text-[rgb(var(--c-a-300))]"
                         initial={{ pathLength: 0 }}
                         animate={{ pathLength: 1 }}
                         transition={{ duration: 0.5, delay: 0.2 }}
@@ -294,8 +294,8 @@ export function ZellePaymentModal({
                     </motion.div>
                     <h3 className="font-serif text-base text-slate-50">Confirmation received</h3>
                     <p className="mx-auto mt-1.5 max-w-xs text-sm text-slate-400">
-                      We're verifying your transfer for <span className="text-slate-200">{scaleTitle}</span>. This is
-                      usually quick — you'll get access as soon as it clears review.
+                      We&apos;re verifying your transfer for <span className="text-slate-200">{scaleTitle}</span>. This is
+                      usually quick — you&apos;ll get access as soon as it clears review.
                     </p>
                     <button
                       type="button"

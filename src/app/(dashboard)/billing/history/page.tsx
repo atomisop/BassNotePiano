@@ -13,7 +13,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_STYLE: Record<string, string> = {
   AWAITING_TRANSFER: "bg-slate-800 text-slate-400",
-  PENDING_REVIEW: "bg-amber-400/15 text-amber-300",
+  PENDING_REVIEW: "bg-[rgb(var(--c-a-400)/0.15)] text-[rgb(var(--c-a-300))]",
   VERIFIED: "bg-emerald-400/15 text-emerald-300",
   REJECTED: "bg-red-400/15 text-red-300",
   EXPIRED: "bg-slate-800 text-slate-500",
@@ -58,7 +58,7 @@ export default async function BillingHistoryPage() {
 
   return (
     <div className="w-full max-w-lg">
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Billing</p>
+      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Billing</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Payment history</h1>
       <p className="mt-2 text-sm text-slate-500">
         {payments.length === 0
@@ -78,7 +78,7 @@ export default async function BillingHistoryPage() {
             <div key={payment.id} className="glass-surface p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">{eyebrow}</p>
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">{eyebrow}</p>
                   <p className="mt-1 text-slate-100">{title}</p>
                   <p className="mt-1 text-xs text-slate-600">
                     {new Date(payment.createdAt).toLocaleDateString(undefined, {

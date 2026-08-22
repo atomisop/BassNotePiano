@@ -68,7 +68,7 @@ export function NewGroupPanel({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Tizita crew"
-              className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+              className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
             />
           </div>
           <p className="text-xs font-medium text-slate-400">Add friends</p>
@@ -79,7 +79,7 @@ export function NewGroupPanel({
             <p className="text-xs text-slate-600">Loading friends…</p>
           ) : friends.length === 0 ? (
             <p className="text-xs text-slate-600">
-              You don't have any friends yet — add some on the Friends page first.
+              You don&apos;t have any friends yet — add some on the Friends page first.
             </p>
           ) : (
             <div className="space-y-1">
@@ -92,7 +92,7 @@ export function NewGroupPanel({
                     disabled={!f.username}
                     onClick={() => toggle(f.username)}
                     className={`flex w-full items-center gap-2.5 rounded-lg p-2.5 text-left transition ${
-                      checked ? "bg-amber-400/10" : "hover:bg-ink/5"
+                      checked ? "bg-[rgb(var(--c-a-400)/0.1)]" : "hover:bg-ink/5"
                     } disabled:opacity-40`}
                   >
                     <Avatar image={f.image} label={f.name ?? f.username ?? "?"} className="h-8 w-8 text-xs" />
@@ -102,7 +102,7 @@ export function NewGroupPanel({
                     </div>
                     <div
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-                        checked ? "border-amber-400 bg-amber-400 text-slate-950" : "border-ink/15"
+                        checked ? "border-[rgb(var(--c-a-400))] bg-[rgb(var(--c-a-400))] text-slate-950" : "border-ink/15"
                       }`}
                     >
                       {checked && (
@@ -124,7 +124,7 @@ export function NewGroupPanel({
             type="button"
             onClick={handleCreate}
             disabled={submitting || selected.size === 0}
-            className="cta-sheen w-full rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen cta-fill w-full rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? "Creating…" : `Create group${selected.size > 0 ? ` (${selected.size})` : ""}`}
           </button>

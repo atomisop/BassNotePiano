@@ -3,8 +3,10 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { signOut } from "next-auth/react";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { ThemePicker } from "@/components/theme/ThemePicker";
+import { Switch } from "@/components/ui/switch";
 import { updatePasswordAction, updateNotificationPreferencesAction, type NotificationPreferencesInput } from "./actions";
 
 interface AccountSettingsProps {
@@ -22,6 +24,8 @@ const TAB_ICONS = {
   appearance:
     "M12 3a9 9 0 000 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1-.24-.27-.39-.62-.39-1 0-.83.67-1.5 1.5-1.5H16a5 5 0 005-5c0-4.42-4.03-8-9-8zM7.5 11a1 1 0 100-2 1 1 0 000 2zm3-3a1 1 0 100-2 1 1 0 000 2zm5 0a1 1 0 100-2 1 1 0 000 2z",
   chevron: "M9 18l6-6-6-6",
+  about: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 7.5h.01",
+  logout: "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9",
 } as const;
 
 const TABS = [
@@ -54,6 +58,41 @@ function SectionCard({ title, description, children }: { title: string; descript
 
 // lg+ only — a sticky always-visible nav beside the inline content, since
 // there's room for both without it feeling cluttered.
+// Not a tab (nothing appears inline for it) — a real link out to the
+// existing `/about` page, which is its own substantial tabbed page
+// (About/Update notes/Terms). Styled to match the tab buttons above it so
+// it reads as part of the same list.
+function AboutLink() {
+  return (
+    <Link
+      href="/about"
+      className="flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left text-sm text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200"
+    >
+      <TabIcon path={TAB_ICONS.about} />
+      About
+    </Link>
+  );
+}
+
+// Same subdued styling the old Sidebar's sign-out button used — an action,
+// not a destructive-red warning.
+function SignOutButton({ className = "" }: { className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={() => signOut({ callbackUrl: "/" })}
+      className={`flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left text-sm text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200 ${className}`}
+    >
+      <TabIcon path={TAB_ICONS.logout} />
+      Sign out
+    </button>
+  );
+}
+
+// lg+ only — a sticky always-visible nav beside the inline content, since
+// there's room for both without it feeling cluttered. "About" and "Sign
+// out" sit below a divider, outside the TABS loop, so they always render
+// last regardless of which tab is active.
 function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: (tab: TabId) => void }) {
   return (
     <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start glass-surface p-2 lg:flex">
@@ -64,7 +103,7 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
           onClick={() => onSelect(tab.id)}
           className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm transition ${
             activeTab === tab.id
-              ? "border-amber-400/40 bg-slate-800 text-slate-50"
+              ? "border-[rgb(var(--c-a-400)/0.4)] bg-slate-800 text-slate-50"
               : "border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
           }`}
         >
@@ -72,12 +111,16 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
           {tab.label}
         </button>
       ))}
+      <div className="my-1 h-px bg-ink/10" />
+      <AboutLink />
+      <SignOutButton />
     </nav>
   );
 }
 
 // Below lg — a plain menu list, no content shown until tapped. Each row
 // pushes a full-screen SlideOverPanel instead of swapping content in place.
+// Same bottom-pinned About/Sign out pair as the desktop nav, always last.
 function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
   return (
     <div className="glass-surface divide-y divide-ink/10 lg:hidden">
@@ -93,6 +136,12 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
           <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-600" />
         </button>
       ))}
+      <Link href="/about" className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-ink/5">
+        <TabIcon path={TAB_ICONS.about} className="h-5 w-5 shrink-0 text-slate-400" />
+        <span className="flex-1 text-sm text-slate-100">About</span>
+        <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-600" />
+      </Link>
+      <SignOutButton className="w-full rounded-none px-4 py-4 hover:bg-ink/5" />
     </div>
   );
 }
@@ -163,11 +212,11 @@ function AccountSettingsInner({ hasCurriculumAccess, classCredits, initialNotifi
   return (
     <div className="mx-auto max-w-4xl">
       <div>
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Settings</p>
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Settings</p>
         <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Account</h1>
         <p className="mt-1 text-sm text-slate-500">
           Want to edit your name, username, or photo? Head to{" "}
-          <Link href="/profile" className="text-amber-300 hover:text-amber-200">
+          <Link href="/profile" className="text-[rgb(var(--c-a-300))] hover:text-[rgb(var(--c-a-200))]">
             your profile
           </Link>
           .
@@ -233,7 +282,7 @@ function MembershipSection({
         {!hasCurriculumAccess && (
           <Link
             href="/billing/curriculum"
-            className="cta-sheen rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
+            className="cta-sheen cta-fill rounded-lg px-4 py-2 text-xs font-semibold"
           >
             Unlock — $99
           </Link>
@@ -249,7 +298,7 @@ function MembershipSection({
         </div>
         <Link
           href="/billing/lessons"
-          className="rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-200"
+          className="rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-200))]"
         >
           Buy credits
         </Link>
@@ -257,7 +306,7 @@ function MembershipSection({
 
       <Link
         href="/billing/history"
-        className="mt-3 flex items-center justify-between rounded-xl border border-ink/10 p-4 text-sm text-slate-200 transition hover:border-amber-400/30 hover:text-amber-200"
+        className="mt-3 flex items-center justify-between rounded-xl border border-ink/10 p-4 text-sm text-slate-200 transition hover:border-[rgb(var(--c-a-400)/0.3)] hover:text-[rgb(var(--c-a-200))]"
       >
         Payment history
         <span className="text-slate-500">→</span>
@@ -308,7 +357,7 @@ function PasswordSection() {
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
           disabled={submitting}
-          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+          className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
         />
         <input
           type="password"
@@ -318,7 +367,7 @@ function PasswordSection() {
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           disabled={submitting}
-          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+          className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
         />
         <input
           type="password"
@@ -328,7 +377,7 @@ function PasswordSection() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           disabled={submitting}
-          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60 disabled:opacity-60"
+          className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
         />
 
         {error && <p className="text-xs text-red-400">{error}</p>}
@@ -337,7 +386,7 @@ function PasswordSection() {
         <button
           type="submit"
           disabled={submitting}
-          className="cta-sheen w-full rounded-lg bg-amber-400 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen cta-fill w-full rounded-lg py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting ? "Saving…" : "Change password"}
         </button>
@@ -357,7 +406,7 @@ function TutorialsSection() {
       <button
         type="button"
         onClick={() => router.push("/dashboard?tour=1")}
-        className="cta-sheen mt-4 rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
+        className="cta-sheen cta-fill mt-4 rounded-lg px-4 py-2 text-xs font-semibold"
       >
         Replay app tour
       </button>
@@ -371,22 +420,6 @@ const NOTIFICATION_TOGGLES: { key: keyof NotificationPreferencesInput; label: st
   { key: "notifyEmailSocial", label: "Social", description: "Friend requests and new messages." },
   { key: "notifyEmailReminders", label: "Practice reminders", description: "Nudges after a few days away." },
 ];
-
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative h-5 w-9 shrink-0 rounded-full transition ${checked ? "bg-amber-400 hover:bg-amber-300" : "bg-slate-800 hover:bg-slate-700"}`}
-    >
-      <span
-        className={`absolute top-0.5 h-4 w-4 rounded-full bg-slate-950 transition ${checked ? "left-[18px]" : "left-0.5"}`}
-      />
-    </button>
-  );
-}
 
 function NotificationSettingsSection({ initial }: { initial: NotificationPreferencesInput }) {
   const [prefs, setPrefs] = useState(initial);
@@ -412,7 +445,11 @@ function NotificationSettingsSection({ initial }: { initial: NotificationPrefere
               <p className="text-sm text-slate-200">{item.label}</p>
               <p className="text-xs text-slate-500">{item.description}</p>
             </div>
-            <Toggle checked={prefs[item.key]} onChange={(value) => handleToggle(item.key, value)} />
+            <Switch
+              checked={prefs[item.key]}
+              onCheckedChange={(value) => handleToggle(item.key, value)}
+              aria-label={item.label}
+            />
           </div>
         ))}
       </div>

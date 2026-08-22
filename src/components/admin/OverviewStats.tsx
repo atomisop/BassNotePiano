@@ -37,7 +37,7 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
             className={`p-5 ${card.highlight ? "glass-surface-elevated" : "glass-surface"}`}
           >
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">{card.label}</p>
-            <p className={`mt-2 font-serif text-3xl ${card.highlight ? "text-amber-300" : "text-slate-50"}`}>
+            <p className={`mt-2 font-serif text-3xl ${card.highlight ? "text-[rgb(var(--c-a-300))]" : "text-slate-50"}`}>
               {card.value}
             </p>
           </motion.div>
@@ -47,19 +47,19 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
       <motion.div variants={item} className="flex flex-wrap gap-3">
         <Link
           href="/admin/payments"
-          className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-300"
+          className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))]"
         >
           Review pending payments{stats.pendingPayments > 0 ? ` (${stats.pendingPayments})` : ""} →
         </Link>
         <Link
           href="/admin/bookings"
-          className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-300"
+          className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))]"
         >
           Lesson bookings →
         </Link>
         <Link
           href="/admin/users"
-          className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-300"
+          className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))]"
         >
           Manage users →
         </Link>
@@ -79,7 +79,7 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
                 }`}
               >
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-amber-400/80">{row.code}</p>
+                  <p className="text-xs uppercase tracking-wide text-[rgb(var(--c-a-400)/0.8)]">{row.code}</p>
                   <p className="text-slate-200">{row.title}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-6 text-sm">
@@ -92,7 +92,7 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
                     <p className="text-[11px] text-slate-600">completed</p>
                   </div>
                   <div className="w-14 text-right">
-                    <p className="text-amber-300">{rate}%</p>
+                    <p className="text-[rgb(var(--c-a-300))]">{rate}%</p>
                     <p className="text-[11px] text-slate-600">completion</p>
                   </div>
                 </div>

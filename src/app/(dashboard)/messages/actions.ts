@@ -21,6 +21,7 @@ import {
   type GroupSummary,
 } from "@/lib/groupMessages";
 import { getFriendsList, SocialError } from "@/lib/social";
+import { RateLimitError } from "@/lib/rateLimit";
 import type { MessageRow } from "@/components/messaging/ChatWindow";
 
 async function requireUserId(): Promise<string> {
@@ -52,7 +53,7 @@ export async function sendMessageAction(friendId: string, body: string) {
     await sendMessage(userId, friendId, body);
     return { ok: true as const };
   } catch (err) {
-    return { ok: false as const, error: err instanceof SocialError ? err.message : "Something went wrong." };
+    return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
   }
 }
 
@@ -66,7 +67,7 @@ export async function togglePinAction(friendId: string) {
     const userId = await requireUserId();
     return { ok: true as const, ...(await togglePin(userId, friendId)) };
   } catch (err) {
-    return { ok: false as const, error: err instanceof SocialError ? err.message : "Something went wrong." };
+    return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
   }
 }
 
@@ -111,7 +112,7 @@ export async function getGroupDetailAction(groupId: string) {
       })),
     };
   } catch (err) {
-    return { ok: false as const, error: err instanceof SocialError ? err.message : "Something went wrong." };
+    return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
   }
 }
 
@@ -139,7 +140,7 @@ export async function sendGroupMessageAction(groupId: string, body: string) {
     await sendGroupMessage(userId, groupId, body);
     return { ok: true as const };
   } catch (err) {
-    return { ok: false as const, error: err instanceof SocialError ? err.message : "Something went wrong." };
+    return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
   }
 }
 
@@ -154,7 +155,7 @@ export async function createGroupAction(name: string, memberUsernames: string[])
     const group = await createGroup({ creatorId: userId, name, memberUsernames });
     return { ok: true as const, groupId: group.id };
   } catch (err) {
-    return { ok: false as const, error: err instanceof SocialError ? err.message : "Something went wrong." };
+    return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
   }
 }
 
@@ -164,6 +165,6 @@ export async function leaveGroupAction(groupId: string) {
     await leaveGroup(userId, groupId);
     return { ok: true as const };
   } catch (err) {
-    return { ok: false as const, error: err instanceof SocialError ? err.message : "Something went wrong." };
+    return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
   }
 }

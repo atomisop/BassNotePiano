@@ -26,7 +26,7 @@ export function StreakDots({ currentStreak }: { currentStreak: number }) {
             {isMilestone && !prefersReducedMotion && (
               <motion.span
                 aria-hidden
-                className="absolute inset-0 rounded-full bg-amber-400"
+                className="absolute inset-0 rounded-full bg-[rgb(var(--c-a-400))]"
                 initial={{ opacity: 0.7, scale: 1 }}
                 animate={{ opacity: 0, scale: 1.8 }}
                 transition={{ duration: 1, repeat: 2, repeatDelay: 0.3, ease: "easeOut" }}
@@ -36,8 +36,8 @@ export function StreakDots({ currentStreak }: { currentStreak: number }) {
               title={day.isToday ? "Today" : undefined}
               className={`relative flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold transition ${
                 day.isFilled
-                  ? "bg-amber-400 text-slate-950"
-                  : `border text-slate-600 ${day.isToday ? "border-amber-400/50" : "border-ink/10"}`
+                  ? "bg-[rgb(var(--c-a-400))] text-slate-950"
+                  : `border text-slate-600 ${day.isToday ? "border-[rgb(var(--c-a-400)/0.5)]" : "border-ink/10"}`
               }`}
             >
               {day.letter}

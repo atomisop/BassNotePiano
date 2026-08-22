@@ -36,7 +36,7 @@ const STATUS_LABEL: Record<BookingRow["status"], string> = {
 };
 
 const STATUS_STYLE: Record<BookingRow["status"], string> = {
-  SCHEDULED: "bg-amber-400/15 text-amber-300",
+  SCHEDULED: "bg-[rgb(var(--c-a-400)/0.15)] text-[rgb(var(--c-a-300))]",
   COMPLETED: "bg-emerald-400/15 text-emerald-300",
   CANCELED: "bg-slate-800 text-slate-500",
 };
@@ -171,7 +171,7 @@ function BookingCard({
         {pastSelfServeWindow && supportContactId && (
           <Link
             href={`/messages?with=${supportContactId}`}
-            className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-amber-400/40 hover:text-amber-200"
+            className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-200))]"
           >
             Message support
           </Link>
@@ -338,7 +338,7 @@ export function ClassBookingClient({
 
   return (
     <div className="mx-auto max-w-3xl">
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Weekly Classes</p>
+      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Weekly Classes</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Book a class</h1>
       <p className="mt-2 text-sm text-slate-500">Live on Zoom · 1 credit = 30 minutes · up to 10 students per class.</p>
 
@@ -351,7 +351,7 @@ export function ClassBookingClient({
         </div>
         <Link
           href="/billing/lessons"
-          className="rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-amber-400/40 hover:text-amber-200"
+          className="rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-200))]"
         >
           Buy credits
         </Link>
@@ -377,7 +377,7 @@ export function ClassBookingClient({
             <button
               type="button"
               onClick={() => setSelectedDateKey(null)}
-              className="shrink-0 text-xs font-medium text-slate-500 transition hover:text-amber-300"
+              className="shrink-0 text-xs font-medium text-slate-500 transition hover:text-[rgb(var(--c-a-300))]"
             >
               Show all
             </button>
@@ -423,7 +423,7 @@ export function ClassBookingClient({
                           type="button"
                           onClick={() => handleBook(row)}
                           disabled={disabled}
-                          className="shrink-0 rounded-lg border border-amber-400/40 px-4 py-2 text-xs font-semibold text-amber-300 transition hover:border-amber-400 hover:bg-amber-400/10 disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
+                          className="shrink-0 rounded-lg border border-[rgb(var(--c-a-400)/0.4)] px-4 py-2 text-xs font-semibold text-[rgb(var(--c-a-300))] transition hover:border-[rgb(var(--c-a-400))] hover:bg-[rgb(var(--c-a-400)/0.1)] disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
                         >
                           {bookingKey === key ? "Booking…" : row.isFull ? "Full" : insufficientCredits ? "Not enough credits" : "Book"}
                         </button>

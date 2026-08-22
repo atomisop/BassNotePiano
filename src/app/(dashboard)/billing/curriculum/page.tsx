@@ -3,6 +3,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { getOrCreatePendingCurriculumPayment } from "@/lib/payments";
 import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
 import { CurriculumConsentGate } from "@/components/billing/CurriculumConsentGate";
+import { CheckIcon } from "@/components/ui/icons";
 import { submitCurriculumPaymentAction } from "./actions";
 
 const BENEFITS = [
@@ -27,14 +28,14 @@ export default async function BillingCurriculumPage({ searchParams }: { searchPa
 
   return (
     <div className="w-full max-w-sm">
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">Curriculum</p>
+      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Curriculum</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Unlock the full curriculum</h1>
       <p className="mt-2 text-sm text-slate-500">
         One-time ${(CURRICULUM_PRICE_CENTS / 100).toFixed(0)} payment via Zelle — every scale, forever.
       </p>
 
       {redirectReason && (
-        <p className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/5 px-3.5 py-2.5 text-xs text-amber-200">
+        <p className="mt-4 rounded-xl border border-[rgb(var(--c-a-400)/0.2)] bg-[rgb(var(--c-a-400)/0.05)] px-3.5 py-2.5 text-xs text-[rgb(var(--c-a-200))]">
           {redirectReason}
         </p>
       )}
@@ -42,7 +43,7 @@ export default async function BillingCurriculumPage({ searchParams }: { searchPa
       <ul className="mt-5 space-y-2">
         {BENEFITS.map((benefit) => (
           <li key={benefit} className="flex gap-2.5 text-sm text-slate-300">
-            <span className="mt-0.5 text-amber-400">✓</span>
+            <CheckIcon className="mt-1 shrink-0 text-[rgb(var(--c-a-400))]" />
             {benefit}
           </li>
         ))}

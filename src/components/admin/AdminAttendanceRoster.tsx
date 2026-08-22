@@ -36,7 +36,7 @@ function Avatar({ image, name }: { image: string | null; name: string }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={image} alt="" className="h-full w-full object-cover" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center font-serif text-sm text-amber-300">
+        <div className="flex h-full w-full items-center justify-center font-serif text-sm text-[rgb(var(--c-a-300))]">
           {name.charAt(0).toUpperCase()}
         </div>
       )}
@@ -186,7 +186,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                           value={reason}
                           onChange={(e) => setReason(e.target.value)}
                           placeholder="Reason (optional, shown to the student)"
-                          className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-red-400/60"
+                          className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-red-400/60"
                         />
                         <div className="flex gap-2">
                           <button

@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
 import { saveOnboardingAction, checkUsernameAvailableAction } from "./actions";
+import { Stepper } from "@/components/ui/Stepper";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -66,7 +67,7 @@ function OptionButton({
       onClick={onClick}
       className={`w-full rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${
         selected
-          ? "border-amber-400/60 bg-amber-400/10 text-amber-200"
+          ? "border-[rgb(var(--c-a-400)/0.6)] bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-200))]"
           : "border-ink/10 bg-slate-950 text-slate-300 hover:border-ink/15"
       }`}
     >
@@ -148,16 +149,19 @@ export function OnboardingWizard() {
       animate="visible"
       className="w-full max-w-md glass-surface-elevated p-7"
     >
-      <div className="mb-6 flex items-center gap-1.5">
-        {STEP_TITLES.map((_, i) => (
-          <div
-            key={i}
-            className={`h-1 flex-1 rounded-full transition ${i <= step ? "bg-amber-400" : "bg-slate-800"}`}
-          />
-        ))}
+      {/* Replaces five undifferentiated bars. The horizontal Stepper marks
+          completed steps with a check, the current one with a filled marker,
+          and carries `aria-current="step"` — so the position is announced
+          rather than only drawn. */}
+      <div className="mb-6">
+        <Stepper
+          orientation="horizontal"
+          current={step}
+          steps={STEP_TITLES.map((title) => ({ title }))}
+        />
       </div>
 
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-amber-400/80">
+      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">
         Step {step + 1} of {STEP_TITLES.length}
       </p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">{STEP_TITLES[step]}</h1>
@@ -166,7 +170,7 @@ export function OnboardingWizard() {
       <AnimatePresence mode="wait">
         <motion.div key={step} variants={stepVariants} initial="enter" animate="center" exit="exit" className="mt-6 space-y-2">
           {step === 0 && (
-            <div className="flex items-center rounded-xl border border-ink/10 bg-slate-950 pl-4 focus-within:border-amber-400/60">
+            <div className="flex items-center glass-surface-subtle pl-4 focus-within:border-[rgb(var(--c-a-400)/0.6)]">
               <span className="text-sm text-slate-500">@</span>
               <input
                 type="text"
@@ -234,7 +238,7 @@ export function OnboardingWizard() {
           type="button"
           onClick={handleNext}
           disabled={!canAdvance || submitting || checkingUsername}
-          className="cta-sheen flex-1 rounded-xl bg-amber-400 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {checkingUsername ? "Checking…" : submitting ? "Saving…" : step < lastStep ? "Next" : "Finish"}
         </button>

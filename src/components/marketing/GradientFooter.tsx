@@ -16,18 +16,18 @@ type Stop = { offset: number; color: string };
 const VBW = 1271;
 const VBH = 599;
 
-// Retuned for paper. The original was built to glow out of a near-black
-// page, so its dark ember floor and magenta top read as a bruise on cream.
-// This is the same technique — a soft band rising from the floor — but as a
-// warm sunrise wash in the rust/amber family, dissolving into the paper
-// rather than into black.
+// Same technique as the original Dia Browser effect this was ported from —
+// a soft band rising from the floor — retuned to the app's own black/
+// signal-green identity: a deep forest-green floor brightening to the
+// vivid signal green partway up, then dissolving through pale mint into
+// transparency near the top.
 const DEFAULT_STOPS: Stop[] = [
-  { offset: 0, color: "#B4581C" },
-  { offset: 0.22, color: "#CE7A2E" },
-  { offset: 0.42, color: "#E0A063" },
-  { offset: 0.62, color: "#EDC49B" },
-  { offset: 0.82, color: "#F6E2CB" },
-  { offset: 1, color: "#FAF6EC00" },
+  { offset: 0, color: "#0D2E0A" },
+  { offset: 0.22, color: "#145C0A" },
+  { offset: 0.42, color: "#2E9E1A" },
+  { offset: 0.62, color: "#7FE86F" },
+  { offset: 0.82, color: "#C8FAC2" },
+  { offset: 1, color: "#F5F5F500" },
 ];
 
 function bellHeights(n: number, peak: number, valley: number): number[] {

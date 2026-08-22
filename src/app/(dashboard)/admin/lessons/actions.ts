@@ -19,9 +19,14 @@ async function requireAdmin() {
   return session.user;
 }
 
-export async function requestLessonUploadUrlAction(scaleGroupSlug: string, fileName: string, contentType: string) {
+export async function requestLessonUploadUrlAction(
+  scaleGroupSlug: string,
+  fileName: string,
+  contentType: string,
+  fileSize: number,
+) {
   await requireAdmin();
-  return createPresignedLessonUpload(scaleGroupSlug, fileName, contentType);
+  return createPresignedLessonUpload(scaleGroupSlug, fileName, contentType, fileSize);
 }
 
 export interface CreateLessonActionInput {

@@ -52,7 +52,7 @@ export function NewMessagePanel({
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
             placeholder="Search by name or email…"
-            className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-amber-400/60"
+            className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
           />
         </div>
 
