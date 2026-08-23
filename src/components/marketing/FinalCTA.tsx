@@ -28,8 +28,8 @@ export function FinalCTA() {
   const isLoggedIn = Boolean(session?.user);
 
   return (
-    <section className="mx-auto max-w-2xl px-6 py-24 text-center md:py-32">
-      <ScrollGlassCard className="p-8 md:p-12" direction="up">
+    <section className="mx-auto max-w-2xl px-6 py-14 text-center md:py-32">
+      <ScrollGlassCard className="p-6 md:p-12" direction="up">
         <p className="display-2 text-balance text-[rgb(var(--c-s-50))]">
           You already knew the sound.
           <br />

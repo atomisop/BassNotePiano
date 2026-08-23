@@ -26,8 +26,8 @@ function formatUsd(cents: number) {
  */
 export function PricingCallout() {
   return (
-    <section className="mx-auto max-w-3xl px-6 py-20 text-center md:py-28">
-      <ScrollGlassCard className="p-8 md:p-12" direction="right">
+    <section className="mx-auto max-w-3xl px-6 py-12 text-center md:py-28">
+      <ScrollGlassCard className="p-6 md:p-12" direction="right">
         <p className="label label-muted">Everything, once</p>
         <p className="mt-4 font-serif text-6xl tabular-nums text-slate-50 sm:text-7xl">
           {formatUsd(CURRICULUM_PRICE_CENTS)}

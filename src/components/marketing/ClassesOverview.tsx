@@ -12,8 +12,8 @@ import { ScrollGlassCard } from "@/components/marketing/ScrollGlassCard";
  */
 export function ClassesOverview() {
   return (
-    <section className="mx-auto max-w-5xl px-6 py-20 md:py-28">
-      <ScrollGlassCard className="p-8 md:p-12" direction="left">
+    <section className="mx-auto max-w-5xl px-6 py-12 md:py-28">
+      <ScrollGlassCard className="p-6 md:p-12" direction="left">
         <div className="grid gap-12 sm:grid-cols-[1fr_auto] sm:items-start sm:gap-16">
           <div>
             <p className="label label-muted">Live on Zoom</p>

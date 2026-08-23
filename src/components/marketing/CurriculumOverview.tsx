@@ -52,8 +52,8 @@ const STAGES = [
 
 export function CurriculumOverview() {
   return (
-    <section id="curriculum" className="mx-auto max-w-5xl scroll-mt-24 px-6 py-20 md:py-28">
-      <ScrollGlassCard className="p-8 md:p-12" direction="left">
+    <section id="curriculum" className="mx-auto max-w-5xl scroll-mt-24 px-6 py-12 md:py-28">
+      <ScrollGlassCard className="p-6 md:p-12" direction="left">
         <p className="label label-muted">Curriculum</p>
         <h2 className="display-2 mt-4 max-w-[24ch] text-balance">
           Six scale groups, one connected path.

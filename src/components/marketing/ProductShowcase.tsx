@@ -35,8 +35,8 @@ const SCREENSHOTS: PhoneScreenshot[] = [
 
 export function ProductShowcase() {
   return (
-    <section className="mx-auto max-w-6xl px-6 py-20 md:py-28">
-      <ScrollGlassCard className="p-8 md:p-12" direction="right">
+    <section className="mx-auto max-w-6xl px-6 py-12 md:py-28">
+      <ScrollGlassCard className="p-6 md:p-12" direction="right">
         <p className="label label-muted">The product</p>
         <h2 className="display-2 mt-4 max-w-[26ch] text-balance">
           Your roadmap, badges, and classes — all in your pocket.
