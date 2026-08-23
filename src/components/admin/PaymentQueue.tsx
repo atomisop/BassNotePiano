@@ -18,7 +18,7 @@ function formatUsd(cents: number) {
 
 function describePayment(payment: PendingZellePayment): { eyebrow: string; title: string } {
   if (payment.purpose === "CURRICULUM") {
-    return { eyebrow: "Curriculum — $99", title: "Full platform unlock" };
+    return { eyebrow: "Curriculum — $69.99", title: "Full platform unlock" };
   }
   if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
     // A lessonType present means this is a historical row from the old

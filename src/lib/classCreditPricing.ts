@@ -2,7 +2,7 @@
 // which must never end up in a "use client" bundle (the purchase page's
 // quantity/tier picker needs this pure math client-side).
 
-export const CREDIT_BASE_PRICE_CENTS = 5000; // $50 per credit (1 credit = 30 min), full price
+export const CREDIT_BASE_PRICE_CENTS = 3499; // $34.99 per credit (1 credit = 30 min), full price
 
 interface PriceTier {
   minQuantity: number;

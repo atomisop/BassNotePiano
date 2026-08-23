@@ -31,7 +31,7 @@ export default async function BillingCurriculumPage({ searchParams }: { searchPa
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Curriculum</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Unlock the full curriculum</h1>
       <p className="mt-2 text-sm text-slate-500">
-        One-time ${(CURRICULUM_PRICE_CENTS / 100).toFixed(0)} payment via Zelle — every scale, forever.
+        One-time ${(CURRICULUM_PRICE_CENTS / 100).toFixed(2)} payment via Zelle — every scale, forever.
       </p>
 
       {redirectReason && (

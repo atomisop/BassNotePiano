@@ -39,8 +39,8 @@ chords — as a paid online curriculum that acts as the digital companion to a p
 book. Built around piano/keyboard, but the theory is explicitly instrument-agnostic (guitar,
 violin, bass players are a real part of the audience).
 
-**Business model:** one-time **$99** unlocks the entire 6-scale curriculum for life. No
-subscription. Optional add-on: **$50 per 30-minute live 1:1 lesson** (Online or In-Person), **20%
+**Business model:** one-time **$69.99** unlocks the entire 6-scale curriculum for life. No
+subscription. Optional add-on: **$34.99 per 30-minute live 1:1 lesson** (Online or In-Person), **20%
 off when booking 2 or more**.
 
 **The 6 scales** (use these exact names as content everywhere):
@@ -257,14 +257,14 @@ fill; never stack three opaque layers or the footage flattens to black. Quality 
 **Linear** (hairline borders, grid segmentation), **Chronicle** (bento elements morphing on
 scroll), **Breakthrough Energy** (center-pinned media, margin copy fading at the edges),
 **MakeMePulse** (typography pairing, vast negative space, kinetic hover). Sections: session-aware
-nav → hero (eyebrow "Only $99 · Lifetime access", headline "Ethiopian Scales, Rhythm & Chords" with
+nav → hero (eyebrow "Only $69.99 · Lifetime access", headline "Ethiopian Scales, Rhythm & Chords" with
 "Rhythm" in rust, primary + secondary CTA) → a real static preview of the in-app curriculum roadmap
 (show the actual product, Stripe-style, not just mood photography) → the full 6-scale grid → guitar
-section → violin section → closing $99 pricing callout → footer.
+section → violin section → closing $69.99 pricing callout → footer.
 
-**`/pricing`** — "One price. Every scale. Forever." One `.surface-elevated` curriculum card ($99,
+**`/pricing`** — "One price. Every scale. Forever." One `.surface-elevated` curriculum card ($69.99,
 three benefits, "Unlock the curriculum"), then a live-lessons explainer with a worked discount
-example ($50 each, 20% off 2+) and "Buy lesson credits". Animated tier grid; price counts up.
+example ($34.99 each, 20% off 2+) and "Buy lesson credits". Animated tier grid; price counts up.
 
 **`/classes`** — in-person lead capture, no login. Header "Learn with us in person." Fields in
 order: Full name*, Email*, Phone*, Instrument (pill-select: Piano/Keyboard, Bass, Guitar, Drums,
@@ -299,7 +299,7 @@ fills between steps; each step slides in horizontally.
   that highlights the scale's notes in every key, showing correct spelling and the mapped chords.
 - **`/lessons`** — book a live 1:1 lesson. Credit balance, calendar, time-slot picker,
   Online/In-Person toggle, upcoming and past bookings.
-- **`/billing/curriculum`** — the $99 unlock.
+- **`/billing/curriculum`** — the $69.99 unlock.
 - **`/billing/lessons`** — buy lesson credits, with the 20% bundle discount shown live as quantity
   changes.
 - **`/billing/history`** — payments grouped by month, one card with divided rows, status chips.

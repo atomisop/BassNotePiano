@@ -7,7 +7,7 @@ import { ZelleUnlockGate, type ZelleUnlockGateProps } from "./ZelleUnlockGate";
 /**
  * Wraps ZelleUnlockGate with a required "no refunds" acknowledgment for the
  * one purchase in the app where that's an absolute, no-exceptions rule (the
- * $99 curriculum) — mirrors the inline checkbox on the class-credits
+ * $69.99 curriculum) — mirrors the inline checkbox on the class-credits
  * purchase flow, just pulled out since curriculum has no quantity-picker
  * step to attach it to.
  */
@@ -25,7 +25,7 @@ export function CurriculumConsentGate(props: ZelleUnlockGateProps) {
           className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-a-400))]"
         />
         <span>
-          I understand the ${(props.amountCents / 100).toFixed(0)} curriculum purchase is{" "}
+          I understand the ${(props.amountCents / 100).toFixed(2)} curriculum purchase is{" "}
           <span className="font-medium text-[rgb(var(--c-a-200))]">final and non-refundable</span> once bought, since access is
           granted right away, for good. Full{" "}
           <Link href="/terms" target="_blank" className="text-[rgb(var(--c-a-300))] underline hover:text-[rgb(var(--c-a-200))]">

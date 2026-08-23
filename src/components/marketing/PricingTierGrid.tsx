@@ -76,7 +76,7 @@ export function PricingTierGrid() {
               <NumberFlow value={tier.total.totalCents / 100} format={{ style: "currency", currency: "USD", trailingZeroDisplay: "stripIfInteger" }} />
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              {tier.quantity} credit{tier.quantity > 1 ? "s" : ""} · ${(tier.total.perCreditCents / 100).toFixed(0)}/ea
+              {tier.quantity} credit{tier.quantity > 1 ? "s" : ""} · ${(tier.total.perCreditCents / 100).toFixed(2)}/ea
               {tier.total.discountRate > 0 ? ` · ${Math.round(tier.total.discountRate * 100)}% off` : ""}
             </p>
           </div>

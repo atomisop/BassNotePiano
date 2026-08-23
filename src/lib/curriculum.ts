@@ -65,7 +65,7 @@ export const SCALE_GROUPS: ScaleGroupMeta[] = [
 export const SCALE_SLUGS = SCALE_GROUPS.map((s) => s.slug);
 
 /** One-time purchase price for lifetime access to every scale group above. */
-export const CURRICULUM_PRICE_CENTS = 9900;
+export const CURRICULUM_PRICE_CENTS = 6999;
 
 export function scaleIndexFromSlug(slug: string): number {
   return SCALE_SLUGS.indexOf(slug);

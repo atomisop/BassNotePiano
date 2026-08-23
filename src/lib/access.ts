@@ -30,7 +30,7 @@ export interface ScaleAccessState {
   /**
    * "unlocked" — this specific scale was granted individually (legacy
    * per-scale purchase, or an admin override). "curriculum-access" — the
-   * blanket $99 purchase bypasses gating entirely. "locked" — neither;
+   * blanket $69.99 purchase bypasses gating entirely. "locked" — neither;
    * there's exactly one way forward now (buy the curriculum), regardless of
    * where this scale sits in the sequence, since per-scale purchase no
    * longer exists.

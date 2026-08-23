@@ -12,7 +12,7 @@ import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { PricingTierGrid } from "@/components/marketing/PricingTierGrid";
 
 function formatUsd(cents: number) {
-  return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+  return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
 const container = {

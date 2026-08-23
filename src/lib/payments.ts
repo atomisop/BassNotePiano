@@ -74,7 +74,7 @@ async function getOrCreatePendingZellePayment({
     orderBy: { createdAt: "desc" },
   });
   // A reused row can predate a price change for this purpose (e.g. the
-  // curriculum price dropping from $200 to $99) — the billing page always
+  // curriculum price dropping from $99 to $69.99) — the billing page always
   // displays the caller's freshly-computed amountCents, so keep the stored
   // row in sync rather than letting it quietly settle at a stale price the
   // admin queue and payment history would then show instead.
@@ -248,7 +248,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
 
   let notificationBody = "Your payment was verified.";
   if (payment.purpose === "CURRICULUM") {
-    notificationBody = "Your $99 curriculum payment was verified — every scale is unlocked, for good.";
+    notificationBody = "Your $69.99 curriculum payment was verified — every scale is unlocked, for good.";
   } else if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
     const { discountCents } = calculateClassCreditTotal(payment.lessonQuantity);
     const discountNote = discountCents > 0 ? " — bundle discount applied" : "";

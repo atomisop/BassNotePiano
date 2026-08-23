@@ -8,14 +8,13 @@ function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", {
     style: "currency",
     currency: "USD",
-    maximumFractionDigits: 0,
   });
 }
 
 /**
  * HOMEPAGE REPLACEMENT — 06 PRICING.
  *
- * Same real numbers the old pricing callout used ($99 curriculum,
+ * Same real numbers the old pricing callout used ($69.99 curriculum,
  * `PRESET_BUNDLES`' three real credit tiers) — plain static values now, not
  * `NumberFlow`'s count-up-on-mount animation and not `TiltGlow`'s hover-tilt
  * (both still exist and are still used on the real /pricing page, which
