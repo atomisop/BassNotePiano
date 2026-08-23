@@ -1,7 +1,7 @@
 import type { AttendanceStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
-import { assertRateLimit } from "@/lib/rateLimit";
+import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
 
 export class ClassBookingError extends Error {}
 
@@ -245,6 +245,63 @@ export async function bookClass(studentId: string, scheduleId: string, occurrenc
     }
     throw err;
   }
+}
+
+export interface BundleBookingSelection {
+  scheduleId: string;
+  occurrenceDateMs: number;
+}
+
+export interface BundleBookingResult extends BundleBookingSelection {
+  ok: boolean;
+  bookingId: string | null;
+  error: string | null;
+}
+
+/**
+ * Bundle booking: one submit for several occurrences at once (e.g. three
+ * classes with the same teacher in one go), instead of repeating the whole
+ * single-booking round trip per class. Deliberately NOT one shared
+ * transaction across every selection — each occurrence has its own
+ * capacity and its own failure mode (already full, already booked, not
+ * enough credits *at that point in the loop*), and failing selection #3
+ * because someone else took the last seat shouldn't undo #1 and #2, which
+ * genuinely succeeded. Every selection goes through the exact same
+ * `bookClass` a single booking does — same Serializable transaction, same
+ * capacity/credit/de-dupe checks, same rate limit (counted per class
+ * booked, same as if they'd been submitted one at a time) — this just
+ * loops it and reports one outcome per selection instead of one for the
+ * whole batch.
+ *
+ * Duplicate selections (the same occurrence picked twice, e.g. a
+ * double-click race) collapse to a single attempt — `bookClass` itself
+ * would just report the second as "already booked" otherwise, which reads
+ * like a real failure for something that was never a real second request.
+ */
+export async function bookClassBundle(studentId: string, selections: BundleBookingSelection[]): Promise<BundleBookingResult[]> {
+  const seen = new Set<string>();
+  const deduped = selections.filter((s) => {
+    const key = `${s.scheduleId}:${s.occurrenceDateMs}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  const results: BundleBookingResult[] = [];
+  for (const selection of deduped) {
+    try {
+      const booking = await bookClass(studentId, selection.scheduleId, selection.occurrenceDateMs);
+      results.push({ ...selection, ok: true, bookingId: booking.id, error: null });
+    } catch (err) {
+      results.push({
+        ...selection,
+        ok: false,
+        bookingId: null,
+        error: err instanceof ClassBookingError || err instanceof RateLimitError ? err.message : "Something went wrong.",
+      });
+    }
+  }
+  return results;
 }
 
 export async function getClassCreditBalance(userId: string): Promise<number> {

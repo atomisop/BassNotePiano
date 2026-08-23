@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { bookClassAction, cancelClassBookingAction } from "./actions";
+import { bookClassAction, bookClassBundleAction, cancelClassBookingAction } from "./actions";
 import { BookingCalendar, dayKey } from "./BookingCalendar";
 
 interface OccurrenceRow {
@@ -268,10 +268,36 @@ export function ClassBookingClient({
   // day only ever lights up when it genuinely has something to show here.
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
 
+  // Bundle booking: check off several occurrences, then book them all in
+  // one submit — the checkbox on each row is independent of that row's own
+  // "Book" button, which still books just that one class immediately, same
+  // as before this feature existed. Keyed the same way bookingKey is
+  // (`scheduleId:occurrenceDateMs`), so both features share one identity
+  // format for a row.
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [bundleSubmitting, setBundleSubmitting] = useState(false);
+
   const displayRows = useMemo(
     () => (selectedDateKey ? rows.filter((r) => dayKey(r.occurrenceDateMs) === selectedDateKey) : rows),
     [rows, selectedDateKey],
   );
+
+  const selectedRows = useMemo(
+    () => rows.filter((r) => selectedKeys.has(`${r.scheduleId}:${r.occurrenceDateMs}`)),
+    [rows, selectedKeys],
+  );
+  const selectedCreditTotal = useMemo(() => selectedRows.reduce((sum, r) => sum + r.creditCost, 0), [selectedRows]);
+  const selectedExceedsBalance = selectedCreditTotal > credits;
+
+  function toggleSelected(row: OccurrenceRow) {
+    const key = `${row.scheduleId}:${row.occurrenceDateMs}`;
+    setSelectedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   // Split into "needs your attention" (still scheduled) vs. an archived,
   // collapsible-by-month history — a flat list of every booking ever made
@@ -317,6 +343,72 @@ export function ClassBookingClient({
       ...prev,
     ]);
     setSuccess("Booked — you're on the roster.");
+  }
+
+  /**
+   * Books every currently-checked row in one submit. Each selection is its
+   * own independent attempt server-side (see bookClassBundle) — a seat
+   * someone else just took on selection #2 doesn't undo #1 or #3, so this
+   * applies each result exactly like handleBook would, one at a time, and
+   * reports whatever mix of success/failure actually happened rather than
+   * an all-or-nothing message that wouldn't match reality.
+   */
+  async function handleBookBundle() {
+    if (selectedRows.length === 0) return;
+    setError(null);
+    setSuccess(null);
+    setBundleSubmitting(true);
+
+    const selections = selectedRows.map((r) => ({ scheduleId: r.scheduleId, occurrenceDateMs: r.occurrenceDateMs }));
+    const result = await bookClassBundleAction(selections);
+    setBundleSubmitting(false);
+    setSelectedKeys(new Set());
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    const succeeded = result.results.filter((r) => r.ok);
+    const failed = result.results.filter((r) => !r.ok);
+
+    if (succeeded.length > 0) {
+      const succeededKeys = new Set(succeeded.map((r) => `${r.scheduleId}:${r.occurrenceDateMs}`));
+      const succeededRows = selectedRows.filter((r) => succeededKeys.has(`${r.scheduleId}:${r.occurrenceDateMs}`));
+
+      setCredits((c) => c - succeededRows.reduce((sum, r) => sum + r.creditCost, 0));
+      setRows((prev) =>
+        prev.map((r) =>
+          succeededKeys.has(`${r.scheduleId}:${r.occurrenceDateMs}`)
+            ? { ...r, seatsBooked: r.seatsBooked + 1, seatsLeft: r.seatsLeft - 1, isFull: r.seatsLeft - 1 <= 0 }
+            : r,
+        ),
+      );
+      setBookings((prev) => [
+        ...succeeded.map((r) => {
+          const row = succeededRows.find((sr) => sr.scheduleId === r.scheduleId && sr.occurrenceDateMs === r.occurrenceDateMs)!;
+          return {
+            id: r.bookingId!,
+            label: row.label,
+            scheduledAt: row.scheduledAt,
+            creditsSpent: row.creditCost,
+            status: "SCHEDULED" as const,
+            refunded: false,
+            attendance: null,
+            canceledReason: null,
+          };
+        }),
+        ...prev,
+      ]);
+    }
+
+    if (failed.length === 0) {
+      setSuccess(`Booked ${succeeded.length} class${succeeded.length === 1 ? "" : "es"} — you're on the roster.`);
+    } else if (succeeded.length === 0) {
+      setError(failed[0]!.error ?? "Couldn't book those classes.");
+    } else {
+      setError(`Booked ${succeeded.length} of ${result.results.length}. ${failed[0]!.error ?? ""}`.trim());
+    }
   }
 
   async function handleCancel(booking: BookingRow) {
@@ -366,6 +458,42 @@ export function ClassBookingClient({
         </div>
       )}
 
+      {/* Bundle booking: check any number of classes below, then book them
+          all here in one submit — this is deliberately a normal in-flow
+          card, not a fixed floating bar, so it can never end up fighting
+          the app's own floating dock nav for the same strip of screen. */}
+      {selectedKeys.size > 0 && (
+        <div className="glass-surface-elevated mt-8 flex flex-wrap items-center justify-between gap-4 p-5">
+          <div>
+            <p className="text-sm font-medium text-slate-100">
+              {selectedRows.length} class{selectedRows.length === 1 ? "" : "es"} selected
+            </p>
+            <p className={`mt-0.5 text-xs ${selectedExceedsBalance ? "text-red-400" : "text-slate-500"}`}>
+              {selectedCreditTotal} credit{selectedCreditTotal === 1 ? "" : "s"} total
+              {selectedExceedsBalance && ` — you only have ${credits}`}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSelectedKeys(new Set())}
+              disabled={bundleSubmitting}
+              className="text-xs font-medium text-slate-500 transition hover:text-slate-300 disabled:pointer-events-none disabled:opacity-50"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={handleBookBundle}
+              disabled={bundleSubmitting || selectedExceedsBalance}
+              className="cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {bundleSubmitting ? "Booking…" : `Book ${selectedRows.length} class${selectedRows.length === 1 ? "" : "es"}`}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="mt-8">
         <div className="mb-3 flex items-baseline justify-between gap-3">
           <h2 className="font-serif text-lg text-slate-100">
@@ -402,9 +530,25 @@ export function ClassBookingClient({
                   {group.rows.map((row) => {
                     const key = `${row.scheduleId}:${row.occurrenceDateMs}`;
                     const insufficientCredits = credits < row.creditCost;
-                    const disabled = row.isFull || insufficientCredits || bookingKey !== null;
+                    const disabled = row.isFull || insufficientCredits || bookingKey !== null || bundleSubmitting;
+                    const isSelected = selectedKeys.has(key);
                     return (
                       <div key={key} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-6">
+                        {/* Independent of the "Book" button below: checking
+                            this adds the class to the bundle bar instead of
+                            booking it immediately. Disabled only when the
+                            class itself is unbookable (full) — a credit
+                            shortfall is judged against the whole selection's
+                            total, not this one row, so it doesn't block
+                            checking the box here. */}
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelected(row)}
+                          disabled={row.isFull || bundleSubmitting}
+                          aria-label={`Select ${formatOccurrenceDay(row.scheduledAt)} at ${formatOccurrenceTime(row.scheduledAt)} for bundle booking`}
+                          className="h-4 w-4 shrink-0 self-start rounded border-ink/20 bg-transparent text-[rgb(var(--c-a-400))] accent-[rgb(var(--c-a-400))] focus:ring-[rgb(var(--c-a-400)/0.5)] disabled:cursor-not-allowed disabled:opacity-30 sm:self-auto"
+                        />
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-slate-100">{formatOccurrenceDay(row.scheduledAt)}</p>
                           <p className="mt-0.5 text-xs text-slate-500">
