@@ -5,6 +5,7 @@ import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { Toaster } from "@/components/ui/Toaster";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
+import { AssistantWidget } from "@/components/assistant/AssistantWidget";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -25,6 +26,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
               so it appears on every page — marketing, auth, and the
               authenticated app — using whatever theme is active on each. */}
           <CookieConsentBanner />
+          {/* Atom, the assistant widget — same "every page, one mount point"
+              reasoning as Toaster/CookieConsentBanner above. */}
+          <AssistantWidget />
         </ThemeProvider>
       </MotionConfig>
     </SessionProvider>

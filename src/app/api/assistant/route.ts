@@ -1,0 +1,72 @@
+import { NextResponse } from "next/server";
+import { headers } from "next/headers";
+import { getServerAuthSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { askAssistant, assertAssistantRateLimit, RateLimitError, type AssistantMessage } from "@/lib/assistant";
+
+const MAX_MESSAGES = 20; // caps both cost and the prompt's own size
+const MAX_MESSAGE_LENGTH = 2000;
+
+/**
+ * A real route handler, not a Server Action — the widget is reachable from
+ * the public marketing pages with no session, and Server Actions always run
+ * as POSTs to the current page's own route, which would tie this to
+ * whatever page happened to render it. A plain fetchable endpoint is the
+ * simpler contract for a client component that has to work identically on
+ * every page in the app.
+ */
+export async function POST(req: Request) {
+  const body = await req.json().catch(() => null);
+  const rawHistory = Array.isArray(body?.messages) ? body.messages : null;
+  if (!rawHistory || rawHistory.length === 0) {
+    return NextResponse.json({ error: "No message provided." }, { status: 400 });
+  }
+
+  const history: AssistantMessage[] = rawHistory
+    .slice(-MAX_MESSAGES)
+    .filter(
+      (m: unknown): m is AssistantMessage =>
+        typeof m === "object" &&
+        m !== null &&
+        (("role" in m && (m as { role: unknown }).role === "user") || (m as { role: unknown }).role === "assistant") &&
+        typeof (m as { content: unknown }).content === "string",
+    )
+    .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_MESSAGE_LENGTH) }));
+
+  if (history.length === 0 || history[history.length - 1].role !== "user") {
+    return NextResponse.json({ error: "No message provided." }, { status: 400 });
+  }
+
+  const session = await getServerAuthSession();
+
+  // IP-based limiting only matters for the anonymous case — a signed-in
+  // visitor is already keyed by their own account, which is a stronger,
+  // more accountable identifier than whatever IP a shared network puts them
+  // behind.
+  const identifier = session?.user
+    ? `user:${session.user.id}`
+    : (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+
+  try {
+    await assertAssistantRateLimit(identifier, Boolean(session?.user));
+  } catch (err) {
+    if (err instanceof RateLimitError) return NextResponse.json({ error: err.message }, { status: 429 });
+    throw err;
+  }
+
+  let classCredits: number | null = null;
+  if (session?.user) {
+    const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { classCredits: true } });
+    classCredits = user?.classCredits ?? null;
+  }
+
+  const reply = await askAssistant(history, {
+    signedIn: Boolean(session?.user),
+    name: session?.user?.name ?? null,
+    hasCurriculumAccess: Boolean(session?.user?.hasCurriculumAccess),
+    classCredits,
+    isAdmin: session?.user?.role === "ADMIN",
+  });
+
+  return NextResponse.json({ reply });
+}

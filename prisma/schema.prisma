@@ -642,6 +642,21 @@ model FailedLoginAttempt {
   @@index([email, createdAt])
 }
 
+// Rate-limit ledger for the Atom assistant widget (src/lib/assistant.ts) —
+// every real reply costs a paid Anthropic API call, and the widget is
+// reachable from the public marketing pages with no login required, so this
+// exists purely to bound cost/abuse. `identifier` is `user:<id>` for a
+// signed-in visitor or the request's IP address for an anonymous one — never
+// both, never anything else. Not a conversation log: no message content is
+// stored here, only "this identifier made a request at this time."
+model AssistantRateLimit {
+  id         String   @id @default(cuid())
+  identifier String
+  createdAt  DateTime @default(now())
+
+  @@index([identifier, createdAt])
+}
+
 // ---------------------------------------------------------------------------
 // Curriculum
 // ---------------------------------------------------------------------------

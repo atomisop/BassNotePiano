@@ -27,6 +27,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1104.0",
     "@aws-sdk/s3-request-presigner": "^3.1104.0",
+    "@google/genai": "^2.18.0",
     "@netlify/functions": "^5.3.0",
     "@next-auth/prisma-adapter": "^1.0.7",
     "@number-flow/react": "^0.6.2",
