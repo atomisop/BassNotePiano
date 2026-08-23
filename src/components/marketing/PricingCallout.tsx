@@ -27,8 +27,13 @@ export function PricingCallout() {
   return (
     <section className="mx-auto max-w-3xl px-6 py-12 text-center md:py-28">
       <ScrollGlassCard className="relative p-6 md:p-12" direction="right">
-        <div className="absolute right-4 top-4 flex items-center gap-1.5 sm:right-6 sm:top-6">
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-[rgb(var(--c-a-300))]">
+        {/* Poking over the card's own top edge, not sitting inline above
+            "Everything, once" — right next to it, the two read as one
+            phrase that could be misread as the lifetime access itself
+            being time-limited, which it isn't. The card border between
+            them makes it unambiguous that this is a separate promo tag. */}
+        <div className="absolute -top-3.5 right-5 flex items-center gap-1.5 sm:-top-4 sm:right-7">
+          <span className="rounded-full bg-slate-950 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[rgb(var(--c-a-300))] ring-1 ring-inset ring-[rgb(var(--c-a-400)/0.4)]">
             Limited time offer
           </span>
           <span className="rounded-full bg-[rgb(var(--c-a-400))] px-2.5 py-1 text-[11px] font-bold tabular-nums text-slate-950">

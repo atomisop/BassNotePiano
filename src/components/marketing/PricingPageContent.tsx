@@ -81,8 +81,15 @@ export function PricingPageContent() {
         className="relative mx-auto max-w-lg px-6 pb-20"
       >
         <TiltGlow className="glass-surface-elevated relative p-9 text-center sm:p-11" maxTilt={4}>
-          <div className="absolute right-5 top-5 flex items-center gap-1.5 sm:right-7 sm:top-7">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-[rgb(var(--c-a-300))]">
+          {/* A ribbon poking over the card's own top edge, not a line
+              inside it — sitting it in the flow right above "Curriculum ·
+              Lifetime" (as an earlier version did) read as one continuous
+              phrase ("limited time offer curriculum lifetime...") that
+              could be misread as the lifetime access itself being time-
+              limited, which it isn't. The card border between them now
+              makes it unambiguous that this is a separate promo tag. */}
+          <div className="absolute -top-3.5 right-6 flex items-center gap-1.5 sm:-top-4 sm:right-8">
+            <span className="rounded-full bg-slate-950 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[rgb(var(--c-a-300))] ring-1 ring-inset ring-[rgb(var(--c-a-400)/0.4)]">
               Limited time offer
             </span>
             <span className="rounded-full bg-[rgb(var(--c-a-400))] px-2.5 py-1 text-[11px] font-bold tabular-nums text-slate-950">
