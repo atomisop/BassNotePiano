@@ -99,26 +99,26 @@ function Dock({
       className='mx-2 flex max-w-full items-end overflow-x-auto'
     >
       <motion.div
-        onMouseMove={({ pageX }) => {
+        // Pointer Events, not Mouse Events, and gated on `pointerType` —
+        // this is the actual fix, not just "remove the touch handlers".
+        // That first attempt assumed touch devices simply don't fire mouse
+        // events; they do. Real touchscreens (iOS Safari, Android Chrome)
+        // synthesize a compatibility "mousemove"/"mouseover" after a tap
+        // lifts, for pages that only listen for mouse — ~300ms later, at
+        // the tap's coordinates — and that fake event was still reaching a
+        // plain `onMouseMove` handler, re-triggering the exact same
+        // magnify-and-stick bug via a different door. `PointerEvent.
+        // pointerType` is the one place the browser tells the truth about
+        // what actually generated the event, so filtering there — rather
+        // than on which event *name* fired — is what genuinely excludes
+        // touch instead of just the touch handlers.
+        onPointerMove={(e) => {
+          if (e.pointerType !== 'mouse') return;
           isHovered.set(1);
-          mouseX.set(pageX);
+          mouseX.set(e.pageX);
         }}
-        onMouseLeave={() => {
-          isHovered.set(0);
-          mouseX.set(Infinity);
-        }}
-        // Touch has no hover state, so a finger pressed on the dock drives
-        // the same magnification a mouse move does — hold and drag along
-        // the row to see icons grow, same choreography either way. A plain
-        // tap still just navigates normally, since it never fires `move`.
-        onTouchStart={(e) => {
-          isHovered.set(1);
-          mouseX.set(e.touches[0]!.pageX);
-        }}
-        onTouchMove={(e) => {
-          mouseX.set(e.touches[0]!.pageX);
-        }}
-        onTouchEnd={() => {
+        onPointerLeave={(e) => {
+          if (e.pointerType !== 'mouse') return;
           isHovered.set(0);
           mouseX.set(Infinity);
         }}
