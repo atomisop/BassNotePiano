@@ -53,15 +53,14 @@ function buildCoiledPath(x1: number, y1: number, x2: number, y2: number): string
 }
 
 /**
- * The same data-tour value intentionally appears on more than one element
- * — e.g. "nav-roadmap" exists in both Sidebar (desktop) and MobileTabBar
- * (mobile), so the tour works regardless of which nav is actually
- * rendered at the current viewport. querySelector alone would only ever
- * see the FIRST match in document order (Sidebar's, since it renders
- * before MobileTabBar), which is `display:none` — not removed from the
- * DOM — below the md breakpoint. querySelectorAll + picking the first
- * element with a real (nonzero) rect is what actually finds whichever
- * copy is on screen right now, on any viewport.
+ * AppDock is one unified nav at every breakpoint now, so in practice each
+ * data-tour value only has one live match today. Kept as querySelectorAll +
+ * "first element with a real (nonzero) rect", not plain querySelector,
+ * because the dead Sidebar/MobileTabBar/MoreSheet still carry a few of the
+ * same data-tour values from before AppDock replaced them (harmless — those
+ * components never mount, so they never actually appear in the DOM to
+ * match) — and because it's the right defensive shape regardless, in case
+ * a future nav split reintroduces a real duplicate.
  */
 function findVisibleTarget(target: string): Element | null {
   const candidates = Array.from(document.querySelectorAll(`[data-tour="${target}"]`));
@@ -77,7 +76,7 @@ function findTargetRect(target: string | null): Rect | null {
   return el ? getRect(el) : null;
 }
 
-/** Walks from `from` in `dir`, skipping steps whose target isn't currently visible (e.g. tucked in the closed mobile "More" sheet, or the desktop-only Sidebar while on a narrow viewport). Returns -1 if none found. */
+/** Walks from `from` in `dir`, skipping steps whose target isn't currently visible in the DOM. Returns -1 if none found. */
 function resolveStepIndex(from: number, dir: 1 | -1): number {
   let i = from;
   while (i >= 0 && i < TOUR_STEPS.length) {

@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { BrandMark } from "./BrandMark";
 
 /**
  * The user's real photo, fetched here rather than read off the session —
@@ -25,6 +25,7 @@ async function ProfileAvatarLink() {
     <Link
       href="/profile"
       aria-label="Your profile"
+      data-tour="nav-profile"
       className="h-8 w-8 shrink-0 overflow-hidden rounded-full border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.1)] transition hover:border-[rgb(var(--c-a-400)/0.6)]"
     >
       {user.image ? (
@@ -42,10 +43,7 @@ async function ProfileAvatarLink() {
 export function TopBar() {
   return (
     <header className="chrome flex h-16 shrink-0 items-center justify-between border-b border-ink/10 px-8">
-      <Link href="/" className="flex items-center gap-2.5 font-serif text-sm tracking-[0.2em] text-slate-200">
-        <Image src="/logo-mark.png" alt="" width={28} height={28} className="h-7 w-7" priority />
-        BASS NOTE <span className="text-[rgb(var(--c-a-400))]">PIANO</span>
-      </Link>
+      <BrandMark />
       <div className="flex items-center gap-3">
         <NotificationBell />
         <ProfileAvatarLink />

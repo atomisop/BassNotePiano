@@ -2,12 +2,15 @@
 // a checklist and are easy to add to/reorder without touching any of the
 // positioning/rendering logic in OnboardingTour.tsx.
 //
-// `target` is a data-tour value (see Sidebar/MobileTabBar/MoreSheet/
-// NotificationBell) — steps with no target render as a centered card with
-// no spotlight (used for the opening and closing steps). If a step's
-// target isn't found in the DOM (e.g. it's tucked inside the mobile "More"
-// sheet, which isn't open by default), the tour skips straight past it
-// rather than getting stuck — see OnboardingTour's findStep().
+// `target` is a data-tour value — the nav ones (nav-*) live on AppDock's
+// links, nav-profile on TopBar's avatar link, notification-bell on
+// NotificationBell. (Sidebar/MobileTabBar/MoreSheet carry old copies of
+// some of these too, a leftover from before AppDock replaced them — inert,
+// since nothing renders those components anymore.) Steps with no target
+// render as a centered card with no spotlight (used for the opening and
+// closing steps). If a step's target isn't found in the DOM, the tour
+// skips straight past it rather than getting stuck — see OnboardingTour's
+// findStep().
 export interface TourStep {
   id: string;
   target: string | null;
