@@ -81,16 +81,21 @@ export function PricingPageContent() {
         className="relative mx-auto max-w-lg px-6 pb-20"
       >
         <TiltGlow className="glass-surface-elevated relative p-9 text-center sm:p-11" maxTilt={4}>
-          <span className="absolute right-5 top-5 rounded-full bg-[rgb(var(--c-a-400))] px-2.5 py-1 text-[11px] font-bold tabular-nums text-slate-950 sm:right-7 sm:top-7">
-            -{CURRICULUM_DISCOUNT_PERCENT}%
-          </span>
+          <div className="absolute right-5 top-5 flex items-center gap-1.5 sm:right-7 sm:top-7">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-[rgb(var(--c-a-300))]">
+              Limited time offer
+            </span>
+            <span className="rounded-full bg-[rgb(var(--c-a-400))] px-2.5 py-1 text-[11px] font-bold tabular-nums text-slate-950">
+              -{CURRICULUM_DISCOUNT_PERCENT}%
+            </span>
+          </div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-300))]">Curriculum · Lifetime</p>
-          <p className="mt-4 flex items-baseline justify-center gap-3">
-            <span className="text-2xl tabular-nums text-slate-500 line-through">
+          <div className="mt-4 flex flex-col items-center gap-1">
+            <span className="text-xl tabular-nums text-slate-500 line-through sm:text-2xl">
               {formatUsd(CURRICULUM_ORIGINAL_PRICE_CENTS)}
             </span>
             <span className="font-serif text-7xl tabular-nums text-slate-50">{formatUsd(CURRICULUM_PRICE_CENTS)}</span>
-          </p>
+          </div>
           <p className="mt-2 text-sm text-[rgb(var(--c-a-200)/0.7)]">one-time payment · no subscriptions, ever</p>
 
           <ul className="mt-7 space-y-2.5 text-left text-sm text-slate-100">

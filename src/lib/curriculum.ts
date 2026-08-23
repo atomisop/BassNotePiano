@@ -67,8 +67,8 @@ export const SCALE_SLUGS = SCALE_GROUPS.map((s) => s.slug);
 /** One-time purchase price for lifetime access to every scale group above. */
 export const CURRICULUM_PRICE_CENTS = 6999;
 
-/** Pre-discount price, kept only so marketing pages can show a struck-through "was" price and a % off badge. */
-export const CURRICULUM_ORIGINAL_PRICE_CENTS = 9900;
+/** "Compare at" list price, kept only so marketing pages can show a struck-through "was" price and a % off badge. */
+export const CURRICULUM_ORIGINAL_PRICE_CENTS = 9999;
 
 /** Rounded down so the badge never overstates the real discount. */
 export const CURRICULUM_DISCOUNT_PERCENT = Math.floor(
