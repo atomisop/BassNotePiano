@@ -276,7 +276,7 @@ function MembershipSection({
         <div>
           <p className="text-sm text-slate-100">{hasCurriculumAccess ? "Curriculum unlocked" : "Curriculum not yet purchased"}</p>
           <p className="mt-0.5 text-xs text-slate-500">
-            {hasCurriculumAccess ? "All six scale groups are unlocked, for good." : "One-time $99 payment unlocks every scale, for good."}
+            {hasCurriculumAccess ? "All six scale groups are unlocked, for good." : "One-time $69.99 payment unlocks every scale, for good."}
           </p>
         </div>
         {!hasCurriculumAccess && (
@@ -284,7 +284,7 @@ function MembershipSection({
             href="/billing/curriculum"
             className="cta-sheen cta-fill rounded-lg px-4 py-2 text-xs font-semibold"
           >
-            Unlock — $99
+            Unlock — $69.99
           </Link>
         )}
       </div>

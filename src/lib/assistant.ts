@@ -57,7 +57,7 @@ export async function assertAssistantRateLimit(identifier: string, signedIn: boo
 // ---------------------------------------------------------------------------
 
 function formatUsd(cents: number): string {
-  return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+  return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
 interface VisitorContext {

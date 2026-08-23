@@ -2,8 +2,8 @@
 // Bass Note Piano — Prisma schema
 // PostgreSQL (Neon in production, any Postgres locally). Covers auth
 // (NextAuth adapter), the six-scale curriculum, per-user progress gating,
-// and manual Zelle payment verification for the one-time $99 curriculum
-// purchase and $50/30-minute live lesson add-ons.
+// and manual Zelle payment verification for the one-time $69.99 curriculum
+// purchase and $34.99/30-minute live lesson add-ons.
 // ============================================================================
 
 generator client {
@@ -39,7 +39,7 @@ enum ProgressStatus {
 }
 
 enum PaymentPurpose {
-  CURRICULUM // one-time $99 full-curriculum unlock (renamed from PRO_LIFETIME)
+  CURRICULUM // one-time $69.99 full-curriculum unlock (renamed from PRO_LIFETIME)
   SCALE_UNLOCK // legacy Pay-As-You-Go per-scale unlock — no longer purchasable, kept for historical rows
   CLASS_CREDITS // class-credit bundle purchase (renamed from LESSON_PACKAGE — the old 1:1 online/in-person lesson system was replaced by the weekly group-class schedule below)
 }
@@ -674,7 +674,7 @@ model ScaleGroup {
   description String? @db.Text
 
   // Vestigial — Pay-As-You-Go per-scale pricing was retired in favor of a
-  // single $99 curriculum purchase (see CURRICULUM_PRICE_CENTS in
+  // single $69.99 curriculum purchase (see CURRICULUM_PRICE_CENTS in
   // src/lib/curriculum.ts). Left in place rather than migrated away since
   // nothing reads it anymore; not worth a destructive column drop for it.
   priceCents Int @default(2500)
@@ -789,7 +789,7 @@ model QuizAttempt {
 // Commerce — Zelle manual verification
 // ---------------------------------------------------------------------------
 
-// Every Zelle transfer the platform expects to receive: the $99 curriculum
+// Every Zelle transfer the platform expects to receive: the $69.99 curriculum
 // purchase, a lesson-credit package, or (historically) a $25 per-scale
 // unlock. This is the row the admin verification queue and the
 // ZellePaymentModal both read/write.

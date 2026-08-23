@@ -26,21 +26,21 @@ export function TermsContent() {
         </p>
       </TermsSection>
 
-      <TermsSection title="Curriculum ($99, one-time)">
+      <TermsSection title="Curriculum ($69.99, one-time)">
         <p>
-          The $99 curriculum purchase unlocks every scale module for that account, permanently. There&apos;s no
+          The $69.99 curriculum purchase unlocks every scale module for that account, permanently. There&apos;s no
           subscription and nothing else to buy for lesson content.
         </p>
         <p>
           <span className="font-medium text-[rgb(var(--c-a-200))]">Curriculum purchases are final.</span> Because access is
-          granted immediately and it&apos;s digital content, nothing about the $99 purchase is refundable, for any
+          granted immediately and it&apos;s digital content, nothing about the $69.99 purchase is refundable, for any
           reason, once it&apos;s bought.
         </p>
       </TermsSection>
 
       <TermsSection title="Class credits & bundles">
         <p>
-          Credits are $50 each (1 credit = 30 minutes), with a bigger discount the more you buy at once: 10% off at
+          Credits are $34.99 each (1 credit = 30 minutes), with a bigger discount the more you buy at once: 10% off at
           4+, 20% off at 10+, 30% off at 20+. Credits never expire.
         </p>
         <p>

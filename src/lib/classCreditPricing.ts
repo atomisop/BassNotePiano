@@ -2,7 +2,13 @@
 // which must never end up in a "use client" bundle (the purchase page's
 // quantity/tier picker needs this pure math client-side).
 
-export const CREDIT_BASE_PRICE_CENTS = 5000; // $50 per credit (1 credit = 30 min), full price
+export const CREDIT_BASE_PRICE_CENTS = 3499; // $34.99 per credit (1 credit = 30 min), full price
+
+/** Pre-discount per-credit price, kept only so marketing pages can show a struck-through "was" price and a % off badge. */
+export const CREDIT_ORIGINAL_PRICE_CENTS = 5000;
+
+/** Rounded down so the badge never overstates the real discount. */
+export const CREDIT_DISCOUNT_PERCENT = Math.floor((1 - CREDIT_BASE_PRICE_CENTS / CREDIT_ORIGINAL_PRICE_CENTS) * 100);
 
 interface PriceTier {
   minQuantity: number;
