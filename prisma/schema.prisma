@@ -622,6 +622,26 @@ model LoginEvent {
   @@index([userId, createdAt])
 }
 
+// One row per failed login attempt (wrong password OR an email with no
+// account at all — recorded the same way so both paths carry the same
+// cost to an attacker). Not tied to User by a required relation: a guess
+// against a nonexistent email still needs to count against something, so
+// this is keyed on the submitted email string directly, not a userId.
+//
+// Existence of this table is the whole fix for STEP 26's "no lockout on
+// repeated wrong-password attempts" finding — loginStepOneAction in
+// login/actions.ts checks assertRateLimit against it before ever touching
+// bcrypt, and writes a row here on every failure. Rows are never deleted
+// on success; the sliding time window (see assertRateLimit) is what lets a
+// legitimate user recover, not a manual reset.
+model FailedLoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+}
+
 // ---------------------------------------------------------------------------
 // Curriculum
 // ---------------------------------------------------------------------------

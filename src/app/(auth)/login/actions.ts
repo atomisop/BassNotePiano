@@ -2,7 +2,8 @@
 
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { createAndSendCode, createSilentCode, RateLimitError } from "@/lib/verification";
+import { createAndSendCode, createSilentCode, RateLimitError as CodeRateLimitError } from "@/lib/verification";
+import { assertRateLimit, RateLimitError as LockoutError } from "@/lib/rateLimit";
 
 export type LoginStepOneResult =
   | { ok: false; error: string }
@@ -10,6 +11,27 @@ export type LoginStepOneResult =
   | { ok: true; needsEmailVerification: false; autoCode: string };
 
 const GENERIC_CREDENTIALS_ERROR = "Invalid email or password.";
+const LOCKOUT_MESSAGE = "Too many failed attempts on this account. Wait 15 minutes and try again, or reset your password.";
+
+// STEP 26 security audit: nothing previously stopped unlimited password
+// guesses against a single account — bcrypt's own cost slows each guess
+// down a little, but that's not a real limit. FailedLoginAttempt is a
+// dedicated table (not reused from LoginEvent, which only ever recorded
+// successful logins and requires a real userId — a guess against an email
+// with no account still needs to count against something).
+const LOCKOUT_WINDOW_MINUTES = 15;
+const LOCKOUT_MAX_ATTEMPTS = 8;
+
+async function recordFailedAttempt(email: string): Promise<void> {
+  try {
+    await prisma.failedLoginAttempt.create({ data: { email } });
+  } catch (err) {
+    // Never let a failure to log the attempt block the (correct) error
+    // response the user is about to get — same "non-blocking" posture as
+    // every other audit-ish side effect in this codebase.
+    console.error("Failed to record failed login attempt (non-blocking):", err);
+  }
+}
 
 /**
  * Verifies the password (the only place it's ever checked) and decides what
@@ -27,12 +49,33 @@ const GENERIC_CREDENTIALS_ERROR = "Invalid email or password.";
  */
 export async function loginStepOneAction(email: string, password: string): Promise<LoginStepOneResult> {
   const normalizedEmail = email.trim().toLowerCase();
+
+  // Checked before the user lookup or any bcrypt work, so a locked-out
+  // caller can't keep burning compute (or probing which emails exist) by
+  // guessing past the limit.
+  try {
+    await assertRateLimit(
+      prisma.failedLoginAttempt.count,
+      { email: normalizedEmail },
+      { windowMinutes: LOCKOUT_WINDOW_MINUTES, max: LOCKOUT_MAX_ATTEMPTS, message: LOCKOUT_MESSAGE },
+    );
+  } catch (err) {
+    if (err instanceof LockoutError) return { ok: false, error: err.message };
+    throw err;
+  }
+
   const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
-  if (!user?.passwordHash) return { ok: false, error: GENERIC_CREDENTIALS_ERROR };
+  if (!user?.passwordHash) {
+    await recordFailedAttempt(normalizedEmail);
+    return { ok: false, error: GENERIC_CREDENTIALS_ERROR };
+  }
 
   const validPassword = await bcrypt.compare(password, user.passwordHash);
-  if (!validPassword) return { ok: false, error: GENERIC_CREDENTIALS_ERROR };
+  if (!validPassword) {
+    await recordFailedAttempt(normalizedEmail);
+    return { ok: false, error: GENERIC_CREDENTIALS_ERROR };
+  }
 
   try {
     if (!user.emailVerified) {
@@ -44,7 +87,7 @@ export async function loginStepOneAction(email: string, password: string): Promi
     const { code } = await createSilentCode({ email: user.email, userId: user.id, purpose: "LOGIN_2FA" });
     return { ok: true, needsEmailVerification: false, autoCode: code };
   } catch (err) {
-    if (err instanceof RateLimitError) return { ok: false, error: err.message };
+    if (err instanceof CodeRateLimitError) return { ok: false, error: err.message };
     throw err;
   }
 }
