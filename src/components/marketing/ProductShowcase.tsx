@@ -39,10 +39,10 @@ export function ProductShowcase() {
       <ScrollGlassCard className="p-6 md:p-12" direction="right">
         <p className="label label-muted">The product</p>
         <h2 className="display-2 mt-4 max-w-[26ch] text-balance">
-          Your roadmap, badges, and classes — all in your pocket.
+          Your roadmap, badges, and classes, all in your pocket.
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-slate-300">
-          Real screens from inside Bass Note Piano — drag or tap to explore.
+          Real screens from inside Bass Note Piano. Drag or tap to explore.
         </p>
 
         <div className="mt-14">

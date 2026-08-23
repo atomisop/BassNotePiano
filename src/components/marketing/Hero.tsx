@@ -111,21 +111,9 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reduced ? 0.3 : 0.7, delay: 0.25 }}
         >
-          <motion.span
-            className="mb-2 block text-4xl font-light tracking-wide text-white/90 md:text-5xl lg:text-6xl"
-            style={{
-              background: "linear-gradient(135deg, #e8fadb 0%, #4dd946 30%, #05e901 70%, #e8fadb 100%)",
-              backgroundSize: "200% 200%",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-              filter: "url(#hero-text-glow)",
-            }}
-            animate={reduced ? {} : { backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-          >
+          <span className="mb-2 block text-4xl font-light tracking-wide text-[rgb(var(--c-a-300))] md:text-5xl lg:text-6xl">
             The grammar of
-          </motion.span>
+          </span>
           <span className="block font-black text-white">Ethiopian</span>
           <span className="block font-light italic text-white/80">music.</span>
         </motion.h1>
@@ -136,8 +124,8 @@ export function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reduced ? 0.3 : 0.6, delay: 0.45 }}
         >
-          Six kiñit scales — Tizita, Bati, Anchihoye, Mixolydian — spelled correctly in all twelve
-          keys, for piano and guitar.
+          Six kiñit scales (Tizita, Bati, Anchihoye, Mixolydian, and more), spelled correctly in
+          all twelve keys, for piano and guitar.
         </motion.p>
 
         <motion.div
@@ -150,7 +138,7 @@ export function Hero() {
             href={isLoggedIn ? "/dashboard" : "/register"}
             className="btn btn-primary"
           >
-            {isLoggedIn ? "Go to dashboard" : `Start Learning — ${formatUsd(CURRICULUM_PRICE_CENTS)}`}
+            {isLoggedIn ? "Go to dashboard" : `Start learning for ${formatUsd(CURRICULUM_PRICE_CENTS)}`}
           </Link>
           <a href="#curriculum" className="btn btn-secondary">
             Explore Curriculum

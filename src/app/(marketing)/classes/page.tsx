@@ -9,7 +9,7 @@ import { ClassRegistrationForm } from "./ClassRegistrationForm";
 export const metadata: Metadata = pageMetadata({
   title: "Register for a class",
   description:
-    "Register your interest in learning Ethiopian kiñit with us — piano, guitar, bass, drums or voice, at any level. No account needed to apply.",
+    "Register your interest in learning Ethiopian kiñit with us: piano, guitar, bass, drums or voice, at any level. No account needed to apply.",
   path: "/classes",
 });
 
@@ -33,8 +33,8 @@ export default function ClassesPage() {
             Learn with us in person
           </h1>
           <p className="mx-auto mt-4 max-w-md text-base text-slate-200">
-            Tell us what you&apos;d like to learn and where you&apos;re starting from — we&apos;ll follow up by phone or email to
-            get you scheduled.
+            Tell us what you&apos;d like to learn and where you&apos;re starting from, and we&apos;ll follow up by phone or
+            email to get you scheduled.
           </p>
         </div>
 

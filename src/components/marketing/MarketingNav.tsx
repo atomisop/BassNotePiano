@@ -112,7 +112,7 @@ export function MarketingNav() {
             lifted ? "h-16 md:h-20" : "h-20 md:h-24",
           ].join(" ")}
         >
-          <Link href="/" className="flex items-center gap-3" aria-label="Bass Note Piano — home">
+          <Link href="/" className="flex items-center gap-3" aria-label="Bass Note Piano, home">
             <Image
               src="/logo-mark.png"
               alt=""

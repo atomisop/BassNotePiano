@@ -37,7 +37,7 @@ export function FinalCTA() {
         </p>
 
         <Link href={isLoggedIn ? "/dashboard" : "/register"} className="btn btn-primary group mt-8 inline-flex">
-          {isLoggedIn ? "Go to dashboard" : `Start learning — ${formatUsd(CURRICULUM_PRICE_CENTS)}`}
+          {isLoggedIn ? "Go to dashboard" : `Start learning for ${formatUsd(CURRICULUM_PRICE_CENTS)}`}
           <svg
             width="15"
             height="15"

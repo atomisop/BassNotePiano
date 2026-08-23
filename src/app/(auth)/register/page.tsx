@@ -171,6 +171,10 @@ function RegisterForm() {
             I agree to the{" "}
             <Link href="/terms" target="_blank" className="text-[rgb(var(--c-a-300))] underline transition hover:text-[rgb(var(--c-a-200))]">
               Terms &amp; refund policy
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" target="_blank" className="text-[rgb(var(--c-a-300))] underline transition hover:text-[rgb(var(--c-a-200))]">
+              Privacy policy
             </Link>
             .
           </span>

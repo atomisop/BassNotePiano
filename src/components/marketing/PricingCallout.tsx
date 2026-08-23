@@ -68,7 +68,7 @@ export function PricingCallout() {
         </div>
 
         <p className="mx-auto mt-8 max-w-md text-sm text-slate-500">
-          Live group classes on Zoom — see the full breakdown on the pricing page.
+          Live group classes on Zoom: see the full breakdown on the pricing page.
         </p>
       </ScrollGlassCard>
     </section>

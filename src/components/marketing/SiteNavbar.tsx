@@ -1,6 +1,5 @@
 "use client";
 
-import { CalendarDays, Music4 } from "lucide-react";
 import { useSession } from "next-auth/react";
 
 import { Navbar1, type MenuItem } from "@/components/blocks/shadcnblocks-com-navbar1";
@@ -33,15 +32,13 @@ const MENU: MenuItem[] = [
       {
         title: "Live classes",
         description:
-          "Weekly sessions on Zoom — tell us where you're starting from and we'll get you scheduled.",
-        icon: <CalendarDays className="size-5 shrink-0" />,
+          "Weekly sessions on Zoom. Tell us where you're starting from and we'll get you scheduled.",
         url: "/classes",
       },
       {
         title: "The curriculum",
         description:
           "Six Ethiopian kiñit scales, spelled correctly in every key, with chords and practice tracks.",
-        icon: <Music4 className="size-5 shrink-0" />,
         url: "/pricing",
       },
     ],

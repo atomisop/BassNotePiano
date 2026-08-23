@@ -15,7 +15,10 @@ const EXPLORE_LINKS = [
   { href: "/pricing", label: "Pricing" },
 ];
 
-const LEGAL_LINKS = [{ href: "/terms", label: "Terms & refund policy" }];
+const LEGAL_LINKS = [
+  { href: "/terms", label: "Terms & refund policy" },
+  { href: "/privacy", label: "Privacy policy" },
+];
 
 export function SiteFooter() {
   const { data: session } = useSession();
@@ -39,7 +42,7 @@ export function SiteFooter() {
               BASS NOTE <span className="text-[rgb(var(--c-a-400))]">PIANO</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm text-slate-500">
-              A digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book — six kiñit scales,
+              A digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book: six kiñit scales,
               spelled correctly in every key, plus live weekly classes on Zoom.
             </p>
           </div>

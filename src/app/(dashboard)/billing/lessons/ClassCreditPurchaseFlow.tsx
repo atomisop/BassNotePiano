@@ -167,7 +167,7 @@ export function ClassCreditPurchaseFlow({ zelleHandle }: { zelleHandle: string }
         />
         <span>
           I understand money spent on class credits is <span className="font-medium text-[rgb(var(--c-a-200))]">non-refundable</span>.
-          The only way a credit comes back is canceling a booking 24+ hours before it starts — inside that window,
+          The only way a credit comes back is canceling a booking 24+ hours before it starts. Inside that window,
           self-cancellation is off and any refund is a manual, case-by-case call. Full{" "}
           <Link href="/terms" target="_blank" className="text-[rgb(var(--c-a-300))] underline hover:text-[rgb(var(--c-a-200))]">
             terms &amp; refund policy

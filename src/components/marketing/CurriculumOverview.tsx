@@ -31,12 +31,12 @@ const STAGES = [
   {
     marker: "02",
     title: "Scales",
-    body: `${kinitNames.length} real kiñits, each a different way of choosing five notes out of twelve — ${kinitNames.join(", ")}.`,
+    body: `${kinitNames.length} real kiñits, each a different way of choosing five notes out of twelve: ${kinitNames.join(", ")}.`,
   },
   {
     marker: "03",
     title: "Chords",
-    body: "Each kiñit's native chords are already inside its five notes — no separate chord theory to learn.",
+    body: "Each kiñit's native chords are already inside its five notes, so there's no separate chord theory to learn.",
   },
   {
     marker: "04",
