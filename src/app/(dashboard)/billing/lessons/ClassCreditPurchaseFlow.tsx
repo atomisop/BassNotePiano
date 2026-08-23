@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { ZellePaymentStatus } from "@prisma/client";
 import {
   CREDIT_BASE_PRICE_CENTS,
+  CREDIT_ORIGINAL_PRICE_CENTS,
   PRESET_BUNDLES,
   MIN_CUSTOM_QUANTITY,
   MAX_CUSTOM_QUANTITY,
@@ -142,7 +143,8 @@ export function ClassCreditPurchaseFlow({ zelleHandle }: { zelleHandle: string }
       <div className="rounded-xl border border-ink/10 p-4">
         <div className="flex items-center justify-between text-sm text-slate-400">
           <span>
-            {quantity} × {formatUsd(CREDIT_BASE_PRICE_CENTS)}
+            {quantity} × <span className="text-slate-600 line-through">{formatUsd(CREDIT_ORIGINAL_PRICE_CENTS)}</span>{" "}
+            {formatUsd(CREDIT_BASE_PRICE_CENTS)}
           </span>
           <span>{formatUsd(total.subtotalCents)}</span>
         </div>

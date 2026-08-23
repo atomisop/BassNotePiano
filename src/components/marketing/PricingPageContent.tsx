@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
-import { CREDIT_BASE_PRICE_CENTS } from "@/lib/classCreditPricing";
+import { CURRICULUM_PRICE_CENTS, CURRICULUM_ORIGINAL_PRICE_CENTS, CURRICULUM_DISCOUNT_PERCENT } from "@/lib/curriculum";
+import { CREDIT_BASE_PRICE_CENTS, CREDIT_ORIGINAL_PRICE_CENTS } from "@/lib/classCreditPricing";
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { TiltGlow } from "@/components/ui/TiltGlow";
@@ -70,7 +70,7 @@ export function PricingPageContent() {
             it. */}
         <motion.p variants={item} className="mx-auto mt-5 max-w-lg text-base text-slate-50 sm:text-lg">
           Every scale and its native chords, spelled correctly in all 12 keys. A single {formatUsd(CURRICULUM_PRICE_CENTS)}{" "}
-          payment unlocks the whole curriculum for good.
+          payment (down from {formatUsd(CURRICULUM_ORIGINAL_PRICE_CENTS)}) unlocks the whole curriculum for good.
         </motion.p>
       </motion.section>
 
@@ -80,9 +80,17 @@ export function PricingPageContent() {
         animate="visible"
         className="relative mx-auto max-w-lg px-6 pb-20"
       >
-        <TiltGlow className="glass-surface-elevated p-9 text-center sm:p-11" maxTilt={4}>
+        <TiltGlow className="glass-surface-elevated relative p-9 text-center sm:p-11" maxTilt={4}>
+          <span className="absolute right-5 top-5 rounded-full bg-[rgb(var(--c-a-400))] px-2.5 py-1 text-[11px] font-bold tabular-nums text-slate-950 sm:right-7 sm:top-7">
+            -{CURRICULUM_DISCOUNT_PERCENT}%
+          </span>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-300))]">Curriculum · Lifetime</p>
-          <p className="mt-4 font-serif text-7xl tabular-nums text-slate-50">{formatUsd(CURRICULUM_PRICE_CENTS)}</p>
+          <p className="mt-4 flex items-baseline justify-center gap-3">
+            <span className="text-2xl tabular-nums text-slate-500 line-through">
+              {formatUsd(CURRICULUM_ORIGINAL_PRICE_CENTS)}
+            </span>
+            <span className="font-serif text-7xl tabular-nums text-slate-50">{formatUsd(CURRICULUM_PRICE_CENTS)}</span>
+          </p>
           <p className="mt-2 text-sm text-[rgb(var(--c-a-200)/0.7)]">one-time payment · no subscriptions, ever</p>
 
           <ul className="mt-7 space-y-2.5 text-left text-sm text-slate-100">
@@ -115,7 +123,8 @@ export function PricingPageContent() {
           <h2 className="mt-1.5 font-serif text-3xl text-slate-50">Live group coaching on Zoom</h2>
           <p className="mx-auto mt-2.5 max-w-md text-sm text-slate-300">
             Six recurring weekly classes, capped at 10 students each, on top of your self-paced curriculum. 1 credit
-            = {formatUsd(CREDIT_BASE_PRICE_CENTS)}, and that never changes no matter which bundle you buy. Bigger
+            = <span className="text-slate-500 line-through">{formatUsd(CREDIT_ORIGINAL_PRICE_CENTS)}</span>{" "}
+            {formatUsd(CREDIT_BASE_PRICE_CENTS)}, and that never changes no matter which bundle you buy. Bigger
             bundles just knock the per-credit rate down.
           </p>
         </div>

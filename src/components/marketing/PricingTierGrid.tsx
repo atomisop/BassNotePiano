@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import {
   PRESET_BUNDLES,
   MIN_CUSTOM_QUANTITY,
+  CREDIT_ORIGINAL_PRICE_CENTS,
+  CREDIT_DISCOUNT_PERCENT,
   calculateClassCreditTotal,
 } from "@/lib/classCreditPricing";
 
@@ -63,37 +65,52 @@ export function PricingTierGrid() {
       viewport={{ once: true, margin: "-60px" }}
       className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
     >
-      {TIERS.map((tier) => (
-        <motion.div
-          key={tier.id}
-          variants={cardItem}
-          className="glass-surface flex flex-col gap-4 rounded-2xl border border-transparent p-5 transition hover:border-[rgb(var(--c-a-400)/0.3)] sm:p-6"
-        >
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-[rgb(var(--c-a-300))]">{tier.label}</p>
-
-          <div>
-            <p className="font-serif text-3xl tabular-nums text-slate-50 sm:text-4xl">
-              <NumberFlow value={tier.total.totalCents / 100} format={{ style: "currency", currency: "USD", trailingZeroDisplay: "stripIfInteger" }} />
-            </p>
-            <p className="mt-1 text-xs text-slate-500">
-              {tier.quantity} credit{tier.quantity > 1 ? "s" : ""} · ${(tier.total.perCreditCents / 100).toFixed(2)}/ea
-              {tier.total.discountRate > 0 ? ` · ${Math.round(tier.total.discountRate * 100)}% off` : ""}
-            </p>
-          </div>
-
-          <p className="flex-1 text-xs leading-relaxed text-slate-400">
-            30-minute live classes on Zoom. Credits never expire, and unused ones roll over indefinitely.
-          </p>
-
-          <Link
-            href="/billing/lessons"
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-ink/10 py-2.5 text-center text-sm font-semibold text-slate-100 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))]"
+      {TIERS.map((tier) => {
+        // Only the single-credit tier shows the "was/now" badge — for the
+        // bundle tiers it'd stack confusingly on top of their own genuine
+        // bundle-quantity "% off" note, which is a separate discount.
+        const isSingleCredit = tier.quantity === MIN_CUSTOM_QUANTITY;
+        return (
+          <motion.div
+            key={tier.id}
+            variants={cardItem}
+            className="glass-surface relative flex flex-col gap-4 rounded-2xl border border-transparent p-5 transition hover:border-[rgb(var(--c-a-400)/0.3)] sm:p-6"
           >
-            Buy credits
-            <ArrowIcon />
-          </Link>
-        </motion.div>
-      ))}
+            {isSingleCredit && (
+              <span className="absolute right-3 top-3 rounded-full bg-[rgb(var(--c-a-400))] px-2 py-0.5 text-[10px] font-bold tabular-nums text-slate-950">
+                -{CREDIT_DISCOUNT_PERCENT}%
+              </span>
+            )}
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-[rgb(var(--c-a-300))]">{tier.label}</p>
+
+            <div>
+              <p className="font-serif text-3xl tabular-nums text-slate-50 sm:text-4xl">
+                <NumberFlow value={tier.total.totalCents / 100} format={{ style: "currency", currency: "USD", trailingZeroDisplay: "stripIfInteger" }} />
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                {tier.quantity} credit{tier.quantity > 1 ? "s" : ""} ·{" "}
+                {isSingleCredit && (
+                  <span className="line-through">${(CREDIT_ORIGINAL_PRICE_CENTS / 100).toFixed(2)}</span>
+                )}{" "}
+                ${(tier.total.perCreditCents / 100).toFixed(2)}/ea
+                {tier.total.discountRate > 0 ? ` · ${Math.round(tier.total.discountRate * 100)}% off` : ""}
+              </p>
+            </div>
+
+            <p className="flex-1 text-xs leading-relaxed text-slate-400">
+              30-minute live classes on Zoom. Credits never expire, and unused ones roll over indefinitely.
+            </p>
+
+            <Link
+              href="/billing/lessons"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-ink/10 py-2.5 text-center text-sm font-semibold text-slate-100 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))]"
+            >
+              Buy credits
+              <ArrowIcon />
+            </Link>
+          </motion.div>
+        );
+      })}
     </motion.div>
   );
 }

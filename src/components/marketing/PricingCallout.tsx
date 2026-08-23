@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
+import { CURRICULUM_PRICE_CENTS, CURRICULUM_ORIGINAL_PRICE_CENTS, CURRICULUM_DISCOUNT_PERCENT } from "@/lib/curriculum";
 import { PRESET_BUNDLES, calculateClassCreditTotal } from "@/lib/classCreditPricing";
 import { ScrollGlassCard } from "@/components/marketing/ScrollGlassCard";
 import { StaggerCard } from "@/components/marketing/StaggerCard";
@@ -26,10 +26,18 @@ function formatUsd(cents: number) {
 export function PricingCallout() {
   return (
     <section className="mx-auto max-w-3xl px-6 py-12 text-center md:py-28">
-      <ScrollGlassCard className="p-6 md:p-12" direction="right">
+      <ScrollGlassCard className="relative p-6 md:p-12" direction="right">
+        <span className="absolute right-4 top-4 rounded-full bg-[rgb(var(--c-a-400))] px-2.5 py-1 text-[11px] font-bold tabular-nums text-slate-950 sm:right-6 sm:top-6">
+          -{CURRICULUM_DISCOUNT_PERCENT}%
+        </span>
         <p className="label label-muted">Everything, once</p>
-        <p className="mt-4 font-serif text-6xl tabular-nums text-slate-50 sm:text-7xl">
-          {formatUsd(CURRICULUM_PRICE_CENTS)}
+        <p className="mt-4 flex items-baseline justify-center gap-3">
+          <span className="text-2xl tabular-nums text-slate-500 line-through sm:text-3xl">
+            {formatUsd(CURRICULUM_ORIGINAL_PRICE_CENTS)}
+          </span>
+          <span className="font-serif text-6xl tabular-nums text-slate-50 sm:text-7xl">
+            {formatUsd(CURRICULUM_PRICE_CENTS)}
+          </span>
         </p>
         <p className="mt-3 text-base text-slate-400">
           One-time payment · every scale, forever · no subscriptions
