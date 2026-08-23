@@ -5,8 +5,9 @@ import { isObjectStorageConfigured } from "@/lib/storage";
 import { AdminLessonManager } from "@/components/admin/AdminLessonManager";
 import { requestLessonUploadUrlAction, createLessonAction, deleteLessonAction, reorderLessonsAction } from "./actions";
 
-export default async function AdminLessonsPage({ searchParams }: { searchParams: { scale?: string } }) {
-  const activeSlug = SCALE_GROUPS.find((s) => s.slug === searchParams.scale)?.slug ?? SCALE_GROUPS[0].slug;
+export default async function AdminLessonsPage({ searchParams }: { searchParams: Promise<{ scale?: string }> }) {
+  const { scale } = await searchParams;
+  const activeSlug = SCALE_GROUPS.find((s) => s.slug === scale)?.slug ?? SCALE_GROUPS[0].slug;
   const activeScale = SCALE_GROUPS.find((s) => s.slug === activeSlug)!;
   const [lessons, storageConfigured] = await Promise.all([getLessonsForScale(activeSlug), Promise.resolve(isObjectStorageConfigured())]);
 

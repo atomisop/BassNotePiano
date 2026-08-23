@@ -2,8 +2,8 @@ import { searchUsers } from "@/lib/admin";
 import { UserManagementTable } from "@/components/admin/UserManagementTable";
 import { setUserRoleAction, setCurriculumAccessAction, toggleScaleUnlockAction } from "./actions";
 
-export default async function AdminUsersPage({ searchParams }: { searchParams: { q?: string } }) {
-  const query = searchParams.q ?? "";
+export default async function AdminUsersPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const query = (await searchParams).q ?? "";
   const users = await searchUsers(query);
 
   return (

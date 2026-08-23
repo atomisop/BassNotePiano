@@ -10,16 +10,19 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Prisma 7 removed `url`/`directUrl` from this block entirely — connection
+// strings now live in two separate places instead of both sitting here:
+//   - `prisma.config.ts` (project root): DIRECT_URL, used by the `prisma`
+//     CLI (migrate/studio/db) — needs the unpooled connection since
+//     PgBouncer's transaction-mode pooling doesn't support the
+//     session-level features migrations need.
+//   - `src/lib/prisma.ts`: DATABASE_URL (Neon's pooled/PgBouncer endpoint
+//     in production), passed to a `@prisma/adapter-pg` driver adapter that
+//     the running app's PrismaClient actually queries through.
+// Locally, where there's no pooler, both env vars just point at the same
+// database either way.
 datasource db {
-  provider  = "postgresql"
-  // Pooled connection (Neon's PgBouncer endpoint in production) — used for
-  // every query the running app makes.
-  url       = env("DATABASE_URL")
-  // Direct, unpooled connection — used only by `prisma migrate`. PgBouncer's
-  // transaction-mode pooling doesn't support the session-level features
-  // migrations need, so this has to bypass the pooler. Locally, where
-  // there's no pooler, both vars just point at the same database.
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
 // ---------------------------------------------------------------------------

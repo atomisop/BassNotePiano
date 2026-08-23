@@ -11,8 +11,8 @@ const FILTERS: { label: string; value: ClassRegistrationStatus | "ALL" }[] = [
   { label: "All", value: "ALL" },
 ];
 
-export default async function AdminStudentsPage({ searchParams }: { searchParams: { status?: string } }) {
-  const requested = searchParams.status?.toUpperCase();
+export default async function AdminStudentsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
+  const requested = (await searchParams).status?.toUpperCase();
   const activeFilter = FILTERS.find((f) => f.value === requested)?.value ?? "PENDING";
   const registrations = await getAdminClassRegistrations(activeFilter === "ALL" ? undefined : activeFilter);
   const activeLabel = FILTERS.find((f) => f.value === activeFilter)!.label;

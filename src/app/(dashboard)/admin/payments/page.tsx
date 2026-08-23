@@ -13,8 +13,8 @@ const FILTERS: { label: string; value: ZellePaymentStatus | "ALL" }[] = [
   { label: "All", value: "ALL" },
 ];
 
-export default async function AdminPaymentsPage({ searchParams }: { searchParams: { status?: string } }) {
-  const requested = searchParams.status?.toUpperCase();
+export default async function AdminPaymentsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
+  const requested = (await searchParams).status?.toUpperCase();
   const activeFilter = FILTERS.find((f) => f.value === requested)?.value ?? "PENDING_REVIEW";
   const payments = await getAdminPayments(activeFilter === "ALL" ? undefined : activeFilter);
   const activeLabel = FILTERS.find((f) => f.value === activeFilter)!.label;

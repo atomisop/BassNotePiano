@@ -9,11 +9,12 @@ import { ScaleExplorer } from "@/components/scales/ScaleExplorer";
 import { CoursePlayer } from "./components/CoursePlayer";
 import { markLessonCompleteAction, markPracticeCompletedAction, submitQuizAction } from "./actions";
 
-export default async function ScalePage({ params }: { params: { scaleSlug: string } }) {
+export default async function ScalePage({ params }: { params: Promise<{ scaleSlug: string }> }) {
+  const { scaleSlug } = await params;
   const session = await getServerAuthSession();
-  if (!session?.user) redirect(`/login?callbackUrl=/scales/${params.scaleSlug}`);
+  if (!session?.user) redirect(`/login?callbackUrl=/scales/${scaleSlug}`);
 
-  const access = await canAccessScale(session.user.id, params.scaleSlug);
+  const access = await canAccessScale(session.user.id, scaleSlug);
   if (!access) notFound();
 
   if (!access.canAccess) {

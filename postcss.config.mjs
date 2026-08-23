@@ -1,4 +1,5 @@
-export default {
+/** @type {import('postcss-load-config').Config} */
+const config = {
   plugins: {
     // Tailwind v4: `tailwindcss` is no longer a PostCSS plugin itself —
     // the engine moved into `@tailwindcss/postcss`. Autoprefixer is gone
@@ -7,3 +8,5 @@ export default {
     "@tailwindcss/postcss": {},
   },
 };
+
+export default config;

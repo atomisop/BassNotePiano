@@ -17,14 +17,15 @@ const NEXT_STEP_REASON: Record<string, string> = {
   lessons: "Booking a live class requires curriculum access first.",
 };
 
-export default async function BillingCurriculumPage({ searchParams }: { searchParams: { next?: string } }) {
+export default async function BillingCurriculumPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/curriculum");
   if (session.user.hasCurriculumAccess) redirect("/dashboard");
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
   const payment = await getOrCreatePendingCurriculumPayment(session.user.id, CURRICULUM_PRICE_CENTS, zelleHandle);
-  const redirectReason = searchParams.next ? NEXT_STEP_REASON[searchParams.next] : undefined;
+  const { next } = await searchParams;
+  const redirectReason = next ? NEXT_STEP_REASON[next] : undefined;
 
   return (
     <div className="w-full max-w-sm">
