@@ -25,9 +25,22 @@ function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
-export function ClassCreditPurchaseFlow({ zelleHandle }: { zelleHandle: string }) {
-  const [selectedId, setSelectedId] = useState<string>(PRESET_BUNDLES[0].id);
-  const [customQuantity, setCustomQuantity] = useState(4);
+// Coming in from a specific "Buy credits" button on the pricing page
+// (?quantity=N) should land the picker already on that bundle, not always
+// on Starter — otherwise the button is a lie: it looks like it bought that
+// tier but actually just dumps the student back at square one to reselect
+// the same quantity themselves.
+function resolveInitialSelection(initialQuantity?: number): { selectedId: string; customQuantity: number } {
+  const preset = initialQuantity ? PRESET_BUNDLES.find((b) => b.quantity === initialQuantity) : undefined;
+  if (preset) return { selectedId: preset.id, customQuantity: 4 };
+  if (initialQuantity) return { selectedId: "custom", customQuantity: initialQuantity };
+  return { selectedId: PRESET_BUNDLES[0].id, customQuantity: 4 };
+}
+
+export function ClassCreditPurchaseFlow({ zelleHandle, initialQuantity }: { zelleHandle: string; initialQuantity?: number }) {
+  const initialSelection = resolveInitialSelection(initialQuantity);
+  const [selectedId, setSelectedId] = useState<string>(initialSelection.selectedId);
+  const [customQuantity, setCustomQuantity] = useState(initialSelection.customQuantity);
   const [acknowledged, setAcknowledged] = useState(false);
   const [payment, setPayment] = useState<PendingPayment | null>(null);
   const [loading, setLoading] = useState(false);

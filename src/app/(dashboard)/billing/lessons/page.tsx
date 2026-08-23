@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
+import { MIN_CUSTOM_QUANTITY, MAX_CUSTOM_QUANTITY } from "@/lib/classCreditPricing";
 import { ClassCreditPurchaseFlow } from "./ClassCreditPurchaseFlow";
 
-export default async function BillingLessonsPage() {
+export default async function BillingLessonsPage({ searchParams }: { searchParams: { quantity?: string } }) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/lessons");
   // Class credits are an add-on to the curriculum, not a standalone
@@ -10,6 +11,14 @@ export default async function BillingLessonsPage() {
   if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=credits");
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
+
+  // Lets a "Buy credits" button on the pricing page (e.g. ?quantity=20 for
+  // Best Value) land the picker already on that bundle instead of always
+  // defaulting to Starter and making the student reselect it themselves.
+  const parsedQuantity = Number(searchParams.quantity);
+  const initialQuantity = Number.isInteger(parsedQuantity)
+    ? Math.min(MAX_CUSTOM_QUANTITY, Math.max(MIN_CUSTOM_QUANTITY, parsedQuantity))
+    : undefined;
 
   return (
     <div className="w-full max-w-sm">
@@ -20,7 +29,7 @@ export default async function BillingLessonsPage() {
       </p>
 
       <div className="mt-6">
-        <ClassCreditPurchaseFlow zelleHandle={zelleHandle} />
+        <ClassCreditPurchaseFlow zelleHandle={zelleHandle} initialQuantity={initialQuantity} />
       </div>
     </div>
   );
