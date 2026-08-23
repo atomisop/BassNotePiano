@@ -28,7 +28,7 @@ const panelVariants = {
   },
 };
 
-/** Shown once per calendar day (server-computed in (dashboard)/layout.tsx) — dismissing it marks lastSeenPatchNotesAt. */
+/** Shown once per new changelog entry (server-computed in (dashboard)/layout.tsx) — dismissing it marks lastSeenPatchNotesAt. */
 export function WhatsNewModal({ show, entry }: { show: boolean; entry: ChangelogEntry }) {
   const [open, setOpen] = useState(show);
 

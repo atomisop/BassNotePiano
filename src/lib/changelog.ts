@@ -6,9 +6,11 @@ export interface ChangelogEntry {
 }
 
 // Newest first. CURRENT_VERSION and the "What's new" popup always reflect
-// entries[0] — there's no per-version read tracking, just a once-per-day
-// popup (see lastSeenPatchNotesAt on User), so this list only needs to stay
-// truthful, not perfectly granular.
+// entries[0]. Read tracking is a single timestamp, not a per-version flag
+// (see lastSeenPatchNotesAt on User) — the popup shows once by comparing
+// that timestamp against entries[0].date, so adding a new entry here with
+// today's date is what makes it reappear for everyone. Backdating an entry
+// or leaving its date stale would suppress it; keep dates truthful.
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: "1.4.0",

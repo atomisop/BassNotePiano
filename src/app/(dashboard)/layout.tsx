@@ -13,10 +13,6 @@ import { AnnouncementBanner } from "@/components/layout/AnnouncementBanner";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { CommandMenu } from "@/components/layout/CommandMenu";
 
-function isSameUtcDay(a: Date, b: Date): boolean {
-  return a.getUTCFullYear() === b.getUTCFullYear() && a.getUTCMonth() === b.getUTCMonth() && a.getUTCDate() === b.getUTCDate();
-}
-
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
@@ -33,7 +29,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Deferred until the tour's been seen once — a brand-new account
   // shouldn't get the spotlight tour and the "what's new" popup stacked on
   // top of each other on the very first dashboard visit.
-  const shouldShowWhatsNew = !shouldShowTour && (!user?.lastSeenPatchNotesAt || !isSameUtcDay(user.lastSeenPatchNotesAt, new Date()));
+  //
+  // Once per new release, not once per day: compares against the latest
+  // changelog entry's own date, not "today" — the old check
+  // (`!isSameUtcDay(lastSeenPatchNotesAt, now)`) meant anyone logging in on
+  // a new calendar day saw the same "what's new" card again, forever, even
+  // though nothing shipped. Marking it seen now holds until a genuinely
+  // newer entry lands at the front of CHANGELOG.
+  const shouldShowWhatsNew =
+    !shouldShowTour && (!user?.lastSeenPatchNotesAt || user.lastSeenPatchNotesAt < new Date(LATEST_ENTRY.date));
   const isAdmin = session.user.role === "ADMIN";
 
   return (
