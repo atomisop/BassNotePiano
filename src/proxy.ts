@@ -20,8 +20,14 @@ function isPublic(pathname: string) {
 // entirely from entitlement claims baked into the NextAuth JWT (see
 // src/types/next-auth.d.ts). Those claims are refreshed server-side whenever
 // a ZellePayment is verified or a ScaleProgress row completes — this
-// middleware never needs to know *why* a slug is unlocked, only that it is.
-export async function middleware(req: NextRequest) {
+// proxy never needs to know *why* a slug is unlocked, only that it is.
+//
+// Renamed from middleware.ts/middleware() to proxy.ts/proxy() as part of the
+// Next 14->16 upgrade — Next.js 16 deprecated the "middleware" file
+// convention/export name in favor of "proxy" (same request-interception
+// mechanism, same file location convention, just a rename). Everything
+// below is unchanged logic.
+export async function proxy(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
 
   if (isPublic(pathname)) return NextResponse.next();
