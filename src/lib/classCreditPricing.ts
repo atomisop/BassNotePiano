@@ -52,12 +52,31 @@ export interface CreditTotal {
   perCreditCents: number;
 }
 
+/** Nearest dollar, then a cent under it — the same $X.99 "charm price" every other price in the app ends on. */
+function toCharmPriceCents(cents: number): number {
+  return Math.round(cents / 100) * 100 - 1;
+}
+
 export function calculateClassCreditTotal(quantity: number): CreditTotal {
   const q = Math.min(MAX_CUSTOM_QUANTITY, Math.max(MIN_CUSTOM_QUANTITY, Math.floor(quantity)));
   const tier = TIERS.find((t) => q >= t.minQuantity) ?? TIERS[TIERS.length - 1];
   const subtotalCents = q * CREDIT_BASE_PRICE_CENTS;
-  const discountCents = Math.round(subtotalCents * tier.discountRate);
-  const totalCents = subtotalCents - discountCents;
+  const rawTotalCents = subtotalCents - Math.round(subtotalCents * tier.discountRate);
+  // Charm-priced rather than the raw discount math, so every discounted
+  // quantity's total — bundle cards, checkout, and the actual amount
+  // charged, since this same totalCents is what gets billed — ends in .99
+  // instead of landing wherever the percentage happens to fall (e.g.
+  // $125.96). Only for tier.discountRate > 0: rounding *up* to the nearest
+  // .99 can land a cent or two above the raw total (e.g. 2 credits, no
+  // bundle discount, $69.98 rounds up to $69.99) — fine when there's a
+  // real discount cushioning it, but for an undiscounted quantity that
+  // would silently charge a hair more than quantity × CREDIT_BASE_PRICE_CENTS,
+  // breaking the "1 credit is always $34.99, that never changes" promise
+  // on the pricing page. discountCents is derived from the (possibly
+  // charm-rounded) total, not the other way around, so subtotal - discount
+  // = total still holds exactly on the checkout page's line-item breakdown.
+  const totalCents = tier.discountRate > 0 ? toCharmPriceCents(rawTotalCents) : rawTotalCents;
+  const discountCents = subtotalCents - totalCents;
   return {
     quantity: q,
     subtotalCents,
