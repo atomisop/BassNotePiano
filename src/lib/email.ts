@@ -98,7 +98,7 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
         </tr>
         <tr>
           <td style="padding:20px 32px 8px;">
-            <h1 style="margin:0 0 16px;font-size:21px;font-family:Georgia,'Times New Roman',serif;color:#1a1a1a;">${title}</h1>
+            <h1 style="margin:0 0 16px;font-size:21px;font-family:Georgia,'Times New Roman',serif;color:#1a1a1a;">${escapeHtml(title)}</h1>
             <div style="font-size:15px;line-height:1.65;color:#3a3a3a;">
               ${bodyHtml}
             </div>
