@@ -27,18 +27,23 @@ export function PricingCallout() {
   return (
     <section className="mx-auto max-w-3xl px-6 py-12 text-center md:py-28">
       <ScrollGlassCard className="relative p-6 md:p-12" direction="right">
-        <span className="absolute right-4 top-4 rounded-full bg-[rgb(var(--c-a-400))] px-2.5 py-1 text-[11px] font-bold tabular-nums text-slate-950 sm:right-6 sm:top-6">
-          -{CURRICULUM_DISCOUNT_PERCENT}%
-        </span>
+        <div className="absolute right-4 top-4 flex items-center gap-1.5 sm:right-6 sm:top-6">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-[rgb(var(--c-a-300))]">
+            Limited time offer
+          </span>
+          <span className="rounded-full bg-[rgb(var(--c-a-400))] px-2.5 py-1 text-[11px] font-bold tabular-nums text-slate-950">
+            -{CURRICULUM_DISCOUNT_PERCENT}%
+          </span>
+        </div>
         <p className="label label-muted">Everything, once</p>
-        <p className="mt-4 flex items-baseline justify-center gap-3">
-          <span className="text-2xl tabular-nums text-slate-500 line-through sm:text-3xl">
+        <div className="mt-4 flex flex-col items-center gap-1">
+          <span className="text-xl tabular-nums text-slate-500 line-through sm:text-2xl">
             {formatUsd(CURRICULUM_ORIGINAL_PRICE_CENTS)}
           </span>
           <span className="font-serif text-6xl tabular-nums text-slate-50 sm:text-7xl">
             {formatUsd(CURRICULUM_PRICE_CENTS)}
           </span>
-        </p>
+        </div>
         <p className="mt-3 text-base text-slate-400">
           One-time payment · every scale, forever · no subscriptions
         </p>

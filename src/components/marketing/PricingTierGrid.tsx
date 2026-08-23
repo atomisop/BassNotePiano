@@ -102,7 +102,7 @@ export function PricingTierGrid() {
             </p>
 
             <Link
-              href="/billing/lessons"
+              href={`/billing/lessons?quantity=${tier.quantity}`}
               className="flex items-center justify-center gap-1.5 rounded-xl border border-ink/10 py-2.5 text-center text-sm font-semibold text-slate-100 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))]"
             >
               Buy credits
