@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { PulsingBorder } from "@paper-design/shaders-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
@@ -17,7 +16,7 @@ import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
  * background to extend the full homepage, not just this section, so it now
  * lives in `PageBackground.tsx`, mounted once above every section. This
  * file keeps only what's genuinely hero-specific: the badge/headline/
- * paragraph/CTA content and the corner `PulsingBorder` accent.
+ * paragraph/CTA content.
  *
  * What changed from ShaderShowcase's own colors/content:
  *  - Mesh gradient (now in `PageBackground.tsx`): cyan/orange/white → warm
@@ -25,10 +24,6 @@ import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
  *  - Badge pill / headline / paragraph / CTA labels: the real, existing
  *    Bass Note hero copy (same text `HeroScene.tsx` used), not the demo's
  *    "New Paper Shaders Experience" / "Beautiful Shader Experiences".
- *  - The rotating corner text: real Bass Note brand copy ("Bass Note
- *    Piano · Ethiopian Scales, Rhythm & Chords ·", repeated), not the
- *    demo's own promotional filler text — this project's "do not invent
- *    testimonials/stats" rule applies here as much as anywhere else.
  *  - Dropped entirely: the demo's own inline logo+nav+gooey-login-button
  *    header row. This site already has a real, sitewide sticky nav
  *    (`MarketingNav`, adapted from `header-2`) — duplicating a second nav
@@ -37,13 +32,12 @@ import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
  *    duplicate logo here to hang it on) and the gooey gravitational login
  *    button (same reason). Also dropped: the on-screen piano image the
  *    original homepage used here — removed per direct instruction.
- *
- * Reduced motion: the pulsing border still renders (turning it off entirely
- * would leave a blank corner), but its `speed` drops to 0 so it doesn't
- * animate, and the rotating corner text and the entrance fades stop moving
- * too — same pattern used everywhere else in this app that has continuous
- * or entrance motion. The mesh gradient's own reduced-motion handling now
- * lives with it in `PageBackground.tsx`.
+ *  - Dropped: the corner PulsingBorder + rotating-brand-text accent this
+ *    section used to carry on its own — the Atom assistant widget
+ *    (AssistantWidget.tsx) now uses that same shader treatment as its real,
+ *    functional launcher button, and having a second, purely decorative
+ *    copy of it elsewhere on the page read as confusing/redundant next to
+ *    it, per direct instruction.
  */
 
 function formatUsd(cents: number) {
@@ -54,8 +48,6 @@ function formatUsd(cents: number) {
   });
 }
 
-const ROTATING_TEXT = "Bass Note Piano · Ethiopian Scales, Rhythm & Chords · ".repeat(2);
-
 export function Hero() {
   const { data: session } = useSession();
   const isLoggedIn = Boolean(session?.user);
@@ -63,9 +55,8 @@ export function Hero() {
 
   return (
     <section className="relative min-h-[92vh] overflow-hidden">
-      {/* SVG filters — glass-effect for the badge pill, text-glow for the
-          gradient headline line. Both are generic effect filters (no
-          content baked in), kept from ShaderShowcase as-is. */}
+      {/* SVG filter — glass-effect for the badge pill. Generic effect filter
+          (no content baked in), kept from ShaderShowcase as-is. */}
       <svg className="absolute inset-0 h-0 w-0">
         <defs>
           <filter id="hero-glass-effect" x="-50%" y="-50%" width="200%" height="200%">
@@ -76,13 +67,6 @@ export function Hero() {
               values="1 0 0 0 0.02 0 1 0 0 0.02 0 0 1 0 0.05 0 0 0 0.9 0"
               result="tint"
             />
-          </filter>
-          <filter id="hero-text-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
           </filter>
         </defs>
       </svg>
@@ -144,48 +128,6 @@ export function Hero() {
             Explore Curriculum
           </a>
         </motion.div>
-      </div>
-
-      {/* Corner accent — same PulsingBorder + rotating-text pattern as
-          ShaderShowcase, amber/rust palette, real repeated brand copy
-          instead of promotional filler. Hidden on small phones: at that
-          width it sits directly under the CTA row with no room to breathe. */}
-      <div className="absolute bottom-8 right-8 z-10 hidden sm:block">
-        <div className="relative flex h-20 w-20 items-center justify-center">
-          <PulsingBorder
-            colors={["#05e901", "#0d2e0a", "#e8fadb", "#145c0a", "#4dd946"]}
-            colorBack="#00000000"
-            speed={reduced ? 0 : 1.2}
-            roundness={1}
-            thickness={0.1}
-            softness={0.2}
-            intensity={4}
-            spots={5}
-            spotSize={0.1}
-            pulse={reduced ? 0 : 0.1}
-            smoke={0.5}
-            smokeSize={4}
-            scale={0.65}
-            rotation={0}
-            style={{ width: "60px", height: "60px", borderRadius: "50%" }}
-          />
-          <motion.svg
-            className="absolute inset-0 h-full w-full"
-            viewBox="0 0 100 100"
-            animate={reduced ? {} : { rotate: 360 }}
-            transition={{ duration: 22, repeat: Infinity, ease: "linear" }}
-            style={{ transform: "scale(1.6)" }}
-          >
-            <defs>
-              <path id="hero-corner-circle" d="M 50, 50 m -38, 0 a 38,38 0 1,1 76,0 a 38,38 0 1,1 -76,0" />
-            </defs>
-            <text className="fill-white/70 text-[9px] font-medium">
-              <textPath href="#hero-corner-circle" startOffset="0%">
-                {ROTATING_TEXT}
-              </textPath>
-            </text>
-          </motion.svg>
-        </div>
       </div>
     </section>
   );
