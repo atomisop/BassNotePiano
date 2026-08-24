@@ -8,6 +8,7 @@ import {
   MIN_CUSTOM_QUANTITY,
   CREDIT_ORIGINAL_PRICE_CENTS,
   CREDIT_DISCOUNT_PERCENT,
+  LIMITED_TIME_BUNDLE_DISCOUNT_RATE,
   calculateClassCreditTotal,
 } from "@/lib/classCreditPricing";
 
@@ -66,10 +67,14 @@ export function PricingTierGrid() {
       className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4"
     >
       {TIERS.map((tier) => {
-        // Only the single-credit tier shows the "was/now" badge — for the
-        // bundle tiers it'd stack confusingly on top of their own genuine
-        // bundle-quantity "% off" note, which is a separate discount.
+        // Single-credit shows its own permanent "was $50, now $34.99"
+        // badge (a real markdown off the original price). The three
+        // bundle tiers get a separate, newer badge: a limited-time markdown
+        // off the price the tier already showed, not stacked visibly on
+        // top of the bundle-size discount. Customers see one "was $X, now
+        // $Y" pair and one badge, not two percentages to reconcile.
         const isSingleCredit = tier.quantity === MIN_CUSTOM_QUANTITY;
+        const showLimitedTime = tier.total.hasLimitedTimeDiscount;
         return (
           <motion.div
             key={tier.id}
@@ -81,9 +86,19 @@ export function PricingTierGrid() {
                 -{CREDIT_DISCOUNT_PERCENT}%
               </span>
             )}
+            {showLimitedTime && (
+              <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-[rgb(var(--c-a-400))] px-2 py-0.5 text-[10px] font-bold tabular-nums text-slate-950">
+                Limited time · -{Math.round(LIMITED_TIME_BUNDLE_DISCOUNT_RATE * 100)}%
+              </span>
+            )}
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-[rgb(var(--c-a-300))]">{tier.label}</p>
 
             <div>
+              {showLimitedTime && (
+                <p className="text-sm tabular-nums text-slate-500 line-through">
+                  ${(tier.total.preLimitedTimeTotalCents / 100).toFixed(2)}
+                </p>
+              )}
               <p className="font-serif text-3xl tabular-nums text-slate-50 sm:text-4xl">
                 <NumberFlow value={tier.total.totalCents / 100} format={{ style: "currency", currency: "USD", trailingZeroDisplay: "stripIfInteger" }} />
               </p>
@@ -93,7 +108,6 @@ export function PricingTierGrid() {
                   <span className="line-through">${(CREDIT_ORIGINAL_PRICE_CENTS / 100).toFixed(2)}</span>
                 )}{" "}
                 ${(tier.total.perCreditCents / 100).toFixed(2)}/ea
-                {tier.total.discountRate > 0 ? ` · ${Math.round(tier.total.discountRate * 100)}% off` : ""}
               </p>
             </div>
 

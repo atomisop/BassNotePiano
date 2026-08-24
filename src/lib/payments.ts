@@ -2,7 +2,11 @@ import type { Prisma, ZellePaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AccessDeniedError, unlockScaleForUser, grantCurriculumAccess } from "@/lib/access";
 import { addClassCredits } from "@/lib/classSchedule";
-import { calculateClassCreditTotal } from "@/lib/classCreditPricing";
+import {
+  calculateClassCreditTotal,
+  calculateFamilyBundleTotal,
+  MIN_FAMILY_BUNDLE_RECIPIENTS,
+} from "@/lib/classCreditPricing";
 import { createNotification } from "@/lib/notifications";
 import { assertRateLimit } from "@/lib/rateLimit";
 
@@ -105,6 +109,132 @@ export function getOrCreatePendingClassCreditsPayment(userId: string, quantity: 
   });
 }
 
+// ---------------------------------------------------------------------------
+// Family bundle: one credit tier bought at once for 2+ separate,
+// already-existing accounts (a parent buying the same bundle for each of
+// her kids' own accounts, say), an extra 25% off the combined total. The
+// entire point of this section is that "2+ real accounts" is *verified*,
+// not just asserted. Someone could otherwise get the extra discount by
+// typing in fabricated-looking or duplicate addresses and never actually
+// sharing credits with anyone.
+// ---------------------------------------------------------------------------
+
+export class FamilyBundleError extends Error {}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export interface FamilyBundleRecipientCheck {
+  email: string;
+  found: boolean;
+  /** Only set when found. Lets the buyer visually confirm "yes, that's my kid's account" for an email they themselves just typed, not a stranger's private data. */
+  name: string | null;
+}
+
+/**
+ * Live, side-effect-free (beyond its own rate-limit ledger) lookup used
+ * while the buyer is still filling in the family bundle form, so a typo in
+ * one email can be caught and fixed before submitting, rather than the
+ * whole purchase just failing at the end with no indication which address
+ * was the problem.
+ *
+ * Deliberately reveals account existence per email to the caller. See the
+ * FamilyBundleCheckAttempt model's own doc comment in schema.prisma for why
+ * that trade-off is made instead of hiding it, and what actually bounds it
+ * (a real signed-in session, plus this rate limit; not "nobody can ever
+ * tell").
+ */
+export async function checkFamilyBundleRecipients(callerId: string, emails: string[]): Promise<FamilyBundleRecipientCheck[]> {
+  await assertRateLimit(
+    prisma.familyBundleCheckAttempt.count,
+    { userId: callerId },
+    { windowMinutes: 10, max: 30, message: "Too many account checks. Please wait a few minutes and try again." },
+  );
+  await prisma.familyBundleCheckAttempt.create({ data: { userId: callerId } });
+
+  const normalized = emails.map((e) => e.trim().toLowerCase()).filter(Boolean);
+  if (normalized.length === 0) return [];
+
+  const users = await prisma.user.findMany({
+    where: { email: { in: normalized } },
+    select: { email: true, name: true },
+  });
+  const byEmail = new Map(users.map((u) => [u.email, u.name]));
+
+  return normalized.map((email) => ({ email, found: byEmail.has(email), name: byEmail.get(email) ?? null }));
+}
+
+export interface FamilyBundlePurchaseInput {
+  buyerId: string;
+  tierQuantity: number;
+  recipientEmails: string[];
+  zelleHandle: string;
+}
+
+/**
+ * Creates the AWAITING_TRANSFER payment for a family bundle, after
+ * re-verifying every recipient server-side. Never trusts whatever the
+ * client's own live-check UI showed, since that's just UX, not the actual
+ * authorization boundary. Not idempotent the way getOrCreatePendingZellePayment
+ * is (a repeat visit always creates a fresh row): matching an "identical"
+ * prior attempt would mean comparing tier + the exact set of recipient
+ * emails, which isn't worth the complexity for what should be a rare,
+ * deliberate purchase. An abandoned row still self-expires via
+ * expireStalePendingPayments() like every other pending payment does.
+ */
+export async function createFamilyBundlePayment(input: FamilyBundlePurchaseInput) {
+  const normalized = input.recipientEmails.map((e) => e.trim().toLowerCase()).filter(Boolean);
+
+  if (normalized.length < MIN_FAMILY_BUNDLE_RECIPIENTS) {
+    throw new FamilyBundleError(`A family bundle needs at least ${MIN_FAMILY_BUNDLE_RECIPIENTS} recipient accounts.`);
+  }
+  if (new Set(normalized).size !== normalized.length) {
+    throw new FamilyBundleError("Each recipient needs a different email. The same account can't be entered twice.");
+  }
+  for (const email of normalized) {
+    if (!EMAIL_RE.test(email)) throw new FamilyBundleError(`"${email}" isn't a valid email address.`);
+  }
+
+  const users = await prisma.user.findMany({ where: { email: { in: normalized } }, select: { id: true, email: true } });
+  const byEmail = new Map(users.map((u) => [u.email, u.id]));
+
+  const missing = normalized.filter((email) => !byEmail.has(email));
+  if (missing.length > 0) {
+    throw new FamilyBundleError(
+      `These emails don't have a Bass Note Piano account yet. Everyone needs to register before you can bundle their credits: ${missing.join(", ")}`,
+    );
+  }
+
+  const recipientUserIds = normalized.map((email) => byEmail.get(email)!);
+  // Distinct-looking email strings resolving to the same account shouldn't
+  // be possible (email is @unique), but this is the actual check that
+  // matters, not just "the strings typed in looked different."
+  if (new Set(recipientUserIds).size !== recipientUserIds.length) {
+    throw new FamilyBundleError("Each recipient needs to be a different account.");
+  }
+
+  const creditsPerRecipient = calculateClassCreditTotal(input.tierQuantity).quantity;
+  const { totalCents } = calculateFamilyBundleTotal(input.tierQuantity, normalized.length);
+
+  await expireStalePendingPayments();
+
+  return prisma.zellePayment.create({
+    data: {
+      userId: input.buyerId,
+      purpose: "FAMILY_BUNDLE",
+      amountCents: totalCents,
+      zelleHandle: input.zelleHandle,
+      // The per-recipient credit count, for display parity with how
+      // CLASS_CREDITS stores lessonQuantity. The combined credit count
+      // across everyone is recipientUserIds.length × this, not this alone.
+      lessonQuantity: creditsPerRecipient,
+      status: "AWAITING_TRANSFER",
+      familyBundleRecipients: {
+        create: recipientUserIds.map((userId) => ({ userId, creditsGranted: creditsPerRecipient })),
+      },
+    },
+  });
+}
+
 export interface ZelleReferenceSubmission {
   senderName: string;
   referenceCode: string;
@@ -181,6 +311,9 @@ export async function getUserPaymentHistory(userId: string): Promise<UserPayment
 const pendingPaymentInclude = {
   user: { select: { id: true, name: true, email: true } },
   scaleGroup: { select: { slug: true, code: true, title: true } },
+  // So the admin queue can list who a FAMILY_BUNDLE payment actually
+  // credits, not just who paid. Empty array for every other purpose.
+  familyBundleRecipients: { include: { user: { select: { name: true, email: true } } } },
 } satisfies Prisma.ZellePaymentInclude;
 
 export type PendingZellePayment = Prisma.ZellePaymentGetPayload<{ include: typeof pendingPaymentInclude }>;
@@ -237,6 +370,13 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
       await grantCurriculumAccess(payment.userId, tx);
     } else if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
       await addClassCredits(payment.userId, payment.lessonQuantity, tx);
+    } else if (payment.purpose === "FAMILY_BUNDLE") {
+      // Credits go to every recipient row, not payment.userId: the payer
+      // isn't necessarily a recipient themselves (see createFamilyBundlePayment).
+      const recipients = await tx.familyBundleRecipient.findMany({ where: { paymentId: payment.id } });
+      for (const recipient of recipients) {
+        await addClassCredits(recipient.userId, recipient.creditsGranted, tx);
+      }
     } else if (payment.scaleGroupId) {
       // Legacy Pay-As-You-Go row from before per-scale purchase was retired.
       const scaleGroup = await tx.scaleGroup.findUniqueOrThrow({ where: { id: payment.scaleGroupId } });
@@ -253,6 +393,8 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
     const { discountCents } = calculateClassCreditTotal(payment.lessonQuantity);
     const discountNote = discountCents > 0 ? " — bundle discount applied" : "";
     notificationBody = `Your ${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} payment was verified${discountNote}. Credits are on your account.`;
+  } else if (payment.purpose === "FAMILY_BUNDLE" && payment.lessonQuantity) {
+    notificationBody = `Your family bundle payment was verified. ${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} each went out to everyone in the bundle.`;
   } else if (payment.scaleGroupId) {
     const scaleGroup = await prisma.scaleGroup.findUniqueOrThrow({ where: { id: payment.scaleGroupId } });
     notificationBody = `Your payment for ${scaleGroup.code} — ${scaleGroup.title} was verified. It's unlocked now.`;
@@ -265,6 +407,28 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
     body: notificationBody,
     emailCategory: "payments",
   });
+
+  // Every recipient who isn't the payer themselves gets their own "credits
+  // just appeared" notice. Approving the payment above already granted
+  // them, this is purely the heads-up, so a failure here is non-blocking
+  // same as everywhere else a notification follows a real grant.
+  if (payment.purpose === "FAMILY_BUNDLE" && payment.lessonQuantity) {
+    const recipients = await prisma.familyBundleRecipient.findMany({
+      where: { paymentId: payment.id, userId: { not: payment.userId } },
+      select: { userId: true },
+    });
+    await Promise.all(
+      recipients.map((r) =>
+        createNotification({
+          userId: r.userId,
+          type: "CREDIT_ADJUSTED",
+          title: `${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} added`,
+          body: "Someone bundled a family purchase that included your account. The credits are on your balance now.",
+          emailCategory: "payments",
+        }).catch((err) => console.error(`Failed to notify family bundle recipient ${r.userId} (non-blocking):`, err)),
+      ),
+    );
+  }
 }
 
 /** Rejects a pending payment with a reason the student sees on the resubmit screen. */

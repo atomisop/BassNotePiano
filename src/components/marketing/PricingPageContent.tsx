@@ -144,6 +144,32 @@ export function PricingPageContent() {
         <div className="mt-10">
           <PricingTierGrid />
         </div>
+
+        {/* Sits under the four fixed-price tiers, not as a fifth tile in
+            that grid: its price depends on how many recipients you add, so
+            it can't show a single number the way the other four cards do. */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+          className="glass-surface mt-6 flex flex-col items-start gap-4 rounded-2xl border border-[rgb(var(--c-a-400)/0.2)] p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7"
+        >
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-[rgb(var(--c-a-300))]">Family bundle</p>
+            <p className="mt-1.5 text-sm text-slate-300">
+              Buying for 2 or more kids? Bundle the same tier across their accounts and get an{" "}
+              <span className="text-slate-100">extra 25% off</span> the combined total, for a limited time. Each
+              recipient just needs their own account already.
+            </p>
+          </div>
+          <Link
+            href="/billing/lessons?mode=family"
+            className="flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-ink/10 px-5 py-2.5 text-center text-sm font-semibold text-slate-100 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))]"
+          >
+            Bundle &amp; save
+          </Link>
+        </motion.div>
       </motion.section>
 
       <SiteFooter />

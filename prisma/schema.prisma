@@ -42,6 +42,7 @@ enum PaymentPurpose {
   CURRICULUM // one-time $69.99 full-curriculum unlock (renamed from PRO_LIFETIME)
   SCALE_UNLOCK // legacy Pay-As-You-Go per-scale unlock — no longer purchasable, kept for historical rows
   CLASS_CREDITS // class-credit bundle purchase (renamed from LESSON_PACKAGE — the old 1:1 online/in-person lesson system was replaced by the weekly group-class schedule below)
+  FAMILY_BUNDLE // one credit tier bought for 2+ separate, already-existing accounts at once, an extra 25% off the combined price. See FamilyBundleRecipient below for who actually receives the credits
 }
 
 // Kept only for LessonType/LessonBooking below, which are now historical —
@@ -507,6 +508,7 @@ model User {
   assistantEscalationsResolved   AssistantEscalation[] @relation("AssistantEscalationResolver")
   supportMessagesSent            SupportMessage[]       @relation("SupportMessageSentBy")
   assistantConversation          AssistantConversationMessage[]
+  familyBundlesReceived          FamilyBundleRecipient[]
 
   sentFriendRequests     FriendRequest[]      @relation("FriendRequestSender")
   receivedFriendRequests FriendRequest[]      @relation("FriendRequestReceiver")
@@ -650,6 +652,22 @@ model FailedLoginAttempt {
   @@index([email, createdAt])
 }
 
+// Rate-limit ledger for checkFamilyBundleRecipientsAction (billing/lessons).
+// That action reveals, per email a signed-in buyer types in, whether it
+// belongs to a real account. That's a deliberate, narrow account-enumeration
+// surface (the whole feature needs it: a parent has to find out which
+// kid's email was mistyped before paying), so the trade-off made here is
+// requiring a real signed-in session to even reach it (no anonymous mass
+// probing) plus this table capping how many lookups any one account can
+// run, rather than trying to hide which emails exist at all.
+model FamilyBundleCheckAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
 // Rate-limit ledger for the Atom assistant widget (src/lib/assistant.ts) —
 // every real reply costs a paid Anthropic API call, and the widget is
 // reachable from the public marketing pages with no login required, so this
@@ -673,15 +691,15 @@ enum AssistantMessageRole {
 // Per direct instruction: an anonymous visitor's plain Atom chat (as
 // opposed to an actual support handoff, which already persists as an
 // AssistantEscalation/SupportMessage pair above) is never written here at
-// all — it lives only in the widget's own React state, gone the moment the
+// all. It lives only in the widget's own React state, gone the moment the
 // tab reloads. Only a SIGNED-IN visitor's Atom conversation is kept, tied to
 // their account, so it survives a reload/new device/logging back in later.
-// This is the one place that's true — deliberately smaller in scope than
+// This is the one place that's true, deliberately smaller in scope than
 // the studio's overall notion of "chat history," and specifically so
 // anonymous traffic can't grow this table unbounded.
 //
 // Deletion is admin-only (see clearAssistantHistoryAction in
-// admin/users/actions.ts) — there's no self-service "clear my chat" for the
+// admin/users/actions.ts). There's no self-service "clear my chat" for the
 // student themselves, only for the studio to prune on request.
 model AssistantConversationMessage {
   id        String               @id @default(cuid())
@@ -963,7 +981,32 @@ model ZellePayment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  familyBundleRecipients FamilyBundleRecipient[]
+
   @@index([status])
+  @@index([userId])
+}
+
+// Who actually receives credits from a FAMILY_BUNDLE ZellePayment, and how
+// many. The payment's own userId is just whoever paid, which per direct
+// instruction can be, but doesn't have to be, one of the recipients too.
+// Written once at purchase time (see createFamilyBundlePayment in
+// payments.ts, which is also where every recipient is verified to already
+// hold a real, existing account — the whole point of this table existing
+// separately from just trusting N raw email strings). approveZellePayment
+// reads this instead of payment.userId/lessonQuantity when purpose is
+// FAMILY_BUNDLE, crediting every row here rather than the payer alone.
+model FamilyBundleRecipient {
+  id             String       @id @default(cuid())
+  paymentId      String
+  payment        ZellePayment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creditsGranted Int
+  createdAt      DateTime     @default(now())
+
+  @@unique([paymentId, userId])
+  @@index([paymentId])
   @@index([userId])
 }
 

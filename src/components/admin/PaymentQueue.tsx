@@ -37,6 +37,13 @@ function describePayment(payment: PendingZellePayment): { eyebrow: string; title
       title: `${payment.lessonQuantity} credit${payment.lessonQuantity === 1 ? "" : "s"}${discountCents > 0 ? " — bundle discount applied" : ""}`,
     };
   }
+  if (payment.purpose === "FAMILY_BUNDLE" && payment.lessonQuantity) {
+    const recipientCount = payment.familyBundleRecipients.length;
+    return {
+      eyebrow: "Family bundle",
+      title: `${payment.lessonQuantity} credit${payment.lessonQuantity === 1 ? "" : "s"} × ${recipientCount} account${recipientCount === 1 ? "" : "s"}`,
+    };
+  }
   // Legacy Pay-As-You-Go row from before per-scale purchase was retired.
   return { eyebrow: payment.scaleGroup?.code ?? "Scale unlock", title: payment.scaleGroup?.title ?? "Scale unlock" };
 }
@@ -110,6 +117,11 @@ export function PaymentQueue({
               <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">{eyebrow}</p>
               <h3 className="mt-1 font-serif text-lg text-slate-50">{title}</h3>
               <p className="mt-1 text-sm text-slate-500">{payment.user.name ?? payment.user.email}</p>
+              {payment.purpose === "FAMILY_BUNDLE" && payment.familyBundleRecipients.length > 0 && (
+                <p className="mt-1 text-xs text-slate-600">
+                  Credits go to: {payment.familyBundleRecipients.map((r) => r.user.name ?? r.user.email).join(", ")}
+                </p>
+              )}
             </div>
             <div className="text-right">
               <p className="font-serif text-xl text-[rgb(var(--c-a-300))]">{formatUsd(payment.amountCents)}</p>
