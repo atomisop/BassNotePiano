@@ -457,6 +457,22 @@ export function AssistantWidget() {
     return () => document.removeEventListener("keydown", handleKey);
   }, [open]);
 
+  // overscroll-contain on the message list (below) stops wheel/trackpad
+  // scroll from chaining to the page once the list hits its own top/bottom
+  // — but that CSS property is unreliable for touch scrolling on iOS
+  // Safari specifically, which is exactly where "the page behind the chat
+  // scrolls too" was actually reported from. Locking body scroll outright
+  // while the panel is open is the same fix OnboardingTour.tsx already uses
+  // for this identical problem, and it's not touch/browser-dependent.
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, threadMessages, loading, escalationOffer, collectingEmail]);
