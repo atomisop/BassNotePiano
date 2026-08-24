@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { askAssistant, assertAssistantRateLimit, RateLimitError, type AssistantMessage } from "@/lib/assistant";
+import { askAssistant, assertAssistantRateLimit, appendPersistedMessages, RateLimitError, type AssistantMessage } from "@/lib/assistant";
 
 const MAX_MESSAGES = 20; // caps both cost and the prompt's own size
 const MAX_MESSAGE_LENGTH = 2000;
@@ -67,6 +67,18 @@ export async function POST(req: Request) {
     classCredits,
     isAdmin: session?.user?.role === "ADMIN",
   });
+
+  // Persisted only for a signed-in visitor (see appendPersistedMessages'
+  // own doc comment for why) — the widget already sent its full local
+  // transcript above for the model's own context; this is a separate,
+  // server-side append of just the one new exchange, not a re-save of
+  // everything the client happened to send.
+  if (session?.user) {
+    const lastUserMessage = history[history.length - 1].content;
+    await appendPersistedMessages(session.user.id, lastUserMessage, reply).catch((err) =>
+      console.error("Failed to persist Atom history (non-blocking):", err),
+    );
+  }
 
   return NextResponse.json({ reply });
 }

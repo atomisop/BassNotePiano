@@ -6,6 +6,7 @@ import type { Role } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { setUserRole, setCurriculumAccess } from "@/lib/admin";
 import { unlockScaleForUser, lockScaleForUser } from "@/lib/access";
+import { clearPersistedHistory } from "@/lib/assistant";
 
 // Same pattern as admin/payments/actions.ts — the admin layout's redirect
 // only protects rendering, not these Server Actions, so this re-check is
@@ -44,4 +45,13 @@ export async function toggleScaleUnlockAction(targetUserId: string, scaleSlug: s
   }
   revalidatePath("/admin/users");
   revalidatePath("/admin");
+}
+
+// Per direct instruction: a signed-in visitor's Atom conversation is kept
+// permanently unless the studio chooses to clear it — there's no
+// self-service "clear my chat" for the student, only this admin action.
+export async function clearAssistantHistoryAction(targetUserId: string) {
+  await requireAdmin();
+  await clearPersistedHistory(targetUserId);
+  revalidatePath("/admin/users");
 }

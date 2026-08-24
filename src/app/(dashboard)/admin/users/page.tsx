@@ -1,6 +1,6 @@
 import { searchUsers } from "@/lib/admin";
 import { UserManagementTable } from "@/components/admin/UserManagementTable";
-import { setUserRoleAction, setCurriculumAccessAction, toggleScaleUnlockAction } from "./actions";
+import { setUserRoleAction, setCurriculumAccessAction, toggleScaleUnlockAction, clearAssistantHistoryAction } from "./actions";
 
 export default async function AdminUsersPage({ searchParams }: { searchParams: { q?: string } }) {
   const query = searchParams.q ?? "";
@@ -22,6 +22,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
           onSetRole={setUserRoleAction}
           onSetCurriculumAccess={setCurriculumAccessAction}
           onToggleScale={toggleScaleUnlockAction}
+          onClearAssistantHistory={clearAssistantHistoryAction}
         />
       </div>
     </div>

@@ -12,6 +12,7 @@ export interface UserManagementTableProps {
   onSetRole: (userId: string, role: Role) => Promise<void>;
   onSetCurriculumAccess: (userId: string, hasAccess: boolean) => Promise<void>;
   onToggleScale: (userId: string, scaleSlug: string, unlock: boolean) => Promise<void>;
+  onClearAssistantHistory: (userId: string) => Promise<void>;
 }
 
 export function UserManagementTable({
@@ -20,6 +21,7 @@ export function UserManagementTable({
   onSetRole,
   onSetCurriculumAccess,
   onToggleScale,
+  onClearAssistantHistory,
 }: UserManagementTableProps) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
@@ -136,6 +138,19 @@ export function UserManagementTable({
                 >
                   {user.hasCurriculumAccess ? "Revoke curriculum" : "Grant curriculum"}
                 </button>
+                {user.assistantMessageCount > 0 && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      if (!window.confirm(`Permanently delete ${user.assistantMessageCount} stored Atom message(s) for this account? This can't be undone.`)) return;
+                      withBusy(user.id, () => onClearAssistantHistory(user.id));
+                    }}
+                    className="rounded-lg border border-red-400/20 px-3 py-1.5 text-xs font-medium text-red-400/80 transition hover:bg-red-400/10 disabled:opacity-40"
+                  >
+                    Clear Atom history ({user.assistantMessageCount})
+                  </button>
+                )}
               </div>
             </div>
           );

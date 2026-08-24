@@ -506,6 +506,7 @@ model User {
   assistantEscalations           AssistantEscalation[] @relation("AssistantEscalationSubmitter")
   assistantEscalationsResolved   AssistantEscalation[] @relation("AssistantEscalationResolver")
   supportMessagesSent            SupportMessage[]       @relation("SupportMessageSentBy")
+  assistantConversation          AssistantConversationMessage[]
 
   sentFriendRequests     FriendRequest[]      @relation("FriendRequestSender")
   receivedFriendRequests FriendRequest[]      @relation("FriendRequestReceiver")
@@ -662,6 +663,35 @@ model AssistantRateLimit {
   createdAt  DateTime @default(now())
 
   @@index([identifier, createdAt])
+}
+
+enum AssistantMessageRole {
+  USER
+  ASSISTANT
+}
+
+// Per direct instruction: an anonymous visitor's plain Atom chat (as
+// opposed to an actual support handoff, which already persists as an
+// AssistantEscalation/SupportMessage pair above) is never written here at
+// all — it lives only in the widget's own React state, gone the moment the
+// tab reloads. Only a SIGNED-IN visitor's Atom conversation is kept, tied to
+// their account, so it survives a reload/new device/logging back in later.
+// This is the one place that's true — deliberately smaller in scope than
+// the studio's overall notion of "chat history," and specifically so
+// anonymous traffic can't grow this table unbounded.
+//
+// Deletion is admin-only (see clearAssistantHistoryAction in
+// admin/users/actions.ts) — there's no self-service "clear my chat" for the
+// student themselves, only for the studio to prune on request.
+model AssistantConversationMessage {
+  id        String               @id @default(cuid())
+  userId    String
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      AssistantMessageRole
+  content   String               @db.Text
+  createdAt DateTime             @default(now())
+
+  @@index([userId, createdAt])
 }
 
 enum AssistantFeedbackRating {

@@ -37,7 +37,6 @@ import { PulsingBorder } from "@paper-design/shaders-react";
 
 const GREETING_TEXT = "Hi I am Atom, your personal assistant. Ask me anything related to Bass Note Piano";
 const GREETING_SEEN_KEY = "bnp-atom-greeting-seen";
-const HISTORY_KEY = "bnp-atom-history";
 const FEEDBACK_KEY = "bnp-atom-feedback";
 const ESCALATION_ID_KEY = "bnp-atom-escalation-id";
 const GREETING_DELAY_MS = 1800;
@@ -73,18 +72,6 @@ interface ThreadMessage {
 }
 
 const THREAD_SENDER_LABEL: Record<ThreadSender, string> = { VISITOR: "You", ATOM: "Atom", SUPPORT: "Support" };
-
-function readStoredHistory(): Message[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.sessionStorage.getItem(HISTORY_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 function readStoredFeedback(): Record<number, FeedbackRating> {
   if (typeof window === "undefined") return {};
@@ -307,7 +294,7 @@ function TypingIndicator() {
 }
 
 export function AssistantWidget() {
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [showGreeting, setShowGreeting] = useState(false);
@@ -342,20 +329,34 @@ export function AssistantWidget() {
   // Portals need a real document — same SSR-safety pattern as NotificationBell.
   useEffect(() => {
     setMounted(true);
-    setMessages(readStoredHistory());
     setFeedback(readStoredFeedback());
     setActiveEscalationId(readStoredEscalationId());
   }, []);
 
+  // Per direct instruction: an anonymous visitor's plain Atom chat lives
+  // only in this component's own state — nothing written to storage, so a
+  // reload starts clean. A signed-in visitor's conversation is the opposite:
+  // stored server-side (see loadPersistedHistory), fetched here once the
+  // session status actually resolves, so it survives a reload/new device.
+  // Waiting on sessionStatus (rather than firing on mount unconditionally)
+  // avoids a request for a still-anonymous-looking session that's actually
+  // about to resolve to signed-in a moment later.
   useEffect(() => {
-    if (!mounted) return;
-    try {
-      window.sessionStorage.setItem(HISTORY_KEY, JSON.stringify(messages));
-    } catch {
-      // Safari private mode / storage full — the widget still works, it just
-      // won't survive a page navigation this time.
-    }
-  }, [messages, mounted]);
+    if (sessionStatus !== "authenticated") return;
+    let cancelled = false;
+    fetch("/api/assistant/history")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && Array.isArray(data?.messages)) setMessages(data.messages);
+      })
+      .catch(() => {
+        // Best-effort — worst case the visitor starts this tab's session
+        // without their older history and it's still there next time.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionStatus]);
 
   useEffect(() => {
     if (!mounted) return;

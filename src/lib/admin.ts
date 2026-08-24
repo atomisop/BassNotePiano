@@ -195,6 +195,8 @@ export interface AdminUserRow {
   createdAt: Date;
   /** One entry per curriculum scale, in order — drives the per-scale unlock chips in the admin UI. */
   scaleUnlocks: { slug: string; unlocked: boolean; completed: boolean }[];
+  /** How many Atom messages this account has stored — 0 means the "Clear Atom history" action has nothing to do. */
+  assistantMessageCount: number;
 }
 
 export async function searchUsers(query: string): Promise<AdminUserRow[]> {
@@ -209,7 +211,10 @@ export async function searchUsers(query: string): Promise<AdminUserRow[]> {
         }
       : undefined,
     orderBy: { createdAt: "desc" },
-    include: { progress: { include: { scaleGroup: true } } },
+    include: {
+      progress: { include: { scaleGroup: true } },
+      _count: { select: { assistantConversation: true } },
+    },
     take: 100,
   });
 
@@ -224,6 +229,7 @@ export async function searchUsers(query: string): Promise<AdminUserRow[]> {
       const progress = user.progress.find((p) => p.scaleGroup.slug === slug);
       return { slug, unlocked: Boolean(progress?.unlockedAt), completed: progress?.status === "COMPLETED" };
     }),
+    assistantMessageCount: user._count.assistantConversation,
   }));
 }
 
