@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { PulsingBorder } from "@paper-design/shaders-react";
@@ -197,6 +198,41 @@ function FeedbackButtons({
   );
 }
 
+// Atom's replies point people at real in-app pages using plain markdown
+// link syntax (the system prompt writes "/messages" etc. as real paths) —
+// this turns [label](url) into an actual clickable link instead of showing
+// the bracket/paren syntax as literal text. Deliberately minimal: this is
+// the only markdown construct the model is asked to use, so a full markdown
+// renderer would be solving a problem that doesn't exist here. Shared by
+// both bubble components below since a seeded transcript message can appear
+// in either one (pre-handoff in MessageBubble, replayed inside the thread
+// in ThreadMessageBubble).
+const MARKDOWN_LINK = /\[([^\]]+)\]\(([^)]+)\)/g;
+
+function renderMessageContent(content: string, accentLink: boolean) {
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let key = 0;
+
+  for (const match of Array.from(content.matchAll(MARKDOWN_LINK))) {
+    const [full, label, href] = match;
+    const index = match.index ?? 0;
+    if (index > lastIndex) parts.push(<Fragment key={key++}>{content.slice(lastIndex, index)}</Fragment>);
+    parts.push(
+      <Link
+        key={key++}
+        href={href}
+        className={`underline underline-offset-2 ${accentLink ? "text-slate-950" : "text-[rgb(var(--c-a-300))] hover:text-[rgb(var(--c-a-200))]"}`}
+      >
+        {label}
+      </Link>,
+    );
+    lastIndex = index + full.length;
+  }
+  if (lastIndex < content.length) parts.push(<Fragment key={key++}>{content.slice(lastIndex)}</Fragment>);
+  return parts;
+}
+
 function MessageBubble({
   message,
   feedback,
@@ -219,7 +255,7 @@ function MessageBubble({
           isMine ? "bg-[rgb(var(--c-a-400))] text-slate-950" : "border border-ink/10 bg-slate-950 text-slate-100"
         }`}
       >
-        <p className="whitespace-pre-wrap break-words">{message.content}</p>
+        <p className="whitespace-pre-wrap break-words">{renderMessageContent(message.content, isMine)}</p>
       </motion.div>
       {!isMine && <FeedbackButtons rating={feedback} busy={feedbackBusy} onRate={onRate} />}
     </div>
@@ -247,7 +283,7 @@ function ThreadMessageBubble({ message }: { message: ThreadMessage }) {
               : "border border-ink/10 bg-slate-950 text-slate-100"
         }`}
       >
-        <p className="whitespace-pre-wrap break-words">{message.body}</p>
+        <p className="whitespace-pre-wrap break-words">{renderMessageContent(message.body, isVisitor)}</p>
       </motion.div>
     </div>
   );
@@ -634,10 +670,13 @@ export function AssistantWidget() {
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-slate-50">{inSupportMode ? "Support" : "Atom"}</p>
-                <p className="text-xs text-slate-500">
-                  {inSupportMode ? "Bass Note Piano's support team" : "Bass Note Piano's assistant"}
-                </p>
+                {/* Always "Atom" — per direct instruction, the widget keeps its
+                    one identity even once a human joins the thread. Which
+                    sender said what is still clear from each message's own
+                    ATOM/SUPPORT/YOU label (see ThreadMessageBubble) without
+                    the header itself switching names on the visitor. */}
+                <p className="text-sm font-semibold text-slate-50">Atom</p>
+                <p className="text-xs text-slate-500">Bass Note Piano&apos;s assistant</p>
               </div>
               <button
                 type="button"
@@ -651,7 +690,7 @@ export function AssistantWidget() {
               </button>
             </div>
 
-            <div className="min-w-0 flex-1 space-y-3 overflow-y-auto p-4">
+            <div className="min-w-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
               {!inSupportMode && messages.length === 0 && (
                 <p className="text-sm text-slate-400">
                   Hi, I&apos;m Atom. Ask me about pricing, booking a class, policies, or anything else about Bass Note
@@ -727,7 +766,10 @@ export function AssistantWidget() {
 
               {collectingEmail && (
                 <form onSubmit={handleEmailSubmit} className="space-y-2 rounded-xl border border-ink/10 bg-slate-900/60 p-3">
-                  <p className="text-sm text-slate-300">What&apos;s the best email to reach you at?</p>
+                  <p className="text-sm text-slate-300">
+                    The team will reply right here in this chat — what&apos;s a good email for them to reach you at
+                    only if you&apos;re not around when they do?
+                  </p>
                   <input
                     type="email"
                     value={escalationEmail}
