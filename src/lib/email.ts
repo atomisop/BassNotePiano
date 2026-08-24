@@ -157,6 +157,12 @@ const PURPOSE_COPY: Record<VerificationPurpose, { subject: string; heading: stri
     heading: "Confirm photo change",
     intro: "Enter this code to confirm your new profile photo.",
   },
+  DELETE_ACCOUNT: {
+    subject: "Confirm account deletion — Bass Note Piano",
+    heading: "Confirm account deletion",
+    intro:
+      "Enter this code to permanently delete your account. This can't be undone — if you didn't request this, do not share this code with anyone.",
+  },
 };
 
 export async function sendVerificationCodeEmail(to: string, purpose: VerificationPurpose, code: string) {

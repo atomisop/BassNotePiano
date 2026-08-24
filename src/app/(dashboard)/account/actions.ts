@@ -1,11 +1,13 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { Prisma } from "@prisma/client";
 import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { setUsername, SocialError } from "@/lib/social";
 import { createPresignedAvatarUpload, deleteObject, keyFromPublicUrl, isObjectStorageConfigured } from "@/lib/storage";
+import { createAndSendCode, verifyCode, RateLimitError } from "@/lib/verification";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -162,4 +164,85 @@ export async function updateUsernameAction(newUsername: string) {
   } catch (err) {
     return { ok: false as const, error: err instanceof SocialError ? err.message : "Something went wrong." };
   }
+}
+
+// ---------------------------------------------------------------------------
+// Delete account — the one destructive, irreversible action in this file, so
+// unlike password/name/avatar it deliberately keeps the emailed-code step
+// the 2026-08-07 decision (see PasswordSection above) dropped everywhere
+// else. Both steps require the account's own current password, checked
+// server-side each time — never trust a password the client claims it
+// already validated in an earlier call.
+// ---------------------------------------------------------------------------
+
+const DELETE_ACCOUNT_CODE_PURPOSE = "DELETE_ACCOUNT" as const;
+
+async function verifyCurrentPassword(userId: string, currentPassword: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, passwordHash: true } });
+  if (!user) return { ok: false as const, error: "Something went wrong — try signing in again." };
+  if (!user.passwordHash) {
+    // An account with no password (nothing in this app issues one today,
+    // but the column is nullable) has no credential to check against —
+    // fail closed rather than silently skipping the check.
+    return { ok: false as const, error: "This account has no password set — message the studio to have your account removed." };
+  }
+  if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
+    return { ok: false as const, error: "Current password is incorrect." };
+  }
+  return { ok: true as const, email: user.email };
+}
+
+/** Step 1: password-gated, emails a fresh 6-digit code to the account's own address (never anything the client supplies). */
+export async function requestAccountDeletionCodeAction(currentPassword: string) {
+  const { id } = await requireSession();
+  const check = await verifyCurrentPassword(id, currentPassword);
+  if (!check.ok) return check;
+
+  try {
+    const result = await createAndSendCode({ email: check.email, userId: id, purpose: DELETE_ACCOUNT_CODE_PURPOSE });
+    if (!result.ok) return { ok: false as const, error: "Couldn't send a verification code — try again in a moment." };
+  } catch (err) {
+    if (err instanceof RateLimitError) return { ok: false as const, error: err.message };
+    throw err;
+  }
+
+  return { ok: true as const };
+}
+
+/** Step 2: re-checks the password (defense in depth against the two steps being called out of order) and the emailed code, then permanently deletes the account. */
+export async function confirmAccountDeletionAction(currentPassword: string, code: string) {
+  const { id } = await requireSession();
+  const check = await verifyCurrentPassword(id, currentPassword);
+  if (!check.ok) return check;
+
+  const verified = await verifyCode(check.email, DELETE_ACCOUNT_CODE_PURPOSE, code.trim());
+  if (!verified.ok) {
+    const REASON_MESSAGE: Record<typeof verified.reason, string> = {
+      not_found: "Request a verification code first.",
+      expired: "That code expired — request a new one.",
+      too_many_attempts: "Too many incorrect attempts — request a new code.",
+      incorrect: "Incorrect code.",
+    };
+    return { ok: false as const, error: REASON_MESSAGE[verified.reason] };
+  }
+
+  try {
+    // Almost everything cascades from here (schema.prisma — messages,
+    // bookings, progress, payments, notifications, ...). The one relation
+    // that doesn't (Lesson.uploadedById, required + no onDelete override)
+    // blocks deletion with a foreign-key error for an admin who has
+    // uploaded course content — caught below rather than left as a raw 500,
+    // since there's no other admin here to reassign that content to.
+    await prisma.user.delete({ where: { id } });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && (err.code === "P2003" || err.code === "P2014")) {
+      return {
+        ok: false as const,
+        error: "Your account can't be deleted while it owns content other students depend on (uploaded lessons). Message the studio for help with this.",
+      };
+    }
+    throw err;
+  }
+
+  return { ok: true as const };
 }
