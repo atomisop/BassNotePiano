@@ -101,6 +101,16 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
     setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
 
+  // AppDock auto-hides on desktop now (see its own file). This step's
+  // target can live inside it, so the tour needs a way to force it visible
+  // rather than spotlighting a nav item that's currently translated
+  // off-screen. A DOM CustomEvent, not a shared context: the two components
+  // are unrelated siblings under a server DashboardLayout, and this is a
+  // one-off signal, not state either side needs to read back.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent<boolean>("bnp:force-dock-visible", { detail: open }));
+  }, [open]);
+
   // Auto-trigger: once per account, after a short delay so nav elements
   // have settled in — guarded by a ref (not just the autoShow prop, which
   // is a server-computed value from the page load and won't flip false
