@@ -227,6 +227,15 @@ export async function confirmAccountDeletionAction(currentPassword: string, code
   }
 
   try {
+    // Read the avatar URL before the row disappears. Deleting the User
+    // row was, until this fix, the entire "delete my account" story: it
+    // took the DB pointer to the avatar with it but left the actual file
+    // sitting in R2 forever, unreferenced but still live at its public URL.
+    // The privacy policy promises deletion "of your account and its data,"
+    // and an orphaned photo a stranger could still load by URL doesn't
+    // meet that bar just because nothing in the app links to it anymore.
+    const target = await prisma.user.findUnique({ where: { id }, select: { image: true } });
+
     // Almost everything cascades from here (schema.prisma — messages,
     // bookings, progress, payments, notifications, ...). The one relation
     // that doesn't (Lesson.uploadedById, required + no onDelete override)
@@ -234,6 +243,9 @@ export async function confirmAccountDeletionAction(currentPassword: string, code
     // uploaded course content — caught below rather than left as a raw 500,
     // since there's no other admin here to reassign that content to.
     await prisma.user.delete({ where: { id } });
+
+    const avatarKey = target?.image ? keyFromPublicUrl(target.image) : null;
+    if (avatarKey) await deleteObject(avatarKey);
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && (err.code === "P2003" || err.code === "P2014")) {
       return {
