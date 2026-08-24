@@ -41,6 +41,7 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   LESSON_BOOKING_CANCELED: { label: "View your bookings", url: getAppUrl("/lessons"), kind: "notice" },
   ANNOUNCEMENT: { label: "See announcement", url: getAppUrl("/dashboard"), kind: "default" },
   CREDIT_ADJUSTED: { label: "View your credits", url: getAppUrl("/lessons"), kind: "default" },
+  ASSISTANT_ESCALATION: { label: "View chat history", url: getAppUrl("/admin/assistant"), kind: "default" },
 };
 
 /**
