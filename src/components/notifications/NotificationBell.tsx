@@ -42,7 +42,7 @@ function notificationHref(type: string): string | null {
     case "ANNOUNCEMENT":
       return "/dashboard";
     case "ASSISTANT_ESCALATION":
-      return "/admin/assistant";
+      return "/admin/support";
     default:
       return null;
   }

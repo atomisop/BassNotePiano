@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
-import { createAssistantEscalation, AssistantEscalationError } from "@/lib/assistantEscalation";
+import { createAssistantEscalation, AssistantEscalationError } from "@/lib/support";
 import type { AssistantMessage } from "@/lib/assistant";
 
 const MAX_MESSAGES = 20;
@@ -81,14 +81,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "An email address is needed so our team can follow up." }, { status: 400 });
     }
 
+    let escalationId: string;
     try {
-      await createAssistantEscalation({ identifier, userId, contactName, contactEmail, transcript });
+      const escalation = await createAssistantEscalation({ identifier, userId, contactName, contactEmail, transcript });
+      escalationId = escalation.id;
     } catch (err) {
       if (err instanceof AssistantEscalationError) return NextResponse.json({ error: err.message }, { status: 400 });
       throw err;
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, escalationId });
   } catch (err) {
     console.error("POST /api/assistant/escalate failed:", err);
     return NextResponse.json(
