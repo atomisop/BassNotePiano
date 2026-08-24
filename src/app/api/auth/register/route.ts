@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createAndSendCode, RateLimitError } from "@/lib/verification";
+import { isDisposableEmailDomain } from "@/lib/disposableEmail";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
@@ -16,6 +17,19 @@ export async function POST(req: Request) {
   if (!name || !EMAIL_PATTERN.test(email) || password.length < MIN_PASSWORD_LENGTH) {
     return NextResponse.json(
       { error: `Enter a name, a valid email, and a password of at least ${MIN_PASSWORD_LENGTH} characters.` },
+      { status: 400 },
+    );
+  }
+
+  // Checked after the format check (a well-formed but disposable address),
+  // before anything is written: the verification code, payment receipts,
+  // and progress notifications this app sends all depend on the address
+  // actually being reachable by the student long-term, and the family
+  // bundle feature specifically depends on "an account" meaning a real,
+  // ongoing person rather than a throwaway inbox nobody can be reached at.
+  if (isDisposableEmailDomain(email)) {
+    return NextResponse.json(
+      { error: "That looks like a temporary or disposable email address. Please use one you can actually receive mail at." },
       { status: 400 },
     );
   }
