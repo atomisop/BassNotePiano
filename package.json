@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "sh -c 'if [ -n \"$DATABASE_URL\" ]; then npx prisma migrate deploy; fi' && next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",

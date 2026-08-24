@@ -20,21 +20,27 @@ import { PulsingBorder } from "@paper-design/shaders-react";
  * marketing pages' footer live) specifically to clear that button and the
  * signed-in AppDock, which is centered but still close to the bottom edge.
  *
- * Also owns three self-contained additions layered on top of the plain
+ * Also owns several self-contained additions layered on top of the plain
  * chat, none of which touch the LLM prompt itself:
  *  - a thumbs up/down under every Atom reply (POSTs to /api/assistant/feedback);
- *  - a suggestion-chip row that's always available, not just on first open;
+ *  - a suggestion-chip row that's always available before a handoff;
  *  - a small, deterministic (non-LLM) triage: a thumbs-down or an "I need a
  *    human" kind of message offers a handoff, which — once confirmed —
- *    POSTs the transcript to /api/assistant/escalate and notifies every
- *    admin, whose notification leads to /admin/assistant to read it back.
+ *    POSTs the transcript to /api/assistant/escalate. From there the widget
+ *    switches into live "support mode": the composer talks to
+ *    /api/assistant/support/[id] instead of the LLM, polling the same
+ *    endpoint for whatever an admin replies with from /admin/support. A
+ *    support reply always renders labeled "Support" — never the admin's
+ *    real name, which the visitor-facing API never even returns.
  */
 
 const GREETING_TEXT = "Hi I am Atom, your personal assistant. Ask me anything related to Bass Note Piano";
 const GREETING_SEEN_KEY = "bnp-atom-greeting-seen";
 const HISTORY_KEY = "bnp-atom-history";
 const FEEDBACK_KEY = "bnp-atom-feedback";
+const ESCALATION_ID_KEY = "bnp-atom-escalation-id";
 const GREETING_DELAY_MS = 1800;
+const SUPPORT_POLL_MS = 4000;
 
 const SUGGESTIONS = [
   "How much does the curriculum cost?",
@@ -56,6 +62,16 @@ interface Message {
 }
 
 type FeedbackRating = "UP" | "DOWN";
+type ThreadSender = "VISITOR" | "ATOM" | "SUPPORT";
+type ThreadStatus = "OPEN" | "RESOLVED";
+
+interface ThreadMessage {
+  id: string;
+  sender: ThreadSender;
+  body: string;
+}
+
+const THREAD_SENDER_LABEL: Record<ThreadSender, string> = { VISITOR: "You", ATOM: "Atom", SUPPORT: "Support" };
 
 function readStoredHistory(): Message[] {
   if (typeof window === "undefined") return [];
@@ -78,6 +94,15 @@ function readStoredFeedback(): Record<number, FeedbackRating> {
     return parsed && typeof parsed === "object" ? parsed : {};
   } catch {
     return {};
+  }
+}
+
+function readStoredEscalationId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(ESCALATION_ID_KEY);
+  } catch {
+    return null;
   }
 }
 
@@ -201,6 +226,33 @@ function MessageBubble({
   );
 }
 
+// Post-handoff rendering — every bubble here carries an explicit sender
+// label (never ambiguous the way a plain LLM reply is), and SUPPORT gets
+// its own accent so "a real person just replied" reads at a glance rather
+// than blending into Atom's own messages.
+function ThreadMessageBubble({ message }: { message: ThreadMessage }) {
+  const isVisitor = message.sender === "VISITOR";
+  return (
+    <div className={`flex flex-col ${isVisitor ? "items-end" : "items-start"}`}>
+      <span className="mb-1 px-1 text-[10px] uppercase tracking-wide text-slate-600">{THREAD_SENDER_LABEL[message.sender]}</span>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+        className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm ${
+          isVisitor
+            ? "bg-[rgb(var(--c-a-400))] text-slate-950"
+            : message.sender === "SUPPORT"
+              ? "border border-[rgb(var(--c-a-400)/0.35)] bg-[rgb(var(--c-a-400)/0.1)] text-slate-100"
+              : "border border-ink/10 bg-slate-950 text-slate-100"
+        }`}
+      >
+        <p className="whitespace-pre-wrap break-words">{message.body}</p>
+      </motion.div>
+    </div>
+  );
+}
+
 function TypingIndicator() {
   return (
     <div className="flex justify-start">
@@ -236,20 +288,27 @@ export function AssistantWidget() {
   const [feedback, setFeedback] = useState<Record<number, FeedbackRating>>({});
   const [feedbackBusy, setFeedbackBusy] = useState<number | null>(null);
 
-  // Triage/handoff — entirely client-side state, never sent anywhere until
-  // the visitor explicitly confirms they want a person.
+  // Triage/handoff offer — entirely client-side state, never sent anywhere
+  // until the visitor explicitly confirms they want a person.
   const [escalationOffer, setEscalationOffer] = useState(false);
   const [collectingEmail, setCollectingEmail] = useState(false);
   const [escalationEmail, setEscalationEmail] = useState("");
   const [escalationSubmitting, setEscalationSubmitting] = useState(false);
   const [escalationError, setEscalationError] = useState<string | null>(null);
-  const [escalationSent, setEscalationSent] = useState(false);
+
+  // Live support mode — once set, the composer talks to the support thread
+  // instead of the LLM, and threadMessages (fetched/polled from the server)
+  // replaces `messages` as the render source.
+  const [activeEscalationId, setActiveEscalationId] = useState<string | null>(null);
+  const [threadMessages, setThreadMessages] = useState<ThreadMessage[]>([]);
+  const [threadStatus, setThreadStatus] = useState<ThreadStatus | null>(null);
 
   // Portals need a real document — same SSR-safety pattern as NotificationBell.
   useEffect(() => {
     setMounted(true);
     setMessages(readStoredHistory());
     setFeedback(readStoredFeedback());
+    setActiveEscalationId(readStoredEscalationId());
   }, []);
 
   useEffect(() => {
@@ -270,6 +329,64 @@ export function AssistantWidget() {
       // Non-fatal, same reasoning as the history save above.
     }
   }, [feedback, mounted]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    try {
+      if (activeEscalationId) window.sessionStorage.setItem(ESCALATION_ID_KEY, activeEscalationId);
+      else window.sessionStorage.removeItem(ESCALATION_ID_KEY);
+    } catch {
+      // Non-fatal — worst case a reload loses the live thread and the
+      // widget falls back to plain Atom chat.
+    }
+  }, [activeEscalationId, mounted]);
+
+  // sessionStorage clears on tab close, so a signed-in visitor who closes
+  // and reopens the tab would otherwise lose their live thread entirely —
+  // this re-finds it server-side by account instead. Anonymous visitors
+  // have no account to look it up by, so they stay scoped to whatever their
+  // browser still remembers, same as the rest of the widget's history.
+  useEffect(() => {
+    if (!mounted || activeEscalationId || !session?.user?.id) return;
+    let cancelled = false;
+    fetch("/api/assistant/support/active")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && data?.escalationId) setActiveEscalationId(data.escalationId);
+      })
+      .catch(() => {
+        // Best-effort — worst case they just stay in plain Atom chat.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mounted, session?.user?.id, activeEscalationId]);
+
+  // Polls the live thread while it's open on screen — no point spending
+  // requests on a panel the visitor isn't looking at.
+  useEffect(() => {
+    if (!activeEscalationId || !open) return;
+    let cancelled = false;
+
+    async function poll() {
+      try {
+        const res = await fetch(`/api/assistant/support/${activeEscalationId}`);
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (cancelled) return;
+        setThreadMessages(data.messages);
+        setThreadStatus(data.status);
+      } catch {
+        // Best-effort — the next poll tick will retry.
+      }
+    }
+    poll();
+    const interval = setInterval(poll, SUPPORT_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [activeEscalationId, open]);
 
   // Greeting bubble: once per browser session, only if the conversation is
   // still empty (a returning visitor mid-conversation doesn't need re-pitching).
@@ -306,16 +423,11 @@ export function AssistantWidget() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading, escalationOffer, collectingEmail, escalationSent]);
+  }, [messages, threadMessages, loading, escalationOffer, collectingEmail]);
 
-  async function sendMessage(text: string) {
-    const trimmed = text.trim();
-    if (!trimmed || loading) return;
-
+  async function sendAtomMessage(trimmed: string) {
     const nextHistory: Message[] = [...messages, { role: "user", content: trimmed }];
     setMessages(nextHistory);
-    setInput("");
-    setError(null);
     setLoading(true);
 
     try {
@@ -343,13 +455,47 @@ export function AssistantWidget() {
     }
   }
 
+  async function sendSupportMessage(trimmed: string) {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/assistant/support/${activeEscalationId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: trimmed }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(data?.error ?? "Something went wrong sending that — try again in a moment.");
+        return;
+      }
+      setThreadMessages(data.messages);
+      setThreadStatus(data.status);
+    } catch {
+      setError("Couldn't send that — check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function sendMessage(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed || loading) return;
+    setInput("");
+    setError(null);
+    if (activeEscalationId) {
+      await sendSupportMessage(trimmed);
+    } else {
+      await sendAtomMessage(trimmed);
+    }
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     sendMessage(input);
   }
 
   function offerHandoff() {
-    if (escalationSent) return;
+    if (activeEscalationId) return; // already talking to a person
     setEscalationOffer(true);
     setCollectingEmail(false);
     setEscalationError(null);
@@ -402,9 +548,12 @@ export function AssistantWidget() {
         setEscalationError(data?.error ?? "Couldn't reach our team — try again in a moment.");
         return;
       }
-      setEscalationSent(true);
       setEscalationOffer(false);
       setCollectingEmail(false);
+      // Switches straight into live support mode — the next poll tick (or
+      // the immediate one the activeEscalationId effect kicks off) picks up
+      // the seeded thread, which already contains this whole conversation.
+      setActiveEscalationId(data.escalationId as string);
     } catch {
       setEscalationError("Couldn't reach our team — check your connection and try again.");
     } finally {
@@ -431,12 +580,25 @@ export function AssistantWidget() {
     submitEscalation(trimmedEmail);
   }
 
+  // "Done with support, back to normal Q&A" — leaves the thread itself
+  // untouched (still there for the admin, still reachable if the visitor
+  // sends into it again), just stops routing this widget's composer to it.
+  function resetToAtom() {
+    setActiveEscalationId(null);
+    setThreadMessages([]);
+    setThreadStatus(null);
+    setMessages([]);
+    setError(null);
+  }
+
   if (!mounted) return null;
 
-  // The always-available suggestion row stays out of the way while the
-  // handoff micro-flow is actively asking something, so there's only ever
-  // one set of buttons competing for a click at a time.
-  const showSuggestions = !loading && !escalationOffer && !collectingEmail;
+  const inSupportMode = Boolean(activeEscalationId);
+  // The always-available suggestion row and the handoff micro-flow only
+  // make sense before a handoff exists — once a person is (or was)
+  // actually connected, there's nothing left to triage.
+  const showSuggestions = !inSupportMode && !loading && !escalationOffer && !collectingEmail;
+  const hasSupportReply = threadMessages.some((m) => m.sender === "SUPPORT");
 
   return createPortal(
     <div className="fixed bottom-24 right-6 z-40 flex flex-col items-end gap-3">
@@ -472,8 +634,10 @@ export function AssistantWidget() {
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-slate-50">Atom</p>
-                <p className="text-xs text-slate-500">Bass Note Piano&apos;s assistant</p>
+                <p className="text-sm font-semibold text-slate-50">{inSupportMode ? "Support" : "Atom"}</p>
+                <p className="text-xs text-slate-500">
+                  {inSupportMode ? "Bass Note Piano's support team" : "Bass Note Piano's assistant"}
+                </p>
               </div>
               <button
                 type="button"
@@ -488,22 +652,51 @@ export function AssistantWidget() {
             </div>
 
             <div className="min-w-0 flex-1 space-y-3 overflow-y-auto p-4">
-              {messages.length === 0 && (
+              {!inSupportMode && messages.length === 0 && (
                 <p className="text-sm text-slate-400">
                   Hi, I&apos;m Atom. Ask me about pricing, booking a class, policies, or anything else about Bass Note
                   Piano.
                 </p>
               )}
 
-              {messages.map((m, i) => (
-                <MessageBubble
-                  key={i}
-                  message={m}
-                  feedback={feedback[i] ?? null}
-                  feedbackBusy={feedbackBusy === i}
-                  onRate={(rating) => handleRate(i, rating)}
-                />
-              ))}
+              {!inSupportMode &&
+                messages.map((m, i) => (
+                  <MessageBubble
+                    key={i}
+                    message={m}
+                    feedback={feedback[i] ?? null}
+                    feedbackBusy={feedbackBusy === i}
+                    onRate={(rating) => handleRate(i, rating)}
+                  />
+                ))}
+
+              {inSupportMode && (
+                <>
+                  {threadMessages.map((m) => (
+                    <ThreadMessageBubble key={m.id} message={m} />
+                  ))}
+                  {!hasSupportReply && threadStatus === "OPEN" && (
+                    <p className="rounded-xl border border-ink/10 bg-slate-900/60 p-3 text-center text-xs text-slate-500">
+                      🎧 You&apos;re connected — our support team has been notified and will reply here shortly.
+                    </p>
+                  )}
+                  {threadStatus === "RESOLVED" && (
+                    <div className="space-y-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-center">
+                      <p className="text-xs text-emerald-300">
+                        This conversation was marked resolved. Sending another message here will reopen it.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={resetToAtom}
+                        className="text-xs font-medium text-[rgb(var(--c-a-300))] underline-offset-2 hover:underline"
+                      >
+                        Or start a fresh question with Atom
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+
               {loading && <TypingIndicator />}
               {error && <p className="text-center text-xs text-red-400">{error}</p>}
 
@@ -566,13 +759,6 @@ export function AssistantWidget() {
                 </form>
               )}
 
-              {escalationSent && (
-                <p className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-sm text-emerald-300">
-                  ✅ Done — I&apos;ve flagged this chat for our team and they&apos;ll follow up by email. Feel free to keep
-                  asking me anything else in the meantime.
-                </p>
-              )}
-
               <div ref={messagesEndRef} />
             </div>
 
@@ -592,7 +778,7 @@ export function AssistantWidget() {
                 <button
                   type="button"
                   onClick={offerHandoff}
-                  disabled={loading || escalationSent}
+                  disabled={loading}
                   className="rounded-full border border-ink/10 px-2.5 py-1 text-xs text-slate-400 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))] disabled:opacity-50"
                 >
                   🧑‍💼 Talk to our team
@@ -606,7 +792,7 @@ export function AssistantWidget() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask Atom anything…"
+                placeholder={inSupportMode ? "Message support…" : "Ask Atom anything…"}
                 maxLength={2000}
                 disabled={loading}
                 className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-[rgb(var(--c-a-400)/0.4)]"

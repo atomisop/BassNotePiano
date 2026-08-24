@@ -505,6 +505,7 @@ model User {
   assistantFeedback              AssistantFeedback[]
   assistantEscalations           AssistantEscalation[] @relation("AssistantEscalationSubmitter")
   assistantEscalationsResolved   AssistantEscalation[] @relation("AssistantEscalationResolver")
+  supportMessagesSent            SupportMessage[]       @relation("SupportMessageSentBy")
 
   sentFriendRequests     FriendRequest[]      @relation("FriendRequestSender")
   receivedFriendRequests FriendRequest[]      @relation("FriendRequestReceiver")
@@ -697,14 +698,13 @@ enum AssistantEscalationStatus {
 }
 
 // A "connect me to a person" handoff from the Atom widget's guided triage:
-// created only once the visitor confirms they want a human, after Atom
-// couldn't resolve it on its own. This is the one place Atom's conversation
-// is actually persisted server-side — a self-contained transcript snapshot,
-// not a pointer into the Message model, since an anonymous visitor (the
-// widget works with no account) has no Message history to point at at all.
-// Notifying admins (see createAssistantEscalation in
-// src/lib/assistantEscalation.ts) is what makes this the "lead me to the
-// chat history" trail for a handoff.
+// created once the visitor confirms they want a human, after Atom couldn't
+// resolve it on its own. This is the live support thread's parent row — the
+// one place Atom's conversation is actually persisted server-side, since an
+// anonymous visitor (the widget works with no account) has no Message
+// history to point at at all. Notifying admins on creation (see
+// createAssistantEscalation in src/lib/assistantEscalation.ts) is what
+// leads an admin to /admin/support to pick it up.
 model AssistantEscalation {
   id           String                     @id @default(cuid())
   identifier   String
@@ -712,18 +712,51 @@ model AssistantEscalation {
   user         User?                      @relation("AssistantEscalationSubmitter", fields: [userId], references: [id], onDelete: SetNull)
   contactName  String?
   contactEmail String
-  // Snapshot of the conversation at handoff time: [{ role, content }, ...],
-  // same shape as AssistantMessage — capped to the most recent messages and
-  // to a per-message length at write time (see createAssistantEscalation).
-  transcript   Json
   status       AssistantEscalationStatus @default(OPEN)
+  // Bumped every time any admin opens this thread in /admin/support — a
+  // single shared "last read" rather than per-admin, same collective-inbox
+  // model messages.ts already uses for admin threads. Drives the unread dot
+  // in the thread list: any SupportMessage(sender: VISITOR) newer than this
+  // is unread. Null means "never opened."
+  adminLastReadAt DateTime?
   resolvedAt   DateTime?
   resolvedById String?
   resolvedBy   User?                      @relation("AssistantEscalationResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
   createdAt    DateTime                   @default(now())
 
+  messages SupportMessage[]
+
   @@index([status, createdAt])
   @@index([identifier, createdAt])
+}
+
+enum SupportMessageSender {
+  VISITOR // the person who escalated — signed-in user or anonymous visitor
+  ATOM // replayed from the pre-escalation AI chat, seeded once at handoff time so the thread is one continuous timeline
+  SUPPORT // an admin reply — always shown to the visitor as "Support", never by name (see sentById below)
+}
+
+// One row per message in a support thread, from the pre-escalation Atom
+// history through the live back-and-forth after handoff — the whole
+// conversation is just this table's rows in order, so the widget and the
+// admin panel both render off the exact same source. `sentById` records
+// which admin actually typed a SUPPORT reply, but is internal-only: no
+// visitor-facing API response includes it — the widget only ever sees the
+// generic "Support" role, which is the whole point (no personal admin
+// identity leaks to a visitor).
+model SupportMessage {
+  id           String               @id @default(cuid())
+  escalationId String
+  escalation   AssistantEscalation  @relation(fields: [escalationId], references: [id], onDelete: Cascade)
+  sender       SupportMessageSender
+  body         String               @db.Text
+  // Same `user:<id>` / IP convention as elsewhere — set only on VISITOR rows, for rate-limiting/abuse trail only.
+  identifier   String?
+  sentById     String?
+  sentBy       User?                @relation("SupportMessageSentBy", fields: [sentById], references: [id], onDelete: SetNull)
+  createdAt    DateTime             @default(now())
+
+  @@index([escalationId, createdAt])
 }
 
 // ---------------------------------------------------------------------------
