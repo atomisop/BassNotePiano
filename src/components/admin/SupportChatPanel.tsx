@@ -191,7 +191,12 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
   }
 
   return (
-    <div className="flex h-[70vh] min-h-[420px] flex-col gap-4 overflow-hidden lg:flex-row">
+    // h-[70vh] used to measure against the full viewport, ignoring both this
+    // page's own header above it and the floating AppDock below it — tall
+    // enough that the reply input ended up rendered behind the dock on
+    // common desktop viewport heights. calc() here reserves real space for
+    // both instead of guessing at a smaller vh percentage.
+    <div className="flex h-[calc(100vh-22rem)] min-h-[420px] flex-col gap-4 overflow-hidden lg:flex-row">
       <div className="glass-surface flex w-full shrink-0 flex-col overflow-y-auto lg:w-72">
         <div className="divide-y divide-ink/10">
           {threads.map((thread) => (

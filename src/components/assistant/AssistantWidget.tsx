@@ -531,7 +531,7 @@ export function AssistantWidget() {
 
   async function sendMessage(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || loading) return;
+    if (!trimmed || loading || isResolved) return;
     setInput("");
     setError(null);
     if (activeEscalationId) {
@@ -646,6 +646,11 @@ export function AssistantWidget() {
   if (!mounted) return null;
 
   const inSupportMode = Boolean(activeEscalationId);
+  // Once an admin resolves a thread, it's dead — history stays, but neither
+  // Atom nor a real person is listening on it anymore. Guards the composer
+  // itself (below), not just the send handler, so there's no window where a
+  // stale disabled state lets a message slip through right as it resolves.
+  const isResolved = inSupportMode && threadStatus === "RESOLVED";
   // The always-available suggestion row and the handoff micro-flow only
   // make sense before a handoff exists — once a person is (or was)
   // actually connected, there's nothing left to triage.
@@ -738,14 +743,15 @@ export function AssistantWidget() {
                   {threadStatus === "RESOLVED" && (
                     <div className="space-y-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-center">
                       <p className="text-xs text-emerald-300">
-                        This conversation was marked resolved. Sending another message here will reopen it.
+                        This conversation is closed. The history above is kept, but this thread no longer accepts new
+                        messages.
                       </p>
                       <button
                         type="button"
                         onClick={resetToAtom}
                         className="text-xs font-medium text-[rgb(var(--c-a-300))] underline-offset-2 hover:underline"
                       >
-                        Or start a fresh question with Atom
+                        Start a new question with Atom
                       </button>
                     </div>
                   )}
@@ -850,14 +856,14 @@ export function AssistantWidget() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={inSupportMode ? "Message support…" : "Ask Atom anything…"}
+                placeholder={isResolved ? "This conversation is closed" : inSupportMode ? "Message support…" : "Ask Atom anything…"}
                 maxLength={2000}
-                disabled={loading}
-                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-[rgb(var(--c-a-400)/0.4)]"
+                disabled={loading || isResolved}
+                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-[rgb(var(--c-a-400)/0.4)] disabled:opacity-50"
               />
               <button
                 type="submit"
-                disabled={loading || !input.trim()}
+                disabled={loading || isResolved || !input.trim()}
                 aria-label="Send"
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgb(var(--c-a-400))] text-slate-950 transition disabled:opacity-40"
               >

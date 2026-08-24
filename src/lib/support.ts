@@ -182,21 +182,21 @@ export async function postVisitorMessage(
   const escalation = await loadEscalationForVisitor(escalationId);
   if (!escalation) return null;
 
+  // Per direct instruction: once an admin resolves a thread, it's dead —
+  // the history stays (nothing here deletes anything), but the thread no
+  // longer accepts new messages from either side and nothing reopens it
+  // automatically. A visitor who genuinely needs more help starts a fresh
+  // Atom conversation instead, which can open its own new escalation.
+  if (escalation.status === "RESOLVED") {
+    throw new AssistantEscalationError("This conversation is closed. Start a new question with Atom if you need more help.");
+  }
+
   const trimmed = body.trim().slice(0, MAX_VISITOR_MESSAGE_LENGTH);
   if (!trimmed) throw new AssistantEscalationError("Message can't be empty.");
 
-  await prisma.$transaction([
-    prisma.supportMessage.create({
-      data: { escalationId, sender: "VISITOR", body: trimmed, identifier },
-    }),
-    // A visitor writing back into a thread the team already marked resolved
-    // is exactly a "customer replied again" reopen — the common support-desk
-    // convention, and simpler than leaving them stuck talking into a closed
-    // thread with no way to signal the team again.
-    ...(escalation.status === "RESOLVED"
-      ? [prisma.assistantEscalation.update({ where: { id: escalationId }, data: { status: "OPEN" as const } })]
-      : []),
-  ]);
+  await prisma.supportMessage.create({
+    data: { escalationId, sender: "VISITOR", body: trimmed, identifier },
+  });
 
   return getThreadForVisitor(escalationId);
 }
