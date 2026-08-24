@@ -174,6 +174,7 @@ enum NotificationType {
   LESSON_BOOKING_CANCELED // to the student, when a booking is canceled and their credit is refunded
   ANNOUNCEMENT // fanned out to every user when an admin publishes an announcement
   CREDIT_ADJUSTED // to the student, when an admin manually grants or deducts class credits
+  ASSISTANT_ESCALATION // to admins, when a visitor asks the Atom widget to connect them to a person
 }
 
 // The in-app inbox is the source of truth — always written regardless of
@@ -500,6 +501,10 @@ model User {
   loginEvents       LoginEvent[]
   badges            UserBadge[]
 
+  assistantFeedback              AssistantFeedback[]
+  assistantEscalations           AssistantEscalation[] @relation("AssistantEscalationSubmitter")
+  assistantEscalationsResolved   AssistantEscalation[] @relation("AssistantEscalationResolver")
+
   sentFriendRequests     FriendRequest[]      @relation("FriendRequestSender")
   receivedFriendRequests FriendRequest[]      @relation("FriendRequestReceiver")
   blocksMade             Block[]              @relation("BlockedBy")
@@ -654,6 +659,69 @@ model AssistantRateLimit {
   identifier String
   createdAt  DateTime @default(now())
 
+  @@index([identifier, createdAt])
+}
+
+enum AssistantFeedbackRating {
+  UP
+  DOWN
+}
+
+// One row per thumbs up/down click on a single Atom reply — the small,
+// low-friction rating shown under each assistant bubble in the widget.
+// `identifier` follows the exact same `user:<id>` / IP convention as
+// AssistantRateLimit above, purely to rate-limit the endpoint; `userId` is
+// the separate, nullable link to a real account for whoever happens to be
+// signed in when they rate a reply, so the studio can tell "who" apart from
+// "how many" if it ever matters. Not tied to a stored conversation — Atom
+// keeps no server-side chat log outside of an actual escalation (see
+// AssistantEscalation below), so this is just "this reply text got this
+// rating, from this identifier, at this time."
+model AssistantFeedback {
+  id             String                  @id @default(cuid())
+  identifier     String
+  userId         String?
+  user           User?                   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  rating         AssistantFeedbackRating
+  messageContent String                  @db.Text
+  createdAt      DateTime                @default(now())
+
+  @@index([identifier, createdAt])
+  @@index([userId])
+}
+
+enum AssistantEscalationStatus {
+  OPEN
+  RESOLVED
+}
+
+// A "connect me to a person" handoff from the Atom widget's guided triage:
+// created only once the visitor confirms they want a human, after Atom
+// couldn't resolve it on its own. This is the one place Atom's conversation
+// is actually persisted server-side — a self-contained transcript snapshot,
+// not a pointer into the Message model, since an anonymous visitor (the
+// widget works with no account) has no Message history to point at at all.
+// Notifying admins (see createAssistantEscalation in
+// src/lib/assistantEscalation.ts) is what makes this the "lead me to the
+// chat history" trail for a handoff.
+model AssistantEscalation {
+  id           String                     @id @default(cuid())
+  identifier   String
+  userId       String?
+  user         User?                      @relation("AssistantEscalationSubmitter", fields: [userId], references: [id], onDelete: SetNull)
+  contactName  String?
+  contactEmail String
+  // Snapshot of the conversation at handoff time: [{ role, content }, ...],
+  // same shape as AssistantMessage — capped to the most recent messages and
+  // to a per-message length at write time (see createAssistantEscalation).
+  transcript   Json
+  status       AssistantEscalationStatus @default(OPEN)
+  resolvedAt   DateTime?
+  resolvedById String?
+  resolvedBy   User?                      @relation("AssistantEscalationResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime                   @default(now())
+
+  @@index([status, createdAt])
   @@index([identifier, createdAt])
 }
 

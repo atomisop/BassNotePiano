@@ -41,6 +41,8 @@ function notificationHref(type: string): string | null {
       return "/lessons";
     case "ANNOUNCEMENT":
       return "/dashboard";
+    case "ASSISTANT_ESCALATION":
+      return "/admin/assistant";
     default:
       return null;
   }

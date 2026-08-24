@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useSession } from "next-auth/react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { PulsingBorder } from "@paper-design/shaders-react";
 
@@ -18,11 +19,21 @@ import { PulsingBorder } from "@paper-design/shaders-react";
  * Positioned at bottom-24 (not bottom-6, where ScrollToTopButton and the
  * marketing pages' footer live) specifically to clear that button and the
  * signed-in AppDock, which is centered but still close to the bottom edge.
+ *
+ * Also owns three self-contained additions layered on top of the plain
+ * chat, none of which touch the LLM prompt itself:
+ *  - a thumbs up/down under every Atom reply (POSTs to /api/assistant/feedback);
+ *  - a suggestion-chip row that's always available, not just on first open;
+ *  - a small, deterministic (non-LLM) triage: a thumbs-down or an "I need a
+ *    human" kind of message offers a handoff, which — once confirmed —
+ *    POSTs the transcript to /api/assistant/escalate and notifies every
+ *    admin, whose notification leads to /admin/assistant to read it back.
  */
 
 const GREETING_TEXT = "Hi I am Atom, your personal assistant. Ask me anything related to Bass Note Piano";
 const GREETING_SEEN_KEY = "bnp-atom-greeting-seen";
 const HISTORY_KEY = "bnp-atom-history";
+const FEEDBACK_KEY = "bnp-atom-feedback";
 const GREETING_DELAY_MS = 1800;
 
 const SUGGESTIONS = [
@@ -32,10 +43,19 @@ const SUGGESTIONS = [
   "I need help with my account",
 ];
 
+// Simple, deterministic triage — no reliance on the model to self-report
+// when it's stuck, which would mean trusting free-form LLM output to
+// trigger a real notification. A visitor asking in plain English to reach
+// a person is a clear, checkable signal on its own.
+const HUMAN_REQUEST_RE = /\b(human|real\s+person|representative|customer\s+service|talk\s+to\s+(a\s+|someone)|speak\s+(to|with))\b/i;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 interface Message {
   role: "user" | "assistant";
   content: string;
 }
+
+type FeedbackRating = "UP" | "DOWN";
 
 function readStoredHistory(): Message[] {
   if (typeof window === "undefined") return [];
@@ -46,6 +66,18 @@ function readStoredHistory(): Message[] {
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
+  }
+}
+
+function readStoredFeedback(): Record<number, FeedbackRating> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.sessionStorage.getItem(FEEDBACK_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
   }
 }
 
@@ -79,10 +111,77 @@ function AtomButton({ onClick, label }: { onClick: () => void; label: string }) 
   );
 }
 
-function MessageBubble({ message }: { message: Message }) {
+// Deliberately tiny and low-contrast until hovered/rated — a CSAT prompt
+// that competed visually with the actual answer would be worse than no
+// CSAT prompt at all. Once rated, the chosen icon stays lit and both
+// buttons go inert (one vote per reply, no un-voting).
+function FeedbackButtons({
+  rating,
+  busy,
+  onRate,
+}: {
+  rating: FeedbackRating | null;
+  busy: boolean;
+  onRate: (rating: FeedbackRating) => void;
+}) {
+  return (
+    <div className="mt-1 flex items-center gap-0.5 pl-1">
+      <button
+        type="button"
+        onClick={() => onRate("UP")}
+        disabled={busy || rating !== null}
+        aria-label="Helpful"
+        aria-pressed={rating === "UP"}
+        className={`flex h-5 w-5 items-center justify-center rounded transition ${
+          rating === "UP" ? "text-[rgb(var(--c-a-400))]" : "text-slate-600 hover:text-slate-400"
+        } disabled:cursor-default`}
+      >
+        <svg viewBox="0 0 24 24" fill={rating === "UP" ? "currentColor" : "none"} className="h-3 w-3">
+          <path
+            d="M7 22h11a2 2 0 002-2v-7a2 2 0 00-2-2h-3l1-5.5A1.5 1.5 0 0014.5 4L10 9H7v13zM3 22h2V9H3v13z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      <button
+        type="button"
+        onClick={() => onRate("DOWN")}
+        disabled={busy || rating !== null}
+        aria-label="Not helpful"
+        aria-pressed={rating === "DOWN"}
+        className={`flex h-5 w-5 items-center justify-center rounded transition ${
+          rating === "DOWN" ? "text-red-400" : "text-slate-600 hover:text-slate-400"
+        } disabled:cursor-default`}
+      >
+        <svg viewBox="0 0 24 24" fill={rating === "DOWN" ? "currentColor" : "none"} className="h-3 w-3">
+          <path
+            d="M17 2H6a2 2 0 00-2 2v7a2 2 0 002 2h3l-1 5.5A1.5 1.5 0 0010.5 20L15 15h3V2zM21 2h-2v13h2V2z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+function MessageBubble({
+  message,
+  feedback,
+  feedbackBusy,
+  onRate,
+}: {
+  message: Message;
+  feedback: FeedbackRating | null;
+  feedbackBusy: boolean;
+  onRate: (rating: FeedbackRating) => void;
+}) {
   const isMine = message.role === "user";
   return (
-    <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+    <div className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -93,6 +192,7 @@ function MessageBubble({ message }: { message: Message }) {
       >
         <p className="whitespace-pre-wrap break-words">{message.content}</p>
       </motion.div>
+      {!isMine && <FeedbackButtons rating={feedback} busy={feedbackBusy} onRate={onRate} />}
     </div>
   );
 }
@@ -115,6 +215,7 @@ function TypingIndicator() {
 }
 
 export function AssistantWidget() {
+  const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [showGreeting, setShowGreeting] = useState(false);
@@ -125,10 +226,26 @@ export function AssistantWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Feedback (thumbs) — keyed by index into `messages`, which never
+  // reorders/truncates client-side, so the index stays a stable key for the
+  // lifetime of one stored history.
+  const [feedback, setFeedback] = useState<Record<number, FeedbackRating>>({});
+  const [feedbackBusy, setFeedbackBusy] = useState<number | null>(null);
+
+  // Triage/handoff — entirely client-side state, never sent anywhere until
+  // the visitor explicitly confirms they want a person.
+  const [escalationOffer, setEscalationOffer] = useState(false);
+  const [collectingEmail, setCollectingEmail] = useState(false);
+  const [escalationEmail, setEscalationEmail] = useState("");
+  const [escalationSubmitting, setEscalationSubmitting] = useState(false);
+  const [escalationError, setEscalationError] = useState<string | null>(null);
+  const [escalationSent, setEscalationSent] = useState(false);
+
   // Portals need a real document — same SSR-safety pattern as NotificationBell.
   useEffect(() => {
     setMounted(true);
     setMessages(readStoredHistory());
+    setFeedback(readStoredFeedback());
   }, []);
 
   useEffect(() => {
@@ -140,6 +257,15 @@ export function AssistantWidget() {
       // won't survive a page navigation this time.
     }
   }, [messages, mounted]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    try {
+      window.sessionStorage.setItem(FEEDBACK_KEY, JSON.stringify(feedback));
+    } catch {
+      // Non-fatal, same reasoning as the history save above.
+    }
+  }, [feedback, mounted]);
 
   // Greeting bubble: once per browser session, only if the conversation is
   // still empty (a returning visitor mid-conversation doesn't need re-pitching).
@@ -176,7 +302,7 @@ export function AssistantWidget() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+  }, [messages, loading, escalationOffer, collectingEmail, escalationSent]);
 
   async function sendMessage(text: string) {
     const trimmed = text.trim();
@@ -202,6 +328,10 @@ export function AssistantWidget() {
       }
 
       setMessages([...nextHistory, { role: "assistant", content: data.reply as string }]);
+      // A plain-English ask for a human is offered a handoff regardless of
+      // how the reply itself reads — this check is on what the visitor
+      // typed, not on anything the model said.
+      if (HUMAN_REQUEST_RE.test(trimmed)) offerHandoff();
     } catch {
       setError("Couldn't reach Atom — check your connection and try again.");
     } finally {
@@ -214,7 +344,93 @@ export function AssistantWidget() {
     sendMessage(input);
   }
 
+  function offerHandoff() {
+    if (escalationSent) return;
+    setEscalationOffer(true);
+    setCollectingEmail(false);
+    setEscalationError(null);
+  }
+
+  async function handleRate(index: number, rating: FeedbackRating) {
+    if (feedback[index] || feedbackBusy === index) return;
+    setFeedbackBusy(index);
+    setFeedback((prev) => ({ ...prev, [index]: rating }));
+    try {
+      await fetch("/api/assistant/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating, messageContent: messages[index]?.content ?? "" }),
+      });
+    } catch {
+      // Best-effort — a failed feedback POST shouldn't disrupt the chat.
+    } finally {
+      setFeedbackBusy(null);
+    }
+    // A thumbs-down is exactly the "didn't get help here" signal the triage
+    // is built around — offer the same handoff a "talk to a human" message
+    // would trigger.
+    if (rating === "DOWN") offerHandoff();
+  }
+
+  function declineHandoff() {
+    setEscalationOffer(false);
+    setCollectingEmail(false);
+    setEscalationError(null);
+  }
+
+  async function submitEscalation(contactEmail?: string) {
+    setEscalationSubmitting(true);
+    setEscalationError(null);
+    try {
+      const res = await fetch("/api/assistant/escalate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages,
+          contactEmail,
+          contactName: session?.user?.name ?? undefined,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setEscalationError(data?.error ?? "Couldn't reach our team — try again in a moment.");
+        return;
+      }
+      setEscalationSent(true);
+      setEscalationOffer(false);
+      setCollectingEmail(false);
+    } catch {
+      setEscalationError("Couldn't reach our team — check your connection and try again.");
+    } finally {
+      setEscalationSubmitting(false);
+    }
+  }
+
+  function confirmHandoff() {
+    if (session?.user) {
+      submitEscalation();
+    } else {
+      setCollectingEmail(true);
+      setEscalationError(null);
+    }
+  }
+
+  function handleEmailSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmedEmail = escalationEmail.trim();
+    if (!EMAIL_RE.test(trimmedEmail)) {
+      setEscalationError("Enter a valid email address so our team can follow up.");
+      return;
+    }
+    submitEscalation(trimmedEmail);
+  }
+
   if (!mounted) return null;
+
+  // The always-available suggestion row stays out of the way while the
+  // handoff micro-flow is actively asking something, so there's only ever
+  // one set of buttons competing for a click at a time.
+  const showSuggestions = !loading && !escalationOffer && !collectingEmail;
 
   return createPortal(
     <div className="fixed bottom-24 right-6 z-40 flex flex-col items-end gap-3">
@@ -265,35 +481,118 @@ export function AssistantWidget() {
               </button>
             </div>
 
-            <div className="min-w-0 flex-1 space-y-2 overflow-y-auto p-4">
+            <div className="min-w-0 flex-1 space-y-3 overflow-y-auto p-4">
               {messages.length === 0 && (
-                <div className="space-y-3">
-                  <p className="text-sm text-slate-400">
-                    Hi, I&apos;m Atom. Ask me about pricing, booking a class, policies, or anything else about Bass
-                    Note Piano.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {SUGGESTIONS.map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => sendMessage(s)}
-                        className="rounded-full border border-ink/10 px-3 py-1.5 text-xs text-slate-300 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))]"
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <p className="text-sm text-slate-400">
+                  Hi, I&apos;m Atom. Ask me about pricing, booking a class, policies, or anything else about Bass Note
+                  Piano.
+                </p>
               )}
 
               {messages.map((m, i) => (
-                <MessageBubble key={i} message={m} />
+                <MessageBubble
+                  key={i}
+                  message={m}
+                  feedback={feedback[i] ?? null}
+                  feedbackBusy={feedbackBusy === i}
+                  onRate={(rating) => handleRate(i, rating)}
+                />
               ))}
               {loading && <TypingIndicator />}
               {error && <p className="text-center text-xs text-red-400">{error}</p>}
+
+              {escalationOffer && (
+                <div className="space-y-2 rounded-xl border border-ink/10 bg-slate-900/60 p-3">
+                  <p className="text-sm text-slate-300">Want me to connect you with our customer service team? A real person can dig into your account directly.</p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={declineHandoff}
+                      disabled={escalationSubmitting}
+                      className="flex-1 rounded-lg border border-ink/10 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                    >
+                      No, keep trying
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmHandoff}
+                      disabled={escalationSubmitting}
+                      className="flex-1 rounded-lg bg-[rgb(var(--c-a-400))] py-1.5 text-xs font-semibold text-slate-950 transition disabled:opacity-60"
+                    >
+                      {escalationSubmitting ? "Connecting…" : "Yes, connect me"}
+                    </button>
+                  </div>
+                  {escalationError && <p className="text-xs text-red-400">{escalationError}</p>}
+                </div>
+              )}
+
+              {collectingEmail && (
+                <form onSubmit={handleEmailSubmit} className="space-y-2 rounded-xl border border-ink/10 bg-slate-900/60 p-3">
+                  <p className="text-sm text-slate-300">What&apos;s the best email to reach you at?</p>
+                  <input
+                    type="email"
+                    value={escalationEmail}
+                    onChange={(e) => setEscalationEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    autoFocus
+                    maxLength={320}
+                    disabled={escalationSubmitting}
+                    className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-1.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-[rgb(var(--c-a-400)/0.4)]"
+                  />
+                  {escalationError && <p className="text-xs text-red-400">{escalationError}</p>}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={declineHandoff}
+                      disabled={escalationSubmitting}
+                      className="flex-1 rounded-lg border border-ink/10 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={escalationSubmitting || !escalationEmail.trim()}
+                      className="flex-1 rounded-lg bg-[rgb(var(--c-a-400))] py-1.5 text-xs font-semibold text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {escalationSubmitting ? "Sending…" : "Notify the team"}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {escalationSent && (
+                <p className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-sm text-emerald-300">
+                  ✅ Done — I&apos;ve flagged this chat for our team and they&apos;ll follow up by email. Feel free to keep
+                  asking me anything else in the meantime.
+                </p>
+              )}
+
               <div ref={messagesEndRef} />
             </div>
+
+            {showSuggestions && (
+              <div className="flex flex-wrap gap-1.5 border-t border-ink/10 px-4 py-2.5">
+                {SUGGESTIONS.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => sendMessage(s)}
+                    disabled={loading}
+                    className="rounded-full border border-ink/10 px-2.5 py-1 text-xs text-slate-300 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))] disabled:opacity-50"
+                  >
+                    {s}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={offerHandoff}
+                  disabled={loading || escalationSent}
+                  className="rounded-full border border-ink/10 px-2.5 py-1 text-xs text-slate-400 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))] disabled:opacity-50"
+                >
+                  🧑‍💼 Talk to our team
+                </button>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="flex min-w-0 gap-2 border-t border-ink/10 p-3">
               <input
