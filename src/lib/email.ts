@@ -2,6 +2,13 @@ import { Resend } from "resend";
 import type { VerificationPurpose } from "@prisma/client";
 
 const EMAIL_FROM = process.env.EMAIL_FROM ?? "Bass Note Piano <noreply@bassnotepiano.com>";
+// Real inbox (Squarespace-forwarded), not the noreply sender above. Set so
+// hitting "reply" on any app email actually reaches someone, and the
+// footer has a real contact address rather than just a link back into the
+// app. Not a substitute for the physical mailing address CAN-SPAM
+// requires (that's still pending); this just closes the "there's no way to
+// write back" gap in the meantime.
+const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO ?? "music@bassnotepiano.com";
 
 /** Builds an absolute in-app URL for an email link — NEXTAUTH_URL has no trailing slash (matches every other usage of it in this codebase). */
 export function getAppUrl(path: string): string {
@@ -50,7 +57,7 @@ async function sendEmail({ to, subject, html, text }: SendEmailParams): Promise<
     return;
   }
 
-  const result = await client.emails.send({ from: EMAIL_FROM, to, subject, html, text });
+  const result = await client.emails.send({ from: EMAIL_FROM, to, subject, html, text, replyTo: EMAIL_REPLY_TO });
   if (result.error) {
     throw new Error(`Resend failed to send to ${to}: ${result.error.message}`);
   }
@@ -106,8 +113,11 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
         </tr>
         <tr>
           <td style="padding:22px 32px 28px;border-top:1px solid #efece4;">
-            <p style="margin:0;font-size:12px;line-height:1.6;color:#999999;">
+            <p style="margin:0 0 6px;font-size:12px;line-height:1.6;color:#999999;">
               ${footerNote}
+            </p>
+            <p style="margin:0;font-size:12px;line-height:1.6;color:#999999;">
+              Questions? Write to <a href="mailto:${EMAIL_REPLY_TO}" style="color:#8a6d1f;text-decoration:underline;">${EMAIL_REPLY_TO}</a>.
             </p>
           </td>
         </tr>
