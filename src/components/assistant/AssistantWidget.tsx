@@ -294,7 +294,7 @@ function TypingIndicator() {
 }
 
 export function AssistantWidget() {
-  const { data: session, status: sessionStatus } = useSession();
+  const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [showGreeting, setShowGreeting] = useState(false);
@@ -333,30 +333,15 @@ export function AssistantWidget() {
     setActiveEscalationId(readStoredEscalationId());
   }, []);
 
-  // Per direct instruction: an anonymous visitor's plain Atom chat lives
-  // only in this component's own state — nothing written to storage, so a
-  // reload starts clean. A signed-in visitor's conversation is the opposite:
-  // stored server-side (see loadPersistedHistory), fetched here once the
-  // session status actually resolves, so it survives a reload/new device.
-  // Waiting on sessionStatus (rather than firing on mount unconditionally)
-  // avoids a request for a still-anonymous-looking session that's actually
-  // about to resolve to signed-in a moment later.
-  useEffect(() => {
-    if (sessionStatus !== "authenticated") return;
-    let cancelled = false;
-    fetch("/api/assistant/history")
-      .then((res) => res.json())
-      .then((data) => {
-        if (!cancelled && Array.isArray(data?.messages)) setMessages(data.messages);
-      })
-      .catch(() => {
-        // Best-effort — worst case the visitor starts this tab's session
-        // without their older history and it's still there next time.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [sessionStatus]);
+  // Per direct instruction: the live widget always opens on a clean slate,
+  // signed in or not. Nothing here ever hydrates `messages` from
+  // /api/assistant/history on mount. A signed-in visitor's conversation is
+  // still saved server-side on every exchange (see appendPersistedMessages,
+  // called from the API route), it's just no longer replayed back into this
+  // chat window; Settings → Privacy → History → Atom is where that history
+  // is actually readable now (see AssistantHistorySection.tsx). An
+  // anonymous visitor's chat was never stored server-side at all, so for
+  // them this was already true.
 
   useEffect(() => {
     if (!mounted) return;

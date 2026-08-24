@@ -7,6 +7,7 @@ import { signOut } from "next-auth/react";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { ThemePicker } from "@/components/theme/ThemePicker";
 import { Switch } from "@/components/ui/switch";
+import type { AssistantMessage } from "@/lib/assistant";
 import {
   updatePasswordAction,
   updateNotificationPreferencesAction,
@@ -19,6 +20,7 @@ interface AccountSettingsProps {
   hasCurriculumAccess: boolean;
   classCredits: number;
   initialNotificationPreferences: NotificationPreferencesInput;
+  assistantHistory: AssistantMessage[];
 }
 
 const TAB_ICONS = {
@@ -33,6 +35,7 @@ const TAB_ICONS = {
   about: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 7.5h.01",
   logout: "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9",
   danger: "M4 7h16M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m3 0-1 12a2 2 0 01-2 2H8a2 2 0 01-2-2L5 7h14z",
+  privacy: "M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z",
 } as const;
 
 const TABS = [
@@ -41,6 +44,7 @@ const TABS = [
   { id: "password", label: "Password", icon: TAB_ICONS.password },
   { id: "appearance", label: "Themes & Appearance", icon: TAB_ICONS.appearance },
   { id: "tutorials", label: "Tutorials", icon: TAB_ICONS.tutorials },
+  { id: "privacy", label: "Privacy & Data", icon: TAB_ICONS.privacy },
   { id: "danger", label: "Delete Account", icon: TAB_ICONS.danger },
 ] as const;
 
@@ -159,18 +163,67 @@ function TabContent({
   hasCurriculumAccess,
   classCredits,
   initialNotificationPreferences,
+  assistantHistory,
 }: {
   tab: TabId;
   hasCurriculumAccess: boolean;
   classCredits: number;
   initialNotificationPreferences: NotificationPreferencesInput;
+  assistantHistory: AssistantMessage[];
 }) {
   if (tab === "notifications") return <NotificationSettingsSection initial={initialNotificationPreferences} />;
   if (tab === "membership") return <MembershipSection hasCurriculumAccess={hasCurriculumAccess} classCredits={classCredits} />;
   if (tab === "appearance") return <AppearanceSection />;
   if (tab === "tutorials") return <TutorialsSection />;
+  if (tab === "privacy") return <PrivacySection history={assistantHistory} />;
   if (tab === "danger") return <DangerZoneSection />;
   return <PasswordSection />;
+}
+
+// Atom's live chat window always opens on a clean slate now (see
+// AssistantWidget.tsx). This is where the actual saved history lives
+// instead. Read-only: it ages out on its own after 30 days
+// (pruneStaleAssistantHistory in assistant.ts), so there's no self-service
+// clear-now button here, just a pointer to messaging the studio for anyone
+// who wants it gone sooner.
+function PrivacySection({ history }: { history: AssistantMessage[] }) {
+  return (
+    <SectionCard title="Privacy & data" description="What's saved about your conversations, and where to go for the rest.">
+      <div>
+        <h3 className="text-sm font-medium text-slate-200">History → Atom</h3>
+        <p className="mt-1 text-xs text-slate-500">
+          Atom&apos;s chat window always opens fresh, but everything you&apos;ve asked it while signed in is kept here for 30
+          days, then deleted on its own: {history.length} message{history.length === 1 ? "" : "s"} right now.
+        </p>
+        <div className="mt-3 max-h-96 space-y-2 overflow-y-auto rounded-xl border border-ink/10 p-3">
+          {history.length === 0 ? (
+            <p className="py-6 text-center text-xs text-slate-600">
+              Nothing here yet. Questions you ask Atom while signed in will show up here.
+            </p>
+          ) : (
+            history.map((message, index) => (
+              <div
+                key={index}
+                className={`rounded-lg px-3 py-2 text-xs ${
+                  message.role === "user" ? "ml-8 bg-[rgb(var(--c-a-400)/0.12)] text-slate-100" : "mr-8 bg-slate-900 text-slate-300"
+                }`}
+              >
+                <p className="mb-0.5 font-medium text-slate-500">{message.role === "user" ? "You" : "Atom"}</p>
+                <p className="whitespace-pre-wrap">{message.content}</p>
+              </div>
+            ))
+          )}
+        </div>
+        <p className="mt-3 text-xs text-slate-500">
+          Want it gone sooner than 30 days? Message us directly through the app. See the{" "}
+          <Link href="/privacy" className="text-[rgb(var(--c-a-300))] hover:text-[rgb(var(--c-a-200))]">
+            Privacy policy
+          </Link>{" "}
+          for how deletion works.
+        </p>
+      </div>
+    </SectionCard>
+  );
 }
 
 function AppearanceSection() {
@@ -187,7 +240,7 @@ function AppearanceSection() {
   );
 }
 
-function AccountSettingsInner({ hasCurriculumAccess, classCredits, initialNotificationPreferences }: AccountSettingsProps) {
+function AccountSettingsInner({ hasCurriculumAccess, classCredits, initialNotificationPreferences, assistantHistory }: AccountSettingsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
@@ -242,6 +295,7 @@ function AccountSettingsInner({ hasCurriculumAccess, classCredits, initialNotifi
             hasCurriculumAccess={hasCurriculumAccess}
             classCredits={classCredits}
             initialNotificationPreferences={initialNotificationPreferences}
+            assistantHistory={assistantHistory}
           />
         </div>
       </div>
@@ -257,6 +311,7 @@ function AccountSettingsInner({ hasCurriculumAccess, classCredits, initialNotifi
             hasCurriculumAccess={hasCurriculumAccess}
             classCredits={classCredits}
             initialNotificationPreferences={initialNotificationPreferences}
+            assistantHistory={assistantHistory}
           />
         )}
       </SlideOverPanel>

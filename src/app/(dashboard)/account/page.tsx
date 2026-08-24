@@ -2,13 +2,14 @@ import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getClassCreditBalance } from "@/lib/classSchedule";
+import { loadPersistedHistory } from "@/lib/assistant";
 import { AccountSettings } from "./AccountSettings";
 
 export default async function AccountPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/account");
 
-  const [user, credits] = await Promise.all([
+  const [user, credits, assistantHistory] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
@@ -19,6 +20,7 @@ export default async function AccountPage() {
       },
     }),
     getClassCreditBalance(session.user.id),
+    loadPersistedHistory(session.user.id),
   ]);
   if (!user) redirect("/login");
 
@@ -32,6 +34,7 @@ export default async function AccountPage() {
         notifyEmailSocial: user.notifyEmailSocial,
         notifyEmailReminders: user.notifyEmailReminders,
       }}
+      assistantHistory={assistantHistory}
     />
   );
 }
