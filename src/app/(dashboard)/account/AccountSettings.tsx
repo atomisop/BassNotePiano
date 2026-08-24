@@ -7,7 +7,13 @@ import { signOut } from "next-auth/react";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { ThemePicker } from "@/components/theme/ThemePicker";
 import { Switch } from "@/components/ui/switch";
-import { updatePasswordAction, updateNotificationPreferencesAction, type NotificationPreferencesInput } from "./actions";
+import {
+  updatePasswordAction,
+  updateNotificationPreferencesAction,
+  requestAccountDeletionCodeAction,
+  confirmAccountDeletionAction,
+  type NotificationPreferencesInput,
+} from "./actions";
 
 interface AccountSettingsProps {
   hasCurriculumAccess: boolean;
@@ -26,6 +32,7 @@ const TAB_ICONS = {
   chevron: "M9 18l6-6-6-6",
   about: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 7.5h.01",
   logout: "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9",
+  danger: "M4 7h16M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m3 0-1 12a2 2 0 01-2 2H8a2 2 0 01-2-2L5 7h14z",
 } as const;
 
 const TABS = [
@@ -34,6 +41,7 @@ const TABS = [
   { id: "password", label: "Password", icon: TAB_ICONS.password },
   { id: "appearance", label: "Themes & Appearance", icon: TAB_ICONS.appearance },
   { id: "tutorials", label: "Tutorials", icon: TAB_ICONS.tutorials },
+  { id: "danger", label: "Delete Account", icon: TAB_ICONS.danger },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -161,6 +169,7 @@ function TabContent({
   if (tab === "membership") return <MembershipSection hasCurriculumAccess={hasCurriculumAccess} classCredits={classCredits} />;
   if (tab === "appearance") return <AppearanceSection />;
   if (tab === "tutorials") return <TutorialsSection />;
+  if (tab === "danger") return <DangerZoneSection />;
   return <PasswordSection />;
 }
 
@@ -391,6 +400,171 @@ function PasswordSection() {
           {submitting ? "Saving…" : "Change password"}
         </button>
       </form>
+    </SectionCard>
+  );
+}
+
+// Three stages: the button sits alone until clicked (nothing pre-filled,
+// nothing pre-triggered), then a password field + "send code" button, then
+// — once a code has actually been emailed — the code field, the explicit
+// confirmation checkbox, and the real delete button. Password and code are
+// both re-checked server-side on the final submit regardless of what this
+// component thinks already happened (see confirmAccountDeletionAction).
+function DangerZoneSection() {
+  const [stage, setStage] = useState<"idle" | "password" | "code">("idle");
+  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sendingCode, setSendingCode] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  function reset() {
+    setStage("idle");
+    setPassword("");
+    setCode("");
+    setConfirmed(false);
+    setError(null);
+  }
+
+  async function handleSendCode(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSendingCode(true);
+    const result = await requestAccountDeletionCodeAction(password);
+    setSendingCode(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setStage("code");
+  }
+
+  async function handleDelete(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!confirmed) {
+      setError("Confirm you understand this can't be undone.");
+      return;
+    }
+    setDeleting(true);
+    const result = await confirmAccountDeletionAction(password, code);
+    if (!result.ok) {
+      setDeleting(false);
+      setError(result.error);
+      return;
+    }
+    // The account row is already gone server-side — this just clears the
+    // browser's session cookie and leaves. Not setDeleting(false): there's
+    // nothing left to re-enable a form for.
+    await signOut({ callbackUrl: "/" });
+  }
+
+  return (
+    <SectionCard title="Danger zone" description="Permanently delete your account and everything tied to it.">
+      <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-4">
+        <p className="text-sm text-slate-200">
+          This deletes your profile, curriculum progress, class bookings, credits, messages, and everything else tied
+          to your account.
+        </p>
+        <p className="mt-1.5 text-xs font-medium text-red-300">
+          This can&apos;t be undone. Once your data is deleted there is no way to get it back — not even by
+          contacting us.
+        </p>
+
+        {stage === "idle" && (
+          <button
+            type="button"
+            onClick={() => setStage("password")}
+            className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-500"
+          >
+            Delete my account
+          </button>
+        )}
+
+        {stage === "password" && (
+          <form onSubmit={handleSendCode} className="mt-4 space-y-3">
+            <input
+              type="password"
+              placeholder="Current password"
+              autoComplete="current-password"
+              autoFocus
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={sendingCode}
+              className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-red-400/60 disabled:opacity-60"
+            />
+            {error && <p className="text-xs text-red-400">{error}</p>}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={reset}
+                disabled={sendingCode}
+                className="flex-1 rounded-lg border border-ink/10 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={sendingCode || !password}
+                className="flex-1 rounded-lg bg-red-600 py-2 text-xs font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {sendingCode ? "Sending code…" : "Send verification code"}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {stage === "code" && (
+          <form onSubmit={handleDelete} className="mt-4 space-y-3">
+            <p className="text-xs text-slate-500">
+              We emailed a 6-digit code to your account&apos;s email address. It expires in 10 minutes.
+            </p>
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              placeholder="6-digit code"
+              maxLength={6}
+              autoFocus
+              required
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              disabled={deleting}
+              className="w-full glass-surface-subtle px-3 py-2 text-center text-sm tracking-[0.4em] text-slate-100 outline-none transition focus:border-red-400/60 disabled:opacity-60"
+            />
+            <label className="flex items-start gap-2 text-xs text-slate-400">
+              <input
+                type="checkbox"
+                checked={confirmed}
+                onChange={(e) => setConfirmed(e.target.checked)}
+                disabled={deleting}
+                className="mt-0.5 accent-red-500"
+              />
+              I understand this permanently deletes my account and everything in it, and can&apos;t be undone.
+            </label>
+            {error && <p className="text-xs text-red-400">{error}</p>}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={reset}
+                disabled={deleting}
+                className="flex-1 rounded-lg border border-ink/10 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={deleting || !confirmed || code.length !== 6}
+                className="flex-1 rounded-lg bg-red-600 py-2 text-xs font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : "Permanently delete my account"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </SectionCard>
   );
 }

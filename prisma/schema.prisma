@@ -87,6 +87,7 @@ enum VerificationPurpose {
   CHANGE_PASSWORD // confirm a password change from account settings
   CHANGE_NAME // confirm a display name change
   CHANGE_AVATAR // confirm a profile photo change
+  DELETE_ACCOUNT // confirm permanent account deletion from account settings — unlike CHANGE_*, still code-gated (see the 2026-08-07 decision note in account/actions.ts): deleting is irreversible, so it keeps the extra step the others dropped
 }
 
 // ---------------------------------------------------------------------------

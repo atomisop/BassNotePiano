@@ -111,10 +111,13 @@ function AtomButton({ onClick, label }: { onClick: () => void; label: string }) 
   );
 }
 
-// Deliberately tiny and low-contrast until hovered/rated — a CSAT prompt
-// that competed visually with the actual answer would be worse than no
-// CSAT prompt at all. Once rated, the chosen icon stays lit and both
-// buttons go inert (one vote per reply, no un-voting).
+// Deliberately tiny and low-contrast — a CSAT prompt that competed
+// visually with the actual answer would be worse than no CSAT prompt at
+// all. Rating stays changeable (clicking the other icon switches it,
+// clicking the already-selected one is a no-op) rather than locking in
+// after the first click — a visitor who mis-tapped, or who changes their
+// mind after Atom's follow-up actually helps, isn't stuck with their first
+// answer.
 function FeedbackButtons({
   rating,
   busy,
@@ -125,16 +128,17 @@ function FeedbackButtons({
   onRate: (rating: FeedbackRating) => void;
 }) {
   return (
-    <div className="mt-1 flex items-center gap-0.5 pl-1">
+    <div className="mt-1 flex items-center gap-1 pl-1">
+      <span className="text-[10px] text-slate-600">Was this answer satisfying?</span>
       <button
         type="button"
         onClick={() => onRate("UP")}
-        disabled={busy || rating !== null}
+        disabled={busy}
         aria-label="Helpful"
         aria-pressed={rating === "UP"}
         className={`flex h-5 w-5 items-center justify-center rounded transition ${
           rating === "UP" ? "text-[rgb(var(--c-a-400))]" : "text-slate-600 hover:text-slate-400"
-        } disabled:cursor-default`}
+        } disabled:cursor-default disabled:opacity-60`}
       >
         <svg viewBox="0 0 24 24" fill={rating === "UP" ? "currentColor" : "none"} className="h-3 w-3">
           <path
@@ -148,12 +152,12 @@ function FeedbackButtons({
       <button
         type="button"
         onClick={() => onRate("DOWN")}
-        disabled={busy || rating !== null}
+        disabled={busy}
         aria-label="Not helpful"
         aria-pressed={rating === "DOWN"}
         className={`flex h-5 w-5 items-center justify-center rounded transition ${
           rating === "DOWN" ? "text-red-400" : "text-slate-600 hover:text-slate-400"
-        } disabled:cursor-default`}
+        } disabled:cursor-default disabled:opacity-60`}
       >
         <svg viewBox="0 0 24 24" fill={rating === "DOWN" ? "currentColor" : "none"} className="h-3 w-3">
           <path
@@ -352,7 +356,9 @@ export function AssistantWidget() {
   }
 
   async function handleRate(index: number, rating: FeedbackRating) {
-    if (feedback[index] || feedbackBusy === index) return;
+    // Re-clicking the already-selected rating is a no-op; switching to the
+    // other one is always allowed (see the FeedbackButtons comment above).
+    if (feedback[index] === rating || feedbackBusy === index) return;
     setFeedbackBusy(index);
     setFeedback((prev) => ({ ...prev, [index]: rating }));
     try {
