@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
+import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
 import { saveOnboardingAction, checkUsernameAvailableAction } from "./actions";
 import { Stepper } from "@/components/ui/Stepper";
 
@@ -56,22 +57,29 @@ function OptionButton({
   label,
   selected,
   onClick,
+  comingSoon,
 }: {
   label: string;
   selected: boolean;
   onClick: () => void;
+  comingSoon?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${
+      className={`flex w-full items-center justify-between gap-2 rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${
         selected
           ? "border-[rgb(var(--c-a-400)/0.6)] bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-200))]"
           : "border-ink/10 bg-slate-950 text-slate-300 hover:border-ink/15"
       }`}
     >
       {label}
+      {comingSoon && (
+        <span className="shrink-0 rounded-full bg-slate-800 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+          Coming soon
+        </span>
+      )}
     </button>
   );
 }
@@ -189,6 +197,7 @@ export function OnboardingWizard() {
                 label={opt.label}
                 selected={instrument === opt.value}
                 onClick={() => setInstrument(opt.value)}
+                comingSoon={INSTRUMENTS_COMING_SOON.has(opt.value)}
               />
             ))}
           {step === 2 &&

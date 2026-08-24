@@ -4,6 +4,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
+import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
 import {
   updateNameAction,
   updateAvatarAction,
@@ -124,18 +125,33 @@ const LEARNING_GOALS: { value: LearningGoal; label: string }[] = [
   { value: "HOBBYIST", label: "Just for fun (hobbyist)" },
 ];
 
-function Pill({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
+function Pill({
+  label,
+  selected,
+  onClick,
+  comingSoon,
+}: {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+  comingSoon?: boolean;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
         selected
           ? "border-[rgb(var(--c-a-400)/0.6)] bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-200))]"
           : "border-ink/10 bg-slate-950 text-slate-400 hover:border-ink/15"
       }`}
     >
       {label}
+      {comingSoon && (
+        <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+          Coming soon
+        </span>
+      )}
     </button>
   );
 }
@@ -207,7 +223,13 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
           <p className="mb-1.5 text-xs font-medium text-slate-400">Primary instrument</p>
           <div className="flex flex-wrap gap-2">
             {INSTRUMENTS.map((opt) => (
-              <Pill key={opt.value} label={opt.label} selected={instrument === opt.value} onClick={() => setInstrument(opt.value)} />
+              <Pill
+                key={opt.value}
+                label={opt.label}
+                selected={instrument === opt.value}
+                onClick={() => setInstrument(opt.value)}
+                comingSoon={INSTRUMENTS_COMING_SOON.has(opt.value)}
+              />
             ))}
           </div>
         </div>

@@ -17,3 +17,14 @@ export const SKILL_LABEL: Record<SkillLevel, string> = {
   INTERMEDIATE: "Intermediate",
   ADVANCED: "Advanced",
 };
+
+/**
+ * Instruments in the picker that the studio doesn't actually teach yet.
+ * Still choosable everywhere PrimaryInstrument is picked (the class
+ * registration form, onboarding, and the profile editor): someone
+ * registering interest or setting this as their own instrument ahead of
+ * launch is exactly the demand signal worth capturing, not something to
+ * hide. Flagged "Coming soon" wherever it's offered as a choice instead, so
+ * nobody picks it thinking lessons already exist.
+ */
+export const INSTRUMENTS_COMING_SOON = new Set<PrimaryInstrument>(["DRUMS", "VOCAL"]);

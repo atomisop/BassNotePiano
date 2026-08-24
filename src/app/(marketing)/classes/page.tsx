@@ -9,7 +9,7 @@ import { ClassRegistrationForm } from "./ClassRegistrationForm";
 export const metadata: Metadata = pageMetadata({
   title: "Register for a class",
   description:
-    "Register your interest in learning Ethiopian kiñit with us: piano, guitar, bass, drums or voice, at any level. No account needed to apply.",
+    "Register for classes learning Ethiopian kiñit on piano, guitar, or bass, at any level, with drums and voice coming soon. No account needed to apply.",
   path: "/classes",
 });
 

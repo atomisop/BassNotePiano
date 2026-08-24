@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import type { PrimaryInstrument, SkillLevel } from "@prisma/client";
+import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
 import { submitClassRegistrationAction } from "./actions";
 
 const INSTRUMENTS: { value: PrimaryInstrument; label: string }[] = [
@@ -19,7 +21,17 @@ const SKILL_LEVELS: { value: SkillLevel; label: string }[] = [
   { value: "ADVANCED", label: "Advanced" },
 ];
 
-function Pill({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
+function Pill({
+  label,
+  selected,
+  onClick,
+  comingSoon,
+}: {
+  label: string;
+  selected: boolean;
+  onClick: () => void;
+  comingSoon?: boolean;
+}) {
   return (
     // aria-pressed carries the selection. Without it the only thing marking
     // the chosen instrument is a colour change, which is invisible to a screen
@@ -28,13 +40,21 @@ function Pill({ label, selected, onClick }: { label: string; selected: boolean; 
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-a-400)/0.7)] ${
+      className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-a-400)/0.7)] ${
         selected
           ? "border-[rgb(var(--c-a-400)/0.6)] bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-200))]"
           : "border-ink/10 bg-slate-950 text-slate-400 hover:border-ink/15"
       }`}
     >
       {label}
+      {/* Still a real, selectable choice (see INSTRUMENTS_COMING_SOON's own
+          doc comment): registering interest ahead of launch is the whole
+          point, this just sets the right expectation about timing. */}
+      {comingSoon && (
+        <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+          Coming soon
+        </span>
+      )}
     </button>
   );
 }
@@ -79,10 +99,17 @@ export function ClassRegistrationForm() {
       <div className="glass-surface-elevated p-8 text-center">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Request received</p>
         <h3 className="mt-2 font-serif text-xl text-slate-50">Thanks, {fullName.split(" ")[0]}.</h3>
-        <p className="mt-2 text-sm text-slate-400">
-          We&apos;ve got your registration for {INSTRUMENTS.find((i) => i.value === instrument)?.label.toLowerCase()} lessons.
-          We&apos;ll reach out at {email} or {phone} shortly.
-        </p>
+        {instrument && INSTRUMENTS_COMING_SOON.has(instrument) ? (
+          <p className="mt-2 text-sm text-slate-400">
+            We don&apos;t have {INSTRUMENTS.find((i) => i.value === instrument)?.label.toLowerCase()} lessons running yet, but
+            we&apos;ve saved your interest and will reach out at {email} or {phone} as soon as we do.
+          </p>
+        ) : (
+          <p className="mt-2 text-sm text-slate-400">
+            We&apos;ve got your registration for {INSTRUMENTS.find((i) => i.value === instrument)?.label.toLowerCase()} lessons.
+            We&apos;ll reach out at {email} or {phone} shortly.
+          </p>
+        )}
       </div>
     );
   }
@@ -159,7 +186,13 @@ export function ClassRegistrationForm() {
         </p>
         <div className="flex flex-wrap gap-2">
           {INSTRUMENTS.map((opt) => (
-            <Pill key={opt.value} label={opt.label} selected={instrument === opt.value} onClick={() => setInstrument(opt.value)} />
+            <Pill
+              key={opt.value}
+              label={opt.label}
+              selected={instrument === opt.value}
+              onClick={() => setInstrument(opt.value)}
+              comingSoon={INSTRUMENTS_COMING_SOON.has(opt.value)}
+            />
           ))}
         </div>
       </div>
@@ -199,6 +232,20 @@ export function ClassRegistrationForm() {
       >
         {submitting ? "Submitting…" : "Request to register"}
       </button>
+
+      {/* No account is created by this form (see ClassRegistration's own
+          schema comment), so there's no consent checkbox to gate submission
+          on the way /register does. This is a plain disclosure line, not a
+          click-through, since a name/email/phone lead-capture form is still
+          collecting real personal data from a visitor with nothing else on
+          this page pointing them at how it's handled. */}
+      <p className="text-center text-xs text-slate-500">
+        By submitting, you agree to our{" "}
+        <Link href="/privacy" target="_blank" className="text-[rgb(var(--c-a-300))] underline hover:text-[rgb(var(--c-a-200))]">
+          Privacy policy
+        </Link>
+        .
+      </p>
     </form>
   );
 }
