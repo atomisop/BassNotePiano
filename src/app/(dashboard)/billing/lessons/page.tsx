@@ -35,8 +35,8 @@ export default async function BillingLessonsPage({ searchParams }: { searchParam
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Weekly Classes</p>
         <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Buy class credits</h1>
         <p className="mt-3 text-sm leading-relaxed text-slate-400">
-          1 credit = 30 minutes of live class. $34.99/credit, and Starter, Standard, and Best Value all carry an extra
-          limited-time markdown right now on top of their usual bundle price. Credits never expire.
+          1 credit = 30 minutes of live class. $34.99/credit, and Starter, Standard, and Best Value are all marked down
+          from the $50/credit rate for a limited time, with bigger bundles saving more. Credits never expire.
         </p>
         <div className="mt-6 space-y-3 border-t border-ink/10 pt-6 text-sm text-slate-400">
           <p className="font-medium text-slate-300">Buying for more than one kid?</p>

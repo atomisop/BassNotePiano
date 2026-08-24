@@ -43,18 +43,6 @@ export const PRESET_BUNDLES: PresetBundle[] = [
 export const MIN_CUSTOM_QUANTITY = 1;
 export const MAX_CUSTOM_QUANTITY = 200;
 
-// An extra promotional markdown on top of a bundle tier's own size discount,
-// applied only where tier.discountRate > 0 (Starter, Standard, Best Value,
-// and any custom quantity of 4+), not the single-credit rate. Framed to
-// customers as one plain markdown from the price the tier already showed,
-// not as two percentages stacked and added together: the UI shows "was
-// $125.99, now $87.99, limited time" for Starter, never "10% off, plus 30%
-// off". Currently a manual on/off switch, not a real countdown: flip this
-// back to 0 (or remove the extra step in calculateClassCreditTotal below)
-// when the promotion ends. Feeds into calculateFamilyBundleTotal too, since
-// that function calls calculateClassCreditTotal for its per-recipient price.
-export const LIMITED_TIME_BUNDLE_DISCOUNT_RATE = 0.3;
-
 export interface CreditTotal {
   quantity: number;
   subtotalCents: number;
@@ -62,11 +50,10 @@ export interface CreditTotal {
   totalCents: number;
   discountRate: number;
   perCreditCents: number;
-  /** The bundle's own price before the limited-time markdown: what totalCents used to be, and what the "was" price shows struck through. Equal to totalCents when hasLimitedTimeDiscount is false. */
-  preLimitedTimeTotalCents: number;
-  /** Dollar amount of just the limited-time layer, 0 when it doesn't apply. */
-  limitedTimeDiscountCents: number;
-  hasLimitedTimeDiscount: boolean;
+  /** quantity × the pre-discount $50/credit rate: the "was" price a bundle tier's badge strikes through. Not what's charged; purely the marketing comparison point. */
+  originalTotalCents: number;
+  /** The real, whole-number % off originalTotalCents that totalCents represents, floored so the badge never overstates it. */
+  originalDiscountPercent: number;
 }
 
 /** Nearest dollar, then a cent under it: the same $X.99 "charm price" every other price in the app ends on. */
@@ -90,18 +77,17 @@ export function calculateClassCreditTotal(quantity: number): CreditTotal {
   // would silently charge a hair more than quantity × CREDIT_BASE_PRICE_CENTS,
   // breaking the "1 credit is always $34.99, that never changes" promise
   // on the pricing page.
-  const preLimitedTimeTotalCents = tier.discountRate > 0 ? toCharmPriceCents(rawTotalCents) : rawTotalCents;
-
-  const hasLimitedTimeDiscount = tier.discountRate > 0;
-  const rawLimitedTotalCents = hasLimitedTimeDiscount
-    ? preLimitedTimeTotalCents - Math.round(preLimitedTimeTotalCents * LIMITED_TIME_BUNDLE_DISCOUNT_RATE)
-    : preLimitedTimeTotalCents;
-  const totalCents = hasLimitedTimeDiscount ? toCharmPriceCents(rawLimitedTotalCents) : rawLimitedTotalCents;
-
-  // discountCents is derived from the final (possibly twice charm-rounded)
-  // total, not the other way around, so subtotal - discount = total still
-  // holds exactly on every line-item breakdown that uses it.
+  const totalCents = tier.discountRate > 0 ? toCharmPriceCents(rawTotalCents) : rawTotalCents;
   const discountCents = subtotalCents - totalCents;
+
+  // originalTotalCents is quantity × $50, the same comparison the single-
+  // credit tier has always struck through ($50.00 → $34.99), extended here
+  // to every quantity so a bundle's badge is one real number (the actual
+  // combined % off $50/credit) rather than a separate, made-up promotional
+  // rate stacked on top of the bundle discount.
+  const originalTotalCents = q * CREDIT_ORIGINAL_PRICE_CENTS;
+  const originalDiscountPercent = Math.floor((1 - totalCents / originalTotalCents) * 100);
+
   return {
     quantity: q,
     subtotalCents,
@@ -109,9 +95,8 @@ export function calculateClassCreditTotal(quantity: number): CreditTotal {
     totalCents,
     discountRate: tier.discountRate,
     perCreditCents: Math.round(totalCents / q),
-    preLimitedTimeTotalCents,
-    limitedTimeDiscountCents: preLimitedTimeTotalCents - totalCents,
-    hasLimitedTimeDiscount,
+    originalTotalCents,
+    originalDiscountPercent,
   };
 }
 
@@ -121,10 +106,9 @@ export function calculateClassCreditTotal(quantity: number): CreditTotal {
 // payments.ts for the account verification this is paired with; this file
 // only does the math, on purpose, same "no Prisma in here" reason as the
 // header comment). An *additional* 25% off, stacked on top of whatever
-// price the chosen tier already carries (bundle size discount and the
-// limited-time markdown both included, since this calls
-// calculateClassCreditTotal above for that price), e.g. 3x Starter is
-// 3 × Starter's own current price, then 25% off that combined total.
+// price the chosen tier already carries (its own size discount, via
+// calculateClassCreditTotal above), e.g. 3x Starter is 3 × Starter's own
+// current price, then 25% off that combined total.
 // ---------------------------------------------------------------------------
 
 export const FAMILY_BUNDLE_DISCOUNT_RATE = 0.25;

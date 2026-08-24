@@ -74,7 +74,6 @@ export function IndividualCreditsFlow({ zelleHandle, initialQuantity }: { zelleH
           {total.discountCents > 0 && (
             <p className="mt-1 text-xs text-emerald-400">
               {Math.round((total.discountCents / total.subtotalCents) * 100)}% discount applied
-              {total.hasLimitedTimeDiscount ? " (limited time)" : ""}
             </p>
           )}
         </div>
@@ -111,15 +110,11 @@ export function IndividualCreditsFlow({ zelleHandle, initialQuantity }: { zelleH
               >
                 <div className="flex items-center gap-1.5">
                   <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-a-200))]" : "text-slate-100"}`}>{bundle.label}</p>
-                  {bundleTotal.hasLimitedTimeDiscount && (
-                    <span className="rounded-full bg-[rgb(var(--c-a-400)/0.15)] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[rgb(var(--c-a-300))]">
-                      Limited time
-                    </span>
-                  )}
+                  <span className="rounded-full bg-[rgb(var(--c-a-400)/0.15)] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[rgb(var(--c-a-300))]">
+                    Limited time
+                  </span>
                 </div>
-                {bundleTotal.hasLimitedTimeDiscount && (
-                  <p className="mt-1 text-xs text-slate-600 line-through">{formatUsd(bundleTotal.preLimitedTimeTotalCents)}</p>
-                )}
+                <p className="mt-1 text-xs text-slate-600 line-through">{formatUsd(bundleTotal.originalTotalCents)}</p>
                 <p className="mt-0.5 text-xs text-slate-500">
                   {bundle.quantity} credits · {formatUsd(bundleTotal.perCreditCents)}/credit
                 </p>
@@ -162,7 +157,7 @@ export function IndividualCreditsFlow({ zelleHandle, initialQuantity }: { zelleH
             </button>
             <span className="text-xs text-slate-500">
               {total.discountCents > 0
-                ? `${Math.round((total.discountCents / total.subtotalCents) * 100)}% off at this quantity${total.hasLimitedTimeDiscount ? " (limited time)" : ""}`
+                ? `${Math.round((total.discountCents / total.subtotalCents) * 100)}% off at this quantity`
                 : "no discount below 4 credits"}
             </span>
           </div>
@@ -179,10 +174,7 @@ export function IndividualCreditsFlow({ zelleHandle, initialQuantity }: { zelleH
         </div>
         {total.discountCents > 0 && (
           <div className="mt-1 flex items-center justify-between text-sm text-emerald-400">
-            <span>
-              Discount ({Math.round((total.discountCents / total.subtotalCents) * 100)}%)
-              {total.hasLimitedTimeDiscount ? " · limited time" : ""}
-            </span>
+            <span>Discount ({Math.round((total.discountCents / total.subtotalCents) * 100)}%)</span>
             <span>−{formatUsd(total.discountCents)}</span>
           </div>
         )}

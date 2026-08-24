@@ -200,9 +200,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                 }`}
               >
                 <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-a-200))]" : "text-slate-100"}`}>{bundle.label}</p>
-                {bundleTotal.hasLimitedTimeDiscount && (
-                  <p className="mt-1 text-xs text-slate-600 line-through">{formatUsd(bundleTotal.preLimitedTimeTotalCents)}</p>
-                )}
+                <p className="mt-1 text-xs text-slate-600 line-through">{formatUsd(bundleTotal.originalTotalCents)}</p>
                 <p className="mt-0.5 text-xs text-slate-500">
                   {bundle.quantity} credits · {formatUsd(bundleTotal.perCreditCents)}/credit
                 </p>
