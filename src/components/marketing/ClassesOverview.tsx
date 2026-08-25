@@ -5,8 +5,9 @@ import { ScrollGlassCard } from "@/components/marketing/ScrollGlassCard";
 /**
  * HOMEPAGE REPLACEMENT — 05 CLASSES.
  *
- * Copy is the old homepage's real "Live on Zoom" bento-cell copy; the three
- * facts below it are the app's own real constants (`CLASS_CAPACITY`,
+ * Copy started as the old homepage's real "Live on Zoom" bento-cell copy,
+ * updated to Discord once classes actually moved there; the three facts
+ * below it are the app's own real constants (`CLASS_CAPACITY`,
  * `CANCELLATION_CUTOFF_HOURS`) plus the credit-to-minutes rule already
  * stated in `/classes`' own registration copy — nothing invented.
  */
@@ -16,7 +17,7 @@ export function ClassesOverview() {
       <ScrollGlassCard className="p-6 md:p-12" direction="left">
         <div className="grid gap-12 sm:grid-cols-[1fr_auto] sm:items-start sm:gap-16">
           <div>
-            <p className="label label-muted">Live on Zoom</p>
+            <p className="label label-muted">Live on Discord</p>
             <h2 className="display-2 mt-4 max-w-[22ch] text-balance">Weekly group classes.</h2>
             <p className="lead mt-5 max-w-[46ch] text-slate-300">
               Buy credits, book a seat, show up. Bundle discounts reach 30% and credits never

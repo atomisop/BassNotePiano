@@ -35,7 +35,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: "lessons",
     target: "nav-lessons",
     title: "Online lessons",
-    body: "Book a live weekly class on Zoom using class credits, whenever you want real-time coaching alongside the self-paced curriculum.",
+    body: "Book a live weekly class on Discord using class credits, whenever you want real-time coaching alongside the self-paced curriculum.",
   },
   {
     id: "friends",

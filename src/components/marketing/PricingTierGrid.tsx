@@ -102,7 +102,7 @@ export function PricingTierGrid() {
             </div>
 
             <p className="flex-1 text-xs leading-relaxed text-slate-400">
-              30-minute live classes on Zoom. Credits never expire, and unused ones roll over indefinitely.
+              30-minute live classes on Discord. Credits never expire, and unused ones roll over indefinitely.
             </p>
 
             <Link

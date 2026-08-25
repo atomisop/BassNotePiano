@@ -432,7 +432,7 @@ export function ClassBookingClient({
     <div className="mx-auto max-w-3xl">
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Weekly Classes</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Book a class</h1>
-      <p className="mt-2 text-sm text-slate-500">Live on Zoom · 1 credit = 30 minutes · up to 10 students per class.</p>
+      <p className="mt-2 text-sm text-slate-500">Live on Discord · 1 credit = 30 minutes · up to 10 students per class.</p>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 glass-surface p-5">
         <div>

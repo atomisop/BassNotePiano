@@ -45,7 +45,7 @@ export function SiteFooter() {
             </Link>
             <p className="mt-4 max-w-xs text-sm text-slate-500">
               A digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book: six kiñit scales,
-              spelled correctly in every key, plus live weekly classes on Zoom.
+              spelled correctly in every key, plus live weekly classes on Discord.
             </p>
             <a
               href={DISCORD_INVITE_URL}

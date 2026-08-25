@@ -6,10 +6,10 @@ import { DISCORD_INVITE_URL } from "@/lib/discord";
  * HOMEPAGE — Discord community plug, sitting right after ClassesOverview.
  *
  * Pitched as the community/practice space between classes ("share clips,
- * ask questions"), not a claim about which platform the live session itself
- * runs on. ClassesOverview just above this still says "Live on Zoom", and
- * this is deliberately worded so it doesn't contradict that regardless of
- * how that question eventually gets resolved.
+ * ask questions") rather than repeating the "this is where live classes
+ * happen" claim ClassesOverview just above this already makes — the two
+ * sections cover different parts of the same Discord server rather than
+ * competing to say the same thing.
  *
  * direction="up": ClassesOverview (left) sits right before this and
  * PricingCallout (right) right after, so "up" avoids repeating either

@@ -433,9 +433,9 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
 
 /**
  * Marks attendance and finalizes the booking as COMPLETED — Present and
- * No-show both keep the already-spent credit (there's no Zoom integration
- * here, so this roster is the sole source of truth for who actually used
- * their credits; a no-show is a forfeit, not a refund).
+ * No-show both keep the already-spent credit (there's no Discord
+ * integration here, so this roster is the sole source of truth for who
+ * actually used their credits; a no-show is a forfeit, not a refund).
  */
 export async function markAttendance(bookingId: string, attendance: AttendanceStatus): Promise<void> {
   const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });

@@ -34,7 +34,7 @@ const MENU: MenuItem[] = [
       {
         title: "Live classes",
         description:
-          "Weekly sessions on Zoom. Tell us where you're starting from and we'll get you scheduled.",
+          "Weekly sessions on Discord. Tell us where you're starting from and we'll get you scheduled.",
         url: "/classes",
       },
       {

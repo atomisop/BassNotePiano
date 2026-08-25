@@ -13,6 +13,14 @@ export interface ChangelogEntry {
 // or leaving its date stale would suppress it; keep dates truthful.
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.5.0",
+    date: "2026-08-24",
+    title: "Live classes move to Discord",
+    items: [
+      "Weekly live group classes now happen on Discord instead of Zoom — join the server from the classes page or your account settings",
+    ],
+  },
+  {
     version: "1.4.0",
     date: "2026-08-08",
     title: "Bigger profile photos",

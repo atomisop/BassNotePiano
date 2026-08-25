@@ -136,7 +136,7 @@ export function PricingPageContent() {
       >
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Weekly classes</p>
-          <h2 className="mt-1.5 font-serif text-3xl text-slate-50">Live group coaching on Zoom</h2>
+          <h2 className="mt-1.5 font-serif text-3xl text-slate-50">Live group coaching on Discord</h2>
           <p className="mx-auto mt-2.5 max-w-md text-sm text-slate-300">
             Six recurring weekly classes, capped at 10 students each, on top of your self-paced curriculum. 1 credit
             = <span className="text-slate-500 line-through">{formatUsd(CREDIT_ORIGINAL_PRICE_CENTS)}</span>{" "}

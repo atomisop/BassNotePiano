@@ -236,7 +236,7 @@ export async function sendWelcomeEmail(to: string, name: string | null) {
   const firstName = name?.trim().split(" ")[0];
   const greeting = firstName ? `Welcome, ${escapeHtml(firstName)}!` : "Welcome!";
   const body =
-    "Your account is verified and ready to go. Explore the six-scale Ethiopian kiñit curriculum, book a live Zoom class, or just look around — here's a quick tour of what's here.";
+    "Your account is verified and ready to go. Explore the six-scale Ethiopian kiñit curriculum, book a live Discord class, or just look around — here's a quick tour of what's here.";
   const html = emailShell(greeting, `<p style="margin:0 0 20px;">${body}</p>${ctaButtonHtml({ label: "Learn more about Bass Note Piano", url: getAppUrl("/about") })}`);
   const text = `${greeting}\n\n${body}\n\nLearn more: ${getAppUrl("/about")}`;
   await sendEmail({ to, subject: "Welcome to Bass Note Piano 🎹", html, text });
