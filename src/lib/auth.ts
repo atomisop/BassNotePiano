@@ -119,7 +119,20 @@ export const authOptions: NextAuthOptions = {
   // Account/Session/VerificationToken tables for any OAuth provider added
   // later (e.g. Google sign-in) alongside email/password.
   adapter: PrismaAdapter(prisma),
-  session: { strategy: "jwt" },
+  // maxAge (not just the strategy) is deliberate: edge middleware decodes
+  // the JWT with next-auth/jwt's getToken(), which never runs the jwt
+  // callback below — so a token that was force-signed-out (sessionVersion
+  // bumped) or otherwise invalidated keeps being trusted at the edge for as
+  // long as the cookie itself is valid, regardless of what the callback
+  // would say. NextAuth's own default is 30 days; 7 bounds how long that
+  // mismatch window can last for an action like "sign this person out" that
+  // should feel close to immediate. updateAge (default 24h) still silently
+  // rolls this forward on every active day, so a real, still-signed-in user
+  // never notices — only an idle or force-signed-out session ever hits the
+  // cap. Actually making the edge check DB-fresh would mean every gated
+  // request on the whole site pays a database round trip just to cover this
+  // rare admin action, a worse trade than a bounded staleness window.
+  session: { strategy: "jwt", maxAge: 7 * 24 * 60 * 60 },
   pages: {
     signIn: "/login",
     error: "/login",
