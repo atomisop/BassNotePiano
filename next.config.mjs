@@ -66,7 +66,7 @@ const nextConfig = {
 // org/project/authToken are deliberately NOT read from env here (not an
 // oversight): error events go to GlitchTip (app.glitchtip.com), not
 // sentry.io, and this source-map-upload API is specifically a sentry.io
-// feature GlitchTip doesn't have an equivalent of — there's no org/project
+// feature GlitchTip doesn't have an equivalent of: there's no org/project
 // to authenticate the upload against. Leaving all three unset makes this
 // step no-op gracefully, the same as a missing DSN does; `silent: true`
 // keeps that no-op quiet rather than logging "skipping X" on every build.

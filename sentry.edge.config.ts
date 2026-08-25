@@ -1,6 +1,6 @@
 // STEP 21 — OBSERVABILITY. Edge runtime init — this app's `src/middleware.ts`
 // runs here, not in Node. Auto-loaded via next.config.mjs's
-// `withSentryConfig`. DSN points at GlitchTip, not sentry.io — see
+// `withSentryConfig`. DSN points at GlitchTip, not sentry.io: see
 // src/instrumentation-client.ts. Deliberately minimal: the edge runtime
 // doesn't support everything the Node SDK does (no beforeSend body-scrubbing
 // needed here, since middleware doesn't handle raw form bodies the way

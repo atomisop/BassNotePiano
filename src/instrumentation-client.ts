@@ -6,7 +6,7 @@
 // Turbopack), specifically recommending this file instead — moved rather
 // than leaving a known-deprecated path in place.
 //
-// DSN points at GlitchTip (app.glitchtip.com), not sentry.io — GlitchTip
+// DSN points at GlitchTip (app.glitchtip.com), not sentry.io. GlitchTip
 // implements the same ingestion protocol Sentry does, so the official
 // @sentry/nextjs SDK works against it unmodified, just with a different DSN.
 // See .env.example for where that value comes from.
