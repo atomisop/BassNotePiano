@@ -41,6 +41,7 @@ import { DISCORD_INVITE_URL } from "@/lib/discord";
 const LINKS = [
   { label: "Classes", href: "/classes" },
   { label: "Pricing", href: "/pricing" },
+  { label: "Shop", href: "/shop" },
 ];
 
 export function MarketingNav() {

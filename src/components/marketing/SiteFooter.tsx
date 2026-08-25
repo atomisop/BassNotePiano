@@ -15,6 +15,7 @@ const EXPLORE_LINKS = [
   { href: "/", label: "Home" },
   { href: "/classes", label: "Live classes" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/shop", label: "Shop" },
 ];
 
 const LEGAL_LINKS = [
