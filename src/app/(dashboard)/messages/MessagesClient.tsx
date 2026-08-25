@@ -215,7 +215,7 @@ function MessagesInner({
         <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Messages</h1>
         <p className="mt-4 text-sm text-slate-500">
           You don&apos;t have any friends to message yet. Add some on the{" "}
-          <a href="/friends" className="text-[rgb(var(--c-a-300))] hover:text-[rgb(var(--c-a-200))]">
+          <a href="/friends" className="underline underline-offset-2 text-[rgb(var(--c-a-300))] hover:text-[rgb(var(--c-a-200))]">
             Friends
           </a>{" "}
           page first.

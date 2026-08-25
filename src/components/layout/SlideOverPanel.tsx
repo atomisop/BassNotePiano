@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useDismissDrag } from "@/lib/useDismissDrag";
@@ -25,6 +25,8 @@ export function SlideOverPanel({
 }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  const titleId = useId();
 
   // The panel is full-width on phones and capped at md:max-w-md above that,
   // so the dismiss distance has to be measured rather than assumed.
@@ -85,6 +87,9 @@ export function SlideOverPanel({
               onPointerMove={dismiss.onPointerMove}
               onPointerUp={dismiss.onPointerUp}
               onPointerCancel={dismiss.onPointerUp}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
               className="relative flex h-full w-full flex-col border-l border-ink/10 bg-surface"
             >
             <div className="flex items-center gap-4 border-b border-ink/10 px-6 py-5">
@@ -98,7 +103,7 @@ export function SlideOverPanel({
                   <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
-              <h1 className="truncate font-serif text-lg text-slate-50">{title}</h1>
+              <h1 id={titleId} className="truncate font-serif text-lg text-slate-50">{title}</h1>
             </div>
             <div data-sheet-scroll className="flex-1 overflow-y-auto p-6">{children}</div>
             </motion.div>

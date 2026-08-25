@@ -281,7 +281,7 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
         </div>
         <p className="mt-3 text-xs text-slate-500">
           Want it gone sooner than 30 days? Message us directly through the app. See the{" "}
-          <Link href="/privacy" className="text-[rgb(var(--c-a-300))] hover:text-[rgb(var(--c-a-200))]">
+          <Link href="/privacy" className="underline underline-offset-2 text-[rgb(var(--c-a-300))] hover:text-[rgb(var(--c-a-200))]">
             Privacy policy
           </Link>{" "}
           for how deletion works.
@@ -343,7 +343,7 @@ function AccountSettingsInner({ hasCurriculumAccess, classCredits, initialNotifi
         <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Account</h1>
         <p className="mt-1 text-sm text-slate-500">
           Want to edit your name, username, or photo? Head to{" "}
-          <Link href="/profile" className="text-[rgb(var(--c-a-300))] hover:text-[rgb(var(--c-a-200))]">
+          <Link href="/profile" className="underline underline-offset-2 text-[rgb(var(--c-a-300))] hover:text-[rgb(var(--c-a-200))]">
             your profile
           </Link>
           .
