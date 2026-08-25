@@ -6,7 +6,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { bookClass, bookClassBundle, cancelClassBooking, ClassBookingError, type BundleBookingSelection } from "@/lib/classSchedule";
 import { RateLimitError } from "@/lib/rateLimit";
 
-export async function bookClassAction(scheduleId: string, occurrenceDateMs: number) {
+export async function bookClassAction(scheduleId: string, occurrenceDateMs: number, creditsToBook?: number) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
   // Mirrors the page-level redirect — re-checked here since this Server
@@ -14,7 +14,7 @@ export async function bookClassAction(scheduleId: string, occurrenceDateMs: numb
   if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=lessons");
 
   try {
-    const booking = await bookClass(session.user.id, scheduleId, occurrenceDateMs);
+    const booking = await bookClass(session.user.id, scheduleId, occurrenceDateMs, creditsToBook);
     revalidatePath("/lessons");
     return { ok: true as const, id: booking.id };
   } catch (err) {

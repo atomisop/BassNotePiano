@@ -49,6 +49,12 @@ function formatDuration(min: number) {
   return min >= 60 ? `${min / 60} hr${min > 60 ? "s" : ""}` : `${min} min`;
 }
 
+/** The clock time `credits` worth of 30-minute chunks past `scheduledAtIso` lands on — every credit choice for a row shares the same start, so this is the one thing that actually changes per choice. */
+function formatEndTime(scheduledAtIso: string, credits: number): string {
+  const end = new Date(new Date(scheduledAtIso).getTime() + credits * 30 * 60_000);
+  return end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
 /** Weekday + date only — the time is shown separately as its own column. */
 function formatOccurrenceDay(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
@@ -277,6 +283,28 @@ export function ClassBookingClient({
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [bundleSubmitting, setBundleSubmitting] = useState(false);
 
+  // Every class still starts at the same clock time for everyone booked
+  // into it — a student can only choose to leave earlier than the full
+  // window, spending fewer credits accordingly. Keyed the same way
+  // bookingKey/selectedKeys are.
+  const [chosenCredits, setChosenCredits] = useState<Record<string, number>>({});
+
+  // Defaults to the full window when the student can actually afford it
+  // (matching every row's behavior before this feature existed), but to
+  // whatever they *can* afford otherwise — defaulting to a window they
+  // can't pay for would show "Not enough credits" on first render for
+  // anyone without a full balance, when a shorter, bookable stay was right
+  // there the whole time.
+  function creditsFor(row: OccurrenceRow): number {
+    const key = `${row.scheduleId}:${row.occurrenceDateMs}`;
+    return chosenCredits[key] ?? Math.max(1, Math.min(row.creditCost, credits));
+  }
+
+  function setCreditsFor(row: OccurrenceRow, value: number) {
+    const key = `${row.scheduleId}:${row.occurrenceDateMs}`;
+    setChosenCredits((prev) => ({ ...prev, [key]: value }));
+  }
+
   const displayRows = useMemo(
     () => (selectedDateKey ? rows.filter((r) => dayKey(r.occurrenceDateMs) === selectedDateKey) : rows),
     [rows, selectedDateKey],
@@ -286,7 +314,11 @@ export function ClassBookingClient({
     () => rows.filter((r) => selectedKeys.has(`${r.scheduleId}:${r.occurrenceDateMs}`)),
     [rows, selectedKeys],
   );
-  const selectedCreditTotal = useMemo(() => selectedRows.reduce((sum, r) => sum + r.creditCost, 0), [selectedRows]);
+  const selectedCreditTotal = useMemo(
+    () => selectedRows.reduce((sum, r) => sum + creditsFor(r), 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedRows, chosenCredits],
+  );
   const selectedExceedsBalance = selectedCreditTotal > credits;
 
   function toggleSelected(row: OccurrenceRow) {
@@ -310,10 +342,11 @@ export function ClassBookingClient({
 
   async function handleBook(row: OccurrenceRow) {
     const key = `${row.scheduleId}:${row.occurrenceDateMs}`;
+    const chosen = creditsFor(row);
     setError(null);
     setSuccess(null);
     setBookingKey(key);
-    const result = await bookClassAction(row.scheduleId, row.occurrenceDateMs);
+    const result = await bookClassAction(row.scheduleId, row.occurrenceDateMs, chosen);
     setBookingKey(null);
 
     if (!result.ok) {
@@ -321,7 +354,7 @@ export function ClassBookingClient({
       return;
     }
 
-    setCredits((c) => c - row.creditCost);
+    setCredits((c) => c - chosen);
     setRows((prev) =>
       prev.map((r) =>
         r.scheduleId === row.scheduleId && r.occurrenceDateMs === row.occurrenceDateMs
@@ -334,7 +367,7 @@ export function ClassBookingClient({
         id: result.id,
         label: row.label,
         scheduledAt: row.scheduledAt,
-        creditsSpent: row.creditCost,
+        creditsSpent: chosen,
         status: "SCHEDULED",
         refunded: false,
         attendance: null,
@@ -359,7 +392,11 @@ export function ClassBookingClient({
     setSuccess(null);
     setBundleSubmitting(true);
 
-    const selections = selectedRows.map((r) => ({ scheduleId: r.scheduleId, occurrenceDateMs: r.occurrenceDateMs }));
+    const selections = selectedRows.map((r) => ({
+      scheduleId: r.scheduleId,
+      occurrenceDateMs: r.occurrenceDateMs,
+      creditsToBook: creditsFor(r),
+    }));
     const result = await bookClassBundleAction(selections);
     setBundleSubmitting(false);
     setSelectedKeys(new Set());
@@ -376,7 +413,7 @@ export function ClassBookingClient({
       const succeededKeys = new Set(succeeded.map((r) => `${r.scheduleId}:${r.occurrenceDateMs}`));
       const succeededRows = selectedRows.filter((r) => succeededKeys.has(`${r.scheduleId}:${r.occurrenceDateMs}`));
 
-      setCredits((c) => c - succeededRows.reduce((sum, r) => sum + r.creditCost, 0));
+      setCredits((c) => c - succeededRows.reduce((sum, r) => sum + creditsFor(r), 0));
       setRows((prev) =>
         prev.map((r) =>
           succeededKeys.has(`${r.scheduleId}:${r.occurrenceDateMs}`)
@@ -391,7 +428,7 @@ export function ClassBookingClient({
             id: r.bookingId!,
             label: row.label,
             scheduledAt: row.scheduledAt,
-            creditsSpent: row.creditCost,
+            creditsSpent: creditsFor(row),
             status: "SCHEDULED" as const,
             refunded: false,
             attendance: null,
@@ -529,9 +566,15 @@ export function ClassBookingClient({
                 <div className="glass-surface divide-y divide-ink/10 overflow-hidden">
                   {group.rows.map((row) => {
                     const key = `${row.scheduleId}:${row.occurrenceDateMs}`;
-                    const insufficientCredits = credits < row.creditCost;
+                    const chosen = creditsFor(row);
+                    const insufficientCredits = credits < chosen;
                     const disabled = row.isFull || insufficientCredits || bookingKey !== null || bundleSubmitting;
                     const isSelected = selectedKeys.has(key);
+                    // Every duration option shares row.scheduledAt as its
+                    // start — this offers *when it ends*, not a different
+                    // class time, matching the fixed shared start every
+                    // other student in this same occurrence also gets.
+                    const durationOptions = Array.from({ length: row.creditCost }, (_, i) => i + 1);
                     return (
                       <div key={key} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-6">
                         {/* Independent of the "Book" button below: checking
@@ -552,9 +595,30 @@ export function ClassBookingClient({
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-slate-100">{formatOccurrenceDay(row.scheduledAt)}</p>
                           <p className="mt-0.5 text-xs text-slate-500">
-                            {formatOccurrenceTime(row.scheduledAt)} · {formatDuration(row.durationMin)} ·{" "}
-                            {row.creditCost} credit{row.creditCost === 1 ? "" : "s"}
+                            {formatOccurrenceTime(row.scheduledAt)}–{formatEndTime(row.scheduledAt, chosen)} ·{" "}
+                            {chosen} credit{chosen === 1 ? "" : "s"}
+                            {row.creditCost > 1 && ` of ${formatDuration(row.durationMin)} available`}
                           </p>
+                          {/* Only offered when there's an actual choice to
+                              make — a 30-min class (creditCost 1) has
+                              exactly one possible end time already. */}
+                          {row.creditCost > 1 && (
+                            <label className="mt-1.5 flex items-center gap-2 text-xs text-slate-500">
+                              Stay until
+                              <select
+                                value={chosen}
+                                onChange={(e) => setCreditsFor(row, Number(e.target.value))}
+                                disabled={bookingKey !== null || bundleSubmitting}
+                                className="glass-surface-subtle rounded-md px-2 py-1 text-xs text-slate-200 outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {durationOptions.map((n) => (
+                                  <option key={n} value={n}>
+                                    {formatEndTime(row.scheduledAt, n)} ({n} credit{n === 1 ? "" : "s"})
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          )}
                         </div>
                         <p className="shrink-0 text-xs tabular-nums text-slate-500 sm:w-24 sm:text-right">
                           {row.isFull ? (

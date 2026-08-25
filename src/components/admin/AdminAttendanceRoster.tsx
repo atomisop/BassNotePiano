@@ -11,6 +11,10 @@ interface RosterEntry {
   studentImage: string | null;
   status: "SCHEDULED" | "CANCELED" | "COMPLETED";
   attendance: "PRESENT" | "NO_SHOW" | null;
+  /** Every student in an occurrence shares the same start time, but can
+      book fewer credits than the full window — this is what actually
+      differs per student, so it's what tells you when each one leaves. */
+  creditsSpent: number;
 }
 
 interface OccurrenceGroup {
@@ -46,6 +50,12 @@ function Avatar({ image, name }: { image: string | null; name: string }) {
 
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+/** The clock time `creditsSpent` worth of 30-minute chunks past `scheduledAtIso` lands on. */
+function formatEndTime(scheduledAtIso: string, creditsSpent: number): string {
+  const end = new Date(new Date(scheduledAtIso).getTime() + creditsSpent * 30 * 60_000);
+  return end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
 export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelBooking }: AdminAttendanceRosterProps) {
@@ -117,7 +127,10 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                         <Avatar image={entry.studentImage} name={entry.studentName ?? entry.studentEmail} />
                         <div>
                           <p className="text-sm text-slate-100">{entry.studentName ?? "Student"}</p>
-                          <p className="text-xs text-slate-600">{entry.studentEmail}</p>
+                          <p className="text-xs text-slate-600">
+                            {entry.studentEmail} · until {formatEndTime(occ.scheduledAt, entry.creditsSpent)} (
+                            {entry.creditsSpent} credit{entry.creditsSpent === 1 ? "" : "s"})
+                          </p>
                         </div>
                       </div>
 

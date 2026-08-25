@@ -161,9 +161,30 @@ export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
  * both succeed (Postgres aborts the loser with a serialization failure,
  * surfaced here as a friendly "just filled up" error rather than a crash).
  */
-export async function bookClass(studentId: string, scheduleId: string, occurrenceDateMs: number) {
+/**
+ * `creditsToBook` defaults to the schedule's full window (today's existing
+ * behavior — book the whole thing) but a student can spend fewer credits to
+ * attend only the first part of it. Every SCHEDULED booking for a given
+ * occurrence still shares the exact same start time (`scheduledAt` below) —
+ * it's one live class, not several private lessons — this only lets each
+ * student's own end time, and what they're charged, vary from the window's
+ * maximum. Validated against `schedule.creditCost`, which is by definition
+ * `durationMin / 30` (see the schema comment on ClassSchedule.creditCost),
+ * so it's already the exact ceiling in credits.
+ */
+export async function bookClass(
+  studentId: string,
+  scheduleId: string,
+  occurrenceDateMs: number,
+  creditsToBook?: number,
+) {
   const schedule = await prisma.classSchedule.findUniqueOrThrow({ where: { id: scheduleId } });
   if (!schedule.active) throw new ClassBookingError("This class is no longer offered.");
+
+  const credits = creditsToBook ?? schedule.creditCost;
+  if (!Number.isInteger(credits) || credits < 1 || credits > schedule.creditCost) {
+    throw new ClassBookingError(`Choose between 1 and ${schedule.creditCost} credits for this class.`);
+  }
 
   const occurrenceDate = new Date(occurrenceDateMs);
   const { hour, minute } = parseStartTime(schedule.startTime);
@@ -209,11 +230,11 @@ export async function bookClass(studentId: string, scheduleId: string, occurrenc
         }
 
         const spent = await tx.user.updateMany({
-          where: { id: studentId, classCredits: { gte: schedule.creditCost } },
-          data: { classCredits: { decrement: schedule.creditCost } },
+          where: { id: studentId, classCredits: { gte: credits } },
+          data: { classCredits: { decrement: credits } },
         });
         if (spent.count === 0) {
-          throw new ClassBookingError(`You need ${schedule.creditCost} credits for this class.`);
+          throw new ClassBookingError(`You need ${credits} credit${credits === 1 ? "" : "s"} for this class.`);
         }
 
         if (existing) {
@@ -222,7 +243,7 @@ export async function bookClass(studentId: string, scheduleId: string, occurrenc
             data: {
               status: "SCHEDULED",
               scheduledAt,
-              creditsSpent: schedule.creditCost,
+              creditsSpent: credits,
               attendance: null,
               refunded: false,
               canceledReason: null,
@@ -231,7 +252,7 @@ export async function bookClass(studentId: string, scheduleId: string, occurrenc
         }
 
         return tx.classBooking.create({
-          data: { studentId, scheduleId, occurrenceDate, scheduledAt, creditsSpent: schedule.creditCost },
+          data: { studentId, scheduleId, occurrenceDate, scheduledAt, creditsSpent: credits },
         });
       },
       { isolationLevel: "Serializable" },
@@ -254,7 +275,7 @@ export async function bookClass(studentId: string, scheduleId: string, occurrenc
   // classRegistration.ts already uses for new registrations: notify every
   // ADMIN (today, just the one account), non-blocking so a notification
   // hiccup never fails a real booking.
-  notifyAdminsOfBooking(studentId, schedule, scheduledAt).catch((err) =>
+  notifyAdminsOfBooking(studentId, schedule, scheduledAt, credits).catch((err) =>
     console.error("Admin booking notification failed (non-blocking):", err),
   );
 
@@ -265,6 +286,7 @@ async function notifyAdminsOfBooking(
   studentId: string,
   schedule: { label: string | null; creditCost: number },
   scheduledAt: Date,
+  creditsBooked: number,
 ) {
   const [student, admins] = await Promise.all([
     prisma.user.findUnique({ where: { id: studentId }, select: { name: true, email: true } }),
@@ -272,7 +294,21 @@ async function notifyAdminsOfBooking(
   ]);
   const studentLabel = student?.name ?? student?.email ?? "A student";
   const when = scheduledAt.toLocaleString("en-US", { timeZone: ET_ZONE, dateStyle: "full", timeStyle: "short" });
-  const classLabel = schedule.label ? `${schedule.label} class` : "class";
+  const endsAt = new Date(scheduledAt.getTime() + creditsBooked * 30 * 60_000).toLocaleTimeString("en-US", {
+    timeZone: ET_ZONE,
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  // Real labels already read as full names ("Wednesday class", "Monday
+  // evening class") — appending "class" again produced "Wednesday class
+  // class".
+  const classLabel = schedule.label ?? "class";
+  // Full window ("starting at" only) vs. a partial stay ("X-Y") — the
+  // teacher needs to know when a student is actually leaving if it's
+  // earlier than the whole class, same reason bookClass now accepts a
+  // shorter creditsToBook at all.
+  const spanLabel =
+    creditsBooked === schedule.creditCost ? `starting ${when}` : `${when} to ${endsAt}`;
 
   await Promise.all(
     admins.map((admin) =>
@@ -280,7 +316,7 @@ async function notifyAdminsOfBooking(
         userId: admin.id,
         type: "LESSON_BOOKING_RECEIVED",
         title: "New class booking",
-        body: `${studentLabel} booked the ${when} ${classLabel} (${schedule.creditCost} credit${schedule.creditCost === 1 ? "" : "s"}).`,
+        body: `${studentLabel} booked the ${classLabel} ${spanLabel} (${creditsBooked} credit${creditsBooked === 1 ? "" : "s"}).`,
         emailCategory: "social",
       }),
     ),
@@ -290,6 +326,8 @@ async function notifyAdminsOfBooking(
 export interface BundleBookingSelection {
   scheduleId: string;
   occurrenceDateMs: number;
+  /** Same optional meaning as bookClass's own param — omit for the full window. */
+  creditsToBook?: number;
 }
 
 export interface BundleBookingResult extends BundleBookingSelection {
@@ -330,7 +368,7 @@ export async function bookClassBundle(studentId: string, selections: BundleBooki
   const results: BundleBookingResult[] = [];
   for (const selection of deduped) {
     try {
-      const booking = await bookClass(studentId, selection.scheduleId, selection.occurrenceDateMs);
+      const booking = await bookClass(studentId, selection.scheduleId, selection.occurrenceDateMs, selection.creditsToBook);
       results.push({ ...selection, ok: true, bookingId: booking.id, error: null });
     } catch (err) {
       results.push({
@@ -417,6 +455,10 @@ export interface AdminOccurrenceRosterEntry {
   studentImage: string | null;
   status: "SCHEDULED" | "CANCELED" | "COMPLETED";
   attendance: AttendanceStatus | null;
+  /** Minutes into the occurrence this student is actually staying for —
+      every student shares the same start, but can book fewer credits than
+      the full window (see bookClass), so this can differ per row. */
+  creditsSpent: number;
 }
 
 export interface AdminOccurrenceGroup {
@@ -465,6 +507,7 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
       studentImage: b.student.image,
       status: b.status,
       attendance: b.attendance,
+      creditsSpent: b.creditsSpent,
     });
   }
 
@@ -514,4 +557,85 @@ export async function adminCancelClassBooking(bookingId: string, reason?: string
       : `Your ${booking.scheduledAt.toLocaleString()} class was canceled by the studio and ${booking.creditsSpent} credit${booking.creditsSpent === 1 ? "" : "s"} were refunded.`,
     emailCategory: "social",
   });
+}
+
+// ---------------------------------------------------------------------------
+// Admin: weekly schedule management
+//
+// The recurring weekly slots (ClassSchedule rows) had no admin UI at all —
+// every existing row was created by hand, directly in the database. These
+// functions back the first real self-serve way to add, edit, and retire a
+// slot without touching the database.
+//
+// "Remove" a slot always means deactivate, never delete: a hard delete
+// would either fail (a foreign key from real ClassBooking history) or
+// silently orphan that history. `active: false` is the exact mechanism
+// getUpcomingOccurrences() and bookClass() already use to mean "no longer
+// offered" — this just exposes it through the app instead of a one-off
+// script.
+// ---------------------------------------------------------------------------
+
+export class ClassScheduleError extends Error {}
+
+export interface ClassScheduleInput {
+  dayOfWeek: number;
+  /** "HH:mm", ET wall-clock — same format ClassSchedule.startTime already stores. */
+  startTime: string;
+  /** "HH:mm", ET wall-clock — end of the window; durationMin/creditCost are derived from (end - start), never entered directly, so they can never drift out of the 1-credit-per-30-min invariant bookClass depends on. */
+  endTime: string;
+  label: string | null;
+}
+
+function parseHHMM(value: string): number {
+  const [hour, minute] = value.split(":").map(Number);
+  if (Number.isNaN(hour) || Number.isNaN(minute) || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    throw new ClassScheduleError(`"${value}" isn't a valid time.`);
+  }
+  return hour * 60 + minute;
+}
+
+/** Shared validation for create/update — throws ClassScheduleError with a message meant to be shown as-is. */
+function resolveDurationMin(startTime: string, endTime: string): number {
+  const startMin = parseHHMM(startTime);
+  const endMin = parseHHMM(endTime);
+  const durationMin = endMin - startMin;
+  if (durationMin <= 0) throw new ClassScheduleError("End time has to be after the start time.");
+  if (durationMin % 30 !== 0) throw new ClassScheduleError("The window has to be a whole number of 30-minute chunks.");
+  return durationMin;
+}
+
+/** Every schedule row, active or not — unlike getUpcomingOccurrences(), which only ever shows what's currently bookable. */
+export async function getAllClassSchedules() {
+  return prisma.classSchedule.findMany({ orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }] });
+}
+
+export async function createClassSchedule(input: ClassScheduleInput) {
+  const durationMin = resolveDurationMin(input.startTime, input.endTime);
+  return prisma.classSchedule.create({
+    data: {
+      dayOfWeek: input.dayOfWeek,
+      startTime: input.startTime,
+      durationMin,
+      creditCost: durationMin / 30,
+      label: input.label,
+    },
+  });
+}
+
+export async function updateClassSchedule(scheduleId: string, input: ClassScheduleInput) {
+  const durationMin = resolveDurationMin(input.startTime, input.endTime);
+  return prisma.classSchedule.update({
+    where: { id: scheduleId },
+    data: {
+      dayOfWeek: input.dayOfWeek,
+      startTime: input.startTime,
+      durationMin,
+      creditCost: durationMin / 30,
+      label: input.label,
+    },
+  });
+}
+
+export async function setClassScheduleActive(scheduleId: string, active: boolean) {
+  return prisma.classSchedule.update({ where: { id: scheduleId }, data: { active } });
 }
