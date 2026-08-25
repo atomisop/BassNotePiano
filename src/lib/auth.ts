@@ -255,10 +255,21 @@ export const authOptions: NextAuthOptions = {
  * used in a write (or a findUniqueOrThrow read). Checking existence here
  * means every existing `if (!session?.user) redirect(...)` guard across the
  * app correctly treats a dead session as logged-out, with nothing else to change.
+ *
+ * `session.user.id` missing is itself one of those dead-session cases, not
+ * just "skip the DB check": it happens whenever the jwt callback's own
+ * sessionVersion mismatch fires (force sign-out, password change elsewhere)
+ * and returns `{}`, since NextAuth still builds a `session.user` object from
+ * that empty token's undefined name/email/image before this ever runs. That
+ * object is truthy, just with no `.id` on it, so returning it unchanged
+ * (as this used to) left `!session?.user` false everywhere downstream, and
+ * every page that went on to query `prisma.user.findUnique({ where: { id:
+ * session.user.id } })` passed `id: undefined` and crashed. Returning null
+ * here instead is what actually makes that first guard fire.
  */
 export const getServerAuthSession = cache(async () => {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.id) return session;
+  if (!session?.user?.id) return null;
 
   const exists = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true } });
   return exists ? session : null;
