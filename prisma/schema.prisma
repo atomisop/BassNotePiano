@@ -418,6 +418,15 @@ model User {
   passwordHash  String? // set only for credentials-based signup
   role          Role      @default(STUDENT)
 
+  // Bumped by a password change or an explicit "sign out of all other
+  // devices" (see src/lib/auth.ts's jwt callback and
+  // signOutOtherDevicesAction in the account actions). Every other
+  // already-open session is carrying an older value baked into its own JWT
+  // at sign-in, so a mismatch here is what actually invalidates it — the
+  // account-settings password form's claim that changing it signs out other
+  // devices did nothing enforceable before this existed.
+  sessionVersion Int @default(1)
+
   // Optional — nothing in the app requires it except the friends/messages
   // system, which prompts for it inline rather than forcing it through the
   // (already-shipped) onboarding wizard. Always stored lowercase so

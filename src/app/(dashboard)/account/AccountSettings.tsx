@@ -3,13 +3,14 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { ThemePicker } from "@/components/theme/ThemePicker";
 import { Switch } from "@/components/ui/switch";
 import type { AssistantMessage } from "@/lib/assistant";
 import {
   updatePasswordAction,
+  signOutOtherDevicesAction,
   updateNotificationPreferencesAction,
   requestAccountDeletionCodeAction,
   confirmAccountDeletionAction,
@@ -38,17 +39,38 @@ const TAB_ICONS = {
   privacy: "M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z",
 } as const;
 
+// Grouped into defined categories rather than one flat list — order here is
+// render order, so entries in the same category stay adjacent. "Danger
+// zone" is its own category rather than folded into "Account & security" on
+// purpose: a destructive action should never blend visually into routine
+// settings.
 const TABS = [
-  { id: "notifications", label: "Notifications", icon: TAB_ICONS.notifications },
-  { id: "membership", label: "Membership & Purchases", icon: TAB_ICONS.membership },
-  { id: "password", label: "Password", icon: TAB_ICONS.password },
-  { id: "appearance", label: "Themes & Appearance", icon: TAB_ICONS.appearance },
-  { id: "tutorials", label: "Tutorials", icon: TAB_ICONS.tutorials },
-  { id: "privacy", label: "Privacy & Data", icon: TAB_ICONS.privacy },
-  { id: "danger", label: "Delete Account", icon: TAB_ICONS.danger },
+  { id: "notifications", label: "Notifications", icon: TAB_ICONS.notifications, category: "Preferences" },
+  { id: "appearance", label: "Themes & Appearance", icon: TAB_ICONS.appearance, category: "Preferences" },
+  { id: "membership", label: "Membership & Purchases", icon: TAB_ICONS.membership, category: "Billing" },
+  { id: "password", label: "Password & Security", icon: TAB_ICONS.password, category: "Account & security" },
+  { id: "privacy", label: "Privacy & Data", icon: TAB_ICONS.privacy, category: "Account & security" },
+  { id: "tutorials", label: "Tutorials", icon: TAB_ICONS.tutorials, category: "Help" },
+  { id: "danger", label: "Delete Account", icon: TAB_ICONS.danger, category: "Danger zone" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
+type Category = (typeof TABS)[number]["category"];
+
+/** Groups TABS by category, preserving the array's own order — no re-sort,
+    so category order is controlled entirely by TABS above. */
+function groupedTabs(): { category: Category; tabs: (typeof TABS)[number][] }[] {
+  const groups: { category: Category; tabs: (typeof TABS)[number][] }[] = [];
+  for (const tab of TABS) {
+    const last = groups[groups.length - 1];
+    if (last && last.category === tab.category) {
+      last.tabs.push(tab);
+    } else {
+      groups.push({ category: tab.category, tabs: [tab] });
+    }
+  }
+  return groups;
+}
 
 function TabIcon({ path, className = "h-[18px] w-[18px] shrink-0" }: { path: string; className?: string }) {
   return (
@@ -101,59 +123,102 @@ function SignOutButton({ className = "" }: { className?: string }) {
   );
 }
 
+// Small uppercase divider between groups — text-slate-500, not -600: -600
+// fails AA (4.5:1) for real text on this ground (see the accessibility
+// pass's SiteFooter comment), and a category label is real text a sighted
+// user reads to understand the grouping, not decoration.
+function CategoryHeading({ category, isFirst }: { category: Category; isFirst: boolean }) {
+  return (
+    <p
+      className={`px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${isFirst ? "" : "mt-3"} ${
+        category === "Danger zone" ? "text-red-400/70" : "text-slate-500"
+      }`}
+    >
+      {category}
+    </p>
+  );
+}
+
 // lg+ only — a sticky always-visible nav beside the inline content, since
-// there's room for both without it feeling cluttered. "About" and "Sign
-// out" sit below a divider, outside the TABS loop, so they always render
-// last regardless of which tab is active.
+// there's room for both without it feeling cluttered. "About" renders as
+// the last item of the "Help" category group (it's a real link out, not a
+// tab with inline content, but it belongs with Tutorials conceptually, not
+// off on its own). "Sign out" stays below everything, uncategorized — it's
+// an action, not a setting.
 function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: (tab: TabId) => void }) {
   return (
     <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start glass-surface p-2 lg:flex">
-      {TABS.map((tab) => (
-        <button
-          key={tab.id}
-          type="button"
-          onClick={() => onSelect(tab.id)}
-          className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm transition ${
-            activeTab === tab.id
-              ? "border-[rgb(var(--c-a-400)/0.4)] bg-slate-800 text-slate-50"
-              : "border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
-          }`}
-        >
-          <TabIcon path={tab.icon} />
-          {tab.label}
-        </button>
+      {groupedTabs().map((group, i) => (
+        <div key={group.category}>
+          <CategoryHeading category={group.category} isFirst={i === 0} />
+          <div className="flex flex-col gap-1">
+            {group.tabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => onSelect(tab.id)}
+                className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm transition ${
+                  activeTab === tab.id
+                    ? "border-[rgb(var(--c-a-400)/0.4)] bg-slate-800 text-slate-50"
+                    : "border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+                }`}
+              >
+                <TabIcon path={tab.icon} />
+                {tab.label}
+              </button>
+            ))}
+            {group.category === "Help" && <AboutLink />}
+          </div>
+        </div>
       ))}
       <div className="my-1 h-px bg-ink/10" />
-      <AboutLink />
       <SignOutButton />
     </nav>
   );
 }
 
-// Below lg — a plain menu list, no content shown until tapped. Each row
-// pushes a full-screen SlideOverPanel instead of swapping content in place.
-// Same bottom-pinned About/Sign out pair as the desktop nav, always last.
+// Below lg — a plain menu list, grouped under the same category headings as
+// the desktop nav, no content shown until tapped. Each row pushes a
+// full-screen SlideOverPanel instead of swapping content in place. Sign out
+// stays bottom-pinned, always last, same reasoning as the desktop nav.
 function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
   return (
-    <div className="glass-surface divide-y divide-ink/10 lg:hidden">
-      {TABS.map((tab) => (
-        <button
-          key={tab.id}
-          type="button"
-          onClick={() => onSelect(tab.id)}
-          className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-ink/5"
-        >
-          <TabIcon path={tab.icon} className="h-5 w-5 shrink-0 text-slate-400" />
-          <span className="flex-1 text-sm text-slate-100">{tab.label}</span>
-          <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-600" />
-        </button>
+    <div className="glass-surface lg:hidden">
+      {groupedTabs().map((group, i) => (
+        <div key={group.category} className={i === 0 ? "" : "border-t border-ink/10 pt-1"}>
+          <p
+            className={`px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+              group.category === "Danger zone" ? "text-red-400/70" : "text-slate-500"
+            }`}
+          >
+            {group.category}
+          </p>
+          <div className="divide-y divide-ink/10">
+            {group.tabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => onSelect(tab.id)}
+                className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-ink/5"
+              >
+                <TabIcon path={tab.icon} className="h-5 w-5 shrink-0 text-slate-400" />
+                <span className="flex-1 text-sm text-slate-100">{tab.label}</span>
+                <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
+              </button>
+            ))}
+            {group.category === "Help" && (
+              <Link href="/about" className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-ink/5">
+                <TabIcon path={TAB_ICONS.about} className="h-5 w-5 shrink-0 text-slate-400" />
+                <span className="flex-1 text-sm text-slate-100">About</span>
+                <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
+              </Link>
+            )}
+          </div>
+        </div>
       ))}
-      <Link href="/about" className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-ink/5">
-        <TabIcon path={TAB_ICONS.about} className="h-5 w-5 shrink-0 text-slate-400" />
-        <span className="flex-1 text-sm text-slate-100">About</span>
-        <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-600" />
-      </Link>
-      <SignOutButton className="w-full rounded-none px-4 py-4 hover:bg-ink/5" />
+      <div className="border-t border-ink/10">
+        <SignOutButton className="w-full rounded-none px-4 py-4 hover:bg-ink/5" />
+      </div>
     </div>
   );
 }
@@ -380,6 +445,7 @@ function MembershipSection({
 }
 
 function PasswordSection() {
+  const { update } = useSession();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -408,53 +474,100 @@ function PasswordSection() {
     setNewPassword("");
     setConfirmPassword("");
     setSuccess(true);
+    // The password change just bumped sessionVersion so every OTHER open
+    // session gets signed out (see updatePasswordAction) — update() forces
+    // this device's own JWT to re-stamp against the new value right now,
+    // rather than waiting for its next natural refresh, so it isn't
+    // accidentally caught by the same check.
+    await update();
   }
 
   return (
-    <SectionCard title="Password" description="Changing it signs out any other devices you've marked as remembered.">
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <input
-          type="password"
-          placeholder="Current password"
-          autoComplete="current-password"
-          required
-          value={currentPassword}
-          onChange={(e) => setCurrentPassword(e.target.value)}
-          disabled={submitting}
-          className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
-        />
-        <input
-          type="password"
-          placeholder="New password"
-          autoComplete="new-password"
-          required
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          disabled={submitting}
-          className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
-        />
-        <input
-          type="password"
-          placeholder="Confirm new password"
-          autoComplete="new-password"
-          required
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          disabled={submitting}
-          className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
-        />
+    <div className="space-y-6">
+      <SectionCard title="Password" description="Changing it signs out any other devices you're currently signed in on.">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            type="password"
+            placeholder="Current password"
+            autoComplete="current-password"
+            required
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            disabled={submitting}
+            className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
+          />
+          <input
+            type="password"
+            placeholder="New password"
+            autoComplete="new-password"
+            required
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            disabled={submitting}
+            className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
+          />
+          <input
+            type="password"
+            placeholder="Confirm new password"
+            autoComplete="new-password"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            disabled={submitting}
+            className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
+          />
 
-        {error && <p className="text-xs text-red-400">{error}</p>}
-        {success && <p className="text-xs text-emerald-400">Password updated.</p>}
+          {error && <p className="text-xs text-red-400">{error}</p>}
+          {success && <p className="text-xs text-emerald-400">Password updated. Other devices have been signed out.</p>}
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="cta-sheen cta-fill w-full rounded-lg py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {submitting ? "Saving…" : "Change password"}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="cta-sheen cta-fill w-full rounded-lg py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {submitting ? "Saving…" : "Change password"}
+          </button>
+        </form>
+      </SectionCard>
+
+      <SignOutOtherDevicesCard />
+    </div>
+  );
+}
+
+// Standalone, on-demand version of what a password change now also does —
+// for someone who wants this without changing their password, e.g. after
+// using a shared or public computer.
+function SignOutOtherDevicesCard() {
+  const { update } = useSession();
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  async function handleClick() {
+    setSubmitting(true);
+    await signOutOtherDevicesAction();
+    // Re-stamp this device's own token first, same reasoning as the
+    // password form above, so this button doesn't sign out the device that
+    // clicked it.
+    await update();
+    setSubmitting(false);
+    setSuccess(true);
+  }
+
+  return (
+    <SectionCard
+      title="Sign out of other devices"
+      description="If you're signed in somewhere you don't recognize, or just used a shared computer, this ends every session except this one."
+    >
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={submitting}
+        className="rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-200))] disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {submitting ? "Signing out other devices…" : "Sign out of all other devices"}
+      </button>
+      {success && !submitting && <p className="mt-3 text-xs text-emerald-400">Done. This device stays signed in.</p>}
     </SectionCard>
   );
 }

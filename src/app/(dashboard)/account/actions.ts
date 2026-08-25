@@ -52,13 +52,35 @@ export async function updatePasswordAction(currentPassword: string, newPassword:
 
   const newPasswordHash = await bcrypt.hash(newPassword, 12);
   await prisma.$transaction([
-    prisma.user.update({ where: { id }, data: { passwordHash: newPasswordHash } }),
+    // sessionVersion increment is what actually makes "signs out any other
+    // devices" (below) true — see the jwt callback in src/lib/auth.ts. The
+    // client re-syncs its OWN session to the new version right after this
+    // call succeeds, via next-auth's update(), so only other devices drop.
+    prisma.user.update({
+      where: { id },
+      data: { passwordHash: newPasswordHash, sessionVersion: { increment: 1 } },
+    }),
     // Harmless no-op today (nothing populates TrustedDevice anymore since
     // login no longer has a "remember me" step), kept in case that ever
     // comes back — a changed password should always invalidate it.
     prisma.trustedDevice.deleteMany({ where: { userId: id } }),
   ]);
 
+  return { ok: true as const };
+}
+
+// ---------------------------------------------------------------------------
+// Sign out other devices — the explicit, on-demand version of what a
+// password change now also does as a side effect. Same mechanism (bump
+// User.sessionVersion; every other open session's JWT was issued against
+// the old value and fails the check on its next touch), exposed as its own
+// action for someone who just wants to do this without also changing their
+// password — e.g. after using a shared or public computer.
+// ---------------------------------------------------------------------------
+
+export async function signOutOtherDevicesAction() {
+  const { id } = await requireSession();
+  await prisma.user.update({ where: { id }, data: { sessionVersion: { increment: 1 } } });
   return { ok: true as const };
 }
 

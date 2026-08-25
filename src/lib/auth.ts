@@ -1,6 +1,7 @@
 import { cache } from "react";
 import type { NextAuthOptions } from "next-auth";
 import { getServerSession } from "next-auth";
+import type { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
@@ -13,7 +14,19 @@ type Entitlements = {
   completedScaleSlugs: string[];
   name: string | null;
   onboarded: boolean;
+  sessionVersion: number;
 };
+
+/**
+ * Sentinel for "the DB didn't answer in time (or the user row is gone),
+ * skip the session-version check this pass" — never a real stored value
+ * (the column defaults to 1). Every other field here falls back to a
+ * least-privilege default on a timeout, but doing the same for
+ * sessionVersion would mean a slow database round trip randomly signs
+ * people out, which is a worse failure mode than briefly trusting a stale
+ * version the way the role/access fields already do.
+ */
+const SESSION_VERSION_UNKNOWN = -1;
 
 // Fallback used only if loadEntitlements() itself doesn't come back in time
 // (see loadEntitlementsBounded below) — least-privilege defaults, since a
@@ -30,6 +43,7 @@ const DEFAULT_ENTITLEMENTS: Entitlements = {
   completedScaleSlugs: [],
   name: null,
   onboarded: false,
+  sessionVersion: SESSION_VERSION_UNKNOWN,
 };
 
 // Single source of truth for "what can this user see" — read by the jwt
@@ -52,7 +66,7 @@ async function loadEntitlements(userId: string): Promise<Entitlements> {
   const [user, verifiedUnlocks, unlockedProgress] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
-      select: { role: true, hasCurriculumAccess: true, name: true, onboardedAt: true },
+      select: { role: true, hasCurriculumAccess: true, name: true, onboardedAt: true, sessionVersion: true },
     }),
     prisma.zellePayment.findMany({
       where: { userId, purpose: "SCALE_UNLOCK", status: "VERIFIED", scaleGroupId: { not: null } },
@@ -82,6 +96,7 @@ async function loadEntitlements(userId: string): Promise<Entitlements> {
     completedScaleSlugs,
     name: user?.name ?? null,
     onboarded: Boolean(user?.onboardedAt),
+    sessionVersion: user?.sessionVersion ?? SESSION_VERSION_UNKNOWN,
   };
 }
 
@@ -153,10 +168,40 @@ export const authOptions: NextAuthOptions = {
     // ever decodes the resulting cookie — it can't hit Postgres itself — so
     // this callback is the only place entitlements get re-derived from the
     // DB, and how often it runs is the whole staleness budget for gating.
-    async jwt({ token }) {
+    async jwt({ token, user, trigger }) {
       if (!token.sub) return token;
 
       const entitlements = await loadEntitlementsBounded(token.sub);
+
+      // Real "sign out other devices" enforcement, not just the UI copy
+      // claiming it: every already-open session's token carries whatever
+      // version was current at ITS OWN sign-in. A password change or the
+      // explicit "sign out of all other devices" action bumps the column,
+      // so the next time any of those other tokens touch this callback,
+      // the comparison below fails and returning `{}` drops it (no `sub`,
+      // so getServerAuthSession/useSession see it as logged out).
+      if (entitlements.sessionVersion !== SESSION_VERSION_UNKNOWN) {
+        if (user || trigger === "update") {
+          // Fresh sign-in, or this exact device just called update()
+          // right after triggering the bump itself — bake in the current
+          // version so the device that DID the bump doesn't sign itself
+          // out too.
+          token.sessionVersion = entitlements.sessionVersion;
+        } else if (typeof token.sessionVersion !== "number") {
+          // A token issued before this field existed. Adopt the current
+          // version rather than treating "never had one" as a mismatch —
+          // otherwise shipping this signs out every already-open session
+          // app-wide the moment it deploys.
+          token.sessionVersion = entitlements.sessionVersion;
+        } else if (token.sessionVersion !== entitlements.sessionVersion) {
+          // Deliberately not a real JWT — the cast is the intentional part.
+          // getServerAuthSession/useSession/middleware all key off `sub`
+          // being present, not off matching this type's shape, so an empty
+          // object correctly reads as "no session" everywhere it's checked.
+          return {} as JWT;
+        }
+      }
+
       token.role = entitlements.role;
       token.hasCurriculumAccess = entitlements.hasCurriculumAccess;
       token.unlockedScaleSlugs = entitlements.unlockedScaleSlugs;
