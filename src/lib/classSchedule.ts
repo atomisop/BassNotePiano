@@ -2,6 +2,8 @@ import type { AttendanceStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
+import { getRoadmap, type ScaleAccessState } from "@/lib/access";
+import { resolveNextStep } from "@/lib/next-step";
 
 export class ClassBookingError extends Error {}
 
@@ -447,6 +449,34 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
 // Admin: roster + attendance
 // ---------------------------------------------------------------------------
 
+export interface RosterFocus {
+  /** Curriculum order (0-5) of the scale this student is actually working
+      on right now, or null if they have no curriculum access at all yet —
+      a distinct bucket from Scale 0, not the same as being new to it. */
+  scaleOrder: number | null;
+  scaleLabel: string;
+  /** What specifically to help them with — "Take the quiz", "Work through
+      the module", etc. Same wording the student's own dashboard uses. */
+  action: string;
+}
+
+/** Reuses the exact same "what's next" logic the student's own dashboard
+    is built on (src/lib/next-step.ts) — so a class-day roster grouped by
+    this can never disagree with what a student sees when they log in. */
+function summarizeFocus(roadmap: ScaleAccessState[]): RosterFocus {
+  const next = resolveNextStep(roadmap);
+  if (next.kind === "buy-curriculum") {
+    return { scaleOrder: null, scaleLabel: "No curriculum access", action: "Hasn't unlocked the curriculum yet" };
+  }
+  // Every other NextStepKind always carries a real scale.
+  const scale = next.scale!;
+  return {
+    scaleOrder: scale.scaleGroup.order,
+    scaleLabel: `${scale.scaleGroup.code} · ${scale.scaleGroup.kinitName ?? scale.scaleGroup.title}`,
+    action: next.action,
+  };
+}
+
 export interface AdminOccurrenceRosterEntry {
   bookingId: string;
   studentId: string;
@@ -459,6 +489,11 @@ export interface AdminOccurrenceRosterEntry {
       every student shares the same start, but can book fewer credits than
       the full window (see bookClass), so this can differ per row. */
   creditsSpent: number;
+  /** Where this student actually is in the self-paced curriculum right
+      now — lets the roster group "who's here today" by level, for a
+      flipped-classroom-style live session (teacher circulates by level
+      instead of teaching one lockstep lesson to everyone). */
+  focus: RosterFocus;
 }
 
 export interface AdminOccurrenceGroup {
@@ -484,6 +519,14 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
     orderBy: { scheduledAt: "desc" },
   });
 
+  // One roadmap lookup per distinct student, not per booking row — the same
+  // student can appear across several occurrences inside the window, and
+  // their curriculum progress doesn't change from one row to the next.
+  const studentIds = Array.from(new Set(bookings.map((b) => b.student.id)));
+  const focusByStudent = new Map(
+    await Promise.all(studentIds.map(async (id) => [id, summarizeFocus(await getRoadmap(id))] as const)),
+  );
+
   const groups = new Map<string, AdminOccurrenceGroup>();
   for (const b of bookings) {
     const key = `${b.scheduleId}:${b.occurrenceDate.getTime()}`;
@@ -508,6 +551,7 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
       status: b.status,
       attendance: b.attendance,
       creditsSpent: b.creditsSpent,
+      focus: focusByStudent.get(b.student.id)!,
     });
   }
 
