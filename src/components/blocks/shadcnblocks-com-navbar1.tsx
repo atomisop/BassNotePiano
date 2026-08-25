@@ -59,6 +59,11 @@ import { cn } from "@/lib/utils";
  * not carried over — logo, menu and auth are required props. Shipping
  * placeholder routes on a live marketing site is the exact thing SiteFooter
  * already calls out; see its header comment.
+ *
+ * 5. `extraAction` (optional) is a single external icon link, added for the
+ *    Discord invite. It sits beside the auth pair rather than inside `menu`
+ *    because it isn't an in-app route or a dropdown, just one outbound link
+ *    the whole site surfaces the same way everywhere.
  */
 
 interface MenuItem {
@@ -90,6 +95,12 @@ interface Navbar1Props {
       text: string;
       url: string;
     };
+  };
+  /** A single external icon link (e.g. Discord), rendered beside the auth pair. */
+  extraAction?: {
+    href: string;
+    label: string;
+    icon: JSX.Element;
   };
   /** Applied to the outer <section>, so a host layout can own the chrome. */
   className?: string;
@@ -130,6 +141,7 @@ const Navbar1 = ({
   menu,
   mobileExtraLinks = [],
   auth,
+  extraAction,
   className,
 }: Navbar1Props) => {
   return (
@@ -152,7 +164,14 @@ const Navbar1 = ({
               </NavigationMenu>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {extraAction && (
+              <Button asChild variant="outline" size="icon">
+                <NavAnchor href={extraAction.href} target="_blank" rel="noopener noreferrer" aria-label={extraAction.label}>
+                  {extraAction.icon}
+                </NavAnchor>
+              </Button>
+            )}
             <Button asChild variant="outline" size="sm">
               <NavAnchor href={auth.login.url}>{auth.login.text}</NavAnchor>
             </Button>
@@ -214,6 +233,21 @@ const Navbar1 = ({
                     </div>
                   )}
                   <div className="flex flex-col gap-3">
+                    {extraAction && (
+                      <SheetClose asChild>
+                        <Button asChild variant="outline">
+                          <NavAnchor
+                            href={extraAction.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-2"
+                          >
+                            {extraAction.icon}
+                            {extraAction.label}
+                          </NavAnchor>
+                        </Button>
+                      </SheetClose>
+                    )}
                     <SheetClose asChild>
                       <Button asChild variant="outline">
                         <NavAnchor href={auth.login.url}>

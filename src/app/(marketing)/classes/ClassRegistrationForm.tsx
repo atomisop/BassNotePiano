@@ -63,7 +63,13 @@ function Pill({
 }
 
 function fieldClass() {
-  return "w-full glass-surface-subtle px-3 py-2.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-[rgb(var(--c-a-400)/0.6)]";
+  // placeholder:text-slate-500, not -600: -600 resolves to rgb(120,120,120)
+  // on this surface's rgb(26,26,26) ground, about 3.9:1, well under the
+  // 4.5:1 AA minimum for text (marketing.css documents this exact pairing
+  // as "non-text, always"). -500 (6.5:1) is the same token SiteFooter's
+  // real body text already uses after the accessibility pass found the
+  // same mistake there.
+  return "w-full glass-surface-subtle px-3 py-2.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-a-400)/0.6)]";
 }
 
 export function ClassRegistrationForm() {

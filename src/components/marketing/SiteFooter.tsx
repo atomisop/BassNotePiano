@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { GradientFooter } from "./GradientFooter";
+import { DiscordIcon } from "@/components/ui/icons";
+import { DISCORD_INVITE_URL } from "@/lib/discord";
 
 // Every link here maps to a route that actually exists on this site —
 // no invented Docs/Blog/Careers/Status columns, no email-signup box with
@@ -45,6 +47,15 @@ export function SiteFooter() {
               A digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book: six kiñit scales,
               spelled correctly in every key, plus live weekly classes on Zoom.
             </p>
+            <a
+              href={DISCORD_INVITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-[rgb(var(--c-a-300))]"
+            >
+              <DiscordIcon size={18} />
+              Join our Discord
+            </a>
           </div>
 
           <div>

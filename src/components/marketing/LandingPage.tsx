@@ -5,6 +5,7 @@ import { WhatBassNoteIs } from "@/components/marketing/WhatBassNoteIs";
 import { CurriculumOverview } from "@/components/marketing/CurriculumOverview";
 import { ProductShowcase } from "@/components/marketing/ProductShowcase";
 import { ClassesOverview } from "@/components/marketing/ClassesOverview";
+import { DiscordCommunityCallout } from "@/components/marketing/DiscordCommunityCallout";
 import { PricingCallout } from "@/components/marketing/PricingCallout";
 import { FinalCTA } from "@/components/marketing/FinalCTA";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
@@ -61,6 +62,7 @@ export function LandingPage() {
         <CurriculumOverview />
         <ProductShowcase />
         <ClassesOverview />
+        <DiscordCommunityCallout />
         <PricingCallout />
         <FinalCTA />
       </main>

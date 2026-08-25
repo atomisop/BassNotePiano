@@ -1,4 +1,5 @@
 import "./marketing.css";
+import { DiscordNotificationCard } from "@/components/marketing/DiscordNotificationCard";
 
 /**
  * Scopes the marketing design system to the public-facing routes.
@@ -37,6 +38,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         Skip to main content
       </a>
       {children}
+      <DiscordNotificationCard />
     </div>
   );
 }

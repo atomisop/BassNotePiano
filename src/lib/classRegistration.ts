@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { sendNotificationEmail, sendNotificationEmailWithCta } from "@/lib/email";
 import { INSTRUMENT_LABEL, SKILL_LABEL } from "@/lib/classRegistrationLabels";
+import { isDisposableEmailDomain } from "@/lib/disposableEmail";
 
 export { INSTRUMENT_LABEL, SKILL_LABEL };
 
@@ -29,6 +30,13 @@ export async function submitClassRegistration(input: SubmitClassRegistrationInpu
 
   if (!fullName) throw new Error("Full name is required.");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Enter a valid email address.");
+  // Same check /api/auth/register runs, and for the same reason: this is
+  // the only address the studio has to actually reach a registrant at to
+  // get them scheduled, so a burner inbox defeats the form's entire
+  // purpose even though no account is created here.
+  if (isDisposableEmailDomain(email)) {
+    throw new Error("That looks like a temporary or disposable email address. Please use one you can actually receive mail at.");
+  }
   if (!phone) throw new Error("Phone number is required.");
 
   const registration = await prisma.classRegistration.create({

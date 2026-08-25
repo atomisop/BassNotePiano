@@ -5,6 +5,8 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useSession } from "next-auth/react";
+import { DiscordIcon } from "@/components/ui/icons";
+import { DISCORD_INVITE_URL } from "@/lib/discord";
 
 /**
  * The homepage header.
@@ -151,6 +153,19 @@ export function MarketingNav() {
             >
               {secondary.label}
             </Link>
+            {/* Icon-only, same Level 1 glass as the pills above rather than
+                a labeled pill — this is a single external link, not another
+                in-app destination, so it reads as secondary chrome next to
+                Classes/Pricing/Log in without competing with them. */}
+            <a
+              href={DISCORD_INVITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Join our Discord"
+              className="glass-surface-subtle flex h-9 w-9 items-center justify-center !rounded-full text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
+            >
+              <DiscordIcon size={16} />
+            </a>
             {/* Real liquid glass here specifically — `glass-surface-elevated`
                 (translucent, blurred, signal-green-tinted border) instead of
                 `.btn-primary`'s solid gradient fill. Scoped to just this one
@@ -216,6 +231,16 @@ export function MarketingNav() {
                   {link.label}
                 </Link>
               ))}
+              <a
+                href={DISCORD_INVITE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMenuOpen(false)}
+                className="display-3 flex items-center gap-3 border-b border-[rgb(var(--c-s-50)/0.08)] py-6"
+              >
+                <DiscordIcon size={28} />
+                Discord
+              </a>
               <Link
                 href={primary.href}
                 onClick={() => setMenuOpen(false)}

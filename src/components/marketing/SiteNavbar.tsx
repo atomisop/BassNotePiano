@@ -3,6 +3,8 @@
 import { useSession } from "next-auth/react";
 
 import { Navbar1, type MenuItem } from "@/components/blocks/shadcnblocks-com-navbar1";
+import { DiscordIcon } from "@/components/ui/icons";
+import { DISCORD_INVITE_URL } from "@/lib/discord";
 
 /**
  * The marketing header: shadcnblocks' Navbar1 block, given this site's real
@@ -95,6 +97,11 @@ export function SiteNavbar() {
           menu={MENU}
           mobileExtraLinks={MOBILE_EXTRA_LINKS}
           auth={auth}
+          extraAction={{
+            href: DISCORD_INVITE_URL,
+            label: "Join our Discord",
+            icon: <DiscordIcon size={16} />,
+          }}
         />
       </div>
     </header>

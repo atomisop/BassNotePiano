@@ -34,7 +34,7 @@ export default function ClassesPage() {
         <section className="relative mx-auto max-w-lg px-6 pb-24 pt-28">
           <div className="text-center">
             <h1 className="text-balance font-serif text-4xl leading-tight tracking-[-0.02em] text-slate-50 sm:text-5xl">
-              Learn with us in person
+              Learn with us via Discord
             </h1>
             <p className="mx-auto mt-4 max-w-md text-base text-slate-200">
               Tell us what you&apos;d like to learn and where you&apos;re starting from, and we&apos;ll follow up by phone
