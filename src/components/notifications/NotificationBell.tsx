@@ -85,22 +85,51 @@ export function NotificationBell() {
   useEffect(() => setMounted(true), []);
 
   async function refresh() {
-    const result = await fetchNotificationsAction();
-    // Only chime when the count goes up from a known previous value — skips
-    // the initial mount (previousUnreadRef still null) and any decrease.
-    if (previousUnreadRef.current !== null && result.unreadCount > previousUnreadRef.current) {
-      playNotificationSound();
-    }
-    previousUnreadRef.current = result.unreadCount;
+    // Caught, not left to throw: this runs unattended on a 30s interval, and
+    // the underlying network call has no way to guarantee success. A phone
+    // or tablet getting backgrounded mid-request is a routine, expected way
+    // for this to fail (confirmed in production: an iPad's "Load failed" on
+    // this exact call, from an in-flight fetch the OS killed when the tab
+    // was suspended), not a real bug worth surfacing. The next poll 30s
+    // later just tries again, same as this whole mechanism already assumes.
+    try {
+      const result = await fetchNotificationsAction();
+      // Only chime when the count goes up from a known previous value.
+      // Skips the initial mount (previousUnreadRef still null) and any
+      // decrease.
+      if (previousUnreadRef.current !== null && result.unreadCount > previousUnreadRef.current) {
+        playNotificationSound();
+      }
+      previousUnreadRef.current = result.unreadCount;
 
-    setUnreadCount(result.unreadCount);
-    setNotifications(result.notifications);
+      setUnreadCount(result.unreadCount);
+      setNotifications(result.notifications);
+    } catch (err) {
+      console.error("Notification poll failed (non-blocking, will retry):", err);
+    }
   }
 
   useEffect(() => {
     refresh();
-    const interval = setInterval(refresh, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
+    // Skips the network call entirely while the tab is backgrounded, rather
+    // than firing it anyway and letting it fail: cuts battery/data use for
+    // every signed-in user, not just a fix for the one iPad case above, and
+    // there's nothing useful to show in a hidden tab regardless. Catches up
+    // immediately on return via the visibilitychange listener below, so
+    // coming back to the tab doesn't wait out a stale interval first.
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") refresh();
+    }, POLL_INTERVAL_MS);
+
+    function handleVisibility() {
+      if (document.visibilityState === "visible") refresh();
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
