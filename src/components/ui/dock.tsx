@@ -37,6 +37,7 @@ type DockProps = {
 type DockItemProps = {
   className?: string;
   children: React.ReactNode;
+  'aria-label'?: string;
 };
 type DockLabelProps = {
   className?: string;
@@ -135,7 +136,7 @@ function Dock({
   );
 }
 
-function DockItem({ children, className }: DockItemProps) {
+function DockItem({ children, className, 'aria-label': ariaLabel }: DockItemProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   const { distance, magnification, mouseX, spring } = useDock();
@@ -170,6 +171,7 @@ function DockItem({ children, className }: DockItemProps) {
       tabIndex={0}
       role='button'
       aria-haspopup='true'
+      aria-label={ariaLabel}
     >
       {Children.map(children, (child) =>
         cloneElement(child as React.ReactElement, { width, isHovered })

@@ -31,6 +31,7 @@ export function BrandMark() {
   return (
     <Link
       href="/"
+      aria-label="Bass Note Piano, home"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className="flex items-center gap-2.5 font-serif text-sm tracking-[0.2em] text-slate-200"

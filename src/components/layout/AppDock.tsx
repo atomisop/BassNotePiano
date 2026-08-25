@@ -209,7 +209,11 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
     : NAV_ITEMS;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center pb-[env(safe-area-inset-bottom)]">
+    <div
+      role="navigation"
+      aria-label="Primary"
+      className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center pb-[env(safe-area-inset-bottom)]"
+    >
       <motion.div
         ref={wrapperRef}
         className="pointer-events-auto"
@@ -235,6 +239,7 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
                 className="relative flex flex-col items-center gap-1"
               >
                 <DockItem
+                  aria-label={item.label}
                   className={`rounded-full transition-colors ${
                     active ? "bg-[rgb(var(--c-a-400)/0.18)]" : "hover:bg-[rgb(var(--c-s-50)/0.08)]"
                   }`}
