@@ -760,7 +760,11 @@ const NOTIFICATION_TOGGLES: { key: keyof NotificationPreferencesInput; label: st
   { key: "notifyEmailPayments", label: "Payment approvals", description: "Zelle payments verified or rejected." },
   { key: "notifyEmailRoleUpdates", label: "Role updates", description: "Granted Admin access." },
   { key: "notifyEmailSocial", label: "Social", description: "Friend requests and new messages." },
-  { key: "notifyEmailReminders", label: "Practice reminders", description: "Nudges after a few days away." },
+  {
+    key: "notifyEmailReminders",
+    label: "Practice reminders",
+    description: "Nudges after a few days away. Off means off — no bell, no email.",
+  },
 ];
 
 function NotificationSettingsSection({ initial }: { initial: NotificationPreferencesInput }) {
@@ -779,7 +783,10 @@ function NotificationSettingsSection({ initial }: { initial: NotificationPrefere
   }
 
   return (
-    <SectionCard title="Notification settings" description="The in-app bell always shows these — choose which also send an email.">
+    <SectionCard
+      title="Notification settings"
+      description="Payments, role updates, and social always show in the bell — choose which also send an email. Practice reminders can be muted completely."
+    >
       <div className="space-y-3">
         {NOTIFICATION_TOGGLES.map((item) => (
           <div key={item.key} className="flex items-center justify-between gap-4">

@@ -4,9 +4,14 @@ import { createNotification } from "../../src/lib/notifications";
 
 // Nudge points, in days since last practice activity — spaced out (not
 // daily) so a lapsed student gets a few gentle reminders rather than one
-// per day forever. In-app notification always gets created for anyone at
-// one of these thresholds; whether it's *also* emailed is per-user, via
-// their notifyEmailReminders preference (checked inside createNotification).
+// per day forever.
+//
+// Unlike every other notification category (payments, role updates,
+// social), which always create the in-app bell entry and let
+// notifyEmail* only decide whether it's *also* emailed, practice
+// reminders skip the user entirely — no bell entry, no email — when
+// notifyEmailReminders is off. Turning "Practice reminders" off in
+// Settings is meant to mean silence, not "email off, bell still nags."
 const REMINDER_TRIGGER_DAYS = [1, 3, 7, 14, 30];
 
 function daysSince(date: Date, now: Date): number {
@@ -23,7 +28,7 @@ function daysSince(date: Date, now: Date): number {
 export const handler = schedule("0 15 * * *", async () => {
   const now = new Date();
   const users = await prisma.user.findMany({
-    where: { onboardedAt: { not: null }, lastActivityDate: { not: null } },
+    where: { onboardedAt: { not: null }, lastActivityDate: { not: null }, notifyEmailReminders: true },
     select: { id: true, lastActivityDate: true },
   });
 
