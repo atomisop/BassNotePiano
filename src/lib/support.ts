@@ -220,9 +220,14 @@ export interface AdminThreadSummary {
   hasUnread: boolean;
 }
 
-export async function getSupportThreads(status?: AssistantEscalationStatus): Promise<AdminThreadSummary[]> {
+/** `userId` narrows to one account's own threads — used by the admin
+    customer-detail page; the plain admin support inbox never passes it. */
+export async function getSupportThreads(status?: AssistantEscalationStatus, userId?: string): Promise<AdminThreadSummary[]> {
   const escalations = await prisma.assistantEscalation.findMany({
-    where: status ? { status } : undefined,
+    where: {
+      ...(status ? { status } : {}),
+      ...(userId ? { userId } : {}),
+    },
     orderBy: { createdAt: "desc" },
     take: 100,
     include: {

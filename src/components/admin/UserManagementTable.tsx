@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { Role } from "@prisma/client";
 import type { AdminUserRow } from "@/lib/admin";
 import { SCALE_GROUPS } from "@/lib/curriculum";
@@ -75,6 +76,12 @@ export function UserManagementTable({
                 <div>
                   <p className="text-slate-100">{user.name ?? "—"}</p>
                   <p className="text-sm text-slate-500">{user.email}</p>
+                  <Link
+                    href={`/admin/users/${user.id}`}
+                    className="mt-1 inline-block text-xs font-medium text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))]"
+                  >
+                    View full profile →
+                  </Link>
                 </div>
                 <div className="flex items-center gap-2">
                   <span
