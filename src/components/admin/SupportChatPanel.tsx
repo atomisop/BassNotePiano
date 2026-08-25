@@ -114,6 +114,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
 
   const [threads, setThreads] = useState(initialThreads);
   const [messages, setMessages] = useState<AdminThreadMessage[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
   const [threadStatus, setThreadStatus] = useState<AssistantEscalationStatus | null>(null);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
@@ -133,15 +134,31 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
     if (!activeId) {
       setMessages([]);
       setThreadStatus(null);
+      setMessagesLoading(false);
       return;
     }
     let cancelled = false;
+    let initialLoad = true;
+
+    // Switching threads used to leave the previously-selected thread's
+    // messages on screen until the new ones arrived — reads as "the message
+    // history takes a while to load" when really it's just showing the
+    // wrong thread's history for a beat. Clear it immediately and show a
+    // loading state instead; the 2.5s poll after that reuses this same
+    // `load`, but only the very first call for a given thread flips the
+    // loading flag — a poll refresh shouldn't flicker a spinner.
+    setMessages([]);
+    setMessagesLoading(true);
 
     async function load() {
       const result = await getSupportThreadAction(activeId!);
       if (cancelled || !result) return;
       setMessages(result.messages);
       setThreadStatus(result.status);
+      if (initialLoad) {
+        setMessagesLoading(false);
+        initialLoad = false;
+      }
     }
     load();
 
@@ -236,10 +253,16 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
             </div>
 
             <div className="min-w-0 flex-1 space-y-3 overflow-y-auto p-4">
-              {messages.map((m) => (
-                <MessageRow key={m.id} message={m} />
-              ))}
-              <div ref={messagesEndRef} />
+              {messagesLoading ? (
+                <div className="flex h-full items-center justify-center text-sm text-slate-500">Loading messages…</div>
+              ) : (
+                <>
+                  {messages.map((m) => (
+                    <MessageRow key={m.id} message={m} />
+                  ))}
+                  <div ref={messagesEndRef} />
+                </>
+              )}
             </div>
 
             <form onSubmit={handleSend} className="flex min-w-0 gap-2 border-t border-ink/10 p-3">
