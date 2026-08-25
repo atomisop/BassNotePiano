@@ -3,7 +3,7 @@ import Link from "next/link";
 /**
  * App-wide 404.
  *
- * Self-contained rather than reusing <SiteNavbar>: this renders directly
+ * Self-contained rather than reusing <MarketingNav>: this renders directly
  * inside the root layout, and it has to work for a signed-out visitor
  * mistyping a marketing URL *and* for a signed-in student following a stale
  * link, without knowing which it is. A nav with the wrong auth state on it

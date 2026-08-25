@@ -7,7 +7,7 @@ import { CREDIT_BASE_PRICE_CENTS, CREDIT_ORIGINAL_PRICE_CENTS } from "@/lib/clas
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { TiltGlow } from "@/components/ui/TiltGlow";
-import { SiteNavbar } from "@/components/marketing/SiteNavbar";
+import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { PricingTierGrid } from "@/components/marketing/PricingTierGrid";
 
@@ -49,7 +49,7 @@ export function PricingPageContent() {
         <PhotoBackdrop src={BACKDROPS.pricing} scrim="dense" priority sizes="100vw" />
       </div>
 
-      <SiteNavbar />
+      <MarketingNav />
 
       {/* id + tabIndex: the skip link in (marketing)/layout.tsx targets
           #main-content — see terms/page.tsx for why this moved onto a real

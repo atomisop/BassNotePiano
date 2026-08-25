@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/site";
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
-import { SiteNavbar } from "@/components/marketing/SiteNavbar";
+import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { PrivacyContent, PRIVACY_LAST_UPDATED } from "@/components/legal/PrivacyContent";
 
@@ -24,7 +24,7 @@ export default function PrivacyPage() {
         <PhotoBackdrop src={BACKDROPS.pricing} scrim="dense" priority sizes="100vw" />
       </div>
 
-      <SiteNavbar />
+      <MarketingNav />
 
       {/* id + tabIndex: the skip link in (marketing)/layout.tsx targets
           #main-content — see terms/page.tsx for why this moved onto a real
