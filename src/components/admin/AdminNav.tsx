@@ -1,12 +1,13 @@
 "use client";
 
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/payments", label: "Payments" },
   { href: "/admin/bookings", label: "Bookings" },
+  { href: "/admin/schedule", label: "Schedule" },
   { href: "/admin/students", label: "Students" },
   { href: "/admin/roster", label: "Roster" },
   { href: "/admin/lessons", label: "Lessons" },
@@ -17,13 +18,47 @@ const NAV_ITEMS = [
   { href: "/admin/announcements", label: "Announcements" },
 ];
 
-export function AdminNav() {
+function isActive(href: string, pathname: string): boolean {
+  return href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+}
+
+/**
+ * Below sm: a native <select>. Twelve sections wrapped into five rows of
+ * pills at phone width — technically no longer side-scrolling, but it
+ * pushed the actual page content down almost a full screen's worth before
+ * you ever reach it. A single-line dropdown is the same "jump to any
+ * section" job in the footprint mobile actually has room for — same split
+ * AccountSettings already uses (DesktopSettingsNav vs. MobileSettingsMenu)
+ * for its own many-sections problem.
+ */
+function MobileAdminSelect() {
+  const router = useRouter();
   const pathname = usePathname();
+  const current = NAV_ITEMS.find((item) => isActive(item.href, pathname))?.href ?? NAV_ITEMS[0].href;
 
   return (
-    <nav className="flex gap-1.5 overflow-x-auto rounded-full border border-ink/10 p-1">
+    <select
+      value={current}
+      onChange={(e) => router.push(e.target.value)}
+      aria-label="Admin section"
+      className="glass-surface-subtle w-full rounded-xl px-3 py-2.5 text-sm font-medium text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] sm:hidden"
+    >
+      {NAV_ITEMS.map((item) => (
+        <option key={item.href} value={item.href}>
+          {item.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/** sm and up: real width to work with, so wrapping to 2-3 rows of pills stays compact — no dropdown needed once there's room to just show every section. */
+function DesktopAdminPills() {
+  const pathname = usePathname();
+  return (
+    <nav className="hidden flex-wrap gap-1.5 rounded-2xl border border-ink/10 p-1.5 sm:flex">
       {NAV_ITEMS.map((item) => {
-        const active = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
+        const active = isActive(item.href, pathname);
         return (
           <Link
             key={item.href}
@@ -37,5 +72,14 @@ export function AdminNav() {
         );
       })}
     </nav>
+  );
+}
+
+export function AdminNav() {
+  return (
+    <>
+      <MobileAdminSelect />
+      <DesktopAdminPills />
+    </>
   );
 }
