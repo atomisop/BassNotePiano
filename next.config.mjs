@@ -61,18 +61,23 @@ const nextConfig = {
 // loads on its own via its native instrumentation conventions, not through
 // this wrapper. None of this requires a DSN to be set; with none
 // configured, the SDK stays inert (see those two files) and this wrapper
-// just adds a no-op layer. `silent: true` keeps its own build-time logging
-// quiet when there's no org/project configured yet, so a DSN-less build
-// isn't full of "skipping X" noise. `webpack.treeshake.removeDebugLogging`
-// strips Sentry's own internal debug logging out of the client bundle
-// (smaller bundle, matches this app's existing "don't log sensitive/
-// internal detail" stance from Step 4) — the currently-documented option;
-// an earlier version of this used the now-deprecated `disableLogger` flag,
-// which Sentry's own dev-server output flagged directly.
+// just adds a no-op layer.
+//
+// org/project/authToken are deliberately NOT read from env here (not an
+// oversight): error events go to GlitchTip (app.glitchtip.com), not
+// sentry.io, and this source-map-upload API is specifically a sentry.io
+// feature GlitchTip doesn't have an equivalent of — there's no org/project
+// to authenticate the upload against. Leaving all three unset makes this
+// step no-op gracefully, the same as a missing DSN does; `silent: true`
+// keeps that no-op quiet rather than logging "skipping X" on every build.
+// Cost: production stack traces show minified code, not real source.
+// `webpack.treeshake.removeDebugLogging` strips Sentry's own internal debug
+// logging out of the client bundle (smaller bundle, matches this app's
+// existing "don't log sensitive/internal detail" stance from Step 4) — the
+// currently-documented option; an earlier version of this used the
+// now-deprecated `disableLogger` flag, which Sentry's own dev-server output
+// flagged directly.
 export default withSentryConfig(nextConfig, {
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-  authToken: process.env.SENTRY_AUTH_TOKEN,
   silent: true,
   webpack: { treeshake: { removeDebugLogging: true } },
 });

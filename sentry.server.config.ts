@@ -1,7 +1,9 @@
 // STEP 21 — OBSERVABILITY. Node runtime init (Server Components, Route
 // Handlers, Server Actions). Auto-loaded via next.config.mjs's
-// `withSentryConfig` — nothing imports this directly. See
-// sentry.client.config.ts for the "inert with no DSN" reasoning; identical
+// `withSentryConfig` — nothing imports this directly. DSN points at
+// GlitchTip, not sentry.io — see src/instrumentation-client.ts for why the
+// real @sentry/nextjs SDK still works unmodified against it. See
+// instrumentation-client.ts for the "inert with no DSN" reasoning; identical
 // here with the server-side `SENTRY_DSN` var (not `NEXT_PUBLIC_`-prefixed,
 // since the server doesn't need it exposed to the browser bundle).
 import * as Sentry from "@sentry/nextjs";

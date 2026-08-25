@@ -6,13 +6,16 @@
 // Turbopack), specifically recommending this file instead — moved rather
 // than leaving a known-deprecated path in place.
 //
+// DSN points at GlitchTip (app.glitchtip.com), not sentry.io — GlitchTip
+// implements the same ingestion protocol Sentry does, so the official
+// @sentry/nextjs SDK works against it unmodified, just with a different DSN.
+// See .env.example for where that value comes from.
+//
 // Inert until NEXT_PUBLIC_SENTRY_DSN is actually set: Sentry.init with an
 // empty/undefined dsn is a documented no-op (the SDK stays loaded but never
 // sends anything), so this ships safely in every environment, including
-// ones that haven't configured Sentry yet, without an `if` around the whole
-// file. Getting a real DSN means creating a (free) Sentry account and a
-// project — not something this session can do on the user's behalf; see the
-// Step 21 report for the exact steps.
+// ones that haven't configured a DSN yet, without an `if` around the whole
+// file.
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
