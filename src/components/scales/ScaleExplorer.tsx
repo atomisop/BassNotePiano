@@ -11,8 +11,10 @@ import { useScalePlayer, useStopOnChange } from "@/components/scales/useScalePla
 
 export interface ScaleExplorerProps {
   variants: ScaleVariant[];
-  /** The signed-in student's own instrument, so the dashboard below shows
-      guitar/bass/piano correctly — see TranspositionDashboard's comment. */
+  /** The signed-in student's own instrument, used only as the *default* view
+      below — see the instrumentView state right under this and
+      TranspositionDashboard's switcher. Never re-read after mount, so
+      switching pages restores the account's own choice again. */
   instrument: PrimaryInstrument | null;
 }
 
@@ -22,14 +24,23 @@ export function ScaleExplorer({ variants, instrument }: ScaleExplorerProps) {
   const [root, setRoot] = useState<RootKey>("C");
   const variant = variants[activeVariantIndex];
 
+  // Defaults to the account's own instrument (set at onboarding, changeable
+  // in Profile) but is a local, page-only view from here on — a guitar
+  // student peeking at the piano layout, or vice versa, shouldn't require a
+  // trip to Profile, and shouldn't silently overwrite their saved
+  // preference either. Purely a viewing choice, by direct instruction.
+  const [instrumentView, setInstrumentView] = useState(instrument);
+
   // One player for the whole explorer, not one per panel: there is a single
   // pair of speakers, so a chord and a scale run must be able to interrupt
   // each other. Two independent hooks would happily play over one another.
-  const player = useScalePlayer();
+  // Voice-aware on `instrumentView` so switching it changes what you hear,
+  // not just what you see.
+  const player = useScalePlayer(instrumentView);
 
-  // Changing key or variant mid-run would leave a scale sounding in the key
-  // the user just navigated away from.
-  useStopOnChange(player.stop, `${root}-${activeVariantIndex}`);
+  // Changing key, variant, or instrument mid-run would leave a scale sounding
+  // in the key (or voice) the user just navigated away from.
+  useStopOnChange(player.stop, `${root}-${activeVariantIndex}-${instrumentView}`);
 
   return (
     <div className="space-y-6">
@@ -58,7 +69,13 @@ export function ScaleExplorer({ variants, instrument }: ScaleExplorerProps) {
         <KeySelector value={root} onChange={setRoot} />
       </div>
 
-      <TranspositionDashboard variant={variant} root={root} player={player} instrument={instrument} />
+      <TranspositionDashboard
+        variant={variant}
+        root={root}
+        player={player}
+        instrument={instrumentView}
+        onInstrumentChange={setInstrumentView}
+      />
       <ScaleChordsPanel variant={variant} root={root} player={player} />
     </div>
   );

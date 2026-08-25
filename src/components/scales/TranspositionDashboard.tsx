@@ -14,8 +14,116 @@ export interface TranspositionDashboardProps {
   root: RootKey;
   player: ScalePlayer;
   /** Picks which instrument view renders below — same scale data either
-      way, see the header comment on Fretboard.tsx for why this exists. */
+      way, see the header comment on Fretboard.tsx for why this exists.
+      Defaults to the student's own account setting but is switchable right
+      here via the buttons below, without a trip to Profile. */
   instrument: PrimaryInstrument | null;
+  onInstrumentChange: (instrument: PrimaryInstrument) => void;
+}
+
+const INSTRUMENT_OPTIONS: { value: PrimaryInstrument; label: string }[] = [
+  { value: "PIANO_KEYBOARD", label: "Piano" },
+  { value: "GUITAR", label: "Guitar" },
+  { value: "BASS", label: "Bass" },
+];
+
+function PianoGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <rect x="1.5" y="5" width="21" height="14" rx="1.5" fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.3" />
+      <rect x="5.5" y="5" width="2.6" height="8.5" fill="currentColor" />
+      <rect x="10.7" y="5" width="2.6" height="8.5" fill="currentColor" />
+      <rect x="15.9" y="5" width="2.6" height="8.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** A plectrum, not a guitar body — the body shape read as a lopsided piano at 14px, and a pick is the one silhouette that's unambiguously "guitar" and nothing else at icon size. */
+function GuitarGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M12 2C16 2 18.8 5.2 18.8 9C18.8 15 13.5 19.8 12 22C10.5 19.8 5.2 15 5.2 9C5.2 5.2 8 2 12 2Z"
+        fill="currentColor"
+        fillOpacity="0.15"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** A bass (F) clef — its curled hook and the two dots that name it, simplified but unmistakable, rather than a guitar-body shape shrunk down and re-labeled "bass". */
+function BassGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M7 5C11.5 3.2 16 5.5 16 10C16 14 12.5 16.5 8.5 16"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        fill="none"
+      />
+      <circle cx="6.8" cy="5.1" r="2.1" fill="currentColor" />
+      <circle cx="19" cy="7.5" r="1.6" fill="currentColor" />
+      <circle cx="19" cy="12.5" r="1.6" fill="currentColor" />
+    </svg>
+  );
+}
+
+const INSTRUMENT_GLYPHS: Record<PrimaryInstrument, (() => React.JSX.Element) | null> = {
+  PIANO_KEYBOARD: PianoGlyph,
+  GUITAR: GuitarGlyph,
+  BASS: BassGlyph,
+  DRUMS: null,
+  VOCAL: null,
+  OTHER: null,
+};
+
+/**
+ * Piano/Guitar/Bass toggle for the dashboard below — a quick way to preview
+ * any instrument's view and sound without leaving the page, by direct
+ * instruction: going to Profile just to peek at a different layout was the
+ * friction this replaces. Defaults to the account's own instrument (set at
+ * onboarding) but is never restricted to it — every student sees all three
+ * options here regardless of what they picked at signup.
+ */
+function InstrumentSwitcher({
+  value,
+  onChange,
+}: {
+  value: PrimaryInstrument | null;
+  onChange: (instrument: PrimaryInstrument) => void;
+}) {
+  // Same fallback as the render branch below: no instrument on file, or one
+  // without its own view (drums/vocal/other), reads as the keyboard.
+  const active = value === "GUITAR" || value === "BASS" ? value : "PIANO_KEYBOARD";
+
+  return (
+    <div className="flex gap-1 rounded-full border border-ink/10 p-1" role="group" aria-label="Instrument view">
+      {INSTRUMENT_OPTIONS.map((option) => {
+        const Glyph = INSTRUMENT_GLYPHS[option.value]!;
+        const isActive = option.value === active;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onChange(option.value)}
+            aria-pressed={isActive}
+            className={`flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+              isActive
+                ? "bg-[rgb(var(--c-a-400))] text-slate-950"
+                : "text-slate-400 hover:text-slate-100"
+            }`}
+          >
+            <Glyph />
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function PlayIcon() {
@@ -35,7 +143,7 @@ function StopIcon() {
 }
 
 /** Spells `variant` at `root`, plus a reference table of all 12 keys with the active root highlighted. */
-export function TranspositionDashboard({ variant, root, player, instrument }: TranspositionDashboardProps) {
+export function TranspositionDashboard({ variant, root, player, instrument, onInstrumentChange }: TranspositionDashboardProps) {
   const spelled = useMemo(() => spellScale(root, variant.formula), [root, variant.formula]);
   const allKeys = useMemo(() => getScaleInAllKeys(variant.formula), [variant.formula]);
 
@@ -116,7 +224,12 @@ export function TranspositionDashboard({ variant, root, player, instrument }: Tr
           physical layout differs, so this picks the one that's actually
           true to what they're holding. PIANO_KEYBOARD, OTHER, and no
           instrument on file all default to the keyboard. */}
-      <div className="mt-7">
+      <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs font-medium uppercase tracking-[0.15em] text-slate-500">View as</p>
+        <InstrumentSwitcher value={instrument} onChange={onInstrumentChange} />
+      </div>
+
+      <div className="mt-3">
         {instrument === "GUITAR" ? (
           <Fretboard
             notes={spelled.notes}

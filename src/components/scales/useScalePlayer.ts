@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { PrimaryInstrument } from "@prisma/client";
 import {
+  DEFAULT_OCTAVE,
   ensureAudioReady,
   isAudioSupported,
   notesToAscendingMidi,
@@ -9,6 +11,7 @@ import {
   playNote,
   playSequence,
   stopPlayback,
+  voiceForInstrument,
 } from "@/lib/audio-engine";
 
 /**
@@ -18,8 +21,14 @@ import {
  * per tab), so this hook exists to hold the two things React actually needs to
  * render: whether a run is in progress, and which note of it is sounding right
  * now.
+ *
+ * `instrument` picks the synthesized voice (piano/guitar/bass) every play
+ * call below uses — passed in rather than read once, so a live instrument
+ * switcher (see TranspositionDashboard) changes the sound immediately on the
+ * same player, not just on the next page load.
  */
-export function useScalePlayer() {
+export function useScalePlayer(instrument: PrimaryInstrument | null = null) {
+  const voice = voiceForInstrument(instrument);
   const [supported, setSupported] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   /** Index into the note list currently sounding, or null. Drives highlighting. */
@@ -51,6 +60,15 @@ export function useScalePlayer() {
    * doesn't resolve, and students consistently read that as "the scale sounds
    * wrong" rather than "the run ended early".
    */
+  // A real bass sits an octave below where a guitar or piano would play the
+  // same note names — without this, switching to Bass would keep the piano's
+  // register and just sound like a piano-range synth with a bass tone
+  // applied. Only affects the abstract note-name paths below: a fretboard
+  // press already carries its own real physical pitch (BASS_STANDARD_TUNING
+  // is tuned a genuine octave under GUITAR_STANDARD_TUNING), so playKey needs
+  // no adjustment.
+  const baseOctave = voice === "BASS" ? DEFAULT_OCTAVE - 1 : DEFAULT_OCTAVE;
+
   const playScale = useCallback(
     async (notes: string[]) => {
       if (notes.length === 0) return;
@@ -59,8 +77,9 @@ export function useScalePlayer() {
 
       const withOctave = [...notes, notes[0]];
       setIsPlaying(true);
-      playSequence(notesToAscendingMidi(withOctave), {
+      playSequence(notesToAscendingMidi(withOctave, baseOctave), {
         tempo: 116,
+        voice,
         onStep: (index) => setActiveIndex(index),
         onEnd: () => {
           setIsPlaying(false);
@@ -68,7 +87,7 @@ export function useScalePlayer() {
         },
       });
     },
-    [],
+    [voice, baseOctave],
   );
 
   /** Auditions one scale degree in the register it occupies within the run. */
@@ -76,25 +95,25 @@ export function useScalePlayer() {
     const ready = await ensureAudioReady();
     if (!ready) return;
 
-    const midis = notesToAscendingMidi(notes);
+    const midis = notesToAscendingMidi(notes, baseOctave);
     const midi = midis[index];
     if (midi === undefined) return;
 
     stopPlayback();
     setIsPlaying(false);
-    playNote(midi);
+    playNote(midi, 0.55, voice);
 
     // Purely a visual pulse on the tapped chip — short, and independent of the
     // note's own (longer) decay.
     setActiveIndex(index);
     setTimeout(() => setActiveIndex((current) => (current === index ? null : current)), 320);
-  }, []);
+  }, [voice, baseOctave]);
 
   const playChordNotes = useCallback(async (notes: string[]) => {
     const ready = await ensureAudioReady();
     if (!ready) return;
-    playChord(notesToAscendingMidi(notes));
-  }, []);
+    playChord(notesToAscendingMidi(notes, baseOctave), { voice });
+  }, [voice, baseOctave]);
 
   /**
    * Sounds one physical key.
@@ -114,7 +133,7 @@ export function useScalePlayer() {
 
     stopPlayback();
     setIsPlaying(false);
-    playNote(midi, degreeIndex === null ? 0.45 : 0.55);
+    playNote(midi, degreeIndex === null ? 0.45 : 0.55, voice);
 
     if (degreeIndex !== null) {
       setActiveIndex(degreeIndex);
@@ -123,7 +142,7 @@ export function useScalePlayer() {
         320,
       );
     }
-  }, []);
+  }, [voice]);
 
   return {
     supported,

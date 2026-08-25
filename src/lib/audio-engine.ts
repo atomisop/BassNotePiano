@@ -1,18 +1,22 @@
 // ============================================================================
-// Scale Explorer audio — a synthesized piano-ish voice for auditioning the
-// scales and native chords that src/lib/music-theory.ts spells.
+// Scale Explorer audio — synthesized voices for auditioning the scales and
+// native chords that src/lib/music-theory.ts spells.
 //
 // Synthesized rather than sampled, for the same reason the notification chime
-// is (see src/lib/notification-sound.ts): a real multi-velocity piano library
-// is tens of megabytes, and this has to cover every note of every scale in all
-// twelve keys. The whole engine is a few hundred bytes of maths and ships with
-// no dependency and no network request.
+// is (see src/lib/notification-sound.ts): a real multi-velocity sample library
+// is tens of megabytes per instrument, and this has to cover every note of
+// every scale in all twelve keys, times three instruments. The whole engine
+// is a few hundred bytes of maths and ships with no dependency and no network
+// request.
 //
-// It is not pretending to be a Steinway. It is aiming for "unmistakably a
-// pitched, struck, decaying instrument" — enough that a student can hear
-// whether Anchihoye really does sound the way the page says it does.
+// None of the three voices below is pretending to be a real recording. Each
+// is aiming for "unmistakably a pitched, struck or plucked, decaying
+// instrument, and clearly not the other two" — enough that a guitar or bass
+// student hears their own instrument, not the piano voice with a different
+// picture next to it.
 // ============================================================================
 
+import type { PrimaryInstrument } from "@prisma/client";
 import { pitchClassOf } from "@/lib/music-theory";
 
 // ---------------------------------------------------------------------------
@@ -110,23 +114,116 @@ export function notesToAscendingMidi(notes: string[], octave = DEFAULT_OCTAVE): 
 }
 
 // ---------------------------------------------------------------------------
-// The voice
+// The voices
 // ---------------------------------------------------------------------------
 
-// Amplitude of each harmonic partial relative to the fundamental. Roughly
-// follows a struck string's spectrum: strong fundamental, quickly thinning
-// upper partials. More than five adds cost without being audible here.
-const PARTIALS: ReadonlyArray<{ ratio: number; gain: number }> = [
-  { ratio: 1, gain: 1 },
-  { ratio: 2, gain: 0.32 },
-  { ratio: 3, gain: 0.14 },
-  { ratio: 4, gain: 0.07 },
-  { ratio: 5, gain: 0.035 },
-];
+export type InstrumentVoice = "PIANO" | "GUITAR" | "BASS";
+
+/** `TranspositionDashboard` uses the same GUITAR/BASS/else split for which diagram to show — keeping the mapping here means the sound and the picture can never drift apart. */
+export function voiceForInstrument(instrument: PrimaryInstrument | null): InstrumentVoice {
+  if (instrument === "GUITAR") return "GUITAR";
+  if (instrument === "BASS") return "BASS";
+  return "PIANO";
+}
+
+interface VoiceProfile {
+  /** Amplitude of each harmonic partial relative to the fundamental. */
+  partials: ReadonlyArray<{ ratio: number; gain: number }>;
+  /** Cents of detune per (ratio - 1) — real strings run sharp on upper partials; how sharp depends on the string's own stiffness. */
+  detuneCents: number;
+  /** Linear attack, in seconds. */
+  attack: number;
+  /** The envelope has decayed to `sustainLevel` of peak by this fraction of the note's total duration. */
+  sustainAt: number;
+  sustainLevel: number;
+  /** Lowpass: opens to `min(freq * openMult, openCap)` at the attack, closes to `max(freq * closeMult, closeFloor)` by `closeAt` of the duration. */
+  filterOpenMult: number;
+  filterOpenCap: number;
+  filterCloseMult: number;
+  filterCloseFloor: number;
+  filterCloseAt: number;
+  filterQ: number;
+  /** Multiplies every caller's base note duration — a struck piano note is short, a plucked string rings longer. */
+  durationScale: number;
+}
+
+const VOICE_PROFILES: Record<InstrumentVoice, VoiceProfile> = {
+  // The original voice, unchanged: strong fundamental, thinning upper
+  // partials, brightness decaying faster than loudness — a struck hammer,
+  // not an organ tone.
+  PIANO: {
+    partials: [
+      { ratio: 1, gain: 1 },
+      { ratio: 2, gain: 0.32 },
+      { ratio: 3, gain: 0.14 },
+      { ratio: 4, gain: 0.07 },
+      { ratio: 5, gain: 0.035 },
+    ],
+    detuneCents: 1.6,
+    attack: 0.006,
+    sustainAt: 0.45,
+    sustainLevel: 0.28,
+    filterOpenMult: 9,
+    filterOpenCap: 14000,
+    filterCloseMult: 2.2,
+    filterCloseFloor: 300,
+    filterCloseAt: 0.9,
+    filterQ: 0.7,
+    durationScale: 1,
+  },
+  // A plucked steel string: brighter and richer in upper harmonics than a
+  // piano hammer (more of the pick's attack survives into the tone), an
+  // almost-instant attack, and a longer, ringing tail instead of a struck
+  // note's clean cutoff.
+  GUITAR: {
+    partials: [
+      { ratio: 1, gain: 1 },
+      { ratio: 2, gain: 0.55 },
+      { ratio: 3, gain: 0.32 },
+      { ratio: 4, gain: 0.2 },
+      { ratio: 5, gain: 0.11 },
+      { ratio: 6, gain: 0.06 },
+    ],
+    detuneCents: 2.4,
+    attack: 0.002,
+    sustainAt: 0.22,
+    sustainLevel: 0.4,
+    filterOpenMult: 12,
+    filterOpenCap: 15000,
+    filterCloseMult: 3.4,
+    filterCloseFloor: 600,
+    filterCloseAt: 0.75,
+    filterQ: 1.1,
+    durationScale: 1.5,
+  },
+  // A fingered/plucked electric bass: dominated by the fundamental with
+  // little upper-harmonic content (the "round", not "zingy", low end), a
+  // slightly rounder attack than a guitar pick, and a dark filter that never
+  // opens far above the note itself.
+  BASS: {
+    partials: [
+      { ratio: 1, gain: 1 },
+      { ratio: 2, gain: 0.2 },
+      { ratio: 3, gain: 0.08 },
+      { ratio: 4, gain: 0.025 },
+    ],
+    detuneCents: 1.2,
+    attack: 0.009,
+    sustainAt: 0.55,
+    sustainLevel: 0.42,
+    filterOpenMult: 4,
+    filterOpenCap: 3200,
+    filterCloseMult: 1.5,
+    filterCloseFloor: 130,
+    filterCloseAt: 0.92,
+    filterQ: 0.6,
+    durationScale: 1.8,
+  },
+};
 
 /**
- * Schedules one struck note. Returns nothing — the caller tracks cancellation
- * through the module-level source list.
+ * Schedules one struck or plucked note, per `voice`. Returns nothing — the
+ * caller tracks cancellation through the module-level source list.
  */
 function scheduleVoice(
   ctx: AudioContext,
@@ -135,41 +232,42 @@ function scheduleVoice(
   startTime: number,
   duration: number,
   velocity: number,
+  voice: InstrumentVoice = "PIANO",
 ) {
+  const profile = VOICE_PROFILES[voice];
+
   // One filter per note rather than per partial: a real string's brightness
-  // decays faster than its loudness, which is most of what separates a struck
-  // note from an organ tone.
+  // decays faster than its loudness, which is most of what separates a
+  // struck/plucked note from an organ tone.
   const filter = ctx.createBiquadFilter();
   filter.type = "lowpass";
-  filter.Q.value = 0.7;
-  filter.frequency.setValueAtTime(Math.min(frequency * 9, 14000), startTime);
+  filter.Q.value = profile.filterQ;
+  filter.frequency.setValueAtTime(Math.min(frequency * profile.filterOpenMult, profile.filterOpenCap), startTime);
   filter.frequency.exponentialRampToValueAtTime(
-    Math.max(frequency * 2.2, 300),
-    startTime + duration * 0.9,
+    Math.max(frequency * profile.filterCloseMult, profile.filterCloseFloor),
+    startTime + duration * profile.filterCloseAt,
   );
 
   const noteGain = ctx.createGain();
   const peak = Math.max(velocity, 0.0001);
 
-  // A 6ms attack — fast enough to read as struck, slow enough to avoid the
-  // click that a truly instant ramp produces.
   noteGain.gain.setValueAtTime(0, startTime);
-  noteGain.gain.linearRampToValueAtTime(peak, startTime + 0.006);
+  noteGain.gain.linearRampToValueAtTime(peak, startTime + profile.attack);
   // Exponential, never to exactly zero (exponentialRampToValueAtTime cannot
   // reach 0 and will throw), then a short linear tail to silence.
-  noteGain.gain.exponentialRampToValueAtTime(peak * 0.28, startTime + duration * 0.45);
+  noteGain.gain.exponentialRampToValueAtTime(peak * profile.sustainLevel, startTime + duration * profile.sustainAt);
   noteGain.gain.exponentialRampToValueAtTime(peak * 0.0001, startTime + duration);
 
   filter.connect(noteGain).connect(destination);
 
-  for (const partial of PARTIALS) {
+  for (const partial of profile.partials) {
     const osc = ctx.createOscillator();
     osc.type = "sine";
     osc.frequency.value = frequency * partial.ratio;
 
     // Real strings are slightly inharmonic — upper partials run sharp. A few
     // cents of stretch stops the stack sounding like a synthetic sawtooth.
-    osc.detune.value = (partial.ratio - 1) * 1.6;
+    osc.detune.value = (partial.ratio - 1) * profile.detuneCents;
 
     const partialGain = ctx.createGain();
     partialGain.gain.value = partial.gain;
@@ -206,6 +304,7 @@ export interface SequenceOptions {
   onStep?: (index: number) => void;
   /** Fired once the final note has been released. */
   onEnd?: () => void;
+  voice?: InstrumentVoice;
 }
 
 /**
@@ -219,21 +318,23 @@ export interface SequenceOptions {
  * stumble whenever React re-rendered.
  */
 export function playSequence(midis: number[], options: SequenceOptions = {}): void {
-  const { tempo = 108, onStep, onEnd } = options;
+  const { tempo = 108, onStep, onEnd, voice = "PIANO" } = options;
   const ctx = getContext();
   if (!ctx || !masterGain || midis.length === 0) return;
 
   stopPlayback();
 
   const secondsPerNote = 60 / tempo;
-  // Slight overlap so the run sounds connected rather than clipped-and-gapped.
-  const noteDuration = secondsPerNote * 1.6;
+  // Slight overlap so the run sounds connected rather than clipped-and-gapped
+  // — scaled per voice, since a plucked string should ring into the next
+  // note more than a struck piano key does.
+  const noteDuration = secondsPerNote * 1.6 * VOICE_PROFILES[voice].durationScale;
   // A small lead-in — scheduling at exactly currentTime can drop the first note.
   const startAt = ctx.currentTime + 0.06;
 
   midis.forEach((midi, index) => {
     const noteStart = startAt + index * secondsPerNote;
-    scheduleVoice(ctx, masterGain!, midiToFrequency(midi), noteStart, noteDuration, 0.5);
+    scheduleVoice(ctx, masterGain!, midiToFrequency(midi), noteStart, noteDuration, 0.5, voice);
 
     if (onStep) {
       activeTimers.push(setTimeout(() => onStep(index), (noteStart - ctx.currentTime) * 1000));
@@ -247,10 +348,10 @@ export function playSequence(midis: number[], options: SequenceOptions = {}): vo
 }
 
 /** Plays a single note — used for auditioning one scale degree. */
-export function playNote(midi: number, velocity = 0.55): void {
+export function playNote(midi: number, velocity = 0.55, voice: InstrumentVoice = "PIANO"): void {
   const ctx = getContext();
   if (!ctx || !masterGain) return;
-  scheduleVoice(ctx, masterGain, midiToFrequency(midi), ctx.currentTime + 0.02, 1.5, velocity);
+  scheduleVoice(ctx, masterGain, midiToFrequency(midi), ctx.currentTime + 0.02, 1.5 * VOICE_PROFILES[voice].durationScale, velocity, voice);
 }
 
 /**
@@ -259,8 +360,9 @@ export function playNote(midi: number, velocity = 0.55): void {
  * Per-voice gain is scaled down by the voice count — four notes at the level
  * used for a single note sums past full scale and distorts on the way out.
  */
-export function playChord(midis: number[], options: { duration?: number } = {}): void {
-  const { duration = 2.2 } = options;
+export function playChord(midis: number[], options: { duration?: number; voice?: InstrumentVoice } = {}): void {
+  const { voice = "PIANO" } = options;
+  const duration = options.duration ?? 2.2 * VOICE_PROFILES[voice].durationScale;
   const ctx = getContext();
   if (!ctx || !masterGain || midis.length === 0) return;
 
@@ -272,7 +374,7 @@ export function playChord(midis: number[], options: { duration?: number } = {}):
   midis.forEach((midi, index) => {
     // A few milliseconds of spread per voice, low to high. A perfectly
     // simultaneous attack is the single most synthetic-sounding thing a
-    // sampled-piano imitation can do; a real hand is never that precise.
+    // sampled imitation can do; a real hand is never that precise.
     scheduleVoice(
       ctx,
       masterGain!,
@@ -280,6 +382,7 @@ export function playChord(midis: number[], options: { duration?: number } = {}):
       startAt + index * 0.012,
       duration,
       velocity,
+      voice,
     );
   });
 }
