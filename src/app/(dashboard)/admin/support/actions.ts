@@ -7,6 +7,7 @@ import {
   getSupportThread,
   postAdminReply,
   resolveSupportThread,
+  deleteSupportThread,
   AssistantEscalationError,
   type AdminThreadSummary,
   type AdminThreadMessage,
@@ -44,4 +45,9 @@ export async function sendSupportReplyAction(escalationId: string, body: string)
 export async function resolveSupportThreadAction(escalationId: string): Promise<void> {
   const adminId = await requireAdminId();
   await resolveSupportThread(escalationId, adminId);
+}
+
+export async function deleteSupportThreadAction(escalationId: string): Promise<void> {
+  await requireAdminId();
+  await deleteSupportThread(escalationId);
 }

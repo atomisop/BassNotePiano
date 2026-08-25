@@ -289,3 +289,14 @@ export async function resolveSupportThread(escalationId: string, adminId: string
     data: { status: "RESOLVED", resolvedAt: new Date(), resolvedById: adminId },
   });
 }
+
+// Permanently erases everything a visitor shared through this one thread:
+// the escalation row itself (contactName/contactEmail) and, via the schema's
+// `onDelete: Cascade` on SupportMessage.escalation, every message body in
+// it. Deliberately does NOT touch the linked User row when the visitor was
+// signed in — that's a real account, out of scope for "delete this chat."
+// `deleteMany` (not `delete`) so calling this twice, or on an id that's
+// already gone, is a no-op instead of throwing.
+export async function deleteSupportThread(escalationId: string): Promise<void> {
+  await prisma.assistantEscalation.deleteMany({ where: { id: escalationId } });
+}

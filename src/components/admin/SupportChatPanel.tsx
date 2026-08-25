@@ -1,13 +1,14 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import type { AssistantEscalationStatus, SupportMessageSender } from "@prisma/client";
 import {
   getSupportThreadsAction,
   getSupportThreadAction,
   sendSupportReplyAction,
   resolveSupportThreadAction,
+  deleteSupportThreadAction,
   type AdminThreadSummary,
   type AdminThreadMessage,
 } from "@/app/(dashboard)/admin/support/actions";
@@ -108,9 +109,17 @@ export interface SupportChatPanelProps {
 }
 
 function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "No conversations yet." }: SupportChatPanelProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const activeId = searchParams.get("thread");
+  // Read once, as the initial value only: deliberately not the live
+  // searchParams value. Deep links (`?thread=…`) and the browser back/
+  // forward buttons still work off this initial read; every switch after
+  // that is local state updated via history.replaceState in selectThread,
+  // not router.replace. router.replace re-enters the App Router and
+  // re-fetches this whole route from the server just to change which
+  // thread is highlighted, a second, pointless round trip stacked in
+  // front of the real one (the message fetch below) on every single click,
+  // which is a big part of why opening a thread felt slow.
+  const [activeId, setActiveId] = useState<string | null>(() => searchParams.get("thread"));
 
   const [threads, setThreads] = useState(initialThreads);
   const [messages, setMessages] = useState<AdminThreadMessage[]>([]);
@@ -119,16 +128,42 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const [resolving, setResolving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const activeThread = threads.find((t) => t.id === activeId) ?? null;
 
+  // The Open/Resolved/All tabs on the page above are plain <Link>s to
+  // ?status=…, which re-renders this route on the server with a fresh
+  // `initialThreads` for the new filter. But useState(initialThreads)
+  // only reads that value on first mount, so without this the old tab's
+  // list (a resolved thread included, if that's where you came from) sat
+  // on screen until the poll below happened to fire. That poll used to
+  // wait a full THREAD_LIST_POLL_MS before its very first fetch, too, so
+  // "switch tabs quickly" reliably showed the wrong list for real,
+  // noticeable seconds, not just a rare race.
   useEffect(() => {
-    const interval = setInterval(async () => {
-      setThreads(await getSupportThreadsAction(statusFilter));
-    }, THREAD_LIST_POLL_MS);
-    return () => clearInterval(interval);
+    setThreads(initialThreads);
+  }, [initialThreads]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function refresh() {
+      const result = await getSupportThreadsAction(statusFilter);
+      if (!cancelled) setThreads(result);
+    }
+    refresh();
+    const interval = setInterval(refresh, THREAD_LIST_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [statusFilter]);
+
+  useEffect(() => {
+    setConfirmingDelete(false);
+  }, [activeId]);
 
   useEffect(() => {
     if (!activeId) {
@@ -141,12 +176,12 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
     let initialLoad = true;
 
     // Switching threads used to leave the previously-selected thread's
-    // messages on screen until the new ones arrived — reads as "the message
+    // messages on screen until the new ones arrived: reads as "the message
     // history takes a while to load" when really it's just showing the
     // wrong thread's history for a beat. Clear it immediately and show a
     // loading state instead; the 2.5s poll after that reuses this same
     // `load`, but only the very first call for a given thread flips the
-    // loading flag — a poll refresh shouldn't flicker a spinner.
+    // loading flag, so a poll refresh doesn't flicker a spinner.
     setMessages([]);
     setMessagesLoading(true);
 
@@ -173,8 +208,12 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  function selectThread(id: string) {
-    router.replace(`/admin/support?${statusFilter ? `status=${statusFilter}&` : ""}thread=${id}`, { scroll: false });
+  function selectThread(id: string | null) {
+    setActiveId(id);
+    const query = [statusFilter ? `status=${statusFilter}` : null, id ? `thread=${id}` : null].filter(Boolean).join("&");
+    // Keeps the URL shareable/refreshable without going through the
+    // App Router; see the note above on why this isn't router.replace.
+    window.history.replaceState(null, "", `/admin/support${query ? `?${query}` : ""}`);
   }
 
   async function handleSend(e: React.FormEvent) {
@@ -201,6 +240,16 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
     setThreadStatus("RESOLVED");
     setThreads(await getSupportThreadsAction(statusFilter));
     setResolving(false);
+  }
+
+  async function handleDelete() {
+    if (!activeId || deleting) return;
+    setDeleting(true);
+    await deleteSupportThreadAction(activeId);
+    setThreads((prev) => prev.filter((t) => t.id !== activeId));
+    setDeleting(false);
+    setConfirmingDelete(false);
+    selectThread(null);
   }
 
   if (threads.length === 0) {
@@ -237,20 +286,56 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                   {activeThread.user && <> · has an account{activeThread.user.username ? ` (@${activeThread.user.username})` : ""}</>}
                 </p>
               </div>
-              {threadStatus === "OPEN" && (
+              <div className="flex shrink-0 items-center gap-2">
+                {threadStatus === "OPEN" && (
+                  <button
+                    type="button"
+                    onClick={handleResolve}
+                    disabled={resolving}
+                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    {resolving ? "Resolving…" : "Mark resolved"}
+                  </button>
+                )}
+                {threadStatus === "RESOLVED" && (
+                  <span className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-[11px] font-medium text-emerald-300">Resolved</span>
+                )}
                 <button
                   type="button"
-                  onClick={handleResolve}
-                  disabled={resolving}
-                  className="shrink-0 rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                  onClick={() => setConfirmingDelete(true)}
+                  className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/10"
                 >
-                  {resolving ? "Resolving…" : "Mark resolved"}
+                  Delete
                 </button>
-              )}
-              {threadStatus === "RESOLVED" && (
-                <span className="shrink-0 rounded-full bg-emerald-400/15 px-2.5 py-1 text-[11px] font-medium text-emerald-300">Resolved</span>
-              )}
+              </div>
             </div>
+
+            {confirmingDelete && (
+              <div className="space-y-2 border-b border-ink/10 bg-red-500/5 px-4 py-3">
+                <p className="text-xs text-slate-400">
+                  Permanently deletes this conversation and everything the visitor shared through it: their name,
+                  email, and every message. This can&apos;t be undone.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDelete(false)}
+                    disabled={deleting}
+                    className="flex-1 rounded-lg border border-ink/10 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    Never mind
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="flex-1 rounded-lg bg-red-500/95 py-2 text-xs font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {deleting ? "Deleting…" : "Delete permanently"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="min-w-0 flex-1 space-y-3 overflow-y-auto p-4">
               {messagesLoading ? (
