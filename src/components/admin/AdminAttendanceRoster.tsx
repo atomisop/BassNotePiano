@@ -17,10 +17,10 @@ interface RosterEntry {
   studentImage: string | null;
   status: "SCHEDULED" | "CANCELED" | "COMPLETED";
   attendance: "PRESENT" | "NO_SHOW" | null;
-  /** Every student in an occurrence shares the same start time, but can
-      book fewer credits than the full window — this is what actually
-      differs per student, so it's what tells you when each one leaves. */
+  /** Credits this booking costs once attendance is taken. */
   creditsSpent: number;
+  /** Shared across every row from the same family booking — null for a solo booking. */
+  familyBookingGroupId: string | null;
   focus: RosterFocus;
 }
 
@@ -54,7 +54,6 @@ interface OccurrenceGroup {
   dayOfWeek: number;
   occurrenceDateMs: number;
   scheduledAt: string;
-  capacity: number;
   roster: RosterEntry[];
 }
 
@@ -134,6 +133,10 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
         const key = `${occ.scheduleId}:${occ.occurrenceDateMs}`;
         const hasHappened = new Date(occ.scheduledAt).getTime() <= Date.now();
         const activeRoster = occ.roster.filter((r) => r.status !== "CANCELED");
+        // One booking party per occurrence now (see getUpcomingOccurrences):
+        // a family booking is every row sharing the same familyBookingGroupId,
+        // a solo booking is the one row with none.
+        const isFamily = activeRoster.length > 0 && activeRoster[0]!.familyBookingGroupId !== null;
         return (
           <div key={key} className="glass-surface p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -141,9 +144,11 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                 <h3 className="font-serif text-lg text-slate-50">{occ.label ?? "Class"}</h3>
                 <p className="mt-0.5 text-sm text-slate-500">{formatDateTime(occ.scheduledAt)}</p>
               </div>
-              <span className="rounded-full border border-ink/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
-                {activeRoster.length} / {occ.capacity} booked
-              </span>
+              {activeRoster.length > 0 && (
+                <span className="rounded-full border border-ink/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  {isFamily ? `Family · ${activeRoster.length} students` : "One-on-one"}
+                </span>
+              )}
             </div>
 
             <div className="mt-4 space-y-5">

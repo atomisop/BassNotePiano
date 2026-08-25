@@ -7,7 +7,25 @@ import { resolveNextStep } from "@/lib/next-step";
 
 export class ClassBookingError extends Error {}
 
-export const CLASS_CAPACITY = 10;
+// Three tiers, by direct instruction:
+//  - Solo (1:1): one student books an occurrence alone, 1-2 credits (up to
+//    an hour) of their own choosing, at their own pace. The default now —
+//    the whole reason the other two tiers below exist as *separate* things
+//    rather than every booking flowing through one shared path.
+//  - Family: 2+ named, verified accounts sharing one occurrence, always at
+//    the full FAMILY_CREDITS_PER_STUDENT rate each, since teaching several
+//    kids at once is genuinely more work than one regardless of how long
+//    any single kid stays.
+//  - Group: up to GROUP_CAPACITY strangers sharing one occurrence at the
+//    fixed GROUP_CREDITS_PER_STUDENT rate, no early leaving. Not built yet
+//    — these constants exist now so the eventual group-booking function
+//    has its numbers already agreed on, not so anything reads them today.
+export const SOLO_MAX_CREDITS = 2;
+export const FAMILY_MIN_ATTENDEES = 2;
+export const FAMILY_CREDITS_PER_STUDENT = 2;
+export const GROUP_CAPACITY = 10;
+export const GROUP_CREDITS_PER_STUDENT = 2;
+
 export const CANCELLATION_CUTOFF_HOURS = 24;
 // How many upcoming weeks of each weekly slot to surface as bookable —
 // a fixed planning horizon rather than an unbounded "forever" list, since
@@ -74,20 +92,51 @@ function parseStartTime(startTime: string): { hour: number; minute: number } {
 // a real instant — scheduledAt is the real instant.
 // ---------------------------------------------------------------------------
 
+// A window longer than one appointment (e.g. an admin-defined "11am-1pm"
+// block) doesn't become one all-or-nothing occurrence — it splits into
+// independent CHUNK_MIN-sized appointment slots (11:00 and 12:00), each its
+// own booking party. Taking the 11:00 slot no longer blocks 12:00 the way a
+// single-occurrence-per-window model would; only whichever exact start time
+// was actually claimed is unavailable. CHUNK_MIN matches both
+// SOLO_MAX_CREDITS and FAMILY_CREDITS_PER_STUDENT (60 min = 2 credits) since
+// every booking, solo or family, is already capped at that same length.
+const CHUNK_MIN = SOLO_MAX_CREDITS * 30;
+
+interface ScheduleChunk {
+  chunkIndex: number;
+  /** Minutes past the schedule's own startTime this chunk begins. */
+  offsetMin: number;
+  /** This chunk's own max credits — CHUNK_MIN's worth, or whatever's left in a window that doesn't divide evenly. */
+  creditCost: number;
+}
+
+function chunksForSchedule(schedule: { durationMin: number }): ScheduleChunk[] {
+  const chunks: ScheduleChunk[] = [];
+  for (let offsetMin = 0; offsetMin < schedule.durationMin; offsetMin += CHUNK_MIN) {
+    const remainingMin = schedule.durationMin - offsetMin;
+    chunks.push({ chunkIndex: chunks.length, offsetMin, creditCost: Math.min(remainingMin, CHUNK_MIN) / 30 });
+  }
+  return chunks;
+}
+
 export interface ClassOccurrence {
   scheduleId: string;
   label: string | null;
   dayOfWeek: number;
+  /** Which CHUNK_MIN-sized appointment slot within the schedule's own window this is — see chunksForSchedule. */
+  chunkIndex: number;
   durationMin: number;
+  /** This chunk's own credit ceiling, not the whole window's. */
   creditCost: number;
   occurrenceDate: Date;
   scheduledAt: Date;
-  seatsBooked: number;
-  seatsLeft: number;
-  isFull: boolean;
+  /** One booking party per chunk — solo or family, either way this exact
+      start time is gone once anyone has claimed it. A different chunk of
+      the same window (a different start time) is unaffected. */
+  isBooked: boolean;
 }
 
-/** Every active weekly slot's next OCCURRENCES_PER_SLOT bookable occurrences, with live seat counts. */
+/** Every active weekly slot's next OCCURRENCES_PER_SLOT bookable chunks, with live availability. */
 export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
   const schedules = await prisma.classSchedule.findMany({ where: { active: true }, orderBy: { dayOfWeek: "asc" } });
   if (schedules.length === 0) return [];
@@ -96,10 +145,16 @@ export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
   const todayUtcMidnight = Date.UTC(year, month - 1, day);
   const now = Date.now();
 
-  const candidates: { schedule: (typeof schedules)[number]; occurrenceDate: Date; scheduledAt: Date }[] = [];
+  const candidates: {
+    schedule: (typeof schedules)[number];
+    chunk: ScheduleChunk;
+    occurrenceDate: Date;
+    scheduledAt: Date;
+  }[] = [];
 
   for (const schedule of schedules) {
     const { hour, minute } = parseStartTime(schedule.startTime);
+    const chunks = chunksForSchedule(schedule);
     let found = 0;
     // 8 weeks is comfortably more than enough to find OCCURRENCES_PER_SLOT
     // matches for any weekday; this is just a safety bound, not a real limit.
@@ -108,47 +163,54 @@ export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
       const candidateDate = new Date(candidateUtcMidnight);
       if (candidateDate.getUTCDay() !== schedule.dayOfWeek) continue;
 
-      const scheduledAt = etWallTimeToUtc(
+      const baseScheduledAt = etWallTimeToUtc(
         candidateDate.getUTCFullYear(),
         candidateDate.getUTCMonth() + 1,
         candidateDate.getUTCDate(),
         hour,
         minute,
       );
-      if (scheduledAt.getTime() <= now) continue; // today's slot already started/passed
 
-      candidates.push({ schedule, occurrenceDate: candidateDate, scheduledAt });
+      for (const chunk of chunks) {
+        const scheduledAt = new Date(baseScheduledAt.getTime() + chunk.offsetMin * 60_000);
+        if (scheduledAt.getTime() <= now) continue; // this chunk already started/passed today
+        candidates.push({ schedule, chunk, occurrenceDate: candidateDate, scheduledAt });
+      }
       found++;
     }
   }
 
-  // One grouped count query instead of one-per-candidate.
-  const seatCounts = await prisma.classBooking.groupBy({
-    by: ["scheduleId", "occurrenceDate"],
+  // One grouped count query instead of one-per-candidate — grouped by the
+  // exact instant, not just the day, since that's what actually identifies
+  // one chunk now. Any count > 0 means that specific chunk's one booking
+  // party (solo or family) is claimed; a sibling chunk in the same window
+  // is a different scheduledAt and unaffected.
+  const bookedCounts = await prisma.classBooking.groupBy({
+    by: ["scheduleId", "occurrenceDate", "scheduledAt"],
     where: {
       status: "SCHEDULED",
-      OR: candidates.map((c) => ({ scheduleId: c.schedule.id, occurrenceDate: c.occurrenceDate })),
+      OR: candidates.map((c) => ({ scheduleId: c.schedule.id, occurrenceDate: c.occurrenceDate, scheduledAt: c.scheduledAt })),
     },
     _count: { _all: true },
   });
-  const seatsByKey = new Map(seatCounts.map((s) => [`${s.scheduleId}:${s.occurrenceDate.getTime()}`, s._count._all]));
+  const bookedKeys = new Set(
+    bookedCounts.filter((s) => s._count._all > 0).map((s) => `${s.scheduleId}:${s.occurrenceDate.getTime()}:${s.scheduledAt.getTime()}`),
+  );
 
   return candidates
-    .map((c): ClassOccurrence => {
-      const seatsBooked = seatsByKey.get(`${c.schedule.id}:${c.occurrenceDate.getTime()}`) ?? 0;
-      return {
+    .map(
+      (c): ClassOccurrence => ({
         scheduleId: c.schedule.id,
         label: c.schedule.label,
         dayOfWeek: c.schedule.dayOfWeek,
-        durationMin: c.schedule.durationMin,
-        creditCost: c.schedule.creditCost,
+        chunkIndex: c.chunk.chunkIndex,
+        durationMin: c.chunk.creditCost * 30,
+        creditCost: c.chunk.creditCost,
         occurrenceDate: c.occurrenceDate,
         scheduledAt: c.scheduledAt,
-        seatsBooked,
-        seatsLeft: Math.max(0, CLASS_CAPACITY - seatsBooked),
-        isFull: seatsBooked >= CLASS_CAPACITY,
-      };
-    })
+        isBooked: bookedKeys.has(`${c.schedule.id}:${c.occurrenceDate.getTime()}:${c.scheduledAt.getTime()}`),
+      }),
+    )
     .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
 }
 
@@ -157,45 +219,68 @@ export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
 // ---------------------------------------------------------------------------
 
 /**
- * Books a specific occurrence: verifies it's still in the future, spends
- * the schedule's credit cost, and enforces the 10-seat cap — all inside one
- * Serializable transaction so two students racing for the last seat can't
- * both succeed (Postgres aborts the loser with a serialization failure,
- * surfaced here as a friendly "just filled up" error rather than a crash).
+ * A student's own credit balance minus whatever's already reserved by their
+ * own SCHEDULED-but-not-yet-attended bookings. The real charge for any of
+ * those doesn't land until markAttendance runs (see that function's own
+ * comment for why), so User.classCredits alone would overstate what's
+ * actually still free to spend — this is what every booking check and every
+ * "your balance" display should read instead of the raw column.
  */
+export async function getEffectiveClassCredits(userId: string): Promise<number> {
+  const [user, pending] = await Promise.all([
+    prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { classCredits: true } }),
+    prisma.classBooking.aggregate({ where: { studentId: userId, status: "SCHEDULED" }, _sum: { creditsSpent: true } }),
+  ]);
+  return user.classCredits - (pending._sum.creditsSpent ?? 0);
+}
+
 /**
- * `creditsToBook` defaults to the schedule's full window (today's existing
- * behavior — book the whole thing) but a student can spend fewer credits to
- * attend only the first part of it. Every SCHEDULED booking for a given
- * occurrence still shares the exact same start time (`scheduledAt` below) —
- * it's one live class, not several private lessons — this only lets each
- * student's own end time, and what they're charged, vary from the window's
- * maximum. Validated against `schedule.creditCost`, which is by definition
- * `durationMin / 30` (see the schema comment on ClassSchedule.creditCost),
- * so it's already the exact ceiling in credits.
+ * Books a specific occurrence for one student alone. Solo 1:1 is the
+ * default tier now: `creditsToBook` is 1 or 2 (30 or 60 minutes), the
+ * student's own choice, capped at SOLO_MAX_CREDITS regardless of how long
+ * the underlying schedule window itself is — by direct instruction, no
+ * single 1:1 booking should ever run past an hour.
+ *
+ * Capacity is binary, not counted: an occurrence is claimed by whichever
+ * booking (solo or family) lands on it first, and everyone else is locked
+ * out of that exact slot for that week — this is an appointment book, not a
+ * shared classroom. Credits are reserved (checked against
+ * getEffectiveClassCredits) but not actually deducted from the student's
+ * balance yet; that happens once in markAttendance, whether they show up or
+ * not. Both checks run inside one Serializable transaction so two students
+ * racing for the same open slot can't both win it (Postgres aborts the
+ * loser with a serialization failure, surfaced here as a friendly "just
+ * booked" error rather than a crash).
  */
 export async function bookClass(
   studentId: string,
   scheduleId: string,
   occurrenceDateMs: number,
+  chunkIndex: number,
   creditsToBook?: number,
 ) {
   const schedule = await prisma.classSchedule.findUniqueOrThrow({ where: { id: scheduleId } });
   if (!schedule.active) throw new ClassBookingError("This class is no longer offered.");
 
-  const credits = creditsToBook ?? schedule.creditCost;
-  if (!Number.isInteger(credits) || credits < 1 || credits > schedule.creditCost) {
-    throw new ClassBookingError(`Choose between 1 and ${schedule.creditCost} credits for this class.`);
+  const chunk = chunksForSchedule(schedule)[chunkIndex];
+  if (!chunk) throw new ClassBookingError("That time slot doesn't exist.");
+
+  const maxCredits = Math.min(chunk.creditCost, SOLO_MAX_CREDITS);
+  const credits = creditsToBook ?? maxCredits;
+  if (!Number.isInteger(credits) || credits < 1 || credits > maxCredits) {
+    throw new ClassBookingError(`Choose between 1 and ${maxCredits} credits for this class.`);
   }
 
   const occurrenceDate = new Date(occurrenceDateMs);
   const { hour, minute } = parseStartTime(schedule.startTime);
-  const scheduledAt = etWallTimeToUtc(
-    occurrenceDate.getUTCFullYear(),
-    occurrenceDate.getUTCMonth() + 1,
-    occurrenceDate.getUTCDate(),
-    hour,
-    minute,
+  const scheduledAt = new Date(
+    etWallTimeToUtc(
+      occurrenceDate.getUTCFullYear(),
+      occurrenceDate.getUTCMonth() + 1,
+      occurrenceDate.getUTCDate(),
+      hour,
+      minute,
+    ).getTime() + chunk.offsetMin * 60_000,
   );
   if (scheduledAt.getTime() <= Date.now()) {
     throw new ClassBookingError("That class has already started or passed.");
@@ -214,8 +299,13 @@ export async function bookClass(
   try {
     booking = await prisma.$transaction(
       async (tx) => {
-        const seatsBooked = await tx.classBooking.count({ where: { scheduleId, occurrenceDate, status: "SCHEDULED" } });
-        if (seatsBooked >= CLASS_CAPACITY) throw new ClassBookingError("This class just filled up — pick another time.");
+        // Keyed on the exact instant, not just the day — a sibling chunk of
+        // the same admin-defined window (a different start time) is a
+        // separate appointment slot and shouldn't block this one.
+        const takenByAnyone = await tx.classBooking.findFirst({ where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED" } });
+        if (takenByAnyone && takenByAnyone.studentId !== studentId) {
+          throw new ClassBookingError("This time was just booked by someone else — pick another slot.");
+        }
 
         // (studentId, scheduleId, occurrenceDate) is unique, so a student who
         // previously booked this exact occurrence and then canceled already
@@ -231,12 +321,15 @@ export async function bookClass(
           throw new ClassBookingError("You've already booked this class.");
         }
 
-        const spent = await tx.user.updateMany({
-          where: { id: studentId, classCredits: { gte: credits } },
-          data: { classCredits: { decrement: credits } },
-        });
-        if (spent.count === 0) {
-          throw new ClassBookingError(`You need ${credits} credit${credits === 1 ? "" : "s"} for this class.`);
+        const [user, pending] = await Promise.all([
+          tx.user.findUniqueOrThrow({ where: { id: studentId }, select: { classCredits: true } }),
+          tx.classBooking.aggregate({ where: { studentId, status: "SCHEDULED" }, _sum: { creditsSpent: true } }),
+        ]);
+        const available = user.classCredits - (pending._sum.creditsSpent ?? 0);
+        if (available < credits) {
+          throw new ClassBookingError(
+            `You need ${credits} credit${credits === 1 ? "" : "s"} available — you have ${available} free right now.`,
+          );
         }
 
         if (existing) {
@@ -249,6 +342,7 @@ export async function bookClass(
               attendance: null,
               refunded: false,
               canceledReason: null,
+              familyBookingGroupId: null,
             },
           });
         }
@@ -265,7 +359,7 @@ export async function bookClass(
       throw new ClassBookingError("You've already booked this class.");
     }
     if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2034") {
-      throw new ClassBookingError("That seat was just taken — try again.");
+      throw new ClassBookingError("That slot was just taken — try again.");
     }
     throw err;
   }
@@ -286,7 +380,7 @@ export async function bookClass(
 
 async function notifyAdminsOfBooking(
   studentId: string,
-  schedule: { label: string | null; creditCost: number },
+  schedule: { label: string | null },
   scheduledAt: Date,
   creditsBooked: number,
 ) {
@@ -305,20 +399,45 @@ async function notifyAdminsOfBooking(
   // evening class") — appending "class" again produced "Wednesday class
   // class".
   const classLabel = schedule.label ?? "class";
-  // Full window ("starting at" only) vs. a partial stay ("X-Y") — the
-  // teacher needs to know when a student is actually leaving if it's
-  // earlier than the whole class, same reason bookClass now accepts a
-  // shorter creditsToBook at all.
-  const spanLabel =
-    creditsBooked === schedule.creditCost ? `starting ${when}` : `${when} to ${endsAt}`;
 
   await Promise.all(
     admins.map((admin) =>
       createNotification({
         userId: admin.id,
         type: "LESSON_BOOKING_RECEIVED",
-        title: "New class booking",
-        body: `${studentLabel} booked the ${classLabel} ${spanLabel} (${creditsBooked} credit${creditsBooked === 1 ? "" : "s"}).`,
+        title: "New one-on-one booking",
+        body: `${studentLabel} booked the ${classLabel} ${when} to ${endsAt} (${creditsBooked} credit${creditsBooked === 1 ? "" : "s"}).`,
+        emailCategory: "social",
+      }),
+    ),
+  );
+}
+
+async function notifyAdminsOfFamilyBooking(
+  attendeeIds: string[],
+  schedule: { label: string | null },
+  scheduledAt: Date,
+) {
+  const [students, admins] = await Promise.all([
+    prisma.user.findMany({ where: { id: { in: attendeeIds } }, select: { name: true, email: true } }),
+    prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } }),
+  ]);
+  const names = students.map((s) => s.name ?? s.email).join(", ");
+  const when = scheduledAt.toLocaleString("en-US", { timeZone: ET_ZONE, dateStyle: "full", timeStyle: "short" });
+  const endsAt = new Date(scheduledAt.getTime() + FAMILY_CREDITS_PER_STUDENT * 30 * 60_000).toLocaleTimeString("en-US", {
+    timeZone: ET_ZONE,
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  const classLabel = schedule.label ?? "class";
+
+  await Promise.all(
+    admins.map((admin) =>
+      createNotification({
+        userId: admin.id,
+        type: "LESSON_BOOKING_RECEIVED",
+        title: "New family booking",
+        body: `${names} booked the ${classLabel} ${when} to ${endsAt} together (${FAMILY_CREDITS_PER_STUDENT} credits each).`,
         emailCategory: "social",
       }),
     ),
@@ -328,7 +447,8 @@ async function notifyAdminsOfBooking(
 export interface BundleBookingSelection {
   scheduleId: string;
   occurrenceDateMs: number;
-  /** Same optional meaning as bookClass's own param — omit for the full window. */
+  chunkIndex: number;
+  /** Same optional meaning as bookClass's own param — omit for the chunk's full length. */
   creditsToBook?: number;
 }
 
@@ -361,7 +481,7 @@ export interface BundleBookingResult extends BundleBookingSelection {
 export async function bookClassBundle(studentId: string, selections: BundleBookingSelection[]): Promise<BundleBookingResult[]> {
   const seen = new Set<string>();
   const deduped = selections.filter((s) => {
-    const key = `${s.scheduleId}:${s.occurrenceDateMs}`;
+    const key = `${s.scheduleId}:${s.occurrenceDateMs}:${s.chunkIndex}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -370,7 +490,7 @@ export async function bookClassBundle(studentId: string, selections: BundleBooki
   const results: BundleBookingResult[] = [];
   for (const selection of deduped) {
     try {
-      const booking = await bookClass(studentId, selection.scheduleId, selection.occurrenceDateMs, selection.creditsToBook);
+      const booking = await bookClass(studentId, selection.scheduleId, selection.occurrenceDateMs, selection.chunkIndex, selection.creditsToBook);
       results.push({ ...selection, ok: true, bookingId: booking.id, error: null });
     } catch (err) {
       results.push({
@@ -382,6 +502,202 @@ export async function bookClassBundle(studentId: string, selections: BundleBooki
     }
   }
   return results;
+}
+
+// ---------------------------------------------------------------------------
+// Family booking — 2+ named, verified accounts sharing one occurrence.
+// ---------------------------------------------------------------------------
+
+export interface FamilyAttendeeCheck {
+  email: string;
+  found: boolean;
+  /** Only set when found and verified — lets the booker visually confirm
+      "yes, that's my kid's account" for an email they themselves just
+      typed, not a stranger's private data. */
+  name: string | null;
+  userId: string | null;
+  verified: boolean;
+}
+
+/**
+ * Live, side-effect-free-beyond-its-own-rate-limit-ledger lookup used while
+ * the booker is still filling in attendee emails — same shape and reasoning
+ * as payments.ts's checkFamilyBundleRecipients (a typo should be caught and
+ * fixed before submitting, not surface as a confusing failure at the end),
+ * reusing that same rate-limit ledger rather than standing up a second
+ * table for what's the same abuse vector (probing account existence by
+ * email). The one real difference: a family *booking* requires the account
+ * to be email-verified, not just existing — payments.ts's own check never
+ * needed that, since crediting an unverified account for a purchase is a
+ * different risk than letting them occupy a live class slot.
+ */
+export async function checkFamilyClassAttendees(callerId: string, emails: string[]): Promise<FamilyAttendeeCheck[]> {
+  await assertRateLimit(
+    prisma.familyBundleCheckAttempt.count,
+    { userId: callerId },
+    { windowMinutes: 10, max: 30, message: "Too many account checks. Please wait a few minutes and try again." },
+  );
+  await prisma.familyBundleCheckAttempt.create({ data: { userId: callerId } });
+
+  const normalized = emails.map((e) => e.trim().toLowerCase()).filter(Boolean);
+  if (normalized.length === 0) return [];
+
+  const users = await prisma.user.findMany({
+    where: { email: { in: normalized } },
+    select: { id: true, email: true, name: true, emailVerified: true },
+  });
+  const byEmail = new Map(users.map((u) => [u.email, u]));
+
+  return normalized.map((email) => {
+    const user = byEmail.get(email);
+    return {
+      email,
+      found: Boolean(user),
+      name: user?.name ?? null,
+      userId: user?.id ?? null,
+      verified: Boolean(user?.emailVerified),
+    };
+  });
+}
+
+/**
+ * Books one occurrence for a named family group — 2+ verified accounts,
+ * each charged FAMILY_CREDITS_PER_STUDENT once markAttendance runs, same
+ * deferred-charge rule bookClass uses. One ClassBooking row per attendee
+ * (so each kid's own credits, attendance, and history stay theirs), all
+ * sharing one familyBookingGroupId so the roster can display them as one
+ * party and one occurrence slot (capacity is per-occurrence, not per-row —
+ * see getUpcomingOccurrences).
+ *
+ * `initiatorId` is whoever is logged in and clicking the button — used only
+ * for the rate-limit/authorization boundary in the calling Server Action,
+ * not assumed to be one of the attendees. Every named email must resolve to
+ * a real, verified account; nothing here accepts an arbitrary string as a
+ * stand-in for a real student.
+ */
+export async function bookFamilyClass(
+  initiatorId: string,
+  scheduleId: string,
+  occurrenceDateMs: number,
+  chunkIndex: number,
+  attendeeEmails: string[],
+) {
+  const normalizedEmails = Array.from(new Set(attendeeEmails.map((e) => e.trim().toLowerCase()).filter(Boolean)));
+  if (normalizedEmails.length < FAMILY_MIN_ATTENDEES) {
+    throw new ClassBookingError(
+      `A family booking needs at least ${FAMILY_MIN_ATTENDEES} students — for just one, use the regular one-on-one booking instead.`,
+    );
+  }
+
+  const schedule = await prisma.classSchedule.findUniqueOrThrow({ where: { id: scheduleId } });
+  if (!schedule.active) throw new ClassBookingError("This class is no longer offered.");
+
+  const chunk = chunksForSchedule(schedule)[chunkIndex];
+  if (!chunk) throw new ClassBookingError("That time slot doesn't exist.");
+  if (chunk.creditCost < FAMILY_CREDITS_PER_STUDENT) {
+    throw new ClassBookingError("This time slot is too short for a family class.");
+  }
+
+  const occurrenceDate = new Date(occurrenceDateMs);
+  const { hour, minute } = parseStartTime(schedule.startTime);
+  const scheduledAt = new Date(
+    etWallTimeToUtc(
+      occurrenceDate.getUTCFullYear(),
+      occurrenceDate.getUTCMonth() + 1,
+      occurrenceDate.getUTCDate(),
+      hour,
+      minute,
+    ).getTime() + chunk.offsetMin * 60_000,
+  );
+  if (scheduledAt.getTime() <= Date.now()) {
+    throw new ClassBookingError("That class has already started or passed.");
+  }
+
+  await assertRateLimit(
+    prisma.classBooking.count,
+    { studentId: initiatorId },
+    { windowMinutes: 60, max: 20, message: "You're booking too fast — please wait a bit and try again." },
+  );
+
+  // Re-verified here, never trusted from whatever the client last showed —
+  // the live check above is a UX convenience, not the actual authorization.
+  const attendees = await prisma.user.findMany({
+    where: { email: { in: normalizedEmails } },
+    select: { id: true, email: true, emailVerified: true },
+  });
+  const byEmail = new Map(attendees.map((u) => [u.email, u]));
+  const unresolved = normalizedEmails.filter((e) => !byEmail.get(e)?.emailVerified);
+  if (unresolved.length > 0) {
+    throw new ClassBookingError(`These emails aren't verified accounts on file: ${unresolved.join(", ")}.`);
+  }
+
+  const familyBookingGroupId = crypto.randomUUID();
+
+  let bookings;
+  try {
+    bookings = await prisma.$transaction(
+      async (tx) => {
+        const takenByAnyone = await tx.classBooking.findFirst({ where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED" } });
+        if (takenByAnyone) throw new ClassBookingError("This time was just booked — pick another slot.");
+
+        const created: Prisma.ClassBookingGetPayload<Record<string, never>>[] = [];
+        for (const email of normalizedEmails) {
+          const attendee = byEmail.get(email)!;
+
+          const existing = await tx.classBooking.findUnique({
+            where: { studentId_scheduleId_occurrenceDate: { studentId: attendee.id, scheduleId, occurrenceDate } },
+          });
+          if (existing?.status === "SCHEDULED") {
+            throw new ClassBookingError(`${email} already has a booking for this occurrence.`);
+          }
+
+          const [user, pending] = await Promise.all([
+            tx.user.findUniqueOrThrow({ where: { id: attendee.id }, select: { classCredits: true } }),
+            tx.classBooking.aggregate({ where: { studentId: attendee.id, status: "SCHEDULED" }, _sum: { creditsSpent: true } }),
+          ]);
+          const available = user.classCredits - (pending._sum.creditsSpent ?? 0);
+          if (available < FAMILY_CREDITS_PER_STUDENT) {
+            throw new ClassBookingError(`${email} needs ${FAMILY_CREDITS_PER_STUDENT} credits available — they have ${available} free right now.`);
+          }
+
+          const data = {
+            scheduledAt,
+            creditsSpent: FAMILY_CREDITS_PER_STUDENT,
+            status: "SCHEDULED" as const,
+            attendance: null,
+            refunded: false,
+            canceledReason: null,
+            familyBookingGroupId,
+          };
+
+          created.push(
+            existing
+              ? await tx.classBooking.update({ where: { id: existing.id }, data })
+              : await tx.classBooking.create({ data: { studentId: attendee.id, scheduleId, occurrenceDate, ...data } }),
+          );
+        }
+        return created;
+      },
+      { isolationLevel: "Serializable" },
+    );
+  } catch (err) {
+    if (err instanceof ClassBookingError) throw err;
+    if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2002") {
+      throw new ClassBookingError("One of these students already has a booking for this occurrence.");
+    }
+    if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2034") {
+      throw new ClassBookingError("That slot was just taken — try again.");
+    }
+    throw err;
+  }
+
+  notifyAdminsOfFamilyBooking(
+    attendees.map((a) => a.id),
+    schedule,
+    scheduledAt,
+  ).catch((err) => console.error("Admin family booking notification failed (non-blocking):", err));
+
+  return bookings;
 }
 
 export async function getClassCreditBalance(userId: string): Promise<number> {
@@ -429,16 +745,18 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
     );
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.classBooking.update({ where: { id: bookingId }, data: { status: "CANCELED", refunded: true } });
-    await tx.user.update({ where: { id: studentId }, data: { classCredits: { increment: booking.creditsSpent } } });
-  });
+  // No credit mutation here: the real charge doesn't land until
+  // markAttendance runs (see that function's own comment), and a booking
+  // still SCHEDULED at this point has never been attendance-marked — there
+  // is nothing to refund because nothing was ever actually taken. `refunded`
+  // stays true regardless, meaning "this booking never cost you anything."
+  await prisma.classBooking.update({ where: { id: bookingId }, data: { status: "CANCELED", refunded: true } });
 
   await createNotification({
     userId: studentId,
     type: "LESSON_BOOKING_CANCELED",
     title: "Class canceled",
-    body: `Your ${booking.scheduledAt.toLocaleString()} class was canceled and ${booking.creditsSpent} credit${booking.creditsSpent === 1 ? "" : "s"} were refunded.`,
+    body: `Your ${booking.scheduledAt.toLocaleString()} class was canceled — no credits were charged.`,
     emailCategory: "social",
   });
 
@@ -485,10 +803,14 @@ export interface AdminOccurrenceRosterEntry {
   studentImage: string | null;
   status: "SCHEDULED" | "CANCELED" | "COMPLETED";
   attendance: AttendanceStatus | null;
-  /** Minutes into the occurrence this student is actually staying for —
-      every student shares the same start, but can book fewer credits than
-      the full window (see bookClass), so this can differ per row. */
+  /** Credits this booking will cost once markAttendance runs. Always
+      SOLO_MAX_CREDITS or fewer for a solo booking, always exactly
+      FAMILY_CREDITS_PER_STUDENT for a family one. */
   creditsSpent: number;
+  /** Shared by every row from the same family booking — null for solo.
+      Lets the roster show "these N rows are one family" instead of N
+      unrelated-looking students who happen to share a start time. */
+  familyBookingGroupId: string | null;
   /** Where this student actually is in the self-paced curriculum right
       now — lets the roster group "who's here today" by level, for a
       flipped-classroom-style live session (teacher circulates by level
@@ -529,7 +851,11 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
 
   const groups = new Map<string, AdminOccurrenceGroup>();
   for (const b of bookings) {
-    const key = `${b.scheduleId}:${b.occurrenceDate.getTime()}`;
+    // Keyed on the exact instant, not just the day — a schedule window that
+    // splits into several chunks (see chunksForSchedule) can have a
+    // different booking party at each start time, and those shouldn't
+    // merge into one roster card.
+    const key = `${b.scheduleId}:${b.occurrenceDate.getTime()}:${b.scheduledAt.getTime()}`;
     let group = groups.get(key);
     if (!group) {
       group = {
@@ -551,6 +877,7 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
       status: b.status,
       attendance: b.attendance,
       creditsSpent: b.creditsSpent,
+      familyBookingGroupId: b.familyBookingGroupId,
       focus: focusByStudent.get(b.student.id)!,
     });
   }
@@ -564,19 +891,40 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
  * integration here, so this roster is the sole source of truth for who
  * actually used their credits; a no-show is a forfeit, not a refund).
  */
+/**
+ * Marks attendance and finalizes the booking as COMPLETED — and, the first
+ * time this runs for a given booking, this is also where the credit charge
+ * actually happens. By direct instruction, a student is charged based on
+ * whether the admin checks them present or absent, not at booking time —
+ * booking only *reserves* the credits (see getEffectiveClassCredits), and a
+ * no-show is charged exactly the same as an attendance, per the terms
+ * students agree to.
+ *
+ * Guarded against double-charging: this is also how an admin corrects a
+ * mis-click (Present when they meant No-show, or back), which re-enters
+ * here with the booking already COMPLETED — the second call only updates
+ * `attendance`, since the one real charge already landed on the first.
+ */
 export async function markAttendance(bookingId: string, attendance: AttendanceStatus): Promise<void> {
   const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
   if (booking.status === "CANCELED") throw new ClassBookingError("Can't mark attendance for a canceled booking.");
-  await prisma.classBooking.update({ where: { id: bookingId }, data: { attendance, status: "COMPLETED" } });
+
+  const alreadyCharged = booking.status === "COMPLETED";
+  await prisma.$transaction(async (tx) => {
+    await tx.classBooking.update({ where: { id: bookingId }, data: { attendance, status: "COMPLETED" } });
+    if (!alreadyCharged) {
+      await tx.user.update({ where: { id: booking.studentId }, data: { classCredits: { decrement: booking.creditsSpent } } });
+    }
+  });
 }
 
 /**
  * Admin-initiated cancel — unlike the student's self-serve cancelClassBooking,
- * this has no 24-hour cutoff (an admin can free a seat or fix a mistake any
- * time before the class happens) and always refunds the credit, since a
- * human made the call here rather than the strict self-serve rule. This is
- * the "manual, case-by-case" refund path the terms page points students to
- * support for.
+ * this has no 24-hour cutoff (an admin can free a slot or fix a mistake any
+ * time before the class happens). No credit mutation, same reasoning as
+ * cancelClassBooking: the real charge waits for markAttendance, so a
+ * booking that's still SCHEDULED was never actually charged in the first
+ * place — there's nothing to refund.
  */
 export async function adminCancelClassBooking(bookingId: string, reason?: string): Promise<void> {
   const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
@@ -584,12 +932,9 @@ export async function adminCancelClassBooking(bookingId: string, reason?: string
 
   const trimmedReason = reason?.trim() || null;
 
-  await prisma.$transaction(async (tx) => {
-    await tx.classBooking.update({
-      where: { id: bookingId },
-      data: { status: "CANCELED", refunded: true, canceledReason: trimmedReason },
-    });
-    await tx.user.update({ where: { id: booking.studentId }, data: { classCredits: { increment: booking.creditsSpent } } });
+  await prisma.classBooking.update({
+    where: { id: bookingId },
+    data: { status: "CANCELED", refunded: true, canceledReason: trimmedReason },
   });
 
   await createNotification({
@@ -597,8 +942,8 @@ export async function adminCancelClassBooking(bookingId: string, reason?: string
     type: "LESSON_BOOKING_CANCELED",
     title: "Class canceled",
     body: trimmedReason
-      ? `Your ${booking.scheduledAt.toLocaleString()} class was canceled by the studio (${trimmedReason}) and ${booking.creditsSpent} credit${booking.creditsSpent === 1 ? "" : "s"} were refunded.`
-      : `Your ${booking.scheduledAt.toLocaleString()} class was canceled by the studio and ${booking.creditsSpent} credit${booking.creditsSpent === 1 ? "" : "s"} were refunded.`,
+      ? `Your ${booking.scheduledAt.toLocaleString()} class was canceled by the studio (${trimmedReason}) — no credits were charged.`
+      : `Your ${booking.scheduledAt.toLocaleString()} class was canceled by the studio — no credits were charged.`,
     emailCategory: "social",
   });
 }

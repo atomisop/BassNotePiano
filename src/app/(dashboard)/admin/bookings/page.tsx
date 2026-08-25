@@ -1,4 +1,4 @@
-import { getAdminOccurrences, CLASS_CAPACITY } from "@/lib/classSchedule";
+import { getAdminOccurrences } from "@/lib/classSchedule";
 import { AdminAttendanceRoster } from "@/components/admin/AdminAttendanceRoster";
 import { markAttendanceAction, adminCancelBookingAction } from "./actions";
 
@@ -10,8 +10,8 @@ export default async function AdminBookingsPage() {
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Admin</p>
       <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Class attendance</h1>
       <p className="mt-2 text-sm text-slate-500">
-        Every occurrence with a booking, past and upcoming — mark Present or No-show once a class has happened, or
-        cancel a booking (with a refund) any time before then.
+        Every occurrence with a booking, past and upcoming — marking Present or No-show is what actually charges the
+        credit, so mark it either way once a class has happened. Cancel any time before then at no charge.
       </p>
 
       <div className="mt-6">
@@ -22,7 +22,6 @@ export default async function AdminBookingsPage() {
             dayOfWeek: o.dayOfWeek,
             occurrenceDateMs: o.occurrenceDate.getTime(),
             scheduledAt: o.scheduledAt.toISOString(),
-            capacity: CLASS_CAPACITY,
             roster: o.roster,
           }))}
           onMarkAttendance={markAttendanceAction}

@@ -2,20 +2,19 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { bookClassAction, bookClassBundleAction, cancelClassBookingAction } from "./actions";
+import { bookClassAction, bookClassBundleAction, bookFamilyClassAction, checkFamilyClassAttendeesAction, cancelClassBookingAction } from "./actions";
 import { BookingCalendar, dayKey } from "./BookingCalendar";
 
 interface OccurrenceRow {
   scheduleId: string;
   label: string | null;
   dayOfWeek: number;
+  chunkIndex: number;
   durationMin: number;
   creditCost: number;
   occurrenceDateMs: number;
   scheduledAt: string;
-  seatsBooked: number;
-  seatsLeft: number;
-  isFull: boolean;
+  isBooked: boolean;
 }
 
 interface BookingRow {
@@ -28,6 +27,8 @@ interface BookingRow {
   attendance: "PRESENT" | "NO_SHOW" | null;
   canceledReason: string | null;
 }
+
+type BookingMode = "SOLO" | "FAMILY";
 
 const STATUS_LABEL: Record<BookingRow["status"], string> = {
   SCHEDULED: "Scheduled",
@@ -45,11 +46,7 @@ function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
-function formatDuration(min: number) {
-  return min >= 60 ? `${min / 60} hr${min > 60 ? "s" : ""}` : `${min} min`;
-}
-
-/** The clock time `credits` worth of 30-minute chunks past `scheduledAtIso` lands on — every credit choice for a row shares the same start, so this is the one thing that actually changes per choice. */
+/** The clock time `credits` worth of 30-minute chunks past `scheduledAtIso` lands on. */
 function formatEndTime(scheduledAtIso: string, credits: number): string {
   const end = new Date(new Date(scheduledAtIso).getTime() + credits * 30 * 60_000);
   return end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
@@ -66,8 +63,8 @@ function formatOccurrenceTime(iso: string) {
 
 /**
  * Buckets upcoming occurrences into "This week" / "Next week" / "Later".
- * A flat list of seven near-identical rows gave the reader nothing to
- * navigate by; a week boundary is the unit people actually plan in.
+ * A flat list of near-identical rows gave the reader nothing to navigate
+ * by; a week boundary is the unit people actually plan in.
  */
 function groupOccurrencesByWeek(rows: OccurrenceRow[]): { key: string; label: string; rows: OccurrenceRow[] }[] {
   const now = new Date();
@@ -143,25 +140,17 @@ function BookingCard({
           {b.creditsSpent} credit{b.creditsSpent === 1 ? "" : "s"}
           {b.status === "SCHEDULED" &&
             (cancelEligible
-              ? ` · Cancel by ${new Date(new Date(b.scheduledAt).getTime() - cancellationCutoffHours * 3_600_000).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} for a refund`
+              ? ` · Cancel by ${new Date(new Date(b.scheduledAt).getTime() - cancellationCutoffHours * 3_600_000).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`
               : pastSelfServeWindow
                 ? " · Too close to class time to self-cancel"
                 : "")}
         </p>
         {b.status === "COMPLETED" && b.attendance && (
           <p className={`mt-0.5 text-xs ${b.attendance === "PRESENT" ? "text-emerald-400" : "text-red-400"}`}>
-            {b.attendance === "PRESENT" ? "Attended" : "Marked no-show"}
+            {b.attendance === "PRESENT" ? "Attended" : "Marked no-show — still charged, per our terms"}
           </p>
         )}
-        {b.status === "CANCELED" && (
-          // refunded can still be false on bookings canceled before
-          // this policy tightened to "self-cancel is 24h+ only" —
-          // kept accurate for that historical data, even though
-          // every new cancellation is always refunded now.
-          <p className={`mt-0.5 text-xs ${b.refunded ? "text-emerald-400" : "text-red-400"}`}>
-            {b.refunded ? "Credits refunded" : "Credits forfeited"}
-          </p>
-        )}
+        {b.status === "CANCELED" && <p className="mt-0.5 text-xs text-emerald-400">Canceled — no credits were charged</p>}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {cancelEligible && (
@@ -249,15 +238,69 @@ function MonthGroup({
   );
 }
 
+/** One row's email input + live verification badge — used inside the family booking form. */
+function AttendeeEmailRow({
+  value,
+  onChange,
+  onRemove,
+  removable,
+  status,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onRemove: () => void;
+  removable: boolean;
+  status?: { checking: boolean; found: boolean; verified: boolean; name: string | null };
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="email"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="student@email.com"
+        className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
+      />
+      <span className="w-28 shrink-0 text-xs">
+        {value.trim() === "" ? null : status?.checking ? (
+          <span className="text-slate-500">Checking…</span>
+        ) : status?.verified ? (
+          <span className="text-emerald-400">✓ {status.name ?? "Verified"}</span>
+        ) : status?.found ? (
+          <span className="text-red-400">Not verified</span>
+        ) : status ? (
+          <span className="text-red-400">No account found</span>
+        ) : null}
+      </span>
+      {removable && (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="Remove this student"
+          className="shrink-0 text-slate-500 transition hover:text-red-400"
+        >
+          ✕
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function ClassBookingClient({
   initialCredits,
   cancellationCutoffHours,
+  soloMaxCredits,
+  familyMinAttendees,
+  familyCreditsPerStudent,
   supportContactId,
   occurrences,
   initialBookings,
 }: {
   initialCredits: number;
   cancellationCutoffHours: number;
+  soloMaxCredits: number;
+  familyMinAttendees: number;
+  familyCreditsPerStudent: number;
   supportContactId: string | null;
   occurrences: OccurrenceRow[];
   initialBookings: BookingRow[];
@@ -265,6 +308,7 @@ export function ClassBookingClient({
   const [credits, setCredits] = useState(initialCredits);
   const [bookings, setBookings] = useState(initialBookings);
   const [rows, setRows] = useState(occurrences);
+  const [mode, setMode] = useState<BookingMode>("SOLO");
   const [bookingKey, setBookingKey] = useState<string | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -274,34 +318,35 @@ export function ClassBookingClient({
   // day only ever lights up when it genuinely has something to show here.
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
 
-  // Bundle booking: check off several occurrences, then book them all in
-  // one submit — the checkbox on each row is independent of that row's own
-  // "Book" button, which still books just that one class immediately, same
-  // as before this feature existed. Keyed the same way bookingKey is
+  // Bundle booking (solo only): check off several occurrences, then book
+  // them all in one submit. Keyed the same way bookingKey is
   // (`scheduleId:occurrenceDateMs`), so both features share one identity
   // format for a row.
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [bundleSubmitting, setBundleSubmitting] = useState(false);
 
-  // Every class still starts at the same clock time for everyone booked
-  // into it — a student can only choose to leave earlier than the full
-  // window, spending fewer credits accordingly. Keyed the same way
-  // bookingKey/selectedKeys are.
+  // A solo booking can run shorter than the schedule window (up to
+  // soloMaxCredits) — the student's own choice of how long to stay, keyed
+  // the same way bookingKey/selectedKeys are.
   const [chosenCredits, setChosenCredits] = useState<Record<string, number>>({});
 
-  // Defaults to the full window when the student can actually afford it
-  // (matching every row's behavior before this feature existed), but to
-  // whatever they *can* afford otherwise — defaulting to a window they
-  // can't pay for would show "Not enough credits" on first render for
-  // anyone without a full balance, when a shorter, bookable stay was right
-  // there the whole time.
+  // Family booking: which occurrence, and the list of attendee emails being
+  // typed in. Only one family booking is composed at a time — picking a
+  // different row for it replaces the in-progress one rather than stacking.
+  const [familyRowKey, setFamilyRowKey] = useState<string | null>(null);
+  const [familyEmails, setFamilyEmails] = useState<string[]>(["", ""]);
+  const [familyChecks, setFamilyChecks] = useState<Record<string, { checking: boolean; found: boolean; verified: boolean; name: string | null }>>({});
+  const [familySubmitting, setFamilySubmitting] = useState(false);
+
+  /** Defaults to the full window (capped at soloMaxCredits) when affordable, otherwise whatever's actually affordable right now. */
   function creditsFor(row: OccurrenceRow): number {
-    const key = `${row.scheduleId}:${row.occurrenceDateMs}`;
-    return chosenCredits[key] ?? Math.max(1, Math.min(row.creditCost, credits));
+    const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
+    const maxForRow = Math.min(row.creditCost, soloMaxCredits);
+    return chosenCredits[key] ?? Math.max(1, Math.min(maxForRow, credits));
   }
 
   function setCreditsFor(row: OccurrenceRow, value: number) {
-    const key = `${row.scheduleId}:${row.occurrenceDateMs}`;
+    const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
     setChosenCredits((prev) => ({ ...prev, [key]: value }));
   }
 
@@ -311,7 +356,7 @@ export function ClassBookingClient({
   );
 
   const selectedRows = useMemo(
-    () => rows.filter((r) => selectedKeys.has(`${r.scheduleId}:${r.occurrenceDateMs}`)),
+    () => rows.filter((r) => selectedKeys.has(`${r.scheduleId}:${r.occurrenceDateMs}:${r.chunkIndex}`)),
     [rows, selectedKeys],
   );
   const selectedCreditTotal = useMemo(
@@ -322,7 +367,7 @@ export function ClassBookingClient({
   const selectedExceedsBalance = selectedCreditTotal > credits;
 
   function toggleSelected(row: OccurrenceRow) {
-    const key = `${row.scheduleId}:${row.occurrenceDateMs}`;
+    const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
     setSelectedKeys((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
@@ -340,13 +385,21 @@ export function ClassBookingClient({
   const history = useMemo(() => bookings.filter((b) => b.status !== "SCHEDULED"), [bookings]);
   const historyGroups = useMemo(() => groupByMonth(history), [history]);
 
+  function markRowBooked(scheduleId: string, occurrenceDateMs: number, chunkIndex: number) {
+    setRows((prev) =>
+      prev.map((r) =>
+        r.scheduleId === scheduleId && r.occurrenceDateMs === occurrenceDateMs && r.chunkIndex === chunkIndex ? { ...r, isBooked: true } : r,
+      ),
+    );
+  }
+
   async function handleBook(row: OccurrenceRow) {
-    const key = `${row.scheduleId}:${row.occurrenceDateMs}`;
+    const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
     const chosen = creditsFor(row);
     setError(null);
     setSuccess(null);
     setBookingKey(key);
-    const result = await bookClassAction(row.scheduleId, row.occurrenceDateMs, chosen);
+    const result = await bookClassAction(row.scheduleId, row.occurrenceDateMs, row.chunkIndex, chosen);
     setBookingKey(null);
 
     if (!result.ok) {
@@ -354,14 +407,11 @@ export function ClassBookingClient({
       return;
     }
 
+    // Reserved, not yet charged — the real deduction lands once the teacher
+    // marks attendance (present or absent, either way). This only reflects
+    // what's no longer *free to book again* right now.
     setCredits((c) => c - chosen);
-    setRows((prev) =>
-      prev.map((r) =>
-        r.scheduleId === row.scheduleId && r.occurrenceDateMs === row.occurrenceDateMs
-          ? { ...r, seatsBooked: r.seatsBooked + 1, seatsLeft: r.seatsLeft - 1, isFull: r.seatsLeft - 1 <= 0 }
-          : r,
-      ),
-    );
+    markRowBooked(row.scheduleId, row.occurrenceDateMs, row.chunkIndex);
     setBookings((prev) => [
       {
         id: result.id,
@@ -375,16 +425,15 @@ export function ClassBookingClient({
       },
       ...prev,
     ]);
-    setSuccess("Booked — you're on the roster.");
+    setSuccess("Booked — you're on the schedule.");
   }
 
   /**
    * Books every currently-checked row in one submit. Each selection is its
-   * own independent attempt server-side (see bookClassBundle) — a seat
-   * someone else just took on selection #2 doesn't undo #1 or #3, so this
-   * applies each result exactly like handleBook would, one at a time, and
-   * reports whatever mix of success/failure actually happened rather than
-   * an all-or-nothing message that wouldn't match reality.
+   * own independent attempt server-side (see bookClassBundle) — someone
+   * else taking selection #2's slot doesn't undo #1 or #3, so this applies
+   * each result exactly like handleBook would, one at a time, and reports
+   * whatever mix of success/failure actually happened.
    */
   async function handleBookBundle() {
     if (selectedRows.length === 0) return;
@@ -395,6 +444,7 @@ export function ClassBookingClient({
     const selections = selectedRows.map((r) => ({
       scheduleId: r.scheduleId,
       occurrenceDateMs: r.occurrenceDateMs,
+      chunkIndex: r.chunkIndex,
       creditsToBook: creditsFor(r),
     }));
     const result = await bookClassBundleAction(selections);
@@ -410,20 +460,14 @@ export function ClassBookingClient({
     const failed = result.results.filter((r) => !r.ok);
 
     if (succeeded.length > 0) {
-      const succeededKeys = new Set(succeeded.map((r) => `${r.scheduleId}:${r.occurrenceDateMs}`));
-      const succeededRows = selectedRows.filter((r) => succeededKeys.has(`${r.scheduleId}:${r.occurrenceDateMs}`));
+      const succeededKeys = new Set(succeeded.map((r) => `${r.scheduleId}:${r.occurrenceDateMs}:${r.chunkIndex}`));
+      const succeededRows = selectedRows.filter((r) => succeededKeys.has(`${r.scheduleId}:${r.occurrenceDateMs}:${r.chunkIndex}`));
 
       setCredits((c) => c - succeededRows.reduce((sum, r) => sum + creditsFor(r), 0));
-      setRows((prev) =>
-        prev.map((r) =>
-          succeededKeys.has(`${r.scheduleId}:${r.occurrenceDateMs}`)
-            ? { ...r, seatsBooked: r.seatsBooked + 1, seatsLeft: r.seatsLeft - 1, isFull: r.seatsLeft - 1 <= 0 }
-            : r,
-        ),
-      );
+      setRows((prev) => prev.map((r) => (succeededKeys.has(`${r.scheduleId}:${r.occurrenceDateMs}:${r.chunkIndex}`) ? { ...r, isBooked: true } : r)));
       setBookings((prev) => [
         ...succeeded.map((r) => {
-          const row = succeededRows.find((sr) => sr.scheduleId === r.scheduleId && sr.occurrenceDateMs === r.occurrenceDateMs)!;
+          const row = succeededRows.find((sr) => sr.scheduleId === r.scheduleId && sr.occurrenceDateMs === r.occurrenceDateMs && sr.chunkIndex === r.chunkIndex)!;
           return {
             id: r.bookingId!,
             label: row.label,
@@ -440,7 +484,7 @@ export function ClassBookingClient({
     }
 
     if (failed.length === 0) {
-      setSuccess(`Booked ${succeeded.length} class${succeeded.length === 1 ? "" : "es"} — you're on the roster.`);
+      setSuccess(`Booked ${succeeded.length} class${succeeded.length === 1 ? "" : "es"} — you're on the schedule.`);
     } else if (succeeded.length === 0) {
       setError(failed[0]!.error ?? "Couldn't book those classes.");
     } else {
@@ -461,19 +505,74 @@ export function ClassBookingClient({
     }
 
     setBookings((prev) => prev.map((b) => (b.id === booking.id ? { ...b, status: "CANCELED", refunded: true } : b)));
+    // Frees the reservation, not a refund of anything actually charged —
+    // nothing was charged yet (see cancelClassBookingAction).
     setCredits((c) => c + booking.creditsSpent);
-    setSuccess("Canceled — credits refunded.");
+    setSuccess("Canceled — no credits were charged.");
+  }
+
+  function openFamilyBooking(row: OccurrenceRow) {
+    setFamilyRowKey(`${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`);
+    setFamilyEmails(["", ""]);
+    setFamilyChecks({});
+    setError(null);
+    setSuccess(null);
+  }
+
+  function updateFamilyEmail(index: number, value: string) {
+    setFamilyEmails((prev) => prev.map((e, i) => (i === index ? value : e)));
+    // Debounce-free live check: fires on every keystroke via a trailing
+    // check once the field looks like a complete email, same threshold
+    // EMAIL_RE-style validation elsewhere in the app uses.
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
+      checkFamilyEmail(value.trim());
+    }
+  }
+
+  async function checkFamilyEmail(email: string) {
+    setFamilyChecks((prev) => ({ ...prev, [email]: { checking: true, found: false, verified: false, name: null } }));
+    const results = await checkFamilyClassAttendeesAction([email]);
+    const result = results[0];
+    if (!result) return;
+    setFamilyChecks((prev) => ({ ...prev, [email]: { checking: false, found: result.found, verified: result.verified, name: result.name } }));
+  }
+
+  const familyRow = rows.find((r) => `${r.scheduleId}:${r.occurrenceDateMs}:${r.chunkIndex}` === familyRowKey) ?? null;
+  const familyEmailsTrimmed = familyEmails.map((e) => e.trim().toLowerCase()).filter(Boolean);
+  const familyAllVerified =
+    familyEmailsTrimmed.length >= familyMinAttendees && familyEmailsTrimmed.every((e) => familyChecks[e]?.verified);
+
+  async function handleBookFamily() {
+    if (!familyRow || !familyAllVerified) return;
+    setError(null);
+    setSuccess(null);
+    setFamilySubmitting(true);
+    const result = await bookFamilyClassAction(familyRow.scheduleId, familyRow.occurrenceDateMs, familyRow.chunkIndex, familyEmailsTrimmed);
+    setFamilySubmitting(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    markRowBooked(familyRow.scheduleId, familyRow.occurrenceDateMs, familyRow.chunkIndex);
+    setFamilyRowKey(null);
+    setFamilyEmails(["", ""]);
+    setFamilyChecks({});
+    setSuccess(`Booked for ${familyEmailsTrimmed.length} students — ${familyCreditsPerStudent} credits reserved from each.`);
   }
 
   return (
     <div className="mx-auto max-w-3xl">
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Weekly Classes</p>
+      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Live Lessons</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Book a class</h1>
-      <p className="mt-2 text-sm text-slate-500">Live on Discord · 1 credit = 30 minutes · up to 10 students per class.</p>
+      <p className="mt-2 text-sm text-slate-500">
+        Live on Discord · 1 credit = 30 minutes · charged when attendance is taken, present or not.
+      </p>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 glass-surface p-5">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">Your balance</p>
+          <p className="text-xs uppercase tracking-wide text-slate-500">Available to book</p>
           <p className="mt-1 font-serif text-2xl text-slate-50">
             {credits} credit{credits === 1 ? "" : "s"}
           </p>
@@ -486,6 +585,42 @@ export function ClassBookingClient({
         </Link>
       </div>
 
+      {/* Mode picker — same segmented-pill pattern used elsewhere in the app. Group is listed but disabled, matching the "coming soon" treatment already used for other not-yet-available options. */}
+      <div className="mt-6 flex flex-wrap gap-1.5 rounded-full border border-ink/10 p-1">
+        <button
+          type="button"
+          onClick={() => setMode("SOLO")}
+          aria-pressed={mode === "SOLO"}
+          className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+            mode === "SOLO" ? "bg-[rgb(var(--c-a-400))] text-slate-950" : "text-slate-400 hover:text-slate-100"
+          }`}
+        >
+          One-on-one
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("FAMILY")}
+          aria-pressed={mode === "FAMILY"}
+          className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+            mode === "FAMILY" ? "bg-[rgb(var(--c-a-400))] text-slate-950" : "text-slate-400 hover:text-slate-100"
+          }`}
+        >
+          Family
+        </button>
+        <span
+          title="Group classes are coming soon"
+          className="flex cursor-not-allowed items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium text-slate-600"
+        >
+          Group
+          <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide">Soon</span>
+        </span>
+      </div>
+      <p className="mt-2 text-xs text-slate-500">
+        {mode === "SOLO"
+          ? `One-on-one time with the teacher — pick 1 or 2 credits (up to an hour) per class.`
+          : `2+ verified students from the same family, taught together — ${familyCreditsPerStudent} credits each, regardless of how many join.`}
+      </p>
+
       {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
       {success && <p className="mt-4 text-sm text-emerald-400">{success}</p>}
 
@@ -495,11 +630,7 @@ export function ClassBookingClient({
         </div>
       )}
 
-      {/* Bundle booking: check any number of classes below, then book them
-          all here in one submit — this is deliberately a normal in-flow
-          card, not a fixed floating bar, so it can never end up fighting
-          the app's own floating dock nav for the same strip of screen. */}
-      {selectedKeys.size > 0 && (
+      {mode === "SOLO" && selectedKeys.size > 0 && (
         <div className="glass-surface-elevated mt-8 flex flex-wrap items-center justify-between gap-4 p-5">
           <div>
             <p className="text-sm font-medium text-slate-100">
@@ -531,6 +662,56 @@ export function ClassBookingClient({
         </div>
       )}
 
+      {mode === "FAMILY" && familyRow && (
+        <div className="glass-surface-elevated mt-8 p-5">
+          <p className="text-sm font-medium text-slate-100">
+            Family booking — {formatOccurrenceDay(familyRow.scheduledAt)} at {formatOccurrenceTime(familyRow.scheduledAt)}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            Every student listed must already have a verified account. {familyCreditsPerStudent} credits will be reserved from each.
+          </p>
+          <div className="mt-4 space-y-2">
+            {familyEmails.map((email, i) => (
+              <AttendeeEmailRow
+                key={i}
+                value={email}
+                onChange={(v) => updateFamilyEmail(i, v)}
+                onRemove={() => setFamilyEmails((prev) => prev.filter((_, idx) => idx !== i))}
+                removable={familyEmails.length > familyMinAttendees}
+                status={familyChecks[email.trim().toLowerCase()]}
+              />
+            ))}
+          </div>
+          <div className="mt-3 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setFamilyEmails((prev) => [...prev, ""])}
+              className="text-xs font-medium text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))]"
+            >
+              + Add another student
+            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setFamilyRowKey(null)}
+                disabled={familySubmitting}
+                className="text-xs font-medium text-slate-500 transition hover:text-slate-300 disabled:pointer-events-none disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleBookFamily}
+                disabled={!familyAllVerified || familySubmitting}
+                className="cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {familySubmitting ? "Booking…" : `Book for ${familyEmailsTrimmed.length || familyMinAttendees} students`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mt-8">
         <div className="mb-3 flex items-baseline justify-between gap-3">
           <h2 className="font-serif text-lg text-slate-100">
@@ -551,7 +732,7 @@ export function ClassBookingClient({
         {rows.length === 0 ? (
           <p className="text-sm text-slate-600">No classes scheduled right now — check back soon.</p>
         ) : displayRows.length === 0 ? (
-          <p className="text-sm text-slate-600">No classes left on that day — someone else just took the last seat. Try another date.</p>
+          <p className="text-sm text-slate-600">No open slots on that day — someone else just took it. Try another date.</p>
         ) : (
           /* One card per week with divided rows, rather than a stack of
              separate floating cards: seven identical shadowed pills read as
@@ -565,76 +746,84 @@ export function ClassBookingClient({
                 <h3 className="eyebrow mb-2">{group.label}</h3>
                 <div className="glass-surface divide-y divide-ink/10 overflow-hidden">
                   {group.rows.map((row) => {
-                    const key = `${row.scheduleId}:${row.occurrenceDateMs}`;
+                    const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
                     const chosen = creditsFor(row);
                     const insufficientCredits = credits < chosen;
-                    const disabled = row.isFull || insufficientCredits || bookingKey !== null || bundleSubmitting;
+                    const maxForRow = Math.min(row.creditCost, soloMaxCredits);
+                    const disabled = row.isBooked || insufficientCredits || bookingKey !== null || bundleSubmitting;
                     const isSelected = selectedKeys.has(key);
                     // Every duration option shares row.scheduledAt as its
-                    // start — this offers *when it ends*, not a different
-                    // class time, matching the fixed shared start every
-                    // other student in this same occurrence also gets.
-                    const durationOptions = Array.from({ length: row.creditCost }, (_, i) => i + 1);
+                    // start — this offers *when it ends*, capped at
+                    // soloMaxCredits regardless of how long the underlying
+                    // window is.
+                    const durationOptions = Array.from({ length: maxForRow }, (_, i) => i + 1);
                     return (
                       <div key={key} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-6">
-                        {/* Independent of the "Book" button below: checking
-                            this adds the class to the bundle bar instead of
-                            booking it immediately. Disabled only when the
-                            class itself is unbookable (full) — a credit
-                            shortfall is judged against the whole selection's
-                            total, not this one row, so it doesn't block
-                            checking the box here. */}
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleSelected(row)}
-                          disabled={row.isFull || bundleSubmitting}
-                          aria-label={`Select ${formatOccurrenceDay(row.scheduledAt)} at ${formatOccurrenceTime(row.scheduledAt)} for bundle booking`}
-                          className="h-4 w-4 shrink-0 self-start rounded border-ink/20 bg-transparent text-[rgb(var(--c-a-400))] accent-[rgb(var(--c-a-400))] focus:ring-[rgb(var(--c-a-400)/0.5)] disabled:cursor-not-allowed disabled:opacity-30 sm:self-auto"
-                        />
+                        {mode === "SOLO" && (
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelected(row)}
+                            disabled={row.isBooked || bundleSubmitting}
+                            aria-label={`Select ${formatOccurrenceDay(row.scheduledAt)} at ${formatOccurrenceTime(row.scheduledAt)} for bundle booking`}
+                            className="h-4 w-4 shrink-0 self-start rounded border-ink/20 bg-transparent text-[rgb(var(--c-a-400))] accent-[rgb(var(--c-a-400))] focus:ring-[rgb(var(--c-a-400)/0.5)] disabled:cursor-not-allowed disabled:opacity-30 sm:self-auto"
+                          />
+                        )}
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-slate-100">{formatOccurrenceDay(row.scheduledAt)}</p>
-                          <p className="mt-0.5 text-xs text-slate-500">
-                            {formatOccurrenceTime(row.scheduledAt)}–{formatEndTime(row.scheduledAt, chosen)} ·{" "}
-                            {chosen} credit{chosen === 1 ? "" : "s"}
-                            {row.creditCost > 1 && ` of ${formatDuration(row.durationMin)} available`}
-                          </p>
-                          {/* Only offered when there's an actual choice to
-                              make — a 30-min class (creditCost 1) has
-                              exactly one possible end time already. */}
-                          {row.creditCost > 1 && (
-                            <label className="mt-1.5 flex items-center gap-2 text-xs text-slate-500">
-                              Stay until
-                              <select
-                                value={chosen}
-                                onChange={(e) => setCreditsFor(row, Number(e.target.value))}
-                                disabled={bookingKey !== null || bundleSubmitting}
-                                className="glass-surface-subtle rounded-md px-2 py-1 text-xs text-slate-200 outline-none disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                {durationOptions.map((n) => (
-                                  <option key={n} value={n}>
-                                    {formatEndTime(row.scheduledAt, n)} ({n} credit{n === 1 ? "" : "s"})
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
+                          {mode === "SOLO" ? (
+                            <>
+                              <p className="mt-0.5 text-xs text-slate-500">
+                                {formatOccurrenceTime(row.scheduledAt)}–{formatEndTime(row.scheduledAt, chosen)} ·{" "}
+                                {chosen} credit{chosen === 1 ? "" : "s"}
+                              </p>
+                              {maxForRow > 1 && (
+                                <label className="mt-1.5 flex items-center gap-2 text-xs text-slate-500">
+                                  Stay until
+                                  <select
+                                    value={chosen}
+                                    onChange={(e) => setCreditsFor(row, Number(e.target.value))}
+                                    disabled={bookingKey !== null || bundleSubmitting}
+                                    className="glass-surface-subtle rounded-md px-2 py-1 text-xs text-slate-200 outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    {durationOptions.map((n) => (
+                                      <option key={n} value={n}>
+                                        {formatEndTime(row.scheduledAt, n)} ({n} credit{n === 1 ? "" : "s"})
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+                              )}
+                            </>
+                          ) : (
+                            <p className="mt-0.5 text-xs text-slate-500">
+                              {formatOccurrenceTime(row.scheduledAt)}–{formatEndTime(row.scheduledAt, familyCreditsPerStudent)} ·{" "}
+                              {familyCreditsPerStudent} credits per student
+                            </p>
                           )}
                         </div>
-                        <p className="shrink-0 text-xs tabular-nums text-slate-500 sm:w-24 sm:text-right">
-                          {row.isFull ? (
-                            <span className="text-red-400">Full</span>
-                          ) : (
-                            `${row.seatsLeft} seat${row.seatsLeft === 1 ? "" : "s"} left`
-                          )}
+                        <p className="shrink-0 text-xs tabular-nums text-slate-500 sm:w-20 sm:text-right">
+                          {row.isBooked ? <span className="text-red-400">Booked</span> : "Available"}
                         </p>
-                        <button
-                          type="button"
-                          onClick={() => handleBook(row)}
-                          disabled={disabled}
-                          className="shrink-0 rounded-lg border border-[rgb(var(--c-a-400)/0.4)] px-4 py-2 text-xs font-semibold text-[rgb(var(--c-a-300))] transition hover:border-[rgb(var(--c-a-400))] hover:bg-[rgb(var(--c-a-400)/0.1)] disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
-                        >
-                          {bookingKey === key ? "Booking…" : row.isFull ? "Full" : insufficientCredits ? "Not enough credits" : "Book"}
-                        </button>
+                        {mode === "SOLO" ? (
+                          <button
+                            type="button"
+                            onClick={() => handleBook(row)}
+                            disabled={disabled}
+                            className="shrink-0 rounded-lg border border-[rgb(var(--c-a-400)/0.4)] px-4 py-2 text-xs font-semibold text-[rgb(var(--c-a-300))] transition hover:border-[rgb(var(--c-a-400))] hover:bg-[rgb(var(--c-a-400)/0.1)] disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
+                          >
+                            {bookingKey === key ? "Booking…" : row.isBooked ? "Booked" : insufficientCredits ? "Not enough credits" : "Book"}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => openFamilyBooking(row)}
+                            disabled={row.isBooked || familySubmitting}
+                            className="shrink-0 rounded-lg border border-[rgb(var(--c-a-400)/0.4)] px-4 py-2 text-xs font-semibold text-[rgb(var(--c-a-300))] transition hover:border-[rgb(var(--c-a-400))] hover:bg-[rgb(var(--c-a-400)/0.1)] disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
+                          >
+                            {row.isBooked ? "Booked" : "Set up family"}
+                          </button>
+                        )}
                       </div>
                     );
                   })}

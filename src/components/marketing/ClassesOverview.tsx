@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { CLASS_CAPACITY, CANCELLATION_CUTOFF_HOURS } from "@/lib/classSchedule";
+import { SOLO_MAX_CREDITS, CANCELLATION_CUTOFF_HOURS } from "@/lib/classSchedule";
 import { ScrollGlassCard } from "@/components/marketing/ScrollGlassCard";
 
 /**
  * HOMEPAGE REPLACEMENT — 05 CLASSES.
  *
- * Copy started as the old homepage's real "Live on Zoom" bento-cell copy,
- * updated to Discord once classes actually moved there; the three facts
- * below it are the app's own real constants (`CLASS_CAPACITY`,
+ * Rewritten for the 1:1-first booking model (group classes reverted to
+ * "coming soon" — see the booking page for that). The three facts below are
+ * still the app's own real constants (`SOLO_MAX_CREDITS`,
  * `CANCELLATION_CUTOFF_HOURS`) plus the credit-to-minutes rule already
  * stated in `/classes`' own registration copy — nothing invented.
  */
@@ -18,10 +18,10 @@ export function ClassesOverview() {
         <div className="grid gap-12 sm:grid-cols-[1fr_auto] sm:items-start sm:gap-16">
           <div>
             <p className="label label-muted">Live on Discord</p>
-            <h2 className="display-2 mt-4 max-w-[22ch] text-balance">Weekly group classes.</h2>
+            <h2 className="display-2 mt-4 max-w-[22ch] text-balance">One-on-one lessons with your teacher.</h2>
             <p className="lead mt-5 max-w-[46ch] text-slate-300">
-              Buy credits, book a seat, show up. Bundle discounts reach 30% and credits never
-              expire.
+              Buy credits, book your own time, show up. Siblings learning together can book a family
+              session instead. Credits never expire.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/classes" className="btn btn-secondary">
@@ -35,8 +35,8 @@ export function ClassesOverview() {
 
           <dl className="grid grid-cols-3 gap-6 sm:grid-cols-1 sm:gap-8">
             <div>
-              <dt className="text-xs uppercase tracking-[0.14em] text-slate-500">Class size</dt>
-              <dd className="mt-1 font-serif text-2xl text-slate-50">Up to {CLASS_CAPACITY}</dd>
+              <dt className="text-xs uppercase tracking-[0.14em] text-slate-500">Lesson length</dt>
+              <dd className="mt-1 font-serif text-2xl text-slate-50">Up to {(SOLO_MAX_CREDITS * 30) / 60} hr</dd>
             </div>
             <div>
               <dt className="text-xs uppercase tracking-[0.14em] text-slate-500">1 credit</dt>

@@ -9,7 +9,7 @@ import { useMemo, useState } from "react";
  * card linked out to an external cal.com booking page. Neither of those
  * fits an actual booking flow — a random day isn't meaningfully "available",
  * and this app already has its own real booking system (see
- * ClassBookingClient, which books against live seat counts and a credit
+ * ClassBookingClient, which books against live slot availability and a credit
  * balance, not a third-party calendar).
  *
  * What carried over is the genuinely useful part: a compact month-grid view
@@ -24,8 +24,7 @@ const DAY_NAMES = ["S", "M", "T", "W", "T", "F", "S"];
 
 interface OccurrenceLike {
   occurrenceDateMs: number;
-  seatsLeft: number;
-  isFull: boolean;
+  isBooked: boolean;
 }
 
 /**
@@ -51,18 +50,18 @@ export function BookingCalendar({
   onSelectDate: (key: string | null) => void;
 }) {
   // One entry per distinct calendar day that has at least one occurrence —
-  // multiple schedules landing on the same day just add to seatsLeft/count
-  // rather than producing duplicate dots.
+  // multiple schedules landing on the same day just add to the day's own
+  // count rather than producing duplicate dots.
   const dayInfo = useMemo(() => {
-    const map = new Map<string, { count: number; hasOpenSeats: boolean; ms: number }>();
+    const map = new Map<string, { count: number; hasOpenSlot: boolean; ms: number }>();
     for (const o of occurrences) {
       const key = dayKey(o.occurrenceDateMs);
       const existing = map.get(key);
       if (existing) {
         existing.count += 1;
-        existing.hasOpenSeats = existing.hasOpenSeats || !o.isFull;
+        existing.hasOpenSlot = existing.hasOpenSlot || !o.isBooked;
       } else {
-        map.set(key, { count: 1, hasOpenSeats: !o.isFull, ms: o.occurrenceDateMs });
+        map.set(key, { count: 1, hasOpenSlot: !o.isBooked, ms: o.occurrenceDateMs });
       }
     }
     return map;
@@ -167,7 +166,7 @@ export function BookingCalendar({
                 isSelected
                   ? "bg-[rgb(var(--c-a-400))] font-semibold text-slate-950"
                   : clickable
-                    ? info?.hasOpenSeats
+                    ? info?.hasOpenSlot
                       ? "font-medium text-[rgb(var(--c-a-200))] hover:bg-[rgb(var(--c-a-400)/0.15)]"
                       : "font-medium text-slate-500 hover:bg-ink/5"
                     : isToday
@@ -178,7 +177,7 @@ export function BookingCalendar({
               {day}
               {info && !isSelected && (
                 <span
-                  className={`absolute bottom-1 h-1 w-1 rounded-full ${info.hasOpenSeats ? "bg-[rgb(var(--c-a-400))]" : "bg-slate-600"}`}
+                  className={`absolute bottom-1 h-1 w-1 rounded-full ${info.hasOpenSlot ? "bg-[rgb(var(--c-a-400))]" : "bg-slate-600"}`}
                   aria-hidden
                 />
               )}
@@ -190,9 +189,9 @@ export function BookingCalendar({
       <div className="mt-4 flex items-center justify-between border-t border-ink/10 pt-3">
         <p className="flex items-center gap-1.5 text-[11px] text-slate-600">
           <span className="h-1.5 w-1.5 rounded-full bg-[rgb(var(--c-a-400))]" aria-hidden />
-          Open seats
+          Available
           <span className="ml-2 h-1.5 w-1.5 rounded-full bg-slate-600" aria-hidden />
-          Full
+          Booked
         </p>
         {selectedDateKey && (
           <button

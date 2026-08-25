@@ -1101,13 +1101,28 @@ model ClassBooking {
   // cancellation cutoff and admin roster ordering are computed from.
   scheduledAt    DateTime
 
-  // Snapshotted from ClassSchedule.creditCost at booking time so a later
-  // schedule edit never retroactively changes what a past booking cost.
+  // The credits this booking will cost — reserved at booking time (checked
+  // against the student's own available balance) but not actually deducted
+  // from User.classCredits until markAttendance runs; see that function's
+  // own comment for why the charge itself waits that long. Snapshotted here
+  // (not recomputed from ClassSchedule.creditCost) so a later schedule edit
+  // never retroactively changes what a past booking cost.
   creditsSpent Int
+
+  // Every row sharing one value here booked one family session together —
+  // one credit charge per row, all against the same occurrence, but as one
+  // booking "party" for capacity purposes (see getUpcomingOccurrences: an
+  // occurrence with any active booking at all, solo or family, is full).
+  // Null for a solo 1:1 booking, which needs no such grouping.
+  familyBookingGroupId String?
 
   status         ClassBookingStatus @default(SCHEDULED)
   attendance     AttendanceStatus? // set by admin after the class happens; null until marked
-  refunded       Boolean            @default(false) // true only for a >=24h-ahead self-cancellation
+  // True once this booking was actually canceled before ever being charged
+  // — which, now that the real charge waits for attendance, is every
+  // cancellation that reaches this state at all (a booking already marked
+  // COMPLETED can't be canceled — see cancelClassBooking's own guard).
+  refunded       Boolean            @default(false)
   canceledReason String?
 
   createdAt DateTime @default(now())
@@ -1116,6 +1131,7 @@ model ClassBooking {
   @@unique([studentId, scheduleId, occurrenceDate])
   @@index([scheduleId, occurrenceDate, status])
   @@index([studentId, status])
+  @@index([familyBookingGroupId])
 }
 
 // Audit trail for every manual admin change to a student's classCredits

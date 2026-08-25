@@ -1,6 +1,14 @@
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
-import { getClassCreditBalance, getUpcomingOccurrences, getUserClassBookings, CANCELLATION_CUTOFF_HOURS } from "@/lib/classSchedule";
+import {
+  getEffectiveClassCredits,
+  getUpcomingOccurrences,
+  getUserClassBookings,
+  CANCELLATION_CUTOFF_HOURS,
+  SOLO_MAX_CREDITS,
+  FAMILY_MIN_ATTENDEES,
+  FAMILY_CREDITS_PER_STUDENT,
+} from "@/lib/classSchedule";
 import { getSupportContactId } from "@/lib/admin";
 import { ClassBookingClient } from "./ClassBookingClient";
 
@@ -13,7 +21,10 @@ export default async function LessonsPage() {
   if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=lessons");
 
   const [credits, occurrences, bookings, supportContactId] = await Promise.all([
-    getClassCreditBalance(session.user.id),
+    // Effective, not raw: a credit already reserved by another SCHEDULED
+    // booking isn't actually free to spend again, even though the real
+    // charge for it hasn't landed yet — see getEffectiveClassCredits.
+    getEffectiveClassCredits(session.user.id),
     getUpcomingOccurrences(),
     getUserClassBookings(session.user.id),
     getSupportContactId(),
@@ -23,18 +34,20 @@ export default async function LessonsPage() {
     <ClassBookingClient
       initialCredits={credits}
       cancellationCutoffHours={CANCELLATION_CUTOFF_HOURS}
+      soloMaxCredits={SOLO_MAX_CREDITS}
+      familyMinAttendees={FAMILY_MIN_ATTENDEES}
+      familyCreditsPerStudent={FAMILY_CREDITS_PER_STUDENT}
       supportContactId={supportContactId}
       occurrences={occurrences.map((o) => ({
         scheduleId: o.scheduleId,
         label: o.label,
         dayOfWeek: o.dayOfWeek,
+        chunkIndex: o.chunkIndex,
         durationMin: o.durationMin,
         creditCost: o.creditCost,
         occurrenceDateMs: o.occurrenceDate.getTime(),
         scheduledAt: o.scheduledAt.toISOString(),
-        seatsBooked: o.seatsBooked,
-        seatsLeft: o.seatsLeft,
-        isFull: o.isFull,
+        isBooked: o.isBooked,
       }))}
       initialBookings={bookings.map((b) => ({
         id: b.id,
