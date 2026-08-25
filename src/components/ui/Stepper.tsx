@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { CheckIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
@@ -35,30 +36,44 @@ export function Stepper({
         {steps.map((step, i) => {
           const done = i < current;
           const active = i === current;
+          const last = i === steps.length - 1;
           return (
-            <li
-              key={step.title}
-              className={cn("flex items-center", i < steps.length - 1 && "flex-1")}
-              aria-current={active ? "step" : undefined}
-            >
-              <Marker index={i} done={done} active={active} />
-              <span
-                className={cn(
-                  "ml-2 hidden whitespace-nowrap text-xs font-medium sm:inline",
-                  active ? "text-slate-50" : done ? "text-slate-400" : "text-slate-600",
-                )}
-              >
-                {step.title}
-              </span>
-              {i < steps.length - 1 && (
-                <span
-                  className={cn(
-                    "mx-3 h-px flex-1",
-                    done ? "bg-emerald-400/40" : "bg-ink/10",
-                  )}
+            // The connector used to live *inside* this <li>, competing with
+            // this step's own label for space inside one equally-divided
+            // slot — a long label like "Your instrument" left it nothing to
+            // grow into, so it rendered at a real, measured 0px wide, not
+            // just visually thin. It's a separate <li> now: a true sibling
+            // flex item of <ol>, so it grows into whatever's actually left
+            // over in the row instead of whatever's left over in one
+            // label's own cramped box. aria-hidden — it carries no content a
+            // screen reader needs, and keeps the list's announced item
+            // count at the real number of steps, not steps-plus-connectors.
+            //
+            // Only the active step's label is ever shown — not a viewport
+            // check (`sm:inline`, as this used to be): the wizard's own card
+            // is a fixed ~28rem regardless of how wide the screen around it
+            // is, so a screen-width breakpoint never actually fires here.
+            // All five full labels genuinely don't fit that card width at
+            // once — showing every label was the reason nothing was left
+            // for the connector even before the nesting bug above. One
+            // visible label at a time always fits, and the big heading
+            // right below the row already repeats the current step's full
+            // name — every step's label still reaches a screen reader via
+            // sr-only, just not painted for the ones not being read.
+            <Fragment key={step.title}>
+              <li className="flex shrink-0 items-center" aria-current={active ? "step" : undefined}>
+                <Marker index={i} done={done} active={active} />
+                <span className={cn("ml-2 whitespace-nowrap text-xs font-medium text-slate-50", !active && "sr-only")}>
+                  {step.title}
+                </span>
+              </li>
+              {!last && (
+                <li
+                  aria-hidden
+                  className={cn("mx-3 h-px flex-1", done ? "bg-emerald-400/40" : "bg-ink/10")}
                 />
               )}
-            </li>
+            </Fragment>
           );
         })}
       </ol>
