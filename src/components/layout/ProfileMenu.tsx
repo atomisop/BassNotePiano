@@ -13,6 +13,11 @@ export interface ProfileMenuProps {
   username: string | null;
   email: string | null;
   image: string | null;
+  /** Appended after the trigger's base sizing classes so a caller in a
+      different-sized row (e.g. MarketingNav's h-9 pills) can fit in with
+      its neighbors — `!`-prefixed the same way MarketingNav's own primary
+      CTA already overrides shared button classes. */
+  triggerClassName?: string;
 }
 
 /**
@@ -26,7 +31,7 @@ export interface ProfileMenuProps {
  * TopBar's ProfileAvatarLink) since `image` is deliberately kept out of the
  * JWT/session.
  */
-export function ProfileMenu({ name, username, email, image }: ProfileMenuProps) {
+export function ProfileMenu({ name, username, email, image, triggerClassName }: ProfileMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -59,7 +64,7 @@ export function ProfileMenu({ name, username, email, image }: ProfileMenuProps) 
         aria-expanded={open}
         data-tour="nav-profile"
         onClick={() => setOpen((v) => !v)}
-        className="h-8 w-8 shrink-0 overflow-hidden rounded-full border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.1)] transition hover:border-[rgb(var(--c-a-400)/0.6)]"
+        className={`h-8 w-8 shrink-0 overflow-hidden rounded-full border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.1)] transition hover:border-[rgb(var(--c-a-400)/0.6)] ${triggerClassName ?? ""}`}
       >
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element -- data URI, next/image can't optimize it

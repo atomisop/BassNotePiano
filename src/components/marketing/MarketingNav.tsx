@@ -4,9 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { DiscordIcon } from "@/components/ui/icons";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
+import { ProfileMenu } from "@/components/layout/ProfileMenu";
 
 /**
  * The homepage header.
@@ -92,9 +93,10 @@ export function MarketingNav() {
   const primary = isLoggedIn
     ? { label: "Dashboard", href: "/dashboard" }
     : { label: "Start learning", href: "/register" };
-  const secondary = isLoggedIn
-    ? { label: "Account", href: "/account" }
-    : { label: "Log in", href: "/login" };
+  // Logged in: no separate "Account" pill any more — ProfileMenu's own
+  // Settings item goes to the same /account, so it'd be a second link
+  // pointing at the same place. Logged out: unchanged, "Log in".
+  const secondary = isLoggedIn ? null : { label: "Log in", href: "/login" };
 
   return (
     <>
@@ -148,12 +150,14 @@ export function MarketingNav() {
                 {link.label}
               </Link>
             ))}
-            <Link
-              href={secondary.href}
-              className="glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-[13px] font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
-            >
-              {secondary.label}
-            </Link>
+            {secondary && (
+              <Link
+                href={secondary.href}
+                className="glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-[13px] font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
+              >
+                {secondary.label}
+              </Link>
+            )}
             {/* Icon-only, same Level 1 glass as the pills above rather than
                 a labeled pill — this is a single external link, not another
                 in-app destination, so it reads as secondary chrome next to
@@ -167,6 +171,18 @@ export function MarketingNav() {
             >
               <DiscordIcon size={16} />
             </a>
+            {/* Sits immediately next to the Dashboard button, by direct
+                instruction — replaces the old plain "Account" text pill
+                (ProfileMenu's own Settings item already goes to /account). */}
+            {isLoggedIn && (
+              <ProfileMenu
+                name={session?.user?.name ?? null}
+                username={null}
+                email={session?.user?.email ?? null}
+                image={null}
+                triggerClassName="!h-9 !w-9"
+              />
+            )}
             {/* Real liquid glass here specifically — `glass-surface-elevated`
                 (translucent, blurred, signal-green-tinted border) instead of
                 `.btn-primary`'s solid gradient fill. Scoped to just this one
@@ -222,7 +238,7 @@ export function MarketingNav() {
             </div>
 
             <div className="flex flex-col px-6 pt-8">
-              {[...LINKS, secondary].map((link) => (
+              {[...LINKS, ...(secondary ? [secondary] : [])].map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -232,6 +248,34 @@ export function MarketingNav() {
                   {link.label}
                 </Link>
               ))}
+              {/* No dropdown on a full-screen sheet — it's already the
+                  expanded state, so Profile/Settings/Log out are just flat
+                  rows here instead of nesting ProfileMenu inside it. */}
+              {isLoggedIn && (
+                <>
+                  <Link
+                    href="/profile"
+                    onClick={() => setMenuOpen(false)}
+                    className="display-3 border-b border-[rgb(var(--c-s-50)/0.08)] py-6"
+                  >
+                    Profile
+                  </Link>
+                  <Link
+                    href="/account"
+                    onClick={() => setMenuOpen(false)}
+                    className="display-3 border-b border-[rgb(var(--c-s-50)/0.08)] py-6"
+                  >
+                    Settings
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                    className="display-3 border-b border-[rgb(var(--c-s-50)/0.08)] py-6 text-left text-[rgb(var(--c-s-300))]"
+                  >
+                    Log out
+                  </button>
+                </>
+              )}
               <a
                 href={DISCORD_INVITE_URL}
                 target="_blank"
