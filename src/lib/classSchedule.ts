@@ -187,8 +187,9 @@ export async function bookClass(studentId: string, scheduleId: string, occurrenc
     { windowMinutes: 60, max: 20, message: "You're booking too fast — please wait a bit and try again." },
   );
 
+  let booking;
   try {
-    return await prisma.$transaction(
+    booking = await prisma.$transaction(
       async (tx) => {
         const seatsBooked = await tx.classBooking.count({ where: { scheduleId, occurrenceDate, status: "SCHEDULED" } });
         if (seatsBooked >= CLASS_CAPACITY) throw new ClassBookingError("This class just filled up — pick another time.");
@@ -245,6 +246,45 @@ export async function bookClass(studentId: string, scheduleId: string, occurrenc
     }
     throw err;
   }
+
+  // LESSON_BOOKING_RECEIVED already existed as a defined notification type
+  // (bell icon, admin CTA to /admin/bookings) but nothing ever actually
+  // triggered it — the teacher had no way to find out a class had been
+  // booked short of checking the roster themselves. Same pattern
+  // classRegistration.ts already uses for new registrations: notify every
+  // ADMIN (today, just the one account), non-blocking so a notification
+  // hiccup never fails a real booking.
+  notifyAdminsOfBooking(studentId, schedule, scheduledAt).catch((err) =>
+    console.error("Admin booking notification failed (non-blocking):", err),
+  );
+
+  return booking;
+}
+
+async function notifyAdminsOfBooking(
+  studentId: string,
+  schedule: { label: string | null; creditCost: number },
+  scheduledAt: Date,
+) {
+  const [student, admins] = await Promise.all([
+    prisma.user.findUnique({ where: { id: studentId }, select: { name: true, email: true } }),
+    prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } }),
+  ]);
+  const studentLabel = student?.name ?? student?.email ?? "A student";
+  const when = scheduledAt.toLocaleString("en-US", { timeZone: ET_ZONE, dateStyle: "full", timeStyle: "short" });
+  const classLabel = schedule.label ? `${schedule.label} class` : "class";
+
+  await Promise.all(
+    admins.map((admin) =>
+      createNotification({
+        userId: admin.id,
+        type: "LESSON_BOOKING_RECEIVED",
+        title: "New class booking",
+        body: `${studentLabel} booked the ${when} ${classLabel} (${schedule.creditCost} credit${schedule.creditCost === 1 ? "" : "s"}).`,
+        emailCategory: "social",
+      }),
+    ),
+  );
 }
 
 export interface BundleBookingSelection {
