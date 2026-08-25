@@ -137,10 +137,14 @@ function Pill({
   comingSoon?: boolean;
 }) {
   return (
+    // disabled when comingSoon: same fix as ClassRegistrationForm's Pill and
+    // OnboardingWizard's OptionButton. A "Coming soon" tag on an option you
+    // can still click and select reads as a bug, not a feature.
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+      disabled={comingSoon}
+      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
         selected
           ? "border-[rgb(var(--c-a-400)/0.6)] bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-200))]"
           : "border-ink/10 bg-slate-950 text-slate-400 hover:border-ink/15"

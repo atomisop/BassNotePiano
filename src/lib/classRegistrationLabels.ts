@@ -20,11 +20,11 @@ export const SKILL_LABEL: Record<SkillLevel, string> = {
 
 /**
  * Instruments in the picker that the studio doesn't actually teach yet.
- * Still choosable everywhere PrimaryInstrument is picked (the class
- * registration form, onboarding, and the profile editor): someone
- * registering interest or setting this as their own instrument ahead of
- * launch is exactly the demand signal worth capturing, not something to
- * hide. Flagged "Coming soon" wherever it's offered as a choice instead, so
- * nobody picks it thinking lessons already exist.
+ * Flagged "Coming soon" and disabled everywhere PrimaryInstrument is picked
+ * (the class registration form, onboarding, and the profile editor), so
+ * nobody can pick a lesson that doesn't exist. An earlier version left these
+ * clickable on purpose, to capture early interest as a demand signal, but a
+ * "Coming soon" tag on something you could still click and select read as a
+ * bug rather than a feature, so it was turned off.
  */
 export const INSTRUMENTS_COMING_SOON = new Set<PrimaryInstrument>(["DRUMS", "VOCAL"]);

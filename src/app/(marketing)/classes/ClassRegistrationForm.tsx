@@ -36,20 +36,23 @@ function Pill({
     // aria-pressed carries the selection. Without it the only thing marking
     // the chosen instrument is a colour change, which is invisible to a screen
     // reader and to anyone who can't distinguish the two border tints.
+    //
+    // disabled when comingSoon: this used to stay clickable on purpose, to
+    // register early interest in Drums/Vocal ahead of launch, but a "Coming
+    // soon" tag on something you can still click and select reads as a bug,
+    // not a feature. Disabled per direct instruction.
     <button
       type="button"
       onClick={onClick}
+      disabled={comingSoon}
       aria-pressed={selected}
-      className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-a-400)/0.7)] ${
+      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-a-400)/0.7)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
         selected
           ? "border-[rgb(var(--c-a-400)/0.6)] bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-200))]"
           : "border-ink/10 bg-slate-950 text-slate-400 hover:border-ink/15"
-      }`}
+      } ${comingSoon ? "" : "cursor-pointer"}`}
     >
       {label}
-      {/* Still a real, selectable choice (see INSTRUMENTS_COMING_SOON's own
-          doc comment): registering interest ahead of launch is the whole
-          point, this just sets the right expectation about timing. */}
       {comingSoon && (
         <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
           Coming soon
@@ -99,17 +102,13 @@ export function ClassRegistrationForm() {
       <div className="glass-surface-elevated p-8 text-center">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Request received</p>
         <h3 className="mt-2 font-serif text-xl text-slate-50">Thanks, {fullName.split(" ")[0]}.</h3>
-        {instrument && INSTRUMENTS_COMING_SOON.has(instrument) ? (
-          <p className="mt-2 text-sm text-slate-400">
-            We don&apos;t have {INSTRUMENTS.find((i) => i.value === instrument)?.label.toLowerCase()} lessons running yet, but
-            we&apos;ve saved your interest and will reach out at {email} or {phone} as soon as we do.
-          </p>
-        ) : (
-          <p className="mt-2 text-sm text-slate-400">
-            We&apos;ve got your registration for {INSTRUMENTS.find((i) => i.value === instrument)?.label.toLowerCase()} lessons.
-            We&apos;ll reach out at {email} or {phone} shortly.
-          </p>
-        )}
+        {/* No coming-soon branch here anymore: the instrument pill for
+            Drums/Vocal is disabled now, so `instrument` can never actually
+            hold one of those values by the time this renders. */}
+        <p className="mt-2 text-sm text-slate-400">
+          We&apos;ve got your registration for {INSTRUMENTS.find((i) => i.value === instrument)?.label.toLowerCase()} lessons.
+          We&apos;ll reach out at {email} or {phone} shortly.
+        </p>
       </div>
     );
   }

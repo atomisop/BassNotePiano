@@ -65,10 +65,14 @@ function OptionButton({
   comingSoon?: boolean;
 }) {
   return (
+    // disabled when comingSoon: same fix as ClassRegistrationForm's Pill.
+    // A "Coming soon" tag on an option you can still click and select reads
+    // as a bug, not a feature.
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center justify-between gap-2 rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${
+      disabled={comingSoon}
+      className={`flex w-full items-center justify-between gap-2 rounded-xl border px-4 py-3 text-left text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
         selected
           ? "border-[rgb(var(--c-a-400)/0.6)] bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-200))]"
           : "border-ink/10 bg-slate-950 text-slate-300 hover:border-ink/15"
