@@ -29,15 +29,21 @@ export default function TermsPage() {
 
       <SiteNavbar />
 
-      <section className="relative mx-auto max-w-2xl px-6 pb-24 pt-16 sm:pt-24">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Legal</p>
-        <h1 className="mt-1.5 font-serif text-3xl text-slate-50 sm:text-4xl">Terms &amp; refund policy</h1>
-        <p className="mt-3 text-sm text-slate-400">Last updated {TERMS_LAST_UPDATED}.</p>
+      {/* id + tabIndex: the skip link in (marketing)/layout.tsx targets
+          #main-content — axe's "region" check flagged every marketing page
+          for having real content outside any landmark, since that id used
+          to sit on an empty placeholder div rather than an actual <main>. */}
+      <main id="main-content" tabIndex={-1} className="outline-none">
+        <section className="relative mx-auto max-w-2xl px-6 pb-24 pt-16 sm:pt-24">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Legal</p>
+          <h1 className="mt-1.5 font-serif text-3xl text-slate-50 sm:text-4xl">Terms &amp; refund policy</h1>
+          <p className="mt-3 text-sm text-slate-400">Last updated {TERMS_LAST_UPDATED}.</p>
 
-        <div className="glass-surface mt-8 p-6 sm:p-8">
-          <TermsContent />
-        </div>
-      </section>
+          <div className="glass-surface mt-8 p-6 sm:p-8">
+            <TermsContent />
+          </div>
+        </section>
+      </main>
 
       <SiteFooter />
     </div>

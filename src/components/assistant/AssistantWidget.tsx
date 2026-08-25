@@ -864,37 +864,35 @@ export function AssistantWidget() {
 
       <AnimatePresence>
         {showGreeting && !open && (
-          <motion.button
-            type="button"
-            onClick={openPanel}
+          // A <button> (the bubble, opens the panel) used to have another
+          // interactive element (the dismiss control) nested inside it —
+          // invalid HTML regardless of whether that inner control is a real
+          // <button> or (as it was) a role="button" span, and genuinely
+          // ambiguous for a screen reader or keyboard user, not just a
+          // technicality. Two sibling buttons inside a plain wrapping div
+          // instead: open and dismiss are both real, independently
+          // reachable controls, neither nested in the other.
+          <motion.div
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ type: "spring", bounce: 0, duration: 0.3 }}
-            className="glass-surface-elevated relative max-w-[240px] rounded-2xl px-4 py-3 text-left text-sm leading-relaxed text-slate-100"
+            className="glass-surface-elevated relative max-w-[240px] rounded-2xl text-sm leading-relaxed text-slate-100"
           >
-            <span
-              role="button"
-              tabIndex={0}
+            <button type="button" onClick={openPanel} className="block w-full rounded-2xl px-4 py-3 text-left">
+              {GREETING_TEXT}
+            </button>
+            <button
+              type="button"
               aria-label="Dismiss"
-              onClick={(e) => {
-                e.stopPropagation();
-                dismissGreeting();
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.stopPropagation();
-                  dismissGreeting();
-                }
-              }}
+              onClick={dismissGreeting}
               className="absolute -right-2 -top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-ink/10 bg-slate-950 text-slate-400 transition hover:text-slate-200"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
                 <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
-            </span>
-            {GREETING_TEXT}
-          </motion.button>
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
 

@@ -51,16 +51,19 @@ export function LandingPage() {
 
       {/* Skip-link target — see (marketing)/layout.tsx. tabIndex={-1} so
           focus actually lands here on activation; never in normal tab order
-          otherwise. */}
-      <div id="main-content" tabIndex={-1} className="sr-only" />
-
-      <Hero />
-      <WhatBassNoteIs />
-      <CurriculumOverview />
-      <ProductShowcase />
-      <ClassesOverview />
-      <PricingCallout />
-      <FinalCTA />
+          otherwise. A real <main> now, not an empty placeholder div — axe's
+          "region" check flagged every marketing page for having real content
+          outside any landmark, since this id used to sit on an empty div
+          instead of actually wrapping the content it pointed at. */}
+      <main id="main-content" tabIndex={-1} className="outline-none">
+        <Hero />
+        <WhatBassNoteIs />
+        <CurriculumOverview />
+        <ProductShowcase />
+        <ClassesOverview />
+        <PricingCallout />
+        <FinalCTA />
+      </main>
 
       <SiteFooter />
       <ScrollToTopButton />

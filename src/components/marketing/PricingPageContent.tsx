@@ -51,6 +51,10 @@ export function PricingPageContent() {
 
       <SiteNavbar />
 
+      {/* id + tabIndex: the skip link in (marketing)/layout.tsx targets
+          #main-content — see terms/page.tsx for why this moved onto a real
+          <main> instead of an empty placeholder div. */}
+      <main id="main-content" tabIndex={-1} className="outline-none">
       <motion.section
         variants={container}
         initial="hidden"
@@ -171,6 +175,7 @@ export function PricingPageContent() {
           </Link>
         </motion.div>
       </motion.section>
+      </main>
 
       <SiteFooter />
     </div>

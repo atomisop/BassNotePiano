@@ -84,7 +84,12 @@ export function SiteNavbar() {
           logo={{
             url: "/",
             src: "/logo-mark.png",
-            alt: "Bass Note Piano",
+            // Empty, not "Bass Note Piano": Navbar1 renders logo.title as
+            // its own visible text right next to this image (see
+            // shadcnblocks-com-navbar1.tsx), so a non-empty alt here made a
+            // screen reader announce the name twice. Same decorative-logo
+            // treatment every other place this mark appears already uses.
+            alt: "",
             title: "Bass Note Piano",
           }}
           menu={MENU}

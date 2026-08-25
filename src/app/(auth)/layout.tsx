@@ -17,13 +17,18 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="fixed inset-0 -z-10">
         <PhotoBackdrop src={BACKDROPS.auth} scrim="standard" priority sizes="100vw" />
       </div>
-      <Link href="/" className="relative mb-8 flex flex-col items-center text-center">
-        <Image src="/logo-mark.png" alt="" width={44} height={44} className="mb-2 h-11 w-11" priority />
-        <p className="font-serif text-2xl tracking-[0.05em] text-slate-50">
-          Bass Note <span className="text-[rgb(var(--c-a-400))]">Piano</span>
-        </p>
-        <p className="mt-1 text-sm text-slate-400">Ethiopian scale theory, practiced.</p>
-      </Link>
+      {/* header, not a bare <a>: axe's "region" check flagged this brand
+          link for sitting outside any landmark, as a sibling of <main>
+          rather than inside one. */}
+      <header>
+        <Link href="/" className="relative mb-8 flex flex-col items-center text-center">
+          <Image src="/logo-mark.png" alt="" width={44} height={44} className="mb-2 h-11 w-11" priority />
+          <p className="font-serif text-2xl tracking-[0.05em] text-slate-50">
+            Bass Note <span className="text-[rgb(var(--c-a-400))]">Piano</span>
+          </p>
+          <p className="mt-1 text-sm text-slate-400">Ethiopian scale theory, practiced.</p>
+        </Link>
+      </header>
       <main className="relative flex w-full justify-center">{children}</main>
     </div>
   );

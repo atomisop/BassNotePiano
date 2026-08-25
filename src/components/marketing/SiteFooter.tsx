@@ -99,7 +99,11 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="border-t border-ink/5 py-6 text-center text-xs text-slate-600">
+        {/* slate-600 (not used here) is documented in marketing.css as
+            "non-text, always" at 4.4:1 — real body text needs the 4.5:1
+            slate-500 sits at instead. Caught by an axe-core pass; this line
+            was the one real text-contrast failure on the marketing site. */}
+        <div className="border-t border-ink/5 py-6 text-center text-xs text-slate-500">
           © {new Date().getFullYear()} Bass Note Piano.
         </div>
       </div>

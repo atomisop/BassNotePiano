@@ -27,21 +27,26 @@ export default function ClassesPage() {
 
       <SiteNavbar />
 
-      <section className="relative mx-auto max-w-lg px-6 pb-24 pt-28">
-        <div className="text-center">
-          <h1 className="text-balance font-serif text-4xl leading-tight tracking-[-0.02em] text-slate-50 sm:text-5xl">
-            Learn with us in person
-          </h1>
-          <p className="mx-auto mt-4 max-w-md text-base text-slate-200">
-            Tell us what you&apos;d like to learn and where you&apos;re starting from, and we&apos;ll follow up by phone or
-            email to get you scheduled.
-          </p>
-        </div>
+      {/* id + tabIndex: the skip link in (marketing)/layout.tsx targets
+          #main-content — see terms/page.tsx for why this moved onto a real
+          <main> instead of an empty placeholder div. */}
+      <main id="main-content" tabIndex={-1} className="outline-none">
+        <section className="relative mx-auto max-w-lg px-6 pb-24 pt-28">
+          <div className="text-center">
+            <h1 className="text-balance font-serif text-4xl leading-tight tracking-[-0.02em] text-slate-50 sm:text-5xl">
+              Learn with us in person
+            </h1>
+            <p className="mx-auto mt-4 max-w-md text-base text-slate-200">
+              Tell us what you&apos;d like to learn and where you&apos;re starting from, and we&apos;ll follow up by phone
+              or email to get you scheduled.
+            </p>
+          </div>
 
-        <div className="mt-9">
-          <ClassRegistrationForm />
-        </div>
-      </section>
+          <div className="mt-9">
+            <ClassRegistrationForm />
+          </div>
+        </section>
+      </main>
 
       <SiteFooter />
     </div>
