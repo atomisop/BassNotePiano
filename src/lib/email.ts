@@ -63,12 +63,15 @@ async function sendEmail({ to, subject, html, text }: SendEmailParams): Promise<
   }
 }
 
-// Accent per email "kind" — same gold used everywhere by default; a
-// cancellation/rejection reads a touch warmer (amber-red) without going
-// full alarm-red, matching the site's restrained palette.
+// Accent per email "kind" — the app's own real dark ink ground + signal
+// green (src/app/themes.css: [data-mode="dark"][data-accent="signal"]),
+// not an invented email-only palette. A cancellation/rejection stays a
+// warm red instead of green — green reads as "this went well" everywhere
+// else in the app, and reusing it for a rejection would send the wrong
+// signal (same --c-rd-300/400 red the app itself uses for errors).
 const SHELL_ACCENT = {
-  default: { bar: "linear-gradient(90deg,#c79a3a,#e8d9a8,#c79a3a)", dot: "#c79a3a" },
-  notice: { bar: "linear-gradient(90deg,#c17a4a,#e8bf9a,#c17a4a)", dot: "#c17a4a" },
+  default: { bar: "linear-gradient(90deg,#05e901,#64f046,#05e901)", dot: "#05e901" },
+  notice: { bar: "linear-gradient(90deg,#ef4444,#fca5a5,#ef4444)", dot: "#ef4444" },
 } as const;
 
 interface EmailShellOptions {
@@ -81,11 +84,11 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
   const accent = SHELL_ACCENT[options.kind ?? "default"];
   const footerNote =
     options.footerNote ??
-    `You're getting this because you have a Bass Note Piano account. <a href="${getAppUrl("/account?tab=notifications")}" style="color:#8a6d1f;text-decoration:underline;">Manage email preferences</a>.`;
+    `You're getting this because you have a Bass Note Piano account. <a href="${getAppUrl("/account?tab=notifications")}" style="color:#64f046;text-decoration:underline;">Manage email preferences</a>.`;
 
   return `
-    <div style="background:#f4f4f2;padding:40px 16px;font-family:Helvetica,Arial,sans-serif;">
-      <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e5e1d8;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+    <div style="background:#0d0d0d;padding:40px 16px;font-family:Helvetica,Arial,sans-serif;">
+      <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;background:#1c1c1c;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);box-shadow:0 1px 3px rgba(0,0,0,0.4);">
         <tr>
           <td style="height:4px;background:${accent.bar};"></td>
         </tr>
@@ -94,10 +97,10 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
             <table role="presentation">
               <tr>
                 <td style="vertical-align:middle;padding-right:9px;">
-                  <span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:#faf6ea;border:1px solid #e8d9a8;color:#8a6d1f;font-size:14px;">♪</span>
+                  <span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:rgba(5,233,1,0.12);border:1px solid rgba(5,233,1,0.35);color:#64f046;font-size:14px;">♪</span>
                 </td>
                 <td style="vertical-align:middle;">
-                  <span style="font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:#8a6d1f;font-weight:bold;">Bass Note Piano</span>
+                  <span style="font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:#f5f5f5;font-weight:bold;">Bass Note <span style="color:#64f046;">Piano</span></span>
                 </td>
               </tr>
             </table>
@@ -105,19 +108,19 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
         </tr>
         <tr>
           <td style="padding:20px 32px 8px;">
-            <h1 style="margin:0 0 16px;font-size:21px;font-family:Georgia,'Times New Roman',serif;color:#1a1a1a;">${escapeHtml(title)}</h1>
-            <div style="font-size:15px;line-height:1.65;color:#3a3a3a;">
+            <h1 style="margin:0 0 16px;font-size:21px;font-family:Georgia,'Times New Roman',serif;color:#f5f5f5;">${escapeHtml(title)}</h1>
+            <div style="font-size:15px;line-height:1.65;color:#c2c2c2;">
               ${bodyHtml}
             </div>
           </td>
         </tr>
         <tr>
-          <td style="padding:22px 32px 28px;border-top:1px solid #efece4;">
+          <td style="padding:22px 32px 28px;border-top:1px solid rgba(255,255,255,0.08);">
             <p style="margin:0 0 6px;font-size:12px;line-height:1.6;color:#999999;">
               ${footerNote}
             </p>
             <p style="margin:0;font-size:12px;line-height:1.6;color:#999999;">
-              Questions? Write to <a href="mailto:${EMAIL_REPLY_TO}" style="color:#8a6d1f;text-decoration:underline;">${EMAIL_REPLY_TO}</a>.
+              Questions? Write to <a href="mailto:${EMAIL_REPLY_TO}" style="color:#64f046;text-decoration:underline;">${EMAIL_REPLY_TO}</a>.
             </p>
           </td>
         </tr>
@@ -129,7 +132,7 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
 function codeBlockHtml(code: string): string {
   return `
     <div style="margin:20px 0;text-align:center;">
-      <span style="display:inline-block;padding:14px 28px;border-radius:12px;background:#faf6ea;border:1px solid #e8d9a8;font-family:'Courier New',monospace;font-size:28px;letter-spacing:8px;font-weight:bold;color:#8a6d1f;">
+      <span style="display:inline-block;padding:14px 28px;border-radius:12px;background:#0f1f0d;border:1px solid rgba(5,233,1,0.35);font-family:'Courier New',monospace;font-size:28px;letter-spacing:8px;font-weight:bold;color:#64f046;">
         ${code}
       </span>
     </div>
@@ -179,7 +182,7 @@ export async function sendVerificationCodeEmail(to: string, purpose: Verificatio
   const copy = PURPOSE_COPY[purpose];
   const html = emailShell(
     copy.heading,
-    `<p style="margin:0 0 4px;">${copy.intro}</p>${codeBlockHtml(code)}<p style="margin:0;color:#777;font-size:13px;">This code expires in 10 minutes.</p>`,
+    `<p style="margin:0 0 4px;">${copy.intro}</p>${codeBlockHtml(code)}<p style="margin:0;color:#999999;font-size:13px;">This code expires in 10 minutes.</p>`,
     // Codes are a different concern than a "manage preferences" footer — the
     // relevant reassurance here is "someone else can't get in", not "opt out".
     { footerNote: "If you didn't request this, you can safely ignore this email — your account is still secure." },
@@ -207,7 +210,7 @@ export async function sendNotificationEmail(to: string, title: string, body: str
 function ctaButtonHtml(cta: { label: string; url: string }): string {
   return `
     <div style="text-align:center;margin-top:4px;">
-      <a href="${cta.url}" style="display:inline-block;padding:13px 30px;border-radius:10px;background:#c79a3a;color:#1a1a1a;font-size:14px;font-weight:bold;text-decoration:none;">
+      <a href="${cta.url}" style="display:inline-block;padding:13px 30px;border-radius:10px;background:#05e901;color:#0d0d0d;font-size:14px;font-weight:bold;text-decoration:none;">
         ${escapeHtml(cta.label)}
       </a>
     </div>
