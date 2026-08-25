@@ -79,7 +79,7 @@ export function Sidebar({ name, isAdmin, unreadMessageCount }: SidebarProps) {
           />
         ))}
         {isAdmin && (
-          <NavItem href="/admin/payments" label="Admin" icon={ICON_PATHS.admin} active={pathname.startsWith("/admin")} />
+          <NavItem href="/admin" label="Admin" icon={ICON_PATHS.admin} active={pathname.startsWith("/admin")} />
         )}
       </nav>
 

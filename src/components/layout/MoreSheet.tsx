@@ -40,7 +40,7 @@ export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: 
 
   const items: MoreItem[] = [
     { href: "/lessons", label: "Online Lessons", icon: ICON_PATHS.lessons, dataTour: "nav-lessons" },
-    ...(isAdmin ? [{ href: "/admin/payments", label: "Admin", icon: ICON_PATHS.admin }] : []),
+    ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: ICON_PATHS.admin }] : []),
     { href: "/account", label: "Settings", icon: ICON_PATHS.settings, dataTour: "nav-settings" },
     { href: "/about", label: "About", icon: ICON_PATHS.about },
   ];

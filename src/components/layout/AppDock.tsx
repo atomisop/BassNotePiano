@@ -205,7 +205,7 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
   const effectivelyVisible = !autoHideEnabled || visible || hasFocusWithin || tourForcedVisible;
 
   const items = isAdmin
-    ? [...NAV_ITEMS, { href: "/admin/payments", label: "Admin", icon: ICON_PATHS.admin }]
+    ? [...NAV_ITEMS, { href: "/admin", label: "Admin", icon: ICON_PATHS.admin }]
     : NAV_ITEMS;
 
   return (
@@ -222,7 +222,7 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
       >
         <Dock className="items-end pb-3" magnification={72} distance={140} panelHeight={60}>
           {items.map((item) => {
-            const active = pathname === item.href || (item.href === "/admin/payments" && pathname.startsWith("/admin"));
+            const active = pathname === item.href || (item.href === "/admin" && pathname.startsWith("/admin"));
             const badge = item.href === "/messages" ? unreadMessageCount : 0;
 
             return (
