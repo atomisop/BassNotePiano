@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { canAccessScale, QUIZ_PASS_THRESHOLD } from "@/lib/access";
 import { ctaLabel } from "@/lib/ctaLabel";
 import { getLessonsWithProgress } from "@/lib/courseContent";
@@ -23,6 +24,13 @@ export default async function ScalePage({ params }: { params: { scaleSlug: strin
   const { scaleGroup } = access;
   const variants = SCALE_CONTENT[scaleGroup.slug] ?? [];
   const lessons = await getLessonsWithProgress(scaleGroup.slug, session.user.id);
+  // Picks which instrument view the explorer below renders — see
+  // TranspositionDashboard's comment for why a guitar/bass student can't
+  // just get the piano diagram every other scale page shows.
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { primaryInstrument: true },
+  });
 
   return (
     <div className="space-y-10">
@@ -47,7 +55,7 @@ export default async function ScalePage({ params }: { params: { scaleSlug: strin
 
       <div className="mx-auto max-w-5xl">
         {variants.length > 0 ? (
-          <ScaleExplorer variants={variants} />
+          <ScaleExplorer variants={variants} instrument={user?.primaryInstrument ?? null} />
         ) : (
           <p className="text-sm text-slate-500">Interactive content for this scale is coming soon.</p>
         )}

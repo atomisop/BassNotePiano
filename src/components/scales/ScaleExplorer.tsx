@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { PrimaryInstrument } from "@prisma/client";
 import type { RootKey } from "@/lib/music-theory";
 import type { ScaleVariant } from "@/lib/scale-content";
 import { KeySelector } from "@/components/scales/KeySelector";
@@ -10,10 +11,13 @@ import { useScalePlayer, useStopOnChange } from "@/components/scales/useScalePla
 
 export interface ScaleExplorerProps {
   variants: ScaleVariant[];
+  /** The signed-in student's own instrument, so the dashboard below shows
+      guitar/bass/piano correctly — see TranspositionDashboard's comment. */
+  instrument: PrimaryInstrument | null;
 }
 
 /** Owns the shared root + variant selection so the dashboard and chords panel below always stay in sync. */
-export function ScaleExplorer({ variants }: ScaleExplorerProps) {
+export function ScaleExplorer({ variants, instrument }: ScaleExplorerProps) {
   const [activeVariantIndex, setActiveVariantIndex] = useState(0);
   const [root, setRoot] = useState<RootKey>("C");
   const variant = variants[activeVariantIndex];
@@ -54,7 +58,7 @@ export function ScaleExplorer({ variants }: ScaleExplorerProps) {
         <KeySelector value={root} onChange={setRoot} />
       </div>
 
-      <TranspositionDashboard variant={variant} root={root} player={player} />
+      <TranspositionDashboard variant={variant} root={root} player={player} instrument={instrument} />
       <ScaleChordsPanel variant={variant} root={root} player={player} />
     </div>
   );

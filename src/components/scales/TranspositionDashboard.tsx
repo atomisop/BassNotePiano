@@ -2,15 +2,20 @@
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
+import type { PrimaryInstrument } from "@prisma/client";
 import { ROOT_KEYS, spellScale, getScaleInAllKeys, type RootKey } from "@/lib/music-theory";
 import type { ScaleVariant } from "@/lib/scale-content";
 import type { ScalePlayer } from "@/components/scales/useScalePlayer";
 import { PianoKeyboard } from "@/components/scales/PianoKeyboard";
+import { Fretboard, GUITAR_STANDARD_TUNING, BASS_STANDARD_TUNING } from "@/components/scales/Fretboard";
 
 export interface TranspositionDashboardProps {
   variant: ScaleVariant;
   root: RootKey;
   player: ScalePlayer;
+  /** Picks which instrument view renders below — same scale data either
+      way, see the header comment on Fretboard.tsx for why this exists. */
+  instrument: PrimaryInstrument | null;
 }
 
 function PlayIcon() {
@@ -30,7 +35,7 @@ function StopIcon() {
 }
 
 /** Spells `variant` at `root`, plus a reference table of all 12 keys with the active root highlighted. */
-export function TranspositionDashboard({ variant, root, player }: TranspositionDashboardProps) {
+export function TranspositionDashboard({ variant, root, player, instrument }: TranspositionDashboardProps) {
   const spelled = useMemo(() => spellScale(root, variant.formula), [root, variant.formula]);
   const allKeys = useMemo(() => getScaleInAllKeys(variant.formula), [variant.formula]);
 
@@ -99,23 +104,55 @@ export function TranspositionDashboard({ variant, root, player }: TranspositionD
         })}
       </motion.div>
 
-      {/* The same scale, a third way: where it sits under the hands. Rendered
-          whether or not audio is supported — the shape of a kiñit on the keys
-          is worth seeing even on a browser that can't sound it; the keys are
-          just inert there. */}
+      {/* The same scale, a third way: where it sits under the hands (or the
+          fingers, on a fretted string instrument). Rendered whether or not
+          audio is supported — the shape of a kiñit on the instrument is
+          worth seeing even on a browser that can't sound it; the keys/frets
+          are just inert there.
+
+          Which view: a guitar or bass student who lands on a piano diagram
+          for every scale in the curriculum is being shown an instrument
+          they didn't sign up for — the theory is identical, only the
+          physical layout differs, so this picks the one that's actually
+          true to what they're holding. PIANO_KEYBOARD, OTHER, and no
+          instrument on file all default to the keyboard. */}
       <div className="mt-7">
-        <PianoKeyboard
-          notes={spelled.notes}
-          degrees={spelled.degrees}
-          activeIndex={activeIndex}
-          onPlayKey={playKey}
-          disabled={!supported}
-        />
+        {instrument === "GUITAR" ? (
+          <Fretboard
+            notes={spelled.notes}
+            degrees={spelled.degrees}
+            activeIndex={activeIndex}
+            onPlayKey={playKey}
+            disabled={!supported}
+            tuning={GUITAR_STANDARD_TUNING}
+            instrumentLabel="Guitar"
+          />
+        ) : instrument === "BASS" ? (
+          <Fretboard
+            notes={spelled.notes}
+            degrees={spelled.degrees}
+            activeIndex={activeIndex}
+            onPlayKey={playKey}
+            disabled={!supported}
+            tuning={BASS_STANDARD_TUNING}
+            instrumentLabel="Bass"
+          />
+        ) : (
+          <PianoKeyboard
+            notes={spelled.notes}
+            degrees={spelled.degrees}
+            activeIndex={activeIndex}
+            onPlayKey={playKey}
+            disabled={!supported}
+          />
+        )}
       </div>
 
       {supported && (
         <p className="mt-3 text-[11px] text-slate-500">
-          Tap any note or key to hear it. Keys outside the scale still sound.
+          {instrument === "GUITAR" || instrument === "BASS"
+            ? "Tap any note or fret to hear it. Frets outside the scale still sound."
+            : "Tap any note or key to hear it. Keys outside the scale still sound."}
         </p>
       )}
 
