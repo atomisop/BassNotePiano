@@ -19,10 +19,8 @@ import * as Sentry from "@sentry/nextjs";
  */
 export default function GlobalError({
   error,
-  reset,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
 }) {
   useEffect(() => {
     console.error("Root layout error:", error);
@@ -81,7 +79,16 @@ export default function GlobalError({
 
           <button
             type="button"
-            onClick={reset}
+            // Deliberately a real reload, not the `reset` prop Next.js
+            // passes here: reset() only retries rendering this same tree,
+            // which is exactly what already failed once — for a root-layout
+            // crash (the common real-world case being a browser tab still
+            // holding JS chunk references from before the last deploy
+            // shipped) nothing about that retry can succeed, so the button
+            // looked like it did nothing. A real reload re-fetches the
+            // current HTML/JS from the server, which is the one thing that
+            // actually can recover from that.
+            onClick={() => window.location.reload()}
             style={{
               marginTop: 26,
               cursor: "pointer",
