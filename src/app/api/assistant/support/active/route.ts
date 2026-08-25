@@ -9,13 +9,21 @@ import { prisma } from "@/lib/prisma";
  * anonymous visitor has no account to look this up by, and stays scoped to
  * whatever their browser still remembers, same as the rest of the widget's
  * pre-escalation history.
+ *
+ * status: "OPEN" only. This used to return the visitor's most recent
+ * escalation regardless of status, so once an admin resolved it, the
+ * widget's "start a new conversation" reset (which clears activeEscalationId
+ * to go back to plain Atom chat) got immediately undone: this endpoint kept
+ * finding that same resolved thread and re-attaching it, since it's still
+ * "most recent." A resolved thread isn't active by definition — only an
+ * OPEN one should ever be re-offered here.
  */
 export async function GET() {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return NextResponse.json({ escalationId: null });
 
   const escalation = await prisma.assistantEscalation.findFirst({
-    where: { userId: session.user.id },
+    where: { userId: session.user.id, status: "OPEN" },
     orderBy: { createdAt: "desc" },
     select: { id: true },
   });
