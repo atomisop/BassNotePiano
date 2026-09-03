@@ -67,7 +67,7 @@ export default async function DashboardPage() {
       <TodayGreeting name={user?.name ?? null} />
       <p className="mt-2 text-sm text-slate-500">
         {progress.completedScales === 0
-          ? "Six scale groups, one connected path through the kiñit system."
+          ? "Six scale groups, one connected path through the whole system."
           : `${progress.completedScales} of ${progress.totalScales} scale groups complete.`}
       </p>
 
@@ -162,7 +162,7 @@ export default async function DashboardPage() {
       <div className="mt-10">
         <p className="eyebrow">The path</p>
         <h2 className="mt-1.5 font-serif text-2xl text-slate-50">
-          Your route through the kiñit system
+          Your route through the whole system
         </h2>
         <div className="mt-6">
           <ScaleRoadmap roadmap={roadmap} />

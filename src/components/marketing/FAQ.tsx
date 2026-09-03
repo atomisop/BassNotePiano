@@ -4,6 +4,8 @@ import { CREDIT_BASE_PRICE_CENTS } from "@/lib/classCreditPricing";
 import { CANCELLATION_CUTOFF_HOURS, SOLO_MAX_CREDITS, FAMILY_CREDITS_PER_STUDENT } from "@/lib/classSchedule";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { BACKDROPS } from "@/lib/backdrops";
+import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 
 /**
  * HOMEPAGE REBUILD: 06 FAQ.
@@ -25,6 +27,12 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
  * in a second, larger boundary just nested one rule-based structure inside
  * a box, which is exactly what marketing.css's structural rule argues
  * against.
+ *
+ * SECTION BACKDROP: fifth beat of the homepage's image → blur → blank →
+ * blur → image rhythm (see InstrumentPicker's own comment). The
+ * sheet-music photo blurs back out after ProblemStatement's full-clarity
+ * use of it, the same strong-blur-and-fade treatment SocialProof gives
+ * the guitar photo, before FinalCTA closes the page on plain ground.
  */
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -33,7 +41,7 @@ function formatUsd(cents: number) {
 const FAQS = [
   {
     q: "Do I need to already know music theory?",
-    a: "No. The curriculum starts with a real Foundation stage, the diatonic scale, the chromatic scale, and the seven modes, before any kiñit-specific material.",
+    a: "No. The curriculum starts with a real Foundation stage, the diatonic scale, the chromatic scale, and the seven modes, before any scale-specific material.",
   },
   {
     q: "What instruments does this work for?",
@@ -59,8 +67,24 @@ const FAQS = [
 
 export function FAQ() {
   return (
-    <section className="mx-auto max-w-2xl px-6 py-[var(--space-5)] md:py-[var(--space-8)]">
-      <ScrollReveal>
+    <section className="relative overflow-hidden py-[var(--space-5)] md:py-[var(--space-8)]">
+      {/* Masked to fully transparent at both edges, on top of the blur and
+          PhotoBackdrop's own scrim, belt and suspenders so this never
+          reads as a hard cut against FinalCTA's blank ground below. Never
+          a bare image-to-image transition anywhere on this page: every
+          image is either at full clarity with a blank section on both
+          sides, or blurred and fading straight to blank, per direct
+          instruction. */}
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 overflow-hidden"
+        style={{ maskImage: "linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)" }}
+      >
+        <div className="absolute -inset-x-10 -inset-y-10 blur-3xl">
+          <PhotoBackdrop src={BACKDROPS.classes} scrim="standard" sizes="100vw" />
+        </div>
+      </div>
+      <ScrollReveal className="mx-auto max-w-2xl px-6">
         <p className="label label-muted">Questions</p>
         <h2 className="display-2 mt-4 max-w-[20ch] text-balance">Before you commit to anything.</h2>
 

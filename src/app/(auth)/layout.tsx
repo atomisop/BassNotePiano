@@ -1,22 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BACKDROPS } from "@/lib/backdrops";
-import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    /* No `bg-*` on this wrapper: it would paint over the -z-10 backdrop
-       below and hide the photo entirely. The ground comes from <body> and
-       from PhotoBackdrop's own base layer. */
+    // The photo backdrop that used to fill this shell is gone by direct
+    // instruction (moved to the homepage instead, see InstrumentPicker/
+    // ProblemStatement's own comments). The ground now comes straight from
+    // <body>'s own bg-slate-950, same plain dark surface every other
+    // chrome-free area of the app already sits on.
     <div className="relative flex min-h-screen flex-col items-center justify-center px-6 py-16">
-      {/* Fixed, not scoped to a section — persists identically across all five
-          auth screens (login/register/forgot/reset/verify) so moving between
-          them never re-flashes a different photo. The scrim is theme-aware,
-          so this reads as a soft ghost on paper and a fuller image on the
-          dark themes without the markup knowing which is active. */}
-      <div className="fixed inset-0 -z-10">
-        <PhotoBackdrop src={BACKDROPS.auth} scrim="standard" priority sizes="100vw" />
-      </div>
       {/* header, not a bare <a>: axe's "region" check flagged this brand
           link for sitting outside any landmark, as a sibling of <main>
           rather than inside one. */}

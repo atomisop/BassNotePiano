@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { GradientFooter } from "./GradientFooter";
 import { DiscordIcon } from "@/components/ui/icons";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 
@@ -28,15 +27,14 @@ export function SiteFooter() {
   const isLoggedIn = Boolean(session?.user);
 
   return (
-    // minReveal={0}: the band defaults to 0.05, which is 5% of a 40vh glow —
-    // about 21px of blurred warm light pinned to the bottom of the viewport
-    // at ALL times, on every marketing page, at every scroll position. On the
-    // homepage that reads as a rendering artifact rather than a flourish (it
-    // was mistaken for a video decode bug during review), and it sits directly
-    // under the hero's masthead strip. At 0 the glow still rises to full as
-    // the footer comes into view — the effect is intact, it just stops
-    // intruding on the other nine-tenths of the page.
-    <GradientFooter minReveal={0} className="relative border-t border-ink/5">
+    // Plain <footer>, not GradientFooter: that component's rising glow band
+    // (fixed to the viewport bottom, blooming as the footer scrolls into
+    // view) is gone by direct instruction ("the glowing thing that pops out
+    // at the bottom"). It had already been dialed down once before
+    // (minReveal={0}, see git history) but stayed visible at the very
+    // bottom of every page regardless. GradientFooter.tsx had no other
+    // caller, so it's deleted rather than kept as dead code.
+    <footer className="relative border-t border-ink/5">
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pt-16">
         <div className="grid grid-cols-1 gap-10 pb-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-2">
@@ -45,7 +43,7 @@ export function SiteFooter() {
               BASS NOTE <span className="text-[rgb(var(--c-a-400))]">PIANO</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm text-slate-500">
-              A digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book: six kiñit scales,
+              A digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book: six scales,
               spelled correctly in every key, plus live one-on-one and family lessons on Discord.
             </p>
             <a
@@ -54,7 +52,7 @@ export function SiteFooter() {
               rel="noopener noreferrer"
               className="mt-4 inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-[rgb(var(--c-a-300))]"
             >
-              <DiscordIcon size={18} />
+              <DiscordIcon size={18} className="text-[#5865F2]" />
               Join our Discord
             </a>
           </div>
@@ -119,6 +117,6 @@ export function SiteFooter() {
           © {new Date().getFullYear()} Bass Note Piano.
         </div>
       </div>
-    </GradientFooter>
+    </footer>
   );
 }

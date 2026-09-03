@@ -44,11 +44,11 @@ export const SITE_TAGLINE = "Ethiopian Scales, Rhythm & Chords";
 
 /**
  * The default social/meta description. Deliberately concrete about what the
- * curriculum actually covers — the kiñit names are the differentiator and the
+ * curriculum actually covers — the scale names are the differentiator and the
  * thing someone would plausibly search for.
  */
 export const SITE_DESCRIPTION =
-  "An interactive masterclass in the Ethiopian kiñit system — Tizita, Bati, Anchihoye and Mixolydian pentatonics — spelled correctly in all twelve keys, with the native chords mapped for each one.";
+  "An interactive masterclass in the Ethiopian scale system — Tizita, Bati, Anchihoye and Mixolydian pentatonics — spelled correctly in all twelve keys, with the native chords mapped for each one.";
 
 /** Absolute URL helper — sitemap entries and canonicals both need one. */
 export function absoluteUrl(path = "/"): string {

@@ -21,16 +21,24 @@ const buttonVariants = cva(
            and exactly the kind of decorative novelty effect this project's
            own design direction rules out for buttons. What's kept — the
            gradient, the shadow, the hover response — renders identically in
-           every real browser. */
+           every real browser.
+           Every variant below except `link` also lifts on hover and presses
+           down on click (-translate-y-0.5 / translate-y-px), on top of
+           whatever color/fill response it already had. Direct instruction:
+           a filter/color change alone read as "almost impossible to
+           tell if I need to click it or not". `link` stays flat: it's
+           styled as inline text, not a button, so a 3D lift would fight
+           its own look the same way it would on marketing's `.btn-quiet`. */
         default:
-          "relative border border-[rgb(var(--c-a-500)/0.5)] bg-gradient-to-b from-[rgb(var(--c-a-400))] to-[rgb(var(--c-a-500))] text-primary-foreground shadow-[0_1px_1px_rgba(255,255,255,0.25)_inset,0_-1px_1px_rgba(0,0,0,0.12)_inset,0_6px_16px_-6px_rgba(0,0,0,0.4)] transition-[filter] duration-200 hover:brightness-110 active:brightness-95",
+          "relative border border-[rgb(var(--c-a-500)/0.5)] bg-gradient-to-b from-[rgb(var(--c-a-400))] to-[rgb(var(--c-a-500))] text-primary-foreground shadow-[0_1px_1px_rgba(255,255,255,0.25)_inset,0_-1px_1px_rgba(0,0,0,0.12)_inset,0_6px_16px_-6px_rgba(0,0,0,0.4)] transition-[filter,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_1px_1px_rgba(255,255,255,0.25)_inset,0_-1px_1px_rgba(0,0,0,0.12)_inset,0_10px_24px_-8px_rgba(0,0,0,0.5)] active:translate-y-px active:brightness-95 active:shadow-[0_1px_1px_rgba(255,255,255,0.25)_inset,0_-1px_1px_rgba(0,0,0,0.12)_inset,0_2px_8px_-4px_rgba(0,0,0,0.4)]",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground transition-[background-color,transform,box-shadow] duration-200 hover:bg-destructive/90 hover:-translate-y-0.5 hover:shadow-[0_10px_20px_-8px_rgba(0,0,0,0.5)] active:translate-y-px active:shadow-none",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-input bg-background transition-[background-color,color,transform,box-shadow] duration-200 hover:bg-accent hover:text-accent-foreground hover:-translate-y-0.5 hover:shadow-[0_10px_20px_-8px_rgba(0,0,0,0.35)] active:translate-y-px active:shadow-none",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
+          "bg-secondary text-secondary-foreground transition-[background-color,transform,box-shadow] duration-200 hover:bg-secondary/80 hover:-translate-y-0.5 hover:shadow-[0_10px_20px_-8px_rgba(0,0,0,0.4)] active:translate-y-px active:shadow-none",
+        ghost:
+          "transition-[background-color,color,transform] duration-200 hover:bg-accent hover:text-accent-foreground hover:-translate-y-0.5 active:translate-y-px",
         link: "text-primary underline-offset-4 hover:underline",
         /* The spec's other option for a primary action: "dark elevated
            glass" instead of a solid accent fill — for contexts where a
@@ -38,7 +46,8 @@ const buttonVariants = cva(
            surface. Only renders as actual glass under the Glass theme (its
            tokens are 0px blur everywhere else) — same restraint the rest of
            the material system already applies. */
-        glass: "glass-surface-elevated text-[rgb(var(--c-s-50))] hover:brightness-110",
+        glass:
+          "glass-surface-elevated text-[rgb(var(--c-s-50))] transition-[filter,transform] duration-200 hover:brightness-110 hover:-translate-y-0.5 active:translate-y-px",
       },
       size: {
         default: "h-10 px-4 py-2",

@@ -1,4 +1,3 @@
-import { PageBackground } from "@/components/marketing/PageBackground";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { Hero } from "@/components/marketing/Hero";
 import { InstrumentPicker } from "@/components/marketing/InstrumentPicker";
@@ -27,17 +26,16 @@ import { ScrollToTopButton } from "@/components/marketing/ScrollToTopButton";
  * `PricingCallout`'s numbers → `FAQ.tsx`, with the full bundle breakdown
  * staying on the real `/pricing` page one link away, same as before.
  *
- * `Hero` went through several distinct versions this project's history:
- * a plain static section, then the piano scroll sequence itself (folding
- * in the short-lived separate `PianoReveal` file), and now a fixed-
- * viewport HUD hero with a cursor-driven reveal instead of a scroll-driven
- * one, by direct instruction ("use all of it except the picture," referring
- * to a UI/button/layout brief for an unrelated product page). See Hero.tsx's
- * own comment for the current version's full reasoning. Still built from
- * this app's own real piano photography (now the two states of the cursor
- * reveal, not a 65-frame scroll sequence), not the earlier live-WebGL 3D
- * piano backdrop removed earlier this project's history, which none of
- * these versions have been a reversal of.
+ * `Hero` went through several distinct versions this project's history: a
+ * plain static section, the piano scroll sequence itself, a fixed-viewport
+ * HUD hero with a cursor-driven reveal, and now a single restrained
+ * cinematic hero (real piano photo full-bleed, one headline, one line, one
+ * CTA), by direct instruction to study real premium sites and apply what
+ * actually makes them feel that way rather than adding more visual effects.
+ * See Hero.tsx's own comment for the current version's full reasoning.
+ * Still this app's own real piano photography throughout every version,
+ * not the earlier live-WebGL 3D piano backdrop removed earlier this
+ * project's history, which none of these versions have been a reversal of.
  *
  * 21ST.DEV REDESIGN: Solution and HowItWorks were rebuilt again in this
  * pass (Feature Showcase and Timeline patterns, adapted; see each file's
@@ -92,15 +90,34 @@ import { ScrollToTopButton } from "@/components/marketing/ScrollToTopButton";
  * (`InstrumentPicker`, see its own comment) built the same way: the
  * pattern borrowed, the words entirely BNP's own real facts.
  *
- * Everything else from the previous rebuild that this pass didn't touch:
- * `PageBackground`'s shader mesh still extends the whole page (Hero's own
- * opaque full-viewport background simply covers it for that one section,
- * same as any full-bleed section would).
+ * PIANOTE.COM STYLE PASS: `PageBackground` (the animated moving mesh-
+ * gradient that used to extend behind the whole page) is deleted, by
+ * direct instruction to remove it - the page now just shows the plain
+ * static ground color every section already sits on via
+ * `[data-surface="marketing"]`'s own background-color, with nothing
+ * layered behind it. It had no other caller, so the file is gone rather
+ * than kept as dead code. Separately, the nav wordmark (MarketingNav.tsx)
+ * picked up pianote.com's own actual wordmark treatment (bold, lowercase,
+ * colored in the accent, studied directly) in place of the small neutral-
+ * white label it used before - see that file's own comment.
+ *
+ * SECTION BACKDROP PASS: the real photography that used to sit behind
+ * /classes, /pricing, /shop and every auth screen (see backdrops.ts) is
+ * removed from those pages and reused here instead, by direct
+ * instruction, "casually" behind text that already existed rather than as
+ * a new hero-style treatment. InstrumentPicker through FAQ now run a
+ * repeating image -> blur -> blank -> blur -> image rhythm (full detail,
+ * softened, plain ground, softened, full detail again), explicitly never
+ * cutting directly between two different photos - Solution's screenshot
+ * panel and FinalCTA's closing beat stay on plain ground throughout, the
+ * "blank" beats the rhythm needs and, for Solution, the same "product
+ * reveal keeps its own bounded surface" rule this file's STRUCTURE
+ * REDESIGN pass already established. See InstrumentPicker.tsx's own
+ * comment for the full reasoning and which photo runs where.
  */
 export function LandingPage() {
   return (
     <div className="relative">
-      <PageBackground />
       <MarketingNav />
 
       {/* Skip-link target — see (marketing)/layout.tsx. tabIndex={-1} so

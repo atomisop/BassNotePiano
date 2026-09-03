@@ -63,16 +63,14 @@ async function sendEmail({ to, subject, html, text }: SendEmailParams): Promise<
   }
 }
 
-// Accent per email "kind": the app's own real dark ink ground + its one
-// accent (src/app/themes.css: [data-mode="dark"], currently a warm amber;
-// hardcoded as hex here rather than a CSS custom property since email
-// clients don't reliably support those), not an invented email-only
-// palette. A cancellation/rejection stays a warm red instead of the
-// accent, since red reads as "this needs attention" everywhere else in
-// the app, and reusing the accent for a rejection would send the wrong
+// Accent per email "kind" — the app's own real dark ink ground + signal
+// green (src/app/themes.css: [data-mode="dark"], the app's one accent),
+// not an invented email-only palette. A cancellation/rejection stays a
+// warm red instead of green — green reads as "this went well" everywhere
+// else in the app, and reusing it for a rejection would send the wrong
 // signal (same --c-rd-300/400 red the app itself uses for errors).
 const SHELL_ACCENT = {
-  default: { bar: "linear-gradient(90deg,#D98E5A,#F0C09B,#D98E5A)", dot: "#D98E5A" },
+  default: { bar: "linear-gradient(90deg,#05e901,#64f046,#05e901)", dot: "#05e901" },
   notice: { bar: "linear-gradient(90deg,#ef4444,#fca5a5,#ef4444)", dot: "#ef4444" },
 } as const;
 
@@ -86,7 +84,7 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
   const accent = SHELL_ACCENT[options.kind ?? "default"];
   const footerNote =
     options.footerNote ??
-    `You're getting this because you have a Bass Note Piano account. <a href="${getAppUrl("/account?tab=notifications")}" style="color:#E8A87A;text-decoration:underline;">Manage email preferences</a>.`;
+    `You're getting this because you have a Bass Note Piano account. <a href="${getAppUrl("/account?tab=notifications")}" style="color:#64f046;text-decoration:underline;">Manage email preferences</a>.`;
 
   return `
     <div style="background:#0d0d0d;padding:40px 16px;font-family:Helvetica,Arial,sans-serif;">
@@ -99,10 +97,10 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
             <table role="presentation">
               <tr>
                 <td style="vertical-align:middle;padding-right:9px;">
-                  <span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:rgba(217,142,90,0.12);border:1px solid rgba(217,142,90,0.35);color:#E8A87A;font-size:14px;">♪</span>
+                  <span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:rgba(5,233,1,0.12);border:1px solid rgba(5,233,1,0.35);color:#64f046;font-size:14px;">♪</span>
                 </td>
                 <td style="vertical-align:middle;">
-                  <span style="font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:#f5f5f5;font-weight:bold;">Bass Note <span style="color:#E8A87A;">Piano</span></span>
+                  <span style="font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:#f5f5f5;font-weight:bold;">Bass Note <span style="color:#64f046;">Piano</span></span>
                 </td>
               </tr>
             </table>
@@ -122,7 +120,7 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
               ${footerNote}
             </p>
             <p style="margin:0;font-size:12px;line-height:1.6;color:#999999;">
-              Questions? Write to <a href="mailto:${EMAIL_REPLY_TO}" style="color:#E8A87A;text-decoration:underline;">${EMAIL_REPLY_TO}</a>.
+              Questions? Write to <a href="mailto:${EMAIL_REPLY_TO}" style="color:#64f046;text-decoration:underline;">${EMAIL_REPLY_TO}</a>.
             </p>
           </td>
         </tr>
@@ -134,7 +132,7 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
 function codeBlockHtml(code: string): string {
   return `
     <div style="margin:20px 0;text-align:center;">
-      <span style="display:inline-block;padding:14px 28px;border-radius:12px;background:#1f150d;border:1px solid rgba(217,142,90,0.35);font-family:'Courier New',monospace;font-size:28px;letter-spacing:8px;font-weight:bold;color:#E8A87A;">
+      <span style="display:inline-block;padding:14px 28px;border-radius:12px;background:#0f1f0d;border:1px solid rgba(5,233,1,0.35);font-family:'Courier New',monospace;font-size:28px;letter-spacing:8px;font-weight:bold;color:#64f046;">
         ${code}
       </span>
     </div>
@@ -212,7 +210,7 @@ export async function sendNotificationEmail(to: string, title: string, body: str
 function ctaButtonHtml(cta: { label: string; url: string }): string {
   return `
     <div style="text-align:center;margin-top:4px;">
-      <a href="${cta.url}" style="display:inline-block;padding:13px 30px;border-radius:10px;background:#D98E5A;color:#0d0d0d;font-size:14px;font-weight:bold;text-decoration:none;">
+      <a href="${cta.url}" style="display:inline-block;padding:13px 30px;border-radius:10px;background:#05e901;color:#0d0d0d;font-size:14px;font-weight:bold;text-decoration:none;">
         ${escapeHtml(cta.label)}
       </a>
     </div>
@@ -241,7 +239,7 @@ export async function sendWelcomeEmail(to: string, name: string | null) {
   const firstName = name?.trim().split(" ")[0];
   const greeting = firstName ? `Welcome, ${escapeHtml(firstName)}!` : "Welcome!";
   const body =
-    "Your account is verified and ready to go. Explore the six-scale Ethiopian kiñit curriculum, book a live Discord class, or just look around — here's a quick tour of what's here.";
+    "Your account is verified and ready to go. Explore the six-scale Ethiopian curriculum, book a live Discord class, or just look around — here's a quick tour of what's here.";
   const html = emailShell(greeting, `<p style="margin:0 0 20px;">${body}</p>${ctaButtonHtml({ label: "Learn more about Bass Note Piano", url: getAppUrl("/about") })}`);
   const text = `${greeting}\n\n${body}\n\nLearn more: ${getAppUrl("/about")}`;
   await sendEmail({ to, subject: "Welcome to Bass Note Piano 🎹", html, text });

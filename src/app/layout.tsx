@@ -1,19 +1,25 @@
 import type { Metadata } from "next";
-import { Sora, JetBrains_Mono } from "next/font/google";
+import { Sora, Baloo_2, JetBrains_Mono } from "next/font/google";
 import { Providers } from "./providers";
 import { THEME_BOOT_SCRIPT } from "@/lib/themes";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
-// One family for both display and body — the black/amber system
-// this replaces Playfair Display + Inter with is deliberately not an
-// editorial serif-plus-humanist-sans pairing; it's a single geometric
-// sans doing every job, the same way the reference spec only ever
-// names one font.
-const sora = Sora({
+// Display and body are two different families now, by direct instruction
+// to study a real competitor's design (pianote.com) and match its
+// energy: a bold, rounded, friendly display face for headlines, not the
+// single geometric-sans-for-everything system this replaces. Baloo 2 is
+// the real, freely-licensed Google Font closest to that same rounded,
+// heavy-weight character (not pianote.com's own actual typeface, which
+// isn't reproduced here: this is an equivalent in the same spirit, the
+// same distinction this whole redesign pass draws between copying a
+// design's real content vs. its structural/visual style). Sora stays for
+// body copy, which wants to stay quiet and readable underneath a heavier
+// display face, not compete with it.
+const baloo = Baloo_2({
   subsets: ["latin"],
   variable: "--font-display",
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["500", "600", "700", "800"],
 });
 const body = Sora({
   subsets: ["latin"],
@@ -54,8 +60,6 @@ export const metadata: Metadata = {
   // present in the copy the crawler sees.
   keywords: [
     "Ethiopian scales",
-    "kiñit",
-    "kinit",
     "Tizita",
     "Bati",
     "Anchihoye",
@@ -100,7 +104,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     // affected.
     <html
       lang="en"
-      className={`${sora.variable} ${body.variable} ${mono.variable}`}
+      className={`${baloo.variable} ${body.variable} ${mono.variable}`}
       suppressHydrationWarning
     >
       <head>

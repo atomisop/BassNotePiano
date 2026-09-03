@@ -67,7 +67,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-07-22",
     title: "Bass Note Piano launches",
     items: [
-      "The full Ethiopian kiñit curriculum — Tizita, Bati, Anchihoye, and Mixolydian pentatonics — spelled correctly in every key",
+      "The full Ethiopian scale curriculum — Tizita, Bati, Anchihoye, and Mixolydian pentatonics — spelled correctly in every key",
       "Pay-as-you-go per scale, or one-time lifetime Pro access",
       "Secure accounts with email verification and two-factor login",
     ],

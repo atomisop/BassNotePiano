@@ -83,5 +83,3 @@ export const BADGES: BadgeDefinition[] = [
     category: "STREAK",
   },
 ];
-
-export const BADGES_BY_CODE = new Map(BADGES.map((b) => [b.code, b]));

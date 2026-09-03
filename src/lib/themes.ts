@@ -15,8 +15,8 @@
  * There's only ever one accent value anywhere in the app now, so there's
  * nothing left for a picker to choose between; see themes.css's own
  * "Accent" comment for what that one value currently is and why (it has
- * changed since this paragraph was first written, most recently to a
- * warm amber, by direct instruction to match a reference screenshot).
+ * changed more than once since this paragraph was first written, each
+ * time by direct instruction).
  */
 
 export const CURATED_THEME_IDS = ["paper", "ink"] as const;

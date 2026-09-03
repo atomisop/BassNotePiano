@@ -5,16 +5,16 @@ import { SITE_NAME } from "@/lib/site";
 // correct absolute URL + dimensions into both the og: and twitter: tags, so
 // nothing here has to be repeated in `metadata`.
 export const runtime = "nodejs";
-export const alt = `${SITE_NAME} — an interactive masterclass in the Ethiopian kiñit system`;
+export const alt = `${SITE_NAME} — an interactive masterclass in the Ethiopian scale system`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 // Dark card for social: the card is competing for attention in a feed
 // against mostly-white chrome, so it leads with the near-black ground and
-// the warm amber accent the app itself now uses everywhere.
+// the vivid signal-green accent the app itself now uses everywhere.
 const INK = "#1A1A1A";
 const PAPER = "#F5F5F5";
-const RUST = "#D98E5A";
+const RUST = "#05E901";
 const MUTED = "#999999";
 
 /**
@@ -86,7 +86,7 @@ export default async function OpengraphImage() {
           // its parser with "Missing comma before color stops" — which surfaces
           // as a prerender error that fails the whole build, not a silent
           // style fallback.
-          backgroundImage: `radial-gradient(circle at 8% 108%, rgba(217,142,90,0.28) 0%, rgba(217,142,90,0) 62%)`,
+          backgroundImage: `radial-gradient(circle at 8% 108%, rgba(5,233,1,0.28) 0%, rgba(5,233,1,0) 62%)`,
         }}
       >
         {/* Wordmark rail */}

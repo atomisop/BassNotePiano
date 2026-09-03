@@ -2,6 +2,8 @@ import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
 import { QUIZ_PASS_THRESHOLD } from "@/lib/access";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import { Timeline } from "@/components/ui/Timeline";
+import { BACKDROPS } from "@/lib/backdrops";
+import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 
 /**
  * HOMEPAGE REBUILD: 05 HOW IT WORKS.
@@ -25,6 +27,13 @@ import { Timeline } from "@/components/ui/Timeline";
  * already built and documented for exactly this ("Narrative timeline for
  * the marketing 'how this works' sequence") and already used by
  * KinitJourney, rather than inventing a second implementation.
+ *
+ * SECTION BACKDROP: third beat of the homepage's image → blur → blank →
+ * blur → image rhythm (see InstrumentPicker's own comment). Solution just
+ * ran fully blank; this section blurs the sheet-music photo IN, easing
+ * toward ProblemStatement's full-clarity use of that same image, the
+ * mirror of how SocialProof blurred the guitar photo back out after
+ * InstrumentPicker.
  */
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -55,8 +64,24 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section className="mx-auto max-w-3xl px-6 py-[var(--space-5)] md:py-[var(--space-8)]">
-      <ScrollReveal>
+    <section className="relative overflow-hidden py-[var(--space-5)] md:py-[var(--space-8)]">
+      {/* Masked to fully transparent at both edges, on top of the blur and
+          PhotoBackdrop's own scrim, belt and suspenders so this never
+          reads as a hard cut against Solution's blank ground on either
+          side. Never a bare image-to-image transition anywhere on this
+          page: every image is either at full clarity with a blank section
+          on both sides, or blurred and fading straight to blank, per
+          direct instruction. */}
+      <div
+        aria-hidden
+        className="absolute inset-0 -z-10 overflow-hidden"
+        style={{ maskImage: "linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)" }}
+      >
+        <div className="absolute -inset-x-10 -inset-y-10 blur-3xl">
+          <PhotoBackdrop src={BACKDROPS.classes} scrim="standard" sizes="100vw" />
+        </div>
+      </div>
+      <ScrollReveal className="mx-auto max-w-3xl px-6">
         <p className="label label-muted">How it works</p>
         <h2 className="display-2 mt-4 max-w-[22ch] text-balance">Four steps. No fixed schedule to commit to.</h2>
 

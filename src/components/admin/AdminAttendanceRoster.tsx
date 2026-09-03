@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 
 interface RosterFocus {
   scaleOrder: number | null;
@@ -76,16 +77,6 @@ function Avatar({ image, name }: { image: string | null; name: string }) {
       )}
     </div>
   );
-}
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-}
-
-/** The clock time `creditsSpent` worth of 30-minute chunks past `scheduledAtIso` lands on. */
-function formatEndTime(scheduledAtIso: string, creditsSpent: number): string {
-  const end = new Date(new Date(scheduledAtIso).getTime() + creditsSpent * 30 * 60_000);
-  return end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
 export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelBooking }: AdminAttendanceRosterProps) {

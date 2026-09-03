@@ -125,10 +125,15 @@ export function MarketingNav() {
               height={28}
               className="h-7 w-7 rounded-[6px]"
             />
-            {/* The wordmark is set in the display face at label scale — the
-                same serif as the headline, so the brand and the composition
-                are visibly one system rather than a logo dropped onto it. */}
-            <span className="font-serif text-[15px] tracking-[-0.01em] text-[rgb(var(--c-s-50))]">
+            {/* The wordmark is set in the display face (font-serif resolves
+                to --font-display, Baloo 2 as of this pass) so the brand and
+                the composition are visibly one system rather than a logo
+                dropped onto it. Bold, lowercase (via text-transform, not
+                the underlying text, so "Bass Note Piano" stays correct for
+                screen readers/SEO), and colored in the accent: matching
+                pianote.com's own actual wordmark treatment (studied
+                directly), not the small neutral-white label this replaces. */}
+            <span className="font-serif text-lg font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-a-400))]">
               Bass Note Piano
             </span>
           </Link>
@@ -169,7 +174,7 @@ export function MarketingNav() {
               aria-label="Join our Discord"
               className="glass-surface-subtle flex h-9 w-9 items-center justify-center !rounded-full text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
             >
-              <DiscordIcon size={16} />
+              <DiscordIcon size={16} className="text-[#5865F2]" />
             </a>
             {/* Sits immediately next to the Dashboard button, by direct
                 instruction — replaces the old plain "Account" text pill
@@ -184,7 +189,7 @@ export function MarketingNav() {
               />
             )}
             {/* Real liquid glass here specifically — `glass-surface-elevated`
-                (translucent, blurred, amber-tinted border) instead of
+                (translucent, blurred, signal-green-tinted border) instead of
                 `.btn-primary`'s solid gradient fill. Scoped to just this one
                 nav button; `.btn-primary` itself is untouched, so the Hero/
                 FinalCTA/etc. CTAs elsewhere keep their existing solid look. */}
@@ -222,7 +227,7 @@ export function MarketingNav() {
             className="fixed inset-0 z-50 bg-[rgb(var(--c-s-950)/0.97)] backdrop-blur-2xl md:hidden"
           >
             <div className="flex h-20 items-center justify-between px-6">
-              <span className="font-serif text-[15px] text-[rgb(var(--c-s-50))]">
+              <span className="font-serif text-lg font-bold lowercase text-[rgb(var(--c-a-400))]">
                 Bass Note Piano
               </span>
               <button
@@ -283,7 +288,7 @@ export function MarketingNav() {
                 onClick={() => setMenuOpen(false)}
                 className="display-3 flex items-center gap-3 border-b border-[rgb(var(--c-s-50)/0.08)] py-6"
               >
-                <DiscordIcon size={28} />
+                <DiscordIcon size={28} className="text-[#5865F2]" />
                 Discord
               </a>
               <Link

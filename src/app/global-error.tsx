@@ -55,7 +55,7 @@ export default function GlobalError({
               fontSize: 12,
               letterSpacing: "0.18em",
               textTransform: "uppercase",
-              color: "#D98E5A",
+              color: "#05E901",
               fontWeight: 600,
             }}
           >
@@ -94,7 +94,7 @@ export default function GlobalError({
               cursor: "pointer",
               border: "none",
               borderRadius: 999,
-              background: "#D98E5A",
+              background: "#05E901",
               color: "#0A0A0A",
               padding: "11px 22px",
               fontSize: 14,

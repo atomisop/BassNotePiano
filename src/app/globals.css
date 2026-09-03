@@ -208,38 +208,6 @@
   border-top: 1px solid var(--surface-border);
 }
 
-@utility card-surface {
-  /* ---- Cards over the homepage scroll video --------------------------- */
-
-  /* Declared here in raw rgba rather than as Tailwind utilities on the
-     elements, matching how the surface classes above are written.
-
-     The practical reason: when these same values lived in a utility string
-     inside a newly created `.ts` module, Tailwind's watcher never scanned the
-     file and the classes were missing from the compiled stylesheet — the cards
-     kept their radius and padding and rendered fully transparent. That failure
-     is silent, and since this fill is the measured floor holding body copy at
-     4.5:1 against the video's brightest frame, it costs contrast rather than
-     just appearance. A class in a stylesheet the build already tracks cannot
-     fail that way.
-
-     (Opacity utilities are not broken in this project generally — every one
-     currently in source compiles correctly.) */
-  border-radius: 1rem;
-  border: 1px solid rgb(var(--c-s-50) / 0.09);
-  background: rgb(var(--c-s-950) / 0.68);
-  box-shadow:
-    inset 0 1px 0 0 rgb(var(--c-s-50) / 0.06),
-    inset 0 -24px 48px -32px rgb(var(--c-s-950) / 0.9);
-  transition: border-color 300ms ease;
-}
-
-@utility card-surface-hover {
-  &:hover {
-    border-color: rgb(var(--c-s-50) / 0.17);
-  }
-}
-
 @utility chip-accent {
   /* The small token chips — spelled notes, transposition cells. */
   border: 1px solid rgb(var(--c-a-400) / 0.25);
@@ -385,12 +353,27 @@
     inset 0 1px 1px rgba(255, 255, 255, 0.25),
     inset 0 -1px 1px rgba(0, 0, 0, 0.12),
     0 6px 16px -6px rgba(0, 0, 0, 0.4);
-  transition: filter 150ms ease;
+  /* Real dimensional feedback, not just a brightness tint. Direct
+     instruction ("almost impossible to tell if I need to click it or
+     not"): lifts on hover, presses down on click, same -2px/+1px and
+     shadow-growth physics as marketing's own .btn-primary, so a CTA
+     feels identical whether it's rendered by this utility or that one. */
+  transition: filter 150ms ease, transform 150ms ease, box-shadow 150ms ease;
   &:hover {
     filter: brightness(1.1);
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.25),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.12),
+      0 10px 24px -8px rgba(0, 0, 0, 0.5);
   }
   &:active {
     filter: brightness(0.95);
+    transform: translateY(1px);
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.25),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.12),
+      0 2px 8px -4px rgba(0, 0, 0, 0.4);
   }
 }
 

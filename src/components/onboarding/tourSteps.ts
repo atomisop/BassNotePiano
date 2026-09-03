@@ -29,7 +29,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: "roadmap",
     target: "nav-roadmap",
     title: "Your roadmap",
-    body: "Six Ethiopian kiñit scales, one connected path. Read each module, log your practice, and pass an 80% quiz to unlock the next one.",
+    body: "Six Ethiopian scales, one connected path. Read each module, log your practice, and pass an 80% quiz to unlock the next one.",
   },
   {
     id: "lessons",

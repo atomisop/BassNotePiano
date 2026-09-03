@@ -29,12 +29,12 @@ import { SolutionScreenshotTabs } from "@/components/marketing/SolutionScreensho
  */
 const FEATURES = [
   {
-    title: "Six kiñit scales, all twelve keys",
+    title: "Six scales, all twelve keys",
     body: "Tizita, Bati, Anchihoye, Mixolydian, and more, spelled correctly wherever a singer needs them, not just the easy keys.",
   },
   {
     title: "Chords built in, not bolted on",
-    body: "Each kiñit's native chords come from its own five notes. There's no separate chord theory to memorize on top of the scale.",
+    body: "Each scale's native chords come from its own five notes. There's no separate chord theory to memorize on top of the scale.",
   },
   {
     title: "Piano, guitar, and bass",

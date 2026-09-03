@@ -318,11 +318,6 @@ const pendingPaymentInclude = {
 
 export type PendingZellePayment = Prisma.ZellePaymentGetPayload<{ include: typeof pendingPaymentInclude }>;
 
-/** Everything awaiting manual review, oldest submission first — the admin queue's default view. */
-export async function getPendingZellePayments(): Promise<PendingZellePayment[]> {
-  return getAdminPayments("PENDING_REVIEW");
-}
-
 /**
  * Full admin payment listing, optionally filtered to one status — powers
  * the richer "all payments" view (verified/rejected/expired history), not

@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { pageMetadata } from "@/lib/site";
-import { BACKDROPS } from "@/lib/backdrops";
-import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { SHOP_PRODUCTS, type ShopProduct } from "@/lib/shopProducts";
@@ -78,16 +76,12 @@ export default function ShopPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <div className="fixed inset-0 -z-10">
-        <PhotoBackdrop src={BACKDROPS.guitar} scrim="vignette" priority sizes="100vw" />
-      </div>
-
       <MarketingNav />
 
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section className="relative mx-auto max-w-3xl px-6 pb-4 pt-28 text-center">
           <h1 className="text-balance font-serif text-4xl leading-tight tracking-[-0.02em] text-slate-50 sm:text-5xl">
-            Gear that works for kiñit
+            Gear that works for beginners
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-base text-slate-200">
             Don&apos;t have a keyboard or guitar yet? Here&apos;s what we&apos;d point a beginner toward. Plain links

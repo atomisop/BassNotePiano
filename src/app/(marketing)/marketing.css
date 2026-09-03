@@ -46,19 +46,18 @@
   --c-s-900: 41 41 41;      /* recessed surface */
   --c-s-950: 26 26 26;      /* the ground */
 
-  /* ---- Accent ramp: warm amber -------------------------------------------
-     Same rust/amber values as `[data-mode="dark"]` in themes.css (the app's
-     one and only accent, changed from signal green by direct instruction to
-     match a shadcn "Claude Amber" reference). `--c-s-950` on `--c-a-400`
-     clears AA, so the ground colour stays the readable text on the accent,
-     same relationship the app's token bridge already assumes (see
+  /* ---- Accent ramp: signal green ---------------------------------------
+     hsl(119 99% 46%) converted directly — the same vivid green as
+     `[data-mode="dark"]` (the app's one and only accent). `--c-s-950` on
+     `--c-a-400` clears AA, so the ground colour stays the readable text on
+     the accent, same relationship the app's token bridge already assumes (see
      globals.css), so shadcn's `--primary-foreground` keeps working
      untouched. */
-  --c-a-100: 247 220 197;   /* highlight wash */
-  --c-a-200: 240 192 155;   /* hover text */
-  --c-a-300: 232 168 122;   /* accent TEXT */
-  --c-a-400: 217 142 90;    /* CTA fill / accent */
-  --c-a-500: 184 115 64;    /* borders, pressed */
+  --c-a-100: 214 250 195;   /* highlight wash */
+  --c-a-200: 172 247 148;   /* hover text */
+  --c-a-300: 100 240 70;    /* accent TEXT */
+  --c-a-400: 5 233 1;       /* CTA fill / accent */
+  --c-a-500: 4 196 1;       /* borders, pressed */
 
   /* ---- The scrim rule -------------------------------------------------
      Ratios above are against the bare ground. The homepage's real backdrop
@@ -270,8 +269,14 @@
 [data-surface="marketing"] .display-1,
 [data-surface="marketing"] .display-2,
 [data-surface="marketing"] .display-3 {
-  font-family: var(--font-display), ui-serif, Georgia, serif;
-  font-weight: 500;
+  /* ui-sans-serif fallback, not the old ui-serif/Georgia one: --font-display
+     is Baloo 2 now (a bold rounded sans, see layout.tsx's own comment), not
+     the serif this fallback stack was originally written for. Weight
+     bumped from 500 to 700: Baloo 2's actual bold, heavy character (the
+     part of Pianote's own design being matched here) barely reads at a
+     medium weight. */
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
   color: rgb(var(--c-s-50));
   text-wrap: balance;
 }
@@ -407,7 +412,25 @@
     background-color var(--dur-micro) var(--ease-out-quart),
     border-color var(--dur-micro) var(--ease-out-quart),
     color var(--dur-micro) var(--ease-out-quart),
-    filter var(--dur-micro) var(--ease-out-quart);
+    filter var(--dur-micro) var(--ease-out-quart),
+    transform var(--dur-micro) var(--ease-out-quart),
+    box-shadow var(--dur-micro) var(--ease-out-quart);
+}
+
+/* A real 3D press, not just a brightness tint: every tier lifts on hover
+   and presses down on click. Direct instruction ("it is almost impossible
+   to tell if I need to click it or not"): filter-only feedback was too
+   subtle to read as an affordance at a glance. -2px/+1px on every tier
+   keeps the amount of lift consistent whether the button has a shadow to
+   grow (.btn-primary/.btn-secondary below) or not (.btn-quiet, excluded
+   on purpose: it's a plain text link by design, not a button, and giving
+   it a shadow would contradict that). */
+[data-surface="marketing"] .btn:hover {
+  transform: translateY(-2px);
+}
+
+[data-surface="marketing"] .btn:active {
+  transform: translateY(1px);
 }
 
 @media (max-width: 767px) {
@@ -436,10 +459,18 @@
 
 [data-surface="marketing"] .btn-primary:hover {
   filter: brightness(1.1);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.25),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.12),
+    0 10px 24px -8px rgba(0, 0, 0, 0.5);
 }
 
 [data-surface="marketing"] .btn-primary:active {
   filter: brightness(0.95);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.25),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.12),
+    0 2px 8px -4px rgba(0, 0, 0, 0.4);
 }
 
 [data-surface="marketing"] .btn-secondary {
@@ -451,9 +482,19 @@
 [data-surface="marketing"] .btn-secondary:hover {
   border-color: rgb(var(--c-s-50) / 0.36);
   color: rgb(var(--c-s-50));
+  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.5);
 }
 
-/* Text-only tier, for the "no thanks" path out of a scene. */
+[data-surface="marketing"] .btn-secondary:active {
+  box-shadow: 0 2px 6px -4px rgba(0, 0, 0, 0.4);
+}
+
+/* Text-only tier, for the "no thanks" path out of a scene. Deliberately
+   not part of the 3D-press treatment above: it has no fill/border to
+   begin with, so a lift+shadow would read as a button appearing out of
+   nowhere rather than a quiet inline link. Reset defensively in case a
+   future call site ever combines this with .btn instead of standing
+   alone (today nothing does). */
 [data-surface="marketing"] .btn-quiet {
   height: auto;
   padding: 0;
@@ -463,6 +504,7 @@
   text-decoration: underline;
   text-decoration-color: rgb(var(--c-a-300) / 0.4);
   text-underline-offset: 6px;
+  transform: none !important;
 }
 
 [data-surface="marketing"] .btn-quiet:hover {

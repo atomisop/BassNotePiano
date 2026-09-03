@@ -4,8 +4,6 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { CURRICULUM_PRICE_CENTS, CURRICULUM_ORIGINAL_PRICE_CENTS, CURRICULUM_DISCOUNT_PERCENT } from "@/lib/curriculum";
 import { CREDIT_BASE_PRICE_CENTS, CREDIT_ORIGINAL_PRICE_CENTS } from "@/lib/classCreditPricing";
-import { BACKDROPS } from "@/lib/backdrops";
-import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { TiltGlow } from "@/components/ui/TiltGlow";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
@@ -34,21 +32,6 @@ const CURRICULUM_BENEFITS = [
 export function PricingPageContent() {
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* "dense" (flat, strongest wash), not "vignette": vignette darkens a
-          radial core centred on the fixed backdrop's own box — the full
-          viewport height, not this section — so its dark centre lands
-          roughly mid-viewport, well below the H1 anchored near the top
-          under the nav. The H1 was landing outside the protected zone,
-          directly on whatever the photo happens to be there — measured
-          pixel-for-pixel, this particular photo's warm-toned patch there
-          still left individual letters under 4.5:1 even at "standard"
-          strength. Everything after the H1+paragraph — the price card, the
-          classes card — is its own opaque surface either way, so this
-          doesn't change how they read. */}
-      <div className="fixed inset-0 -z-10">
-        <PhotoBackdrop src={BACKDROPS.pricing} scrim="dense" priority sizes="100vw" />
-      </div>
-
       <MarketingNav />
 
       {/* id + tabIndex: the skip link in (marketing)/layout.tsx targets

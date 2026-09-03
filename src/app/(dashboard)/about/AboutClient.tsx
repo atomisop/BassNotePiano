@@ -80,7 +80,7 @@ function AboutTab() {
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Bass Note Piano</p>
       <p className="mt-1 font-serif text-2xl text-slate-50">Version {CURRENT_VERSION}</p>
       <p className="mt-3 max-w-md text-sm text-slate-400">
-        An interactive masterclass in the Ethiopian kiñit system: Tizita, Bati, Anchihoye, and Mixolydian
+        An interactive masterclass in the Ethiopian scale system: Tizita, Bati, Anchihoye, and Mixolydian
         pentatonics, spelled correctly in every key, with native chords mapped for each one.
       </p>
       <p className="mt-6 text-xs text-slate-600">© {new Date().getFullYear()} Bass Note Piano.</p>

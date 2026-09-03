@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { bookClassAction, bookClassBundleAction, bookFamilyClassAction, checkFamilyClassAttendeesAction, cancelClassBookingAction } from "./actions";
 import { BookingCalendar, dayKey } from "./BookingCalendar";
+import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 
 interface OccurrenceRow {
   scheduleId: string;
@@ -41,16 +42,6 @@ const STATUS_STYLE: Record<BookingRow["status"], string> = {
   COMPLETED: "bg-emerald-400/15 text-emerald-300",
   CANCELED: "bg-slate-800 text-slate-500",
 };
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-}
-
-/** The clock time `credits` worth of 30-minute chunks past `scheduledAtIso` lands on. */
-function formatEndTime(scheduledAtIso: string, credits: number): string {
-  const end = new Date(new Date(scheduledAtIso).getTime() + credits * 30 * 60_000);
-  return end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-}
 
 /** Weekday + date only — the time is shown separately as its own column. */
 function formatOccurrenceDay(iso: string) {

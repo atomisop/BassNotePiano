@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
+import { BACKDROPS } from "@/lib/backdrops";
+import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 
 /**
  * HOMEPAGE ADDITION: structural pattern borrowed from pickupmusic.com's
@@ -12,12 +14,23 @@ import { ScrollReveal } from "@/components/marketing/ScrollReveal";
  * rather than inventing instrument-specific curriculum detail that isn't
  * verified anywhere in this codebase.
  *
- * No card/thumbnail treatment: pickupmusic.com's own cards carry a real
- * photo per instrument, and this app has no equivalent per-instrument
- * photography (only the piano-reveal photos already used in Hero.tsx) to
- * justify one, so this stays text-forward with the same rule-hairline
- * language the rest of the redesigned sections use, per marketing.css's
- * own "a card is reserved for the product reveal" rule.
+ * No per-row card/thumbnail treatment: pickupmusic.com's own cards carry a
+ * real photo per instrument, and this app has no equivalent per-instrument
+ * photography to justify one, so the rows stay text-forward with the same
+ * rule-hairline language the rest of the redesigned sections use, per
+ * marketing.css's own "a card is reserved for the product reveal" rule.
+ *
+ * SECTION BACKDROP: by direct instruction to stop leaving the photography
+ * that used to live on /classes, /pricing, /shop and the auth screens
+ * unused, and instead use it "casually" behind text already on the
+ * homepage. This is the first beat of a repeating image → blur → blank →
+ * blur → image rhythm down the page (see ScrollReveal-adjacent sections
+ * below): full clarity here, fading through SocialProof's blurred echo of
+ * the same photo into Solution's plain, image-free ground. It's the same
+ * guitar photo the old /shop page used, a natural fit for "choose your
+ * instrument". "dense" scrim (not "vignette"): the text column spans most
+ * of the section's width here, not one centered block, so a radial
+ * protection zone would leave the row edges under-protected.
  *
  * Every link goes to /register, plainly (not isLoggedIn-aware like Hero's
  * and FinalCTA's own CTAs): there's no verified per-instrument preselect
@@ -26,15 +39,20 @@ import { ScrollReveal } from "@/components/marketing/ScrollReveal";
  * justify promoting this from a server component to a client one just to
  * read the session.
  */
+const BACKDROP_SRC = BACKDROPS.guitar;
+
 const INSTRUMENTS = [
-  { name: "Piano", note: "The full kiñit curriculum, voiced for two hands." },
-  { name: "Guitar", note: "The full kiñit curriculum, voiced for six strings." },
-  { name: "Bass", note: "The full kiñit curriculum, voiced for four strings." },
+  { name: "Piano", note: "The full curriculum, voiced for two hands." },
+  { name: "Guitar", note: "The full curriculum, voiced for six strings." },
+  { name: "Bass", note: "The full curriculum, voiced for four strings." },
 ];
 
 export function InstrumentPicker() {
   return (
-    <section className="py-[var(--space-5)] md:py-[var(--space-7)]">
+    <section className="relative overflow-hidden py-[var(--space-5)] md:py-[var(--space-7)]">
+      <div aria-hidden className="absolute inset-0 -z-10">
+        <PhotoBackdrop src={BACKDROP_SRC} scrim="dense" sizes="100vw" />
+      </div>
       <ScrollReveal className="editorial-grid">
         <p className="label label-muted md:col-span-3">Choose your instrument</p>
 

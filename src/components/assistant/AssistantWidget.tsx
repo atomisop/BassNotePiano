@@ -11,11 +11,12 @@ import { PulsingBorder } from "@paper-design/shaders-react";
  * Atom — the "ask me anything" assistant, floating on every page (mounted
  * once in providers.tsx, same pattern as Toaster/CookieConsentBanner).
  *
- * The launcher reuses Hero.tsx's PulsingBorder shader treatment (signal-
- * green, the same palette/props) rather than a generic chat-bubble icon —
- * per direct instruction, keeping the shader but dropping the rotating
- * brand-copy text ring that surrounds it on the hero, since a floating
- * button doesn't have room to spare on decoration.
+ * The launcher runs the same PulsingBorder shader treatment as this
+ * app's own signal-green identity (matching Hero.tsx's earlier use of the
+ * same shader) rather than a generic chat-bubble icon. Briefly replaced
+ * with a plain static gradient button in this same pass, then restored by
+ * direct instruction ("bring back old rotating atom"). The shimmering
+ * glow is this widget's actual intended look, not an accident to clean up.
  *
  * Positioned at bottom-24 (not bottom-6, where ScrollToTopButton and the
  * marketing pages' footer live) specifically to clear that button and the
@@ -104,7 +105,7 @@ function AtomButton({ onClick, label }: { onClick: () => void; label: string }) 
       className="relative flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full transition hover:scale-105 active:scale-95"
     >
       <PulsingBorder
-        colors={["#D98E5A", "#2e1f0d", "#F7DCC5", "#5c3d14", "#F0C09B"]}
+        colors={["#05e901", "#0d2e0a", "#e8fadb", "#145c0a", "#4dd946"]}
         colorBack="#00000000"
         speed={reduced ? 0 : 1.2}
         roundness={1}
@@ -659,7 +660,7 @@ export function AssistantWidget() {
             <div className="flex items-center gap-3 border-b border-ink/10 px-4 py-3">
               <div className="h-8 w-8 shrink-0">
                 <PulsingBorder
-                  colors={["#D98E5A", "#2e1f0d", "#F7DCC5", "#5c3d14", "#F0C09B"]}
+                  colors={["#05e901", "#0d2e0a", "#e8fadb", "#145c0a", "#4dd946"]}
                   colorBack="#00000000"
                   speed={0.8}
                   roundness={1}
