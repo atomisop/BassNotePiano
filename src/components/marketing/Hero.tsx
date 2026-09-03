@@ -108,7 +108,7 @@ export function Hero() {
           transition={{ duration: reduced ? 0.3 : 0.6, delay: 0.45 }}
         >
           Six kiñit scales (Tizita, Bati, Anchihoye, Mixolydian, and more), spelled correctly in
-          all twelve keys, for piano and guitar.
+          all twelve keys, for piano and guitar. No years of music theory required first.
         </motion.p>
 
         <motion.div
