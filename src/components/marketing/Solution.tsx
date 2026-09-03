@@ -1,28 +1,44 @@
 import { SOLO_MAX_CREDITS } from "@/lib/classSchedule";
 import { ScrollGlassCard } from "@/components/marketing/ScrollGlassCard";
-import { StaggerCard } from "@/components/marketing/StaggerCard";
-import { PhoneCarousel, type PhoneScreenshot } from "@/components/marketing/PhoneCarousel";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { SolutionScreenshotTabs } from "@/components/marketing/SolutionScreenshotTabs";
 
 /**
- * HOMEPAGE REBUILD: 04 SOLUTION.
+ * HOMEPAGE REDESIGN: 21st.dev's "Feature Showcase" pattern
+ * (@ruixen.ui/feature-showcase, id 9309), adapted, not lifted. What
+ * survived the adaptation: the two-column shape (narrative + accordion on
+ * the left, a real full-bleed media panel with a floating tab switcher on
+ * the right) and the idea of accordion-style, one-open-at-a-time features
+ * instead of a static grid. Everything else was rebuilt against this app's
+ * own system rather than shadcn's generic theme:
+ *   - Its Badge/Button/Tabs components are gone. This app already has its
+ *     own eyebrow convention (.label), its own buttons (.btn), and only
+ *     two real images to switch between, not enough to justify installing
+ *     @radix-ui/react-tabs for a third UI-primitive file; a plain useState
+ *     toggle does the same job with zero new dependencies.
+ *   - Its own Accordion is gone in favor of the real one already in this
+ *     repo (src/components/ui/accordion.tsx), the same instance FAQ.tsx
+ *     uses, so there's one accordion implementation in the app, not two.
+ *   - Generic bg-background/text-muted-foreground/bg-primary tokens are
+ *     gone, replaced with this app's real c-a and c-s CSS custom properties.
  *
- * Retires WhatBassNoteIs (its headline/positioning survives, adapted) and
- * ProductShowcase. Its real screenshots and PhoneCarousel move here as this
- * section's supporting visual, matching "each feature plus benefit plus
- * visual to support it" from the rebuild's own template, since only one
- * real visual asset exists for the whole feature set, not one per feature.
+ * This is a plain server component, not "use client": SOLO_MAX_CREDITS
+ * comes from @/lib/classSchedule, whose own chain (notifications -> email
+ * -> resend) is server-only, Prisma-touching code. An earlier version of
+ * this file was itself "use client" (for the screenshot tab state) and
+ * imported that constant directly, which shipped that entire server chain
+ * into the browser bundle and broke the build (webpack tried to statically
+ * resolve resend's optional @react-email/render peer dependency inside a
+ * CLIENT bundle, where the next.config.mjs serverComponentsExternalPackages
+ * fix for that same package doesn't apply). The only genuinely interactive
+ * part, the screenshot switcher, is now its own small client component
+ * (SolutionScreenshotTabs) that takes plain string props instead of
+ * importing anything server-side.
  *
- * Every feature below is real, already-built app functionality, not
- * aspirational copy. Each one traces to a real file: the six-kiñit,
- * twelve-key claim (curriculum.ts's SCALE_GROUPS), native chords needing no
- * separate theory (the same real fact CurriculumOverview's retired "Chords"
- * stage stated, kept here rather than in HowItWorks so the two sections
- * don't repeat it), three-instrument support (the voice-per-instrument work
- * in audio-engine.ts), quiz-gated progression plus badges/streaks
- * (gamification.ts), live one-on-one/family lessons (classSchedule.ts's real
- * credit model), and credits that never expire (the deferred-charge booking
- * model built this session: nothing is charged until attendance, and
- * balances don't decay).
+ * Every feature and both images are still exactly what they were before
+ * this redesign: real, already-built app functionality and real
+ * screenshots, not aspirational copy. See each one's own history in git
+ * blame rather than repeating it here.
  */
 const FEATURES = [
   {
@@ -42,7 +58,16 @@ const FEATURES = [
     body: "Each scale unlocks the next only after you've actually practiced it and passed its quiz, not just clicked through.",
   },
   {
-    title: `Live lessons, up to ${(SOLO_MAX_CREDITS * 30) / 60} hour${SOLO_MAX_CREDITS * 30 > 60 ? "s" : ""} at a time`,
+    // SOLO_MAX_CREDITS is in 30-minute units (see classSchedule.ts's own
+    // CHUNK_MIN); computed rather than hardcoded so this can't drift from
+    // the real booking cap, and phrased in minutes instead of assuming a
+    // clean hour boundary in case that constant ever changes to something
+    // that doesn't divide evenly into 60.
+    title: (() => {
+      const minutes = SOLO_MAX_CREDITS * 30;
+      const durationLabel = minutes % 60 === 0 ? `${minutes / 60} hour${minutes === 60 ? "" : "s"}` : `${minutes} minutes`;
+      return `Live lessons, up to ${durationLabel} at a time`;
+    })(),
     body: "One-on-one with your teacher, or a family session if siblings are learning together, booked on your own schedule over Discord.",
   },
   {
@@ -51,50 +76,42 @@ const FEATURES = [
   },
 ];
 
-// Only two screenshots, not three: /screenshots/lessons.png is a real capture
-// but a stale one, taken before this session's one-on-one/family booking
-// rebuild. It still shows the old copy ("up to 10 students per class"),
-// which now directly contradicts this same page's own feature list and the
-// real /lessons page it was captured from. Showing it as "proof" would be
-// showing a real screenshot of something that's no longer true, worse than
-// just running the carousel with two. Needs a fresh capture of the current
-// /lessons page to come back; flagged to the user rather than faked.
-const SCREENSHOTS: PhoneScreenshot[] = [
-  {
-    src: "/screenshots/dashboard.png",
-    alt: "Roadmap dashboard showing scale progress, badges, and practice streak",
-  },
-  {
-    src: "/screenshots/profile.png",
-    alt: "Profile page showing streak history and earned badges",
-  },
+// Only two, not three: /screenshots/lessons.png was a real capture but a
+// stale one (predated this session's booking-model rebuild, still showed
+// "up to 10 students per class"). Removed rather than shipped as a real
+// screenshot of something no longer true. A fresh capture is real product
+// work someone with a live session has to do, not something to fake.
+const SCREENS = [
+  { key: "dashboard", label: "Roadmap", src: "/screenshots/dashboard.png", alt: "Roadmap dashboard showing scale progress, badges, and practice streak" },
+  { key: "profile", label: "Profile", src: "/screenshots/profile.png", alt: "Profile page showing streak history and earned badges" },
 ];
 
 export function Solution() {
   return (
-    <section id="curriculum" className="mx-auto max-w-5xl scroll-mt-24 px-6 py-12 md:py-28">
+    <section id="curriculum" className="mx-auto max-w-6xl scroll-mt-24 px-6 py-12 md:py-28">
       <ScrollGlassCard className="p-6 md:p-12" direction="right">
-        <p className="label label-muted">The fix</p>
-        <h2 className="display-2 mt-4 max-w-[24ch] text-balance">A spelling engine for Ethiopian music.</h2>
-        <p className="lead mt-5 max-w-[52ch] text-slate-300">
-          This teaches the underlying grammar instead of one song at a time, so you can play
-          anything in the tradition, in any key, correctly.
-        </p>
+        <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+          <div>
+            <p className="label label-muted">The fix</p>
+            <h2 className="display-2 mt-4 max-w-[18ch] text-balance">A spelling engine for Ethiopian music.</h2>
+            <p className="lead mt-5 max-w-[46ch] text-slate-300">
+              This teaches the underlying grammar instead of one song at a time, so you can play
+              anything in the tradition, in any key, correctly.
+            </p>
 
-        <div className="mt-12 grid gap-8 sm:grid-cols-2">
-          {FEATURES.map((feature, i) => (
-            <StaggerCard key={feature.title} index={i}>
-              <h3 className="font-serif text-lg text-slate-50">{feature.title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{feature.body}</p>
-            </StaggerCard>
-          ))}
-        </div>
-
-        <div className="mt-16">
-          <p className="text-center text-sm text-slate-500">Real screens from inside Bass Note Piano. Drag or tap to explore.</p>
-          <div className="mt-8">
-            <PhoneCarousel images={SCREENSHOTS} />
+            <Accordion type="single" collapsible className="mt-8" defaultValue="feature-0">
+              {FEATURES.map((feature, i) => (
+                <AccordionItem key={feature.title} value={`feature-${i}`} className="border-ink/10">
+                  <AccordionTrigger className="text-left font-serif text-base text-slate-50 no-underline hover:no-underline sm:text-lg">
+                    {feature.title}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm leading-relaxed text-slate-400">{feature.body}</AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </div>
+
+          <SolutionScreenshotTabs screens={SCREENS} defaultKey="dashboard" />
         </div>
       </ScrollGlassCard>
     </section>

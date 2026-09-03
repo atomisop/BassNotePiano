@@ -38,13 +38,25 @@ import { ScrollToTopButton } from "@/components/marketing/ScrollToTopButton";
  * removal stands; this is a different, much
  * lighter technique (baked images, no Three.js), not a reversal of it.
  *
+ * 21ST.DEV REDESIGN: Solution and HowItWorks were rebuilt again in this
+ * pass (Feature Showcase and Timeline patterns, adapted; see each file's
+ * own comment), and SocialProof moved from a centered heading + 3-col grid
+ * to an asymmetric editorial split (Editorial Hero pattern, structural
+ * inspiration only, applied here rather than to the piano Hero itself,
+ * which stays as built). ProblemStatement deliberately did not get the same
+ * split treatment: it works as a single short, centered statement, a
+ * quiet beat between SocialProof and Solution, and forcing every section
+ * into the same asymmetric shape would trade that variety for uniformity.
+ * `PhoneCarousel`'s draggable coverflow is gone along with it: Solution's
+ * two real screenshots now switch via a plain tab control instead, and
+ * PhoneCarousel had no other caller, so the file was deleted rather than
+ * left as dead code.
+ *
  * Everything else from the previous rebuild that this pass didn't touch:
  * `PageBackground`'s shader mesh still extends the whole page (Hero's own
  * full-bleed frames simply cover it while pinned, same as any full-bleed
- * section would), `PhoneCarousel`'s draggable coverflow still lives inside
- * `Solution` now instead of the retired `ProductShowcase`, and every
- * section from `SocialProof` down still reveals via `ScrollGlassCard` as
- * it scrolls into view.
+ * section would), and every section from `SocialProof` down still reveals
+ * via `ScrollGlassCard` as it scrolls into view.
  */
 export function LandingPage() {
   return (
