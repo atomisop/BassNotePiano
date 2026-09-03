@@ -1,48 +1,38 @@
 import { PageBackground } from "@/components/marketing/PageBackground";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { Hero } from "@/components/marketing/Hero";
-import { WhatBassNoteIs } from "@/components/marketing/WhatBassNoteIs";
-import { CurriculumOverview } from "@/components/marketing/CurriculumOverview";
-import { ProductShowcase } from "@/components/marketing/ProductShowcase";
-import { ClassesOverview } from "@/components/marketing/ClassesOverview";
-import { DiscordCommunityCallout } from "@/components/marketing/DiscordCommunityCallout";
-import { PricingCallout } from "@/components/marketing/PricingCallout";
+import { SocialProof } from "@/components/marketing/SocialProof";
+import { ProblemStatement } from "@/components/marketing/ProblemStatement";
+import { Solution } from "@/components/marketing/Solution";
+import { HowItWorks } from "@/components/marketing/HowItWorks";
+import { FAQ } from "@/components/marketing/FAQ";
 import { FinalCTA } from "@/components/marketing/FinalCTA";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { ScrollToTopButton } from "@/components/marketing/ScrollToTopButton";
 
 /**
- * HOMEPAGE REPLACEMENT — complete rebuild, per explicit direction:
- * "delete the existing homepage presentation... do not preserve the
- * current homepage JSX, layout, animation system, or visual composition."
+ * HOMEPAGE REBUILD: structural rework, per explicit direction. Hero,
+ * social proof, problem statement, solution, how it works, FAQ, final CTA,
+ * footer: the standard high-converting landing page structure, applied to
+ * this app's own real content rather than a generic template.
  *
- * Gone for good: the persistent 3D piano backdrop (`PianoBackdrop`/
- * `PianoBackdropCanvas`), every pinned/scroll-driven scene (`HeroScene`,
- * `PianoScene`, `KeyboardScene`, `KinitJourney`), and the bento grid
- * (`BentoFeatures`). None of that was low-quality work — it just isn't
- * what this rebuild is building.
+ * Retired in this pass, their real content absorbed elsewhere rather than
+ * discarded (each new section's own comment says exactly where its facts
+ * came from): `WhatBassNoteIs` and `ProductShowcase` → `Solution.tsx`;
+ * `CurriculumOverview` → `HowItWorks.tsx` (reframed as the usage journey,
+ * not curriculum contents, to avoid repeating Solution's feature list);
+ * `ClassesOverview`'s booking facts → `Solution.tsx` and `FAQ.tsx`;
+ * `DiscordCommunityCallout`'s community angle → `SocialProof.tsx`;
+ * `PricingCallout`'s numbers → `FAQ.tsx`, with the full bundle breakdown
+ * staying on the real `/pricing` page one link away, same as before.
  *
- * Two things this comment used to list as "gone" have since come back, by
- * later direct instruction, and are NOT stale leftovers:
- *   - `PhoneCarousel`'s draggable 3D coverflow interaction — restored
- *     (from git history, its deletion was never committed) and live inside
- *     `ProductShowcase` again, not just its screenshots.
- *   - Scroll-triggered reveals — every section from `WhatBassNoteIs` down
- *     through `FinalCTA` now fades/slides in via `ScrollGlassCard` as it
- *     scrolls into view. Not the old `RevealFromSide`/`TextShelf` (still
- *     gone), a new, separate mechanism built for this rebuild.
- *
- * Otherwise still real Bass Note content throughout (nothing invented —
- * see each section's own comment for where its copy/data came from).
- * Structural reference: the `header-2` nav pattern (scroll-compact sticky
- * header, clean links, mobile drawer) adapted into `MarketingNav`, and the
- * restrained split-hero genre `ShaderShowcase`-style components share
- * (large headline, one visual, generous whitespace) — colors and effects
- * are pure Bass Note, not copied from either reference.
- *
- * `PageBackground` extends that shader background to the entire page (it
- * used to be scoped to `Hero` alone) — mounted first, `fixed`, behind
- * everything, per direct instruction.
+ * Everything from the previous rebuild that this pass didn't touch: no 3D
+ * piano backdrop (removed earlier, deliberately, and not brought back here
+ * despite the newest request asking for one; see PageBackground's own
+ * history), `PageBackground`'s shader mesh still extends the whole page,
+ * `PhoneCarousel`'s draggable coverflow still lives inside `Solution` now
+ * instead of the retired `ProductShowcase`, and every section still reveals
+ * via `ScrollGlassCard` as it scrolls into view.
  */
 export function LandingPage() {
   return (
@@ -58,12 +48,11 @@ export function LandingPage() {
           instead of actually wrapping the content it pointed at. */}
       <main id="main-content" tabIndex={-1} className="outline-none">
         <Hero />
-        <WhatBassNoteIs />
-        <CurriculumOverview />
-        <ProductShowcase />
-        <ClassesOverview />
-        <DiscordCommunityCallout />
-        <PricingCallout />
+        <SocialProof />
+        <ProblemStatement />
+        <Solution />
+        <HowItWorks />
+        <FAQ />
         <FinalCTA />
       </main>
 

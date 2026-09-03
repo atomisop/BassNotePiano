@@ -4,7 +4,7 @@
 // "Terms & refunds" tab. Keeping this in one place means the two surfaces
 // can never quietly drift out of sync with each other.
 
-export const TERMS_LAST_UPDATED = "August 8, 2026";
+export const TERMS_LAST_UPDATED = "August 25, 2026";
 
 function TermsSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -52,22 +52,23 @@ export function TermsContent() {
 
       <TermsSection title="Cancellations & no-shows">
         <p>
-          You can cancel a booking yourself any time up until 24 hours before it starts, and the credit goes right
-          back to your balance.
+          A credit is never charged when you book. It&apos;s only charged once, at the lesson itself, when
+          attendance is marked, present or absent. Canceling at least 24 hours ahead removes the booking before
+          that ever happens, so nothing is charged.
         </p>
         <p>
           <span className="font-medium text-[rgb(var(--c-a-200))]">
             Once you&apos;re inside that 24-hour window, self-cancellation is turned off.
           </span>{" "}
-          There&apos;s no button for it, and no refund for canceling or not showing up that close to class time,
-          since that seat could have gone to someone else. If something genuinely comes up in that window, message
-          us directly; a credit refund at that point is a case-by-case call we make by hand, not something the app
-          grants automatically.
+          There&apos;s no button for it, and simply not showing up doesn&apos;t stop the charge either, since that
+          time was already held for you. If something genuinely comes up in that window, message us directly; an
+          exception at that point is a case-by-case call we make by hand, not something the app grants
+          automatically.
         </p>
         <p>
-          Booking a slot mainly to hold it and canceling or no-showing often isn&apos;t in the spirit of the 10-seat
-          cap, so we may cancel bookings or limit how many active bookings an account can hold if that becomes a
-          pattern.
+          Booking a slot mainly to hold it and canceling or no-showing often isn&apos;t in the spirit of a one-on-one
+          or family time slot, so we may cancel bookings or limit how many active bookings an account can hold if
+          that becomes a pattern.
         </p>
       </TermsSection>
 
