@@ -2,6 +2,21 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // resend declares @react-email/render as an *optional* peer dependency
+  // (used only for rendering JSX email templates): this app never passes
+  // resend a `react:` template, only plain html/text strings (see
+  // src/lib/email.ts), so it's never actually needed and was never
+  // installed. Without this, webpack still tries to statically resolve
+  // resend's internal reference to it and fails the whole build with
+  // "Module not found: Can't resolve '@react-email/render'" the moment any
+  // route imports something that transitively reaches src/lib/email.ts.
+  // Marking resend external hands its `require` calls to Node directly at
+  // runtime instead, the same as running outside a bundler, where an
+  // unused optional dependency is simply never touched.
+  experimental: {
+    serverComponentsExternalPackages: ["resend"],
+  },
+
   images: {
     remotePatterns: [
       {
