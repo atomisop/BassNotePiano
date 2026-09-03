@@ -1,45 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
+import { ScrollFrameSequence } from "@/components/marketing/ScrollFrameSequence";
 
 /**
- * HOMEPAGE REPLACEMENT — 01 HERO, third pass.
+ * HOMEPAGE REBUILD: the hero is now the piano-explode scroll sequence
+ * itself, by direct instruction, not a separate section that follows a
+ * plain static hero. Same real content this file always had (badge,
+ * headline, paragraph, CTAs), same real facts, just presented as the first
+ * beat inside ScrollFrameSequence instead of its own standalone section.
  *
- * First pass was fully static (no shader, no motion beyond hover) — the
- * user's own original spec asked for that explicitly. Second pass reversed
- * that call for the hero specifically: real shader/motion effects, recolored
- * into Bass Note's own palette with real content. This pass moves the mesh
- * gradient itself out of this file entirely — the user asked for that
- * background to extend the full homepage, not just this section, so it now
- * lives in `PageBackground.tsx`, mounted once above every section. This
- * file keeps only what's genuinely hero-specific: the badge/headline/
- * paragraph/CTA content.
+ * The individual motion.div mount-animations the previous version used
+ * (fade+rise, staggered by delay) are gone: ScrollFrameSequence's own
+ * textRef already owns this content's opacity/transform, driven by scroll
+ * instead of mount, and a nested Framer Motion animation setting the same
+ * CSS properties on a mount timer would fight that rather than combine
+ * with it. Plain elements now; the parent supplies all the motion.
  *
- * What changed from ShaderShowcase's own colors/content:
- *  - Mesh gradient (now in `PageBackground.tsx`): cyan/orange/white → warm
- *    black/walnut/rust/amber, this app's own tokens' real computed values.
- *  - Badge pill / headline / paragraph / CTA labels: the real, existing
- *    Bass Note hero copy (same text `HeroScene.tsx` used), not the demo's
- *    "New Paper Shaders Experience" / "Beautiful Shader Experiences".
- *  - Dropped entirely: the demo's own inline logo+nav+gooey-login-button
- *    header row. This site already has a real, sitewide sticky nav
- *    (`MarketingNav`, adapted from `header-2`) — duplicating a second nav
- *    inside the hero would mean two navigation bars stacked on load.
- *  - Dropped: the hover-triggered logo sparkle-particle effect (there's no
- *    duplicate logo here to hang it on) and the gooey gravitational login
- *    button (same reason). Also dropped: the on-screen piano image the
- *    original homepage used here — removed per direct instruction.
- *  - Dropped: the corner PulsingBorder + rotating-brand-text accent this
- *    section used to carry on its own — the Atom assistant widget
- *    (AssistantWidget.tsx) now uses that same shader treatment as its real,
- *    functional launcher button, and having a second, purely decorative
- *    copy of it elsewhere on the page read as confusing/redundant next to
- *    it, per direct instruction.
+ * secondChildren (see ScrollFrameSequence.tsx) is the second beat: it fades
+ * in exactly as this content finishes fading out, tying the visual (the
+ * piano opening to show its own structure) directly to the app's real
+ * positioning elsewhere on the page (Solution.tsx's "spelling engine",
+ * ProblemStatement's "grammar underneath") rather than being decorative.
+ *
+ * What's still gone, and stays gone: the demo-derived nav/logo/login-button
+ * chrome this file never carried in the first place, the corner accent
+ * treatment now living on the Atom assistant widget instead, and the old
+ * live-WebGL 3D piano backdrop removed earlier this session, which this
+ * baked-frame-sequence technique is not a reversal of.
  */
-
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", {
     style: "currency",
@@ -50,12 +41,11 @@ function formatUsd(cents: number) {
 export function Hero() {
   const { data: session } = useSession();
   const isLoggedIn = Boolean(session?.user);
-  const reduced = useReducedMotion();
 
   return (
-    <section className="relative min-h-[92vh] overflow-hidden">
-      {/* SVG filter — glass-effect for the badge pill. Generic effect filter
-          (no content baked in), kept from ShaderShowcase as-is. */}
+    <>
+      {/* SVG filter, glass-effect for the badge pill. No content baked in;
+          reused as-is from this file's own earlier version. */}
       <svg className="absolute inset-0 h-0 w-0">
         <defs>
           <filter id="hero-glass-effect" x="-50%" y="-50%" width="200%" height="200%">
@@ -70,64 +60,52 @@ export function Hero() {
         </defs>
       </svg>
 
-      {/* No local background/gradient/scrim here anymore — `PageBackground`
-          (mounted once in `LandingPage`, fixed behind the whole page) now
-          supplies all of it, including the readability scrim this section
-          used to carry on its own. */}
-
-      <div className="relative z-10 mx-auto flex min-h-[92vh] max-w-7xl flex-col justify-end px-6 pb-20 pt-32 md:pb-28">
-        <motion.div
+      <ScrollFrameSequence
+        basePath="/piano-explode"
+        frameCount={70}
+        secondChildren={
+          <>
+            <p className="mb-4 text-xs font-medium uppercase tracking-[0.3em] text-white/70">Under the lid</p>
+            <h2 className="max-w-2xl text-balance font-serif text-4xl leading-[1.1] text-white sm:text-5xl md:text-6xl">
+              It isn&apos;t magic. It&apos;s a system.
+            </h2>
+            <p className="mt-5 max-w-md text-balance text-base leading-relaxed text-white/80 sm:text-lg">
+              And a system can be learned, one real scale at a time.
+            </p>
+          </>
+        }
+      >
+        <div
           className="inline-flex w-fit items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-sm"
           style={{ filter: "url(#hero-glass-effect)" }}
-          initial={reduced ? { opacity: 0 } : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: reduced ? 0.3 : 0.6, delay: 0.1 }}
         >
           <span className="text-sm font-medium tracking-wide text-white/90">
             Ethiopian Scales, Rhythm &amp; Chords
           </span>
-        </motion.div>
+        </div>
 
-        <motion.h1
-          className="mt-6 text-6xl font-bold leading-none tracking-tight text-white md:text-7xl lg:text-8xl"
-          initial={reduced ? { opacity: 0 } : { opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: reduced ? 0.3 : 0.7, delay: 0.25 }}
-        >
-          <span className="mb-2 block text-4xl font-light tracking-wide text-[rgb(var(--c-a-300))] md:text-5xl lg:text-6xl">
+        <h1 className="mt-6 text-balance text-5xl font-bold leading-none tracking-tight text-white sm:text-6xl md:text-7xl">
+          <span className="mb-2 block text-3xl font-light tracking-wide text-[rgb(var(--c-a-300))] sm:text-4xl md:text-5xl">
             The grammar of
           </span>
           <span className="block font-black text-white">Ethiopian</span>
           <span className="block font-light italic text-white/80">music.</span>
-        </motion.h1>
+        </h1>
 
-        <motion.p
-          className="mt-6 max-w-xl text-lg font-light leading-relaxed text-white/70"
-          initial={reduced ? { opacity: 0 } : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: reduced ? 0.3 : 0.6, delay: 0.45 }}
-        >
+        <p className="mt-6 max-w-xl text-balance text-base font-light leading-relaxed text-white/70 sm:text-lg">
           Six kiñit scales (Tizita, Bati, Anchihoye, Mixolydian, and more), spelled correctly in
           all twelve keys, for piano and guitar. No years of music theory required first.
-        </motion.p>
+        </p>
 
-        <motion.div
-          className="mt-8 flex flex-wrap items-center gap-4"
-          initial={reduced ? { opacity: 0 } : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: reduced ? 0.3 : 0.6, delay: 0.6 }}
-        >
-          <Link
-            href={isLoggedIn ? "/dashboard" : "/register"}
-            className="btn btn-primary"
-          >
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+          <Link href={isLoggedIn ? "/dashboard" : "/register"} className="btn btn-primary">
             {isLoggedIn ? "Go to dashboard" : `Start learning for ${formatUsd(CURRICULUM_PRICE_CENTS)}`}
           </Link>
           <a href="#curriculum" className="btn btn-secondary">
             Explore Curriculum
           </a>
-        </motion.div>
-      </div>
-    </section>
+        </div>
+      </ScrollFrameSequence>
+    </>
   );
 }

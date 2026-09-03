@@ -1,7 +1,6 @@
 import { PageBackground } from "@/components/marketing/PageBackground";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { Hero } from "@/components/marketing/Hero";
-import { PianoReveal } from "@/components/marketing/PianoReveal";
 import { SocialProof } from "@/components/marketing/SocialProof";
 import { ProblemStatement } from "@/components/marketing/ProblemStatement";
 import { Solution } from "@/components/marketing/Solution";
@@ -27,20 +26,23 @@ import { ScrollToTopButton } from "@/components/marketing/ScrollToTopButton";
  * `PricingCallout`'s numbers → `FAQ.tsx`, with the full bundle breakdown
  * staying on the real `/pricing` page one link away, same as before.
  *
- * `PianoReveal`, right after Hero, is new: a scroll-scrubbed frame sequence
- * (see ScrollFrameSequence.tsx and PianoReveal's own comment), built from
- * real frames the user provided, not the earlier live-WebGL 3D piano
- * backdrop that was deliberately removed before this session. That removal
- * stands; this is a different, much lighter technique (baked images, no
- * Three.js), not a reversal of it.
+ * `Hero` is now the piano-explode scroll sequence itself, by direct
+ * instruction, not a plain static section followed by a separate reveal
+ * section (an earlier pass here briefly had it as two sections, `Hero` then
+ * `PianoReveal`; `PianoReveal` no longer exists as its own file, folded
+ * into `Hero.tsx`, which now renders `ScrollFrameSequence` directly with
+ * two staged text beats). Built from real frames the user provided, not
+ * the earlier live-WebGL 3D piano backdrop that was deliberately removed
+ * before this session. That removal stands; this is a different, much
+ * lighter technique (baked images, no Three.js), not a reversal of it.
  *
  * Everything else from the previous rebuild that this pass didn't touch:
- * `PageBackground`'s shader mesh still extends the whole page (PianoReveal's
- * own full-bleed frames simply cover it while that one section is pinned,
- * same as any other full-bleed section would), `PhoneCarousel`'s draggable
- * coverflow still lives inside `Solution` now instead of the retired
- * `ProductShowcase`, and every other section still reveals via
- * `ScrollGlassCard` as it scrolls into view.
+ * `PageBackground`'s shader mesh still extends the whole page (Hero's own
+ * full-bleed frames simply cover it while pinned, same as any full-bleed
+ * section would), `PhoneCarousel`'s draggable coverflow still lives inside
+ * `Solution` now instead of the retired `ProductShowcase`, and every
+ * section from `SocialProof` down still reveals via `ScrollGlassCard` as
+ * it scrolls into view.
  */
 export function LandingPage() {
   return (
@@ -56,7 +58,6 @@ export function LandingPage() {
           instead of actually wrapping the content it pointed at. */}
       <main id="main-content" tabIndex={-1} className="outline-none">
         <Hero />
-        <PianoReveal />
         <SocialProof />
         <ProblemStatement />
         <Solution />
