@@ -1,0 +1,60 @@
+name: CI
+
+# STEP 23 — CI/CD. Runs on every PR against main, plus pushes to main itself
+# (so a direct push — an admin bypass, a merge commit — still gets checked,
+# not just the PR that preceded it). Deliberately does NOT deploy or merge
+# anything: Netlify's own GitHub integration already handles deploys on its
+# own trigger, and "do not automatically merge" is explicit in the master
+# spec — this workflow's only job is to turn red when something's actually
+# broken, nothing more.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Matches .nvmrc / package.json's engines.node (pinned in an earlier
+      # step this session) — same Node version in CI as in dev and on
+      # Netlify, not a separate floating version.
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - run: npm ci
+
+      # prisma generate (also wired as postinstall, so `npm ci` above
+      # already ran it once) — repeated explicitly so this step's intent
+      # reads clearly in the Actions log, and so it's not silently relying
+      # on postinstall firing correctly. Only needs DATABASE_URL to be SET,
+      # not to point at a real reachable database — generating the client
+      # reads the schema file, it doesn't connect.
+      - run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://ci:ci@localhost:5432/ci' }}
+
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test
+
+      # NOTE, honestly: this step has not been verified against a real
+      # GitHub Actions run — doing that would mean pushing to trigger CI,
+      # which wasn't done as part of building this workflow. `next build`
+      # may reach for other env vars (NEXTAUTH_SECRET, R2 credentials, the
+      # Resend key) depending on what runs at build time versus only at
+      # request time; the dummy values below cover the ones most likely to
+      # matter. If the first real run of this workflow fails here on a
+      # missing/invalid env var, that's the thing to fix, not a sign the
+      # whole approach is wrong.
+      - run: npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://ci:ci@localhost:5432/ci' }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL || 'postgresql://ci:ci@localhost:5432/ci' }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-placeholder-secret-not-for-production-use' }}
+          NEXTAUTH_URL: "http://localhost:3000"
