@@ -13,8 +13,8 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
  * name with no way to get it back.
  *
  * At `md:` and up: collapsed to just the logo mark by default. Hovering
- * anywhere on the link (not just the 28px icon itself — "near" the logo,
- * not exactly on it) slides "BASS NOTE PIANO" in from behind the icon;
+ * anywhere on the link (not just the 28px icon itself, "near" the logo,
+ * not exactly on it) slides "Bass Note Piano" in from behind the icon;
  * moving away reverses it — the text slides back toward the icon and
  * shrinks slightly as it fades, reading as being drawn back into the mark
  * rather than a plain fade-out. Adapted from 21st.dev's "Expandable
@@ -34,14 +34,16 @@ export function BrandMark() {
       aria-label="Bass Note Piano, home"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="flex items-center gap-2.5 font-serif text-sm tracking-[0.2em] text-slate-200"
+      className="flex items-center gap-2.5"
     >
-      <Image src="/logo-mark.png" alt="" width={28} height={28} className="h-7 w-7 shrink-0" priority />
+      <Image src="/logo-mark.png" alt="" width={28} height={28} className="h-7 w-7 shrink-0 rounded-[6px]" priority />
 
       {/* Below md: unchanged, always-visible text — no hover to drive a
-          reveal on a touch device. */}
-      <span className="md:hidden">
-        BASS NOTE <span className="text-[rgb(var(--c-a-400))]">PIANO</span>
+          reveal on a touch device. Same wordmark treatment as MarketingNav's
+          own (bold, lowercase, fully accent-colored) now, not the
+          pre-Pianote-pass uppercase/split-color version this used to be. */}
+      <span className="font-serif text-sm font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-a-400))] md:hidden">
+        Bass Note Piano
       </span>
 
       {/* md and up: collapsed by default, slides out from the icon on
@@ -55,9 +57,9 @@ export function BrandMark() {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={reducedMotion ? { opacity: 0 } : { opacity: 0, x: -14, scale: 0.85 }}
               transition={{ duration: reducedMotion ? 0.15 : 0.28, ease: [0.16, 1, 0.3, 1] }}
-              className="inline-block whitespace-nowrap"
+              className="inline-block whitespace-nowrap font-serif text-sm font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-a-400))]"
             >
-              BASS NOTE <span className="text-[rgb(var(--c-a-400))]">PIANO</span>
+              Bass Note Piano
             </motion.span>
           )}
         </AnimatePresence>

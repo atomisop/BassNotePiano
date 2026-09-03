@@ -38,9 +38,15 @@ export function SiteFooter() {
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pt-16">
         <div className="grid grid-cols-1 gap-10 pb-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-2">
-            <Link href="/" className="flex items-center gap-2 font-serif text-sm tracking-[0.15em] text-slate-100">
-              <Image src="/logo-mark.png" alt="" width={24} height={24} className="h-6 w-6" />
-              BASS NOTE <span className="text-[rgb(var(--c-a-400))]">PIANO</span>
+            {/* Same wordmark treatment as MarketingNav's own (bold, lowercase,
+                fully accent-colored). This was still the pre-Pianote-pass
+                uppercase/wide-tracked/partial-color version, the one spot
+                that got missed when the nav's was updated. */}
+            <Link href="/" className="flex items-center gap-2">
+              <Image src="/logo-mark.png" alt="" width={24} height={24} className="h-6 w-6 rounded-[6px]" />
+              <span className="font-serif text-sm font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-a-400))]">
+                Bass Note Piano
+              </span>
             </Link>
             <p className="mt-4 max-w-xs text-sm text-slate-500">
               A digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book: six scales,

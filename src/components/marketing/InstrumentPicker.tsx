@@ -32,6 +32,11 @@ import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
  * of the section's width here, not one centered block, so a radial
  * protection zone would leave the row edges under-protected.
  *
+ * MOBILE FIX: see SocialProof.tsx's own comment. Same bug, same fix: the
+ * label and the row column below only had `md:col-span-*`, no base span,
+ * so `.editorial-grid`'s fixed 12-column layout squeezed both into one
+ * sliver-width column below md instead of stacking full-width.
+ *
  * Every link goes to /register, plainly (not isLoggedIn-aware like Hero's
  * and FinalCTA's own CTAs): there's no verified per-instrument preselect
  * mechanism in this codebase to link to instead, and a returning member
@@ -54,9 +59,9 @@ export function InstrumentPicker() {
         <PhotoBackdrop src={BACKDROP_SRC} scrim="dense" sizes="100vw" />
       </div>
       <ScrollReveal className="editorial-grid">
-        <p className="label label-muted md:col-span-3">Choose your instrument</p>
+        <p className="label label-muted col-span-12 md:col-span-3">Choose your instrument</p>
 
-        <div className="md:col-span-9">
+        <div className="col-span-12 md:col-span-9">
           <h2 className="display-2 max-w-[20ch] text-balance">One curriculum, three instruments.</h2>
 
           <div className="mt-10">

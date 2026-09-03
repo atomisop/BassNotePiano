@@ -19,6 +19,20 @@ import { readConsent, CONSENT_DECIDED_EVENT } from "@/lib/cookieConsent";
  * direct instruction ("bring back old rotating atom"). The shimmering
  * glow is this widget's actual intended look, not an accident to clean up.
  *
+ * WEBGL FALLBACK: the shader library throws (doesn't warn, throws) when a
+ * visitor's browser has no WebGL. Real production events for this ("Paper
+ * Shaders: WebGL is not supported in this browser") showed up in error
+ * monitoring, which meant every visitor on a browser/device without WebGL
+ * (locked-down corporate machines, some privacy browsers, older hardware)
+ * hit a broken Atom widget. Feature-detected once per session via
+ * `supportsWebGL()` below, checked *before* PulsingBorder ever mounts.
+ * An error boundary was ruled out here, since a canvas library typically
+ * creates its WebGL context inside an effect, not during render, and
+ * React error boundaries don't catch effect errors at all. Both spots
+ * that render the shader (the launcher, the open panel's header icon)
+ * fall back to the same plain gradient-circle + chat-glyph treatment this
+ * file used during its own brief shader-free period earlier in this pass.
+ *
  * Positioned at bottom-24 (not bottom-6, where ScrollToTopButton and the
  * marketing pages' footer live) specifically to clear that button and the
  * signed-in AppDock, which is centered but still close to the bottom edge.
@@ -75,6 +89,31 @@ interface ThreadMessage {
 
 const THREAD_SENDER_LABEL: Record<ThreadSender, string> = { VISITOR: "You", ATOM: "Atom", SUPPORT: "Support" };
 
+/** Real feature detection, not a browser/UA sniff. The actual failure mode
+ *  is "can this device make a WebGL context", which varies by GPU/driver
+ *  even within the same browser. A throwaway canvas that's never attached
+ *  to the DOM is the standard, side-effect-free way to ask that question. */
+function supportsWebGL(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const canvas = document.createElement("canvas");
+    return Boolean(canvas.getContext("webgl2") || canvas.getContext("webgl") || canvas.getContext("experimental-webgl"));
+  } catch {
+    return false;
+  }
+}
+
+/** Plain chat-bubble glyph, this project's own "SVG only" icon rule (see
+ *  icons.tsx's doc comment) rather than a generic character. Only ever
+ *  shown in place of the shader when `supportsWebGL()` says no. */
+function ChatBubbleIcon({ size = 24 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 5.5A1.5 1.5 0 015.5 4h13A1.5 1.5 0 0120 5.5v9a1.5 1.5 0 01-1.5 1.5H9l-5 4v-4H5.5A1.5 1.5 0 014 14.5v-9z" />
+    </svg>
+  );
+}
+
 function readStoredFeedback(): Record<number, FeedbackRating> {
   if (typeof window === "undefined") return {};
   try {
@@ -96,32 +135,40 @@ function readStoredEscalationId(): string | null {
   }
 }
 
-function AtomButton({ onClick, label }: { onClick: () => void; label: string }) {
+function AtomButton({ onClick, label, webglOk }: { onClick: () => void; label: string; webglOk: boolean }) {
   const reduced = useReducedMotion();
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="relative flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full transition hover:scale-105 active:scale-95"
+      className={
+        webglOk
+          ? "relative flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full transition hover:scale-105 active:scale-95"
+          : "relative flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full border border-[rgb(var(--c-a-500)/0.5)] bg-gradient-to-b from-[rgb(var(--c-a-400))] to-[rgb(var(--c-a-500))] text-[rgb(var(--c-s-950))] shadow-[inset_0_1px_1px_rgba(255,255,255,0.25),inset_0_-1px_1px_rgba(0,0,0,0.12),0_6px_16px_-6px_rgba(0,0,0,0.4)] transition-[transform,filter,box-shadow] duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.25),inset_0_-1px_1px_rgba(0,0,0,0.12),0_10px_22px_-8px_rgba(0,0,0,0.5)] active:translate-y-px active:brightness-95 active:shadow-[inset_0_1px_1px_rgba(255,255,255,0.25),inset_0_-1px_1px_rgba(0,0,0,0.12),0_3px_10px_-4px_rgba(0,0,0,0.4)]"
+      }
     >
-      <PulsingBorder
-        colors={["#05e901", "#0d2e0a", "#e8fadb", "#145c0a", "#4dd946"]}
-        colorBack="#00000000"
-        speed={reduced ? 0 : 1.2}
-        roundness={1}
-        thickness={0.1}
-        softness={0.2}
-        intensity={4}
-        spots={5}
-        spotSize={0.1}
-        pulse={reduced ? 0 : 0.1}
-        smoke={0.5}
-        smokeSize={4}
-        scale={0.65}
-        rotation={0}
-        style={{ width: "60px", height: "60px", borderRadius: "50%" }}
-      />
+      {webglOk ? (
+        <PulsingBorder
+          colors={["#05e901", "#0d2e0a", "#e8fadb", "#145c0a", "#4dd946"]}
+          colorBack="#00000000"
+          speed={reduced ? 0 : 1.2}
+          roundness={1}
+          thickness={0.1}
+          softness={0.2}
+          intensity={4}
+          spots={5}
+          spotSize={0.1}
+          pulse={reduced ? 0 : 0.1}
+          smoke={0.5}
+          smokeSize={4}
+          scale={0.65}
+          rotation={0}
+          style={{ width: "60px", height: "60px", borderRadius: "50%" }}
+        />
+      ) : (
+        <ChatBubbleIcon size={26} />
+      )}
     </button>
   );
 }
@@ -328,9 +375,15 @@ export function AssistantWidget() {
   const [threadMessages, setThreadMessages] = useState<ThreadMessage[]>([]);
   const [threadStatus, setThreadStatus] = useState<ThreadStatus | null>(null);
 
+  // Optimistic true: most visitors have WebGL, and this only matters once
+  // `mounted` is also true (the shader never renders before then anyway),
+  // so there's no flash of the wrong state either way.
+  const [webglOk, setWebglOk] = useState(true);
+
   // Portals need a real document — same SSR-safety pattern as NotificationBell.
   useEffect(() => {
     setMounted(true);
+    setWebglOk(supportsWebGL());
     setFeedback(readStoredFeedback());
     setActiveEscalationId(readStoredEscalationId());
   }, []);
@@ -685,23 +738,29 @@ export function AssistantWidget() {
           >
             <div className="flex items-center gap-3 border-b border-ink/10 px-4 py-3">
               <div className="h-8 w-8 shrink-0">
-                <PulsingBorder
-                  colors={["#05e901", "#0d2e0a", "#e8fadb", "#145c0a", "#4dd946"]}
-                  colorBack="#00000000"
-                  speed={0.8}
-                  roundness={1}
-                  thickness={0.15}
-                  softness={0.2}
-                  intensity={4}
-                  spots={5}
-                  spotSize={0.1}
-                  pulse={0.1}
-                  smoke={0.5}
-                  smokeSize={4}
-                  scale={0.65}
-                  rotation={0}
-                  style={{ width: "32px", height: "32px", borderRadius: "50%" }}
-                />
+                {webglOk ? (
+                  <PulsingBorder
+                    colors={["#05e901", "#0d2e0a", "#e8fadb", "#145c0a", "#4dd946"]}
+                    colorBack="#00000000"
+                    speed={0.8}
+                    roundness={1}
+                    thickness={0.15}
+                    softness={0.2}
+                    intensity={4}
+                    spots={5}
+                    spotSize={0.1}
+                    pulse={0.1}
+                    smoke={0.5}
+                    smokeSize={4}
+                    scale={0.65}
+                    rotation={0}
+                    style={{ width: "32px", height: "32px", borderRadius: "50%" }}
+                  />
+                ) : (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[rgb(var(--c-a-500)/0.5)] bg-gradient-to-b from-[rgb(var(--c-a-400))] to-[rgb(var(--c-a-500))] text-[rgb(var(--c-s-950))]">
+                    <ChatBubbleIcon size={16} />
+                  </div>
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 {/* Always "Atom" — per direct instruction, the widget keeps its
@@ -923,7 +982,7 @@ export function AssistantWidget() {
         )}
       </AnimatePresence>
 
-      {!open && <AtomButton onClick={openPanel} label="Chat with Atom, your personal assistant" />}
+      {!open && <AtomButton onClick={openPanel} label="Chat with Atom, your personal assistant" webglOk={webglOk} />}
     </div>,
     document.body,
   );

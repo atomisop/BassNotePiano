@@ -28,6 +28,15 @@ import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
  * dissolves into color and light rather than cutting straight to
  * Solution's plain ground. Never a hard cut between two different images
  * anywhere on this page: always a strong blur and a fade to blank first.
+ *
+ * MOBILE FIX: both grid items below only ever had `md:col-span-*`, no base
+ * span. `.editorial-grid` is a fixed 12-column grid at every width (see
+ * marketing.css, no mobile-first collapse built in), so with no base span
+ * a grid item defaults to just 1 of 12 columns below md: the label and the
+ * entire proof-points column were each rendering in a sliver a few percent
+ * of the screen wide, wrapping every word onto its own line. Reported as
+ * "mobile is cooked", and this is what that actually was. `col-span-12`
+ * added as the base so both stack full-width until md: takes over.
  */
 const PROOF_POINTS = [
   {
@@ -64,9 +73,9 @@ export function SocialProof() {
         </div>
       </div>
       <ScrollReveal className="editorial-grid">
-        <p className="label label-muted md:col-span-3">Why trust this</p>
+        <p className="label label-muted col-span-12 md:col-span-3">Why trust this</p>
 
-        <div className="md:col-span-9">
+        <div className="col-span-12 md:col-span-9">
           <h2 className="display-2 max-w-[26ch] text-balance">Nothing here asks you to take our word for it.</h2>
 
           <div className="mt-10">

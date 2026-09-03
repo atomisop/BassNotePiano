@@ -26,6 +26,12 @@ import { SolutionScreenshotTabs } from "@/components/marketing/SolutionScreensho
  * this redesign: real, already-built app functionality and real
  * screenshots, not aspirational copy. See each one's own history in git
  * blame rather than repeating it here.
+ *
+ * MOBILE FIX: see SocialProof.tsx's own comment for the full explanation.
+ * Same bug: both columns here only had `md:col-span-*`, no base span, so
+ * `.editorial-grid`'s fixed 12-column layout squeezed the text column and
+ * the screenshot panel into one sliver-width column each below md instead
+ * of stacking full-width, reported as "mobile is cooked".
  */
 const FEATURES = [
   {
@@ -77,7 +83,7 @@ export function Solution() {
   return (
     <section id="curriculum" className="scroll-mt-24 py-[var(--space-5)] md:py-[var(--space-8)]">
       <ScrollReveal className="editorial-grid items-start">
-        <div className="md:col-span-6">
+        <div className="col-span-12 md:col-span-6">
           <p className="label label-muted">The fix</p>
           <h2 className="display-2 mt-4 max-w-[18ch] text-balance">A spelling engine for Ethiopian music.</h2>
           <p className="lead mt-5 max-w-[46ch]">
@@ -101,7 +107,7 @@ export function Solution() {
             marketing.css's "product reveal" exception, not a leftover
             card habit. SolutionScreenshotTabs already carries its own
             rounded border for the image itself. */}
-        <div className="md:col-span-6 md:col-start-7">
+        <div className="col-span-12 md:col-span-6 md:col-start-7">
           <SolutionScreenshotTabs screens={SCREENS} defaultKey="dashboard" />
         </div>
       </ScrollReveal>
