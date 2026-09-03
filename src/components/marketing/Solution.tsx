@@ -51,14 +51,18 @@ const FEATURES = [
   },
 ];
 
+// Only two screenshots, not three: /screenshots/lessons.png is a real capture
+// but a stale one, taken before this session's one-on-one/family booking
+// rebuild. It still shows the old copy ("up to 10 students per class"),
+// which now directly contradicts this same page's own feature list and the
+// real /lessons page it was captured from. Showing it as "proof" would be
+// showing a real screenshot of something that's no longer true, worse than
+// just running the carousel with two. Needs a fresh capture of the current
+// /lessons page to come back; flagged to the user rather than faked.
 const SCREENSHOTS: PhoneScreenshot[] = [
   {
     src: "/screenshots/dashboard.png",
     alt: "Roadmap dashboard showing scale progress, badges, and practice streak",
-  },
-  {
-    src: "/screenshots/lessons.png",
-    alt: "Weekly class booking screen with credit balance and upcoming classes",
   },
   {
     src: "/screenshots/profile.png",

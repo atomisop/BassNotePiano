@@ -54,7 +54,7 @@ const FAQS = [
 export function FAQ() {
   return (
     <section className="mx-auto max-w-2xl px-6 py-12 md:py-28">
-      <ScrollGlassCard className="p-6 md:p-12" direction="up">
+      <ScrollGlassCard className="p-6 md:p-12" direction="right">
         <p className="label label-muted">Questions</p>
         <h2 className="display-2 mt-4 max-w-[20ch] text-balance">Before you commit to anything.</h2>
 
