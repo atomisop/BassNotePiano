@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useSession, signOut } from "next-auth/react";
@@ -37,6 +38,14 @@ import { ProfileMenu } from "@/components/layout/ProfileMenu";
  * already carries it. Past the first viewport it earns a hairline and a
  * wash, which is the point at which content starts passing underneath and
  * the bar needs to separate from it.
+ *
+ * ── Active state ────────────────────────────────────────────────────────
+ * Classes/Pricing/Shop used to render identically regardless of which page
+ * you were actually on, by omission rather than intent: reported directly
+ * ("switching tabs, there is no visual indicator... they all look the
+ * same"). Fixed with `usePathname()` plus the same solid-accent-fill
+ * treatment the admin filter pills already use for "this one is selected"
+ * elsewhere in the app, not a new one-off effect.
  */
 
 const LINKS = [
@@ -49,6 +58,7 @@ export function MarketingNav() {
   const { data: session } = useSession();
   const isLoggedIn = Boolean(session?.user);
   const reduced = useReducedMotion();
+  const pathname = usePathname();
 
   const [lifted, setLifted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -146,15 +156,23 @@ export function MarketingNav() {
               learning"). Using elevated glass on all four would flatten
               that hierarchy back to "everything's equally important". */}
           <div className="hidden items-center gap-3 md:flex">
-            {LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-[13px] font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {LINKS.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-current={isActive ? "page" : undefined}
+                  className={
+                    isActive
+                      ? "flex h-9 items-center !rounded-full bg-[rgb(var(--c-a-400))] px-4 text-[13px] font-medium text-slate-950 transition-colors duration-200"
+                      : "glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-[13px] font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
+                  }
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
             {secondary && (
               <Link
                 href={secondary.href}
@@ -243,16 +261,22 @@ export function MarketingNav() {
             </div>
 
             <div className="flex flex-col px-6 pt-8">
-              {[...LINKS, ...(secondary ? [secondary] : [])].map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMenuOpen(false)}
-                  className="display-3 border-b border-[rgb(var(--c-s-50)/0.08)] py-6"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {[...LINKS, ...(secondary ? [secondary] : [])].map((link) => {
+                const isActive = pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMenuOpen(false)}
+                    aria-current={isActive ? "page" : undefined}
+                    className={`display-3 border-b border-[rgb(var(--c-s-50)/0.08)] py-6 ${
+                      isActive ? "text-[rgb(var(--c-a-400))]" : ""
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
               {/* No dropdown on a full-screen sheet — it's already the
                   expanded state, so Profile/Settings/Log out are just flat
                   rows here instead of nesting ProfileMenu inside it. */}

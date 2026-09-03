@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { PulsingBorder } from "@paper-design/shaders-react";
+import { readConsent, CONSENT_DECIDED_EVENT } from "@/lib/cookieConsent";
 
 /**
  * Atom — the "ask me anything" assistant, floating on every page (mounted
@@ -413,11 +414,36 @@ export function AssistantWidget() {
 
   // Greeting bubble: once per browser session, only if the conversation is
   // still empty (a returning visitor mid-conversation doesn't need re-pitching).
+  //
+  // Also held back until the cookie banner is decided: both this bubble and
+  // CookieConsentBanner are fixed, bottom-right, glass-surfaced elements, and
+  // on a visitor's very first page load they used to show at the same time,
+  // their overlapping backdrop-blurs compositing into a genuinely broken-
+  // looking mess ("the shop page is glitched"). The browser's own `storage`
+  // event only fires in *other* tabs, never the one that made the write, so
+  // waiting on that wouldn't catch the same-tab decision that matters here.
+  // `CONSENT_DECIDED_EVENT` is dispatched by `writeConsent()` specifically
+  // for this.
   useEffect(() => {
     if (!mounted || messages.length > 0) return;
     if (window.sessionStorage.getItem(GREETING_SEEN_KEY)) return;
-    const timer = setTimeout(() => setShowGreeting(true), GREETING_DELAY_MS);
-    return () => clearTimeout(timer);
+
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const arm = () => {
+      timer = setTimeout(() => setShowGreeting(true), GREETING_DELAY_MS);
+    };
+
+    if (readConsent() !== null) {
+      arm();
+      return () => clearTimeout(timer);
+    }
+
+    const onDecided = () => arm();
+    window.addEventListener(CONSENT_DECIDED_EVENT, onDecided, { once: true });
+    return () => {
+      window.removeEventListener(CONSENT_DECIDED_EVENT, onDecided);
+      clearTimeout(timer);
+    };
   }, [mounted, messages.length]);
 
   function dismissGreeting() {
