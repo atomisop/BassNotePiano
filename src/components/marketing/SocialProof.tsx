@@ -1,4 +1,4 @@
-import { ScrollGlassCard } from "@/components/marketing/ScrollGlassCard";
+import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import { DiscordIcon } from "@/components/ui/icons";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 
@@ -14,15 +14,10 @@ import { DISCORD_INVITE_URL } from "@/lib/discord";
  * actually opens a real, active server, and "every key" is a checkable
  * claim against the actual scale data, not marketing language.
  *
- * 21ST.DEV REDESIGN: was a centered heading over a 3-column grid. Rebuilt
- * as an asymmetric editorial split (Editorial Hero pattern, id 19075,
- * structural inspiration only, not its serif/landscape-image specifics,
- * and never applied to the piano Hero, which stays exactly as built). The
- * label now sits alone in a narrow column, pinned to the bottom of the row
- * on larger screens instead of lining up with the heading's top, the same
- * slightly off-kilter alignment the source pattern uses. The three proof
- * points moved from a 3-up grid to a single divided list, reading as one
- * continuous argument rather than three parallel cards.
+ * REDESIGN: no glass-surface card. Uses marketing.css's own editorial-grid
+ * and rule-hairline instead (see ScrollReveal's own comment for why): a
+ * narrow label column beside a wider heading-and-list column, the proof
+ * points separated by hairlines rather than boxed into a card.
  */
 const PROOF_POINTS = [
   {
@@ -41,42 +36,40 @@ const PROOF_POINTS = [
 
 export function SocialProof() {
   return (
-    <section className="mx-auto max-w-5xl px-6 py-12 md:py-28">
-      <ScrollGlassCard className="p-6 md:p-12" direction="left">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,200px)_1fr] lg:gap-16">
-          <p className="label label-muted lg:self-end lg:pb-2">Why trust this</p>
+    <section className="py-[var(--space-5)] md:py-[var(--space-8)]">
+      <ScrollReveal className="editorial-grid">
+        <p className="label label-muted md:col-span-3">Why trust this</p>
 
-          <div>
-            <h2 className="display-2 max-w-[26ch] text-balance">
-              Nothing here asks you to take our word for it.
-            </h2>
+        <div className="md:col-span-9">
+          <h2 className="display-2 max-w-[26ch] text-balance">Nothing here asks you to take our word for it.</h2>
 
-            <div className="mt-10 divide-y divide-[rgb(var(--c-s-50)/0.08)] border-t border-[rgb(var(--c-s-50)/0.08)]">
-              {PROOF_POINTS.map((point) => (
-                <div key={point.label} className="flex flex-col gap-2 py-6 sm:flex-row sm:items-baseline sm:gap-8">
-                  <p className="text-xs font-medium uppercase tracking-[0.14em] text-[rgb(var(--c-a-300))] sm:w-32 sm:shrink-0">
-                    {point.label}
-                  </p>
-                  <p className="max-w-[52ch] text-sm leading-relaxed text-slate-300">{point.body}</p>
+          <div className="mt-10">
+            <hr className="rule-hairline" />
+            {PROOF_POINTS.map((point) => (
+              <div key={point.label}>
+                <div className="flex flex-col gap-2 py-6 sm:flex-row sm:items-baseline sm:gap-8">
+                  <p className="label sm:w-32 sm:shrink-0">{point.label}</p>
+                  <p className="body-copy max-w-[52ch]">{point.body}</p>
                 </div>
-              ))}
-            </div>
-
-            <a
-              href={DISCORD_INVITE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))]"
-            >
-              <DiscordIcon size={16} />
-              See the community for yourself
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </a>
+                <hr className="rule-hairline" />
+              </div>
+            ))}
           </div>
+
+          <a
+            href={DISCORD_INVITE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))]"
+          >
+            <DiscordIcon size={16} />
+            See the community for yourself
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </a>
         </div>
-      </ScrollGlassCard>
+      </ScrollReveal>
     </section>
   );
 }

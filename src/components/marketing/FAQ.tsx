@@ -2,15 +2,15 @@ import Link from "next/link";
 import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
 import { CREDIT_BASE_PRICE_CENTS } from "@/lib/classCreditPricing";
 import { CANCELLATION_CUTOFF_HOURS, SOLO_MAX_CREDITS, FAMILY_CREDITS_PER_STUDENT } from "@/lib/classSchedule";
-import { ScrollGlassCard } from "@/components/marketing/ScrollGlassCard";
+import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 /**
  * HOMEPAGE REBUILD: 06 FAQ.
  *
- * New section. `src/components/ui/accordion.tsx` already existed in the
- * tree but had zero real usages anywhere before this (checked): a real
- * shadcn/Radix accordion, just never wired into a page.
+ * `src/components/ui/accordion.tsx` already existed in the tree but had
+ * zero real usages anywhere before this (checked): a real shadcn/Radix
+ * accordion, just never wired into a page.
  *
  * Every answer is a real policy or fact, not invented for this page. The
  * refund/cancellation wording matches TermsContent.tsx's own language in
@@ -19,6 +19,12 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
  * facing inconsistency. Prices/thresholds are imported from the same
  * constants the rest of the app uses, not hardcoded, so this can't quietly
  * drift out of sync if those ever change.
+ *
+ * REDESIGN: no glass-surface card. An accordion is already its own set of
+ * hairline-divided rows (each AccordionItem's own border-b); wrapping that
+ * in a second, larger boundary just nested one rule-based structure inside
+ * a box, which is exactly what marketing.css's structural rule argues
+ * against.
  */
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -53,8 +59,8 @@ const FAQS = [
 
 export function FAQ() {
   return (
-    <section className="mx-auto max-w-2xl px-6 py-12 md:py-28">
-      <ScrollGlassCard className="p-6 md:p-12" direction="right">
+    <section className="mx-auto max-w-2xl px-6 py-[var(--space-5)] md:py-[var(--space-8)]">
+      <ScrollReveal>
         <p className="label label-muted">Questions</p>
         <h2 className="display-2 mt-4 max-w-[20ch] text-balance">Before you commit to anything.</h2>
 
@@ -80,7 +86,7 @@ export function FAQ() {
           </Link>
           .
         </p>
-      </ScrollGlassCard>
+      </ScrollReveal>
     </section>
   );
 }

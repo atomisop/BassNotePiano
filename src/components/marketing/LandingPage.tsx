@@ -52,11 +52,26 @@ import { ScrollToTopButton } from "@/components/marketing/ScrollToTopButton";
  * PhoneCarousel had no other caller, so the file was deleted rather than
  * left as dead code.
  *
+ * STRUCTURE REDESIGN: the 21st.dev pass above still wrapped every section
+ * in a `ScrollGlassCard` (a glass-surface card that also drove the scroll
+ * reveal), by direct feedback ("still don't like it" / "use one uniform
+ * design language"). marketing.css's own "STRUCTURE" comment had already
+ * specified the actual intended system before any of these sections existed
+ * ("Rules, not boxes... a card is reserved for the product reveal, where a
+ * bounded surface is literally what is being shown"): the glass-card-per-
+ * section pattern was exactly what that comment was written to rule out,
+ * just never implemented in the components until now. Every section below
+ * `Hero` now uses `ScrollReveal` (the animation half of `ScrollGlassCard`,
+ * with no card) plus marketing.css's own `.editorial-grid` /
+ * `.rule-hairline` for layout. Only `Solution`'s screenshot panel keeps a
+ * bounded surface, since that one is the actual "product reveal" the rule
+ * names as the exception. `ScrollGlassCard.tsx` had no callers left after
+ * this pass and is deleted rather than kept as dead code.
+ *
  * Everything else from the previous rebuild that this pass didn't touch:
  * `PageBackground`'s shader mesh still extends the whole page (Hero's own
  * full-bleed frames simply cover it while pinned, same as any full-bleed
- * section would), and every section from `SocialProof` down still reveals
- * via `ScrollGlassCard` as it scrolls into view.
+ * section would).
  */
 export function LandingPage() {
   return (

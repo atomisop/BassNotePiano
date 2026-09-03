@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
-import { ScrollGlassCard } from "@/components/marketing/ScrollGlassCard";
+import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 
 // Matches Hero.tsx's own local copy — no shared `@/lib/format` module
 // exists in this codebase to import instead (checked before adding this).
@@ -17,18 +17,21 @@ function formatUsd(cents: number) {
 /**
  * HOMEPAGE REPLACEMENT — 07 FINAL CTA.
  *
- * Kept the file (it's a small, real, working closing beat). Wrapped in
- * `ScrollGlassCard` now, by direct instruction — a deliberate reversal of
- * this section's own earlier "no scroll-triggered entrance animation"
- * rule, the same way `WhatBassNoteIs` and every section below it now work.
+ * Kept the file (it's a small, real, working closing beat).
+ *
+ * REDESIGN: no glass-surface card. A closing headline and one button is
+ * already the simplest possible content on the page; a card around it adds
+ * a boundary the content does nothing to earn. Keeps the scroll-triggered
+ * reveal (ScrollReveal, the animation half of what ScrollGlassCard used to
+ * do here), just without the box.
  */
 export function FinalCTA() {
   const { data: session } = useSession();
   const isLoggedIn = Boolean(session?.user);
 
   return (
-    <section className="mx-auto max-w-2xl px-6 py-14 text-center md:py-32">
-      <ScrollGlassCard className="p-6 md:p-12" direction="up">
+    <section className="mx-auto max-w-2xl px-6 py-[var(--space-6)] text-center md:py-[var(--space-8)]">
+      <ScrollReveal>
         <p className="display-2 text-balance text-[rgb(var(--c-s-50))]">
           You already knew the sound.
           <br />
@@ -50,7 +53,7 @@ export function FinalCTA() {
             <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </Link>
-      </ScrollGlassCard>
+      </ScrollReveal>
     </section>
   );
 }

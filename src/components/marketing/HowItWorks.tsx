@@ -1,6 +1,6 @@
 import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
 import { QUIZ_PASS_THRESHOLD } from "@/lib/access";
-import { ScrollGlassCard } from "@/components/marketing/ScrollGlassCard";
+import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import { Timeline } from "@/components/ui/Timeline";
 
 /**
@@ -18,13 +18,13 @@ import { Timeline } from "@/components/ui/Timeline";
  * live booking (classSchedule.ts), and the existing streak/badge/roadmap
  * system (gamification.ts, ScaleRoadmap.tsx).
  *
- * 21st.dev REDESIGN: was a plain divide-y numbered list. Rather than porting
- * 21st.dev's own "Timeline" pattern (connected dots + line), this now uses
- * `@/components/ui/Timeline`, an existing component in this repo already
- * built and documented for exactly this ("Narrative timeline for the
- * marketing 'how this works' sequence") and already used by KinitJourney.
- * Reusing it means one timeline implementation in the app instead of a
- * second one copied in from an external source for the same job.
+ * REDESIGN: no glass-surface card here either: a connected-dot timeline is
+ * already exactly "position, scale, and a hairline" (marketing.css's own
+ * structural rule), so it never needed boxing into a card in the first
+ * place. Uses @/components/ui/Timeline, an existing component in this repo
+ * already built and documented for exactly this ("Narrative timeline for
+ * the marketing 'how this works' sequence") and already used by
+ * KinitJourney, rather than inventing a second implementation.
  */
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -55,15 +55,15 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section className="mx-auto max-w-3xl px-6 py-12 md:py-28">
-      <ScrollGlassCard className="p-6 md:p-12" direction="left">
+    <section className="mx-auto max-w-3xl px-6 py-[var(--space-5)] md:py-[var(--space-8)]">
+      <ScrollReveal>
         <p className="label label-muted">How it works</p>
         <h2 className="display-2 mt-4 max-w-[22ch] text-balance">Four steps. No fixed schedule to commit to.</h2>
 
         <div className="mt-12">
           <Timeline entries={STEPS} />
         </div>
-      </ScrollGlassCard>
+      </ScrollReveal>
     </section>
   );
 }
