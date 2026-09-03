@@ -26,14 +26,16 @@ import { ScrollToTopButton } from "@/components/marketing/ScrollToTopButton";
  * `PricingCallout`'s numbers → `FAQ.tsx`, with the full bundle breakdown
  * staying on the real `/pricing` page one link away, same as before.
  *
- * `Hero` is now the piano-explode scroll sequence itself, by direct
- * instruction, not a plain static section followed by a separate reveal
- * section (an earlier pass here briefly had it as two sections, `Hero` then
+ * `Hero` is now the piano scroll sequence itself, by direct instruction,
+ * not a plain static section followed by a separate reveal section (an
+ * earlier pass here briefly had it as two sections, `Hero` then
  * `PianoReveal`; `PianoReveal` no longer exists as its own file, folded
  * into `Hero.tsx`, which now renders `ScrollFrameSequence` directly with
- * two staged text beats). Built from real frames the user provided, not
- * the earlier live-WebGL 3D piano backdrop that was deliberately removed
- * before this session. That removal stands; this is a different, much
+ * two staged text beats, over just the lid opening, not a full exploded-
+ * parts reveal (see Hero.tsx's own comment for why that got cut). Built
+ * from real frames the user provided, not the earlier live-WebGL 3D piano
+ * backdrop that was deliberately removed before this session. That
+ * removal stands; this is a different, much
  * lighter technique (baked images, no Three.js), not a reversal of it.
  *
  * Everything else from the previous rebuild that this pass didn't touch:

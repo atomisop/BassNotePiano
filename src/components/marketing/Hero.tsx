@@ -6,11 +6,19 @@ import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
 import { ScrollFrameSequence } from "@/components/marketing/ScrollFrameSequence";
 
 /**
- * HOMEPAGE REBUILD: the hero is now the piano-explode scroll sequence
- * itself, by direct instruction, not a separate section that follows a
- * plain static hero. Same real content this file always had (badge,
- * headline, paragraph, CTAs), same real facts, just presented as the first
- * beat inside ScrollFrameSequence instead of its own standalone section.
+ * HOMEPAGE REBUILD: the hero is now the piano scroll sequence itself, by
+ * direct instruction, not a separate section that follows a plain static
+ * hero. Same real content this file always had (badge, headline,
+ * paragraph, CTAs), same real facts, just presented as the first beat
+ * inside ScrollFrameSequence instead of its own standalone section.
+ *
+ * The sequence itself is deliberately just the lid opening now, cut before
+ * any part of the piano separates from it (an earlier pass here ran the
+ * full source through to a dramatic exploded-parts reveal; cut per direct
+ * "I don't like it" feedback). public/piano-reveal/ holds exactly frames
+ * 1-65 of that original source (the fully-exploded frames past that point,
+ * along with the original wider-sampled 70-frame set, are deleted, not
+ * just unused, since neither has a reason to stay in the repo).
  *
  * The individual motion.div mount-animations the previous version used
  * (fade+rise, staggered by delay) are gone: ScrollFrameSequence's own
@@ -61,8 +69,8 @@ export function Hero() {
       </svg>
 
       <ScrollFrameSequence
-        basePath="/piano-explode"
-        frameCount={70}
+        basePath="/piano-reveal"
+        frameCount={65}
         secondChildren={
           <>
             <p className="mb-4 text-xs font-medium uppercase tracking-[0.3em] text-white/70">Under the lid</p>
