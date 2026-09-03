@@ -3,16 +3,12 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
-  ACCENT_STORAGE_KEY,
-  DEFAULT_ACCENT,
   DEFAULT_THEME,
   LOGGED_OUT_THEME,
   THEME_STORAGE_KEY,
-  isAccentId,
   isLoggedOutPath,
   isThemeId,
   themeMode,
-  type AccentId,
   type ThemeChoice,
   type ThemeId,
 } from "@/lib/themes";
@@ -22,9 +18,7 @@ interface ThemeContextValue {
   theme: ThemeChoice;
   /** What "system" actually resolved to; equals `theme` otherwise. */
   resolvedTheme: ThemeId;
-  accent: AccentId;
   setTheme: (theme: ThemeChoice) => void;
-  setAccent: (accent: AccentId) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -38,39 +32,33 @@ function resolve(choice: ThemeChoice): ThemeId {
   return choice === "system" ? systemTheme() : choice;
 }
 
-/** The one place that writes theme/mode/accent onto <html>. */
-function applyToDocument(theme: ThemeId, accent: AccentId) {
+/** The one place that writes theme/mode onto <html>. */
+function applyToDocument(theme: ThemeId) {
   const el = document.documentElement;
   el.setAttribute("data-theme", theme);
   el.setAttribute("data-mode", themeMode(theme));
-  el.setAttribute("data-accent", accent);
   el.style.colorScheme = themeMode(theme);
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  // Initialised to the defaults rather than read from localStorage, because
+  // Initialised to the default rather than read from localStorage, because
   // this runs during SSR too. THEME_BOOT_SCRIPT has already put the correct
   // attributes on <html> before paint; the effect below syncs React's copy
   // of that state without ever causing a visible flash.
   const [theme, setThemeState] = useState<ThemeChoice>(DEFAULT_THEME);
-  const [accent, setAccentState] = useState<AccentId>(DEFAULT_ACCENT);
   const [resolvedTheme, setResolvedTheme] = useState<ThemeId>("paper");
 
   useEffect(() => {
     let storedTheme: ThemeChoice = DEFAULT_THEME;
-    let storedAccent: AccentId = DEFAULT_ACCENT;
     try {
       const t = localStorage.getItem(THEME_STORAGE_KEY);
       if (t === "system" || isThemeId(t)) storedTheme = t;
-      const a = localStorage.getItem(ACCENT_STORAGE_KEY);
-      if (isAccentId(a)) storedAccent = a;
     } catch {
       // Safari private mode throws on localStorage access — defaults are fine.
     }
     setThemeState(storedTheme);
-    setAccentState(storedAccent);
     setResolvedTheme(resolve(storedTheme));
   }, []);
 
@@ -84,10 +72,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => mq.removeEventListener("change", onChange);
   }, [theme]);
 
-  // The single place <html> actually gets written to. Every logged-out page
-  // — the storefront (home, classes, pricing, terms) and the road to
-  // signing in (login, register, forgot/reset password, verify email) —
-  // has no picker and is locked to Luxury regardless of what's stored, so
+  // The single place <html> actually gets written to. Every logged-out page,
+  // the storefront (home, classes, pricing, terms) and the road to
+  // signing in (login, register, forgot/reset password, verify email),
+  // has no picker and is locked to Ink regardless of what's stored, so
   // this is also the one spot that lock needs to live. A layout effect, not
   // a plain one, so switching between a locked page and the real app
   // resolves before the browser paints — matching THEME_BOOT_SCRIPT's
@@ -95,11 +83,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // navigation between the two.
   useLayoutEffect(() => {
     if (isLoggedOutPath(pathname)) {
-      applyToDocument(LOGGED_OUT_THEME, DEFAULT_ACCENT);
+      applyToDocument(LOGGED_OUT_THEME);
     } else {
-      applyToDocument(resolvedTheme, accent);
+      applyToDocument(resolvedTheme);
     }
-  }, [pathname, resolvedTheme, accent]);
+  }, [pathname, resolvedTheme]);
 
   const setTheme = useCallback((next: ThemeChoice) => {
     setThemeState(next);
@@ -111,19 +99,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const setAccent = useCallback((next: AccentId) => {
-    setAccentState(next);
-    try {
-      localStorage.setItem(ACCENT_STORAGE_KEY, next);
-    } catch {
-      // As above.
-    }
-  }, []);
-
-  const value = useMemo(
-    () => ({ theme, resolvedTheme, accent, setTheme, setAccent }),
-    [theme, resolvedTheme, accent, setTheme, setAccent],
-  );
+  const value = useMemo(() => ({ theme, resolvedTheme, setTheme }), [theme, resolvedTheme, setTheme]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

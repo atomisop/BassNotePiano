@@ -21,11 +21,12 @@
 
    ── Where the palette comes from ────────────────────────────────────────
    The same neutral black/white ramp and vivid signal-green accent as the
-   rest of the app (see themes.css's `[data-theme="ink"]` and the
-   `[data-accent="signal"]` blocks) — mirrored here in raw values rather than
-   referenced, because these are inherited custom properties: re-pointing
-   `--c-a-400` this far down the tree only works if it's redeclared at this
-   scope, not aliased to the ancestor's already-resolved one.
+   rest of the app (see themes.css's `[data-theme="ink"]` and `[data-mode="dark"]`
+   blocks — signal green is the only accent now, see themes.ts's own
+   comment) — mirrored here in raw values rather than referenced, because
+   these are inherited custom properties: re-pointing `--c-a-400` this far
+   down the tree only works if it's redeclared at this scope, not aliased to
+   the ancestor's already-resolved one.
    ========================================================================== */
 
 [data-surface="marketing"] {
@@ -47,9 +48,9 @@
 
   /* ---- Accent ramp: signal green ---------------------------------------
      hsl(119 99% 46%) converted directly — the same vivid green as
-     `[data-mode="dark"][data-accent="signal"]`. `--c-s-950` on `--c-a-400`
-     clears AA, so the ground colour stays the readable text on the accent,
-     same relationship the app's token bridge already assumes (see
+     `[data-mode="dark"]` (the app's one and only accent). `--c-s-950` on
+     `--c-a-400` clears AA, so the ground colour stays the readable text on
+     the accent, same relationship the app's token bridge already assumes (see
      globals.css), so shadcn's `--primary-foreground` keeps working
      untouched. */
   --c-a-100: 214 250 195;   /* highlight wash */

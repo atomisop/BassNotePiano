@@ -7,7 +7,7 @@
      --c-s-50 … --c-s-950   ground↔text ramp. LOW = strongest text,
                             HIGH = the page ground. Always. In a light theme
                             low is dark; in a dark theme low is light.
-     --c-a-100 … --c-a-500  the accent (set separately, by data-accent)
+     --c-a-100 … --c-a-500  the one accent (set separately, by data-mode)
      --c-em-* / --c-rd-*    success / error
      --c-ink                hairlines and subtle tints
      --c-scrim              modal overlays — dark in EVERY theme
@@ -20,12 +20,12 @@
    ========================================================================== */
 
 /* ── Editorial Paper (light, default) ─────────────────────────────────────
-   Glassmorphism now applies to every theme, not just Midnight Glass — a
-   deliberate reversal of this system's original "blur is opt-in, it's the
-   one expensive thing" stance, by direct instruction. Paper's own version
-   is a frosted warm-white panel over the cream ground: lighter blur than
-   the two dark themes below, since heavy blur over a light, already-bright
-   ground reads as haze rather than depth. */
+   Glassmorphism applies here too, not just in dark mode: a deliberate
+   reversal of this system's original "blur is opt-in, it's the one
+   expensive thing" stance, by direct instruction. Paper's own version is a
+   frosted warm-white panel over the cream ground: lighter blur than Ink's
+   below, since heavy blur over a light, already-bright ground reads as haze
+   rather than depth. */
 :root,
 [data-theme="paper"] {
   --c-s-50: 26 21 15; /* 17.1:1 */
@@ -82,10 +82,11 @@
 
 /* ── Editorial Ink (dark) ───────────────────────────────────────────────────
    The paper system after dark: same warm-not-blue-black ground Editorial
-   Paper uses inverted, now carrying the same universal glass treatment —
-   a real, if lighter, `backdrop-filter` blur, one step down from Midnight
-   Glass's own (below), which stays the most intensely translucent of the
-   three. */
+   Paper uses inverted, now carrying the same universal glass treatment: a
+   real `backdrop-filter` blur, one step heavier than Paper's own above
+   since a dark ground can carry more of it before it reads as haze. This is
+   the app's default theme (see DEFAULT_THEME in themes.ts) and the one
+   every logged-out visitor sees. */
 [data-theme="ink"] {
   --c-s-50: 245 245 245; /* 0% 96% — near-white text */
   --c-s-100: 230 230 230;
@@ -137,121 +138,28 @@
   --scrim-rgb: 20 20 20; /* matches --hero-bg (0 0% 8%) from the spec */
 }
 
-/* ── Midnight Glass (dark) ──────────────────────────────────────────────────
-   Recolored from this theme's original identity (blue-black ground, cool
-   slate panels) to the same warm ramp Editorial Ink uses (already
-   contrast-checked at AA against this exact ground). Now that every theme
-   carries real `backdrop-filter` blur, Glass and Ink share both hue and
-   material — what still separates them is intensity: Glass runs the
-   strongest blur/translucency of the three (see the surface/elev/subtle
-   values below vs. Ink's own, one step lighter), the fullest expression of
-   the same treatment rather than the only theme that has it. */
-[data-theme="glass"] {
-  --c-s-50: 245 245 245;
-  --c-s-100: 230 230 230;
-  --c-s-200: 212 212 212;
-  --c-s-300: 194 194 194;
-  --c-s-400: 168 168 168;
-  --c-s-500: 153 153 153;
-  --c-s-600: 120 120 120;
-  --c-s-700: 66 66 66;
-  --c-s-800: 51 51 51;
-  --c-s-900: 41 41 41;
-  --c-s-950: 26 26 26;
-
-  --c-em-300: 134 239 172;
-  --c-em-400: 74 222 128;
-  --c-rd-300: 252 165 165;
-  --c-rd-400: 239 68 68;
-  --c-rd-500: 220 38 38;
-
-  --c-ink: 255 255 255;
-  --c-scrim: 10 10 10;
-
-  --page-texture:
-    radial-gradient(circle at 15% 20%, rgba(5, 233, 1, 0.045), transparent 45%),
-    radial-gradient(circle at 85% 75%, rgba(255, 255, 255, 0.03), transparent 40%);
-
-  /* Chrome (nav rails, sheets, tab bar) needs one opaque colour even in a
-     translucent theme — a see-through fixed tab bar over scrolling content is
-     unreadable. */
-  --c-surface-solid: 46 46 46;
-  --surface-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
-  --surface-border: rgba(255, 255, 255, 0.13);
-  --surface-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.65), 0 2px 10px -2px rgba(0, 0, 0, 0.4);
-  --surface-blur: 16px;
-  --surface-radius: 0.5rem;
-
-  /* Level 1 — nav pills, secondary chips: real glass, but less of it than a
-     card (lighter tint, half the blur) so it reads as quieter chrome rather
-     than another Level 2 surface competing for the same attention. */
-  --subtle-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
-  --subtle-border: rgba(255, 255, 255, 0.075);
-  --subtle-blur: 8px;
-
-  --elev-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.12), rgb(var(--c-a-400) / 0.1));
-  --elev-border: rgb(var(--c-a-400) / 0.35);
-  --elev-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.7), 0 4px 18px -4px rgba(0, 0, 0, 0.5);
-  --elev-blur: 24px;
-
-  --scrim-light: 0.3;
-  --scrim-standard: 0.52;
-  --scrim-dense: 0.78;
-  --scrim-rgb: 20 20 20;
-}
-
 /* ==========================================================================
-   Accents
+   Accent
    --------------------------------------------------------------------------
-   Keyed on data-mode rather than data-theme: an accent has to clear 4.5:1
+   One accent, everywhere: signal green. Themes and accent color used to be
+   independent choices (three themes x six accents), removed by direct
+   instruction in favor of one uniform design language (see themes.ts's own
+   comment). Signal was already the one accent the marketing pages and every
+   transactional email hardcode; this just makes that true for the rest of
+   the app too, instead of leaving five unused alternatives in the CSS.
+
+   Still keyed on data-mode, not data-theme: the accent has to clear 4.5:1
    against the ground it sits on, and that requirement is the same for every
-   dark theme and every light one. Two sets, not one per theme.
+   dark theme and every light one. Two blocks, one per mode.
 
-   Each accent's 400 step is the workhorse — it has to work BOTH as a fill
-   (with the ground colour set on it) and as text on the ground, which is
-   what lets `bg-amber-400` and `text-amber-400` both stay legible.
-   ========================================================================== */
+   The 400 step is the workhorse: it has to work BOTH as a fill (with the
+   ground colour set on it) and as text on the ground, which is what lets
+   `bg-amber-400` and `text-amber-400` both stay legible. */
 
+/* On a light ground the source hsl(119 99% 46%) itself only clears ~1.6:1,
+   nowhere near AA, so light mode gets a deep forest-green version of the
+   same hue instead. */
 [data-mode="light"] {
-  --c-a-100: 90 42 12;
-  --c-a-200: 107 51 15;
-  --c-a-300: 127 61 20;
-  --c-a-400: 160 78 30; /* rust — 5.4:1 */
-  --c-a-500: 194 105 31;
-}
-[data-mode="light"][data-accent="rose"] {
-  --c-a-100: 92 39 52;
-  --c-a-200: 110 47 62;
-  --c-a-300: 130 56 74;
-  --c-a-400: 163 74 94; /* 5.4:1 */
-  --c-a-500: 192 95 116;
-}
-[data-mode="light"][data-accent="gold"] {
-  --c-a-100: 77 58 11;
-  --c-a-200: 92 70 13;
-  --c-a-300: 110 84 16;
-  --c-a-400: 138 106 18; /* 5.3:1 */
-  --c-a-500: 169 130 26;
-}
-[data-mode="light"][data-accent="sage"] {
-  --c-a-100: 41 60 33;
-  --c-a-200: 49 72 40;
-  --c-a-300: 58 85 48;
-  --c-a-400: 74 107 61; /* 5.6:1 */
-  --c-a-500: 92 132 76;
-}
-[data-mode="light"][data-accent="indigo"] {
-  --c-a-100: 43 45 94;
-  --c-a-200: 51 54 113;
-  --c-a-300: 59 63 134;
-  --c-a-400: 74 79 168; /* 5.9:1 */
-  --c-a-500: 92 97 196;
-}
-/* The vivid signal-green accent. On a light ground the source hsl(119 99%
-   46%) itself only clears ~1.6:1 — nowhere near AA — so light mode gets a
-   deep forest-green version of the same hue instead, same relationship
-   every other accent already has between its light- and dark-mode step. */
-[data-mode="light"][data-accent="signal"] {
   --c-a-100: 4 46 2;
   --c-a-200: 3 66 2;
   --c-a-300: 3 92 2;
@@ -259,46 +167,11 @@
   --c-a-500: 2 145 4;
 }
 
+/* hsl(119 99% 46%) converted directly: rgb(5 233 1), the exact vivid green
+   requested. Genuinely vivid rather than "lifted for a dark ground"; this
+   one comes with its own real neon quality by design, not a softened
+   version of it. */
 [data-mode="dark"] {
-  --c-a-100: 247 220 197;
-  --c-a-200: 240 192 155;
-  --c-a-300: 232 168 122;
-  --c-a-400: 217 142 90; /* rust, lifted for a dark ground */
-  --c-a-500: 184 115 64;
-}
-[data-mode="dark"][data-accent="rose"] {
-  --c-a-100: 245 230 224;
-  --c-a-200: 236 208 198;
-  --c-a-300: 223 183 172;
-  --c-a-400: 209 160 148; /* the original Dynamic Glass dusty rose */
-  --c-a-500: 184 128 111;
-}
-[data-mode="dark"][data-accent="gold"] {
-  --c-a-100: 247 237 197;
-  --c-a-200: 240 220 155;
-  --c-a-300: 232 203 122;
-  --c-a-400: 217 182 90;
-  --c-a-500: 184 151 64;
-}
-[data-mode="dark"][data-accent="sage"] {
-  --c-a-100: 221 235 213;
-  --c-a-200: 194 218 180;
-  --c-a-300: 168 201 150;
-  --c-a-400: 143 184 122;
-  --c-a-500: 116 155 96;
-}
-[data-mode="dark"][data-accent="indigo"] {
-  --c-a-100: 226 228 248;
-  --c-a-200: 203 206 242;
-  --c-a-300: 180 184 234;
-  --c-a-400: 155 160 224;
-  --c-a-500: 127 132 196;
-}
-/* hsl(119 99% 46%) converted directly — rgb(5 233 1), the exact vivid green
-   requested. Genuinely vivid rather than "lifted for a dark ground" like
-   the other four accents here — this one comes with its own real neon
-   quality by design, not a softened version of it. */
-[data-mode="dark"][data-accent="signal"] {
   --c-a-100: 214 250 195;
   --c-a-200: 172 247 148;
   --c-a-300: 100 240 70;

@@ -157,7 +157,7 @@
      Material system
      Every value here comes from the active theme (see themes.css),
      so a card is a flat white panel under Editorial Paper and a
-     frosted translucent pane under Midnight Glass without any
+     frosted translucent pane under Editorial Ink without any
      component knowing the difference.
      ============================================================ */
 
@@ -653,14 +653,13 @@
    hierarchy signal — chrome floats above content that scrolls underneath it,
    rather than consuming an opaque strip of the page.
 
-   Used to be scoped to Midnight Glass only — blur is genuinely expensive on
-   fixed chrome sitting over scrolling content, so the cost was paid on just
-   the one theme whose entire premise was a translucent material. Glass is
-   now universal (by direct instruction, a deliberate reversal of that
-   original performance-first stance — see themes.css's own header comment),
-   so every theme pays the same real, measurable scroll cost here. The
-   opacity/blur numbers themselves are unchanged from what Glass alone used
-   to carry. */
+   Used to be scoped to one dark theme only, back when that theme's whole
+   premise was a translucent material and the others weren't — blur is
+   genuinely expensive on fixed chrome sitting over scrolling content, so
+   the cost was paid on just that one theme. Glass is now universal (by
+   direct instruction, a deliberate reversal of that original
+   performance-first stance — see themes.css's own header comment), so
+   every theme pays the same real, measurable scroll cost here. */
   .chrome {
     background: rgb(var(--c-surface-solid) / 0.72);
     backdrop-filter: blur(20px) saturate(180%);

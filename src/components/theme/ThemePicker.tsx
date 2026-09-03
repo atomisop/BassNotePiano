@@ -1,6 +1,6 @@
 "use client";
 
-import { ACCENTS, THEMES, type ThemeChoice } from "@/lib/themes";
+import { THEMES, type ThemeChoice } from "@/lib/themes";
 import { useTheme } from "./ThemeProvider";
 
 function CheckIcon() {
@@ -34,9 +34,14 @@ const CURATED_THEMES = THEMES.filter((t) => t.source === "curated");
 /**
  * `compact` is for the marketing popover, where vertical space is tight and
  * the descriptions would crowd it out. Settings gets the full version.
+ *
+ * There used to be a second fieldset here for accent color (rust, rose,
+ * gold, sage, indigo, signal). Removed along with the rest of that system
+ * (see themes.ts's own comment), so this is just the one light/dark/system
+ * choice now, nothing left to pick a color for.
  */
 export function ThemePicker({ compact = false }: { compact?: boolean }) {
-  const { theme, resolvedTheme, accent, setTheme, setAccent } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   const options: { id: ThemeChoice; label: string }[] = [
     ...CURATED_THEMES.map((t) => ({ id: t.id as ThemeChoice, label: t.label })),
@@ -84,38 +89,6 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
                     Follows your device&apos;s light or dark setting, and switches with it.
                   </span>
                 )}
-              </button>
-            );
-          })}
-        </div>
-      </fieldset>
-
-      <fieldset className={compact ? "mt-3 border-t border-ink/10 pt-3" : "mt-8"}>
-        <legend className={compact ? "sr-only" : "eyebrow mb-3"}>Accent</legend>
-        <div className="flex flex-wrap gap-2">
-          {ACCENTS.map((a) => {
-            const selected = accent === a.id;
-            const dot = resolvedTheme === "paper" ? a.light : a.dark;
-            return (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => setAccent(a.id)}
-                aria-pressed={selected}
-                title={a.label}
-                className={`flex items-center gap-2 rounded-full border py-1.5 pl-1.5 pr-3 text-xs font-medium transition ${
-                  selected
-                    ? "border-[rgb(var(--c-a-400))] text-slate-100"
-                    : "border-ink/10 text-slate-500 hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-slate-200"
-                }`}
-              >
-                <span
-                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-                  style={{ background: dot, color: resolvedTheme === "paper" ? "#fff" : "#14110E" }}
-                >
-                  {selected && <CheckIcon />}
-                </span>
-                {a.label}
               </button>
             );
           })}

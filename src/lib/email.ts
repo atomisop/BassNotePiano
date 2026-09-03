@@ -64,7 +64,7 @@ async function sendEmail({ to, subject, html, text }: SendEmailParams): Promise<
 }
 
 // Accent per email "kind" — the app's own real dark ink ground + signal
-// green (src/app/themes.css: [data-mode="dark"][data-accent="signal"]),
+// green (src/app/themes.css: [data-mode="dark"], the app's one accent),
 // not an invented email-only palette. A cancellation/rejection stays a
 // warm red instead of green — green reads as "this went well" everywhere
 // else in the app, and reusing it for a rejection would send the wrong

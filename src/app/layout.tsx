@@ -95,8 +95,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     // suppressHydrationWarning: the boot script below rewrites data-theme /
-    // data-mode / data-accent on this element before React hydrates, so the
-    // server-rendered markup deliberately won't match. It's the only element
+    // data-mode on this element before React hydrates, so the server-
+    // rendered markup deliberately won't match. It's the only element
     // affected.
     <html
       lang="en"
