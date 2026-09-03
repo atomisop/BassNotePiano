@@ -1,6 +1,7 @@
 import { PageBackground } from "@/components/marketing/PageBackground";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { Hero } from "@/components/marketing/Hero";
+import { InstrumentPicker } from "@/components/marketing/InstrumentPicker";
 import { SocialProof } from "@/components/marketing/SocialProof";
 import { ProblemStatement } from "@/components/marketing/ProblemStatement";
 import { Solution } from "@/components/marketing/Solution";
@@ -68,6 +69,29 @@ import { ScrollToTopButton } from "@/components/marketing/ScrollToTopButton";
  * names as the exception. `ScrollGlassCard.tsx` had no callers left after
  * this pass and is deleted rather than kept as dead code.
  *
+ * PICKUPMUSIC.COM STRUCTURE PASS: section flow and one new section
+ * (`InstrumentPicker`) adapted from pickupmusic.com's real landing page,
+ * by direct instruction to mirror its flow ("copy the whole landing page
+ * top to bottom... the text should match my bassnotepiano"). Not a literal
+ * clone: three of that page's real sections have no honest BNP
+ * equivalent and are deliberately not reproduced:
+ *   - Customer testimonials: no real testimonials exist anywhere in this
+ *     app's data (confirmed, PRODUCT.md's own "Evidence on Hand" section),
+ *     and inventing any would break the standing "we do not lie" rule.
+ *     `SocialProof` already fills this same trust-building slot in the
+ *     page flow with facts that are actually true instead.
+ *   - "91% improve / 4x faster" style stat callouts: no equivalent data
+ *     exists in this app to verify numbers like that against.
+ *   - The "full refund, no questions asked" guarantee: BNP's real policy
+ *     is the opposite (the curriculum purchase is final once bought, see
+ *     TermsContent.tsx and FAQ.tsx), so copying this section's content
+ *     would state a policy this app doesn't actually have.
+ * Everything else either already existed here with real content
+ * (`SocialProof`, `Solution`, `HowItWorks`, `FAQ`) and is just reordered
+ * to track pickupmusic.com's own flow more closely, or is genuinely new
+ * (`InstrumentPicker`, see its own comment) built the same way: the
+ * pattern borrowed, the words entirely BNP's own real facts.
+ *
  * Everything else from the previous rebuild that this pass didn't touch:
  * `PageBackground`'s shader mesh still extends the whole page (Hero's own
  * opaque full-viewport background simply covers it for that one section,
@@ -87,10 +111,11 @@ export function LandingPage() {
           instead of actually wrapping the content it pointed at. */}
       <main id="main-content" tabIndex={-1} className="outline-none">
         <Hero />
+        <InstrumentPicker />
         <SocialProof />
-        <ProblemStatement />
         <Solution />
         <HowItWorks />
+        <ProblemStatement />
         <FAQ />
         <FinalCTA />
       </main>
