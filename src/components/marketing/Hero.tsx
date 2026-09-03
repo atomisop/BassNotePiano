@@ -4,6 +4,7 @@ import { useRef } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
+import { QUIZ_PASS_THRESHOLD } from "@/lib/access";
 import { ScrollFrameSequence } from "@/components/marketing/ScrollFrameSequence";
 
 /**
@@ -47,6 +48,22 @@ import { ScrollFrameSequence } from "@/components/marketing/ScrollFrameSequence"
  * treatment now living on the Atom assistant widget instead, and the old
  * live-WebGL 3D piano backdrop removed earlier this session, which this
  * baked-frame-sequence technique is not a reversal of.
+ *
+ * HUD ACCENT: a "cyber punkish" pass, by direct instruction, deliberately
+ * scoped to a mood/technique borrow rather than a content one (a separate,
+ * unrelated cyberpunk-armor product brief was explicitly rejected as
+ * having "nothing to do with bassnotepiano" once built and reviewed). Two
+ * additions, both using tokens and conventions this app already has rather
+ * than importing a new palette or font:
+ *   - Corner brackets around the badge pill: a targeting-reticle motif,
+ *     the generic visual shorthand for "HUD", not specific to any one
+ *     brand or product; four small SVG corner marks in the signal accent.
+ *   - A specs readout row below the CTAs, in marketing.css's own `.label`
+ *     voice (JetBrains Mono, uppercase, tracked) it already uses for
+ *     eyebrows elsewhere on this page, just applied to a new row of real
+ *     facts instead of a single eyebrow line. Signal green already reads
+ *     as "vivid, neon-adjacent by design" per themes.css's own comment on
+ *     that accent, which is most of why this works without a new palette.
  */
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", {
@@ -130,13 +147,31 @@ export function Hero() {
           </>
         }
       >
-        <div
-          className="inline-flex w-fit items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-sm"
-          style={{ filter: "url(#hero-glass-effect)" }}
-        >
-          <span className="text-sm font-medium tracking-wide text-white/90">
-            Ethiopian Scales, Rhythm &amp; Chords
-          </span>
+        <div className="relative inline-block w-fit">
+          {/* Corner brackets: a targeting-reticle motif around the badge,
+              purely decorative (aria-hidden, pointer-events-none) and
+              positioned slightly outside the pill's own box so it reads as
+              a HUD frame around the badge rather than a border on it. */}
+          <svg
+            aria-hidden
+            className="pointer-events-none absolute -inset-2.5 h-[calc(100%+20px)] w-[calc(100%+20px)] text-[rgb(var(--c-a-400))]"
+            viewBox="0 0 100 40"
+            preserveAspectRatio="none"
+          >
+            <path d="M2 10V2h8" fill="none" stroke="currentColor" strokeWidth="1" />
+            <path d="M90 2h8v8" fill="none" stroke="currentColor" strokeWidth="1" />
+            <path d="M2 30v8h8" fill="none" stroke="currentColor" strokeWidth="1" />
+            <path d="M98 30v8h-8" fill="none" stroke="currentColor" strokeWidth="1" />
+          </svg>
+
+          <div
+            className="inline-flex w-fit items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-sm"
+            style={{ filter: "url(#hero-glass-effect)" }}
+          >
+            <span className="text-sm font-medium tracking-wide text-white/90">
+              Ethiopian Scales, Rhythm &amp; Chords
+            </span>
+          </div>
         </div>
 
         <h1 className="mt-6 text-balance text-5xl font-bold leading-none tracking-tight text-white sm:text-6xl md:text-7xl">
@@ -159,6 +194,23 @@ export function Hero() {
           <a href="#curriculum" className="btn btn-secondary">
             Explore Curriculum
           </a>
+        </div>
+
+        {/* HUD specs readout: real facts, not decoration. Reuses
+            marketing.css's own `.label` voice (mono, uppercase, tracked,
+            signal accent) rather than a new font, in a row instead of a
+            single eyebrow line. */}
+        <div className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+          {[
+            "6 kiñit scales",
+            "12 keys",
+            "Live 1:1 access",
+            `${Math.round(QUIZ_PASS_THRESHOLD * 100)}% to advance`,
+          ].map((fact) => (
+            <span key={fact} className="label">
+              {fact}
+            </span>
+          ))}
         </div>
       </ScrollFrameSequence>
     </>
