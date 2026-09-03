@@ -104,7 +104,7 @@ function AtomButton({ onClick, label }: { onClick: () => void; label: string }) 
       className="relative flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full transition hover:scale-105 active:scale-95"
     >
       <PulsingBorder
-        colors={["#05e901", "#0d2e0a", "#e8fadb", "#145c0a", "#4dd946"]}
+        colors={["#D98E5A", "#2e1f0d", "#F7DCC5", "#5c3d14", "#F0C09B"]}
         colorBack="#00000000"
         speed={reduced ? 0 : 1.2}
         roundness={1}
@@ -659,7 +659,7 @@ export function AssistantWidget() {
             <div className="flex items-center gap-3 border-b border-ink/10 px-4 py-3">
               <div className="h-8 w-8 shrink-0">
                 <PulsingBorder
-                  colors={["#05e901", "#0d2e0a", "#e8fadb", "#145c0a", "#4dd946"]}
+                  colors={["#D98E5A", "#2e1f0d", "#F7DCC5", "#5c3d14", "#F0C09B"]}
                   colorBack="#00000000"
                   speed={0.8}
                   roundness={1}

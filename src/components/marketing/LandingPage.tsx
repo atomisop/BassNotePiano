@@ -26,17 +26,17 @@ import { ScrollToTopButton } from "@/components/marketing/ScrollToTopButton";
  * `PricingCallout`'s numbers → `FAQ.tsx`, with the full bundle breakdown
  * staying on the real `/pricing` page one link away, same as before.
  *
- * `Hero` is now the piano scroll sequence itself, by direct instruction,
- * not a plain static section followed by a separate reveal section (an
- * earlier pass here briefly had it as two sections, `Hero` then
- * `PianoReveal`; `PianoReveal` no longer exists as its own file, folded
- * into `Hero.tsx`, which now renders `ScrollFrameSequence` directly with
- * two staged text beats, over just the lid opening, not a full exploded-
- * parts reveal (see Hero.tsx's own comment for why that got cut). Built
- * from real frames the user provided, not the earlier live-WebGL 3D piano
- * backdrop that was deliberately removed before this session. That
- * removal stands; this is a different, much
- * lighter technique (baked images, no Three.js), not a reversal of it.
+ * `Hero` went through several distinct versions this project's history:
+ * a plain static section, then the piano scroll sequence itself (folding
+ * in the short-lived separate `PianoReveal` file), and now a fixed-
+ * viewport HUD hero with a cursor-driven reveal instead of a scroll-driven
+ * one, by direct instruction ("use all of it except the picture," referring
+ * to a UI/button/layout brief for an unrelated product page). See Hero.tsx's
+ * own comment for the current version's full reasoning. Still built from
+ * this app's own real piano photography (now the two states of the cursor
+ * reveal, not a 65-frame scroll sequence), not the earlier live-WebGL 3D
+ * piano backdrop removed earlier this project's history, which none of
+ * these versions have been a reversal of.
  *
  * 21ST.DEV REDESIGN: Solution and HowItWorks were rebuilt again in this
  * pass (Feature Showcase and Timeline patterns, adapted; see each file's
@@ -70,8 +70,8 @@ import { ScrollToTopButton } from "@/components/marketing/ScrollToTopButton";
  *
  * Everything else from the previous rebuild that this pass didn't touch:
  * `PageBackground`'s shader mesh still extends the whole page (Hero's own
- * full-bleed frames simply cover it while pinned, same as any full-bleed
- * section would).
+ * opaque full-viewport background simply covers it for that one section,
+ * same as any full-bleed section would).
  */
 export function LandingPage() {
   return (

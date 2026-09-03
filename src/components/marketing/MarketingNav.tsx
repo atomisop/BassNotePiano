@@ -184,7 +184,7 @@ export function MarketingNav() {
               />
             )}
             {/* Real liquid glass here specifically — `glass-surface-elevated`
-                (translucent, blurred, signal-green-tinted border) instead of
+                (translucent, blurred, amber-tinted border) instead of
                 `.btn-primary`'s solid gradient fill. Scoped to just this one
                 nav button; `.btn-primary` itself is untouched, so the Hero/
                 FinalCTA/etc. CTAs elsewhere keep their existing solid look. */}

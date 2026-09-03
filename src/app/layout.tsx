@@ -5,7 +5,7 @@ import { THEME_BOOT_SCRIPT } from "@/lib/themes";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
-// One family for both display and body — the black/signal-green system
+// One family for both display and body — the black/amber system
 // this replaces Playfair Display + Inter with is deliberately not an
 // editorial serif-plus-humanist-sans pairing; it's a single geometric
 // sans doing every job, the same way the reference spec only ever

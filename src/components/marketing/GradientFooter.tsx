@@ -16,17 +16,17 @@ type Stop = { offset: number; color: string };
 const VBW = 1271;
 const VBH = 599;
 
-// Same technique as the original Dia Browser effect this was ported from —
-// a soft band rising from the floor — retuned to the app's own black/
-// signal-green identity: a deep forest-green floor brightening to the
-// vivid signal green partway up, then dissolving through pale mint into
-// transparency near the top.
+// Same technique as the original Dia Browser effect this was ported from:
+// a soft band rising from the floor, retuned to the app's own black/amber
+// identity: a deep amber-brown floor brightening to the vivid accent
+// partway up, then dissolving through pale cream into transparency near
+// the top.
 const DEFAULT_STOPS: Stop[] = [
-  { offset: 0, color: "#0D2E0A" },
-  { offset: 0.22, color: "#145C0A" },
-  { offset: 0.42, color: "#2E9E1A" },
-  { offset: 0.62, color: "#7FE86F" },
-  { offset: 0.82, color: "#C8FAC2" },
+  { offset: 0, color: "#2E1F0D" },
+  { offset: 0.22, color: "#5C3D14" },
+  { offset: 0.42, color: "#B87A2E" },
+  { offset: 0.62, color: "#E8AC7A" },
+  { offset: 0.82, color: "#F7DCC5" },
   { offset: 1, color: "#F5F5F500" },
 ];
 

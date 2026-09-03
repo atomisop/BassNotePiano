@@ -1,218 +1,655 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
 import { QUIZ_PASS_THRESHOLD } from "@/lib/access";
-import { ScrollFrameSequence } from "@/components/marketing/ScrollFrameSequence";
 
 /**
- * HOMEPAGE REBUILD: the hero is now the piano scroll sequence itself, by
- * direct instruction, not a separate section that follows a plain static
- * hero. Same real content this file always had (badge, headline,
- * paragraph, CTAs), same real facts, just presented as the first beat
- * inside ScrollFrameSequence instead of its own standalone section.
+ * HOMEPAGE REBUILD (HUD hero): full replacement of the piano-scroll hero,
+ * by direct instruction, "use all of it except the picture," referring to
+ * the UI (buttons, layout, specs panel, entrance/cursor-reveal animations)
+ * from a fully-specified brief the user provided for a separate, unrelated
+ * cyberpunk-armor product page. That page's fictional content and its
+ * third-party character photo are gone; every structural/interaction
+ * piece from its brief is reproduced here, with real Bass Note Piano
+ * copy, real facts, and real photos of this app's own piano-reveal frames
+ * standing in for the picture.
  *
- * The sequence itself is deliberately just the lid opening now, cut before
- * any part of the piano separates from it (an earlier pass here ran the
- * full source through to a dramatic exploded-parts reveal; cut per direct
- * "I don't like it" feedback). public/piano-reveal/ holds exactly frames
- * 1-65 of that original source (the fully-exploded frames past that point,
- * along with the original wider-sampled 70-frame set, are deleted, not
- * just unused, since neither has a reason to stay in the repo).
+ * Colors are the brief's exact orange/cream palette, by explicit direct
+ * choice after being asked and warned this hero would then look visually
+ * distinct from the black/signal-green rest of the page (SocialProof
+ * through FinalCTA, all untouched by this file). That tradeoff is
+ * deliberate, not an oversight.
  *
- * The individual motion.div mount-animations the previous version used
- * (fade+rise, staggered by delay) are gone: ScrollFrameSequence's own
- * textRef already owns this content's opacity/transform, driven by scroll
- * instead of mount, and a nested Framer Motion animation setting the same
- * CSS properties on a mount timer would fight that rather than combine
- * with it. Plain elements now; the parent supplies all the motion.
+ * Scoped under .hud-hero (not the brief's own generic class names) so
+ * nothing here leaks onto /classes, /pricing, /login, or any other route
+ * sharing this app's <html>/<body> and marketing layout. Fonts (Orbitron-
+ * Medium from a third-party CDN, Google Fonts Inter) are loaded via <link>
+ * tags in (marketing)/page.tsx, a real Server Component, for the same
+ * reason the earlier build used that approach: Next.js's automatic <head>
+ * hoisting for <link>/<title> tags is documented for Server Components,
+ * not reliably for Client Components like this one.
  *
- * secondChildren (see ScrollFrameSequence.tsx) is the second beat: it fades
- * in exactly as this content finishes fading out, tying the visual (the
- * piano opening to show its own structure) directly to the app's real
- * positioning elsewhere on the page (Solution.tsx's "spelling engine",
- * ProblemStatement's "grammar underneath") rather than being decorative.
- *
- * MOUNTAIN is new: a soft hill silhouette sitting across the bottom of the
- * viewport at rest, covering the paragraph/CTA row (the headline itself
- * stays clear, above its ridge). The first few percent of scroll slides it
- * fully out of view, "rising up and over" it to reveal the rest of the
- * hero, per direct instruction ("a behind the mountain effect"). It's
- * `pointer-events: none` throughout, so the CTA underneath is genuinely
- * clickable even before that reveal happens, not just visually blocked.
- *
- * What's still gone, and stays gone: the demo-derived nav/logo/login-button
- * chrome this file never carried in the first place, the corner accent
- * treatment now living on the Atom assistant widget instead, and the old
- * live-WebGL 3D piano backdrop removed earlier this session, which this
- * baked-frame-sequence technique is not a reversal of.
- *
- * HUD ACCENT: a "cyber punkish" pass, by direct instruction, deliberately
- * scoped to a mood/technique borrow rather than a content one (a separate,
- * unrelated cyberpunk-armor product brief was explicitly rejected as
- * having "nothing to do with bassnotepiano" once built and reviewed). Two
- * additions, both using tokens and conventions this app already has rather
- * than importing a new palette or font:
- *   - Corner brackets around the badge pill: a targeting-reticle motif,
- *     the generic visual shorthand for "HUD", not specific to any one
- *     brand or product; four small SVG corner marks in the signal accent.
- *   - A specs readout row below the CTAs, in marketing.css's own `.label`
- *     voice (JetBrains Mono, uppercase, tracked) it already uses for
- *     eyebrows elsewhere on this page, just applied to a new row of real
- *     facts instead of a single eyebrow line. Signal green already reads
- *     as "vivid, neon-adjacent by design" per themes.css's own comment on
- *     that accent, which is most of why this works without a new palette.
+ * This replaces the previous scroll-driven piano-opening sequence
+ * (ScrollFrameSequence, the "mountain" reveal, the two-beat scroll-linked
+ * text) with a single fixed-viewport hero and a cursor-driven reveal
+ * instead: a different interaction model, not an enhancement of the old
+ * one, per the brief's own single-viewport + mousemove design.
+ * ScrollFrameSequence.tsx had no other caller and is deleted; the real
+ * frame images it used (public/piano-reveal/) are reused here instead of
+ * discarded, now as the two states of the cursor-spotlight reveal.
  */
+
+const BASE_IMAGE_URL = "/piano-reveal/frame-001.webp";
+const REVEAL_IMAGE_URL = "/piano-reveal/frame-065.webp";
+const PRODUCT_THUMB_URL = "/screenshots/dashboard.png";
+
 function formatUsd(cents: number) {
-  return (cents / 100).toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
+  return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
-/** How much of the sequence's own scroll progress the mountain's exit spans.
- * Short and early on purpose: this is meant to resolve almost as soon as
- * scrolling starts, well before TEXT_FADE_END (0.35 in ScrollFrameSequence)
- * even begins pulling the rest of this content away. */
-const MOUNTAIN_REVEAL_END = 0.1;
+const HUD_HERO_CSS = `
+.hud-hero {
+  /* Direct instruction: gold text, real black piano, not the brief's
+     original orange/cream. Token names are unchanged from that first
+     pass (--hh-cream, --hh-orange) since every rule below already
+     references them correctly; only the values move to a gold palette,
+     so this comment is the flag that "cream" now means "gold". */
+  --hh-cream: #E8C874;
+  --hh-muted: rgba(232, 200, 116, 0.72);
+  --hh-label: rgba(232, 200, 116, 0.5);
+  --hh-orange: #D4AF37;
+  --hh-card: rgba(8, 8, 8, 0.62);
+  background: #0a0a0a;
+  color: var(--hh-cream);
+  overflow-x: hidden;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+.hud-hero h1, .hud-hero h2, .hud-hero h3, .hud-hero .hh-heading-font {
+  font-family: 'Orbitron-Medium', 'Arial Narrow', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+.hud-hero .hh-hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #0a0a0a;
+}
+
+.hud-hero .hh-hero-base-img {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background-size: cover;
+  background-position: center center;
+  opacity: 0;
+}
+.hud-hero .hh-hero-image-animate {
+  animation: hhHeroImageIn 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  animation-delay: 0.15s;
+}
+@keyframes hhHeroImageIn {
+  from { opacity: 0; transform: scale(1.18); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.hud-hero .hh-hero-reveal-img {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-size: cover;
+  background-position: center center;
+  -webkit-mask-image: radial-gradient(circle 0px at -999px -999px, #fff, transparent);
+  mask-image: radial-gradient(circle 0px at -999px -999px, #fff, transparent);
+}
+
+/* Scrim, not a color wash: direct instruction was to keep the piano's own
+   real black color, not tint it. A neutral dark gradient protects text
+   contrast against the photo's brighter areas (the lacquer's real
+   highlights) without shifting its hue the way the first pass's orange
+   mix-blend-mode overlay did. Same idea as marketing.css's own "scrim"
+   system elsewhere in this app (a tinted layer over a real photo
+   backdrop), just neutral instead of colored. */
+.hud-hero .hh-hero-wash {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(115deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.15) 45%, rgba(0, 0, 0, 0.45) 100%);
+}
+
+.hud-hero .hh-hero-ui {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr auto;
+  padding: 36px 44px 40px;
+  /* MarketingNav (src/components/marketing/MarketingNav.tsx) is a real,
+     shared, fixed-position nav bar this brief's original single-page
+     design never accounted for; being position:fixed, it takes up no
+     space in normal document flow, so without this, this hero's own
+     headline/label would render directly underneath it. The background
+     image stays full-bleed to y=0 regardless (only this text-content
+     layer gets pushed down); ~112px clears the nav's real measured height
+     with a little breathing room, since the nav has no opaque background
+     until the page is scrolled ("lifted"), so the two would otherwise
+     visibly collide as overlapping text, not just crowd each other. */
+  padding-top: 112px;
+  pointer-events: none;
+}
+
+.hud-hero .hh-hero-left {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 28px;
+  min-width: 0;
+}
+
+.hud-hero .hh-hero-copy {
+  max-width: 520px;
+  padding-right: 56px;
+  pointer-events: auto;
+}
+
+.hud-hero .hh-hero-copy h1 {
+  font-size: clamp(1.55rem, 3.6vw, 3.15rem);
+  line-height: 1.05;
+  text-transform: uppercase;
+  color: var(--hh-cream);
+  /* A soft gold-tinted glow plus a dark contrast shadow, not a gradient
+     fill: this app's own craft guidelines flag gradient text as a
+     default-avoid pattern, and a solid gold reads as "luxury" just as
+     well here without needing one. */
+  text-shadow: 0 0 32px rgba(212, 175, 55, 0.35), 0 2px 28px rgba(0, 0, 0, 0.4);
+  margin: 0;
+}
+
+.hud-hero .hh-hero-copy p {
+  margin-top: 18px;
+  max-width: 340px;
+  font-size: 13.5px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--hh-muted);
+}
+
+.hud-hero .hh-icon-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.hud-hero .hh-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(251, 219, 175, 0.55);
+  background: transparent;
+  color: var(--hh-cream);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+.hud-hero .hh-icon-btn:hover {
+  background: rgba(251, 219, 175, 0.1);
+  border-color: var(--hh-cream);
+}
+
+.hud-hero .hh-product-card {
+  pointer-events: auto;
+  width: min(320px, 100%);
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  grid-template-rows: auto auto;
+  gap: 10px 14px;
+  padding: 12px;
+  border-radius: 18px;
+  background: var(--hh-card);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(251, 219, 175, 0.08);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+}
+
+.hud-hero .hh-product-thumb {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  width: 86px;
+  min-height: 86px;
+  border-radius: 12px;
+  overflow: hidden;
+  background-size: cover;
+  background-position: top center;
+}
+
+.hud-hero .hh-product-body {
+  grid-column: 2;
+  grid-row: 1;
+}
+.hud-hero .hh-product-body h2 {
+  font-size: 11px;
+  line-height: 1.25;
+  text-transform: uppercase;
+  color: var(--hh-cream);
+  margin: 0;
+}
+.hud-hero .hh-product-body p {
+  margin-top: 6px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--hh-muted);
+}
+
+.hud-hero .hh-cart-btn {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: start;
+  align-self: end;
+  border: 1px solid var(--hh-cream);
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--hh-cream);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+.hud-hero .hh-cart-btn:hover {
+  transform: translateY(-1px);
+}
+
+.hud-hero .hh-hero-page {
+  position: absolute;
+  top: 36px;
+  right: 44px;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: rgba(251, 219, 175, 0.78);
+}
+
+.hud-hero .hh-specs {
+  grid-column: 2;
+  grid-row: 3;
+  justify-self: end;
+  pointer-events: auto;
+  width: min(340px, 100%);
+}
+.hud-hero .hh-specs h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  margin: 0 0 14px;
+  letter-spacing: 0.12em;
+}
+.hud-hero .hh-spec-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 7px 0;
+}
+.hud-hero .hh-spec-row + .hh-spec-row {
+  border-top: 1px solid rgba(251, 219, 175, 0.12);
+}
+.hud-hero .hh-spec-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hh-label);
+}
+.hud-hero .hh-spec-value {
+  font-size: 12.5px;
+  color: var(--hh-cream);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ---- Word pull-up entrance ------------------------------------------- */
+.hud-hero .hh-pull-word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(20px);
+}
+.hud-hero .hh-pull-word:not(:last-child) {
+  margin-right: 0.3em;
+}
+@keyframes hhWordPullUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.hud-hero .hh-words-visible .hh-pull-word {
+  animation: hhWordPullUp 0.55s ease forwards;
+}
+
+/* ---- Fade-up-blur reveal ----------------------------------------------- */
+.hud-hero .hh-fade-up-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  filter: blur(8px);
+}
+@keyframes hhFadeUp {
+  from { opacity: 0; transform: translateY(14px); filter: blur(8px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.hud-hero .hh-fade-up-reveal.hh-is-visible {
+  animation: hhFadeUp 0.7s ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-hero .hh-hero-image-animate,
+  .hud-hero .hh-words-visible .hh-pull-word,
+  .hud-hero .hh-fade-up-reveal.hh-is-visible {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .hud-hero .hh-hero-base-img,
+  .hud-hero .hh-pull-word,
+  .hud-hero .hh-fade-up-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}
+
+/* ---- Responsive --------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .hud-hero .hh-hero-ui { padding: 32px 28px 36px; padding-top: 112px; }
+  .hud-hero .hh-hero-page { top: 112px; right: 28px; }
+  .hud-hero .hh-specs { width: min(300px, 100%); }
+}
+
+@media (max-width: 900px) {
+  .hud-hero .hh-hero-ui { padding: 28px 22px 28px; padding-top: 112px; }
+  .hud-hero .hh-hero-page { top: 112px; right: 22px; }
+  .hud-hero .hh-hero-copy h1 { font-size: clamp(1.35rem, 7.2vw, 2.4rem); }
+  .hud-hero .hh-hero-base-img, .hud-hero .hh-hero-reveal-img { background-position: 40% center; }
+  .hud-hero .hh-specs { width: min(280px, 100%); }
+}
+
+@media (max-width: 768px) {
+  .hud-hero .hh-hero-ui {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+    padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+    /* MarketingNav drops to its 80px mobile height (h-20) below the 768px
+       breakpoint, per that component's own Tailwind classes; see the base
+       .hh-hero-ui rule's comment for why this clearance exists at all. */
+    padding-top: max(96px, env(safe-area-inset-top));
+  }
+  .hud-hero .hh-hero-left { grid-row: 1 / 3; gap: 24px; }
+  .hud-hero .hh-hero-page { top: max(96px, env(safe-area-inset-top)); right: max(20px, env(safe-area-inset-right)); }
+  .hud-hero .hh-specs { grid-column: 1; grid-row: 3; justify-self: stretch; width: 100%; margin-top: 8px; }
+  .hud-hero .hh-hero-base-img, .hud-hero .hh-hero-reveal-img { background-position: 40% center; }
+}
+
+@media (max-width: 720px) {
+  .hud-hero .hh-hero { height: auto; min-height: 100vh; min-height: 100dvh; }
+  .hud-hero .hh-hero-ui {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    justify-content: flex-start;
+    gap: 28px;
+    padding: max(22px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+    padding-top: max(96px, env(safe-area-inset-top));
+  }
+  .hud-hero .hh-hero-left { display: flex; width: 100%; justify-content: flex-start; }
+  .hud-hero .hh-hero-copy { max-width: 100%; padding-right: 48px; }
+  .hud-hero .hh-hero-copy p { font-size: 12.5px; max-width: 100%; }
+  .hud-hero .hh-product-card { width: 100%; }
+  .hud-hero .hh-specs { width: 100%; margin-top: auto; padding-top: 4px; }
+  .hud-hero .hh-spec-value { white-space: normal; }
+  .hud-hero .hh-hero-base-img, .hud-hero .hh-hero-reveal-img { position: absolute; background-position: 40% center; }
+}
+
+@media (max-width: 480px) {
+  .hud-hero .hh-hero-ui {
+    gap: 22px;
+    padding: max(18px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    padding-top: max(96px, env(safe-area-inset-top));
+  }
+  .hud-hero .hh-hero-page { font-size: 12px; }
+  .hud-hero .hh-hero-copy h1 { font-size: clamp(1.1rem, 8.5vw, 1.65rem); }
+  .hud-hero .hh-hero-copy p { font-size: 12px; margin-top: 14px; }
+  .hud-hero .hh-icon-row { margin-top: 16px; gap: 8px; }
+  .hud-hero .hh-icon-btn { width: 34px; height: 34px; }
+  .hud-hero .hh-hero-left { gap: 22px; }
+  .hud-hero .hh-product-card { grid-template-columns: 72px 1fr; gap: 8px 12px; padding: 10px; border-radius: 14px; }
+  .hud-hero .hh-product-thumb { width: 72px; min-height: 72px; border-radius: 10px; }
+  .hud-hero .hh-product-body h2 { font-size: 10px; }
+  .hud-hero .hh-product-body p { font-size: 11px; }
+  .hud-hero .hh-cart-btn { padding: 6px 14px; font-size: 11px; }
+  .hud-hero .hh-specs h3 { font-size: 10px; margin-bottom: 10px; }
+  .hud-hero .hh-spec-row { padding: 6px 0; gap: 10px; }
+  .hud-hero .hh-spec-label, .hud-hero .hh-spec-value { font-size: 11px; }
+}
+
+@media (max-width: 360px) {
+  .hud-hero .hh-hero-copy h1 { font-size: 1rem; }
+  .hud-hero .hh-product-card { grid-template-columns: 64px 1fr; }
+  .hud-hero .hh-product-thumb { width: 64px; min-height: 64px; }
+}
+`;
+
+const SPEC_ROWS = [
+  { label: "Scales", value: "6 Kinit Groups", delay: "1.2" },
+  { label: "Keys", value: "All 12", delay: "1.3" },
+  { label: "Access", value: "Live 1:1 Lessons", delay: "1.4" },
+  { label: "Progress", value: `${Math.round(QUIZ_PASS_THRESHOLD * 100)}% Quiz Gate`, delay: "1.5" },
+];
 
 export function Hero() {
   const { data: session } = useSession();
   const isLoggedIn = Boolean(session?.user);
-  const mountainRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const revealImgRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    // ---- 1. Cursor-spotlight image reveal --------------------------------
+    function handlePointer(clientX: number, clientY: number) {
+      const revealEl = revealImgRef.current;
+      if (!revealEl) return;
+      const rect = revealEl.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      const w = window.innerWidth;
+      const radius = w < 480 ? 120 : w < 720 ? 160 : 260;
+      const mask = `radial-gradient(circle ${radius}px at ${x}px ${y}px, #fff 0%, #fff 40%, rgba(255,255,255,0.75) 60%, rgba(255,255,255,0.4) 75%, rgba(255,255,255,0.12) 88%, transparent 100%)`;
+      revealEl.style.webkitMaskImage = mask;
+      revealEl.style.maskImage = mask;
+    }
+    function onMouseMove(e: MouseEvent) {
+      handlePointer(e.clientX, e.clientY);
+    }
+    function onTouchMove(e: TouchEvent) {
+      const touch = e.touches[0];
+      if (touch) handlePointer(touch.clientX, touch.clientY);
+    }
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+
+    // ---- 2. Word-by-word split (guarded so it only ever runs once) ------
+    root.querySelectorAll<HTMLElement>(".hh-words-pull-up").forEach((el) => {
+      if (el.dataset.split) return;
+      el.dataset.split = "true";
+
+      const isH1WithLines =
+        el.tagName === "H1" && el.children.length > 0 && Array.from(el.children).every((c) => c.tagName === "SPAN");
+
+      if (isH1WithLines) {
+        let wordIndex = 0;
+        Array.from(el.children).forEach((lineEl) => {
+          const line = lineEl as HTMLElement;
+          line.classList.add("hh-pull-line");
+          line.style.display = "block";
+          const words = (line.textContent ?? "").trim().split(/\s+/).filter(Boolean);
+          line.innerHTML = words
+            .map((word) => {
+              const span = `<span class="hh-pull-word" style="animation-delay:${(wordIndex * 0.1).toFixed(2)}s">${word}</span>`;
+              wordIndex += 1;
+              return span;
+            })
+            .join(" ");
+        });
+      } else {
+        const words = (el.textContent ?? "").trim().split(/\s+/).filter(Boolean);
+        el.innerHTML = words
+          .map((word, i) => `<span class="hh-pull-word" style="animation-delay:${(i * 0.1).toFixed(2)}s">${word}</span>`)
+          .join(" ");
+      }
+    });
+
+    // ---- 3. Mount reveal via IntersectionObserver -------------------------
+    if ("IntersectionObserver" in window) {
+      const wordsObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("hh-words-visible");
+              wordsObserver.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.2 },
+      );
+      root.querySelectorAll(".hh-words-pull-up").forEach((el) => wordsObserver.observe(el));
+
+      const fadeObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const target = entry.target as HTMLElement;
+              target.style.animationDelay = `${target.dataset.delay ?? "0"}s`;
+              target.classList.add("hh-is-visible");
+              fadeObserver.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.15 },
+      );
+      root.querySelectorAll(".hh-fade-up-reveal").forEach((el) => fadeObserver.observe(el));
+    } else {
+      root.querySelectorAll(".hh-words-pull-up").forEach((el) => el.classList.add("hh-words-visible"));
+      root.querySelectorAll(".hh-fade-up-reveal").forEach((el) => el.classList.add("hh-is-visible"));
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("touchmove", onTouchMove);
+    };
+  }, []);
 
   return (
-    <>
-      {/* SVG filter, glass-effect for the badge pill. No content baked in;
-          reused as-is from this file's own earlier version. */}
-      <svg className="absolute inset-0 h-0 w-0">
-        <defs>
-          <filter id="hero-glass-effect" x="-50%" y="-50%" width="200%" height="200%">
-            <feTurbulence baseFrequency="0.005" numOctaves="1" result="noise" />
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.3" />
-            <feColorMatrix
-              type="matrix"
-              values="1 0 0 0 0.02 0 1 0 0 0.02 0 0 1 0 0.05 0 0 0 0.9 0"
-              result="tint"
-            />
-          </filter>
-        </defs>
-      </svg>
+    <div className="hud-hero" ref={rootRef}>
+      <style dangerouslySetInnerHTML={{ __html: HUD_HERO_CSS }} />
 
-      <ScrollFrameSequence
-        basePath="/piano-reveal"
-        frameCount={65}
-        onProgress={(progress) => {
-          const el = mountainRef.current;
-          if (!el) return;
-          const t = Math.min(1, progress / MOUNTAIN_REVEAL_END);
-          // Eased (t*t, not linear) so it starts the slide slowly, giving the
-          // very first pixels of scroll a moment to register as intentional
-          // before the hill visibly moves, then accelerates away.
-          const eased = t * t;
-          el.style.transform = `translateY(${eased * 100}%)`;
-          el.style.pointerEvents = "none";
-        }}
-        foreground={
-          <div
-            ref={mountainRef}
-            aria-hidden
-            className="absolute inset-x-0 bottom-0 h-[50vh] min-h-[340px] sm:h-[54vh]"
-            style={{ pointerEvents: "none" }}
-          >
-            <svg
-              viewBox="0 0 1440 600"
-              preserveAspectRatio="none"
-              className="h-full w-full"
-              style={{ color: "rgb(var(--c-s-950))" }}
-            >
-              <path
-                d="M0,600 L0,320 C 250,180 400,80 620,120 C 850,160 1000,60 1440,100 L1440,600 Z"
-                fill="currentColor"
-              />
-            </svg>
+      {/* A plain div, not <main>: LandingPage.tsx already wraps every
+          section (this one included) in the page's one real <main
+          id="main-content">, which is also the skip-link target. A second
+          <main> nested inside it, with the same id, would be invalid HTML
+          and would make that id ambiguous. */}
+      <div className="hh-hero outline-none">
+        <div
+          className="hh-hero-base-img hh-hero-image-animate"
+          style={{ backgroundImage: `url("${BASE_IMAGE_URL}")` }}
+        />
+        <div ref={revealImgRef} className="hh-hero-reveal-img" style={{ backgroundImage: `url("${REVEAL_IMAGE_URL}")` }} />
+        <div aria-hidden className="hh-hero-wash" />
+
+        <div className="hh-hero-ui">
+          <div className="hh-hero-left">
+            <div className="hh-hero-copy">
+              <h1 className="hh-words-pull-up">
+                <span>ETHIOPIAN //</span>
+                <span>SCALE</span>
+                <span>ENGINE</span>
+              </h1>
+              <p className="hh-fade-up-reveal" data-delay="0.5">
+                Six kiñit scales (Tizita, Bati, Anchihoye, Mixolydian, and more), spelled correctly in all twelve
+                keys, for piano and guitar. No years of music theory required first.
+              </p>
+
+              <div className="hh-icon-row hh-fade-up-reveal" data-delay="0.65">
+                <button type="button" className="hh-icon-btn" aria-label="Curriculum">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2">
+                    <path d="M8 1.4L13.8 4.7V11.3L8 14.6L2.2 11.3V4.7L8 1.4Z" />
+                    <circle cx="8" cy="8" r="1.35" fill="currentColor" stroke="none" />
+                  </svg>
+                </button>
+                <button type="button" className="hh-icon-btn" aria-label="Roadmap">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2">
+                    <path d="M2 5.2V2h3.2" strokeLinecap="round" />
+                    <path d="M14 5.2V2h-3.2" strokeLinecap="round" />
+                    <path d="M2 10.8V14h3.2" strokeLinecap="round" />
+                    <path d="M14 10.8V14h-3.2" strokeLinecap="round" />
+                    <rect x="5.2" y="5.2" width="5.6" height="5.6" />
+                  </svg>
+                </button>
+                <button type="button" className="hh-icon-btn" aria-label="Live lessons">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2">
+                    <path d="M9.2 1.6L4 9.1h3.5L6.8 14.4 12 6.9H8.5L9.2 1.6Z" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <article className="hh-product-card">
+              <div className="hh-product-thumb" aria-hidden style={{ backgroundImage: `url("${PRODUCT_THUMB_URL}")` }} />
+              <div className="hh-product-body">
+                <h2 className="hh-words-pull-up">Ethiopian Scales, Rhythm &amp; Chords</h2>
+                <p className="hh-fade-up-reveal" data-delay="1.05">
+                  The real method book this curriculum is built from, plus live 1:1 access to your teacher.
+                </p>
+              </div>
+              <Link
+                href={isLoggedIn ? "/dashboard" : "/register"}
+                className="hh-cart-btn hh-fade-up-reveal"
+                data-delay="1.15"
+              >
+                {isLoggedIn ? "Go to dashboard" : `Start for ${formatUsd(CURRICULUM_PRICE_CENTS)}`}
+              </Link>
+            </article>
           </div>
-        }
-        secondChildren={
-          <>
-            <p className="mb-4 text-xs font-medium uppercase tracking-[0.3em] text-white/70">Under the lid</p>
-            <h2 className="max-w-2xl text-balance font-serif text-4xl leading-[1.1] text-white sm:text-5xl md:text-6xl">
-              It isn&apos;t magic. It&apos;s a system.
-            </h2>
-            <p className="mt-5 max-w-md text-balance text-base leading-relaxed text-white/80 sm:text-lg">
-              And a system can be learned, one real scale at a time.
-            </p>
-          </>
-        }
-      >
-        <div className="relative inline-block w-fit">
-          {/* Corner brackets: a targeting-reticle motif around the badge,
-              purely decorative (aria-hidden, pointer-events-none) and
-              positioned slightly outside the pill's own box so it reads as
-              a HUD frame around the badge rather than a border on it. */}
-          <svg
-            aria-hidden
-            className="pointer-events-none absolute -inset-2.5 h-[calc(100%+20px)] w-[calc(100%+20px)] text-[rgb(var(--c-a-400))]"
-            viewBox="0 0 100 40"
-            preserveAspectRatio="none"
-          >
-            <path d="M2 10V2h8" fill="none" stroke="currentColor" strokeWidth="1" />
-            <path d="M90 2h8v8" fill="none" stroke="currentColor" strokeWidth="1" />
-            <path d="M2 30v8h8" fill="none" stroke="currentColor" strokeWidth="1" />
-            <path d="M98 30v8h-8" fill="none" stroke="currentColor" strokeWidth="1" />
-          </svg>
 
-          <div
-            className="inline-flex w-fit items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-sm"
-            style={{ filter: "url(#hero-glass-effect)" }}
-          >
-            <span className="text-sm font-medium tracking-wide text-white/90">
-              Ethiopian Scales, Rhythm &amp; Chords
-            </span>
+          <div className="hh-hero-page hh-fade-up-reveal" data-delay="0.75">
+            Six Scales &middot; Twelve Keys
+          </div>
+
+          <div className="hh-specs">
+            <h3 className="hh-words-pull-up">System Specs</h3>
+            {SPEC_ROWS.map((row) => (
+              <div key={row.label} className="hh-spec-row hh-fade-up-reveal" data-delay={row.delay}>
+                <span className="hh-spec-label">{row.label}</span>
+                <span className="hh-spec-value">{row.value}</span>
+              </div>
+            ))}
           </div>
         </div>
-
-        <h1 className="mt-6 text-balance text-5xl font-bold leading-none tracking-tight text-white sm:text-6xl md:text-7xl">
-          <span className="mb-2 block text-3xl font-light tracking-wide text-[rgb(var(--c-a-300))] sm:text-4xl md:text-5xl">
-            The grammar of
-          </span>
-          <span className="block font-black text-white">Ethiopian</span>
-          <span className="block font-light italic text-white/80">music.</span>
-        </h1>
-
-        <p className="mt-6 max-w-xl text-balance text-base font-light leading-relaxed text-white/70 sm:text-lg">
-          Six kiñit scales (Tizita, Bati, Anchihoye, Mixolydian, and more), spelled correctly in
-          all twelve keys, for piano and guitar. No years of music theory required first.
-        </p>
-
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-          <Link href={isLoggedIn ? "/dashboard" : "/register"} className="btn btn-primary">
-            {isLoggedIn ? "Go to dashboard" : `Start learning for ${formatUsd(CURRICULUM_PRICE_CENTS)}`}
-          </Link>
-          <a href="#curriculum" className="btn btn-secondary">
-            Explore Curriculum
-          </a>
-        </div>
-
-        {/* HUD specs readout: real facts, not decoration. Reuses
-            marketing.css's own `.label` voice (mono, uppercase, tracked,
-            signal accent) rather than a new font, in a row instead of a
-            single eyebrow line. */}
-        <div className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-          {[
-            "6 kiñit scales",
-            "12 keys",
-            "Live 1:1 access",
-            `${Math.round(QUIZ_PASS_THRESHOLD * 100)}% to advance`,
-          ].map((fact) => (
-            <span key={fact} className="label">
-              {fact}
-            </span>
-          ))}
-        </div>
-      </ScrollFrameSequence>
-    </>
+      </div>
+    </div>
   );
 }

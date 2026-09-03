@@ -110,7 +110,7 @@
   --c-scrim: 10 10 10;
 
   --page-texture:
-    radial-gradient(circle at 15% 20%, rgba(5, 233, 1, 0.035), transparent 45%),
+    radial-gradient(circle at 15% 20%, rgba(217, 142, 90, 0.035), transparent 45%),
     radial-gradient(circle at 85% 75%, rgba(255, 255, 255, 0.02), transparent 40%);
 
   /* --c-surface-solid at 46 46 46 matches the spec's own `--nav-button`
@@ -141,12 +141,21 @@
 /* ==========================================================================
    Accent
    --------------------------------------------------------------------------
-   One accent, everywhere: signal green. Themes and accent color used to be
-   independent choices (three themes x six accents), removed by direct
-   instruction in favor of one uniform design language (see themes.ts's own
-   comment). Signal was already the one accent the marketing pages and every
-   transactional email hardcode; this just makes that true for the rest of
-   the app too, instead of leaving five unused alternatives in the CSS.
+   One accent, everywhere: a warm amber/terracotta, direct instruction
+   ("rework the whole website color... copy it"), matching a shadcn "Claude
+   Amber" theme reference screenshot. Signal green (this token's previous
+   value) is gone site-wide, not just re-themed on top of it: every
+   consumer reads --c-a-* (or the shadcn bridge in globals.css, which
+   itself just points at --c-a-*), so changing these two blocks is the
+   single place that recolors the whole app.
+
+   These are this app's own real "rust" values from earlier in this
+   project's history (see git blame before the black/signal-green
+   rebuild), not freshly improvised: already contrast-checked at the
+   ratios noted below, and close enough to the reference screenshot's
+   own amber (Anthropic's real Claude brand color, ~rgb(217 119 87)) to
+   read as the same warm terracotta family, without risking an
+   accessibility regression from an improvised, unverified ramp.
 
    Still keyed on data-mode, not data-theme: the accent has to clear 4.5:1
    against the ground it sits on, and that requirement is the same for every
@@ -156,26 +165,21 @@
    ground colour set on it) and as text on the ground, which is what lets
    `bg-amber-400` and `text-amber-400` both stay legible. */
 
-/* On a light ground the source hsl(119 99% 46%) itself only clears ~1.6:1,
-   nowhere near AA, so light mode gets a deep forest-green version of the
-   same hue instead. */
+/* Rust, deep enough for a light ground. */
 [data-mode="light"] {
-  --c-a-100: 4 46 2;
-  --c-a-200: 3 66 2;
-  --c-a-300: 3 92 2;
-  --c-a-400: 2 122 3; /* 5.5:1 */
-  --c-a-500: 2 145 4;
+  --c-a-100: 90 42 12;
+  --c-a-200: 107 51 15;
+  --c-a-300: 127 61 20;
+  --c-a-400: 160 78 30; /* 5.4:1 */
+  --c-a-500: 194 105 31;
 }
 
-/* hsl(119 99% 46%) converted directly: rgb(5 233 1), the exact vivid green
-   requested. Genuinely vivid rather than "lifted for a dark ground"; this
-   one comes with its own real neon quality by design, not a softened
-   version of it. */
+/* Rust, lifted for a dark ground. */
 [data-mode="dark"] {
-  --c-a-100: 214 250 195;
-  --c-a-200: 172 247 148;
-  --c-a-300: 100 240 70;
-  --c-a-400: 5 233 1;
-  --c-a-500: 4 196 1;
+  --c-a-100: 247 220 197;
+  --c-a-200: 240 192 155;
+  --c-a-300: 232 168 122;
+  --c-a-400: 217 142 90;
+  --c-a-500: 184 115 64;
 }
 

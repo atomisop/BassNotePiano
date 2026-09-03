@@ -46,18 +46,19 @@
   --c-s-900: 41 41 41;      /* recessed surface */
   --c-s-950: 26 26 26;      /* the ground */
 
-  /* ---- Accent ramp: signal green ---------------------------------------
-     hsl(119 99% 46%) converted directly — the same vivid green as
-     `[data-mode="dark"]` (the app's one and only accent). `--c-s-950` on
-     `--c-a-400` clears AA, so the ground colour stays the readable text on
-     the accent, same relationship the app's token bridge already assumes (see
+  /* ---- Accent ramp: warm amber -------------------------------------------
+     Same rust/amber values as `[data-mode="dark"]` in themes.css (the app's
+     one and only accent, changed from signal green by direct instruction to
+     match a shadcn "Claude Amber" reference). `--c-s-950` on `--c-a-400`
+     clears AA, so the ground colour stays the readable text on the accent,
+     same relationship the app's token bridge already assumes (see
      globals.css), so shadcn's `--primary-foreground` keeps working
      untouched. */
-  --c-a-100: 214 250 195;   /* highlight wash */
-  --c-a-200: 172 247 148;   /* hover text */
-  --c-a-300: 100 240 70;    /* accent TEXT */
-  --c-a-400: 5 233 1;       /* CTA fill / accent */
-  --c-a-500: 4 196 1;       /* borders, pressed */
+  --c-a-100: 247 220 197;   /* highlight wash */
+  --c-a-200: 240 192 155;   /* hover text */
+  --c-a-300: 232 168 122;   /* accent TEXT */
+  --c-a-400: 217 142 90;    /* CTA fill / accent */
+  --c-a-500: 184 115 64;    /* borders, pressed */
 
   /* ---- The scrim rule -------------------------------------------------
      Ratios above are against the bare ground. The homepage's real backdrop

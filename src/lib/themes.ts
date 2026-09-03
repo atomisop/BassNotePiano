@@ -12,9 +12,11 @@
  * same warm-neutral ramp, just a more intense blur) rather than a real
  * light/dark alternative, so it's gone rather than promoted; the five
  * non-signal accents are gone entirely rather than kept as unused code.
- * Signal green, already the one accent the marketing pages and every
- * transactional email hardcode, is now the only accent anywhere in the
- * app, so there's nothing left for a picker to choose between.
+ * There's only ever one accent value anywhere in the app now, so there's
+ * nothing left for a picker to choose between; see themes.css's own
+ * "Accent" comment for what that one value currently is and why (it has
+ * changed since this paragraph was first written, most recently to a
+ * warm amber, by direct instruction to match a reference screenshot).
  */
 
 export const CURATED_THEME_IDS = ["paper", "ink"] as const;

@@ -31,13 +31,14 @@ export function PageBackground() {
 
   return (
     <div aria-hidden className="fixed inset-0 -z-10 bg-[#1a1a1a]">
-      {/* Literal hex, not CSS custom properties — the shader canvas can't
-          read `--c-*` at runtime, so these are hand-matched to the new
-          black/signal-green identity (`--c-s-950` #1a1a1a, `--c-a-400`
-          #05e901) rather than the old warm near-black/rust/amber stops. */}
+      {/* Literal hex, not CSS custom properties: the shader canvas can't
+          read --c-* at runtime, so these are hand-matched to the app's
+          current identity (--c-s-950 #1a1a1a, --c-a-400 #D98E5A, a warm
+          amber, changed from signal green by direct instruction to match
+          a reference screenshot). */}
       <MeshGradient
         className="absolute inset-0 h-full w-full"
-        colors={["#1a1a1a", "#0d2e0a", "#145c0a", "#05e901", "#1a1a1a"]}
+        colors={["#1a1a1a", "#2e1f0d", "#5c3d14", "#D98E5A", "#1a1a1a"]}
         speed={reduced ? 0 : 0.3}
       />
       <div
