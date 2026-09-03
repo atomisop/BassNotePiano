@@ -34,6 +34,7 @@ export interface ProfileMenuProps {
 export function ProfileMenu({ name, username, email, image, triggerClassName }: ProfileMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -42,7 +43,13 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
     }
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        // A keyboard user dismissing this needs to land back where they
+        // were, not have focus silently drop to <body> once this panel
+        // unmounts out from under whichever link/button they were on.
+        triggerRef.current?.focus();
+      }
     }
     document.addEventListener("mousedown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
@@ -58,9 +65,9 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
   return (
     <div ref={rootRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         aria-label="Your account"
-        aria-haspopup="menu"
         aria-expanded={open}
         data-tour="nav-profile"
         onClick={() => setOpen((v) => !v)}
@@ -77,8 +84,14 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
       </button>
 
       {open && (
+        // role="region", not "menu": this is plain navigation links plus one
+        // action, not an application menu, and declaring "menu" without also
+        // building full arrow-key roving-tabindex navigation (which a real
+        // ARIA menu obligates) would tell a screen reader user to use arrow
+        // keys that then do nothing. Region just labels the group; the
+        // links/button inside are already correctly accessible as themselves.
         <div
-          role="menu"
+          role="region"
           aria-label="Account menu"
           className="glass-surface-elevated absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 overflow-hidden p-1.5"
         >
@@ -103,7 +116,6 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
 
           <Link
             href="/profile"
-            role="menuitem"
             onClick={() => setOpen(false)}
             className="block rounded-lg px-2.5 py-2 text-sm text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
           >
@@ -111,7 +123,6 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
           </Link>
           <Link
             href="/account"
-            role="menuitem"
             onClick={() => setOpen(false)}
             className="block rounded-lg px-2.5 py-2 text-sm text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
           >
@@ -122,7 +133,6 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
 
           <button
             type="button"
-            role="menuitem"
             onClick={() => signOut({ callbackUrl: "/" })}
             className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200"
           >
