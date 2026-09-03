@@ -16,6 +16,19 @@ interface ScrollFrameSequenceProps {
       fading out, holding, then fading out again before the sequence settles
       (see TEXT2_* constants below), a second beat, not a second hero. */
   secondChildren?: React.ReactNode;
+  /** A decorative layer rendered above the canvas but below the text beats
+      (bottom-anchored, full-width), e.g. a foreground silhouette the
+      hero content peeks over. Static content, rendered once; pair with
+      `onProgress` to animate it yourself via a ref, the same direct-style-
+      mutation approach this component already uses for its own text beats,
+      rather than re-rendering it on every scroll tick. */
+  foreground?: React.ReactNode;
+  /** Called on every scroll update with the current 0-1 progress through the
+      sequence: the same value driving the frame index and text fades.
+      Optional; only needed if a caller wants to drive its own `foreground`
+      animation off this component's own progress calculation, rather than
+      duplicating the driver/scroll math independently. */
+  onProgress?: (progress: number) => void;
   className?: string;
 }
 
@@ -100,10 +113,19 @@ const TEXT2_FADE_OUT_END = 0.8;
  * Ported from the same component already proven in the Lulit app
  * (src/components/landing/scroll-frame-sequence.tsx there); the frame-
  * loading/canvas/scroll mechanics are unchanged. `secondChildren` and its
- * fade choreography are new here, added because this app's own hero needed
- * a second beat the original single-`children` version didn't support.
+ * fade choreography, and `foreground`/`onProgress`, are new here, added
+ * because this app's own hero needed a second beat and a foreground
+ * reveal layer the original single-`children` version didn't support.
  */
-export function ScrollFrameSequence({ basePath, frameCount, children, secondChildren, className }: ScrollFrameSequenceProps) {
+export function ScrollFrameSequence({
+  basePath,
+  frameCount,
+  children,
+  secondChildren,
+  foreground,
+  onProgress,
+  className,
+}: ScrollFrameSequenceProps) {
   const reducedMotion = usePrefersReducedMotion();
   const driverRef = React.useRef<HTMLDivElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
@@ -112,6 +134,16 @@ export function ScrollFrameSequence({ basePath, frameCount, children, secondChil
   const imagesRef = React.useRef<(HTMLImageElement | undefined)[]>([]);
   const lastDrawnRef = React.useRef<number>(-1);
   const [canvasReady, setCanvasReady] = React.useState(false);
+
+  // Latest callback in a ref, read inside the scroll effect instead of
+  // closed over directly: a caller almost certainly passes this inline
+  // (a fresh function every render), and putting it in that effect's own
+  // dependency array would tear down and rebuild the whole thing, frame
+  // preloading included, on every one of the parent's re-renders.
+  const onProgressRef = React.useRef(onProgress);
+  React.useEffect(() => {
+    onProgressRef.current = onProgress;
+  });
 
   const posterSrc = frameSrc(basePath, 0);
 
@@ -183,6 +215,8 @@ export function ScrollFrameSequence({ basePath, frameCount, children, secondChil
         text2Ref.current.style.transform = `translateY(${(1 - opacity2) * 16}px)`;
         text2Ref.current.style.pointerEvents = opacity2 > 0.5 ? "auto" : "none";
       }
+
+      onProgressRef.current?.(progress);
 
       drawIndex(Math.round(progress * (frameCount - 1)));
     }
@@ -267,6 +301,11 @@ export function ScrollFrameSequence({ basePath, frameCount, children, secondChil
         />
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" aria-hidden />
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/5 to-black/35" aria-hidden />
+        {/* Between the scrim and the text on purpose: sits in front of the
+            piano image, behind whichever text beat is currently showing, so
+            a foreground silhouette can visually sit "under" the headline
+            the same way it would if it were a real object in the scene. */}
+        {foreground}
         {/* Both beats stacked in the exact same spot (absolute, not flex
             siblings) so the crossfade reads as one beat replacing the other
             in place, not two blocks side by side or one pushing the other

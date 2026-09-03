@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
@@ -33,6 +34,14 @@ import { ScrollFrameSequence } from "@/components/marketing/ScrollFrameSequence"
  * positioning elsewhere on the page (Solution.tsx's "spelling engine",
  * ProblemStatement's "grammar underneath") rather than being decorative.
  *
+ * MOUNTAIN is new: a soft hill silhouette sitting across the bottom of the
+ * viewport at rest, covering the paragraph/CTA row (the headline itself
+ * stays clear, above its ridge). The first few percent of scroll slides it
+ * fully out of view, "rising up and over" it to reveal the rest of the
+ * hero, per direct instruction ("a behind the mountain effect"). It's
+ * `pointer-events: none` throughout, so the CTA underneath is genuinely
+ * clickable even before that reveal happens, not just visually blocked.
+ *
  * What's still gone, and stays gone: the demo-derived nav/logo/login-button
  * chrome this file never carried in the first place, the corner accent
  * treatment now living on the Atom assistant widget instead, and the old
@@ -46,9 +55,16 @@ function formatUsd(cents: number) {
   });
 }
 
+/** How much of the sequence's own scroll progress the mountain's exit spans.
+ * Short and early on purpose: this is meant to resolve almost as soon as
+ * scrolling starts, well before TEXT_FADE_END (0.35 in ScrollFrameSequence)
+ * even begins pulling the rest of this content away. */
+const MOUNTAIN_REVEAL_END = 0.1;
+
 export function Hero() {
   const { data: session } = useSession();
   const isLoggedIn = Boolean(session?.user);
+  const mountainRef = useRef<HTMLDivElement>(null);
 
   return (
     <>
@@ -71,6 +87,37 @@ export function Hero() {
       <ScrollFrameSequence
         basePath="/piano-reveal"
         frameCount={65}
+        onProgress={(progress) => {
+          const el = mountainRef.current;
+          if (!el) return;
+          const t = Math.min(1, progress / MOUNTAIN_REVEAL_END);
+          // Eased (t*t, not linear) so it starts the slide slowly, giving the
+          // very first pixels of scroll a moment to register as intentional
+          // before the hill visibly moves, then accelerates away.
+          const eased = t * t;
+          el.style.transform = `translateY(${eased * 100}%)`;
+          el.style.pointerEvents = "none";
+        }}
+        foreground={
+          <div
+            ref={mountainRef}
+            aria-hidden
+            className="absolute inset-x-0 bottom-0 h-[50vh] min-h-[340px] sm:h-[54vh]"
+            style={{ pointerEvents: "none" }}
+          >
+            <svg
+              viewBox="0 0 1440 600"
+              preserveAspectRatio="none"
+              className="h-full w-full"
+              style={{ color: "rgb(var(--c-s-950))" }}
+            >
+              <path
+                d="M0,600 L0,320 C 250,180 400,80 620,120 C 850,160 1000,60 1440,100 L1440,600 Z"
+                fill="currentColor"
+              />
+            </svg>
+          </div>
+        }
         secondChildren={
           <>
             <p className="mb-4 text-xs font-medium uppercase tracking-[0.3em] text-white/70">Under the lid</p>
