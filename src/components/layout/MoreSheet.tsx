@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { signOut } from "next-auth/react";
 import { NavIcon, ICON_PATHS } from "./navIcons";
 import { useDismissDrag } from "@/lib/useDismissDrag";
+import { setFullscreenNavOpen } from "@/lib/overlayNav";
 
 interface MoreItem {
   href: string;
@@ -35,6 +36,13 @@ export function MoreSheet({ open, onClose, isAdmin }: { open: boolean; onClose: 
   useEffect(() => {
     if (open) dismiss.offset.set(0);
   }, [open, dismiss.offset]);
+
+  // Tells Atom (portaled separately, straight to document.body) to hide
+  // its launcher while this is open — see lib/overlayNav.ts.
+  useEffect(() => {
+    setFullscreenNavOpen(open);
+    return () => setFullscreenNavOpen(false);
+  }, [open]);
 
   if (!mounted) return null;
 

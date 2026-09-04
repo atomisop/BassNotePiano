@@ -207,7 +207,7 @@ function ResetPasswordForm() {
           </p>
         )}
 
-        <Button type="submit" disabled={submitting || code.length !== 6} className="cta-sheen w-full">
+        <Button type="submit" disabled={code.length !== 6} loading={submitting} className="cta-sheen w-full">
           {submitting ? "Resetting…" : "Reset password"}
         </Button>
       </motion.form>

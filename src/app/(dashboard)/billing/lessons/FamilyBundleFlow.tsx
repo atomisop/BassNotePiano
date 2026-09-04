@@ -337,8 +337,9 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         type="button"
         onClick={handleContinue}
         disabled={!canSubmit}
-        className="cta-sheen cta-fill w-full rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
       >
+        {loading && <SpinnerIcon className="mr-2" size={14} />}
         {loading ? "Loading…" : `Continue to payment · ${formatUsd(total.totalCents)}`}
       </button>
       {!allRowsVerified && (

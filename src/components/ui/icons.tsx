@@ -37,6 +37,21 @@ export function CheckIcon({ className, size = 14 }: { className?: string; size?:
  * button is exactly the "repetitive movement" `prefers-reduced-motion`
  * exists to suppress, and this is otherwise the one icon here that would
  * ignore it — the other three are static marks.
+ *
+ * Stroked in the same pink→orange gradient as the `loader-15` ui
+ * component (Atom's icon, `components/ui/loader-15.tsx`) rather than
+ * `currentColor` — this is the app's one loading glyph (`Button`'s
+ * `loading` prop renders it, and every "still screen while something
+ * loads" fix uses it directly), so it carries that same identity
+ * everywhere it appears instead of inheriting whatever text color
+ * happens to surround it.
+ *
+ * The gradient `id` is a fixed literal, not `useId()`-generated: this
+ * file has no "use client" directive (icons here are plain functions with
+ * no hooks, so they stay safe to import from Server Components), and
+ * every instance defines the exact same gradient anyway — a duplicate id
+ * resolves to an equivalent definition, so two spinners on screen at once
+ * still render correctly.
  */
 export function SpinnerIcon({ className, size = 14 }: { className?: string; size?: number }) {
   return (
@@ -48,8 +63,14 @@ export function SpinnerIcon({ className, size = 14 }: { className?: string; size
       className={cn("motion-safe:animate-spin", className)}
       aria-hidden
     >
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" opacity="0.25" />
-      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+      <defs>
+        <linearGradient id="bnp-spinner-gradient" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#f700a8" />
+          <stop offset="1" stopColor="#ff8000" />
+        </linearGradient>
+      </defs>
+      <circle cx="12" cy="12" r="9" stroke="url(#bnp-spinner-gradient)" strokeWidth="2.5" opacity="0.25" />
+      <path d="M21 12a9 9 0 0 0-9-9" stroke="url(#bnp-spinner-gradient)" strokeWidth="2.5" strokeLinecap="round" />
     </svg>
   );
 }

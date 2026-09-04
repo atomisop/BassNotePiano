@@ -9,6 +9,7 @@ import { useSession, signOut } from "next-auth/react";
 import { DiscordIcon } from "@/components/ui/icons";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { ProfileMenu } from "@/components/layout/ProfileMenu";
+import { setFullscreenNavOpen } from "@/lib/overlayNav";
 
 /**
  * The homepage header.
@@ -87,6 +88,13 @@ export function MarketingNav() {
     return () => {
       document.body.style.overflow = previous;
     };
+  }, [menuOpen]);
+
+  // Tells Atom (portaled separately, straight to document.body) to hide
+  // its launcher while this is open — see lib/overlayNav.ts.
+  useEffect(() => {
+    setFullscreenNavOpen(menuOpen);
+    return () => setFullscreenNavOpen(false);
   }, [menuOpen]);
 
   // Escape closes, because a full-screen overlay that only has a visual
