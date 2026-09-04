@@ -120,7 +120,7 @@ function LoginForm() {
           </p>
         )}
 
-        <Button type="submit" disabled={submitting} className="cta-sheen w-full">
+        <Button type="submit" loading={submitting} className="cta-sheen w-full">
           {submitting ? "Logging in…" : "Continue"}
         </Button>
       </motion.form>

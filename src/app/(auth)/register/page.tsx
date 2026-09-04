@@ -201,7 +201,7 @@ function RegisterForm() {
           </p>
         )}
 
-        <Button type="submit" disabled={submitting} className="cta-sheen w-full">
+        <Button type="submit" loading={submitting} className="cta-sheen w-full">
           {submitting ? "Creating account…" : "Create account"}
         </Button>
       </motion.form>

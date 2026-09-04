@@ -137,7 +137,7 @@ function VerifyEmailForm() {
           </p>
         )}
 
-        <Button type="submit" disabled={submitting || code.length !== 6} className="cta-sheen w-full">
+        <Button type="submit" disabled={code.length !== 6} loading={submitting} className="cta-sheen w-full">
           {submitting ? "Verifying…" : "Verify"}
         </Button>
       </form>

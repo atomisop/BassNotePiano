@@ -6,6 +6,7 @@ import type { LessonMediaType } from "@prisma/client";
 import type { CourseLesson } from "@/lib/courseContent";
 import { FileDropzone } from "@/components/ui/FileDropzone";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { SpinnerIcon } from "@/components/ui/icons";
 
 interface PresignedUpload {
   uploadUrl: string;
@@ -245,8 +246,9 @@ export function AdminLessonManager({
           <button
             type="submit"
             disabled={uploading}
-            className="cta-sheen cta-fill w-full rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
+            {uploading && <SpinnerIcon className="mr-2" size={14} />}
             {uploading ? "Uploading…" : "Upload"}
           </button>
         </form>
