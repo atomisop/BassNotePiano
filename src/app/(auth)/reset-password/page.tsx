@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
-import { CheckIcon } from "@/components/ui/icons";
+import { CheckIcon, ArrowLeftIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
@@ -103,6 +103,14 @@ function ResetPasswordForm() {
       animate="visible"
       className="w-full max-w-sm glass-surface-elevated p-7"
     >
+      {/* Codes get mistyped, or someone starts this flow and changes their
+          mind about which account to sign into. The only way out used to
+          be the logo up in the layout header, which leaves the whole
+          reset flow for the marketing homepage rather than back to login. */}
+      <Link href="/login" className="mb-4 flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-300">
+        <ArrowLeftIcon size={16} />
+        Back to login
+      </Link>
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Reset password</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Choose a new password</h1>
       <p className="mt-2 text-sm text-slate-500">

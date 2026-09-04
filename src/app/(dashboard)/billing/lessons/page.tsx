@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getServerAuthSession } from "@/lib/auth";
 import { MIN_CUSTOM_QUANTITY, MAX_CUSTOM_QUANTITY } from "@/lib/classCreditPricing";
+import { ArrowLeftIcon } from "@/components/ui/icons";
 import { ClassCreditPurchaseFlow } from "./ClassCreditPurchaseFlow";
 
 export default async function BillingLessonsPage({ searchParams }: { searchParams: { quantity?: string; mode?: string } }) {
@@ -31,6 +33,16 @@ export default async function BillingLessonsPage({ searchParams }: { searchParam
     // next one, and a lone narrow card floating on an otherwise-empty wide
     // page looked unfinished once the rest of the app got fuller.
     <div className="w-full max-w-5xl lg:grid lg:grid-cols-12 lg:gap-12">
+      {/* The "Buy credits" CTA on /lessons is this page's real, primary
+          entry point (also linked from pricing/account, but booking is
+          where running low on credits actually comes up). */}
+      <Link
+        href="/lessons"
+        className="mb-4 flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100 lg:col-span-12"
+      >
+        <ArrowLeftIcon size={16} />
+        Back to classes
+      </Link>
       <div className="lg:col-span-5">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Weekly Classes</p>
         <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Buy class credits</h1>

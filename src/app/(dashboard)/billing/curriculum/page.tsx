@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getServerAuthSession } from "@/lib/auth";
 import { getOrCreatePendingCurriculumPayment } from "@/lib/payments";
 import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
 import { CurriculumConsentGate } from "@/components/billing/CurriculumConsentGate";
-import { CheckIcon } from "@/components/ui/icons";
+import { CheckIcon, ArrowLeftIcon } from "@/components/ui/icons";
 import { submitCurriculumPaymentAction } from "./actions";
 
 const BENEFITS = [
@@ -32,6 +33,16 @@ export default async function BillingCurriculumPage({ searchParams }: { searchPa
     // its own on the right instead of everything stacked in one narrow
     // max-w-sm column.
     <div className="w-full max-w-4xl lg:grid lg:grid-cols-12 lg:gap-12">
+      {/* Reached from the dashboard roadmap's "Unlock the curriculum" step
+          (see ScaleRoadmap.tsx) and from /billing/lessons's own redirect
+          above; dashboard covers both without needing to track a referrer. */}
+      <Link
+        href="/dashboard"
+        className="mb-4 flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100 lg:col-span-12"
+      >
+        <ArrowLeftIcon size={16} />
+        Back to roadmap
+      </Link>
       <div className="lg:col-span-6">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Curriculum</p>
         <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Unlock the full curriculum</h1>

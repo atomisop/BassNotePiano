@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import type { PublicQuizQuestion, QuizAnswerSubmission } from "@/lib/quiz";
@@ -272,6 +273,13 @@ export function CoursePlayer({
   // ============ List view (default) ============
   return (
     <div className="mx-auto max-w-3xl">
+      {/* The lesson view below has its own "Back to sections" link, but
+          that only ever returns here: this top-level list had no way back
+          to the roadmap it was opened from at all. */}
+      <Link href="/dashboard" className="mb-4 flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100">
+        <ArrowLeftIcon size={16} />
+        Back to roadmap
+      </Link>
       <div className="glass-surface p-6 sm:p-7">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">{scaleGroup.code}</p>
         <h1 className="mt-1.5 font-serif text-3xl text-slate-50">{scaleGroup.title}</h1>

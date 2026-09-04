@@ -41,13 +41,23 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isAdmin = session.user.role === "ADMIN";
 
   return (
-    <div className="relative flex h-screen overflow-hidden bg-slate-950">
+    <div className="relative flex h-dvh overflow-hidden bg-slate-950">
       {/* No photographic backdrop behind the app shell, deliberately. The
           previous system wallpapered every authenticated page with a piano
           photo; on paper that reads as a smudge under the text rather than
           atmosphere, and it forced a heavy scrim that muddied every surface
           sitting on it. Photography now appears only where it is the subject
           (the marketing pages), never as a bed for UI. */}
+      {/* h-dvh, not h-screen: same reasoning as marketing.css's own
+          `--stage-height`. On a real phone/tablet, `100vh` is measured
+          against the tallest the browser chrome ever gets, not what's
+          actually visible once Safari's toolbar is showing. That gap is
+          exactly why the bottom dock could end up clipped below the real,
+          currently-visible viewport (worst in landscape, where the toolbar
+          eats a bigger share of a shorter screen), and why `main`'s own
+          scroll area (`overflow-y-auto` below) never had a scrollbar
+          on-screen to reveal the difference. `dvh` tracks the real,
+          current viewport instead of the theoretical maximum. */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <TopBar />
         <AnnouncementBanner announcement={activeAnnouncement} />

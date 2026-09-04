@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getServerAuthSession } from "@/lib/auth";
 import { getUserPaymentHistory } from "@/lib/payments";
 import { calculateClassCreditTotal } from "@/lib/classCreditPricing";
+import { ArrowLeftIcon } from "@/components/ui/icons";
 
 const STATUS_LABEL: Record<string, string> = {
   AWAITING_TRANSFER: "Awaiting transfer",
@@ -58,6 +60,10 @@ export default async function BillingHistoryPage() {
 
   return (
     <div className="w-full max-w-lg">
+      <Link href="/account" className="mb-4 flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100">
+        <ArrowLeftIcon size={16} />
+        Back to settings
+      </Link>
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Billing</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Payment history</h1>
       <p className="mt-2 text-sm text-slate-500">

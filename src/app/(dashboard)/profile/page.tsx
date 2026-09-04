@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isObjectStorageConfigured } from "@/lib/storage";
 import { BadgeGrid } from "@/components/gamification/BadgeGrid";
 import { StreakDots } from "@/components/gamification/StreakDots";
 import { BADGES } from "@/lib/badges";
+import { ArrowLeftIcon } from "@/components/ui/icons";
 import { ProfileEditButton } from "./ProfileEditButton";
 
 export default async function ProfilePage() {
@@ -34,6 +36,18 @@ export default async function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-3xl">
+      {/* Profile isn't a dock destination. It's opened from the account
+          menu in the top bar, from any of several other pages, or from a
+          friend's own profile link, so there's no single page it "belongs"
+          to. Back to the roadmap rather than guessing a referrer, so this
+          never reads as a dead end reachable only via the dock icons. */}
+      <Link
+        href="/dashboard"
+        className="mb-4 flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100"
+      >
+        <ArrowLeftIcon size={16} />
+        Back to roadmap
+      </Link>
       <div className="flex items-center gap-4">
         <div className="h-16 w-16 overflow-hidden rounded-full border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.1)]">
           {user.image ? (

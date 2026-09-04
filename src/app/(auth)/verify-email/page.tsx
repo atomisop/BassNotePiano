@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ArrowLeftIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { verifyEmailAction, resendVerificationEmailAction } from "./actions";
@@ -84,6 +85,13 @@ function VerifyEmailForm() {
       animate="visible"
       className="w-full max-w-sm glass-surface-elevated p-7"
     >
+      {/* Matches the "missing email" branch's own escape hatch below:
+          register, not login, since there's no verified account to log
+          into yet at this step. */}
+      <Link href="/register" className="mb-4 flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-300">
+        <ArrowLeftIcon size={16} />
+        Back
+      </Link>
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Almost there</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Verify your email</h1>
       <p className="mt-2 text-sm text-slate-500">

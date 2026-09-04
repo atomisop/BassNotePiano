@@ -1,12 +1,13 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { TermsContent, TERMS_LAST_UPDATED } from "@/components/legal/TermsContent";
 import { PrivacyContent, PRIVACY_LAST_UPDATED } from "@/components/legal/PrivacyContent";
 import { CHANGELOG, CURRENT_VERSION } from "@/lib/changelog";
-import { CheckIcon } from "@/components/ui/icons";
+import { CheckIcon, ArrowLeftIcon } from "@/components/ui/icons";
 
 const TAB_ICONS = {
   about: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 7.5h.01",
@@ -180,6 +181,11 @@ function AboutClientInner() {
 
   return (
     <div className="mx-auto max-w-4xl">
+      {/* Only ever linked from Settings, see AccountSettings.tsx. */}
+      <Link href="/account" className="mb-4 flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100">
+        <ArrowLeftIcon size={16} />
+        Back to settings
+      </Link>
       <div>
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Info</p>
         <h1 className="mt-1.5 font-serif text-2xl text-slate-50">About</h1>
