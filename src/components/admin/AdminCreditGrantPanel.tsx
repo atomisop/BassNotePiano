@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { CreditUserSearchRow, CreditAdjustmentRow } from "@/lib/creditAdjustments";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 
 interface RecentAdjustmentRow {
   id: string;
@@ -249,8 +250,9 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                       type="button"
                       onClick={handleConfirm}
                       disabled={submitting}
-                      className="cta-sheen cta-fill flex-1 rounded-lg py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                      className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
                     >
+                      {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {submitting ? "Applying…" : "Confirm"}
                     </button>
                   </div>

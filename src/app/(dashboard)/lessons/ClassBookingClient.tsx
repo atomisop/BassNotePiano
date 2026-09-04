@@ -6,6 +6,7 @@ import { bookClassAction, bookClassBundleAction, bookFamilyClassAction, checkFam
 import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { CheckIcon, XIcon } from "@/components/ui/icons";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 
 interface OccurrenceRow {
   scheduleId: string;
@@ -150,8 +151,9 @@ function BookingCard({
             type="button"
             onClick={() => onCancel(b)}
             disabled={cancelingId === b.id}
-            className="rounded-lg border border-red-400/20 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex items-center justify-center rounded-lg border border-red-400/20 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
+            {cancelingId === b.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {cancelingId === b.id ? "Canceling…" : "Cancel"}
           </button>
         )}
@@ -649,8 +651,9 @@ export function ClassBookingClient({
               type="button"
               onClick={handleBookBundle}
               disabled={bundleSubmitting || selectedExceedsBalance}
-              className="cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+              className="cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
             >
+              {bundleSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
               {bundleSubmitting ? "Booking…" : `Book ${selectedRows.length} class${selectedRows.length === 1 ? "" : "es"}`}
             </button>
           </div>
@@ -698,8 +701,9 @@ export function ClassBookingClient({
                 type="button"
                 onClick={handleBookFamily}
                 disabled={!familyAllVerified || familySubmitting}
-                className="cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                className="cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
               >
+                {familySubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {familySubmitting ? "Booking…" : `Book for ${familyEmailsTrimmed.length || familyMinAttendees} students`}
               </button>
             </div>
@@ -805,8 +809,9 @@ export function ClassBookingClient({
                             type="button"
                             onClick={() => handleBook(row)}
                             disabled={disabled}
-                            className="shrink-0 rounded-lg border border-[rgb(var(--c-a-400)/0.4)] px-4 py-2 text-xs font-semibold text-[rgb(var(--c-a-300))] transition hover:border-[rgb(var(--c-a-400))] hover:bg-[rgb(var(--c-a-400)/0.1)] disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
+                            className="flex shrink-0 items-center justify-center rounded-lg border border-[rgb(var(--c-a-400)/0.4)] px-4 py-2 text-xs font-semibold text-[rgb(var(--c-a-300))] transition hover:border-[rgb(var(--c-a-400))] hover:bg-[rgb(var(--c-a-400)/0.1)] disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
                           >
+                            {bookingKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                             {bookingKey === key ? "Booking…" : row.isBooked ? "Booked" : insufficientCredits ? "Not enough credits" : "Book"}
                           </button>
                         ) : (

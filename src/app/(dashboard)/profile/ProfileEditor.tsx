@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
 import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 import {
   updateNameAction,
   updateAvatarAction,
@@ -270,8 +271,9 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
         type="button"
         onClick={handleSave}
         disabled={submitting}
-        className="cta-sheen cta-fill mt-4 rounded-lg px-4 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        className="cta-sheen cta-fill mt-4 flex items-center justify-center rounded-lg px-4 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
       >
+        {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
         {submitting ? "Saving…" : "Save"}
       </button>
     </SectionCard>
@@ -348,8 +350,9 @@ function AvatarSection({
             type="button"
             disabled={uploading || !storageConfigured}
             onClick={() => fileInputRef.current?.click()}
-            className="cta-sheen rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-ink/20 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen flex items-center justify-center rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-ink/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
+            {uploading && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {uploading ? "Uploading…" : "Choose new photo"}
           </button>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
@@ -398,8 +401,9 @@ function NameSection({ initialName, onDone }: { initialName: string | null; onDo
         <button
           type="submit"
           disabled={submitting || name.trim() === (initialName ?? "")}
-          className="cta-sheen cta-fill rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
+          {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Saving…" : "Save"}
         </button>
       </form>
@@ -447,8 +451,9 @@ function UsernameSection({ initialUsername }: { initialUsername: string | null }
         <button
           type="submit"
           disabled={submitting || username.trim() === (initialUsername ?? "")}
-          className="cta-sheen cta-fill rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
+          {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Saving…" : "Save"}
         </button>
       </form>

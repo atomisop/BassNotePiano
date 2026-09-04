@@ -69,7 +69,24 @@ export default function Loader({ size = 200, className }: { size?: number; class
 
       <style jsx>{`
         .gegga {
+          /* Exists only to hold the <filter> definition <snurra> references
+             by url(#id), never meant to be seen or take up room. width: 0
+             alone wasn't enough: an <svg> with no explicit height defaults
+             to the browser's replaced-element fallback (150px), and that
+             real height stacked above the visible icon in normal flow,
+             overflowing well past the 32-60px circle everywhere Loader is
+             used (confirmed live: Atom's launcher and its chat-panel
+             header icon both spilled a blurred blob down past their own
+             bounds). position: absolute pulls it out of flow entirely, and
+             the explicit 0×0 plus overflow: hidden means even a browser
+             that ignores one of those still can't render anything from it.
+             Filter references to an off-flow, zero-size element still
+             resolve correctly; only paint, not layout participation, is
+             affected. */
+          position: absolute;
           width: 0;
+          height: 0;
+          overflow: hidden;
         }
         .snurra {
           filter: url(#${filterId});

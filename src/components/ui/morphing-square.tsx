@@ -37,18 +37,35 @@ export interface MorphingSquareProps {
    * @default bottom
    */
   messagePlacement?: "top" | "bottom" | "left" | "right";
+  /**
+   * Side length in pixels. The original component was a standalone
+   * 40px block; most call sites here are an icon sitting inline next to
+   * button text ("Saving…", "Uploading…"), so this needs to shrink much
+   * further than a Tailwind size class alone would cleanly express.
+   * @default 40
+   */
+  size?: number;
 }
 
 export function MorphingSquare({
   className,
   message,
   messagePlacement = "bottom",
+  size = 40,
+  style,
   ...props
 }: HTMLMotionProps<"div"> & MorphingSquareProps) {
   return (
     <div className={cn(morphingSquareVariants({ messagePlacement }))}>
       <motion.div
-        className={cn("w-10 h-10 bg-foreground", className)}
+        // bg-current, not bg-foreground: bg-foreground resolves to a fixed
+        // near-white (--foreground: --c-s-50) regardless of context, which
+        // read wrong sitting next to dark text on this app's bright-green
+        // filled buttons. currentColor instead means every call site gets
+        // a square that matches whatever text color it's already sitting
+        // next to, with no per-site color prop to remember to set.
+        className={cn("bg-current", className)}
+        style={{ width: size, height: size, ...style }}
         animate={{
           borderRadius: ["6%", "50%", "6%"],
           rotate: [0, 180, 360],

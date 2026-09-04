@@ -59,6 +59,221 @@ function relativeTime(iso: string): string {
   return `${days}d ago`;
 }
 
+// ---------------------------------------------------------------------------
+// Grouping: Today/Yesterday/This week/Earlier sections, and within each,
+// consecutive notifications from the same category collapsed into one
+// stacked card (iOS's own Notification Center: grouped by app, ordered by
+// recency). There's no per-notification sender in the data model (a
+// friend request doesn't record which friend, e.g.), so "who sent it" here
+// means a recognizable category (Billing, Friends, Announcements) rather
+// than a literal name.
+// ---------------------------------------------------------------------------
+
+const CATEGORY_ICONS = {
+  billing: "M12.59 2.59L21 11l-9 9-8.41-8.41A2 2 0 013 10.17V4a1 1 0 011-1h6.17a2 2 0 011.42.59zM7 7h.01",
+  account:
+    "M10.3 3.3c.3-1 1.7-1 2 0l.2.7c.2.6.8 1 1.4.8l.7-.2c1-.3 1.8.7 1.3 1.6l-.4.6c-.3.5-.1 1.2.4 1.5l.6.4c.9.5.9 1.9 0 2.4l-.6.4c-.5.3-.7 1-.4 1.5l.4.6c.5.9-.3 1.9-1.3 1.6l-.7-.2c-.6-.2-1.2.2-1.4.8l-.2.7c-.3 1-1.7 1-2 0l-.2-.7c-.2-.6-.8-1-1.4-.8l-.7.2c-1 .3-1.8-.7-1.3-1.6l.4-.6c.3-.5.1-1.2-.4-1.5l-.6-.4c-.9-.5-.9-1.9 0-2.4l.6-.4c.5-.3.7-1 .4-1.5l-.4-.6c-.5-.9.3-1.9 1.3-1.6l.7.2c.6.2 1.2-.2 1.4-.8l.2-.7z",
+  friends: "M8 11a3 3 0 100-6 3 3 0 000 6zM3 20c0-3.3 2.7-6 6-6M17 11a3 3 0 100-6 3 3 0 000 6zM13.5 14c2.9.3 5.5 2.8 5.5 6",
+  reminders: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 3",
+  registrations: "M9 12h6M9 16h6M9 8h1M7 3h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z",
+  bookings: "M8 3v3M16 3v3M4 9h16M5 6h14a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1zM9 14l2 2 4-4",
+  announcements:
+    "M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5z",
+  support: "M4 5.5A1.5 1.5 0 015.5 4h13A1.5 1.5 0 0120 5.5v9a1.5 1.5 0 01-1.5 1.5H9l-5 4v-4H5.5A1.5 1.5 0 014 14.5v-9z",
+} as const;
+
+type CategoryKey = keyof typeof CATEGORY_ICONS;
+
+const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>> = {
+  PAYMENT_APPROVED: { key: "billing", label: "Billing" },
+  PAYMENT_REJECTED: { key: "billing", label: "Billing" },
+  CREDIT_ADJUSTED: { key: "billing", label: "Billing" },
+  ROLE_UPDATED: { key: "account", label: "Account" },
+  FRIEND_REQUEST_RECEIVED: { key: "friends", label: "Friends" },
+  FRIEND_REQUEST_ACCEPTED: { key: "friends", label: "Friends" },
+  PRACTICE_REMINDER: { key: "reminders", label: "Reminders" },
+  CLASS_REGISTRATION_RECEIVED: { key: "registrations", label: "Class registrations" },
+  CLASS_REGISTRATION_APPROVED: { key: "registrations", label: "Class registrations" },
+  CLASS_REGISTRATION_REJECTED: { key: "registrations", label: "Class registrations" },
+  LESSON_BOOKING_RECEIVED: { key: "bookings", label: "Bookings" },
+  LESSON_BOOKING_CANCELED: { key: "bookings", label: "Bookings" },
+  ANNOUNCEMENT: { key: "announcements", label: "Announcements" },
+  ASSISTANT_ESCALATION: { key: "support", label: "Support requests" },
+};
+
+function categoryFor(type: string): { key: CategoryKey; label: string } {
+  return TYPE_CATEGORY[type] ?? { key: "account", label: "Updates" };
+}
+
+function startOfDay(d: Date): number {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
+const SECTION_ORDER = ["Today", "Yesterday", "This week", "Earlier"] as const;
+type SectionLabel = (typeof SECTION_ORDER)[number];
+
+function sectionFor(iso: string): SectionLabel {
+  const diffDays = Math.round((startOfDay(new Date()) - startOfDay(new Date(iso))) / 86_400_000);
+  if (diffDays <= 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return "This week";
+  return "Earlier";
+}
+
+interface NotificationCluster {
+  /** The most recent item's own id, stable across polls as long as nothing in the cluster changes. */
+  key: string;
+  categoryKey: CategoryKey;
+  categoryLabel: string;
+  items: NotificationRow[];
+}
+
+interface NotificationSection {
+  label: SectionLabel;
+  clusters: NotificationCluster[];
+}
+
+/**
+ * `notifications` arrives newest-first already. Bucket by day, then within
+ * each day collapse consecutive same-category runs into one cluster:
+ * consecutive, not "every match anywhere in the list," so two Billing
+ * notifications either side of a Friends one stay two separate entries in
+ * their real chronological order, rather than merging out of sequence.
+ */
+function groupNotifications(notifications: NotificationRow[]): NotificationSection[] {
+  const byDay = new Map<SectionLabel, NotificationRow[]>();
+  for (const n of notifications) {
+    const label = sectionFor(n.createdAt);
+    (byDay.get(label) ?? byDay.set(label, []).get(label)!).push(n);
+  }
+
+  const sections: NotificationSection[] = [];
+  for (const label of SECTION_ORDER) {
+    const items = byDay.get(label);
+    if (!items?.length) continue;
+
+    const clusters: NotificationCluster[] = [];
+    for (const n of items) {
+      const category = categoryFor(n.type);
+      const current = clusters[clusters.length - 1];
+      if (current?.categoryKey === category.key) {
+        current.items.push(n);
+      } else {
+        clusters.push({ key: n.id, categoryKey: category.key, categoryLabel: category.label, items: [n] });
+      }
+    }
+    sections.push({ label, clusters });
+  }
+  return sections;
+}
+
+function CategoryIcon({ path }: { path: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden>
+      <path d={path} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** One notification, however it's reached: a top-level row or expanded out of a stack. Pulled out so both places render it identically. */
+function NotificationEntry({ notification, onClick }: { notification: NotificationRow; onClick: (n: NotificationRow) => void }) {
+  const itemClassName =
+    "flex w-full items-start gap-3 rounded-xl border border-ink/10 bg-surface px-4 py-3.5 text-left transition hover:bg-ink/5";
+  const inner = (
+    <>
+      <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${notification.read ? "bg-transparent" : "bg-[rgb(var(--c-a-400))]"}`} />
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium text-slate-100">{notification.title}</span>
+        {notification.body && <span className="mt-0.5 block text-sm text-slate-500">{notification.body}</span>}
+        <span className="mt-1.5 block text-xs text-slate-600">{relativeTime(notification.createdAt)}</span>
+      </span>
+    </>
+  );
+  const href = notificationHref(notification.type);
+
+  if (href) {
+    return (
+      <Link href={href} onClick={() => onClick(notification)} className={itemClassName}>
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <button type="button" onClick={() => onClick(notification)} className={itemClassName}>
+      {inner}
+    </button>
+  );
+}
+
+/**
+ * A collapsed run of same-category notifications, styled as a physical
+ * stack the way iOS groups notifications from one app: two faint card
+ * edges peek out behind the front one, capped at two regardless of how
+ * many are actually in the group (a third edge wouldn't read as "more,"
+ * just cluttered). Tapping the card expands it into the individual
+ * entries beneath, each still independently clickable/markable-read.
+ */
+function NotificationGroup({
+  cluster,
+  expanded,
+  onToggle,
+  onItemClick,
+}: {
+  cluster: NotificationCluster;
+  expanded: boolean;
+  onToggle: () => void;
+  onItemClick: (n: NotificationRow) => void;
+}) {
+  const { items, categoryKey, categoryLabel } = cluster;
+  const latest = items[0]!;
+  const hasUnread = items.some((n) => !n.read);
+
+  return (
+    <div>
+      <div className="relative">
+        {!expanded && (
+          <>
+            <div className="absolute inset-x-2 -top-1.5 h-full rounded-xl border border-ink/10 bg-surface/60" aria-hidden />
+            {items.length > 2 && (
+              <div className="absolute inset-x-4 -top-3 h-full rounded-xl border border-ink/10 bg-surface/40" aria-hidden />
+            )}
+          </>
+        )}
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={expanded}
+          className="relative flex w-full items-start gap-3 rounded-xl border border-ink/10 bg-surface px-4 py-3.5 text-left transition hover:bg-ink/5"
+        >
+          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-a-400)/0.12)] text-[rgb(var(--c-a-300))]">
+            <CategoryIcon path={CATEGORY_ICONS[categoryKey]} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2">
+              <span className="text-sm font-medium text-slate-100">{categoryLabel}</span>
+              <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">{items.length}</span>
+              {hasUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[rgb(var(--c-a-400))]" aria-hidden />}
+            </span>
+            <span className="mt-0.5 block truncate text-sm text-slate-500">{latest.title}</span>
+            <span className="mt-1.5 block text-xs text-slate-600">{relativeTime(latest.createdAt)}</span>
+          </span>
+          <svg viewBox="0 0 24 24" fill="none" className={`mt-1 h-4 w-4 shrink-0 text-slate-600 transition-transform ${expanded ? "rotate-90" : ""}`} aria-hidden>
+            <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
+
+      {expanded && (
+        <div className="mt-2 space-y-2 border-l-2 border-ink/10 pl-3">
+          {items.map((n) => (
+            <NotificationEntry key={n.id} notification={n} onClick={onItemClick} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function BellIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
@@ -78,7 +293,21 @@ export function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [mounted, setMounted] = useState(false);
+  // Which stacked groups are currently expanded, keyed by NotificationCluster.key.
+  // Left as-is across polls/reopens rather than reset, so an in-progress poll
+  // tick or closing and reopening the panel doesn't collapse something the
+  // student just opened.
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const previousUnreadRef = useRef<number | null>(null);
+
+  function toggleGroup(key: string) {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   // Portals need a real document, which only exists client-side — the
   // notification panel would otherwise crash during SSR.
@@ -238,40 +467,32 @@ export function NotificationBell() {
                       </Link>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      {notifications.map((n) => {
-                        // No backdrop-blur — this row sits inside the already
-                        // near-opaque panel above, so there's nothing left
-                        // behind it to blur. Each row paid full blur cost for
-                        // zero visible frosting; with up to 15 rows in a
-                        // scrolling list, that added up fast.
-                        const itemClassName =
-                          "flex w-full items-start gap-3 rounded-xl border border-ink/10 bg-surface px-4 py-3.5 text-left transition hover:bg-ink/5";
-                        const inner = (
-                          <>
-                            <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.read ? "bg-transparent" : "bg-[rgb(var(--c-a-400))]"}`} />
-                            <span className="min-w-0 flex-1">
-                              <span className="block text-sm font-medium text-slate-100">{n.title}</span>
-                              {n.body && <span className="mt-0.5 block text-sm text-slate-500">{n.body}</span>}
-                              <span className="mt-1.5 block text-xs text-slate-600">{relativeTime(n.createdAt)}</span>
-                            </span>
-                          </>
-                        );
-                        const href = notificationHref(n.type);
-
-                        if (href) {
-                          return (
-                            <Link key={n.id} href={href} onClick={() => handleNotificationClick(n)} className={itemClassName}>
-                              {inner}
-                            </Link>
-                          );
-                        }
-                        return (
-                          <button key={n.id} type="button" onClick={() => handleNotificationClick(n)} className={itemClassName}>
-                            {inner}
-                          </button>
-                        );
-                      })}
+                    // No backdrop-blur anywhere below: this list sits inside
+                    // the already near-opaque panel above, so there's nothing
+                    // left behind it to blur. Every row/card paid full blur
+                    // cost for zero visible frosting; across a scrolling list
+                    // plus expanded stacks, that added up fast.
+                    <div className="space-y-5">
+                      {groupNotifications(notifications).map((section) => (
+                        <div key={section.label}>
+                          <p className="mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-600">{section.label}</p>
+                          <div className="space-y-2">
+                            {section.clusters.map((cluster) =>
+                              cluster.items.length === 1 ? (
+                                <NotificationEntry key={cluster.items[0]!.id} notification={cluster.items[0]!} onClick={handleNotificationClick} />
+                              ) : (
+                                <NotificationGroup
+                                  key={cluster.key}
+                                  cluster={cluster}
+                                  expanded={expandedGroups.has(cluster.key)}
+                                  onToggle={() => toggleGroup(cluster.key)}
+                                  onItemClick={handleNotificationClick}
+                                />
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

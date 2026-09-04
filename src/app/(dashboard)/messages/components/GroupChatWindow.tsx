@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { motion } from "framer-motion";
 import type { GroupSummary } from "@/lib/groupMessages";
 import { Avatar } from "@/components/messaging/Avatar";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 import { GroupAvatar } from "./GroupAvatar";
 import type { GroupMessageRow } from "../actions";
 
@@ -89,8 +90,9 @@ export function GroupChatWindow({
               type="button"
               onClick={handleLeave}
               disabled={leaving}
-              className="rounded-lg bg-red-500/95 px-2.5 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-red-500 disabled:opacity-50"
+              className="flex items-center justify-center rounded-lg bg-red-500/95 px-2.5 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-red-500 disabled:opacity-50"
             >
+              {leaving && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
               {leaving ? "Leaving…" : "Leave group"}
             </button>
           </div>

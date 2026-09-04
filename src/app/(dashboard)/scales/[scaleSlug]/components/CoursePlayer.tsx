@@ -8,6 +8,7 @@ import type { PublicQuizQuestion, QuizAnswerSubmission } from "@/lib/quiz";
 import type { CourseLessonWithProgress } from "@/lib/courseContent";
 import { QuizModal } from "@/components/progression/QuizModal";
 import { CheckIcon, ArrowLeftIcon, ArrowRightIcon } from "@/components/ui/icons";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { LessonVideoPlayer } from "./LessonVideoPlayer";
 import { LessonPdfPlayer } from "./LessonPdfPlayer";
@@ -246,6 +247,7 @@ export function CoursePlayer({
               disabled={completing}
               className="cta-sheen cta-fill inline-flex cursor-pointer items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-60"
             >
+              {completing && <MorphingSquare size={14} className="shrink-0" />}
               {completing ? "Saving…" : "Mark as complete"}
               {!completing && <CheckIcon size={15} />}
             </button>
@@ -302,6 +304,7 @@ export function CoursePlayer({
             }`}
           >
             {practiceCompleted && <CheckIcon size={13} />}
+            {markingPractice && !practiceCompleted && <MorphingSquare size={13} className="shrink-0" />}
             {practiceCompleted
               ? "Practice completed"
               : markingPractice

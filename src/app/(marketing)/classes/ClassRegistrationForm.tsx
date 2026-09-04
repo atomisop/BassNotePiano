@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import type { PrimaryInstrument, SkillLevel } from "@prisma/client";
 import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 import { submitClassRegistrationAction } from "./actions";
 
 const INSTRUMENTS: { value: PrimaryInstrument; label: string }[] = [
@@ -233,8 +234,9 @@ export function ClassRegistrationForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="cta-sheen cta-fill w-full rounded-xl py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
       >
+        {submitting && <MorphingSquare size={14} className="mr-2 shrink-0" />}
         {submitting ? "Submitting…" : "Request to register"}
       </button>
 

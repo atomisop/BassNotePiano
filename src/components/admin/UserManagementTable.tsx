@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Role } from "@prisma/client";
 import type { AdminUserRow } from "@/lib/admin";
 import { SCALE_GROUPS } from "@/lib/curriculum";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 
 export interface UserManagementTableProps {
   users: AdminUserRow[];
@@ -165,12 +166,13 @@ export function UserManagementTable({
                         else withBusy(user.id, () => onClearAssistantHistory(user.id));
                       }}
                       disabled={busy}
-                      className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                      className={`flex flex-1 items-center justify-center rounded-lg py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
                         pendingAction.kind === "history"
                           ? "bg-red-500/95 text-slate-950 hover:bg-red-500"
                           : "cta-sheen cta-fill"
                       }`}
                     >
+                      {busy && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {busy ? "Applying…" : "Confirm"}
                     </button>
                   </div>

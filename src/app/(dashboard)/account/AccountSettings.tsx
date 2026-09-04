@@ -9,6 +9,7 @@ import { ThemePicker } from "@/components/theme/ThemePicker";
 import { Switch } from "@/components/ui/switch";
 import { PasswordInput } from "@/components/ui/password-input";
 import { CheckIcon } from "@/components/ui/icons";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 import type { AssistantMessage } from "@/lib/assistant";
 import {
   updatePasswordAction,
@@ -547,8 +548,9 @@ function PasswordSection() {
           <button
             type="submit"
             disabled={submitting}
-            className="cta-sheen cta-fill w-full rounded-lg py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen cta-fill flex w-full items-center justify-center rounded-lg py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
+            {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {submitting ? "Saving…" : "Change password"}
           </button>
         </form>
@@ -587,8 +589,9 @@ function SignOutOtherDevicesCard() {
         type="button"
         onClick={handleClick}
         disabled={submitting}
-        className="rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-200))] disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex items-center justify-center rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-200))] disabled:cursor-not-allowed disabled:opacity-60"
       >
+        {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
         {submitting ? "Signing out other devices…" : "Sign out of all other devices"}
       </button>
       {success && !submitting && <p className="mt-3 text-xs text-emerald-400">Done. This device stays signed in.</p>}
@@ -699,8 +702,9 @@ function DangerZoneSection() {
               <button
                 type="submit"
                 disabled={sendingCode || !password}
-                className="flex-1 rounded-lg bg-red-600 py-2 text-xs font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex flex-1 items-center justify-center rounded-lg bg-red-600 py-2 text-xs font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
+                {sendingCode && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {sendingCode ? "Sending code…" : "Send verification code"}
               </button>
             </div>
@@ -748,8 +752,9 @@ function DangerZoneSection() {
               <button
                 type="submit"
                 disabled={deleting || !confirmed || code.length !== 6}
-                className="flex-1 rounded-lg bg-red-600 py-2 text-xs font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex flex-1 items-center justify-center rounded-lg bg-red-600 py-2 text-xs font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
+                {deleting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {deleting ? "Deleting…" : "Permanently delete my account"}
               </button>
             </div>

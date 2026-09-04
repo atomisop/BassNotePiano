@@ -6,7 +6,7 @@ import type { LessonMediaType } from "@prisma/client";
 import type { CourseLesson } from "@/lib/courseContent";
 import { FileDropzone } from "@/components/ui/FileDropzone";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { SpinnerIcon } from "@/components/ui/icons";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 
 interface PresignedUpload {
   uploadUrl: string;
@@ -248,7 +248,7 @@ export function AdminLessonManager({
             disabled={uploading}
             className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {uploading && <SpinnerIcon className="mr-2" size={14} />}
+            {uploading && <MorphingSquare size={14} className="mr-2 shrink-0" />}
             {uploading ? "Uploading…" : "Upload"}
           </button>
         </form>
@@ -324,8 +324,9 @@ export function AdminLessonManager({
                       type="button"
                       onClick={() => handleDelete(lesson.id)}
                       disabled={busy}
-                      className="flex-1 rounded-lg bg-red-500/95 py-2 text-sm font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-sm font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                     >
+                      {busy && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                       {busy ? "Deleting…" : "Confirm delete"}
                     </button>
                   </div>

@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Role } from "@prisma/client";
 import type { CustomerProfile as CustomerProfileData } from "@/lib/adminCustomer";
 import { SCALE_GROUPS } from "@/lib/curriculum";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 
 export interface CustomerProfileProps {
   profile: CustomerProfileData;
@@ -195,8 +196,9 @@ export function CustomerProfile({
                     type="button"
                     disabled={busy}
                     onClick={() => withBusy(() => onSetCurriculumAccess(user.id, !user.hasCurriculumAccess))}
-                    className="font-semibold underline underline-offset-2 disabled:opacity-40"
+                    className="inline-flex items-center font-semibold underline underline-offset-2 disabled:opacity-40"
                   >
+                    {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                     {busy ? "Applying…" : "Confirm"}
                   </button>
                   <button type="button" onClick={() => setPendingAction(null)} className="text-slate-400 underline underline-offset-2">
@@ -223,8 +225,9 @@ export function CustomerProfile({
                     type="button"
                     disabled={busy}
                     onClick={() => withBusy(() => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN"))}
-                    className="font-semibold underline underline-offset-2 disabled:opacity-40"
+                    className="inline-flex items-center font-semibold underline underline-offset-2 disabled:opacity-40"
                   >
+                    {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                     {busy ? "Applying…" : "Confirm"}
                   </button>
                   <button type="button" onClick={() => setPendingAction(null)} className="text-slate-400 underline underline-offset-2">
@@ -249,8 +252,9 @@ export function CustomerProfile({
                     type="button"
                     disabled={busy}
                     onClick={() => withBusy(() => onClearAssistantHistory(user.id))}
-                    className="font-semibold underline underline-offset-2 disabled:opacity-40"
+                    className="inline-flex items-center font-semibold underline underline-offset-2 disabled:opacity-40"
                   >
+                    {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                     {busy ? "Deleting…" : "Confirm"}
                   </button>
                   <button type="button" onClick={() => setPendingAction(null)} className="text-slate-400 underline underline-offset-2">
@@ -385,8 +389,9 @@ export function CustomerProfile({
                   type="button"
                   disabled={busy}
                   onClick={handleConfirmCredits}
-                  className="font-semibold underline underline-offset-2 disabled:opacity-40"
+                  className="inline-flex items-center font-semibold underline underline-offset-2 disabled:opacity-40"
                 >
+                  {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                   {busy ? "Applying…" : "Confirm"}
                 </button>
                 <button type="button" onClick={() => setCreditConfirming(false)} className="text-slate-400 underline underline-offset-2">

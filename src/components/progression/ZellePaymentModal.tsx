@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 
 export interface ZellePaymentModalProps {
   isOpen: boolean;
@@ -259,8 +260,9 @@ export function ZellePaymentModal({
                           type="button"
                           onClick={handleSubmit}
                           disabled={submitting}
-                          className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                          className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
                         >
+                          {submitting && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                           {submitting ? "Submitting…" : "Submit for review"}
                         </button>
                       </div>

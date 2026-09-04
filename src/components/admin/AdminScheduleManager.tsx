@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 
 interface ScheduleRow {
   id: string;
@@ -137,8 +138,9 @@ function ScheduleForm({
         <button
           type="submit"
           disabled={submitting}
-          className="cta-sheen cta-fill flex-1 rounded-lg py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
+          {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Saving…" : "Save"}
         </button>
       </div>
@@ -253,13 +255,13 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                         type="button"
                         onClick={() => handleToggleActive(row)}
                         disabled={busyId === row.id}
-                        className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                        className={`flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
                           row.active
                             ? "border-red-400/20 text-red-400 hover:border-red-400/40 hover:text-red-300"
                             : "border-emerald-400/30 text-emerald-300 hover:bg-emerald-400/10"
                         }`}
                       >
-                        {busyId === row.id ? "…" : row.active ? "Turn off" : "Turn on"}
+                        {busyId === row.id ? <MorphingSquare size={12} /> : row.active ? "Turn off" : "Turn on"}
                       </button>
                     </div>
                   </div>

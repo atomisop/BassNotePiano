@@ -12,6 +12,7 @@ import {
   type AdminThreadSummary,
   type AdminThreadMessage,
 } from "@/app/(dashboard)/admin/support/actions";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 
 const THREAD_LIST_POLL_MS = 15_000;
 const ACTIVE_THREAD_POLL_MS = 2_500;
@@ -292,8 +293,9 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                     type="button"
                     onClick={handleResolve}
                     disabled={resolving}
-                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                    className="flex items-center justify-center rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
                   >
+                    {resolving && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                     {resolving ? "Resolving…" : "Mark resolved"}
                   </button>
                 )}
@@ -329,8 +331,9 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                     type="button"
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="flex-1 rounded-lg bg-red-500/95 py-2 text-xs font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-xs font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                   >
+                    {deleting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                     {deleting ? "Deleting…" : "Delete permanently"}
                   </button>
                 </div>
@@ -339,7 +342,10 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
 
             <div className="min-w-0 flex-1 space-y-3 overflow-y-auto p-4">
               {messagesLoading ? (
-                <div className="flex h-full items-center justify-center text-sm text-slate-500">Loading messages…</div>
+                <div className="flex h-full items-center justify-center gap-2 text-sm text-slate-500">
+                  <MorphingSquare size={14} />
+                  Loading messages…
+                </div>
               ) : (
                 <>
                   {messages.map((m) => (
@@ -363,8 +369,9 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
               <button
                 type="submit"
                 disabled={sending || !reply.trim()}
-                className="cta-sheen cta-fill shrink-0 rounded-xl px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                className="cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
               >
+                {sending && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {sending ? "Sending…" : "Send"}
               </button>
             </form>

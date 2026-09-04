@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { PublicQuizQuestion, QuizAnswerSubmission } from "@/lib/quiz";
 import { CountUpNumber } from "@/components/ui/CountUpNumber";
 import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 
 export interface QuizModalProps {
   isOpen: boolean;
@@ -208,8 +209,9 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
                           type="button"
                           onClick={handleSubmit}
                           disabled={!hasSelected || step === "submitting"}
-                          className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                          className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
                         >
+                          {step === "submitting" && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                           {step === "submitting" ? "Grading…" : "Submit quiz"}
                         </button>
                       ) : (

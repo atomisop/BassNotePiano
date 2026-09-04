@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
 import Loader from "@/components/ui/loader-15";
-import { SpinnerIcon } from "@/components/ui/icons";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 import { readConsent, CONSENT_DECIDED_EVENT } from "@/lib/cookieConsent";
 import { FULLSCREEN_NAV_EVENT } from "@/lib/overlayNav";
 
@@ -793,7 +793,7 @@ export function AssistantWidget() {
                       disabled={escalationSubmitting}
                       className="flex flex-1 items-center justify-center rounded-lg bg-[rgb(var(--c-a-400))] py-1.5 text-xs font-semibold text-slate-950 transition disabled:opacity-60"
                     >
-                      {escalationSubmitting && <SpinnerIcon className="mr-1.5" size={12} />}
+                      {escalationSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {escalationSubmitting ? "Connecting…" : "Yes, connect me"}
                     </button>
                   </div>
@@ -832,7 +832,7 @@ export function AssistantWidget() {
                       disabled={escalationSubmitting || !escalationEmail.trim()}
                       className="flex flex-1 items-center justify-center rounded-lg bg-[rgb(var(--c-a-400))] py-1.5 text-xs font-semibold text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {escalationSubmitting && <SpinnerIcon className="mr-1.5" size={12} />}
+                      {escalationSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {escalationSubmitting ? "Sending…" : "Notify the team"}
                     </button>
                   </div>
@@ -884,7 +884,7 @@ export function AssistantWidget() {
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgb(var(--c-a-400))] text-slate-950 transition disabled:opacity-40"
               >
                 {loading ? (
-                  <SpinnerIcon size={16} />
+                  <MorphingSquare size={16} />
                 ) : (
                   <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
                     <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

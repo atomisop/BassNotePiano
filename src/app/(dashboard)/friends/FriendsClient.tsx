@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 import {
   searchUsersAction,
   sendFriendRequestAction,
@@ -161,8 +162,9 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
           <button
             type="submit"
             disabled={searching || query.trim().length < 2}
-            className="cta-sheen cta-fill rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
+            {searching && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {searching ? "Searching…" : "Search"}
           </button>
         </form>

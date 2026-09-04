@@ -12,6 +12,7 @@ import {
   calculateClassCreditTotal,
 } from "@/lib/classCreditPricing";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 import { createClassCreditsPendingPaymentAction, submitClassCreditsPaymentAction } from "./actions";
 
 interface PendingPayment {
@@ -206,8 +207,9 @@ export function IndividualCreditsFlow({ zelleHandle, initialQuantity }: { zelleH
         type="button"
         onClick={handleContinue}
         disabled={loading || !acknowledged}
-        className="cta-sheen cta-fill w-full rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
       >
+        {loading && <MorphingSquare size={14} className="mr-2 shrink-0" />}
         {loading ? "Loading…" : "Continue to payment"}
       </button>
     </div>

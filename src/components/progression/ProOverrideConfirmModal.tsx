@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 
 export interface ProOverrideConfirmModalProps {
   isOpen: boolean;
@@ -93,8 +94,9 @@ export function ProOverrideConfirmModal({
                 type="button"
                 onClick={onConfirm}
                 disabled={isConfirming}
-                className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
               >
+                {isConfirming && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                 {isConfirming ? "Unlocking…" : "Confirm override"}
               </button>
             </div>

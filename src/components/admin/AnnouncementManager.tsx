@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminAnnouncementRow } from "@/lib/announcements";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 import {
   createAnnouncementAction,
   setAnnouncementActiveAction,
@@ -71,8 +72,9 @@ function ComposeForm({ onPublished }: { onPublished: () => void }) {
         type="button"
         onClick={handleSubmit}
         disabled={submitting || !title.trim() || !body.trim()}
-        className="cta-sheen cta-fill mt-4 rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        className="cta-sheen cta-fill mt-4 flex items-center justify-center rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
       >
+        {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
         {submitting ? "Publishing…" : "Publish to everyone"}
       </button>
     </div>
@@ -138,8 +140,9 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
               type="button"
               onClick={handleDelete}
               disabled={busy}
-              className="flex-1 rounded-lg bg-red-500/95 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
+              {busy && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
               {busy ? "Deleting…" : "Confirm delete"}
             </button>
           </div>
