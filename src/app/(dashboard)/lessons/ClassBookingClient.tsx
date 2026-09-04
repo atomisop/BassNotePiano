@@ -5,6 +5,7 @@ import Link from "next/link";
 import { bookClassAction, bookClassBundleAction, bookFamilyClassAction, checkFamilyClassAttendeesAction, cancelClassBookingAction } from "./actions";
 import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
+import { CheckIcon, XIcon } from "@/components/ui/icons";
 
 interface OccurrenceRow {
   scheduleId: string;
@@ -256,7 +257,10 @@ function AttendeeEmailRow({
         {value.trim() === "" ? null : status?.checking ? (
           <span className="text-slate-500">Checking…</span>
         ) : status?.verified ? (
-          <span className="text-emerald-400">✓ {status.name ?? "Verified"}</span>
+          <span className="flex items-center gap-1 text-emerald-400">
+            <CheckIcon size={11} />
+            {status.name ?? "Verified"}
+          </span>
         ) : status?.found ? (
           <span className="text-red-400">Not verified</span>
         ) : status ? (
@@ -270,7 +274,7 @@ function AttendeeEmailRow({
           aria-label="Remove this student"
           className="shrink-0 text-slate-500 transition hover:text-red-400"
         >
-          ✕
+          <XIcon size={12} />
         </button>
       )}
     </div>

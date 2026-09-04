@@ -7,6 +7,8 @@ import { signOut, useSession } from "next-auth/react";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { ThemePicker } from "@/components/theme/ThemePicker";
 import { Switch } from "@/components/ui/switch";
+import { PasswordInput } from "@/components/ui/password-input";
+import { CheckIcon } from "@/components/ui/icons";
 import type { AssistantMessage } from "@/lib/assistant";
 import {
   updatePasswordAction,
@@ -444,6 +446,9 @@ function MembershipSection({
   );
 }
 
+// Matches actions.ts's own constant of the same name (and the auth pages').
+const MIN_PASSWORD_LENGTH = 8;
+
 function PasswordSection() {
   const { update } = useSession();
   const [currentPassword, setCurrentPassword] = useState("");
@@ -458,6 +463,10 @@ function PasswordSection() {
     setError(null);
     setSuccess(false);
 
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+      return;
+    }
     if (newPassword !== confirmPassword) {
       setError("New passwords don't match.");
       return;
@@ -486,36 +495,51 @@ function PasswordSection() {
     <div className="space-y-6">
       <SectionCard title="Password" description="Changing it signs out any other devices you're currently signed in on.">
         <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            type="password"
+          <PasswordInput
             placeholder="Current password"
             autoComplete="current-password"
             required
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             disabled={submitting}
-            className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
+            className="w-full disabled:opacity-60"
           />
-          <input
-            type="password"
-            placeholder="New password"
-            autoComplete="new-password"
-            required
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            disabled={submitting}
-            className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
-          />
-          <input
-            type="password"
-            placeholder="Confirm new password"
-            autoComplete="new-password"
-            required
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            disabled={submitting}
-            className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
-          />
+          <div>
+            <PasswordInput
+              placeholder="New password"
+              autoComplete="new-password"
+              required
+              minLength={MIN_PASSWORD_LENGTH}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              disabled={submitting}
+              className="w-full disabled:opacity-60"
+            />
+            {newPassword.length > 0 && (
+              <p className={`mt-1.5 flex items-center gap-1.5 text-xs ${newPassword.length >= MIN_PASSWORD_LENGTH ? "text-emerald-400" : "text-slate-500"}`}>
+                <CheckIcon size={11} className={newPassword.length >= MIN_PASSWORD_LENGTH ? "opacity-100" : "opacity-30"} />
+                At least {MIN_PASSWORD_LENGTH} characters
+              </p>
+            )}
+          </div>
+          <div>
+            <PasswordInput
+              placeholder="Confirm new password"
+              autoComplete="new-password"
+              required
+              minLength={MIN_PASSWORD_LENGTH}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={submitting}
+              className="w-full disabled:opacity-60"
+            />
+            {confirmPassword.length > 0 && (
+              <p className={`mt-1.5 flex items-center gap-1.5 text-xs ${newPassword === confirmPassword ? "text-emerald-400" : "text-slate-500"}`}>
+                <CheckIcon size={11} className={newPassword === confirmPassword ? "opacity-100" : "opacity-30"} />
+                {newPassword === confirmPassword ? "Passwords match" : "Passwords don't match yet"}
+              </p>
+            )}
+          </div>
 
           {error && <p className="text-xs text-red-400">{error}</p>}
           {success && <p className="text-xs text-emerald-400">Password updated. Other devices have been signed out.</p>}
@@ -652,8 +676,7 @@ function DangerZoneSection() {
 
         {stage === "password" && (
           <form onSubmit={handleSendCode} className="mt-4 space-y-3">
-            <input
-              type="password"
+            <PasswordInput
               placeholder="Current password"
               autoComplete="current-password"
               autoFocus
@@ -661,7 +684,7 @@ function DangerZoneSection() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={sendingCode}
-              className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-red-400/60 disabled:opacity-60"
+              className="w-full focus:border-red-400/60 disabled:opacity-60"
             />
             {error && <p className="text-xs text-red-400">{error}</p>}
             <div className="flex gap-2">

@@ -45,6 +45,12 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // A free-typed number applied on a single submit, same risk PaymentQueue's
+  // own Approve button had before it got a confirm step: a typo'd sign or an
+  // extra digit here changes a real account's real balance immediately. The
+  // required reason field already adds some friction, but doesn't show the
+  // actual number back before it's applied, which is the part a typo hides.
+  const [confirming, setConfirming] = useState(false);
 
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -71,6 +77,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
     setReason("");
     setError(null);
     setSuccess(null);
+    setConfirming(false);
     setHistoryLoading(true);
     try {
       const rows = await onGetHistory(user.id);
@@ -80,7 +87,8 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
     }
   }
 
-  async function handleSubmit(e: FormEvent) {
+  /** Validates and moves to the confirm step. Does not touch the balance yet. */
+  function handleReview(e: FormEvent) {
     e.preventDefault();
     if (!selected) return;
     setError(null);
@@ -96,11 +104,22 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
       return;
     }
 
+    setConfirming(true);
+  }
+
+  function editAfterConfirm() {
+    setConfirming(false);
+  }
+
+  async function handleConfirm() {
+    if (!selected) return;
+    const parsed = Number(amount);
     setSubmitting(true);
     try {
       const result = await onAdjust(selected.id, parsed, reason.trim());
       if (!result.ok) {
         setError(result.error);
+        setConfirming(false);
         return;
       }
       setSuccess(`Done — ${selected.name ?? selected.email} now has ${result.balance} credit${result.balance === 1 ? "" : "s"}.`);
@@ -108,11 +127,13 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
       setUsers((prev) => prev.map((u) => (u.id === selected.id ? { ...u, classCredits: result.balance } : u)));
       setAmount("");
       setReason("");
+      setConfirming(false);
       const rows = await onGetHistory(selected.id);
       setHistory(rows);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
+      setConfirming(false);
     } finally {
       setSubmitting(false);
     }
@@ -171,7 +192,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
               Current balance: <span className="text-slate-300">{selected.classCredits} credits</span>
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+            <form onSubmit={handleReview} className="mt-4 space-y-3">
               <div>
                 <label htmlFor="credit-amount" className="text-xs font-medium uppercase tracking-wide text-slate-500">
                   Amount (+ grants, − deducts)
@@ -182,8 +203,9 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   step={1}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
+                  disabled={confirming}
                   placeholder="e.g. 4 or -2"
-                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
+                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
                 />
               </div>
               <div>
@@ -195,21 +217,52 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   rows={2}
+                  disabled={confirming}
                   placeholder="e.g. Paid via Venmo instead of Zelle"
-                  className="mt-1 w-full resize-none glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
+                  className="mt-1 w-full resize-none glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
                 />
               </div>
 
               {error && <p className="text-xs text-red-400">{error}</p>}
               {success && <p className="text-xs text-emerald-400">{success}</p>}
 
-              <button
-                type="submit"
-                disabled={submitting}
-                className="cta-sheen cta-fill w-full rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-40"
-              >
-                {submitting ? "Applying…" : "Apply adjustment"}
-              </button>
+              {confirming ? (
+                // Same "show exactly what's about to happen, then a second
+                // click" shape as PaymentQueue/StudentQueue's own Approve
+                // confirm. The number itself, spelled out in words, is the
+                // part a typo hides right up until this step.
+                <div className="space-y-2 rounded-lg border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.05)] p-3">
+                  <p className="text-sm text-slate-200">
+                    {Number(amount) > 0 ? "Grant" : "Deduct"} <span className="font-semibold text-slate-50">{Math.abs(Number(amount))} credit{Math.abs(Number(amount)) === 1 ? "" : "s"}</span>{" "}
+                    {Number(amount) > 0 ? "to" : "from"} {selected.name ?? selected.email}?
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={editAfterConfirm}
+                      disabled={submitting}
+                      className="flex-1 rounded-lg border border-ink/10 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleConfirm}
+                      disabled={submitting}
+                      className="cta-sheen cta-fill flex-1 rounded-lg py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {submitting ? "Applying…" : "Confirm"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="submit"
+                  className="cta-sheen cta-fill w-full rounded-lg px-3 py-2 text-sm font-medium disabled:opacity-40"
+                >
+                  Review adjustment
+                </button>
+              )}
             </form>
 
             <div className="mt-5">

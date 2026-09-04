@@ -28,6 +28,13 @@ export function UserManagementTable({
   const [query, setQuery] = useState(initialQuery);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Role and curriculum-access changes used to fire on a single click with no
+  // confirmation at all, "Make admin" included, the single highest-stakes
+  // action in the whole admin panel, since an errant admin can then touch
+  // every other admin tool. Clear-history used a native confirm() dialog,
+  // out of place next to the custom in-place confirms used elsewhere. All
+  // three now go through the same review step, one at a time per row.
+  const [pendingAction, setPendingAction] = useState<{ userId: string; kind: "role" | "curriculum" | "history" } | null>(null);
 
   function handleSearchChange(value: string) {
     setQuery(value);
@@ -42,6 +49,7 @@ export function UserManagementTable({
     try {
       await fn();
       router.refresh();
+      setPendingAction(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -126,39 +134,77 @@ export function UserManagementTable({
                 })}
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() =>
-                    withBusy(user.id, () => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN"))
-                  }
-                  className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
-                >
-                  {user.role === "ADMIN" ? "Remove admin" : "Make admin"}
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => withBusy(user.id, () => onSetCurriculumAccess(user.id, !user.hasCurriculumAccess))}
-                  className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
-                >
-                  {user.hasCurriculumAccess ? "Revoke curriculum" : "Grant curriculum"}
-                </button>
-                {user.assistantMessageCount > 0 && (
+              {pendingAction?.userId === user.id ? (
+                <div className="mt-4 space-y-2 rounded-lg border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.05)] p-3">
+                  <p className="text-xs text-slate-300">
+                    {pendingAction.kind === "role" &&
+                      (user.role === "ADMIN"
+                        ? `Remove admin access from ${user.name ?? user.email}?`
+                        : `Make ${user.name ?? user.email} an admin? They'll get full access to payments, users, and every other admin tool.`)}
+                    {pendingAction.kind === "curriculum" &&
+                      (user.hasCurriculumAccess
+                        ? `Revoke curriculum access from ${user.name ?? user.email}? They'll lose access to paid lessons immediately.`
+                        : `Grant curriculum access to ${user.name ?? user.email}?`)}
+                    {pendingAction.kind === "history" &&
+                      `Permanently delete ${user.assistantMessageCount} stored Atom message(s) for this account? This can't be undone.`}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPendingAction(null)}
+                      disabled={busy}
+                      className="flex-1 rounded-lg border border-ink/10 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (pendingAction.kind === "role") withBusy(user.id, () => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN"));
+                        else if (pendingAction.kind === "curriculum") withBusy(user.id, () => onSetCurriculumAccess(user.id, !user.hasCurriculumAccess));
+                        else withBusy(user.id, () => onClearAssistantHistory(user.id));
+                      }}
+                      disabled={busy}
+                      className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                        pendingAction.kind === "history"
+                          ? "bg-red-500/95 text-slate-950 hover:bg-red-500"
+                          : "cta-sheen cta-fill"
+                      }`}
+                    >
+                      {busy ? "Applying…" : "Confirm"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 flex flex-wrap gap-2">
                   <button
                     type="button"
                     disabled={busy}
-                    onClick={() => {
-                      if (!window.confirm(`Permanently delete ${user.assistantMessageCount} stored Atom message(s) for this account? This can't be undone.`)) return;
-                      withBusy(user.id, () => onClearAssistantHistory(user.id));
-                    }}
-                    className="rounded-lg border border-red-400/20 px-3 py-1.5 text-xs font-medium text-red-400/80 transition hover:bg-red-400/10 disabled:opacity-40"
+                    onClick={() => setPendingAction({ userId: user.id, kind: "role" })}
+                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
                   >
-                    Clear Atom history ({user.assistantMessageCount})
+                    {user.role === "ADMIN" ? "Remove admin" : "Make admin"}
                   </button>
-                )}
-              </div>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setPendingAction({ userId: user.id, kind: "curriculum" })}
+                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                  >
+                    {user.hasCurriculumAccess ? "Revoke curriculum" : "Grant curriculum"}
+                  </button>
+                  {user.assistantMessageCount > 0 && (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => setPendingAction({ userId: user.id, kind: "history" })}
+                      className="rounded-lg border border-red-400/20 px-3 py-1.5 text-xs font-medium text-red-400/80 transition hover:bg-red-400/10 disabled:opacity-40"
+                    >
+                      Clear Atom history ({user.assistantMessageCount})
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}

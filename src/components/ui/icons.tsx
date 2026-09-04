@@ -105,6 +105,25 @@ export function XIcon({ className, size = 14 }: { className?: string; size?: num
   );
 }
 
+/** Show-password toggle, "visible" state. */
+export function EyeIcon({ className, size = 14 }: { className?: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className={className} aria-hidden>
+      <path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Show-password toggle, "hidden" state, matching EyeIcon's own outline plus a strike-through rather than an unrelated glyph. */
+export function EyeOffIcon({ className, size = 14 }: { className?: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className={className} aria-hidden>
+      <path d="M3 3l18 18M10.6 10.6a3 3 0 004.24 4.24M9.9 5.2A10.7 10.7 0 0112 5c7 0 10.5 7 10.5 7a13.5 13.5 0 01-3.1 3.9M6.5 6.6C3.6 8.4 1.5 12 1.5 12s3.5 7 10.5 7c1.4 0 2.7-.28 3.9-.75" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /**
  * Discord's own logomark (the "Clyde" mark), a filled shape rather than a
  * stroke like the icons above — matches the path Discord's brand guidelines

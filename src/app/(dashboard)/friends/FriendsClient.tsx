@@ -77,6 +77,11 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
   const [searching, setSearching] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<Set<string>>(new Set());
+  // Block used to fire on a single click. Unlike Reject (turning down a
+  // stranger's incoming request, low-stakes either way), this ends an
+  // existing friendship, so it gets the same one-more-click safety net as
+  // every other hard-to-walk-back admin/account action in the app.
+  const [blockingId, setBlockingId] = useState<string | null>(null);
 
   async function handleSearch(e: FormEvent) {
     e.preventDefault();
@@ -106,6 +111,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
 
   async function handleBlock(userId: string) {
     await blockUserAction(userId);
+    setBlockingId(null);
     router.refresh();
   }
 
@@ -243,21 +249,33 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                   <Avatar profile={friend} />
                   <ProfileLine profile={friend} />
                 </div>
-                <div className="flex shrink-0 gap-2">
-                  <Link
-                    href={`/messages?with=${friend.id}`}
-                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-[rgb(var(--c-a-400)/0.5)] hover:text-[rgb(var(--c-a-300))]"
-                  >
-                    Message
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => handleBlock(friend.id)}
-                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:border-red-900 hover:text-red-400"
-                  >
-                    Block
-                  </button>
-                </div>
+                {blockingId === friend.id ? (
+                  <span className="flex shrink-0 items-center gap-2 rounded-lg border border-red-900 bg-red-400/5 px-3 py-1.5 text-xs text-red-300">
+                    Block {friend.name ?? friend.username ?? "them"}?
+                    <button type="button" onClick={() => handleBlock(friend.id)} className="font-semibold underline underline-offset-2">
+                      Confirm
+                    </button>
+                    <button type="button" onClick={() => setBlockingId(null)} className="text-slate-400 underline underline-offset-2">
+                      Never mind
+                    </button>
+                  </span>
+                ) : (
+                  <div className="flex shrink-0 gap-2">
+                    <Link
+                      href={`/messages?with=${friend.id}`}
+                      className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-[rgb(var(--c-a-400)/0.5)] hover:text-[rgb(var(--c-a-300))]"
+                    >
+                      Message
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setBlockingId(friend.id)}
+                      className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:border-red-900 hover:text-red-400"
+                    >
+                      Block
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

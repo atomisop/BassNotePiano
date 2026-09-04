@@ -809,7 +809,7 @@ export function AssistantWidget() {
                   ))}
                   {!hasSupportReply && threadStatus === "OPEN" && (
                     <p className="rounded-xl border border-ink/10 bg-slate-900/60 p-3 text-center text-xs text-slate-500">
-                      🎧 You&apos;re connected — our support team has been notified and will reply here shortly.
+                      You&apos;re connected — our support team has been notified and will reply here shortly.
                     </p>
                   )}
                   {threadStatus === "RESOLVED" && (
@@ -917,7 +917,7 @@ export function AssistantWidget() {
                   disabled={loading}
                   className="rounded-full border border-ink/10 px-2.5 py-1 text-xs text-slate-400 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))] disabled:opacity-50"
                 >
-                  🧑‍💼 Talk to our team
+                  Talk to our team
                 </button>
               </div>
             )}

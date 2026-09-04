@@ -81,6 +81,10 @@ function ComposeForm({ onPublished }: { onPublished: () => void }) {
 
 function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement: AdminAnnouncementRow; totalUsers: number; onChanged: () => void }) {
   const [busy, setBusy] = useState(false);
+  // Matches the in-place confirm pattern used everywhere else in admin
+  // (PaymentQueue, StudentQueue, AdminLessonManager) instead of a native
+  // confirm() dialog, which looks out of place next to the custom UI.
+  const [deleting, setDeleting] = useState(false);
 
   async function handleToggleActive() {
     setBusy(true);
@@ -90,10 +94,10 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
   }
 
   async function handleDelete() {
-    if (!confirm("Delete this announcement? This can't be undone.")) return;
     setBusy(true);
     await deleteAnnouncementAction(announcement.id);
     setBusy(false);
+    setDeleting(false);
     onChanged();
   }
 
@@ -118,24 +122,48 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
         </div>
       </div>
 
-      <div className="mt-3 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={handleToggleActive}
-          disabled={busy}
-          className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-ink/20 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {announcement.active ? "Deactivate" : "Reactivate"}
-        </button>
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={busy}
-          className="rounded-lg border border-red-400/20 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          Delete
-        </button>
-      </div>
+      {deleting ? (
+        <div className="mt-3 space-y-2">
+          <p className="text-xs text-red-400">Delete this announcement? This can&apos;t be undone.</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setDeleting(false)}
+              disabled={busy}
+              className="flex-1 rounded-lg border border-ink/10 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={busy}
+              className="flex-1 rounded-lg bg-red-500/95 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busy ? "Deleting…" : "Confirm delete"}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-3 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleToggleActive}
+            disabled={busy}
+            className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-ink/20 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {announcement.active ? "Deactivate" : "Reactivate"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setDeleting(true)}
+            disabled={busy}
+            className="rounded-lg border border-red-400/20 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Delete
+          </button>
+        </div>
+      )}
     </div>
   );
 }

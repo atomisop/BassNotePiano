@@ -64,9 +64,20 @@ export function CustomerProfile({
   const [creditAmount, setCreditAmount] = useState("");
   const [creditReason, setCreditReason] = useState("");
   const [creditSuccess, setCreditSuccess] = useState<string | null>(null);
+  // Mirrors AdminCreditGrantPanel's own review step: a free-typed signed
+  // amount is easy to typo (wrong sign, extra digit) and was previously one
+  // submit away from changing a real balance with nothing to double-check.
+  const [creditConfirming, setCreditConfirming] = useState(false);
   const [cancelingBookingId, setCancelingBookingId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
+  // Role, curriculum-access, and clear-history all used to fire on a single
+  // click with no confirmation. "Make admin" is the highest-stakes action in
+  // the whole admin panel, since an errant admin can then touch everything
+  // else here; "Clear Atom history" had no confirmation of any kind, not
+  // even a native dialog. One at a time, same shape as "Sign out everywhere"
+  // right below it.
+  const [pendingAction, setPendingAction] = useState<"role" | "curriculum" | "history" | null>(null);
 
   async function withBusy(fn: () => Promise<void>) {
     setBusy(true);
@@ -74,6 +85,7 @@ export function CustomerProfile({
     try {
       await fn();
       router.refresh();
+      setPendingAction(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -81,7 +93,7 @@ export function CustomerProfile({
     }
   }
 
-  async function handleAdjustCredits(e: FormEvent) {
+  function handleReviewCredits(e: FormEvent) {
     e.preventDefault();
     const amount = Number(creditAmount);
     if (!Number.isInteger(amount) || amount === 0) {
@@ -92,6 +104,12 @@ export function CustomerProfile({
       setError("A reason is required.");
       return;
     }
+    setError(null);
+    setCreditConfirming(true);
+  }
+
+  async function handleConfirmCredits() {
+    const amount = Number(creditAmount);
     setBusy(true);
     setError(null);
     setCreditSuccess(null);
@@ -104,6 +122,7 @@ export function CustomerProfile({
     setCreditSuccess(`New balance: ${result.balance} credit${result.balance === 1 ? "" : "s"}.`);
     setCreditAmount("");
     setCreditReason("");
+    setCreditConfirming(false);
     setBusy(false);
     router.refresh();
   }
@@ -166,31 +185,88 @@ export function CustomerProfile({
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2 border-t border-ink/10 pt-4">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => withBusy(() => onSetCurriculumAccess(user.id, !user.hasCurriculumAccess))}
-                className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
-              >
-                {user.hasCurriculumAccess ? "Revoke curriculum access" : "Grant curriculum access"}
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => withBusy(() => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN"))}
-                className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
-              >
-                {user.role === "ADMIN" ? "Remove admin role" : "Make admin"}
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => withBusy(() => onClearAssistantHistory(user.id))}
-                className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
-              >
-                Clear Atom history
-              </button>
+            <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
+              {pendingAction === "curriculum" ? (
+                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.05)] px-3 py-1.5 text-xs text-slate-200">
+                  {user.hasCurriculumAccess
+                    ? "Revoke curriculum access? They'll lose access to paid lessons immediately."
+                    : "Grant curriculum access to this account?"}
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => withBusy(() => onSetCurriculumAccess(user.id, !user.hasCurriculumAccess))}
+                    className="font-semibold underline underline-offset-2 disabled:opacity-40"
+                  >
+                    {busy ? "Applying…" : "Confirm"}
+                  </button>
+                  <button type="button" onClick={() => setPendingAction(null)} className="text-slate-400 underline underline-offset-2">
+                    Never mind
+                  </button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setPendingAction("curriculum")}
+                  className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                >
+                  {user.hasCurriculumAccess ? "Revoke curriculum access" : "Grant curriculum access"}
+                </button>
+              )}
+
+              {pendingAction === "role" ? (
+                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.05)] px-3 py-1.5 text-xs text-slate-200">
+                  {user.role === "ADMIN"
+                    ? "Remove admin access from this account?"
+                    : "Make this account an admin? They'll get full access to payments, users, and every other admin tool."}
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => withBusy(() => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN"))}
+                    className="font-semibold underline underline-offset-2 disabled:opacity-40"
+                  >
+                    {busy ? "Applying…" : "Confirm"}
+                  </button>
+                  <button type="button" onClick={() => setPendingAction(null)} className="text-slate-400 underline underline-offset-2">
+                    Never mind
+                  </button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setPendingAction("role")}
+                  className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                >
+                  {user.role === "ADMIN" ? "Remove admin role" : "Make admin"}
+                </button>
+              )}
+
+              {pendingAction === "history" ? (
+                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-red-400/5 px-3 py-1.5 text-xs text-red-300">
+                  Permanently delete this account&apos;s stored Atom history?
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => withBusy(() => onClearAssistantHistory(user.id))}
+                    className="font-semibold underline underline-offset-2 disabled:opacity-40"
+                  >
+                    {busy ? "Deleting…" : "Confirm"}
+                  </button>
+                  <button type="button" onClick={() => setPendingAction(null)} className="text-slate-400 underline underline-offset-2">
+                    Never mind
+                  </button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setPendingAction("history")}
+                  className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                >
+                  Clear Atom history
+                </button>
+              )}
 
               {!confirmingSignOut ? (
                 <button
@@ -258,7 +334,7 @@ export function CustomerProfile({
 
           {/* Credits + bookings */}
           <SectionCard title={`Class credits — ${user.classCredits} available`}>
-            <form onSubmit={handleAdjustCredits} className="flex flex-wrap items-end gap-2">
+            <form onSubmit={handleReviewCredits} className="flex flex-wrap items-end gap-2">
               <div>
                 <label htmlFor="cp-amount" className="text-xs font-medium uppercase tracking-wide text-slate-500">
                   Amount
@@ -270,7 +346,8 @@ export function CustomerProfile({
                   value={creditAmount}
                   onChange={(e) => setCreditAmount(e.target.value)}
                   placeholder="e.g. 4 or -2"
-                  className="mt-1 w-28 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
+                  disabled={creditConfirming}
+                  className="mt-1 w-28 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
                 />
               </div>
               <div className="flex-1">
@@ -283,17 +360,40 @@ export function CustomerProfile({
                   value={creditReason}
                   onChange={(e) => setCreditReason(e.target.value)}
                   placeholder="e.g. Paid via Venmo instead of Zelle"
-                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
+                  disabled={creditConfirming}
+                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
                 />
               </div>
-              <button
-                type="submit"
-                disabled={busy}
-                className="cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-40"
-              >
-                Apply
-              </button>
+              {!creditConfirming && (
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className="cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-40"
+                >
+                  Review
+                </button>
+              )}
             </form>
+            {creditConfirming && (
+              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.05)] px-3 py-2 text-xs text-slate-200">
+                {Number(creditAmount) > 0 ? "Grant" : "Deduct"}{" "}
+                <span className="font-semibold text-slate-50">
+                  {Math.abs(Number(creditAmount))} credit{Math.abs(Number(creditAmount)) === 1 ? "" : "s"}
+                </span>
+                ? Reason: &ldquo;{creditReason}&rdquo;
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={handleConfirmCredits}
+                  className="font-semibold underline underline-offset-2 disabled:opacity-40"
+                >
+                  {busy ? "Applying…" : "Confirm"}
+                </button>
+                <button type="button" onClick={() => setCreditConfirming(false)} className="text-slate-400 underline underline-offset-2">
+                  Edit
+                </button>
+              </div>
+            )}
             {creditSuccess && <p className="mt-2 text-xs text-emerald-400">{creditSuccess}</p>}
 
             <div className="mt-5 border-t border-ink/10 pt-4">

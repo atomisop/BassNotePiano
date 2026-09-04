@@ -7,7 +7,9 @@ import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
+import { CheckIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
@@ -17,6 +19,11 @@ const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
   visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", bounce: 0, duration: 0.4 } },
 };
+
+// Matches actions.ts's own constant of the same name (and register's). This
+// form used to enforce nothing client-side, so the length rule only ever
+// surfaced as a submit-time rejection.
+const MIN_PASSWORD_LENGTH = 8;
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -35,6 +42,10 @@ function ResetPasswordForm() {
     e.preventDefault();
     setError(null);
 
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+      return;
+    }
     if (newPassword !== confirmPassword) {
       setError("Passwords don't match.");
       return;
@@ -131,11 +142,11 @@ function ResetPasswordForm() {
           <Label htmlFor="newPassword" className={fieldLabel}>
             New password
           </Label>
-          <Input
+          <PasswordInput
             id="newPassword"
-            type="password"
             autoComplete="new-password"
             required
+            minLength={MIN_PASSWORD_LENGTH}
             aria-invalid={Boolean(error)}
             value={newPassword}
             onChange={(e) => {
@@ -144,17 +155,23 @@ function ResetPasswordForm() {
             }}
             className={cn(error && fieldInvalid)}
           />
+          {newPassword.length > 0 && (
+            <p className={`mt-1.5 flex items-center gap-1.5 text-xs ${newPassword.length >= MIN_PASSWORD_LENGTH ? "text-emerald-400" : "text-slate-500"}`}>
+              <CheckIcon size={11} className={newPassword.length >= MIN_PASSWORD_LENGTH ? "opacity-100" : "opacity-30"} />
+              At least {MIN_PASSWORD_LENGTH} characters
+            </p>
+          )}
         </div>
 
         <div>
           <Label htmlFor="confirmPassword" className={fieldLabel}>
             Confirm new password
           </Label>
-          <Input
+          <PasswordInput
             id="confirmPassword"
-            type="password"
             autoComplete="new-password"
             required
+            minLength={MIN_PASSWORD_LENGTH}
             aria-invalid={Boolean(error)}
             value={confirmPassword}
             onChange={(e) => {
@@ -163,6 +180,12 @@ function ResetPasswordForm() {
             }}
             className={cn(error && fieldInvalid)}
           />
+          {confirmPassword.length > 0 && (
+            <p className={`mt-1.5 flex items-center gap-1.5 text-xs ${newPassword === confirmPassword ? "text-emerald-400" : "text-slate-500"}`}>
+              <CheckIcon size={11} className={newPassword === confirmPassword ? "opacity-100" : "opacity-30"} />
+              {newPassword === confirmPassword ? "Passwords match" : "Passwords don't match yet"}
+            </p>
+          )}
         </div>
 
         {error && (

@@ -44,12 +44,17 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  // Same fix as PaymentQueue's own: Approve used to fire on a single click
+  // while Reject already required a second confirming click plus a reason.
+  // Mirrors Reject's own two-step shape now instead of a new, different one.
+  const [approvingId, setApprovingId] = useState<string | null>(null);
 
   async function handleApprove(id: string) {
     setBusyId(id);
     try {
       await onApprove(id);
       router.refresh();
+      setApprovingId(null);
     } finally {
       setBusyId(null);
     }
@@ -149,6 +154,28 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
                 </button>
               </div>
             </div>
+          ) : approvingId === reg.id ? (
+            <div className="mt-4 space-y-2">
+              <p className="text-sm text-slate-400">Approve {reg.fullName}&apos;s registration?</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setApprovingId(null)}
+                  disabled={busyId === reg.id}
+                  className="flex-1 rounded-lg border border-ink/10 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApprove(reg.id)}
+                  disabled={busyId === reg.id}
+                  className="cta-sheen cta-fill flex-1 rounded-lg py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {busyId === reg.id ? "Approving…" : "Confirm approve"}
+                </button>
+              </div>
+            </div>
           ) : (
             <div className="mt-4 flex gap-2">
               <button
@@ -161,11 +188,11 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
               </button>
               <button
                 type="button"
-                onClick={() => handleApprove(reg.id)}
+                onClick={() => setApprovingId(reg.id)}
                 disabled={busyId === reg.id}
                 className="cta-sheen cta-fill flex-1 rounded-lg py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {busyId === reg.id ? "Approving…" : "Approve"}
+                Approve
               </button>
             </div>
           )}

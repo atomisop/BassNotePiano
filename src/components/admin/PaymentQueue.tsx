@@ -74,12 +74,19 @@ export function PaymentQueue({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  // Approve used to fire on a single click while Reject already required a
+  // second confirming click plus a reason. That's backwards: the higher-
+  // stakes action (this grants real product access/credits) was the easier one
+  // to trigger by mistake in a list of several pending rows. Now mirrors
+  // Reject's own two-step shape instead of a new, different pattern.
+  const [approvingId, setApprovingId] = useState<string | null>(null);
 
   async function handleApprove(id: string) {
     setBusyId(id);
     try {
       await onApprove(id);
       router.refresh();
+      setApprovingId(null);
     } finally {
       setBusyId(null);
     }
@@ -187,6 +194,33 @@ export function PaymentQueue({
                 </button>
               </div>
             </div>
+          ) : approvingId === payment.id ? (
+            // Same two-step shape as reject, just without a reason field:
+            // there's nothing to explain for an approval, only something to
+            // double-check before it fires.
+            <div className="mt-4 space-y-2">
+              <p className="text-sm text-slate-400">
+                Approve {formatUsd(payment.amountCents)} for {payment.user.name ?? payment.user.email}?
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setApprovingId(null)}
+                  disabled={busyId === payment.id}
+                  className="flex-1 rounded-lg border border-ink/10 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApprove(payment.id)}
+                  disabled={busyId === payment.id}
+                  className="cta-sheen cta-fill flex-1 rounded-lg py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {busyId === payment.id ? "Approving…" : "Confirm approve"}
+                </button>
+              </div>
+            </div>
           ) : (
             <div className="mt-4 flex gap-2">
               <button
@@ -199,11 +233,11 @@ export function PaymentQueue({
               </button>
               <button
                 type="button"
-                onClick={() => handleApprove(payment.id)}
+                onClick={() => setApprovingId(payment.id)}
                 disabled={busyId === payment.id}
                 className="cta-sheen cta-fill flex-1 rounded-lg py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {busyId === payment.id ? "Approving…" : "Approve"}
+                Approve
               </button>
             </div>
           )}
