@@ -16,6 +16,29 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+
+    # Every DATABASE_URL/DIRECT_URL fallback below already points at
+    # postgresql://ci:ci@localhost:5432/ci — that only resolves if
+    # something is actually listening there. Without this service,
+    # `prisma generate` is fine (it only reads the schema file), but
+    # `npm run build`'s `prisma migrate deploy` step fails outright with
+    # "Can't reach database server at localhost:5432" — confirmed against
+    # this workflow's real run history (every run since it was added).
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
