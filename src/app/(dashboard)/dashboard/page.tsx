@@ -65,11 +65,11 @@ export default async function DashboardPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <TodayGreeting name={user?.name ?? null} />
-      <p className="mt-2 text-sm text-slate-500">
-        {progress.completedScales === 0
-          ? "Six scale groups, one connected path through the whole system."
-          : `${progress.completedScales} of ${progress.totalScales} scale groups complete.`}
-      </p>
+      {progress.completedScales > 0 && (
+        <p className="mt-2 text-sm text-slate-500">
+          {progress.completedScales} of {progress.totalScales} scale groups complete.
+        </p>
+      )}
 
       {/* ---- The one thing to do next ------------------------------------
           The single `.glass-surface-elevated` on this screen, per the design

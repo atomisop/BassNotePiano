@@ -29,8 +29,19 @@ async function ProfileAvatarLink() {
 }
 
 export function TopBar() {
+  // relative z-30: .chrome's own backdrop-filter already makes this header
+  // a separate stacking context from its siblings below (AnnouncementBanner,
+  // main), but with no z-index of its own that context has no priority
+  // over them, it just paints in plain DOM order, first. AnnouncementBanner
+  // wins that order once it's on screen (Framer Motion's transform gives its
+  // own div a stacking context too), covering the top of ProfileMenu's open
+  // dropdown even though the dropdown itself is z-50: that z-50 only ever
+  // competes with things inside this same header, never with a sibling
+  // entirely outside it. An explicit z-index here is scoped to this header
+  // vs. its own siblings only, so it can't reach past them to outrank
+  // AppDock or any modal one level further up the tree.
   return (
-    <header className="chrome flex h-16 shrink-0 items-center justify-between border-b border-ink/10 px-8">
+    <header className="chrome relative z-30 flex h-16 shrink-0 items-center justify-between border-b border-ink/10 px-8">
       <BrandMark />
       <div className="flex items-center gap-3">
         <NotificationBell />
