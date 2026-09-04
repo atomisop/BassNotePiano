@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowLeftIcon } from "@/components/ui/icons";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -9,6 +10,19 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     // <body>'s own bg-slate-950, same plain dark surface every other
     // chrome-free area of the app already sits on.
     <div className="relative flex min-h-screen flex-col items-center justify-center px-6 py-16">
+      {/* Login and register are the top of their own flow, with nothing
+          else on-page to signal a way out: the brand lockup below is a
+          real link, but a logo alone doesn't read as "click this to leave"
+          to a visitor who isn't already fluent in that web convention. An
+          explicit corner link says so directly, on every auth screen at
+          once, without disturbing the centered brand moment. */}
+      <Link
+        href="/"
+        className="absolute left-4 top-4 flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-300 sm:left-6 sm:top-6"
+      >
+        <ArrowLeftIcon size={16} />
+        Back to homepage
+      </Link>
       {/* header, not a bare <a>: axe's "region" check flagged this brand
           link for sitting outside any landmark, as a sibling of <main>
           rather than inside one. */}
