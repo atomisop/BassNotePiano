@@ -29,19 +29,31 @@ async function ProfileAvatarLink() {
 }
 
 export function TopBar() {
-  // relative z-30: .chrome's own backdrop-filter already makes this header
-  // a separate stacking context from its siblings below (AnnouncementBanner,
-  // main), but with no z-index of its own that context has no priority
-  // over them, it just paints in plain DOM order, first. AnnouncementBanner
-  // wins that order once it's on screen (Framer Motion's transform gives its
-  // own div a stacking context too), covering the top of ProfileMenu's open
-  // dropdown even though the dropdown itself is z-50: that z-50 only ever
-  // competes with things inside this same header, never with a sibling
-  // entirely outside it. An explicit z-index here is scoped to this header
-  // vs. its own siblings only, so it can't reach past them to outrank
-  // AppDock or any modal one level further up the tree.
+  // fixed, not in-flow: this used to be a plain flex child (relative z-30)
+  // that never scrolled away purely because it sat outside `<main>`'s own
+  // scroll area in `(dashboard)/layout.tsx` — structurally sound, but a
+  // visitor reported it disappearing anyway on the way back from "on-screen
+  // stuff" (a full-bleed view — lesson video, a nav overlay — that never
+  // fully released whatever was covering it). Rather than chase that one
+  // specific culprit, it's fixed to the true viewport top now, by direct
+  // instruction ("making it permanent... gives freedom to navigate to the
+  // homepage from any screen") — nothing can leave it stuck hidden again,
+  // since it no longer depends on any other component correctly restoring
+  // its own state to reveal it.
+  //
+  // z-[45]: above AppDock/Atom/every other floating-chrome overlay in the
+  // app (all z-40 or below), so a repeat of the same class of bug can't
+  // cover it again — but still below every real modal dialog (WhatsNewModal,
+  // the Zelle/Quiz/ProOverride progression modals, MoreSheet, CommandMenu,
+  // all z-50; OnboardingTour's own full-tour overlay higher still at
+  // z-[60]), which stay genuinely blocking: a payment or quiz in progress
+  // shouldn't be navigable away from via a topbar floating on top of its
+  // own scrim.
+  //
+  // `(dashboard)/layout.tsx` adds `pt-16` to this header's old flex parent
+  // to reserve the 64px this now paints over instead of occupying in flow.
   return (
-    <header className="chrome relative z-30 flex h-16 shrink-0 items-center justify-between border-b border-ink/10 px-8">
+    <header className="chrome fixed inset-x-0 top-0 z-[45] flex h-16 items-center justify-between border-b border-ink/10 px-8">
       <BrandMark />
       <div className="flex items-center gap-3">
         <NotificationBell />
