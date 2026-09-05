@@ -543,6 +543,22 @@
     overscroll-behavior: none;
   }
 
+  /* iOS Safari's default tap-highlight — a translucent gray rectangle,
+     shown on every tappable element the instant it's pressed — doesn't
+     follow `border-radius` the way the highlight's own box does, so it was
+     visible as a hard, square-cornered gray patch poking out from behind
+     every rounded button/link on a real device (reported as "a light gray
+     sharp corner on all sides of the smooth corners," worst on the dock's
+     own rounded icons and the liquid-glass tab puck, but true of every
+     tappable element site-wide — nothing had ever reset this). `:active`/
+     `:focus-visible` styling already exists per-component (the dock's own
+     `hover:bg-white/8`, the global focus ring below) to give real feedback
+     on press/focus, so removing the browser's own default here trades
+     nothing away. */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   /* Themes change the entire palette at once, so without this every colour on
    screen hard-cuts. Excluded from transform/opacity so it never interferes
    with Framer Motion's entrance animations. */
