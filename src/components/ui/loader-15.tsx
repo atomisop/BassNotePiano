@@ -3,8 +3,11 @@
 import * as React from "react";
 
 /**
- * Loader-15 — a pink→orange animated gradient ring, sourced from a
- * 21st.dev community component of the same name.
+ * Loader-15 — a teal→blue animated gradient ring, sourced from a
+ * 21st.dev community component of the same name (whose original was
+ * pink→orange — recolored here specifically so Atom's icon reads as its
+ * own character, complementary to rather than matching the house
+ * pink/orange accent; see AssistantWidget.tsx's own top comment).
  *
  * Ported from the original's `styled-components` to `<style jsx>` —
  * Next.js's own built-in scoped-CSS mechanism — instead of pulling a whole
@@ -96,10 +99,10 @@ export default function Loader({ size = 200, className }: { size?: number; class
           filter: url(#${filterId});
         }
         .stopp1 {
-          stop-color: #f700a8;
+          stop-color: #00e0c6;
         }
         .stopp2 {
-          stop-color: #ff8000;
+          stop-color: #00a3ff;
         }
         .halvan {
           animation: loader15-snurra 10s infinite linear;

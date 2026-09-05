@@ -110,7 +110,7 @@
   --c-scrim: 10 10 10;
 
   --page-texture:
-    radial-gradient(circle at 15% 20%, rgba(5, 233, 1, 0.035), transparent 45%),
+    radial-gradient(circle at 15% 20%, rgba(255, 128, 0, 0.035), transparent 45%),
     radial-gradient(circle at 85% 75%, rgba(255, 255, 255, 0.02), transparent 40%);
 
   /* --c-surface-solid at 46 46 46 matches the spec's own `--nav-button`
@@ -141,41 +141,59 @@
 /* ==========================================================================
    Accent
    --------------------------------------------------------------------------
-   One accent, everywhere: signal green. Themes and accent color used to be
-   independent choices (three themes x six accents), removed by direct
-   instruction in favor of one uniform design language (see themes.ts's own
-   comment). Signal was already the one accent the marketing pages and every
-   transactional email hardcode; this just makes that true for the rest of
-   the app too, instead of leaving five unused alternatives in the CSS.
+   One accent, everywhere: a pink→orange duotone, replacing the earlier
+   single-hue signal green by direct instruction ("make pink/orange the
+   whole app's identity"). Themes and accent color used to be independent
+   choices (three themes x six accents), removed by direct instruction in
+   favor of one uniform design language (see themes.ts's own comment) — that
+   decision (one accent, not a matrix of choices) stands; only which colour
+   fills the one slot has changed, and has changed more than once by direct
+   instruction since (see themes.ts's own note on this).
 
    Still keyed on data-mode, not data-theme: the accent has to clear 4.5:1
    against the ground it sits on, and that requirement is the same for every
    dark theme and every light one. Two blocks, one per mode.
 
-   The 400 step is the workhorse: it has to work BOTH as a fill (with the
-   ground colour set on it) and as text on the ground, which is what lets
-   `bg-amber-400` and `text-amber-400` both stay legible. */
+   Unlike the old single-hue ramp, 100-400 here stay one hue (pink) at
+   rising saturation, while 500 deliberately breaks to the second hue
+   (orange) — 400 and 500 are the two stops `.cta-fill`/`.btn-primary`
+   already blend into a gradient (see globals.css's `@utility cta-fill`),
+   so every primary button/CTA across the app now renders that same
+   pink→orange gradient Atom's own chat panel introduced, with no change
+   needed at any of those call sites. The 400 step is still the workhorse
+   for solid (non-gradient) uses: it has to work BOTH as a fill and as text
+   on the ground, which is what lets `bg-amber-400` and `text-amber-400`
+   both stay legible. Atom itself now deliberately uses a *different*
+   (complementary, teal→blue) pair instead of this one — see
+   `AssistantWidget.tsx` — so the assistant still reads as its own distinct
+   character against the house accent, the same relationship this app has
+   kept since Atom first broke from the old green. */
 
-/* On a light ground the source hsl(119 99% 46%) itself only clears ~1.6:1,
-   nowhere near AA, so light mode gets a deep forest-green version of the
-   same hue instead. */
+/* On a light ground the vivid dark-mode hues below clear nowhere near AA,
+   so light mode gets deep, ink-adjacent versions of the same two hues
+   instead — same treatment the old green ramp used for its own light
+   variant. */
 [data-mode="light"] {
-  --c-a-100: 4 46 2;
-  --c-a-200: 3 66 2;
-  --c-a-300: 3 92 2;
-  --c-a-400: 2 122 3; /* 5.5:1 */
-  --c-a-500: 2 145 4;
+  --c-a-100: 61 0 42;
+  --c-a-200: 102 0 70;
+  --c-a-300: 143 0 98; /* 8.3:1 */
+  --c-a-400: 180 10 110; /* 6.1:1 */
+  --c-a-500: 153 77 0; /* 5.7:1 */
 }
 
-/* hsl(119 99% 46%) converted directly: rgb(5 233 1), the exact vivid green
-   requested. Genuinely vivid rather than "lifted for a dark ground"; this
-   one comes with its own real neon quality by design, not a softened
-   version of it. */
+/* hsl(319 100% 55%) for the pink (400) and hsl(30 100% 50%) — #ff8000,
+   Atom's original launcher-icon orange — for the second hue (500), kept
+   exact rather than re-derived since it's the one hex this app's history
+   already settled on and no longer needs to differ from. Pink's own
+   lightness (55%, not the fuller/more saturated 48% the brand reference
+   uses) is tuned up specifically for the extra contrast margin against this
+   ground; anything closer to the reference sat right at the 4.5:1 floor
+   with no room to spare. */
 [data-mode="dark"] {
-  --c-a-100: 214 250 195;
-  --c-a-200: 172 247 148;
-  --c-a-300: 100 240 70;
-  --c-a-400: 5 233 1;
-  --c-a-500: 4 196 1;
+  --c-a-100: 255 214 245;
+  --c-a-200: 255 170 232;
+  --c-a-300: 255 100 210;
+  --c-a-400: 255 26 182; /* 5.0:1 */
+  --c-a-500: 255 128 0; /* 6.9:1 */
 }
 

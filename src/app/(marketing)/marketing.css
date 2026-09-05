@@ -6,7 +6,7 @@
 
    ── Why this file exists ────────────────────────────────────────────────
    `LOGGED_OUT_THEME` in src/lib/themes.ts pins every logged-out visitor to
-   "ink" — the same black/signal-green identity the rest of the app now
+   "ink" — the same black/pink-orange identity the rest of the app now
    uses, so in principle this override isn't compensating for a bad theme
    the way it originally was (the old "luxury" daisyUI theme it was built
    against had an inverted, unreadable hierarchy). Kept anyway, now as a
@@ -20,9 +20,9 @@
    before. Only the values behind those names change.
 
    ── Where the palette comes from ────────────────────────────────────────
-   The same neutral black/white ramp and vivid signal-green accent as the
+   The same neutral black/white ramp and pink→orange accent duotone as the
    rest of the app (see themes.css's `[data-theme="ink"]` and `[data-mode="dark"]`
-   blocks — signal green is the only accent now, see themes.ts's own
+   blocks — this pink/orange pair is the only accent now, see themes.ts's own
    comment) — mirrored here in raw values rather than referenced, because
    these are inherited custom properties: re-pointing `--c-a-400` this far
    down the tree only works if it's redeclared at this scope, not aliased to
@@ -46,18 +46,18 @@
   --c-s-900: 41 41 41;      /* recessed surface */
   --c-s-950: 26 26 26;      /* the ground */
 
-  /* ---- Accent ramp: signal green ---------------------------------------
-     hsl(119 99% 46%) converted directly — the same vivid green as
-     `[data-mode="dark"]` (the app's one and only accent). `--c-s-950` on
-     `--c-a-400` clears AA, so the ground colour stays the readable text on
-     the accent, same relationship the app's token bridge already assumes (see
-     globals.css), so shadcn's `--primary-foreground` keeps working
-     untouched. */
-  --c-a-100: 214 250 195;   /* highlight wash */
-  --c-a-200: 172 247 148;   /* hover text */
-  --c-a-300: 100 240 70;    /* accent TEXT */
-  --c-a-400: 5 233 1;       /* CTA fill / accent */
-  --c-a-500: 4 196 1;       /* borders, pressed */
+  /* ---- Accent ramp: pink→orange -----------------------------------------
+     Same values as `[data-mode="dark"]` in themes.css (the app's one and
+     only accent, a pink→orange duotone replacing the earlier single-hue
+     signal green). `--c-s-950` on `--c-a-400` clears AA, so the ground
+     colour stays the readable text on the accent, same relationship the
+     app's token bridge already assumes (see globals.css), so shadcn's
+     `--primary-foreground` keeps working untouched. */
+  --c-a-100: 255 214 245;   /* highlight wash */
+  --c-a-200: 255 170 232;   /* hover text */
+  --c-a-300: 255 100 210;   /* accent TEXT */
+  --c-a-400: 255 26 182;    /* CTA fill / accent */
+  --c-a-500: 255 128 0;     /* borders, pressed / second gradient stop */
 
   /* ---- The scrim rule -------------------------------------------------
      Ratios above are against the bare ground. The homepage's real backdrop

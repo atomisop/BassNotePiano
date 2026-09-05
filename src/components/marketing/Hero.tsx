@@ -63,9 +63,11 @@ const HERO_VIDEO_URL = "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/mark
  * Display type is now Baloo 2 (see layout.tsx's own comment), a bold
  * rounded Google Font chosen to match Pianote's own friendly, heavy-
  * weight display energy without reproducing its actual (non-Google,
- * licensed) typeface. Colors are this app's own signal green and black,
- * not Pianote's actual coral-red-on-brown palette, by direct instruction
- * ("we will use mostly the green and black").
+ * licensed) typeface. Colors are this app's own accent and black — green
+ * and black by the original direct instruction ("we will use mostly the
+ * green and black"), now the pink→orange duotone that replaced it (see
+ * themes.css's own "Accent" comment) — never Pianote's actual
+ * coral-red-on-brown palette.
  *
  * COPY PASS: headline swapped from "The grammar of..." to "The best way
  * to learn...", and "kiñit" dropped from the lead/fact grid, both by

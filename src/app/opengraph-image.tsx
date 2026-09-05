@@ -11,10 +11,13 @@ export const contentType = "image/png";
 
 // Dark card for social: the card is competing for attention in a feed
 // against mostly-white chrome, so it leads with the near-black ground and
-// the vivid signal-green accent the app itself now uses everywhere.
+// the pink→orange accent the app itself now uses everywhere (originally a
+// vivid signal green — see themes.css's own "Accent" comment for the
+// current history).
 const INK = "#1A1A1A";
 const PAPER = "#F5F5F5";
-const RUST = "#05E901";
+const ACCENT_START = "#FF1AB6";
+const ACCENT_END = "#FF8000";
 const MUTED = "#999999";
 
 /**
@@ -86,12 +89,12 @@ export default async function OpengraphImage() {
           // its parser with "Missing comma before color stops" — which surfaces
           // as a prerender error that fails the whole build, not a silent
           // style fallback.
-          backgroundImage: `radial-gradient(circle at 8% 108%, rgba(5,233,1,0.28) 0%, rgba(5,233,1,0) 62%)`,
+          backgroundImage: `radial-gradient(circle at 8% 108%, rgba(255,128,0,0.28) 0%, rgba(255,128,0,0) 62%)`,
         }}
       >
         {/* Wordmark rail */}
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <div style={{ width: 40, height: 3, background: RUST }} />
+          <div style={{ width: 40, height: 3, backgroundImage: `linear-gradient(90deg, ${ACCENT_START}, ${ACCENT_END})` }} />
           <div
             style={{
               fontSize: 23,

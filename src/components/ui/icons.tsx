@@ -38,13 +38,16 @@ export function CheckIcon({ className, size = 14 }: { className?: string; size?:
  * exists to suppress, and this is otherwise the one icon here that would
  * ignore it — the other three are static marks.
  *
- * Stroked in the same pink→orange gradient as the `loader-15` ui
- * component (Atom's icon, `components/ui/loader-15.tsx`) rather than
- * `currentColor` — this is the app's one loading glyph (`Button`'s
- * `loading` prop renders it, and every "still screen while something
- * loads" fix uses it directly), so it carries that same identity
- * everywhere it appears instead of inheriting whatever text color
- * happens to surround it.
+ * Stroked in the app's own house pink→orange gradient (see themes.css's
+ * "Accent" comment — `--c-a-400`/`--c-a-500`, hardcoded here rather than
+ * referenced since a plain `<stop>` can't read a CSS custom property)
+ * rather than `currentColor` — this is the app's one loading glyph
+ * (`Button`'s `loading` prop renders it, and every "still screen while
+ * something loads" fix uses it directly), so it carries that same house
+ * identity everywhere it appears instead of inheriting whatever text
+ * color happens to surround it. Atom's own icon (`loader-15.tsx`) uses a
+ * deliberately different teal→blue pair, not this one — see that file's
+ * own comment.
  *
  * The gradient `id` is a fixed literal, not `useId()`-generated: this
  * file has no "use client" directive (icons here are plain functions with
@@ -65,7 +68,7 @@ export function SpinnerIcon({ className, size = 14 }: { className?: string; size
     >
       <defs>
         <linearGradient id="bnp-spinner-gradient" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#f700a8" />
+          <stop offset="0" stopColor="#ff1ab6" />
           <stop offset="1" stopColor="#ff8000" />
         </linearGradient>
       </defs>
