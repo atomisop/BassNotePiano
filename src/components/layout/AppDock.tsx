@@ -277,27 +277,31 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
                   data-tour={"dataTour" in item ? item.dataTour : undefined}
                   className="relative flex flex-col items-center gap-1"
                 >
-                  {/* The active-tab indicator: a real liquid-glass puck, not
-                      a flat tint — blurred/saturated backdrop (the actual
-                      "bends light" part: it visibly refracts whatever's
-                      behind it, the dock's own black plus any icon it
-                      overlaps), a diagonal highlight gradient and a bright
-                      inset rim on the near edge (light catching curved
-                      glass), plus the same soft outer glow every icon
-                      already carries. Sized to `-inset-3` on the icon's own
-                      box — bigger than the glyph so it reads as covering the
-                      whole tapped area, the way Instagram's own tab
-                      indicator fully backs its icon rather than tracing its
-                      outline.
+                  {/* The active-tab indicator: a real liquid-glass droplet,
+                      not a flat tint — blurred/saturated backdrop (the
+                      actual "bends light" part: it visibly refracts
+                      whatever's behind it, the dock's own black plus the
+                      icon and label it overlaps), a diagonal highlight
+                      gradient and a bright inset rim on the near edge
+                      (light catching curved glass), plus the same soft
+                      outer glow every icon already carries.
 
-                      A sibling of `DockItem`/`DockIcon`, not a child inside
-                      them — `DockItem` clones every direct child
-                      unconditionally to inject the shared hover `width`
-                      (see dock.tsx), and cloning that onto a plain
-                      `motion.div` would try to hand it a MotionValue as a
-                      literal `width` DOM attribute. The extra wrapping
-                      `relative` div is what gives `-inset-3` something of
-                      DockItem's own to measure against.
+                      Sized against `Link`'s own box — icon *and* label
+                      together (`Link` is `flex flex-col`, so its box is
+                      already exactly their union) — not just the icon's,
+                      by direct instruction: a puck sized to the icon alone
+                      only brushed the top of the label underneath, which
+                      read as "the bubble doesn't cover the text." This one
+                      wraps both in a single rounded pill, the way a real
+                      water droplet would sit over the whole tapped area
+                      rather than just its top half — also closer to the
+                      original Instagram reference (a pill backing icon
+                      *and* label, not a ring around the icon alone).
+
+                      A sibling of the icon's own wrapper div, not nested
+                      inside it — keeps this exactly where the old icon-only
+                      puck lived in the tree, just measured against the
+                      outer `Link` instead of the inner icon box.
 
                       `layoutId` (one shared id across every tab) is what
                       makes it slide between tabs on navigation instead of
@@ -305,36 +309,37 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
                       animates the single element's position/size across
                       the layout change automatically.
 
-                      `-top-1`, not `-top-3` to match the other three sides:
-                      measured against the dock bar's own edges, the icon
-                      only has ~7px of headroom above it before hitting the
-                      bar's top border (the bar is a fixed 60px, and the
-                      icon/gap/label/bottom-padding stack already uses most
-                      of that), so the full 12px `-inset-3` on every side
-                      pushed the puck's top rim a few px past the bar's own
-                      rounded edge — visible as the glass bulging out of the
-                      dock's silhouette (reported as "doesn't fit in the
-                      dock"). Bottom/left/right keep the full -3 (12px):
-                      that's where the "covers the whole tapped area" room
-                      actually is, and neither ever hit a hard edge the way
-                      the top does. */}
+                      Insets are asymmetric, each tuned against the dock
+                      bar's own measured bounds (a fixed 60px) rather than
+                      one uniform value: `-top-1` (4px) — the label/icon
+                      stack already used most of the bar's height, leaving
+                      only ~7px of headroom above the icon, so anything
+                      bigger pushed the puck's top rim past the bar's own
+                      rounded edge (visible as the glass bulging out of the
+                      dock's silhouette). `-bottom-2` (8px) — more room
+                      below the label than above the icon, but still not
+                      unlimited before hitting the bar's own bottom edge.
+                      `-left-3 -right-3` (12px) — plenty of clear room on
+                      both sides at every tab's own horizontal position, so
+                      this one gets the full, generous "covers the whole
+                      area" value with no edge to worry about. */}
+                  {active && (
+                    <motion.div
+                      layoutId="dock-active-glass"
+                      transition={{ type: "spring", bounce: 0.15, duration: 0.55 }}
+                      className="pointer-events-none absolute -left-3 -right-3 -top-1 -bottom-2 rounded-full"
+                      style={{
+                        background:
+                          "linear-gradient(135deg, rgba(255,255,255,0.42), rgba(255,255,255,0.08) 55%, rgba(255,255,255,0.18) 100%)",
+                        backdropFilter: "blur(10px) saturate(180%)",
+                        WebkitBackdropFilter: "blur(10px) saturate(180%)",
+                        border: "1px solid rgba(255,255,255,0.4)",
+                        boxShadow:
+                          "inset 0 1px 1.5px rgba(255,255,255,0.8), inset 0 -3px 6px rgba(255,255,255,0.06), 0 0 22px 4px rgba(255,255,255,0.3)",
+                      }}
+                    />
+                  )}
                   <div className="relative">
-                    {active && (
-                      <motion.div
-                        layoutId="dock-active-glass"
-                        transition={{ type: "spring", bounce: 0.15, duration: 0.55 }}
-                        className="pointer-events-none absolute -left-3 -right-3 -top-1 -bottom-3 rounded-full"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, rgba(255,255,255,0.42), rgba(255,255,255,0.08) 55%, rgba(255,255,255,0.18) 100%)",
-                          backdropFilter: "blur(10px) saturate(180%)",
-                          WebkitBackdropFilter: "blur(10px) saturate(180%)",
-                          border: "1px solid rgba(255,255,255,0.4)",
-                          boxShadow:
-                            "inset 0 1px 1.5px rgba(255,255,255,0.8), inset 0 -3px 6px rgba(255,255,255,0.06), 0 0 22px 4px rgba(255,255,255,0.3)",
-                        }}
-                      />
-                    )}
                     <motion.div whileTap={{ scale: 0.9 }} className="relative">
                       {/* White at every step, not accent-colored — same
                           direct instruction as the dock's own background.
@@ -361,21 +366,20 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
                       </DockItem>
                     </motion.div>
                   </div>
-                  {/* relative z-10: the active tab's glass puck above is
-                      sized generously (-inset-3, by direct instruction —
-                      "covers the whole selected area," not just traces the
-                      icon's outline), which puts its bottom edge a few
-                      pixels into this label's own box (only a `gap-1`, 4px,
-                      apart). Measured and confirmed: without a z-index here,
-                      an unpositioned static element paints *before* a
-                      positioned one in the same stacking context regardless
-                      of DOM order, so the glass's blur/translucency was
-                      washing out most of the active label's text underneath
-                      it (reported as a dock label rendering unreadable).
+                  {/* relative z-10: the glass droplet above now deliberately
+                      sits fully over this label too (see its own comment —
+                      it's sized against the whole tab, not just the icon),
+                      so this label is entirely inside the puck's box
+                      whenever its tab is active, by design. Measured and
+                      confirmed: without a z-index here, an unpositioned
+                      static element paints *before* a positioned one in the
+                      same stacking context regardless of DOM order, so the
+                      glass's own blur/translucency would wash the label out
+                      instead of reading as light bending around crisp text.
                       z-10 promotes this span into its own positioned layer
-                      so it always paints on top, keeping the puck's full
-                      covering size intact instead of shrinking it to avoid
-                      the overlap. */}
+                      so it always paints on top of the glass, the same way
+                      a droplet of water refracts what's behind it rather
+                      than obscuring it. */}
                   <span
                     className={`relative z-10 text-[9px] font-medium leading-none ${active ? "text-white" : "text-white/50"}`}
                   >
