@@ -66,7 +66,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
           the instant the toolbar auto-hides, which is a fixed, harmless gap
           rather than a moving one — far better than the shell itself
           reflowing under your thumb. */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      {/* pt-16: TopBar is `position: fixed` now (see its own comment for
+          why — it used to disappear behind whatever "on-screen stuff" the
+          visitor was navigating back from, by direct instruction it's now
+          pinned and un-hideable instead), so it no longer reserves its own
+          64px here by sitting in flow. This padding reserves that same
+          64px so AnnouncementBanner/main start right below it instead of
+          rendering underneath it. */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden pt-16">
         <TopBar />
         <AnnouncementBanner announcement={activeAnnouncement} />
         {/* pb-28 at every width, not just md: — the floating AppDock now
