@@ -90,7 +90,7 @@ export function SectionRow({
     <motion.div
       variants={sectionRowVariants}
       className={`glass-surface flex items-center gap-4 p-4 transition ${dimmed ? "opacity-50" : ""} ${
-        interactive ? "cursor-pointer hover:border-[rgb(var(--c-a-400)/0.3)]" : dimmed ? "cursor-not-allowed" : ""
+        interactive ? "cursor-pointer hover:border-[rgb(var(--c-s-50)/0.3)]" : dimmed ? "cursor-not-allowed" : ""
       }`}
       onClick={interactive ? onClick : undefined}
       role={interactive ? "button" : undefined}
@@ -140,7 +140,7 @@ export function SectionRow({
               ? "bg-slate-800 text-slate-500"
               : status === "coming-soon"
                 ? "bg-slate-800 text-slate-500"
-                : "bg-[rgb(var(--c-a-400)/0.15)] text-[rgb(var(--c-a-300))]"
+                : "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]"
         }`}
       >
         {status === "completed" ? (scoreLabel ?? "Completed") : status === "locked" ? "Locked" : status === "coming-soon" ? "Coming soon" : "Start"}

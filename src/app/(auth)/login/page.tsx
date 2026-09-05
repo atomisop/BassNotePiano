@@ -67,7 +67,7 @@ function LoginForm() {
       animate="visible"
       className="w-full max-w-sm glass-surface-elevated p-7"
     >
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Welcome back</p>
+      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Welcome back</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Log in to continue</h1>
       <p className="mt-1.5 text-sm text-slate-500">Pick up your roadmap right where you left it.</p>
 
@@ -96,7 +96,7 @@ function LoginForm() {
             <Label htmlFor="password" className={fieldLabel}>
               Password
             </Label>
-            <Link href="/forgot-password" className="text-xs text-slate-500 transition hover:text-[rgb(var(--c-a-300))]">
+            <Link href="/forgot-password" className="text-xs text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
               Forgot?
             </Link>
           </div>
@@ -127,7 +127,7 @@ function LoginForm() {
 
       <p className="mt-6 text-center text-sm text-slate-500">
         New here?{" "}
-        <Link href="/register" className="text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))]">
+        <Link href="/register" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
           Create an account
         </Link>
       </p>

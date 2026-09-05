@@ -226,9 +226,14 @@
 }
 
 @utility chip-accent {
-  /* The small token chips — spelled notes, transposition cells. */
-  border: 1px solid rgb(var(--c-a-400) / 0.25);
-  background: rgb(var(--c-a-400) / 0.08);
+  /* The small token chips — spelled notes, transposition cells. Neutral
+     now, not accent-tinted — same values as `.chip-neutral` below, by
+     direct instruction ("premium black and white... accent only on true
+     CTAs"). Kept as its own named utility (rather than switching every
+     `chip-accent` call site over to `chip-neutral`) so this one edit
+     covers every consumer at once. */
+  border: 1px solid rgb(var(--c-s-50) / 0.08);
+  background: rgb(var(--c-s-50) / 0.04);
 }
 
 @utility chip-neutral {
@@ -238,8 +243,9 @@
 
 @utility eyebrow {
   /* The recurring kicker above a heading — centralised so every page gets
-     the same treatment instead of re-declaring the tracking each time. */
-  @apply text-xs font-medium uppercase tracking-[0.18em] text-amber-300;
+     the same treatment instead of re-declaring the tracking each time.
+     Neutral, not accent-tinted — accent is reserved for true CTAs now. */
+  @apply text-xs font-medium uppercase tracking-[0.18em] text-slate-300;
 }
 
 @utility backdrop-scrim-light {
@@ -331,10 +337,13 @@
   );
 }
 
+/* Both glows neutral now, not accent-tinted — a soft white/black ambient
+   bloom instead of a colour wash, same "accent only on true CTAs"
+   instruction as `.chip-accent`/`.eyebrow` above. */
 @utility backdrop-glow-smoke-top {
   background: radial-gradient(
     60% 80% at 50% 0%,
-    rgb(var(--c-a-400) / 0.1),
+    rgb(var(--c-s-50) / 0.1),
     transparent 70%
   );
   filter: blur(40px);
@@ -343,7 +352,7 @@
 @utility backdrop-glow-smoke-bottom {
   background: radial-gradient(
     60% 80% at 50% 100%,
-    rgb(var(--c-a-400) / 0.12),
+    rgb(var(--c-s-50) / 0.12),
     transparent 70%
   );
   filter: blur(40px);
@@ -441,10 +450,11 @@
    The two foreground pairs that sit on colour rather than on the ground —
    primary and destructive — both resolve to `--c-s-950`, the page ground.
    That reads odd but is exactly right in every theme: the ramp's 950 is
-   always the ground, and a theme's accent is always pitched against its own
-   ground (dark rust on light paper, warm amber on dark ink). So "the ground
-   colour" is always the readable text on top of the accent, in both
-   directions, without a light/dark branch here.
+   always the ground, and `--primary` (now the ramp's own 50 — the opposite
+   end from the ground — rather than the accent; see its own comment below)
+   is always pitched against its own ground either way. So "the ground
+   colour" is always the readable text on top of it, in both directions,
+   without a light/dark branch here.
    ========================================================================== */
   :root {
     --background: var(--c-s-950);
@@ -457,7 +467,14 @@
     --popover: var(--c-surface-solid);
     --popover-foreground: var(--c-s-50);
 
-    --primary: var(--c-a-400);
+    /* Neutral, not the accent — `--primary` here feeds shadcn-pattern
+       components generically (Switch's "on" state, the `link` Button
+       variant's text colour, focus rings below), most of which aren't
+       actually a call-to-action. Real CTAs (`.cta-fill`, `.btn-primary`,
+       `Button`'s own `default` variant, `Toaster`'s action button) read
+       `--c-a-mid`/`--c-a-400`/`--c-a-500` directly, not this indirection,
+       so they keep the gradient regardless of what this resolves to. */
+    --primary: var(--c-s-50);
     --primary-foreground: var(--c-s-950);
 
     --secondary: var(--c-s-900);
@@ -476,7 +493,12 @@
 
     --border: var(--c-s-700);
     --input: var(--c-s-700);
-    --ring: var(--c-a-400);
+    /* The one global focus ring, every focusable control site-wide
+       (`focus-visible:ring-ring`) — a universal interaction indicator, not
+       a call-to-action, so it's neutral now too: a crisp near-white/near-
+       black ring reads as sharp and precise, the "sharp interaction states"
+       a premium monochrome UI leans on instead of colour. */
+    --ring: var(--c-s-50);
 
     /* Corner radius follows the active theme's own card radius rather than
      shadcn's fixed 0.5rem, so a Button matches the panels beside it. */
@@ -491,6 +513,24 @@
      image). */
     background-image: var(--page-texture);
     background-attachment: fixed;
+
+    /* The missing half of the dashboard shell's "locked top bar and bottom
+       dock" fix. `(dashboard)/layout.tsx` already gives its own scrollable
+       `<main>` `overscroll-contain` so an iOS rubber-band bounce there can't
+       chain up into an ancestor — but that only stops the bounce from
+       propagating past `<main>`; it does nothing about the BODY itself
+       still being draggable. On a page whose content is short enough (or a
+       measurement is off by a hair at `100svh`), iOS Safari can still pull
+       the whole body down and spring it back — which visually drags the
+       fixed-in-flex-flow TopBar/AppDock along with it before it snaps back,
+       reported live as "pulling down reveals the top bar in the admin
+       screen" (admin pages are exactly the case with the least extra
+       scroll content, on top of them nesting inside `(dashboard)/layout.tsx`
+       rather than replacing it). `overscroll-behavior: none` here stops the
+       body itself from ever being pulled, so the shell — top bar, bottom
+       dock, and everything in between — genuinely never moves; only the
+       content inside `<main>` scrolls. */
+    overscroll-behavior: none;
   }
 
   /* Themes change the entire palette at once, so without this every colour on

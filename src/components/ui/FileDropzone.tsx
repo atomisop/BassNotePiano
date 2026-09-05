@@ -92,8 +92,8 @@ export function FileDropzone({
         className={cn(
           "flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-9 text-center transition",
           dragging
-            ? "border-[rgb(var(--c-a-400))] bg-[rgb(var(--c-a-400)/0.1)]"
-            : "border-ink/15 hover:border-[rgb(var(--c-a-400)/0.5)] hover:bg-[rgb(var(--c-a-400))]/[0.04]",
+            ? "border-[rgb(var(--c-s-50))] bg-[rgb(var(--c-s-50)/0.1)]"
+            : "border-ink/15 hover:border-[rgb(var(--c-s-50)/0.5)] hover:bg-[rgb(var(--c-s-50))]/[0.04]",
           disabled && "pointer-events-none opacity-50",
         )}
       >
@@ -104,7 +104,7 @@ export function FileDropzone({
           fill="none"
           stroke="currentColor"
           strokeWidth="1.8"
-          className="text-[rgb(var(--c-a-300))]"
+          className="text-[rgb(var(--c-s-50))]"
           aria-hidden
         >
           <path d="M12 16V4m0 0L7 9m5-5 5 5" strokeLinecap="round" strokeLinejoin="round" />
@@ -164,7 +164,7 @@ export function FileDropzone({
                 aria-label={`Uploading ${file.name}`}
               >
                 <div
-                  className="h-full rounded-full bg-[rgb(var(--c-a-400))] transition-all duration-200"
+                  className="h-full rounded-full bg-[rgb(var(--c-s-50))] transition-all duration-200"
                   style={{ width: `${progress}%` }}
                 />
               </div>

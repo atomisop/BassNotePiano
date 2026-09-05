@@ -180,7 +180,7 @@ export function CoursePlayer({
             like an unbounded list. */}
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
               Lesson {view.index + 1} of {lessons.length}
             </p>
             <h1 className="mt-1 font-serif text-xl text-slate-50">{lesson.title}</h1>
@@ -224,7 +224,7 @@ export function CoursePlayer({
               type="button"
               onClick={() => canGoPrevious && setView({ mode: "lesson", index: previousIndex })}
               disabled={!canGoPrevious}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-ink/10 px-3 py-2 text-sm text-slate-300 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))] disabled:cursor-default disabled:opacity-40 disabled:hover:border-ink/10 disabled:hover:text-slate-300"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-ink/10 px-3 py-2 text-sm text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] disabled:cursor-default disabled:opacity-40 disabled:hover:border-ink/10 disabled:hover:text-slate-300"
             >
               <ArrowLeftIcon />
               Previous
@@ -233,7 +233,7 @@ export function CoursePlayer({
               type="button"
               onClick={() => canGoNext && setView({ mode: "lesson", index: nextIndex })}
               disabled={!canGoNext}
-              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-ink/10 px-3 py-2 text-sm text-slate-300 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))] disabled:cursor-default disabled:opacity-40 disabled:hover:border-ink/10 disabled:hover:text-slate-300"
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-ink/10 px-3 py-2 text-sm text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] disabled:cursor-default disabled:opacity-40 disabled:hover:border-ink/10 disabled:hover:text-slate-300"
             >
               Next
               <ArrowRightIcon />
@@ -283,7 +283,7 @@ export function CoursePlayer({
         Back to roadmap
       </Link>
       <div className="glass-surface p-6 sm:p-7">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">{scaleGroup.code}</p>
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">{scaleGroup.code}</p>
         <h1 className="mt-1.5 font-serif text-3xl text-slate-50">{scaleGroup.title}</h1>
         {scaleGroup.kinitName && <p className="mt-1 text-slate-500">{scaleGroup.kinitName}</p>}
         {scaleGroup.description && <p className="mt-3 text-sm text-slate-400">{scaleGroup.description}</p>}
@@ -300,7 +300,7 @@ export function CoursePlayer({
             className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-medium transition ${
               practiceCompleted
                 ? "cursor-default border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
-                : "cursor-pointer border-ink/10 text-slate-300 hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))]"
+                : "cursor-pointer border-ink/10 text-slate-300 hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
             }`}
           >
             {practiceCompleted && <CheckIcon size={13} />}
@@ -336,12 +336,12 @@ export function CoursePlayer({
               <span
                 key={l.id}
                 aria-hidden
-                className={`h-1.5 w-6 rounded-full ${l.completed ? "bg-[rgb(var(--c-a-400))]" : "bg-slate-800"}`}
+                className={`h-1.5 w-6 rounded-full ${l.completed ? "bg-[rgb(var(--c-s-50))]" : "bg-slate-800"}`}
               />
             ))}
             <span
               aria-hidden
-              className={`h-1.5 w-6 rounded-full ${quizPassed ? "bg-[rgb(var(--c-a-400))]" : "bg-slate-800"}`}
+              className={`h-1.5 w-6 rounded-full ${quizPassed ? "bg-[rgb(var(--c-s-50))]" : "bg-slate-800"}`}
             />
           </div>
           <p className="text-xs text-slate-500">

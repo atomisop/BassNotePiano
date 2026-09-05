@@ -98,8 +98,9 @@ import { ScrollToTopButton } from "@/components/marketing/ScrollToTopButton";
  * layered behind it. It had no other caller, so the file is gone rather
  * than kept as dead code. Separately, the nav wordmark (MarketingNav.tsx)
  * picked up pianote.com's own actual wordmark treatment (bold, lowercase,
- * colored in the accent, studied directly) in place of the small neutral-
- * white label it used before - see that file's own comment.
+ * studied directly) in place of the small label it used before - colored
+ * in the accent at the time, now neutral again under the "premium black
+ * and white" pass - see that file's own comment.
  *
  * SECTION BACKDROP PASS: the real photography that used to sit behind
  * /classes, /pricing, /shop and every auth screen (see backdrops.ts) is

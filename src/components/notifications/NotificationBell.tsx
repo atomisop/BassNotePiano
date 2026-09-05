@@ -181,7 +181,7 @@ function NotificationEntry({ notification, onClick }: { notification: Notificati
     "flex w-full items-start gap-3 rounded-xl border border-ink/10 bg-surface px-4 py-3.5 text-left transition hover:bg-ink/5";
   const inner = (
     <>
-      <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${notification.read ? "bg-transparent" : "bg-[rgb(var(--c-a-400))]"}`} />
+      <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${notification.read ? "bg-transparent" : "bg-[rgb(var(--c-s-50))]"}`} />
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-medium text-slate-100">{notification.title}</span>
         {notification.body && <span className="mt-0.5 block text-sm text-slate-500">{notification.body}</span>}
@@ -245,14 +245,14 @@ function NotificationGroup({
           aria-expanded={expanded}
           className="relative flex w-full items-start gap-3 rounded-xl border border-ink/10 bg-surface px-4 py-3.5 text-left transition hover:bg-ink/5"
         >
-          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-a-400)/0.12)] text-[rgb(var(--c-a-300))]">
+          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.12)] text-[rgb(var(--c-s-50))]">
             <CategoryIcon path={CATEGORY_ICONS[categoryKey]} />
           </span>
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2">
               <span className="text-sm font-medium text-slate-100">{categoryLabel}</span>
               <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">{items.length}</span>
-              {hasUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[rgb(var(--c-a-400))]" aria-hidden />}
+              {hasUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[rgb(var(--c-s-50))]" aria-hidden />}
             </span>
             <span className="mt-0.5 block truncate text-sm text-slate-500">{latest.title}</span>
             <span className="mt-1.5 block text-xs text-slate-600">{relativeTime(latest.createdAt)}</span>
@@ -396,7 +396,7 @@ export function NotificationBell() {
       >
         <BellIcon />
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] px-1 text-[10px] font-bold text-slate-950">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[rgb(var(--c-s-50))] px-1 text-[10px] font-bold text-slate-950">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -429,14 +429,14 @@ export function NotificationBell() {
                     </svg>
                   </button>
                   <div>
-                    <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Inbox</p>
+                    <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Inbox</p>
                     <h1 className="font-serif text-lg text-slate-50">Notifications</h1>
                   </div>
                   {unreadCount > 0 && (
                     <button
                       type="button"
                       onClick={handleMarkAllRead}
-                      className="ml-auto text-xs text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))]"
+                      className="ml-auto text-xs text-[rgb(var(--c-s-50))] transition hover:opacity-70"
                     >
                       Mark all read
                     </button>
@@ -461,7 +461,7 @@ export function NotificationBell() {
                       <Link
                         href="/account?tab=notifications"
                         onClick={() => setOpen(false)}
-                        className="text-xs text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))]"
+                        className="text-xs text-[rgb(var(--c-s-50))] transition hover:opacity-70"
                       >
                         Notification settings
                       </Link>

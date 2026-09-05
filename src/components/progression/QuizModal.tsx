@@ -124,12 +124,12 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
             className="glass-surface-modal relative w-full max-w-md overflow-hidden"
           >
             {step === "result" && result?.passed && <SuccessGlowPulse />}
-            <div className="h-1 w-full bg-gradient-to-r from-[rgb(var(--c-a-500)/0.4)] via-[rgb(var(--c-a-300))] to-[rgb(var(--c-a-500)/0.4)]" />
+            <div className="h-1 w-full bg-gradient-to-r from-[rgb(var(--c-s-300)/0.4)] via-[rgb(var(--c-s-50))] to-[rgb(var(--c-s-300)/0.4)]" />
 
             <div className="px-6 pb-6 pt-5">
               <div className="mb-5 flex items-start justify-between">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
                     Scale-Spelling Quiz
                   </p>
                   <h2 id="quiz-modal-title" className="mt-1 font-serif text-lg text-slate-50">
@@ -158,9 +158,9 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
                           key={q.id}
                           className={`h-1 flex-1 rounded-full ${
                             i < currentIndex || (i === currentIndex && selections[q.id] !== undefined)
-                              ? "bg-[rgb(var(--c-a-400))]"
+                              ? "bg-[rgb(var(--c-s-50))]"
                               : i === currentIndex
-                                ? "bg-[rgb(var(--c-a-400)/0.4)]"
+                                ? "bg-[rgb(var(--c-s-50)/0.4)]"
                                 : "bg-slate-800"
                           }`}
                         />
@@ -181,7 +181,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
                             onClick={() => selectChoice(i)}
                             className={`w-full rounded-xl border px-4 py-2.5 text-left text-sm font-medium transition ${
                               selected
-                                ? "border-[rgb(var(--c-a-400))] bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-300))]"
+                                ? "border-[rgb(var(--c-s-50))] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
                                 : "border-ink/10 text-slate-300 hover:border-ink/15 hover:bg-slate-800/60"
                             }`}
                           >

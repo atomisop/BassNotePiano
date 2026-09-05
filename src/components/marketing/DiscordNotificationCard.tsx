@@ -57,14 +57,14 @@ export function DiscordNotificationCard() {
         transition={{ duration: reduced ? 0.15 : 0.4, ease: [0.16, 1, 0.3, 1] }}
         className="glass-surface fixed inset-x-4 top-20 z-[60] mx-auto flex max-w-xs items-center gap-2.5 py-2.5 pl-3 pr-9 sm:inset-x-auto sm:left-4 sm:right-auto sm:top-auto sm:bottom-4"
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-a-400)/0.15)] text-[rgb(var(--c-a-300))]">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]">
           <DiscordIcon size={16} className="text-[#5865F2]" />
         </span>
         <a
           href={DISCORD_INVITE_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="truncate text-sm font-medium text-slate-50 hover:text-[rgb(var(--c-a-300))]"
+          className="truncate text-sm font-medium text-slate-50 hover:text-[rgb(var(--c-s-50))]"
         >
           Join our Discord →
         </a>

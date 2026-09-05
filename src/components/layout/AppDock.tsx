@@ -286,7 +286,7 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
                     {item.label}
                   </span>
                   {Boolean(badge) && (
-                    <span className="pointer-events-none absolute right-1 top-1 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] px-1 text-[9px] font-bold text-slate-950">
+                    <span className="pointer-events-none absolute right-1 top-1 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-[rgb(var(--c-s-50))] px-1 text-[9px] font-bold text-slate-950">
                       {badge > 9 ? "9+" : badge}
                     </span>
                   )}

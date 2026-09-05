@@ -114,7 +114,12 @@
   --card-foreground: var(--c-s-50);
   --popover: var(--c-s-900);
   --popover-foreground: var(--c-s-50);
-  --primary: var(--c-a-400);
+  /* Neutral, not the accent — same reasoning as globals.css's own
+     `--primary`/`--ring` comment: these feed generic shadcn-pattern roles
+     and the universal focus ring, not calls-to-action. `.btn-primary`
+     below reads `--c-a-mid`/`--c-a-400`/`--c-a-500` directly, so it keeps
+     the gradient regardless. */
+  --primary: var(--c-s-50);
   --primary-foreground: var(--c-s-950);
   --secondary: var(--c-s-800);
   --secondary-foreground: var(--c-s-50);
@@ -124,7 +129,7 @@
   --accent-foreground: var(--c-s-50);
   --border: var(--c-s-700);
   --input: var(--c-s-700);
-  --ring: var(--c-a-400);
+  --ring: var(--c-s-50);
 
   /* ---- Ground -------------------------------------------------------- */
   color: rgb(var(--c-s-200));
@@ -329,7 +334,9 @@
   font-weight: 500;
   letter-spacing: var(--type-label-ls);
   text-transform: uppercase;
-  color: rgb(var(--c-a-300));
+  /* Neutral, not accent-tinted — same "accent only on true CTAs"
+     instruction as globals.css's own `.eyebrow` utility. */
+  color: rgb(var(--c-s-300));
 }
 
 /* s-300, not s-500. `label-muted` reads as "the quiet one", and s-500 is what
@@ -386,9 +393,12 @@
   margin: 0;
 }
 
+/* Neutral now, not accent-tinted — a stronger hairline than `.rule-hairline`
+   above (0.4 vs 0.12 opacity) rather than a different colour, same "accent
+   only on true CTAs" instruction as elsewhere in this file. */
 [data-surface="marketing"] .rule-accent {
   border: 0;
-  border-top: 1px solid rgb(var(--c-a-400) / 0.4);
+  border-top: 1px solid rgb(var(--c-s-50) / 0.4);
   width: 100%;
   margin: 0;
 }
@@ -502,27 +512,32 @@
    nowhere rather than a quiet inline link. Reset defensively in case a
    future call site ever combines this with .btn instead of standing
    alone (today nothing does). */
+/* Neutral, not accent-tinted — a plain quiet link leans on the underline
+   for its "this is clickable" signal, not colour, same "accent only on
+   true CTAs" instruction as elsewhere in this file. */
 [data-surface="marketing"] .btn-quiet {
   height: auto;
   padding: 0;
   border-radius: 0;
   background: none;
-  color: rgb(var(--c-a-300));
+  color: rgb(var(--c-s-200));
   text-decoration: underline;
-  text-decoration-color: rgb(var(--c-a-300) / 0.4);
+  text-decoration-color: rgb(var(--c-s-200) / 0.4);
   text-underline-offset: 6px;
   transform: none !important;
 }
 
 [data-surface="marketing"] .btn-quiet:hover {
-  color: rgb(var(--c-a-200));
-  text-decoration-color: rgb(var(--c-a-200));
+  color: rgb(var(--c-s-50));
+  text-decoration-color: rgb(var(--c-s-50));
 }
 
-/* Focus is never removed, only restyled. The accent ring reads on every
-   scene because it is the one colour guaranteed to sit on the ground. */
+/* Focus is never removed, only restyled. Neutral, not accent-tinted, now —
+   a crisp near-white ring rather than colour, the one universal focus
+   indicator (not a call-to-action) — and it still reads on every scene
+   because `--c-s-50` is the one colour guaranteed to sit on the ground. */
 [data-surface="marketing"] :is(a, button, [role="button"]):focus-visible {
-  outline: 2px solid rgb(var(--c-a-400));
+  outline: 2px solid rgb(var(--c-s-50));
   outline-offset: 3px;
   border-radius: 4px;
 }

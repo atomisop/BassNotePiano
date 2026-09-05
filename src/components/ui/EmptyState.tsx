@@ -35,7 +35,7 @@ export function EmptyState({
       )}
     >
       {icon && (
-        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-300))]">
+        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]">
           {icon}
         </div>
       )}
@@ -45,7 +45,7 @@ export function EmptyState({
       {actionLabel && actionHref && (
         <Link
           href={actionHref}
-          className="mt-6 inline-flex items-center gap-1.5 rounded-lg border border-[rgb(var(--c-a-400)/0.4)] px-4 py-2 text-sm font-medium text-[rgb(var(--c-a-300))] transition hover:border-[rgb(var(--c-a-400))] hover:bg-[rgb(var(--c-a-400)/0.1)]"
+          className="mt-6 inline-flex items-center gap-1.5 rounded-lg border border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-sm font-medium text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)]"
         >
           {actionLabel}
         </Link>
@@ -54,7 +54,7 @@ export function EmptyState({
         <button
           type="button"
           onClick={onAction}
-          className="mt-6 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[rgb(var(--c-a-400)/0.4)] px-4 py-2 text-sm font-medium text-[rgb(var(--c-a-300))] transition hover:border-[rgb(var(--c-a-400))] hover:bg-[rgb(var(--c-a-400)/0.1)]"
+          className="mt-6 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-sm font-medium text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)]"
         >
           {actionLabel}
         </button>

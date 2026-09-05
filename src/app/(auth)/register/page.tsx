@@ -180,15 +180,15 @@ function RegisterForm() {
               setAgreedToTerms(e.target.checked);
               setError(null);
             }}
-            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-a-400))]"
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-s-50))]"
           />
           <span>
             I agree to the{" "}
-            <Link href="/terms" target="_blank" className="text-[rgb(var(--c-a-300))] underline transition hover:text-[rgb(var(--c-a-200))]">
+            <Link href="/terms" target="_blank" className="text-[rgb(var(--c-s-50))] underline transition hover:opacity-70">
               Terms &amp; refund policy
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" target="_blank" className="text-[rgb(var(--c-a-300))] underline transition hover:text-[rgb(var(--c-a-200))]">
+            <Link href="/privacy" target="_blank" className="text-[rgb(var(--c-s-50))] underline transition hover:opacity-70">
               Privacy policy
             </Link>
             .
@@ -208,7 +208,7 @@ function RegisterForm() {
 
       <p className="mt-6 text-center text-sm text-slate-500">
         Already have an account?{" "}
-        <Link href="/login" className="text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))]">
+        <Link href="/login" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
           Log in
         </Link>
       </p>

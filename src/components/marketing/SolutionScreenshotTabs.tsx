@@ -52,7 +52,7 @@ export function SolutionScreenshotTabs({ screens, defaultKey }: { screens: Solut
                 onClick={() => setActive(screen.key)}
                 aria-pressed={screen.key === active}
                 className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${
-                  screen.key === active ? "bg-[rgb(var(--c-a-400))] text-slate-950" : "text-slate-300 hover:text-slate-50"
+                  screen.key === active ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "text-slate-300 hover:text-slate-50"
                 }`}
               >
                 {screen.label}

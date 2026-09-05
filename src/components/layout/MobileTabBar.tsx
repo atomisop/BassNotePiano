@@ -39,13 +39,13 @@ export function MobileTabBar({ isAdmin, unreadMessageCount }: { isAdmin: boolean
               href={tab.href}
               data-tour={tab.dataTour}
               className={`relative flex flex-1 flex-col items-center gap-1 py-2.5 text-center transition ${
-                active ? "text-[rgb(var(--c-a-300))]" : "text-slate-500 hover:text-slate-300"
+                active ? "text-[rgb(var(--c-s-50))]" : "text-slate-500 hover:text-slate-300"
               }`}
             >
               <NavIcon path={tab.icon} />
               <span className="text-[10px] font-medium leading-none">{tab.label}</span>
               {tab.href === "/messages" && unreadMessageCount > 0 && (
-                <span className="absolute right-[22%] top-1 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] px-1 text-[9px] font-bold text-slate-950">
+                <span className="absolute right-[22%] top-1 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-[rgb(var(--c-s-50))] px-1 text-[9px] font-bold text-slate-950">
                   {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
                 </span>
               )}
@@ -56,7 +56,7 @@ export function MobileTabBar({ isAdmin, unreadMessageCount }: { isAdmin: boolean
           type="button"
           onClick={() => setMoreOpen(true)}
           className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-center transition ${
-            inMoreSection ? "text-[rgb(var(--c-a-300))]" : "text-slate-500 hover:text-slate-300"
+            inMoreSection ? "text-[rgb(var(--c-s-50))]" : "text-slate-500 hover:text-slate-300"
           }`}
         >
           <NavIcon path={ICON_PATHS.more} />

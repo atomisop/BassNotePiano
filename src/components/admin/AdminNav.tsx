@@ -41,7 +41,7 @@ function MobileAdminSelect() {
       value={current}
       onChange={(e) => router.push(e.target.value)}
       aria-label="Admin section"
-      className="glass-surface-subtle w-full rounded-xl px-3 py-2.5 text-sm font-medium text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] sm:hidden"
+      className="glass-surface-subtle w-full rounded-xl px-3 py-2.5 text-sm font-medium text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] sm:hidden"
     >
       {NAV_ITEMS.map((item) => (
         <option key={item.href} value={item.href}>
@@ -64,7 +64,7 @@ function DesktopAdminPills() {
             key={item.href}
             href={item.href}
             className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition ${
-              active ? "bg-[rgb(var(--c-a-400))] text-slate-950" : "text-slate-400 hover:text-slate-100"
+              active ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "text-slate-400 hover:text-slate-100"
             }`}
           >
             {item.label}

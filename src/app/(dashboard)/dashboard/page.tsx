@@ -127,7 +127,7 @@ export default async function DashboardPage() {
       {nextClass && (
         <Link
           href="/lessons"
-          className="glass-surface mt-6 flex items-center justify-between gap-4 p-5 transition hover:border-[rgb(var(--c-a-400)/0.4)]"
+          className="glass-surface mt-6 flex items-center justify-between gap-4 p-5 transition hover:border-[rgb(var(--c-s-50)/0.4)]"
         >
           <div>
             <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Next live class</p>
@@ -149,7 +149,7 @@ export default async function DashboardPage() {
               <p className="mt-0.5 text-sm text-slate-500">{nextClass.schedule.label}</p>
             )}
           </div>
-          <span className="shrink-0 text-[rgb(var(--c-a-300))]">
+          <span className="shrink-0 text-[rgb(var(--c-s-50))]">
             <ArrowIcon />
           </span>
         </Link>

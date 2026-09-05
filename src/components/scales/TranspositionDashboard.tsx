@@ -113,7 +113,7 @@ function InstrumentSwitcher({
             aria-pressed={isActive}
             className={`flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
               isActive
-                ? "bg-[rgb(var(--c-a-400))] text-slate-950"
+                ? "bg-[rgb(var(--c-s-50))] text-slate-950"
                 : "text-slate-400 hover:text-slate-100"
             }`}
           >
@@ -153,7 +153,7 @@ export function TranspositionDashboard({ variant, root, player, instrument, onIn
     <div className="glass-surface p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
             Transposition Dashboard
           </p>
           <h2 className="mt-1 font-serif text-xl text-slate-50">{variant.name}</h2>
@@ -171,7 +171,7 @@ export function TranspositionDashboard({ variant, root, player, instrument, onIn
             aria-label={
               isPlaying ? "Stop playback" : `Play the ${variant.name} scale in ${root}`
             }
-            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[rgb(var(--c-a-400)/0.4)] px-3.5 py-2 text-sm font-medium text-[rgb(var(--c-a-300))] transition duration-200 hover:border-[rgb(var(--c-a-400))] hover:bg-[rgb(var(--c-a-400)/0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-a-400)/0.7)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.4)] px-3.5 py-2 text-sm font-medium text-[rgb(var(--c-s-50))] transition duration-200 hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50)/0.7)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
           >
             {isPlaying ? <StopIcon /> : <PlayIcon />}
             {isPlaying ? "Stop" : "Hear this scale"}
@@ -199,14 +199,14 @@ export function TranspositionDashboard({ variant, root, player, instrument, onIn
               disabled={!supported}
               onClick={() => playDegree(spelled.notes, i)}
               aria-label={`Play ${note}, scale degree ${spelled.degrees[i]}`}
-              className={`flex w-16 cursor-pointer flex-col items-center rounded-xl border py-3 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-a-400)/0.7)] disabled:cursor-default motion-safe:duration-200 ${
+              className={`flex w-16 cursor-pointer flex-col items-center rounded-xl border py-3 transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50)/0.7)] disabled:cursor-default motion-safe:duration-200 ${
                 isActive
-                  ? "border-[rgb(var(--c-a-400))] bg-[rgb(var(--c-a-400)/0.2)] motion-safe:scale-105"
-                  : "border-[rgb(var(--c-a-400)/0.25)] bg-[rgb(var(--c-a-400)/0.05)] hover:border-[rgb(var(--c-a-400)/0.6)] hover:bg-[rgb(var(--c-a-400)/0.1)]"
+                  ? "border-[rgb(var(--c-s-50))] bg-[rgb(var(--c-s-50)/0.2)] motion-safe:scale-105"
+                  : "border-[rgb(var(--c-s-50)/0.25)] bg-[rgb(var(--c-s-50)/0.05)] hover:border-[rgb(var(--c-s-50)/0.6)] hover:bg-[rgb(var(--c-s-50)/0.1)]"
               }`}
             >
               <span className="font-serif text-lg text-slate-50">{note}</span>
-              <span className="mt-1 text-[11px] text-[rgb(var(--c-a-300)/0.8)]">{spelled.degrees[i]}</span>
+              <span className="mt-1 text-[11px] text-[rgb(var(--c-s-50)/0.8)]">{spelled.degrees[i]}</span>
             </button>
           );
         })}
@@ -291,12 +291,12 @@ export function TranspositionDashboard({ variant, root, player, instrument, onIn
             {ROOT_KEYS.map((key) => (
               <tr
                 key={key}
-                className={`border-t border-ink/5 ${key === root ? "bg-[rgb(var(--c-a-400)/0.05)]" : ""}`}
+                className={`border-t border-ink/5 ${key === root ? "bg-[rgb(var(--c-s-50)/0.05)]" : ""}`}
               >
                 <th
                   scope="row"
                   className={`py-2 pr-4 text-left font-medium ${
-                    key === root ? "text-[rgb(var(--c-a-300))]" : "text-slate-300"
+                    key === root ? "text-[rgb(var(--c-s-50))]" : "text-slate-300"
                   }`}
                 >
                   {key}

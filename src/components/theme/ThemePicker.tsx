@@ -64,14 +64,14 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
                 aria-pressed={selected}
                 className={`w-full rounded-lg border p-2.5 text-left transition ${
                   selected
-                    ? "border-[rgb(var(--c-a-400))] bg-[rgb(var(--c-a-400)/0.1)]"
-                    : "border-ink/10 hover:border-[rgb(var(--c-a-400)/0.4)] hover:bg-ink/5"
+                    ? "border-[rgb(var(--c-s-50))] bg-[rgb(var(--c-s-50)/0.1)]"
+                    : "border-ink/10 hover:border-[rgb(var(--c-s-50)/0.4)] hover:bg-ink/5"
                 }`}
               >
                 <span className="flex items-center justify-between gap-2">
                   <span className="text-sm font-medium text-slate-100">{opt.label}</span>
                   {selected && (
-                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] text-slate-950">
+                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50))] text-slate-950">
                       <CheckIcon />
                     </span>
                   )}

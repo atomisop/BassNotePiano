@@ -119,7 +119,7 @@ export function BookingCalendar({
             onClick={() => shiftMonth(-1)}
             disabled={atMinMonth}
             aria-label="Previous month"
-            className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-ink/5 hover:text-[rgb(var(--c-a-300))] disabled:pointer-events-none disabled:opacity-30"
+            className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-ink/5 hover:text-[rgb(var(--c-s-50))] disabled:pointer-events-none disabled:opacity-30"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
               <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
@@ -130,7 +130,7 @@ export function BookingCalendar({
             onClick={() => shiftMonth(1)}
             disabled={atMaxMonth}
             aria-label="Next month"
-            className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-ink/5 hover:text-[rgb(var(--c-a-300))] disabled:pointer-events-none disabled:opacity-30"
+            className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-ink/5 hover:text-[rgb(var(--c-s-50))] disabled:pointer-events-none disabled:opacity-30"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
               <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
@@ -164,10 +164,10 @@ export function BookingCalendar({
               title={info ? `${info.count} class${info.count === 1 ? "" : "es"}` : undefined}
               className={`relative mx-auto flex h-8 w-8 flex-col items-center justify-center rounded-full text-xs transition ${
                 isSelected
-                  ? "bg-[rgb(var(--c-a-400))] font-semibold text-slate-950"
+                  ? "bg-[rgb(var(--c-s-50))] font-semibold text-slate-950"
                   : clickable
                     ? info?.hasOpenSlot
-                      ? "font-medium text-[rgb(var(--c-a-200))] hover:bg-[rgb(var(--c-a-400)/0.15)]"
+                      ? "font-medium text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.15)]"
                       : "font-medium text-slate-500 hover:bg-ink/5"
                     : isToday
                       ? "text-slate-300 ring-1 ring-inset ring-ink/15"
@@ -177,7 +177,7 @@ export function BookingCalendar({
               {day}
               {info && !isSelected && (
                 <span
-                  className={`absolute bottom-1 h-1 w-1 rounded-full ${info.hasOpenSlot ? "bg-[rgb(var(--c-a-400))]" : "bg-slate-600"}`}
+                  className={`absolute bottom-1 h-1 w-1 rounded-full ${info.hasOpenSlot ? "bg-[rgb(var(--c-s-50))]" : "bg-slate-600"}`}
                   aria-hidden
                 />
               )}
@@ -188,7 +188,7 @@ export function BookingCalendar({
 
       <div className="mt-4 flex items-center justify-between border-t border-ink/10 pt-3">
         <p className="flex items-center gap-1.5 text-[11px] text-slate-600">
-          <span className="h-1.5 w-1.5 rounded-full bg-[rgb(var(--c-a-400))]" aria-hidden />
+          <span className="h-1.5 w-1.5 rounded-full bg-[rgb(var(--c-s-50))]" aria-hidden />
           Available
           <span className="ml-2 h-1.5 w-1.5 rounded-full bg-slate-600" aria-hidden />
           Booked
@@ -197,7 +197,7 @@ export function BookingCalendar({
           <button
             type="button"
             onClick={() => onSelectDate(null)}
-            className="text-[11px] font-medium text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))]"
+            className="text-[11px] font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70"
           >
             Show all
           </button>

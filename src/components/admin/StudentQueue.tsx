@@ -20,7 +20,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_STYLE: Record<string, string> = {
-  PENDING: "bg-[rgb(var(--c-a-400)/0.15)] text-[rgb(var(--c-a-300))]",
+  PENDING: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]",
   APPROVED: "bg-emerald-400/15 text-emerald-300",
   REJECTED: "bg-red-400/15 text-red-300",
 };
@@ -32,7 +32,7 @@ function Avatar({ image, name }: { image: string | null | undefined; name: strin
         // eslint-disable-next-line @next/next/no-img-element
         <img src={image} alt="" className="h-full w-full object-cover" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center font-serif text-lg text-[rgb(var(--c-a-300))]">
+        <div className="flex h-full w-full items-center justify-center font-serif text-lg text-[rgb(var(--c-s-50))]">
           {name.charAt(0).toUpperCase()}
         </div>
       )}

@@ -39,14 +39,14 @@ function NavItem({
       data-tour={dataTour}
       className={`relative flex flex-col items-center gap-1 rounded-xl border px-2 py-2.5 text-center transition ${
         active
-          ? "border-[rgb(var(--c-a-400)/0.2)] bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-300))]"
+          ? "border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
           : "border-transparent text-slate-500 hover:border-ink/10 hover:bg-ink/5 hover:text-slate-200"
       }`}
     >
       <NavIcon path={icon} />
       <span className="text-[10px] font-medium leading-none">{label}</span>
       {Boolean(badge) && (
-        <span className="absolute right-1.5 top-1 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] px-1 text-[9px] font-bold text-slate-950">
+        <span className="absolute right-1.5 top-1 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-[rgb(var(--c-s-50))] px-1 text-[9px] font-bold text-slate-950">
           {badge! > 9 ? "9+" : badge}
         </span>
       )}

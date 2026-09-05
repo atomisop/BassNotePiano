@@ -125,7 +125,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
     return (
       <div className="mx-auto max-w-xl space-y-6">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Social</p>
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
           <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Friends</h1>
         </div>
         <SectionCard title="Set a username first" description="Needed so other students can find and add you.">
@@ -143,7 +143,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <div>
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Social</p>
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
         <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Friends</h1>
         <p className="mt-1 text-sm text-slate-500">
           You&apos;re <span className="text-slate-300">@{username}</span>.
@@ -157,7 +157,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search @username"
-            className="flex-1 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
+            className="flex-1 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
           />
           <button
             type="submit"
@@ -183,7 +183,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                   type="button"
                   onClick={() => handleAddFriend(profile)}
                   disabled={sentTo.has(profile.id)}
-                  className="shrink-0 rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-[rgb(var(--c-a-400)/0.5)] hover:text-[rgb(var(--c-a-300))] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="shrink-0 rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.5)] hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {sentTo.has(profile.id) ? "Sent" : "Add friend"}
                 </button>
@@ -265,7 +265,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                   <div className="flex shrink-0 gap-2">
                     <Link
                       href={`/messages?with=${friend.id}`}
-                      className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-[rgb(var(--c-a-400)/0.5)] hover:text-[rgb(var(--c-a-300))]"
+                      className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.5)] hover:text-[rgb(var(--c-s-50))]"
                     >
                       Message
                     </Link>

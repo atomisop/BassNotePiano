@@ -213,7 +213,7 @@ export function AdminLessonManager({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Reading the Bati formula"
               disabled={uploading}
-              className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
+              className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
             />
           </div>
           <div>
@@ -223,7 +223,7 @@ export function AdminLessonManager({
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               disabled={uploading}
-              className="w-full resize-none glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
+              className="w-full resize-none glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
             />
           </div>
           <div>
@@ -265,7 +265,7 @@ export function AdminLessonManager({
             <div key={lesson.id} className="glass-surface p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.1)] text-xs font-semibold text-[rgb(var(--c-a-300))]">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)] text-xs font-semibold text-[rgb(var(--c-s-50))]">
                     {index + 1}
                   </span>
                   <div>

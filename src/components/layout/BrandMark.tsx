@@ -40,9 +40,11 @@ export function BrandMark() {
 
       {/* Below md: unchanged, always-visible text — no hover to drive a
           reveal on a touch device. Same wordmark treatment as MarketingNav's
-          own (bold, lowercase, fully accent-colored) now, not the
-          pre-Pianote-pass uppercase/split-color version this used to be. */}
-      <span className="font-serif text-sm font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-a-400))] md:hidden">
+          own (bold, lowercase) now, not the pre-Pianote-pass
+          uppercase/split-color version this used to be. Fully accent-colored
+          at the time; neutral again now under the "premium black and white"
+          pass. */}
+      <span className="font-serif text-sm font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))] md:hidden">
         Bass Note Piano
       </span>
 
@@ -57,7 +59,7 @@ export function BrandMark() {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={reducedMotion ? { opacity: 0 } : { opacity: 0, x: -14, scale: 0.85 }}
               transition={{ duration: reducedMotion ? 0.15 : 0.28, ease: [0.16, 1, 0.3, 1] }}
-              className="inline-block whitespace-nowrap font-serif text-sm font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-a-400))]"
+              className="inline-block whitespace-nowrap font-serif text-sm font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]"
             >
               Bass Note Piano
             </motion.span>

@@ -146,14 +146,14 @@ export function Fretboard({
                       aria-label={labelFor(degreeIndex, openStringName[stringIndex], fret)}
                       aria-pressed={inScale}
                       style={{ width: fret === 0 ? OPEN_CELL_WIDTH : CELL_WIDTH }}
-                      className={`flex h-8 shrink-0 cursor-pointer items-center justify-center border border-ink/10 text-[10px] font-serif transition-colors duration-150 focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-a-400))] disabled:cursor-default ${
+                      className={`flex h-8 shrink-0 cursor-pointer items-center justify-center border border-ink/10 text-[10px] font-serif transition-colors duration-150 focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50))] disabled:cursor-default ${
                         fret === 0 ? "border-r-2 border-r-ink/40" : ""
                       } ${
                         isActive
-                          ? "bg-[rgb(var(--c-a-400))] text-slate-950"
+                          ? "bg-[rgb(var(--c-s-50))] text-slate-950"
                           : inScale
-                            ? "bg-[rgb(var(--c-a-400)/0.25)] text-[rgb(var(--c-a-200))] hover:bg-[rgb(var(--c-a-400)/0.4)]"
-                            : "bg-slate-950 hover:bg-[rgb(var(--c-a-400)/0.1)]"
+                            ? "bg-[rgb(var(--c-s-50)/0.25)] text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.4)]"
+                            : "bg-slate-950 hover:bg-[rgb(var(--c-s-50)/0.1)]"
                       }`}
                     >
                       {inScale && notes[degreeIndex]}

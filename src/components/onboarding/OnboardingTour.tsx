@@ -291,7 +291,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
         }
       >
         <div className="flex items-start justify-between gap-3">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
             {visibleIndex} of {visibleTotal}
           </p>
           <button type="button" onClick={handleSkip} aria-label="Skip tour" className="shrink-0 text-slate-500 transition hover:text-slate-200">

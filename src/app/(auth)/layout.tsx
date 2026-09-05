@@ -29,10 +29,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <header>
         <Link href="/" className="relative mb-8 flex flex-col items-center text-center">
           <Image src="/logo-mark.png" alt="" width={44} height={44} className="mb-2 h-11 w-11 rounded-[8px]" priority />
-          {/* Same wordmark treatment as MarketingNav's own (bold, lowercase,
-              fully accent-colored). This was still the pre-Pianote-pass
-              title-case/split-color version. */}
-          <p className="font-serif text-2xl font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-a-400))]">
+          {/* Same wordmark treatment as MarketingNav's own (bold, lowercase).
+              This was still the pre-Pianote-pass title-case/split-color
+              version. Fully accent-colored at the time; neutral again now
+              under the "premium black and white" pass. */}
+          <p className="font-serif text-2xl font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]">
             Bass Note Piano
           </p>
           <p className="mt-1 text-sm text-slate-400">Ethiopian scale theory, practiced.</p>

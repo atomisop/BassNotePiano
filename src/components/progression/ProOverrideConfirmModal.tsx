@@ -72,7 +72,7 @@ export function ProOverrideConfirmModal({
             exit="exit"
             className="glass-surface-modal relative w-full max-w-sm p-6"
           >
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Curriculum access</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Curriculum access</p>
             <h2 id="override-modal-title" className="mt-1.5 font-serif text-lg text-slate-50">
               Skip ahead?
             </h2>

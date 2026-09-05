@@ -49,18 +49,18 @@ export default async function ProfilePage() {
         Back to roadmap
       </Link>
       <div className="flex items-center gap-4">
-        <div className="h-16 w-16 overflow-hidden rounded-full border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.1)]">
+        <div className="h-16 w-16 overflow-hidden rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)]">
           {user.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={user.image} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center font-serif text-2xl text-[rgb(var(--c-a-300))]">
+            <div className="flex h-full w-full items-center justify-center font-serif text-2xl text-[rgb(var(--c-s-50))]">
               {(user.name ?? user.username ?? "?").charAt(0).toUpperCase()}
             </div>
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Profile</p>
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Profile</p>
           <h1 className="mt-1 font-serif text-2xl text-slate-50">{user.name ?? "Student"}</h1>
           {user.username && <p className="text-sm text-slate-500">@{user.username}</p>}
         </div>
@@ -80,13 +80,13 @@ export default async function ProfilePage() {
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="glass-surface p-5">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
             {user.currentStreak > 0 ? `${user.currentStreak} day streak` : "Streak"}
           </p>
           <StreakDots currentStreak={user.currentStreak} />
         </div>
         <div className="glass-surface p-5">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Longest streak</p>
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Longest streak</p>
           <p className="mt-2 font-serif text-2xl text-slate-50">
             {user.longestStreak} day{user.longestStreak === 1 ? "" : "s"}
           </p>

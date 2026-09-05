@@ -1,7 +1,7 @@
 export function GroupAvatar({ className = "h-9 w-9" }: { className?: string }) {
   return (
     <div
-      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-[rgb(var(--c-a-400)/0.2)] bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-300))] ${className}`}
+      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))] ${className}`}
     >
       <svg viewBox="0 0 24 24" fill="none" className="h-[45%] w-[45%]">
         <path

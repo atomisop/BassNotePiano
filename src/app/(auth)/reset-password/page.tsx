@@ -87,7 +87,7 @@ function ResetPasswordForm() {
       >
         <p className="text-sm text-slate-400">
           Missing email.{" "}
-          <Link href="/forgot-password" className="text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))]">
+          <Link href="/forgot-password" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
             Start over
           </Link>
           .
@@ -111,7 +111,7 @@ function ResetPasswordForm() {
         <ArrowLeftIcon size={16} />
         Back to login
       </Link>
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Reset password</p>
+      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Reset password</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Choose a new password</h1>
       <p className="mt-2 text-sm text-slate-500">
         We sent a 6-digit code to <span className="text-slate-300">{email}</span>.
@@ -215,7 +215,7 @@ function ResetPasswordForm() {
       <button
         type="button"
         onClick={handleResend}
-        className="mt-4 w-full text-center text-sm text-slate-500 transition hover:text-[rgb(var(--c-a-300))]"
+        className="mt-4 w-full text-center text-sm text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
       >
         Didn&apos;t get a code? Resend
       </button>

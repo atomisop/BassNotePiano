@@ -72,7 +72,7 @@ function Avatar({ image, name }: { image: string | null; name: string }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={image} alt="" className="h-full w-full object-cover" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center font-serif text-sm text-[rgb(var(--c-a-300))]">
+        <div className="flex h-full w-full items-center justify-center font-serif text-sm text-[rgb(var(--c-s-50))]">
           {name.charAt(0).toUpperCase()}
         </div>
       )}
@@ -146,7 +146,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
             <div className="mt-4 space-y-5">
               {groupByFocus(activeRoster).map((group) => (
                 <div key={group.scaleLabel}>
-                  <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[rgb(var(--c-a-400)/0.8)]">
+                  <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[rgb(var(--c-s-50)/0.8)]">
                     {group.scaleLabel} · {group.entries.length} student{group.entries.length === 1 ? "" : "s"}
                   </p>
                   <div className="space-y-2">
@@ -165,7 +165,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                   {entry.studentEmail} · until {formatEndTime(occ.scheduledAt, entry.creditsSpent)} (
                                   {entry.creditsSpent} credit{entry.creditsSpent === 1 ? "" : "s"})
                                 </p>
-                                <p className="mt-0.5 text-xs text-[rgb(var(--c-a-300))]">{entry.focus.action}</p>
+                                <p className="mt-0.5 text-xs text-[rgb(var(--c-s-50))]">{entry.focus.action}</p>
                               </div>
                             </div>
 

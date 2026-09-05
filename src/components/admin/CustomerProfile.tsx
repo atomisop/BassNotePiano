@@ -171,7 +171,7 @@ export function CustomerProfile({
               <div className="flex flex-wrap gap-2">
                 <span
                   className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${
-                    user.role === "ADMIN" ? "bg-[rgb(var(--c-a-400)/0.15)] text-[rgb(var(--c-a-300))]" : "bg-slate-800 text-slate-400"
+                    user.role === "ADMIN" ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "bg-slate-800 text-slate-400"
                   }`}
                 >
                   {user.role}
@@ -188,7 +188,7 @@ export function CustomerProfile({
 
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
               {pendingAction === "curriculum" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.05)] px-3 py-1.5 text-xs text-slate-200">
+                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-1.5 text-xs text-slate-200">
                   {user.hasCurriculumAccess
                     ? "Revoke curriculum access? They'll lose access to paid lessons immediately."
                     : "Grant curriculum access to this account?"}
@@ -217,7 +217,7 @@ export function CustomerProfile({
               )}
 
               {pendingAction === "role" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.05)] px-3 py-1.5 text-xs text-slate-200">
+                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-1.5 text-xs text-slate-200">
                   {user.role === "ADMIN"
                     ? "Remove admin access from this account?"
                     : "Make this account an admin? They'll get full access to payments, users, and every other admin tool."}
@@ -325,7 +325,7 @@ export function CustomerProfile({
                     onClick={() => withBusy(() => onToggleScale(user.id, scale.scaleGroup.slug, scale.status === "LOCKED"))}
                     className={`shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition disabled:opacity-40 ${
                       scale.status === "LOCKED"
-                        ? "border-[rgb(var(--c-a-400)/0.3)] text-[rgb(var(--c-a-300))] hover:bg-[rgb(var(--c-a-400)/0.1)]"
+                        ? "border-[rgb(var(--c-s-50)/0.3)] text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)]"
                         : "border-ink/10 text-slate-400 hover:bg-slate-800"
                     }`}
                   >
@@ -351,7 +351,7 @@ export function CustomerProfile({
                   onChange={(e) => setCreditAmount(e.target.value)}
                   placeholder="e.g. 4 or -2"
                   disabled={creditConfirming}
-                  className="mt-1 w-28 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
+                  className="mt-1 w-28 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
                 />
               </div>
               <div className="flex-1">
@@ -365,7 +365,7 @@ export function CustomerProfile({
                   onChange={(e) => setCreditReason(e.target.value)}
                   placeholder="e.g. Paid via Venmo instead of Zelle"
                   disabled={creditConfirming}
-                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
+                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
                 />
               </div>
               {!creditConfirming && (
@@ -379,7 +379,7 @@ export function CustomerProfile({
               )}
             </form>
             {creditConfirming && (
-              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.05)] px-3 py-2 text-xs text-slate-200">
+              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-2 text-xs text-slate-200">
                 {Number(creditAmount) > 0 ? "Grant" : "Deduct"}{" "}
                 <span className="font-semibold text-slate-50">
                   {Math.abs(Number(creditAmount))} credit{Math.abs(Number(creditAmount)) === 1 ? "" : "s"}
@@ -536,7 +536,7 @@ export function CustomerProfile({
                     <span className="text-xs text-slate-500">{formatDate(t.createdAt)}</span>
                     <span
                       className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
-                        t.status === "OPEN" ? "bg-[rgb(var(--c-a-400)/0.15)] text-[rgb(var(--c-a-300))]" : "bg-emerald-400/15 text-emerald-300"
+                        t.status === "OPEN" ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "bg-emerald-400/15 text-emerald-300"
                       }`}
                     >
                       {t.status === "OPEN" ? "Open" : "Resolved"}

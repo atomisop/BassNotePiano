@@ -71,13 +71,13 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
         aria-expanded={open}
         data-tour="nav-profile"
         onClick={() => setOpen((v) => !v)}
-        className={`h-8 w-8 shrink-0 overflow-hidden rounded-full border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.1)] transition hover:border-[rgb(var(--c-a-400)/0.6)] ${triggerClassName ?? ""}`}
+        className={`h-8 w-8 shrink-0 overflow-hidden rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)] transition hover:border-[rgb(var(--c-s-50)/0.6)] ${triggerClassName ?? ""}`}
       >
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element -- data URI, next/image can't optimize it
           <img src={image} alt="" className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center font-serif text-sm text-[rgb(var(--c-a-300))]">
+          <div className="flex h-full w-full items-center justify-center font-serif text-sm text-[rgb(var(--c-s-50))]">
             {initial}
           </div>
         )}
@@ -96,12 +96,12 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
           className="glass-surface-elevated absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 overflow-hidden p-1.5"
         >
           <div className="flex items-center gap-3 px-2.5 py-2">
-            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.1)]">
+            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)]">
               {image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={image} alt="" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center font-serif text-sm text-[rgb(var(--c-a-300))]">
+                <div className="flex h-full w-full items-center justify-center font-serif text-sm text-[rgb(var(--c-s-50))]">
                   {initial}
                 </div>
               )}

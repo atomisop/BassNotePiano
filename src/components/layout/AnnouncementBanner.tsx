@@ -47,7 +47,7 @@ export function AnnouncementBanner({ announcement }: { announcement: ActiveAnnou
           transition={{ type: "spring", bounce: 0, duration: 0.32 }}
           className="glass-surface-elevated mx-4 mt-4 flex shrink-0 cursor-grab items-start gap-3 p-4 active:cursor-grabbing md:mx-8"
         >
-          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-a-400)/0.15)] text-[rgb(var(--c-a-300))]">
+          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]">
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
               <path
                 d="M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5z"

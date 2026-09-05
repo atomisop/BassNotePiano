@@ -75,7 +75,7 @@ function OptionButton({
       disabled={comingSoon}
       className={`flex w-full items-center justify-between gap-2 rounded-xl border px-4 py-3 text-left text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
         selected
-          ? "border-[rgb(var(--c-a-400)/0.6)] bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-200))]"
+          ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
           : "border-ink/10 bg-slate-950 text-slate-300 hover:border-ink/15"
       }`}
     >
@@ -174,7 +174,7 @@ export function OnboardingWizard() {
         />
       </div>
 
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">
+      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
         Step {step + 1} of {STEP_TITLES.length}
       </p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">{STEP_TITLES[step]}</h1>
@@ -183,7 +183,7 @@ export function OnboardingWizard() {
       <AnimatePresence mode="wait">
         <motion.div key={step} variants={stepVariants} initial="enter" animate="center" exit="exit" className="mt-6 space-y-2">
           {step === 0 && (
-            <div className="flex items-center glass-surface-subtle pl-4 focus-within:border-[rgb(var(--c-a-400)/0.6)]">
+            <div className="flex items-center glass-surface-subtle pl-4 focus-within:border-[rgb(var(--c-s-50)/0.6)]">
               <span className="text-sm text-slate-500">@</span>
               <input
                 type="text"
