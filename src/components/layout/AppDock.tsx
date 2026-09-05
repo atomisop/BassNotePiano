@@ -241,7 +241,14 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
           animate={reducedMotion ? undefined : { y: [-2, 2, -2] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Dock className="items-end pb-3" magnification={72} distance={140} panelHeight={60}>
+          {/* !bg-black/!border-white/10 override `glass-surface-elevated`'s
+              own theme-driven (now pink/orange-tinted) glass background —
+              solid black regardless of theme or accent, by direct
+              instruction. The `!` is load-bearing: `glass-surface-elevated`
+              sets its background via a plain class rule, not an inline
+              style, so an unmarked override isn't guaranteed to win the
+              cascade against it. */}
+          <Dock className="items-end pb-3 !bg-black !border-white/10" magnification={72} distance={140} panelHeight={60}>
             {items.map((item) => {
               const active = pathname === item.href || (item.href === "/admin" && pathname.startsWith("/admin"));
               const badge = item.href === "/messages" ? unreadMessageCount : 0;
@@ -263,18 +270,19 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
                   <motion.div whileTap={{ scale: 0.9 }}>
                     <DockItem
                       aria-label={item.label}
-                      className={`rounded-full transition-colors ${
-                        active ? "bg-[rgb(var(--c-a-400)/0.18)]" : "hover:bg-[rgb(var(--c-s-50)/0.08)]"
-                      }`}
+                      className={`rounded-full transition-colors ${active ? "bg-white/12" : "hover:bg-white/8"}`}
                     >
                       <DockIcon>
-                        <Icon className={`h-full w-full ${active ? "text-[rgb(var(--c-a-300))]" : "text-[rgb(var(--c-s-300))]"}`} />
+                        {/* White at every step, not accent-colored — same
+                            direct instruction as the dock's own background.
+                            Active vs inactive is now opacity-only (full
+                            white vs 60%), so the current tab still reads at
+                            a glance without reintroducing colour. */}
+                        <Icon className={`h-full w-full ${active ? "text-white" : "text-white/60"}`} />
                       </DockIcon>
                     </DockItem>
                   </motion.div>
-                  <span
-                    className={`text-[9px] font-medium leading-none ${active ? "text-[rgb(var(--c-a-300))]" : "text-[rgb(var(--c-s-400))]"}`}
-                  >
+                  <span className={`text-[9px] font-medium leading-none ${active ? "text-white" : "text-white/50"}`}>
                     {item.label}
                   </span>
                   {Boolean(badge) && (
