@@ -690,12 +690,19 @@ export function AssistantWidget() {
             exit={{ opacity: 0, y: 16, scale: 0.96 }}
             transition={{ type: "spring", bounce: 0, duration: 0.3 }}
             className="glass-surface-elevated flex h-[min(70vh,560px)] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl"
-            // `glass-surface-elevated`'s border reads the site's global
-            // accent (green) via `--elev-border` — overridden locally, right
-            // here, to Atom's own pink→orange instead, without touching the
-            // shared variable every other elevated surface on the site
-            // still relies on.
-            style={{ "--elev-border": "rgb(255 128 0 / 0.4)" } as React.CSSProperties}
+            // `glass-surface-elevated`'s border and background material both
+            // read the site's global accent (green) via `--elev-border` /
+            // `--elev-bg` — overridden locally, right here, to Atom's own
+            // pink→orange instead, without touching the shared variables
+            // every other elevated surface on the site still relies on.
+            // Applied regardless of the active site theme (not just dark),
+            // so Atom keeps one consistent identity either way.
+            style={
+              {
+                "--elev-border": "rgb(255 128 0 / 0.4)",
+                "--elev-bg": "linear-gradient(160deg, rgba(247, 0, 168, 0.14), rgba(255, 128, 0, 0.14))",
+              } as React.CSSProperties
+            }
             role="dialog"
             aria-label="Chat with Atom"
           >
@@ -918,7 +925,12 @@ export function AssistantWidget() {
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ type: "spring", bounce: 0, duration: 0.3 }}
             className="glass-surface-elevated relative max-w-[240px] rounded-2xl text-sm leading-relaxed text-slate-100"
-            style={{ "--elev-border": "rgb(255 128 0 / 0.4)" } as React.CSSProperties}
+            style={
+              {
+                "--elev-border": "rgb(255 128 0 / 0.4)",
+                "--elev-bg": "linear-gradient(160deg, rgba(247, 0, 168, 0.14), rgba(255, 128, 0, 0.14))",
+              } as React.CSSProperties
+            }
           >
             <button type="button" onClick={openPanel} className="block w-full rounded-2xl px-4 py-3 text-left">
               {GREETING_TEXT}
