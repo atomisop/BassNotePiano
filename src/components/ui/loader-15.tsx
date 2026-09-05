@@ -11,10 +11,22 @@ import * as React from "react";
  * new CSS-in-JS runtime into an otherwise Tailwind-first codebase for one
  * decorative component. The visual output (the gooey blur via
  * `feGaussianBlur`/`feColorMatrix`, the two out-of-phase dash-offset
- * sweeps, the soft offset shadow copy) is unchanged from the source;
- * only the styling mechanism moved, and the gradient/filter ids are now
- * generated per-instance (`useId`) instead of the original's hardcoded
- * strings, so two `<Loader />`s mounted at once don't collide.
+ * sweeps) is unchanged from the source; only the styling mechanism moved,
+ * and the gradient/filter ids are now generated per-instance (`useId`)
+ * instead of the original's hardcoded strings, so two `<Loader />`s
+ * mounted at once don't collide.
+ *
+ * The source component's second copy of the ring (a blurred "shadow" pass,
+ * offset a few px and rendered at low opacity) is deliberately dropped
+ * here: with no positioned ancestor to pin it against, it kept its own
+ * static-flow position instead of stacking on the real ring, so in every
+ * place this app actually uses Loader (a small fixed-size circle — Atom's
+ * launcher button, its chat-panel header icon) it rendered as a separate
+ * blurry blob floating below the icon rather than a shadow behind it —
+ * exactly the "reflection" a visitor on the live site reported seeing
+ * under Atom's launcher. Removing the copy entirely (rather than pinning
+ * it with `inset: 0` to force it into a tight drop-shadow) is the version
+ * confirmed to actually look right here.
  *
  * `size` scales the whole thing — the path data, stroke widths and blur
  * radius are all defined in the same 200×200 `viewBox`, so they scale
@@ -51,14 +63,6 @@ export default function Loader({ size = 200, className }: { size?: number; class
           </linearGradient>
           <linearGradient y2={160} x2={160} y1={40} x1={40} gradientUnits="userSpaceOnUse" id={gradientId} xlinkHref={`#${stopsId}`} />
         </defs>
-        <path
-          className="halvan"
-          style={{ stroke: `url(#${gradientId})` }}
-          d="m 164,100 c 0,-35.346224 -28.65378,-64 -64,-64 -35.346224,0 -64,28.653776 -64,64 0,35.34622 28.653776,64 64,64 35.34622,0 64,-26.21502 64,-64 0,-37.784981 -26.92058,-64 -64,-64 -37.079421,0 -65.267479,26.922736 -64,64 1.267479,37.07726 26.703171,65.05317 64,64 37.29683,-1.05317 64,-64 64,-64"
-        />
-        <circle className="strecken" style={{ stroke: `url(#${gradientId})` }} cx={100} cy={100} r={64} />
-      </svg>
-      <svg className="skugga" width={size} height={size} viewBox="0 0 200 200">
         <path
           className="halvan"
           style={{ stroke: `url(#${gradientId})` }}
@@ -110,19 +114,6 @@ export default function Loader({ size = 200, className }: { size?: number; class
           fill: none;
           stroke-width: 23;
           stroke-linecap: round;
-        }
-        .skugga {
-          /* No top/left and no positioned ancestor, matching the original
-             exactly — an absolutely-positioned box with no inset set
-             keeps its static-flow position, which is what actually
-             produces the stacked (not overlapping) pair the source
-             component's own preview shows. Pinning it to inset 0 here
-             would "fix" it into a tight drop-shadow, which looks
-             different from the design that was actually picked. */
-          filter: blur(5px);
-          opacity: 0.3;
-          position: absolute;
-          transform: translate(3px, 3px);
         }
         @keyframes loader15-snurra {
           0% {
