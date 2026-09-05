@@ -65,7 +65,7 @@ export function UserManagementTable({
         value={query}
         onChange={(e) => handleSearchChange(e.target.value)}
         placeholder="Search by name or email…"
-        className="w-full max-w-sm glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
+        className="w-full max-w-sm glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
       />
 
       {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
@@ -87,7 +87,7 @@ export function UserManagementTable({
                   <p className="text-sm text-slate-500">{user.email}</p>
                   <Link
                     href={`/admin/users/${user.id}`}
-                    className="mt-1 inline-block text-xs font-medium text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))]"
+                    className="mt-1 inline-block text-xs font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70"
                   >
                     View full profile →
                   </Link>
@@ -95,7 +95,7 @@ export function UserManagementTable({
                 <div className="flex items-center gap-2">
                   <span
                     className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${
-                      user.role === "ADMIN" ? "bg-[rgb(var(--c-a-400)/0.15)] text-[rgb(var(--c-a-300))]" : "bg-slate-800 text-slate-400"
+                      user.role === "ADMIN" ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "bg-slate-800 text-slate-400"
                     }`}
                   >
                     {user.role}
@@ -125,7 +125,7 @@ export function UserManagementTable({
                         su.completed
                           ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20"
                           : su.unlocked
-                            ? "border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-300))] hover:bg-[rgb(var(--c-a-400)/0.2)]"
+                            ? "border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.2)]"
                             : "border-ink/10 text-slate-500 hover:border-ink/15"
                       }`}
                     >
@@ -136,7 +136,7 @@ export function UserManagementTable({
               </div>
 
               {pendingAction?.userId === user.id ? (
-                <div className="mt-4 space-y-2 rounded-lg border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.05)] p-3">
+                <div className="mt-4 space-y-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] p-3">
                   <p className="text-xs text-slate-300">
                     {pendingAction.kind === "role" &&
                       (user.role === "ADMIN"

@@ -37,7 +37,7 @@ function ProductCard({ product }: { product: ShopProduct }) {
         />
       </div>
       <div className="flex flex-1 flex-col gap-2 p-5">
-        <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-[rgb(var(--c-a-300))]">{product.brand}</p>
+        <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-[rgb(var(--c-s-50))]">{product.brand}</p>
         <h3 className="text-balance font-serif text-lg leading-snug text-slate-50">{product.name}</h3>
         <p className="text-sm text-slate-400">{product.blurb}</p>
         <div className="mt-auto flex items-center justify-between gap-3 pt-4">

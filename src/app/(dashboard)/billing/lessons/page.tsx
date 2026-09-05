@@ -44,7 +44,7 @@ export default async function BillingLessonsPage({ searchParams }: { searchParam
         Back to classes
       </Link>
       <div className="lg:col-span-5">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Weekly Classes</p>
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
         <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Buy class credits</h1>
         <p className="mt-3 text-sm leading-relaxed text-slate-400">
           1 credit = 30 minutes of live class. $34.99/credit, and Starter, Standard, and Best Value are all marked down
@@ -53,7 +53,7 @@ export default async function BillingLessonsPage({ searchParams }: { searchParam
         <div className="mt-6 space-y-3 border-t border-ink/10 pt-6 text-sm text-slate-400">
           <p className="font-medium text-slate-300">Buying for more than one kid?</p>
           <p className="leading-relaxed">
-            Switch to <span className="text-[rgb(var(--c-a-300))]">Family bundle</span> on the right. The same tier applied to
+            Switch to <span className="text-[rgb(var(--c-s-50))]">Family bundle</span> on the right. The same tier applied to
             2 or more separate accounts at once gets an extra 25% off the combined total, also for a limited time. Each
             recipient needs their own Bass Note Piano account already, since the credits land directly on their account,
             not yours.

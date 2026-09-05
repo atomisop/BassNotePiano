@@ -131,7 +131,7 @@ export function LessonVideoPlayer({
           value={currentTime}
           onChange={handleScrub}
           aria-label="Seek"
-          className="h-1.5 w-full cursor-pointer accent-[rgb(var(--c-a-400))]"
+          className="h-1.5 w-full cursor-pointer accent-[rgb(var(--c-s-50))]"
         />
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -205,7 +205,7 @@ export function LessonVideoPlayer({
                 value={muted ? 0 : volume}
                 onChange={handleVolumeChange}
                 aria-label="Volume"
-                className="h-1 w-16 cursor-pointer accent-[rgb(var(--c-a-400))]"
+                className="h-1 w-16 cursor-pointer accent-[rgb(var(--c-s-50))]"
               />
             </div>
             <button

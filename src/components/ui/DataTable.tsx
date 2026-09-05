@@ -85,7 +85,7 @@ export function DataTable<TData, TValue>({
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder={searchPlaceholder}
-            className="w-full max-w-xs glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-a-400)/0.6)]"
+            className="w-full max-w-xs glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.6)]"
           />
         </div>
       )}
@@ -121,7 +121,7 @@ export function DataTable<TData, TValue>({
                           <button
                             type="button"
                             onClick={header.column.getToggleSortingHandler()}
-                            className="inline-flex cursor-pointer items-center gap-1 uppercase tracking-[0.12em] transition-colors hover:text-[rgb(var(--c-a-300))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-a-400)/0.7)]"
+                            className="inline-flex cursor-pointer items-center gap-1 uppercase tracking-[0.12em] transition-colors hover:text-[rgb(var(--c-s-50))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50)/0.7)]"
                           >
                             {flexRender(header.column.columnDef.header, header.getContext())}
                             <SortCaret dir={dir === false ? null : dir} />
@@ -194,7 +194,7 @@ function PageButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="cursor-pointer rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))] disabled:cursor-default disabled:opacity-40 disabled:hover:border-ink/10 disabled:hover:text-slate-300"
+      className="cursor-pointer rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] disabled:cursor-default disabled:opacity-40 disabled:hover:border-ink/10 disabled:hover:text-slate-300"
     >
       {children}
     </button>
@@ -211,7 +211,7 @@ function SortCaret({ dir }: { dir: "asc" | "desc" | null }) {
       stroke="currentColor"
       strokeWidth="2.5"
       aria-hidden
-      className={dir ? "text-[rgb(var(--c-a-400))]" : "text-slate-600"}
+      className={dir ? "text-[rgb(var(--c-s-50))]" : "text-slate-600"}
     >
       {dir === "desc" ? (
         <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />

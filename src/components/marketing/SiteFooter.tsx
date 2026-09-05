@@ -38,13 +38,14 @@ export function SiteFooter() {
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6 pt-16">
         <div className="grid grid-cols-1 gap-10 pb-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-2">
-            {/* Same wordmark treatment as MarketingNav's own (bold, lowercase,
-                fully accent-colored). This was still the pre-Pianote-pass
-                uppercase/wide-tracked/partial-color version, the one spot
-                that got missed when the nav's was updated. */}
+            {/* Same wordmark treatment as MarketingNav's own (bold, lowercase).
+                This was still the pre-Pianote-pass uppercase/wide-tracked/
+                partial-color version, the one spot that got missed when the
+                nav's was updated. Fully accent-colored at the time; neutral
+                again now under the "premium black and white" pass. */}
             <Link href="/" className="flex items-center gap-2">
               <Image src="/logo-mark.png" alt="" width={24} height={24} className="h-6 w-6 rounded-[6px]" />
-              <span className="font-serif text-sm font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-a-400))]">
+              <span className="font-serif text-sm font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]">
                 Bass Note Piano
               </span>
             </Link>
@@ -56,7 +57,7 @@ export function SiteFooter() {
               href={DISCORD_INVITE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-[rgb(var(--c-a-300))]"
+              className="mt-4 inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
             >
               <DiscordIcon size={18} className="text-[#5865F2]" />
               Join our Discord
@@ -69,11 +70,11 @@ export function SiteFooter() {
                 level on every one of them. h2 is correct on those and still
                 correct on the homepage, where the last content heading is
                 also an h2. Visual size is set by the classes, not the tag. */}
-            <h2 className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Explore</h2>
+            <h2 className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Explore</h2>
             <ul className="mt-4 flex flex-col gap-3 text-sm">
               {EXPLORE_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="text-slate-500 transition hover:text-[rgb(var(--c-a-300))]">
+                  <Link href={link.href} className="text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
                     {link.label}
                   </Link>
                 </li>
@@ -82,23 +83,23 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <h2 className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Account</h2>
+            <h2 className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Account</h2>
             <ul className="mt-4 flex flex-col gap-3 text-sm">
               {isLoggedIn ? (
                 <li>
-                  <Link href="/dashboard" className="text-slate-500 transition hover:text-[rgb(var(--c-a-300))]">
+                  <Link href="/dashboard" className="text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
                     Dashboard
                   </Link>
                 </li>
               ) : (
                 <>
                   <li>
-                    <Link href="/login" className="text-slate-500 transition hover:text-[rgb(var(--c-a-300))]">
+                    <Link href="/login" className="text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
                       Log in
                     </Link>
                   </li>
                   <li>
-                    <Link href="/register" className="text-slate-500 transition hover:text-[rgb(var(--c-a-300))]">
+                    <Link href="/register" className="text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
                       Create account
                     </Link>
                   </li>
@@ -106,7 +107,7 @@ export function SiteFooter() {
               )}
               {LEGAL_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="text-slate-500 transition hover:text-[rgb(var(--c-a-300))]">
+                  <Link href={link.href} className="text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
                     {link.label}
                   </Link>
                 </li>

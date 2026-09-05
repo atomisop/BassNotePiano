@@ -34,7 +34,7 @@ export function Timeline({
         return (
           <li key={entry.title} className="flex gap-5">
             <div className="flex flex-col items-center">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400))]/[0.07] font-mono text-xs tracking-[0.08em] text-[rgb(var(--c-a-300))]">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50))]/[0.07] font-mono text-xs tracking-[0.08em] text-[rgb(var(--c-s-50))]">
                 {entry.icon ?? entry.marker ?? String(i + 1).padStart(2, "0")}
               </span>
               {!last && <span aria-hidden className="w-px flex-1 bg-ink/10" />}

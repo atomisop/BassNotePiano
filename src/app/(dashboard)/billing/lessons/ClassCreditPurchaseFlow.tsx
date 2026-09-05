@@ -37,7 +37,7 @@ export function ClassCreditPurchaseFlow({
             type="button"
             onClick={() => setMode(m.id)}
             className={`flex-1 rounded-lg px-3.5 py-2 text-sm font-medium transition ${
-              mode === m.id ? "bg-[rgb(var(--c-a-400)/0.15)] text-[rgb(var(--c-a-200))]" : "text-slate-400 hover:text-slate-200"
+              mode === m.id ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "text-slate-400 hover:text-slate-200"
             }`}
           >
             {m.label}
@@ -46,7 +46,7 @@ export function ClassCreditPurchaseFlow({
       </div>
 
       {mode === "family" && (
-        <p className="rounded-xl border border-[rgb(var(--c-a-400)/0.2)] bg-[rgb(var(--c-a-400)/0.05)] px-3.5 py-2.5 text-xs text-[rgb(var(--c-a-200))]">
+        <p className="rounded-xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] px-3.5 py-2.5 text-xs text-[rgb(var(--c-s-50))]">
           Buying the same tier for 2 or more kids at once gets an extra 25% off the combined total, for a limited time.
           Every recipient needs their own Bass Note Piano account already, since credits go straight to them, not to you.
         </p>

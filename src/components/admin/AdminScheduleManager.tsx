@@ -80,7 +80,7 @@ function ScheduleForm({
             value={dayOfWeek}
             onChange={(e) => setDayOfWeek(Number(e.target.value))}
             disabled={submitting}
-            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
+            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
           >
             {DAY_LABELS.map((d, i) => (
               <option key={i} value={i}>
@@ -97,7 +97,7 @@ function ScheduleForm({
             onChange={(e) => setStartTime(e.target.value)}
             required
             disabled={submitting}
-            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
+            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
           />
         </label>
         <label className="text-xs text-slate-500">
@@ -108,7 +108,7 @@ function ScheduleForm({
             onChange={(e) => setEndTime(e.target.value)}
             required
             disabled={submitting}
-            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
+            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
           />
         </label>
       </div>
@@ -120,7 +120,7 @@ function ScheduleForm({
           onChange={(e) => setLabel(e.target.value)}
           placeholder="e.g. Monday class"
           disabled={submitting}
-          className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
+          className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
         />
       </label>
       {error && <p className="text-xs text-red-400">{error}</p>}
@@ -206,7 +206,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
             <div className="mt-3 space-y-2">
               {group.rows.map((row) =>
                 editingId === row.id ? (
-                  <div key={row.id} className="rounded-xl border border-[rgb(var(--c-a-400)/0.3)] p-3">
+                  <div key={row.id} className="rounded-xl border border-[rgb(var(--c-s-50)/0.3)] p-3">
                     <ScheduleForm
                       initial={{
                         dayOfWeek: row.dayOfWeek,
@@ -247,7 +247,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                           setEditingId(row.id);
                           setFormError(null);
                         }}
-                        className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-200))]"
+                        className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
                       >
                         Edit
                       </button>
@@ -289,7 +289,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="w-full rounded-xl border border-dashed border-ink/15 py-3 text-sm font-medium text-slate-400 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-200))]"
+          className="w-full rounded-xl border border-dashed border-ink/15 py-3 text-sm font-medium text-slate-400 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
         >
           + Add a weekly slot
         </button>

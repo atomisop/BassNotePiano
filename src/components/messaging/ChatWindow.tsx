@@ -80,7 +80,7 @@ export function ChatWindow({
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm text-slate-100">{conversation.friendName ?? "Unnamed"}</p>
           {conversation.isTyping ? (
-            <p className="flex items-center gap-1.5 text-xs text-[rgb(var(--c-a-300))]">
+            <p className="flex items-center gap-1.5 text-xs text-[rgb(var(--c-s-50))]">
               typing <TypingIndicator />
             </p>
           ) : (
@@ -109,7 +109,7 @@ export function ChatWindow({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ type: "spring", bounce: 0, duration: 0.4 }}
                 className={`max-w-[70%] rounded-2xl px-3.5 py-2 text-sm ${
-                  isMine ? "bg-[rgb(var(--c-a-400))] text-slate-950" : "border border-ink/10 bg-slate-950 text-slate-100"
+                  isMine ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "border border-ink/10 bg-slate-950 text-slate-100"
                 }`}
               >
                 <p className="whitespace-pre-wrap break-words">{m.body}</p>
@@ -128,7 +128,7 @@ export function ChatWindow({
           onChange={(e) => handleDraftChange(e.target.value)}
           placeholder="Write a message…"
           maxLength={2000}
-          className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
+          className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
         />
         <button
           type="submit"

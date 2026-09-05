@@ -106,12 +106,12 @@ export function IndividualCreditsFlow({ zelleHandle, initialQuantity }: { zelleH
                 type="button"
                 onClick={() => setSelectedId(bundle.id)}
                 className={`rounded-lg border px-3.5 py-3 text-left transition ${
-                  active ? "border-[rgb(var(--c-a-400)/0.6)] bg-[rgb(var(--c-a-400)/0.1)]" : "border-ink/10 hover:border-ink/15"
+                  active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
                 }`}
               >
                 <div className="flex items-center gap-1.5">
-                  <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-a-200))]" : "text-slate-100"}`}>{bundle.label}</p>
-                  <span className="rounded-full bg-[rgb(var(--c-a-400)/0.15)] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[rgb(var(--c-a-300))]">
+                  <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{bundle.label}</p>
+                  <span className="rounded-full bg-[rgb(var(--c-s-50)/0.15)] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[rgb(var(--c-s-50))]">
                     Limited time
                   </span>
                 </div>
@@ -126,10 +126,10 @@ export function IndividualCreditsFlow({ zelleHandle, initialQuantity }: { zelleH
             type="button"
             onClick={() => setSelectedId("custom")}
             className={`rounded-lg border px-3.5 py-3 text-left transition ${
-              isCustom ? "border-[rgb(var(--c-a-400)/0.6)] bg-[rgb(var(--c-a-400)/0.1)]" : "border-ink/10 hover:border-ink/15"
+              isCustom ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
             }`}
           >
-            <p className={`text-sm font-medium ${isCustom ? "text-[rgb(var(--c-a-200))]" : "text-slate-100"}`}>Custom</p>
+            <p className={`text-sm font-medium ${isCustom ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>Custom</p>
             <p className="mt-0.5 text-xs text-slate-500">Pick your own quantity</p>
           </button>
         </div>
@@ -185,18 +185,18 @@ export function IndividualCreditsFlow({ zelleHandle, initialQuantity }: { zelleH
         </div>
       </div>
 
-      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[rgb(var(--c-a-400)/0.2)] bg-[rgb(var(--c-a-400)/0.05)] p-3.5 text-xs text-slate-300">
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] p-3.5 text-xs text-slate-300">
         <input
           type="checkbox"
           checked={acknowledged}
           onChange={(e) => setAcknowledged(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-a-400))]"
+          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-s-50))]"
         />
         <span>
-          I understand money spent on class credits is <span className="font-medium text-[rgb(var(--c-a-200))]">non-refundable</span>.
+          I understand money spent on class credits is <span className="font-medium text-[rgb(var(--c-s-50))]">non-refundable</span>.
           The only way a credit comes back is canceling a booking 24+ hours before it starts. Inside that window,
           self-cancellation is off and any refund is a manual, case-by-case call. Full{" "}
-          <Link href="/terms" target="_blank" className="text-[rgb(var(--c-a-300))] underline hover:text-[rgb(var(--c-a-200))]">
+          <Link href="/terms" target="_blank" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
             terms &amp; refund policy
           </Link>
           .

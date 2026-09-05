@@ -32,7 +32,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           content section). Visually hidden until it receives focus, the
           standard pattern; a sighted mouse user never sees it. */}
       {/* Reuses .btn/.btn-primary rather than hand-rolling colors — same
-          token pairing (rgb(--c-a-400) fill, rgb(--c-s-950) text) every
+          token pairing (rgb(--c-s-50) fill, rgb(--c-s-950) text) every
           other primary CTA on the page already uses, not a new one-off. */}
       <a href="#main-content" className="btn btn-primary sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100]">
         Skip to main content

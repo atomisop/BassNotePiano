@@ -18,7 +18,7 @@ const THREAD_LIST_POLL_MS = 15_000;
 const ACTIVE_THREAD_POLL_MS = 2_500;
 
 const STATUS_STYLE: Record<string, string> = {
-  OPEN: "bg-[rgb(var(--c-a-400)/0.15)] text-[rgb(var(--c-a-300))]",
+  OPEN: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]",
   RESOLVED: "bg-emerald-400/15 text-emerald-300",
 };
 
@@ -54,9 +54,9 @@ function MessageRow({ message }: { message: AdminThreadMessage }) {
       <div
         className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm ${
           isVisitor
-            ? "bg-[rgb(var(--c-a-400))] text-slate-950"
+            ? "bg-[rgb(var(--c-s-50))] text-slate-950"
             : message.sender === "SUPPORT"
-              ? "border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.08)] text-slate-100"
+              ? "border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.08)] text-slate-100"
               : "border border-ink/10 bg-slate-950 text-slate-300"
         }`}
       >
@@ -85,7 +85,7 @@ function ThreadListRow({
     >
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-1.5 truncate text-sm font-medium text-slate-100">
-          {thread.hasUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[rgb(var(--c-a-400))]" />}
+          {thread.hasUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[rgb(var(--c-s-50))]" />}
           {thread.contactName || thread.contactEmail}
         </span>
         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${STATUS_STYLE[thread.status]}`}>
@@ -364,7 +364,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                 placeholder="Reply as Support…"
                 maxLength={2000}
                 disabled={sending}
-                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-a-400)/0.4)]"
+                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.4)]"
               />
               <button
                 type="submit"

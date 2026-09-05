@@ -101,11 +101,11 @@ export function FAQ() {
 
         <p className="mt-8 text-center text-sm text-slate-500">
           More on pricing and bundles on the{" "}
-          <Link href="/pricing" className="text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))]">
+          <Link href="/pricing" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
             full pricing page
           </Link>
           , or read the complete{" "}
-          <Link href="/terms" className="text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))]">
+          <Link href="/terms" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
             terms &amp; refund policy
           </Link>
           .

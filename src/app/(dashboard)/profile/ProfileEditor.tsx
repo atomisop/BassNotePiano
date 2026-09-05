@@ -147,7 +147,7 @@ function Pill({
       disabled={comingSoon}
       className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
         selected
-          ? "border-[rgb(var(--c-a-400)/0.6)] bg-[rgb(var(--c-a-400)/0.1)] text-[rgb(var(--c-a-200))]"
+          ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
           : "border-ink/10 bg-slate-950 text-slate-400 hover:border-ink/15"
       }`}
     >
@@ -396,7 +396,7 @@ function NameSection({ initialName, onDone }: { initialName: string | null; onDo
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={submitting}
-          className="flex-1 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)] disabled:opacity-60"
+          className="flex-1 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
         />
         <button
           type="submit"
@@ -438,7 +438,7 @@ function UsernameSection({ initialUsername }: { initialUsername: string | null }
   return (
     <SectionCard title="Username" description="How friends find and add you on the Friends page.">
       <form onSubmit={handleSubmit} className="flex gap-2">
-        <div className="flex flex-1 items-center glass-surface-subtle pl-3 focus-within:border-[rgb(var(--c-a-400)/0.6)]">
+        <div className="flex flex-1 items-center glass-surface-subtle pl-3 focus-within:border-[rgb(var(--c-s-50)/0.6)]">
           <span className="text-sm text-slate-500">@</span>
           <input
             type="text"

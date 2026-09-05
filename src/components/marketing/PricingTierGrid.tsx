@@ -76,18 +76,18 @@ export function PricingTierGrid() {
           <motion.div
             key={tier.id}
             variants={cardItem}
-            className="glass-surface relative flex flex-col gap-4 rounded-2xl border border-transparent p-5 transition hover:border-[rgb(var(--c-a-400)/0.3)] sm:p-6"
+            className="glass-surface relative flex flex-col gap-4 rounded-2xl border border-transparent p-5 transition hover:border-[rgb(var(--c-s-50)/0.3)] sm:p-6"
           >
             {isSingleCredit ? (
-              <span className="absolute right-3 top-3 rounded-full bg-[rgb(var(--c-a-400))] px-2 py-0.5 text-[10px] font-bold tabular-nums text-slate-950">
+              <span className="absolute right-3 top-3 rounded-full bg-[rgb(var(--c-s-50))] px-2 py-0.5 text-[10px] font-bold tabular-nums text-slate-950">
                 -{CREDIT_DISCOUNT_PERCENT}%
               </span>
             ) : (
-              <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-[rgb(var(--c-a-400))] px-2 py-0.5 text-[10px] font-bold tabular-nums text-slate-950">
+              <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-[rgb(var(--c-s-50))] px-2 py-0.5 text-[10px] font-bold tabular-nums text-slate-950">
                 Limited time · -{tier.total.originalDiscountPercent}%
               </span>
             )}
-            <p className="text-xs font-medium uppercase tracking-[0.14em] text-[rgb(var(--c-a-300))]">{tier.label}</p>
+            <p className="text-xs font-medium uppercase tracking-[0.14em] text-[rgb(var(--c-s-50))]">{tier.label}</p>
 
             <div>
               <p className="text-sm tabular-nums text-slate-500 line-through">
@@ -107,7 +107,7 @@ export function PricingTierGrid() {
 
             <Link
               href={`/billing/lessons?quantity=${tier.quantity}`}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-ink/10 py-2.5 text-center text-sm font-semibold text-slate-100 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))]"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-ink/10 py-2.5 text-center text-sm font-semibold text-slate-100 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
             >
               Buy credits
               <ArrowIcon />

@@ -35,7 +35,7 @@ export function PinnedGrid({
                 type="button"
                 onClick={() => onSelect(c.friendId)}
                 className={`overflow-hidden rounded-full border-2 transition ${
-                  active ? "border-[rgb(var(--c-a-400))]" : "border-ink/10 hover:border-ink/20"
+                  active ? "border-[rgb(var(--c-s-50))]" : "border-ink/10 hover:border-ink/20"
                 }`}
               >
                 <Avatar image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-16 w-16 text-lg" />
@@ -44,7 +44,7 @@ export function PinnedGrid({
               {showBadge && (
                 <span
                   className={`absolute -right-2 -top-1 flex max-w-[6rem] items-center justify-center rounded-full border border-ink/10 px-2 py-1 text-[10px] font-medium shadow-lg ${
-                    c.isTyping ? "bg-[rgb(var(--c-a-400))] text-slate-950" : "bg-surface text-slate-100"
+                    c.isTyping ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "bg-surface text-slate-100"
                   }`}
                 >
                   {c.isTyping ? <TypingIndicator /> : truncateSnippet(c.lastMessageBody ?? "")}
@@ -58,7 +58,7 @@ export function PinnedGrid({
                   onTogglePin(c.friendId);
                 }}
                 aria-label="Unpin conversation"
-                className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 bg-slate-950 text-[rgb(var(--c-a-400))] shadow transition hover:bg-slate-900 hover:text-[rgb(var(--c-a-300))]"
+                className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-ink/10 bg-slate-950 text-[rgb(var(--c-s-50))] shadow transition hover:bg-slate-900 hover:opacity-70"
               >
                 <PinIcon filled className="h-3 w-3" />
               </button>

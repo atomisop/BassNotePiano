@@ -129,7 +129,7 @@ export function Hero() {
             "Virtual instruments",
           ].map((fact) => (
             <span key={fact} className="flex items-center gap-2 text-sm text-slate-300">
-              <CheckIcon className="shrink-0 text-[rgb(var(--c-a-400))]" size={14} />
+              <CheckIcon className="shrink-0 text-[rgb(var(--c-s-50))]" size={14} />
               {fact}
             </span>
           ))}

@@ -44,14 +44,14 @@ export default async function BillingCurriculumPage({ searchParams }: { searchPa
         Back to roadmap
       </Link>
       <div className="lg:col-span-6">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Curriculum</p>
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Curriculum</p>
         <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Unlock the full curriculum</h1>
         <p className="mt-3 text-sm leading-relaxed text-slate-400">
           One-time ${(CURRICULUM_PRICE_CENTS / 100).toFixed(2)} payment via Zelle. Every scale, forever.
         </p>
 
         {redirectReason && (
-          <p className="mt-4 rounded-xl border border-[rgb(var(--c-a-400)/0.2)] bg-[rgb(var(--c-a-400)/0.05)] px-3.5 py-2.5 text-xs text-[rgb(var(--c-a-200))]">
+          <p className="mt-4 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] px-3.5 py-2.5 text-xs text-[rgb(var(--c-s-50))]">
             {redirectReason}
           </p>
         )}
@@ -59,7 +59,7 @@ export default async function BillingCurriculumPage({ searchParams }: { searchPa
         <ul className="mt-6 space-y-3">
           {BENEFITS.map((benefit) => (
             <li key={benefit} className="flex gap-2.5 text-sm text-slate-300">
-              <CheckIcon className="mt-1 shrink-0 text-[rgb(var(--c-a-400))]" />
+              <CheckIcon className="mt-1 shrink-0 text-[rgb(var(--c-s-50))]" />
               {benefit}
             </li>
           ))}

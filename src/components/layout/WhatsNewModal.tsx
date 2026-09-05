@@ -63,7 +63,7 @@ export function WhatsNewModal({ show, entry }: { show: boolean; entry: Changelog
             exit="exit"
             className="glass-surface-modal relative w-full max-w-sm overflow-hidden p-6"
           >
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">What&apos;s new · v{entry.version}</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">What&apos;s new · v{entry.version}</p>
             <h2 id="whats-new-title" className="mt-1.5 font-serif text-lg text-slate-50">
               {entry.title}
             </h2>
@@ -71,7 +71,7 @@ export function WhatsNewModal({ show, entry }: { show: boolean; entry: Changelog
             <ul className="mt-4 space-y-2">
               {entry.items.map((item) => (
                 <li key={item} className="flex gap-2.5 text-sm text-slate-300">
-                  <CheckIcon className="mt-1 shrink-0 text-[rgb(var(--c-a-400))]" />
+                  <CheckIcon className="mt-1 shrink-0 text-[rgb(var(--c-s-50))]" />
                   {item}
                 </li>
               ))}
@@ -81,7 +81,7 @@ export function WhatsNewModal({ show, entry }: { show: boolean; entry: Changelog
               <Link
                 href="/about?tab=updates"
                 onClick={handleClose}
-                className="text-xs text-slate-500 transition hover:text-[rgb(var(--c-a-300))]"
+                className="text-xs text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
               >
                 Full update history
               </Link>

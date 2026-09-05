@@ -53,7 +53,7 @@ function Checklist({ scale, emphasised }: { scale: ScaleAccessState; emphasised:
               item.done
                 ? scale.status === "COMPLETED"
                   ? "bg-emerald-400"
-                  : "bg-[rgb(var(--c-a-400))]"
+                  : "bg-[rgb(var(--c-s-50))]"
                 : "bg-slate-800"
             }`}
           />
@@ -142,7 +142,7 @@ function StepMarker({
   // on it before reading any of the cards.
   if (isCurrent) {
     return (
-      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] text-sm font-semibold text-slate-950">
+      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgb(var(--c-s-50))] text-sm font-semibold text-slate-950">
         {index + 1}
       </div>
     );
@@ -239,7 +239,7 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
                 type="button"
                 onClick={() => handleCardClick(scale)}
                 aria-current={isCurrent ? "step" : undefined}
-                className={`group mb-4 flex-1 cursor-pointer rounded-2xl border p-5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-a-400)/0.7)] ${
+                className={`group mb-4 flex-1 cursor-pointer rounded-2xl border p-5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50)/0.7)] ${
                   isCurrent
                     ? // `shadow-card` (the theme's own --surface-shadow) rather
                       // than a hand-rolled arbitrary shadow: this project has a
@@ -249,20 +249,21 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
                       // it. Not `.glass-surface-elevated` — the dashboard
                       // already spends that on the next-step card, and using it
                       // twice on a screen stops it meaning "the important one".
-                      "border-[rgb(var(--c-a-400)/0.5)] bg-surface shadow-card"
+                      "border-[rgb(var(--c-s-50)/0.5)] bg-surface shadow-card"
                     : locked
-                      ? "border-ink/10 bg-ink/5 hover:border-[rgb(var(--c-a-400)/0.3)]"
-                      : "border-ink/10 bg-surface hover:border-[rgb(var(--c-a-400)/0.3)]"
+                      ? "border-ink/10 bg-ink/5 hover:border-[rgb(var(--c-s-50)/0.3)]"
+                      : "border-ink/10 bg-surface hover:border-[rgb(var(--c-s-50)/0.3)]"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">
+                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
                     {scale.scaleGroup.code}
                   </p>
-                  {/* One badge, and only the current step gets the accent
-                      version — status text alone is enough for the rest. */}
+                  {/* One badge, and only the current step gets it — status
+                      text alone is enough for the rest. Neutral, not
+                      accent-tinted, now: accent is reserved for true CTAs. */}
                   {isCurrent ? (
-                    <span className="rounded-full bg-[rgb(var(--c-a-400)/0.15)] px-2 py-0.5 text-[11px] font-medium text-[rgb(var(--c-a-300))]">
+                    <span className="rounded-full bg-[rgb(var(--c-s-50)/0.15)] px-2 py-0.5 text-[11px] font-medium text-[rgb(var(--c-s-50))]">
                       You&apos;re here
                     </span>
                   ) : (
@@ -297,7 +298,7 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
                   className={`mt-5 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                     isCurrent
                       ? "cta-fill group-hover:brightness-110"
-                      : "border border-[rgb(var(--c-a-400)/0.4)] text-[rgb(var(--c-a-300))] group-hover:border-[rgb(var(--c-a-400))] group-hover:bg-[rgb(var(--c-a-400)/0.1)]"
+                      : "border border-[rgb(var(--c-s-50)/0.4)] text-[rgb(var(--c-s-50))] group-hover:border-[rgb(var(--c-s-50))] group-hover:bg-[rgb(var(--c-s-50)/0.1)]"
                   }`}
                 >
                   {locked && <LockIcon />}

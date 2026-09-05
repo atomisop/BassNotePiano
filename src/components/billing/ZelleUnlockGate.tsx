@@ -37,10 +37,10 @@ export function ZelleUnlockGate({
 
   if (status === "PENDING_REVIEW") {
     return (
-      <div className="rounded-2xl border border-[rgb(var(--c-a-400)/0.2)] bg-[rgb(var(--c-a-400)/0.05)] p-6 text-center">
-        <p className="text-sm text-[rgb(var(--c-a-200)/0.8)]">
+      <div className="rounded-2xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] p-6 text-center">
+        <p className="text-sm text-[rgb(var(--c-s-50)/0.8)]">
           Your payment confirmation is in — we&apos;re verifying it now. You&apos;ll get access to{" "}
-          <span className="text-[rgb(var(--c-a-100))]">{scaleTitle}</span> as soon as it clears review.
+          <span className="text-[rgb(var(--c-s-50))]">{scaleTitle}</span> as soon as it clears review.
         </p>
       </div>
     );

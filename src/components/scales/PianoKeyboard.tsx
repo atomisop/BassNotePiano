@@ -139,18 +139,18 @@ export function PianoKeyboard({
                   onClick={() => handlePress(midi, degreeIndex)}
                   aria-label={labelFor(midi, degreeIndex)}
                   aria-pressed={inScale}
-                  className={`relative flex flex-1 cursor-pointer flex-col items-center justify-end rounded-b-md border border-ink/15 pb-2 transition-colors duration-150 focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-a-400))] disabled:cursor-default ${
+                  className={`relative flex flex-1 cursor-pointer flex-col items-center justify-end rounded-b-md border border-ink/15 pb-2 transition-colors duration-150 focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50))] disabled:cursor-default ${
                     isActive
-                      ? "bg-[rgb(var(--c-a-400))]"
+                      ? "bg-[rgb(var(--c-s-50))]"
                       : inScale
-                        ? "bg-[rgb(var(--c-a-400)/0.25)] hover:bg-[rgb(var(--c-a-400)/0.4)]"
-                        : "bg-slate-950 hover:bg-[rgb(var(--c-a-400)/0.1)]"
+                        ? "bg-[rgb(var(--c-s-50)/0.25)] hover:bg-[rgb(var(--c-s-50)/0.4)]"
+                        : "bg-slate-950 hover:bg-[rgb(var(--c-s-50)/0.1)]"
                   }`}
                 >
                   {inScale && (
                     <span
                       className={`font-serif text-[11px] leading-none ${
-                        isActive ? "text-slate-950" : "text-[rgb(var(--c-a-200))]"
+                        isActive ? "text-slate-950" : "text-[rgb(var(--c-s-50))]"
                       }`}
                     >
                       {notes[degreeIndex]}
@@ -192,20 +192,20 @@ export function PianoKeyboard({
                     width: `${(100 / whiteCount) * 0.62}%`,
                     transform: "translateX(-50%)",
                   }}
-                  className={`absolute top-0 z-10 flex h-[62%] cursor-pointer flex-col items-center justify-end rounded-b-md border border-ink/40 pb-1.5 transition-colors duration-150 focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-a-400))] disabled:cursor-default ${
+                  className={`absolute top-0 z-10 flex h-[62%] cursor-pointer flex-col items-center justify-end rounded-b-md border border-ink/40 pb-1.5 transition-colors duration-150 focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50))] disabled:cursor-default ${
                     isActive
-                      ? "bg-[rgb(var(--c-a-400))]"
+                      ? "bg-[rgb(var(--c-s-50))]"
                       : inScale
-                        ? "bg-[rgb(var(--c-a-300))]"
+                        ? "bg-[rgb(var(--c-s-50))]"
                         : "bg-[#2A2521] hover:bg-[#3A342E]"
                   }`}
                 >
                   {inScale && (
-                    // Paper on rust, whether lit or not. `[rgb(var(--c-a-300))]` is a dark
+                    // Paper on rust, whether lit or not. `[rgb(var(--c-s-50))]` is a dark
                     // rust (#7F3D14) in this system, so the near-black used
                     // for an unlit key's chassis lands at about 1.9:1 on it —
                     // the label was drawn and unreadable. Paper gives 7.6:1 on
-                    // [rgb(var(--c-a-300))] and 5.4:1 on the lit [rgb(var(--c-a-400))].
+                    // [rgb(var(--c-s-50))] and 5.4:1 on the lit [rgb(var(--c-s-50))].
                     <span className="font-serif text-[10px] leading-none text-slate-950">
                       {notes[degreeIndex]}
                     </span>

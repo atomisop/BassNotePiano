@@ -162,7 +162,7 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
                 onClick={() => onSelect(tab.id)}
                 className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm transition ${
                   activeTab === tab.id
-                    ? "border-[rgb(var(--c-a-400)/0.4)] bg-slate-800 text-slate-50"
+                    ? "border-[rgb(var(--c-s-50)/0.4)] bg-slate-800 text-slate-50"
                     : "border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
                 }`}
               >
@@ -273,7 +273,7 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
               <div
                 key={index}
                 className={`rounded-lg px-3 py-2 text-xs ${
-                  message.role === "user" ? "ml-8 bg-[rgb(var(--c-a-400)/0.12)] text-slate-100" : "mr-8 bg-slate-900 text-slate-300"
+                  message.role === "user" ? "ml-8 bg-[rgb(var(--c-s-50)/0.12)] text-slate-100" : "mr-8 bg-slate-900 text-slate-300"
                 }`}
               >
                 <p className="mb-0.5 font-medium text-slate-500">{message.role === "user" ? "You" : "Atom"}</p>
@@ -284,7 +284,7 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
         </div>
         <p className="mt-3 text-xs text-slate-500">
           Want it gone sooner than 30 days? Message us directly through the app. See the{" "}
-          <Link href="/privacy" className="underline underline-offset-2 text-[rgb(var(--c-a-300))] hover:text-[rgb(var(--c-a-200))]">
+          <Link href="/privacy" className="underline underline-offset-2 text-[rgb(var(--c-s-50))] hover:opacity-70">
             Privacy policy
           </Link>{" "}
           for how deletion works.
@@ -342,11 +342,11 @@ function AccountSettingsInner({ hasCurriculumAccess, classCredits, initialNotifi
   return (
     <div className="mx-auto max-w-4xl">
       <div>
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Settings</p>
+        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Settings</p>
         <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Account</h1>
         <p className="mt-1 text-sm text-slate-500">
           Want to edit your name, username, or photo? Head to{" "}
-          <Link href="/profile" className="underline underline-offset-2 text-[rgb(var(--c-a-300))] hover:text-[rgb(var(--c-a-200))]">
+          <Link href="/profile" className="underline underline-offset-2 text-[rgb(var(--c-s-50))] hover:opacity-70">
             your profile
           </Link>
           .
@@ -430,7 +430,7 @@ function MembershipSection({
         </div>
         <Link
           href="/billing/lessons"
-          className="rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-200))]"
+          className="rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
         >
           Buy credits
         </Link>
@@ -438,7 +438,7 @@ function MembershipSection({
 
       <Link
         href="/billing/history"
-        className="mt-3 flex items-center justify-between rounded-xl border border-ink/10 p-4 text-sm text-slate-200 transition hover:border-[rgb(var(--c-a-400)/0.3)] hover:text-[rgb(var(--c-a-200))]"
+        className="mt-3 flex items-center justify-between rounded-xl border border-ink/10 p-4 text-sm text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.3)] hover:text-[rgb(var(--c-s-50))]"
       >
         Payment history
         <span className="text-slate-500">→</span>
@@ -589,7 +589,7 @@ function SignOutOtherDevicesCard() {
         type="button"
         onClick={handleClick}
         disabled={submitting}
-        className="flex items-center justify-center rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-200))] disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex items-center justify-center rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
         {submitting ? "Signing out other devices…" : "Sign out of all other devices"}

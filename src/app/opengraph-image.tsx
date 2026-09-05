@@ -11,14 +11,13 @@ export const contentType = "image/png";
 
 // Dark card for social: the card is competing for attention in a feed
 // against mostly-white chrome, so it leads with the near-black ground and
-// the Instagram-style purple→pink→orange accent the app itself now uses
-// everywhere (originally a vivid signal green, then a plain pink→orange
-// duotone — see themes.css's own "Accent" comment for the current history).
+// crisp white type — neutral rather than the app's own accent, since this
+// card isn't a call-to-action and the app itself now reserves that accent
+// for true CTAs only ("premium black and white" direction; see themes.css's
+// own "Accent" comment for the full history of what that one accent has
+// been over time).
 const INK = "#1A1A1A";
 const PAPER = "#F5F5F5";
-const ACCENT_MID = "#BA70EB";
-const ACCENT_START = "#FA3879";
-const ACCENT_END = "#F77737";
 const MUTED = "#999999";
 
 /**
@@ -81,8 +80,9 @@ export default async function OpengraphImage() {
           justifyContent: "space-between",
           background: INK,
           padding: "72px 80px",
-          // A warm bloom from the lower left, so the flat ink field reads as a
-          // lit surface rather than a solid colour swatch.
+          // A soft white bloom from the lower left, so the flat ink field
+          // reads as a lit surface rather than a solid colour swatch —
+          // neutral, not accent-tinted, same reasoning as above.
           //
           // `circle at …` rather than an explicit two-length size: Satori (the
           // renderer behind ImageResponse) implements only a subset of the CSS
@@ -90,14 +90,12 @@ export default async function OpengraphImage() {
           // its parser with "Missing comma before color stops" — which surfaces
           // as a prerender error that fails the whole build, not a silent
           // style fallback.
-          backgroundImage: `radial-gradient(circle at 8% 108%, rgba(247,119,55,0.28) 0%, rgba(247,119,55,0) 62%)`,
+          backgroundImage: `radial-gradient(circle at 8% 108%, rgba(245,245,245,0.16) 0%, rgba(245,245,245,0) 62%)`,
         }}
       >
         {/* Wordmark rail */}
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <div
-            style={{ width: 40, height: 3, backgroundImage: `linear-gradient(90deg, ${ACCENT_MID}, ${ACCENT_START}, ${ACCENT_END})` }}
-          />
+          <div style={{ width: 40, height: 3, background: PAPER }} />
           <div
             style={{
               fontSize: 23,

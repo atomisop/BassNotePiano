@@ -12,12 +12,12 @@ export default async function AdminLessonsPage({ searchParams }: { searchParams:
 
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">Admin</p>
+      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
       <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Lessons</h1>
       <p className="mt-2 text-sm text-slate-500">Upload the video/PDF course content that drives each scale&apos;s course player.</p>
 
       {!storageConfigured && (
-        <div className="mt-6 rounded-xl border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.05)] px-4 py-3 text-sm text-[rgb(var(--c-a-200))]">
+        <div className="mt-6 rounded-xl border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-4 py-3 text-sm text-[rgb(var(--c-s-50))]">
           Object storage isn&apos;t configured yet — set the <code className="font-mono text-xs">R2_*</code> env vars (see{" "}
           <code className="font-mono text-xs">.env.example</code>) before uploading. The list and reorder/delete controls below
           still work for anything already uploaded.
@@ -30,7 +30,7 @@ export default async function AdminLessonsPage({ searchParams }: { searchParams:
             key={scale.slug}
             href={`/admin/lessons?scale=${scale.slug}`}
             className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-              activeSlug === scale.slug ? "bg-[rgb(var(--c-a-400))] text-slate-950" : "text-slate-400 hover:text-slate-100"
+              activeSlug === scale.slug ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "text-slate-400 hover:text-slate-100"
             }`}
           >
             {scale.code}

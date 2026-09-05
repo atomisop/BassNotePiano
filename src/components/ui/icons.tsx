@@ -38,24 +38,14 @@ export function CheckIcon({ className, size = 14 }: { className?: string; size?:
  * exists to suppress, and this is otherwise the one icon here that would
  * ignore it — the other three are static marks.
  *
- * Stroked in the app's own house accent — the Instagram-style purple→
- * pink→orange gradient (see themes.css's "Accent" comment — `--c-a-mid`/
- * `--c-a-400`/`--c-a-500`, hardcoded here rather than referenced since a
- * plain `<stop>` can't read a CSS custom property) rather than
- * `currentColor` — this is the app's one loading glyph
- * (`Button`'s `loading` prop renders it, and every "still screen while
- * something loads" fix uses it directly), so it carries that same house
- * identity everywhere it appears instead of inheriting whatever text
- * color happens to surround it. Atom's own icon (`loader-15.tsx`) uses a
- * deliberately different teal→blue pair, not this one — see that file's
- * own comment.
- *
- * The gradient `id` is a fixed literal, not `useId()`-generated: this
- * file has no "use client" directive (icons here are plain functions with
- * no hooks, so they stay safe to import from Server Components), and
- * every instance defines the exact same gradient anyway — a duplicate id
- * resolves to an equivalent definition, so two spinners on screen at once
- * still render correctly.
+ * Stroked in `currentColor`, not a hardcoded gradient — a loading spinner
+ * is a state indicator, not a call-to-action, and this app's "accent only
+ * on true CTAs" instruction means it no longer carries its own persistent
+ * house identity the way it briefly did; it just inherits whatever
+ * foreground color already surrounds it (near-black text-on-accent inside
+ * a real CTA button, a plain neutral everywhere else), same as any other
+ * icon here. Atom's own icon (`loader-15.tsx`) is a separate, deliberately
+ * branded component and unaffected by this — see that file's own comment.
  */
 export function SpinnerIcon({ className, size = 14 }: { className?: string; size?: number }) {
   return (
@@ -67,15 +57,8 @@ export function SpinnerIcon({ className, size = 14 }: { className?: string; size
       className={cn("motion-safe:animate-spin", className)}
       aria-hidden
     >
-      <defs>
-        <linearGradient id="bnp-spinner-gradient" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#ba70eb" />
-          <stop offset="0.5" stopColor="#fa3879" />
-          <stop offset="1" stopColor="#f77737" />
-        </linearGradient>
-      </defs>
-      <circle cx="12" cy="12" r="9" stroke="url(#bnp-spinner-gradient)" strokeWidth="2.5" opacity="0.25" />
-      <path d="M21 12a9 9 0 0 0-9-9" stroke="url(#bnp-spinner-gradient)" strokeWidth="2.5" strokeLinecap="round" />
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" opacity="0.25" />
+      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
     </svg>
   );
 }

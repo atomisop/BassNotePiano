@@ -32,7 +32,7 @@ export function TermsContent() {
           subscription and nothing else to buy for lesson content.
         </p>
         <p>
-          <span className="font-medium text-[rgb(var(--c-a-200))]">Curriculum purchases are final.</span> Because access is
+          <span className="font-medium text-[rgb(var(--c-s-50))]">Curriculum purchases are final.</span> Because access is
           granted immediately and it&apos;s digital content, nothing about the $69.99 purchase is refundable, for any
           reason, once it&apos;s bought.
         </p>
@@ -44,7 +44,7 @@ export function TermsContent() {
           4+, 20% off at 10+, 30% off at 20+. Credits never expire.
         </p>
         <p>
-          <span className="font-medium text-[rgb(var(--c-a-200))]">Money spent on credits is non-refundable.</span> The only way
+          <span className="font-medium text-[rgb(var(--c-s-50))]">Money spent on credits is non-refundable.</span> The only way
           a credit itself comes back to your balance (never as cash) is by canceling a booking at least 24 hours
           before it starts. That&apos;s it; there&apos;s no other automatic refund path.
         </p>
@@ -57,7 +57,7 @@ export function TermsContent() {
           that ever happens, so nothing is charged.
         </p>
         <p>
-          <span className="font-medium text-[rgb(var(--c-a-200))]">
+          <span className="font-medium text-[rgb(var(--c-s-50))]">
             Once you&apos;re inside that 24-hour window, self-cancellation is turned off.
           </span>{" "}
           There&apos;s no button for it, and simply not showing up doesn&apos;t stop the charge either, since that

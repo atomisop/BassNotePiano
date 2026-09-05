@@ -55,7 +55,11 @@ export default function GlobalError({
               fontSize: 12,
               letterSpacing: "0.18em",
               textTransform: "uppercase",
-              color: "#f77737",
+              // Neutral, not accent — this is a decorative wordmark, not a
+              // call-to-action. The reload button below is the one real CTA
+              // on this page, so it's the one thing here that keeps the
+              // accent color.
+              color: "#F5F5F5",
               fontWeight: 600,
             }}
           >

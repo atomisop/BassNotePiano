@@ -84,7 +84,7 @@ export function InstrumentPicker() {
                     stroke="currentColor"
                     strokeWidth="2"
                     aria-hidden
-                    className="shrink-0 text-[rgb(var(--c-a-300))] transition-transform duration-300 group-hover:translate-x-1"
+                    className="shrink-0 text-[rgb(var(--c-s-50))] transition-transform duration-300 group-hover:translate-x-1"
                   >
                     <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>

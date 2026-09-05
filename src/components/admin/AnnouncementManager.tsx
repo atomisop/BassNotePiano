@@ -54,7 +54,7 @@ function ComposeForm({ onPublished }: { onPublished: () => void }) {
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Title — e.g. New scale added: Bati"
           maxLength={120}
-          className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
+          className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
         />
         <textarea
           value={body}
@@ -62,7 +62,7 @@ function ComposeForm({ onPublished }: { onPublished: () => void }) {
           placeholder="Message…"
           maxLength={1000}
           rows={3}
-          className="w-full resize-none glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-a-400)/0.6)]"
+          className="w-full resize-none glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
         />
       </div>
 

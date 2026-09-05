@@ -148,10 +148,11 @@ export function MarketingNav() {
                 the composition are visibly one system rather than a logo
                 dropped onto it. Bold, lowercase (via text-transform, not
                 the underlying text, so "Bass Note Piano" stays correct for
-                screen readers/SEO), and colored in the accent: matching
-                pianote.com's own actual wordmark treatment (studied
-                directly), not the small neutral-white label this replaces. */}
-            <span className="font-serif text-lg font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-a-400))]">
+                screen readers/SEO) — matching pianote.com's own actual
+                wordmark treatment (studied directly), not the small label
+                this replaces. Colored in the accent at the time; neutral
+                again now under the "premium black and white" pass. */}
+            <span className="font-serif text-lg font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]">
               Bass Note Piano
             </span>
           </Link>
@@ -173,7 +174,7 @@ export function MarketingNav() {
                   aria-current={isActive ? "page" : undefined}
                   className={
                     isActive
-                      ? "flex h-9 items-center !rounded-full bg-[rgb(var(--c-a-400))] px-4 text-[13px] font-medium text-slate-950 transition-colors duration-200"
+                      ? "flex h-9 items-center !rounded-full bg-[rgb(var(--c-s-50))] px-4 text-[13px] font-medium text-slate-950 transition-colors duration-200"
                       : "glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-[13px] font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
                   }
                 >
@@ -254,7 +255,7 @@ export function MarketingNav() {
             className="fixed inset-0 z-50 bg-[rgb(var(--c-s-950)/0.97)] backdrop-blur-2xl md:hidden"
           >
             <div className="flex h-20 items-center justify-between px-6">
-              <span className="font-serif text-lg font-bold lowercase text-[rgb(var(--c-a-400))]">
+              <span className="font-serif text-lg font-bold lowercase text-[rgb(var(--c-s-50))]">
                 Bass Note Piano
               </span>
               <button
@@ -279,7 +280,7 @@ export function MarketingNav() {
                     onClick={() => setMenuOpen(false)}
                     aria-current={isActive ? "page" : undefined}
                     className={`display-3 border-b border-[rgb(var(--c-s-50)/0.08)] py-6 ${
-                      isActive ? "text-[rgb(var(--c-a-400))]" : ""
+                      isActive ? "text-[rgb(var(--c-s-50))]" : ""
                     }`}
                   >
                     {link.label}

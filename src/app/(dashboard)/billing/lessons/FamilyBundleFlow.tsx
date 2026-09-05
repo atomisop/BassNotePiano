@@ -197,10 +197,10 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                 type="button"
                 onClick={() => setSelectedId(bundle.id)}
                 className={`rounded-lg border px-3.5 py-3 text-left transition ${
-                  active ? "border-[rgb(var(--c-a-400)/0.6)] bg-[rgb(var(--c-a-400)/0.1)]" : "border-ink/10 hover:border-ink/15"
+                  active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
                 }`}
               >
-                <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-a-200))]" : "text-slate-100"}`}>{bundle.label}</p>
+                <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{bundle.label}</p>
                 <p className="mt-1 text-xs text-slate-600 line-through">{formatUsd(bundleTotal.originalTotalCents)}</p>
                 <p className="mt-0.5 text-xs text-slate-500">
                   {bundle.quantity} credits · {formatUsd(bundleTotal.perCreditCents)}/credit
@@ -230,7 +230,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                     value={email}
                     onChange={(e) => updateEmail(index, e.target.value)}
                     placeholder={`Recipient ${index + 1} email`}
-                    className="w-full rounded-lg border border-ink/10 bg-slate-950/40 px-3.5 py-2.5 pr-9 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-a-400)/0.5)]"
+                    className="w-full rounded-lg border border-ink/10 bg-slate-950/40 px-3.5 py-2.5 pr-9 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.5)]"
                   />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
                     {status.kind === "checking" && <SpinnerIcon className="text-slate-500" />}
@@ -291,7 +291,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           type="button"
           onClick={addRecipient}
           disabled={emails.length >= MAX_FAMILY_BUNDLE_RECIPIENTS}
-          className="mt-3 text-xs font-medium text-[rgb(var(--c-a-300))] transition hover:text-[rgb(var(--c-a-200))] disabled:cursor-not-allowed disabled:opacity-40"
+          className="mt-3 text-xs font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-40"
         >
           + Add another recipient
         </button>
@@ -314,18 +314,18 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         </div>
       </div>
 
-      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[rgb(var(--c-a-400)/0.2)] bg-[rgb(var(--c-a-400)/0.05)] p-3.5 text-xs text-slate-300">
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] p-3.5 text-xs text-slate-300">
         <input
           type="checkbox"
           checked={acknowledged}
           onChange={(e) => setAcknowledged(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-a-400))]"
+          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-s-50))]"
         />
         <span>
           I understand these credits go directly to the accounts listed above, not to my own, and that the purchase is{" "}
-          <span className="font-medium text-[rgb(var(--c-a-200))]">non-refundable</span>. The only way a credit comes back is
+          <span className="font-medium text-[rgb(var(--c-s-50))]">non-refundable</span>. The only way a credit comes back is
           canceling a booking 24+ hours before it starts. Full{" "}
-          <Link href="/terms" target="_blank" className="text-[rgb(var(--c-a-300))] underline hover:text-[rgb(var(--c-a-200))]">
+          <Link href="/terms" target="_blank" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
             terms &amp; refund policy
           </Link>
           .
