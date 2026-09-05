@@ -43,6 +43,18 @@ import { FULLSCREEN_NAV_EVENT } from "@/lib/overlayNav";
  * marketing pages' footer live) specifically to clear that button and the
  * signed-in AppDock, which is centered but still close to the bottom edge.
  *
+ * That 96px is a plain fixed value, though, and AppDock's own bottom offset
+ * isn't: AppDock adds `pb-[env(safe-area-inset-bottom)]` on top of its
+ * `bottom-4`, so on a real notched/Dynamic-Island iPhone (a ~34px inset)
+ * the dock's whole row shifts up by that same amount while this launcher,
+ * reading no such inset, stays put — eating most of the ~20px clearance the
+ * fixed 96px was sized around and letting the launcher dip down over
+ * whatever dock icon sits beneath it (reported as "the text is cut out,"
+ * a dock label rendering underneath Atom's teal loader ring). `env(...)`
+ * resolves to 0 on anything without a safe area (desktop, older phones),
+ * so this changes nothing there — it only restores the original ~20px gap
+ * on devices where AppDock itself already moved.
+ *
  * Also owns several self-contained additions layered on top of the plain
  * chat, none of which touch the LLM prompt itself:
  *  - a thumbs up/down under every Atom reply (POSTs to /api/assistant/feedback);
@@ -686,7 +698,10 @@ export function AssistantWidget() {
   const hasSupportReply = threadMessages.some((m) => m.sender === "SUPPORT");
 
   return createPortal(
-    <div className={`fixed bottom-24 right-6 z-40 flex flex-col items-end gap-3 ${navOverlayOpen ? "hidden" : ""}`}>
+    <div
+      className={`fixed right-6 z-40 flex flex-col items-end gap-3 ${navOverlayOpen ? "hidden" : ""}`}
+      style={{ bottom: "calc(6rem + env(safe-area-inset-bottom))" }}
+    >
       <AnimatePresence>
         {open && (
           <motion.div

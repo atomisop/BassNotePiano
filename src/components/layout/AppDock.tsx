@@ -347,7 +347,24 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
                       </DockItem>
                     </motion.div>
                   </div>
-                  <span className={`text-[9px] font-medium leading-none ${active ? "text-white" : "text-white/50"}`}>
+                  {/* relative z-10: the active tab's glass puck above is
+                      sized generously (-inset-3, by direct instruction —
+                      "covers the whole selected area," not just traces the
+                      icon's outline), which puts its bottom edge a few
+                      pixels into this label's own box (only a `gap-1`, 4px,
+                      apart). Measured and confirmed: without a z-index here,
+                      an unpositioned static element paints *before* a
+                      positioned one in the same stacking context regardless
+                      of DOM order, so the glass's blur/translucency was
+                      washing out most of the active label's text underneath
+                      it (reported as a dock label rendering unreadable).
+                      z-10 promotes this span into its own positioned layer
+                      so it always paints on top, keeping the puck's full
+                      covering size intact instead of shrinking it to avoid
+                      the overlap. */}
+                  <span
+                    className={`relative z-10 text-[9px] font-medium leading-none ${active ? "text-white" : "text-white/50"}`}
+                  >
                     {item.label}
                   </span>
                   {Boolean(badge) && (
