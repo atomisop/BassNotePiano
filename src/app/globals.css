@@ -362,7 +362,7 @@
   /* ---- Motion --------------------------------------------------------- */
 
   /* Same liquid-glass chemistry as the `Button` primitive's `default`
-     variant and marketing's `.btn-primary` — gradient fill, layered inset
+     variant and marketing's `.btn-primary` — solid fill, layered inset
      highlight + outer shadow, brighten on hover/press. A separate class
      from `.cta-sheen` below (motion only) rather than merged into it,
      because `.cta-sheen` is also applied directly to the shared `<Button>`
@@ -371,10 +371,19 @@
      so a second background declaration on `.cta-sheen` itself would fight
      the one Button already sets. Raw `<button>`/`<a>`/`<Link>` call sites
      (not the Button component) add `.cta-fill` alongside `.cta-sheen` to
-     get both material and motion. */
-  background-image: linear-gradient(rgb(var(--c-a-mid)), rgb(var(--c-a-400)), rgb(var(--c-a-500)));
-  border: 1px solid rgb(var(--c-a-500) / 0.5);
-  color: rgb(var(--c-s-950));
+     get both material and motion.
+
+     Solid `--primary` now, not the accent gradient — by direct instruction
+     ("still some buttons use the old instagram look"), the "premium black
+     and white" pass extends all the way to real CTAs too: there's no
+     colour left anywhere in the app now, not even the one place it was
+     originally kept. `--primary`/`--c-a-*` themselves are untouched (see
+     themes.css's own "Accent" comment for what `--c-a-*` still holds and
+     why it's kept rather than deleted), just nothing references the accent
+     ramp for a button fill anymore. */
+  background: rgb(var(--primary));
+  border: 1px solid rgb(var(--primary) / 0.5);
+  color: rgb(var(--primary-foreground));
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.25),
     inset 0 -1px 1px rgba(0, 0, 0, 0.12),
@@ -467,13 +476,14 @@
     --popover: var(--c-surface-solid);
     --popover-foreground: var(--c-s-50);
 
-    /* Neutral, not the accent — `--primary` here feeds shadcn-pattern
-       components generically (Switch's "on" state, the `link` Button
-       variant's text colour, focus rings below), most of which aren't
-       actually a call-to-action. Real CTAs (`.cta-fill`, `.btn-primary`,
-       `Button`'s own `default` variant, `Toaster`'s action button) read
-       `--c-a-mid`/`--c-a-400`/`--c-a-500` directly, not this indirection,
-       so they keep the gradient regardless of what this resolves to. */
+    /* Neutral — `--primary` feeds shadcn-pattern components generically
+       (Switch's "on" state, the `link` Button variant's text colour, focus
+       rings below) and, as of the "premium black and white" pass, the real
+       CTAs too (`.cta-fill`, `.btn-primary`, `Button`'s own `default`
+       variant, `Toaster`'s action button all read this same `--primary`
+       for their fill now — see each one's own comment). There's no
+       separate accent path left anywhere in the app; this is the one
+       colour every one of those renders. */
     --primary: var(--c-s-50);
     --primary-foreground: var(--c-s-950);
 

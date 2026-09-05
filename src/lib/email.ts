@@ -63,16 +63,15 @@ async function sendEmail({ to, subject, html, text }: SendEmailParams): Promise<
   }
 }
 
-// Accent per email "kind" — the default is neutral now, not the house
-// accent: the top bar/wordmark dot are decorative, not a call-to-action,
-// and this app now reserves its accent (src/app/themes.css's Instagram-
-// style purple→pink→orange — see that file's own "Accent" comment for the
-// full history) for true CTAs only, the same "premium black and white"
-// instruction the rest of the app got. The actual CTA button below
-// (`cta.url`) is the one thing in these emails that still gets the accent.
-// A cancellation/rejection still gets its own warm red — that one isn't
-// about the accent at all, just keeping a rejection from reading as "this
-// went well" (same --c-rd-300/400 red the app itself uses for errors).
+// Accent per email "kind" — the default is neutral, not the house accent
+// (src/app/themes.css's Instagram-style purple→pink→orange — see that
+// file's own "Accent" comment for the full history): the "premium black
+// and white" pass covers every email touchpoint now, including the real
+// CTA button below (`cta.url`, see `ctaButtonHtml`'s own comment) — there's
+// no colour left anywhere in these emails. A cancellation/rejection still
+// gets its own warm red — that one isn't about the accent at all, just
+// keeping a rejection from reading as "this went well" (same
+// --c-rd-300/400 red the app itself uses for errors).
 const SHELL_ACCENT = {
   default: { bar: "#f5f5f5", dot: "#f5f5f5" },
   notice: { bar: "linear-gradient(90deg,#ef4444,#fca5a5,#ef4444)", dot: "#ef4444" },
@@ -215,9 +214,12 @@ export async function sendNotificationEmail(to: string, title: string, body: str
 }
 
 function ctaButtonHtml(cta: { label: string; url: string }): string {
+  // Neutral, not accent — the "premium black and white" pass now covers
+  // real CTAs too, so nothing in the app fills a button with the accent
+  // gradient anymore.
   return `
     <div style="text-align:center;margin-top:4px;">
-      <a href="${cta.url}" style="display:inline-block;padding:13px 30px;border-radius:10px;background:#f77737;color:#0d0d0d;font-size:14px;font-weight:bold;text-decoration:none;">
+      <a href="${cta.url}" style="display:inline-block;padding:13px 30px;border-radius:10px;background:#f5f5f5;color:#0d0d0d;font-size:14px;font-weight:bold;text-decoration:none;">
         ${escapeHtml(cta.label)}
       </a>
     </div>

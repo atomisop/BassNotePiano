@@ -256,14 +256,14 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           const status = rowStatus(index);
           if (status.kind === "invalid") {
             return (
-              <p key={`err-${index}`} className="mt-1.5 text-xs text-amber-400">
+              <p key={`err-${index}`} className="mt-1.5 text-xs text-red-400">
                 Recipient {index + 1}: enter a valid email address.
               </p>
             );
           }
           if (status.kind === "duplicate") {
             return (
-              <p key={`err-${index}`} className="mt-1.5 text-xs text-amber-400">
+              <p key={`err-${index}`} className="mt-1.5 text-xs text-red-400">
                 Recipient {index + 1}: already entered above. Each recipient needs a different account.
               </p>
             );
