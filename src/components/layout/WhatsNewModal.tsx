@@ -61,7 +61,7 @@ export function WhatsNewModal({ show, entry }: { show: boolean; entry: Changelog
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="glass-surface-elevated relative w-full max-w-sm overflow-hidden p-6"
+            className="glass-surface-modal relative w-full max-w-sm overflow-hidden p-6"
           >
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-a-400)/0.8)]">What&apos;s new · v{entry.version}</p>
             <h2 id="whats-new-title" className="mt-1.5 font-serif text-lg text-slate-50">

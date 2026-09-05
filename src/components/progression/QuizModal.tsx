@@ -121,7 +121,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="glass-surface-elevated relative w-full max-w-md overflow-hidden"
+            className="glass-surface-modal relative w-full max-w-md overflow-hidden"
           >
             {step === "result" && result?.passed && <SuccessGlowPulse />}
             <div className="h-1 w-full bg-gradient-to-r from-[rgb(var(--c-a-500)/0.4)] via-[rgb(var(--c-a-300))] to-[rgb(var(--c-a-500)/0.4)]" />
