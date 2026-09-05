@@ -252,9 +252,27 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
               a soft wash rather than the requested pitch black. The `!` is
               load-bearing on both: `glass-surface-elevated` sets these via a
               plain class rule, not an inline style, so an unmarked override
-              isn't guaranteed to win the cascade against it. */}
+              isn't guaranteed to win the cascade against it.
+
+              `!backdrop-blur-none` removes `glass-surface-elevated`'s own
+              `backdrop-filter: blur(...)`, which is pure dead weight on a
+              100%-opaque black bar — there's nothing behind it left to blur
+              into view. It's also the precondition for a well-documented
+              WebKit rendering bug: `backdrop-filter` combined with
+              `border-radius` on an element that doesn't otherwise clip its
+              own content (this bar is `overflow: visible`, so its box-shadow
+              glow can extend past its own box) can leak a faint square-
+              cornered halo at each rounded corner in Safari, because the
+              blur's own compositing layer doesn't reliably mask itself to
+              the rounded shape — reported as "a light gray sharp corner on
+              all sides of the smooth corners" surviving even after the
+              tap-highlight fix (that fix addressed a real, separate
+              tap-only flash; this addresses a persistent one). Removing the
+              backdrop-filter here removes the bug's precondition entirely,
+              without needing `overflow: hidden` (which would also clip the
+              glow this bar is meant to have). */}
           <Dock
-            className="items-end pb-3 !bg-black !bg-none !border-white/10"
+            className="items-end pb-3 !bg-black !bg-none !border-white/10 !backdrop-blur-none"
             magnification={72}
             distance={140}
             panelHeight={60}
