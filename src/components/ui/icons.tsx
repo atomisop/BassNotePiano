@@ -38,10 +38,11 @@ export function CheckIcon({ className, size = 14 }: { className?: string; size?:
  * exists to suppress, and this is otherwise the one icon here that would
  * ignore it — the other three are static marks.
  *
- * Stroked in the app's own house pink→orange gradient (see themes.css's
- * "Accent" comment — `--c-a-400`/`--c-a-500`, hardcoded here rather than
- * referenced since a plain `<stop>` can't read a CSS custom property)
- * rather than `currentColor` — this is the app's one loading glyph
+ * Stroked in the app's own house accent — the Instagram-style purple→
+ * pink→orange gradient (see themes.css's "Accent" comment — `--c-a-mid`/
+ * `--c-a-400`/`--c-a-500`, hardcoded here rather than referenced since a
+ * plain `<stop>` can't read a CSS custom property) rather than
+ * `currentColor` — this is the app's one loading glyph
  * (`Button`'s `loading` prop renders it, and every "still screen while
  * something loads" fix uses it directly), so it carries that same house
  * identity everywhere it appears instead of inheriting whatever text
@@ -68,8 +69,9 @@ export function SpinnerIcon({ className, size = 14 }: { className?: string; size
     >
       <defs>
         <linearGradient id="bnp-spinner-gradient" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#ff1ab6" />
-          <stop offset="1" stopColor="#ff8000" />
+          <stop offset="0" stopColor="#ba70eb" />
+          <stop offset="0.5" stopColor="#fa3879" />
+          <stop offset="1" stopColor="#f77737" />
         </linearGradient>
       </defs>
       <circle cx="12" cy="12" r="9" stroke="url(#bnp-spinner-gradient)" strokeWidth="2.5" opacity="0.25" />

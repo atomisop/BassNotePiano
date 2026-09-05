@@ -363,7 +363,7 @@
      the one Button already sets. Raw `<button>`/`<a>`/`<Link>` call sites
      (not the Button component) add `.cta-fill` alongside `.cta-sheen` to
      get both material and motion. */
-  background-image: linear-gradient(rgb(var(--c-a-400)), rgb(var(--c-a-500)));
+  background-image: linear-gradient(rgb(var(--c-a-mid)), rgb(var(--c-a-400)), rgb(var(--c-a-500)));
   border: 1px solid rgb(var(--c-a-500) / 0.5);
   color: rgb(var(--c-s-950));
   box-shadow:

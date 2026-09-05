@@ -242,7 +242,7 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         >
           {/* !bg-black/!border-white/10 override `glass-surface-elevated`'s
-              own theme-driven (now pink/orange-tinted) glass background —
+              own theme-driven (now Instagram-gradient-tinted) glass background —
               solid black regardless of theme or accent, by direct
               instruction. The `!` is load-bearing: `glass-surface-elevated`
               sets its background via a plain class rule, not an inline

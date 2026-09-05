@@ -65,9 +65,9 @@ const HERO_VIDEO_URL = "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/mark
  * weight display energy without reproducing its actual (non-Google,
  * licensed) typeface. Colors are this app's own accent and black — green
  * and black by the original direct instruction ("we will use mostly the
- * green and black"), now the pink→orange duotone that replaced it (see
- * themes.css's own "Accent" comment) — never Pianote's actual
- * coral-red-on-brown palette.
+ * green and black"), now the Instagram-style purple/pink/orange accent
+ * that replaced it (see themes.css's own "Accent" comment) — never
+ * Pianote's actual coral-red-on-brown palette.
  *
  * COPY PASS: headline swapped from "The grammar of..." to "The best way
  * to learn...", and "kiñit" dropped from the lead/fact grid, both by
