@@ -303,13 +303,27 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
                       makes it slide between tabs on navigation instead of
                       one fading out while another fades in — Framer Motion
                       animates the single element's position/size across
-                      the layout change automatically. */}
+                      the layout change automatically.
+
+                      `-top-1`, not `-top-3` to match the other three sides:
+                      measured against the dock bar's own edges, the icon
+                      only has ~7px of headroom above it before hitting the
+                      bar's top border (the bar is a fixed 60px, and the
+                      icon/gap/label/bottom-padding stack already uses most
+                      of that), so the full 12px `-inset-3` on every side
+                      pushed the puck's top rim a few px past the bar's own
+                      rounded edge — visible as the glass bulging out of the
+                      dock's silhouette (reported as "doesn't fit in the
+                      dock"). Bottom/left/right keep the full -3 (12px):
+                      that's where the "covers the whole tapped area" room
+                      actually is, and neither ever hit a hard edge the way
+                      the top does. */}
                   <div className="relative">
                     {active && (
                       <motion.div
                         layoutId="dock-active-glass"
                         transition={{ type: "spring", bounce: 0.15, duration: 0.55 }}
-                        className="pointer-events-none absolute -inset-3 rounded-full"
+                        className="pointer-events-none absolute -left-3 -right-3 -top-1 -bottom-3 rounded-full"
                         style={{
                           background:
                             "linear-gradient(135deg, rgba(255,255,255,0.42), rgba(255,255,255,0.08) 55%, rgba(255,255,255,0.18) 100%)",
