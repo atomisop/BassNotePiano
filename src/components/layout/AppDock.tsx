@@ -4,14 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
-import { Route, CalendarCheck, Users, MessageSquare, Settings, Shield, type LucideIcon } from "lucide-react";
+import { Home, CalendarCheck, Users, MessageSquare, Settings, Shield, type LucideIcon } from "lucide-react";
 import { Dock, DockIcon, DockItem } from "@/components/ui/dock";
 
 // Swapped from the hand-drawn NavIcon/ICON_PATHS set (still used elsewhere —
 // see navIcons.tsx) to lucide-react for this dock specifically, by direct
 // instruction.
 const NAV_ICON: Record<string, LucideIcon> = {
-  roadmap: Route,
+  home: Home,
   lessons: CalendarCheck,
   friends: Users,
   messages: MessageSquare,
@@ -65,7 +65,7 @@ export interface AppDockProps {
 // instead of silently skipping almost every step (`findVisibleTarget`
 // treats a missing/invisible target as "skip this one").
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Roadmap", icon: "roadmap", dataTour: "nav-roadmap" },
+  { href: "/dashboard", label: "Home", icon: "home", dataTour: "nav-roadmap" },
   { href: "/lessons", label: "Online Lessons", icon: "lessons", dataTour: "nav-lessons" },
   { href: "/friends", label: "Friends", icon: "friends", dataTour: "nav-friends" },
   { href: "/messages", label: "Messages", icon: "messages", dataTour: "nav-messages" },
@@ -241,14 +241,24 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
           animate={reducedMotion ? undefined : { y: [-2, 2, -2] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         >
-          {/* !bg-black/!border-white/10 override `glass-surface-elevated`'s
-              own theme-driven (now Instagram-gradient-tinted) glass background —
-              solid black regardless of theme or accent, by direct
-              instruction. The `!` is load-bearing: `glass-surface-elevated`
-              sets its background via a plain class rule, not an inline
-              style, so an unmarked override isn't guaranteed to win the
-              cascade against it. */}
-          <Dock className="items-end pb-3 !bg-black !border-white/10" magnification={72} distance={140} panelHeight={60}>
+          {/* !bg-black/!bg-none/!border-white/10 override `glass-surface-
+              elevated`'s own theme-driven glass background — solid black
+              regardless of theme or accent, by direct instruction. Both
+              `!bg-black` AND `!bg-none` are needed: `glass-surface-elevated`
+              sets `background` as a shorthand (a translucent gradient, see
+              `--elev-bg`), and Tailwind's `bg-*` utility only overrides the
+              shorthand's background-color slot — the gradient's own
+              background-image would otherwise keep painting over the black,
+              a soft wash rather than the requested pitch black. The `!` is
+              load-bearing on both: `glass-surface-elevated` sets these via a
+              plain class rule, not an inline style, so an unmarked override
+              isn't guaranteed to win the cascade against it. */}
+          <Dock
+            className="items-end pb-3 !bg-black !bg-none !border-white/10"
+            magnification={72}
+            distance={140}
+            panelHeight={60}
+          >
             {items.map((item) => {
               const active = pathname === item.href || (item.href === "/admin" && pathname.startsWith("/admin"));
               const badge = item.href === "/messages" ? unreadMessageCount : 0;
@@ -267,21 +277,76 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
                   data-tour={"dataTour" in item ? item.dataTour : undefined}
                   className="relative flex flex-col items-center gap-1"
                 >
-                  <motion.div whileTap={{ scale: 0.9 }}>
-                    <DockItem
-                      aria-label={item.label}
-                      className={`rounded-full transition-colors ${active ? "bg-white/12" : "hover:bg-white/8"}`}
-                    >
-                      <DockIcon>
-                        {/* White at every step, not accent-colored — same
-                            direct instruction as the dock's own background.
-                            Active vs inactive is now opacity-only (full
-                            white vs 60%), so the current tab still reads at
-                            a glance without reintroducing colour. */}
-                        <Icon className={`h-full w-full ${active ? "text-white" : "text-white/60"}`} />
-                      </DockIcon>
-                    </DockItem>
-                  </motion.div>
+                  {/* The active-tab indicator: a real liquid-glass puck, not
+                      a flat tint — blurred/saturated backdrop (the actual
+                      "bends light" part: it visibly refracts whatever's
+                      behind it, the dock's own black plus any icon it
+                      overlaps), a diagonal highlight gradient and a bright
+                      inset rim on the near edge (light catching curved
+                      glass), plus the same soft outer glow every icon
+                      already carries. Sized to `-inset-3` on the icon's own
+                      box — bigger than the glyph so it reads as covering the
+                      whole tapped area, the way Instagram's own tab
+                      indicator fully backs its icon rather than tracing its
+                      outline.
+
+                      A sibling of `DockItem`/`DockIcon`, not a child inside
+                      them — `DockItem` clones every direct child
+                      unconditionally to inject the shared hover `width`
+                      (see dock.tsx), and cloning that onto a plain
+                      `motion.div` would try to hand it a MotionValue as a
+                      literal `width` DOM attribute. The extra wrapping
+                      `relative` div is what gives `-inset-3` something of
+                      DockItem's own to measure against.
+
+                      `layoutId` (one shared id across every tab) is what
+                      makes it slide between tabs on navigation instead of
+                      one fading out while another fades in — Framer Motion
+                      animates the single element's position/size across
+                      the layout change automatically. */}
+                  <div className="relative">
+                    {active && (
+                      <motion.div
+                        layoutId="dock-active-glass"
+                        transition={{ type: "spring", bounce: 0.15, duration: 0.55 }}
+                        className="pointer-events-none absolute -inset-3 rounded-full"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, rgba(255,255,255,0.42), rgba(255,255,255,0.08) 55%, rgba(255,255,255,0.18) 100%)",
+                          backdropFilter: "blur(10px) saturate(180%)",
+                          WebkitBackdropFilter: "blur(10px) saturate(180%)",
+                          border: "1px solid rgba(255,255,255,0.4)",
+                          boxShadow:
+                            "inset 0 1px 1.5px rgba(255,255,255,0.8), inset 0 -3px 6px rgba(255,255,255,0.06), 0 0 22px 4px rgba(255,255,255,0.3)",
+                        }}
+                      />
+                    )}
+                    <motion.div whileTap={{ scale: 0.9 }} className="relative">
+                      {/* White at every step, not accent-colored — same
+                          direct instruction as the dock's own background.
+                          Active vs inactive is opacity *and* glow: every
+                          icon carries a soft white ambient glow at rest (a
+                          `drop-shadow` on the icon itself, since that
+                          follows the glyph's own shape rather than boxing it
+                          like `box-shadow` would), and the active tab's icon
+                          glows brighter still, on top of the glass puck
+                          above. */}
+                      <DockItem
+                        aria-label={item.label}
+                        className={`rounded-full transition-colors duration-200 ${active ? "" : "hover:bg-white/8"}`}
+                      >
+                        <DockIcon>
+                          <Icon
+                            className={`h-full w-full transition-[color,filter] duration-200 ${
+                              active
+                                ? "text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]"
+                                : "text-white/60 drop-shadow-[0_0_4px_rgba(255,255,255,0.3)]"
+                            }`}
+                          />
+                        </DockIcon>
+                      </DockItem>
+                    </motion.div>
+                  </div>
                   <span className={`text-[9px] font-medium leading-none ${active ? "text-white" : "text-white/50"}`}>
                     {item.label}
                   </span>
