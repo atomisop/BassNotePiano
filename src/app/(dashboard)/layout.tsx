@@ -41,30 +41,42 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isAdmin = session.user.role === "ADMIN";
 
   return (
-    <div className="relative flex h-dvh overflow-hidden bg-slate-950">
+    <div className="relative flex h-[100svh] overflow-hidden bg-slate-950">
       {/* No photographic backdrop behind the app shell, deliberately. The
           previous system wallpapered every authenticated page with a piano
           photo; on paper that reads as a smudge under the text rather than
           atmosphere, and it forced a heavy scrim that muddied every surface
           sitting on it. Photography now appears only where it is the subject
           (the marketing pages), never as a bed for UI. */}
-      {/* h-dvh, not h-screen: same reasoning as marketing.css's own
-          `--stage-height`. On a real phone/tablet, `100vh` is measured
-          against the tallest the browser chrome ever gets, not what's
-          actually visible once Safari's toolbar is showing. That gap is
-          exactly why the bottom dock could end up clipped below the real,
-          currently-visible viewport (worst in landscape, where the toolbar
-          eats a bigger share of a shorter screen), and why `main`'s own
-          scroll area (`overflow-y-auto` below) never had a scrollbar
-          on-screen to reveal the difference. `dvh` tracks the real,
-          current viewport instead of the theoretical maximum. */}
+      {/* h-[100svh] (small viewport height — the size the browser chrome
+          ever *shrinks* the viewport to), not h-dvh and not h-screen.
+          h-screen/100vh was tried first and rejected: on a real phone,
+          `100vh` is measured against the tallest the browser chrome ever
+          gets, not what's actually visible once Safari's toolbar is
+          showing, and that gap clipped the bottom dock below the real
+          viewport. `dvh` (dynamic viewport height) was the fix for that —
+          but "dynamic" means it's re-measured continuously, including
+          mid-scroll while Safari's toolbar animates itself away, so the
+          whole shell (TopBar, AppDock) visibly resized/shifted during a
+          scroll gesture instead of staying put — reported live as "the top
+          bar and bottom dock move in a weird way when scrolling." `svh`
+          pins the shell to the smallest the viewport is ever going to be
+          (toolbar fully expanded), so it never changes size once painted:
+          the one trade-off is a sliver of empty space below the dock for
+          the instant the toolbar auto-hides, which is a fixed, harmless gap
+          rather than a moving one — far better than the shell itself
+          reflowing under your thumb. */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <TopBar />
         <AnnouncementBanner announcement={activeAnnouncement} />
         {/* pb-28 at every width, not just md: — the floating AppDock now
             covers phone widths too (fixed, not in flow), so this reserved
-            clearance is no longer a desktop-only concern. */}
-        <main className="flex-1 overflow-y-auto px-4 py-6 pb-28 md:px-8 md:py-10">{children}</main>
+            clearance is no longer a desktop-only concern. overscroll-contain
+            stops this scroll area's own momentum/rubber-banding from
+            chaining up to the body once it hits the top/bottom — without
+            it, an iOS overscroll bounce here could visibly tug at the fixed
+            shell around it, the same "things move weird" complaint. */}
+        <main className="flex-1 overflow-y-auto overscroll-contain px-4 py-6 pb-28 md:px-8 md:py-10">{children}</main>
       </div>
       <AppDock isAdmin={isAdmin} unreadMessageCount={unreadMessageCount} />
       <CommandMenu isAdmin={isAdmin} />

@@ -3,9 +3,21 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+import { Route, CalendarCheck, Users, MessageSquare, Settings, Shield, type LucideIcon } from "lucide-react";
 import { Dock, DockIcon, DockItem } from "@/components/ui/dock";
-import { NavIcon, ICON_PATHS } from "./navIcons";
+
+// Swapped from the hand-drawn NavIcon/ICON_PATHS set (still used elsewhere —
+// see navIcons.tsx) to lucide-react for this dock specifically, by direct
+// instruction.
+const NAV_ICON: Record<string, LucideIcon> = {
+  roadmap: Route,
+  lessons: CalendarCheck,
+  friends: Users,
+  messages: MessageSquare,
+  settings: Settings,
+  admin: Shield,
+};
 
 // How close the cursor has to get to the bottom edge to reveal a hidden
 // dock, and how long it lingers after the cursor leaves before hiding
@@ -53,12 +65,12 @@ export interface AppDockProps {
 // instead of silently skipping almost every step (`findVisibleTarget`
 // treats a missing/invisible target as "skip this one").
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Roadmap", icon: ICON_PATHS.roadmap, dataTour: "nav-roadmap" },
-  { href: "/lessons", label: "Online Lessons", icon: ICON_PATHS.lessons, dataTour: "nav-lessons" },
-  { href: "/friends", label: "Friends", icon: ICON_PATHS.friends, dataTour: "nav-friends" },
-  { href: "/messages", label: "Messages", icon: ICON_PATHS.messages, dataTour: "nav-messages" },
-  { href: "/account", label: "Settings", icon: ICON_PATHS.settings, dataTour: "nav-settings" },
-];
+  { href: "/dashboard", label: "Roadmap", icon: "roadmap", dataTour: "nav-roadmap" },
+  { href: "/lessons", label: "Online Lessons", icon: "lessons", dataTour: "nav-lessons" },
+  { href: "/friends", label: "Friends", icon: "friends", dataTour: "nav-friends" },
+  { href: "/messages", label: "Messages", icon: "messages", dataTour: "nav-messages" },
+  { href: "/account", label: "Settings", icon: "settings", dataTour: "nav-settings" },
+] as const;
 
 /**
  * The app's only bottom navigation now, at every breakpoint — a floating
@@ -107,6 +119,7 @@ const NAV_ITEMS = [
 export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
   const pathname = usePathname();
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const reducedMotion = useReducedMotion();
 
   // Auto-hide is a desktop-with-a-real-mouse thing only, by direct
   // instruction. iPad and phone keep the dock solid, and this is computed
@@ -204,9 +217,7 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
 
   const effectivelyVisible = !autoHideEnabled || visible || hasFocusWithin || tourForcedVisible;
 
-  const items = isAdmin
-    ? [...NAV_ITEMS, { href: "/admin", label: "Admin", icon: ICON_PATHS.admin }]
-    : NAV_ITEMS;
+  const items = isAdmin ? [...NAV_ITEMS, { href: "/admin", label: "Admin", icon: "admin" as const }] : NAV_ITEMS;
 
   return (
     <div
@@ -220,51 +231,62 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
         animate={{ y: effectivelyVisible ? 0 : "calc(100% + 24px)", opacity: effectivelyVisible ? 1 : 0 }}
         transition={{ type: "spring", bounce: 0, duration: 0.35 }}
       >
-        <Dock className="items-end pb-3" magnification={72} distance={140} panelHeight={60}>
-          {items.map((item) => {
-            const active = pathname === item.href || (item.href === "/admin" && pathname.startsWith("/admin"));
-            const badge = item.href === "/messages" ? unreadMessageCount : 0;
+        {/* A slow, continuous bob — the same idle-float touch the reference
+            dock has at rest. Independent of the hide/show transform above
+            (that one's a one-shot spring to a target, this one's an
+            infinite loop), so it's its own nested motion.div rather than
+            merged into the same animate prop. Off entirely under reduced
+            motion, same as the hide/reveal slide itself. */}
+        <motion.div
+          animate={reducedMotion ? undefined : { y: [-2, 2, -2] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <Dock className="items-end pb-3" magnification={72} distance={140} panelHeight={60}>
+            {items.map((item) => {
+              const active = pathname === item.href || (item.href === "/admin" && pathname.startsWith("/admin"));
+              const badge = item.href === "/messages" ? unreadMessageCount : 0;
+              const Icon = NAV_ICON[item.icon];
 
-            return (
-              // Badge lives on this wrapper, not inside `DockItem` — that
-              // component clones its direct children unconditionally (see
-              // dock.tsx), so a third, sometimes-`false` child there
-              // crashes it. `DockItem` gets exactly one static child
-              // (`DockIcon`), always; the caption sits outside it entirely.
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-label={item.label}
-                data-tour={"dataTour" in item ? item.dataTour : undefined}
-                className="relative flex flex-col items-center gap-1"
-              >
-                <DockItem
+              return (
+                // Badge lives on this wrapper, not inside `DockItem` — that
+                // component clones its direct children unconditionally (see
+                // dock.tsx), so a third, sometimes-`false` child there
+                // crashes it. `DockItem` gets exactly one static child
+                // (`DockIcon`), always; the caption sits outside it entirely.
+                <Link
+                  key={item.href}
+                  href={item.href}
                   aria-label={item.label}
-                  className={`rounded-full transition-colors ${
-                    active ? "bg-[rgb(var(--c-a-400)/0.18)]" : "hover:bg-[rgb(var(--c-s-50)/0.08)]"
-                  }`}
+                  data-tour={"dataTour" in item ? item.dataTour : undefined}
+                  className="relative flex flex-col items-center gap-1"
                 >
-                  <DockIcon>
-                    <NavIcon
-                      path={item.icon}
-                      className={`h-full w-full ${active ? "text-[rgb(var(--c-a-300))]" : "text-[rgb(var(--c-s-300))]"}`}
-                    />
-                  </DockIcon>
-                </DockItem>
-                <span
-                  className={`text-[9px] font-medium leading-none ${active ? "text-[rgb(var(--c-a-300))]" : "text-[rgb(var(--c-s-400))]"}`}
-                >
-                  {item.label}
-                </span>
-                {Boolean(badge) && (
-                  <span className="pointer-events-none absolute right-1 top-1 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] px-1 text-[9px] font-bold text-slate-950">
-                    {badge > 9 ? "9+" : badge}
+                  <motion.div whileTap={{ scale: 0.9 }}>
+                    <DockItem
+                      aria-label={item.label}
+                      className={`rounded-full transition-colors ${
+                        active ? "bg-[rgb(var(--c-a-400)/0.18)]" : "hover:bg-[rgb(var(--c-s-50)/0.08)]"
+                      }`}
+                    >
+                      <DockIcon>
+                        <Icon className={`h-full w-full ${active ? "text-[rgb(var(--c-a-300))]" : "text-[rgb(var(--c-s-300))]"}`} />
+                      </DockIcon>
+                    </DockItem>
+                  </motion.div>
+                  <span
+                    className={`text-[9px] font-medium leading-none ${active ? "text-[rgb(var(--c-a-300))]" : "text-[rgb(var(--c-s-400))]"}`}
+                  >
+                    {item.label}
                   </span>
-                )}
-              </Link>
-            );
-          })}
-        </Dock>
+                  {Boolean(badge) && (
+                    <span className="pointer-events-none absolute right-1 top-1 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] px-1 text-[9px] font-bold text-slate-950">
+                      {badge > 9 ? "9+" : badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </Dock>
+        </motion.div>
       </motion.div>
     </div>
   );
