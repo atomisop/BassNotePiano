@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
-import { Home, CalendarCheck, Users, MessageSquare, Settings, Shield, type LucideIcon } from "lucide-react";
+import { Home, CalendarCheck, Users, MessageSquare, Settings, type LucideIcon } from "lucide-react";
 import { Dock, DockIcon, DockItem } from "@/components/ui/dock";
 
 // Swapped from the hand-drawn NavIcon/ICON_PATHS set (still used elsewhere —
@@ -16,7 +16,6 @@ const NAV_ICON: Record<string, LucideIcon> = {
   friends: Users,
   messages: MessageSquare,
   settings: Settings,
-  admin: Shield,
 };
 
 // How close the cursor has to get to the bottom edge to reveal a hidden
@@ -45,20 +44,23 @@ function isAppleTouchDevice(): boolean {
 }
 
 export interface AppDockProps {
-  isAdmin: boolean;
   unreadMessageCount: number;
 }
 
 // "About" and "Sign out" live inside Settings now, not as dock icons —
 // pinned to the bottom of its nav there, always. "Profile" moved to the
 // TopBar as the user's own avatar photo, next to the notification bell.
+// "Admin" moved there too, by direct instruction — next to the
+// notification bell rather than a sixth dock icon (see TopBar.tsx) — since
+// it's a role-gated destination for the one admin account, not an
+// everyday nav item every signed-in visitor taps.
 //
 // No "More" overflow, on any width: it briefly existed for mobile, but once
 // About/Sign-out moved into Settings, Settings was the only thing it was
 // still gatekeeping — every real destination (Lessons included) was already
 // a direct icon. An overflow menu hiding exactly one item, itself the
 // gateway to the other two, wasn't earning its tap. Same five items,
-// mobile and desktop alike.
+// mobile and desktop alike, admin or not.
 // `dataTour` values are OnboardingTour's hooks (see tourSteps.ts) — they
 // used to live on Sidebar/MobileTabBar, both now unused. Carrying them over
 // here is what keeps the tour actually pointing at real, on-screen buttons
@@ -116,7 +118,7 @@ const NAV_ITEMS = [
  * from under them), OnboardingTour spotlighting one of its icons, and
  * `!autoHideEnabled` itself (touch devices and reduced-motion).
  */
-export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
+export function AppDock({ unreadMessageCount }: AppDockProps) {
   const pathname = usePathname();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
@@ -217,8 +219,6 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
 
   const effectivelyVisible = !autoHideEnabled || visible || hasFocusWithin || tourForcedVisible;
 
-  const items = isAdmin ? [...NAV_ITEMS, { href: "/admin", label: "Admin", icon: "admin" as const }] : NAV_ITEMS;
-
   return (
     <div
       role="navigation"
@@ -277,8 +277,8 @@ export function AppDock({ isAdmin, unreadMessageCount }: AppDockProps) {
             distance={140}
             panelHeight={60}
           >
-            {items.map((item) => {
-              const active = pathname === item.href || (item.href === "/admin" && pathname.startsWith("/admin"));
+            {NAV_ITEMS.map((item) => {
+              const active = pathname === item.href;
               const badge = item.href === "/messages" ? unreadMessageCount : 0;
               const Icon = NAV_ICON[item.icon];
 

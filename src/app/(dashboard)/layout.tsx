@@ -74,7 +74,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           64px so AnnouncementBanner/main start right below it instead of
           rendering underneath it. */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden pt-16">
-        <TopBar />
+        <TopBar isAdmin={isAdmin} />
         <AnnouncementBanner announcement={activeAnnouncement} />
         {/* pb-28 at every width, not just md: — the floating AppDock now
             covers phone widths too (fixed, not in flow), so this reserved
@@ -85,7 +85,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             shell around it, the same "things move weird" complaint. */}
         <main className="flex-1 overflow-y-auto overscroll-contain px-4 py-6 pb-28 md:px-8 md:py-10">{children}</main>
       </div>
-      <AppDock isAdmin={isAdmin} unreadMessageCount={unreadMessageCount} />
+      <AppDock unreadMessageCount={unreadMessageCount} />
       <CommandMenu isAdmin={isAdmin} />
       <WhatsNewModal show={shouldShowWhatsNew} entry={LATEST_ENTRY} />
       <Suspense fallback={null}>

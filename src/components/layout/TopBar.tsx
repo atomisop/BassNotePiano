@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Shield } from "lucide-react";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -28,7 +30,7 @@ async function ProfileAvatarLink() {
   return <ProfileMenu name={user.name} username={user.username} email={session.user.email ?? null} image={user.image} />;
 }
 
-export function TopBar() {
+export function TopBar({ isAdmin }: { isAdmin: boolean }) {
   // fixed, not in-flow: this used to be a plain flex child (relative z-30)
   // that never scrolled away purely because it sat outside `<main>`'s own
   // scroll area in `(dashboard)/layout.tsx` — structurally sound, but a
@@ -56,6 +58,23 @@ export function TopBar() {
     <header className="chrome fixed inset-x-0 top-0 z-[45] flex h-16 items-center justify-between border-b border-ink/10 px-8">
       <BrandMark />
       <div className="flex items-center gap-3">
+        {/* Moved here from AppDock's own row of icons, by direct
+            instruction — it was the one dock item that wasn't an everyday
+            destination for every signed-in visitor (just the single admin
+            account), so it reads better as a utility icon next to
+            notifications than as a sixth, role-gated tab sitting among
+            Home/Lessons/Friends/Messages/Settings. Same `h-9 w-9 rounded-lg`
+            treatment as the bell right next to it, so the two read as one
+            matched pair of icon buttons rather than two different styles. */}
+        {isAdmin && (
+          <Link
+            href="/admin"
+            aria-label="Admin"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-ink/10 bg-surface text-slate-400 transition hover:border-ink/15 hover:bg-ink/5 hover:text-slate-200"
+          >
+            <Shield className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </Link>
+        )}
         <NotificationBell />
         <ProfileAvatarLink />
       </div>
