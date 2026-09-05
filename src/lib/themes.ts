@@ -80,7 +80,7 @@ export function isThemeId(value: unknown): value is ThemeId {
  * reaching it means a real session already exists; it should look like the
  * app, not like the pitch for it.
  *
- * Locked to Ink (not Paper) so the black/signal-green identity is what
+ * Locked to Ink (not Paper) so the black/pink-orange identity is what
  * every first-time visitor actually sees — matches `DEFAULT_THEME` below,
  * one consistent default rather than two different ones. Marketing pages
  * under `(marketing)/` override these tokens with their own scoped ramp
