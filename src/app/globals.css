@@ -194,6 +194,23 @@
   backdrop-filter: blur(var(--elev-blur));
 }
 
+@utility glass-surface-modal {
+  /* A true modal dialog — floating on a scrim over arbitrary, sometimes
+     text-dense page content (a pricing page, a curriculum overview) —
+     needs to fully obscure whatever's behind it to stay legible.
+     `.glass-surface-elevated`'s translucency is tuned for an in-page "one
+     important card" sitting over its own section's plain background;
+     reused for an actual modal, real page copy read straight through the
+     blur (confirmed live on the Zelle payment modal). Same accent
+     hairline/lift/radius as `.glass-surface-elevated`, just the fully
+     opaque surface color every theme already defines for exactly this —
+     no blur needed once nothing shows through to blur. */
+  background: rgb(var(--c-surface-solid));
+  border: 1px solid var(--elev-border);
+  border-radius: var(--surface-radius);
+  box-shadow: var(--elev-shadow);
+}
+
 @utility glass-pill {
   /* Chips, nav pills, filter tags, badges. */
   @apply rounded-full;

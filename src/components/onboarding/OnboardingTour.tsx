@@ -274,7 +274,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
 
       {/* Tooltip / step card */}
       <div
-        className={`glass-surface-elevated fixed p-5 ${transitionClass}`}
+        className={`glass-surface-modal fixed p-5 ${transitionClass}`}
         style={
           targetRect && layout
             ? {

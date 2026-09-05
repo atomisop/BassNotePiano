@@ -150,7 +150,7 @@ function FeedbackButtons({
         aria-label="Helpful"
         aria-pressed={rating === "UP"}
         className={`flex h-5 w-5 items-center justify-center rounded transition ${
-          rating === "UP" ? "text-[rgb(var(--c-a-400))]" : "text-slate-600 hover:text-slate-400"
+          rating === "UP" ? "text-[#ff8000]" : "text-slate-600 hover:text-slate-400"
         } disabled:cursor-default disabled:opacity-60`}
       >
         <svg viewBox="0 0 24 24" fill={rating === "UP" ? "currentColor" : "none"} className="h-3 w-3">
@@ -209,7 +209,7 @@ function renderMessageContent(content: string, accentLink: boolean) {
       <Link
         key={key++}
         href={href}
-        className={`underline underline-offset-2 ${accentLink ? "text-slate-950" : "text-[rgb(var(--c-a-300))] hover:text-[rgb(var(--c-a-200))]"}`}
+        className={`underline underline-offset-2 ${accentLink ? "text-slate-950" : "text-[#ff8000] hover:text-[#f700a8]"}`}
       >
         {label}
       </Link>,
@@ -239,7 +239,7 @@ function MessageBubble({
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
         className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm ${
-          isMine ? "bg-[rgb(var(--c-a-400))] text-slate-950" : "border border-ink/10 bg-slate-950 text-slate-100"
+          isMine ? "bg-gradient-to-r from-[#f700a8] to-[#ff8000] text-slate-950" : "border border-ink/10 bg-slate-950 text-slate-100"
         }`}
       >
         <p className="whitespace-pre-wrap break-words">{renderMessageContent(message.content, isMine)}</p>
@@ -264,9 +264,9 @@ function ThreadMessageBubble({ message }: { message: ThreadMessage }) {
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
         className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm ${
           isVisitor
-            ? "bg-[rgb(var(--c-a-400))] text-slate-950"
+            ? "bg-gradient-to-r from-[#f700a8] to-[#ff8000] text-slate-950"
             : message.sender === "SUPPORT"
-              ? "border border-[rgb(var(--c-a-400)/0.35)] bg-[rgb(var(--c-a-400)/0.1)] text-slate-100"
+              ? "border border-[#ff8000]/35 bg-[#ff8000]/10 text-slate-100"
               : "border border-ink/10 bg-slate-950 text-slate-100"
         }`}
       >
@@ -690,6 +690,12 @@ export function AssistantWidget() {
             exit={{ opacity: 0, y: 16, scale: 0.96 }}
             transition={{ type: "spring", bounce: 0, duration: 0.3 }}
             className="glass-surface-elevated flex h-[min(70vh,560px)] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl"
+            // `glass-surface-elevated`'s border reads the site's global
+            // accent (green) via `--elev-border` — overridden locally, right
+            // here, to Atom's own pink→orange instead, without touching the
+            // shared variable every other elevated surface on the site
+            // still relies on.
+            style={{ "--elev-border": "rgb(255 128 0 / 0.4)" } as React.CSSProperties}
             role="dialog"
             aria-label="Chat with Atom"
           >
@@ -763,7 +769,7 @@ export function AssistantWidget() {
                       <button
                         type="button"
                         onClick={resetToAtom}
-                        className="text-xs font-medium text-[rgb(var(--c-a-300))] underline-offset-2 hover:underline"
+                        className="text-xs font-medium text-[#ff8000] underline-offset-2 hover:underline"
                       >
                         Start a new question with Atom
                       </button>
@@ -791,7 +797,7 @@ export function AssistantWidget() {
                       type="button"
                       onClick={confirmHandoff}
                       disabled={escalationSubmitting}
-                      className="flex flex-1 items-center justify-center rounded-lg bg-[rgb(var(--c-a-400))] py-1.5 text-xs font-semibold text-slate-950 transition disabled:opacity-60"
+                      className="flex flex-1 items-center justify-center rounded-lg bg-gradient-to-r from-[#f700a8] to-[#ff8000] py-1.5 text-xs font-semibold text-slate-950 transition disabled:opacity-60"
                     >
                       {escalationSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {escalationSubmitting ? "Connecting…" : "Yes, connect me"}
@@ -815,7 +821,7 @@ export function AssistantWidget() {
                     autoFocus
                     maxLength={320}
                     disabled={escalationSubmitting}
-                    className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-1.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-a-400)/0.4)]"
+                    className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-1.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[#ff8000]/40"
                   />
                   {escalationError && <p className="text-xs text-red-400">{escalationError}</p>}
                   <div className="flex gap-2">
@@ -830,7 +836,7 @@ export function AssistantWidget() {
                     <button
                       type="submit"
                       disabled={escalationSubmitting || !escalationEmail.trim()}
-                      className="flex flex-1 items-center justify-center rounded-lg bg-[rgb(var(--c-a-400))] py-1.5 text-xs font-semibold text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex flex-1 items-center justify-center rounded-lg bg-gradient-to-r from-[#f700a8] to-[#ff8000] py-1.5 text-xs font-semibold text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {escalationSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {escalationSubmitting ? "Sending…" : "Notify the team"}
@@ -850,7 +856,7 @@ export function AssistantWidget() {
                     type="button"
                     onClick={() => sendMessage(s)}
                     disabled={loading}
-                    className="rounded-full border border-ink/10 px-2.5 py-1 text-xs text-slate-300 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))] disabled:opacity-50"
+                    className="rounded-full border border-ink/10 px-2.5 py-1 text-xs text-slate-300 transition hover:border-[#ff8000]/40 hover:text-[#ff8000] disabled:opacity-50"
                   >
                     {s}
                   </button>
@@ -859,7 +865,7 @@ export function AssistantWidget() {
                   type="button"
                   onClick={offerHandoff}
                   disabled={loading}
-                  className="rounded-full border border-ink/10 px-2.5 py-1 text-xs text-slate-400 transition hover:border-[rgb(var(--c-a-400)/0.4)] hover:text-[rgb(var(--c-a-300))] disabled:opacity-50"
+                  className="rounded-full border border-ink/10 px-2.5 py-1 text-xs text-slate-400 transition hover:border-[#ff8000]/40 hover:text-[#ff8000] disabled:opacity-50"
                 >
                   Talk to our team
                 </button>
@@ -875,13 +881,13 @@ export function AssistantWidget() {
                 placeholder={isResolved ? "This conversation is closed" : inSupportMode ? "Message support…" : "Ask Atom anything…"}
                 maxLength={2000}
                 disabled={loading || isResolved}
-                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-a-400)/0.4)] disabled:opacity-50"
+                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[#ff8000]/40 disabled:opacity-50"
               />
               <button
                 type="submit"
                 disabled={loading || isResolved || !input.trim()}
                 aria-label={loading ? "Sending…" : "Send"}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgb(var(--c-a-400))] text-slate-950 transition disabled:opacity-40"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-[#f700a8] to-[#ff8000] text-slate-950 transition disabled:opacity-40"
               >
                 {loading ? (
                   <MorphingSquare size={16} />
@@ -912,6 +918,7 @@ export function AssistantWidget() {
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ type: "spring", bounce: 0, duration: 0.3 }}
             className="glass-surface-elevated relative max-w-[240px] rounded-2xl text-sm leading-relaxed text-slate-100"
+            style={{ "--elev-border": "rgb(255 128 0 / 0.4)" } as React.CSSProperties}
           >
             <button type="button" onClick={openPanel} className="block w-full rounded-2xl px-4 py-3 text-left">
               {GREETING_TEXT}
