@@ -29,7 +29,7 @@ export function Toaster() {
           toast: "glass-surface !bg-surface text-slate-100 !border-ink/10",
           title: "font-medium text-slate-50",
           description: "!text-slate-400",
-          actionButton: "!bg-gradient-to-b !from-[rgb(var(--c-a-400))] !to-[rgb(var(--c-a-500))] !text-slate-950 !font-semibold !border !border-[rgb(var(--c-a-500)/0.5)]",
+          actionButton: "!bg-gradient-to-b !from-[rgb(var(--c-a-mid))] !via-[rgb(var(--c-a-400))] !to-[rgb(var(--c-a-500))] !text-slate-950 !font-semibold !border !border-[rgb(var(--c-a-500)/0.5)]",
           cancelButton: "!bg-slate-900 !text-slate-300",
           closeButton: "!bg-surface !border-ink/10 !text-slate-400",
           success: "!text-emerald-300",

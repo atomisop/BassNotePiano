@@ -64,15 +64,16 @@ async function sendEmail({ to, subject, html, text }: SendEmailParams): Promise<
 }
 
 // Accent per email "kind" — the app's own real dark ink ground + its
-// pink→orange accent (src/app/themes.css: [data-mode="dark"], the app's
-// one accent — originally signal green, changed by direct instruction),
+// Instagram-style purple→pink→orange accent (src/app/themes.css:
+// [data-mode="dark"], the app's one accent — originally signal green, then
+// a plain pink→orange duotone, changed by direct instruction each time),
 // not an invented email-only palette. A cancellation/rejection stays a
 // warm red instead of the house accent — orange/pink reads as "this went
 // well" everywhere else in the app, and reusing it for a rejection would
 // send the wrong signal (same --c-rd-300/400 red the app itself uses for
 // errors).
 const SHELL_ACCENT = {
-  default: { bar: "linear-gradient(90deg,#ff1ab6,#ff8000,#ff1ab6)", dot: "#ff8000" },
+  default: { bar: "linear-gradient(90deg,#ba70eb,#fa3879,#f77737)", dot: "#f77737" },
   notice: { bar: "linear-gradient(90deg,#ef4444,#fca5a5,#ef4444)", dot: "#ef4444" },
 } as const;
 
@@ -86,7 +87,7 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
   const accent = SHELL_ACCENT[options.kind ?? "default"];
   const footerNote =
     options.footerNote ??
-    `You're getting this because you have a Bass Note Piano account. <a href="${getAppUrl("/account?tab=notifications")}" style="color:#ff8000;text-decoration:underline;">Manage email preferences</a>.`;
+    `You're getting this because you have a Bass Note Piano account. <a href="${getAppUrl("/account?tab=notifications")}" style="color:#f77737;text-decoration:underline;">Manage email preferences</a>.`;
 
   return `
     <div style="background:#0d0d0d;padding:40px 16px;font-family:Helvetica,Arial,sans-serif;">
@@ -99,10 +100,10 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
             <table role="presentation">
               <tr>
                 <td style="vertical-align:middle;padding-right:9px;">
-                  <span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:rgba(255,128,0,0.12);border:1px solid rgba(255,128,0,0.35);color:#ff8000;font-size:14px;">♪</span>
+                  <span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:rgba(247,119,55,0.12);border:1px solid rgba(247,119,55,0.35);color:#f77737;font-size:14px;">♪</span>
                 </td>
                 <td style="vertical-align:middle;">
-                  <span style="font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:#f5f5f5;font-weight:bold;">Bass Note <span style="color:#ff8000;">Piano</span></span>
+                  <span style="font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:#f5f5f5;font-weight:bold;">Bass Note <span style="color:#f77737;">Piano</span></span>
                 </td>
               </tr>
             </table>
@@ -122,7 +123,7 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
               ${footerNote}
             </p>
             <p style="margin:0;font-size:12px;line-height:1.6;color:#999999;">
-              Questions? Write to <a href="mailto:${EMAIL_REPLY_TO}" style="color:#ff8000;text-decoration:underline;">${EMAIL_REPLY_TO}</a>.
+              Questions? Write to <a href="mailto:${EMAIL_REPLY_TO}" style="color:#f77737;text-decoration:underline;">${EMAIL_REPLY_TO}</a>.
             </p>
           </td>
         </tr>
@@ -134,7 +135,7 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
 function codeBlockHtml(code: string): string {
   return `
     <div style="margin:20px 0;text-align:center;">
-      <span style="display:inline-block;padding:14px 28px;border-radius:12px;background:#1f140a;border:1px solid rgba(255,128,0,0.35);font-family:'Courier New',monospace;font-size:28px;letter-spacing:8px;font-weight:bold;color:#ff8000;">
+      <span style="display:inline-block;padding:14px 28px;border-radius:12px;background:#1f140a;border:1px solid rgba(247,119,55,0.35);font-family:'Courier New',monospace;font-size:28px;letter-spacing:8px;font-weight:bold;color:#f77737;">
         ${code}
       </span>
     </div>
@@ -212,7 +213,7 @@ export async function sendNotificationEmail(to: string, title: string, body: str
 function ctaButtonHtml(cta: { label: string; url: string }): string {
   return `
     <div style="text-align:center;margin-top:4px;">
-      <a href="${cta.url}" style="display:inline-block;padding:13px 30px;border-radius:10px;background:#ff8000;color:#0d0d0d;font-size:14px;font-weight:bold;text-decoration:none;">
+      <a href="${cta.url}" style="display:inline-block;padding:13px 30px;border-radius:10px;background:#f77737;color:#0d0d0d;font-size:14px;font-weight:bold;text-decoration:none;">
         ${escapeHtml(cta.label)}
       </a>
     </div>

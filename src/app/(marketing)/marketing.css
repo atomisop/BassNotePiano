@@ -6,8 +6,9 @@
 
    ── Why this file exists ────────────────────────────────────────────────
    `LOGGED_OUT_THEME` in src/lib/themes.ts pins every logged-out visitor to
-   "ink" — the same black/pink-orange identity the rest of the app now
-   uses, so in principle this override isn't compensating for a bad theme
+   "ink" — the same black + Instagram-style accent identity the rest of the
+   app now uses, so in principle this override isn't compensating for a bad
+   theme
    the way it originally was (the old "luxury" daisyUI theme it was built
    against had an inverted, unreadable hierarchy). Kept anyway, now as a
    values-only mirror of `[data-theme="ink"]` in themes.css: marketing pages
@@ -20,10 +21,11 @@
    before. Only the values behind those names change.
 
    ── Where the palette comes from ────────────────────────────────────────
-   The same neutral black/white ramp and pink→orange accent duotone as the
-   rest of the app (see themes.css's `[data-theme="ink"]` and `[data-mode="dark"]`
-   blocks — this pink/orange pair is the only accent now, see themes.ts's own
-   comment) — mirrored here in raw values rather than referenced, because
+   The same neutral black/white ramp and Instagram-style purple/pink/orange
+   accent as the rest of the app (see themes.css's `[data-theme="ink"]` and
+   `[data-mode="dark"]` blocks — this trio is the only accent now, see
+   themes.ts's own comment) — mirrored here in raw values rather than
+   referenced, because
    these are inherited custom properties: re-pointing `--c-a-400` this far
    down the tree only works if it's redeclared at this scope, not aliased to
    the ancestor's already-resolved one.
@@ -46,18 +48,23 @@
   --c-s-900: 41 41 41;      /* recessed surface */
   --c-s-950: 26 26 26;      /* the ground */
 
-  /* ---- Accent ramp: pink→orange -----------------------------------------
+  /* ---- Accent ramp: the Instagram gradient ------------------------------
      Same values as `[data-mode="dark"]` in themes.css (the app's one and
-     only accent, a pink→orange duotone replacing the earlier single-hue
-     signal green). `--c-s-950` on `--c-a-400` clears AA, so the ground
-     colour stays the readable text on the accent, same relationship the
-     app's token bridge already assumes (see globals.css), so shadcn's
-     `--primary-foreground` keeps working untouched. */
-  --c-a-100: 255 214 245;   /* highlight wash */
-  --c-a-200: 255 170 232;   /* hover text */
-  --c-a-300: 255 100 210;   /* accent TEXT */
-  --c-a-400: 255 26 182;    /* CTA fill / accent */
-  --c-a-500: 255 128 0;     /* borders, pressed / second gradient stop */
+     only accent — purple/pink/orange verified against the real Instagram
+     brand palette, replacing the earlier plain pink→orange duotone, itself
+     replacing the original single-hue signal green). `--c-s-950` on
+     `--c-a-400` clears AA, so the ground colour stays the readable text on
+     the accent, same relationship the app's token bridge already assumes
+     (see globals.css), so shadcn's `--primary-foreground` keeps working
+     untouched. `--c-a-mid` (the purple) is the one addition — used only as
+     the middle stop in `.btn-primary`'s own gradient below, never as a
+     plain solid fill/text colour the way 100-500 are. */
+  --c-a-100: 255 214 225;   /* highlight wash */
+  --c-a-200: 255 163 197;   /* hover text */
+  --c-a-300: 255 100 160;   /* accent TEXT */
+  --c-a-400: 250 56 121;    /* CTA fill / accent */
+  --c-a-500: 247 119 55;    /* borders, pressed / third gradient stop */
+  --c-a-mid: 186 112 235;   /* middle gradient stop only */
 
   /* ---- The scrim rule -------------------------------------------------
      Ratios above are against the bare ground. The homepage's real backdrop
@@ -448,7 +455,7 @@
    (unsupported in Safari, ruled out earlier in this project's own design
    direction). */
 [data-surface="marketing"] .btn-primary {
-  background-image: linear-gradient(rgb(var(--c-a-400)), rgb(var(--c-a-500)));
+  background-image: linear-gradient(rgb(var(--c-a-mid)), rgb(var(--c-a-400)), rgb(var(--c-a-500)));
   border: 1px solid rgb(var(--c-a-500) / 0.5);
   color: rgb(var(--c-s-950));
   box-shadow:
