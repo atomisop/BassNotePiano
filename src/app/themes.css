@@ -61,7 +61,13 @@
   --surface-radius: 0.75rem;
 
   --elev-bg: rgba(255, 255, 255, 0.7);
-  --elev-border: rgb(var(--c-a-400) / 0.28);
+  /* Neutral now, not accent-tinted — `--c-ink` (this theme's own hairline
+     colour) instead of `--c-a-400`, same "premium black and white, accent
+     only on true CTAs" instruction as the rest of the app. Affects every
+     `glass-surface-elevated` consumer at once: modals not already on
+     `glass-surface-modal`, the marketing nav's primary CTA border, cards,
+     panels. */
+  --elev-border: rgb(var(--c-ink) / 0.28);
   --elev-shadow: 0 2px 4px rgba(26, 21, 15, 0.05), 0 12px 28px -8px rgba(26, 21, 15, 0.1);
   --elev-blur: 20px;
 
@@ -123,8 +129,15 @@
   --surface-blur: 14px;
   --surface-radius: 0.5rem;
 
-  --elev-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.1), rgb(var(--c-a-400) / 0.1));
-  --elev-border: rgb(var(--c-a-400) / 0.4);
+  /* Neutral now, not accent-tinted — plain white at two opacities instead
+     of a white/accent blend, and `--c-ink` (this theme's own hairline
+     colour, white here) instead of `--c-a-400` for the border, same
+     "premium black and white, accent only on true CTAs" instruction as the
+     rest of the app. Affects every `glass-surface-elevated` consumer at
+     once: modals not already on `glass-surface-modal`, the marketing nav's
+     primary CTA border, cards, panels. */
+  --elev-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
+  --elev-border: rgb(var(--c-ink) / 0.4);
   --elev-shadow: 0 2px 4px rgba(0, 0, 0, 0.45), 0 12px 28px -8px rgba(0, 0, 0, 0.6);
   --elev-blur: 20px;
 
@@ -158,34 +171,38 @@
    against the ground it sits on, and that requirement is the same for every
    dark theme and every light one. Two blocks, one per mode.
 
-   Three named steps carry hue, not just lightness, now: 100-300 ramp the
-   pink hue at rising saturation, 400 is that pink at its most vivid (the
+   Three named steps carry hue, not just lightness: 100-300 ramp the pink
+   hue at rising saturation, 400 is that pink at its most vivid (the
    workhorse — has to work BOTH as a fill and as text on the ground, same
-   requirement the old single-hue ramp had), 500 is the orange, and --c-a-mid
-   is a new variable — the purple stop, used ONLY by the three-stop
-   gradients below, never as a plain solid fill/text color the way 100-500
-   are. --c-a-mid, --c-a-400, --c-a-500 are the three stops `.cta-fill`/
-   `.btn-primary`/`Button`'s `default` variant/`Toaster`'s action button
-   already blend into a gradient, so every primary button/CTA across the
-   app now renders the actual Instagram gradient, with only those
-   gradient-stop lists themselves needing the third colour added (see each
-   file's own comment).
+   requirement the old single-hue ramp had), 500 is the orange, and
+   --c-a-mid is the purple stop, historically used only by a three-stop
+   gradient, never as a plain solid fill/text color the way 100-500 are.
 
-   The purple needed real lightening past the brand reference to stay
-   legible: `.cta-fill` sets near-black/near-white TEXT (whichever the
-   theme's ground is) over the FULL gradient span, not just the pink/orange
-   half this app tuned before — and the brand purple's own contrast against
-   that text sits well under 4.5:1 at every lightness closer to the
-   reference. Pink and orange both already cleared AA at (near-)reference
-   strength; purple is the one hue tuned noticeably softer than Instagram's
-   own #833AB4 specifically so no point along the gradient goes illegible. */
+   As of the "premium black and white" pass, NOTHING in the app actually
+   renders this ramp anymore — accent is reserved for true CTAs only, and
+   even those (`.cta-fill`, `.btn-primary`, `Button`'s `default` variant,
+   `Toaster`'s action button, the email/error-page CTA buttons) were moved
+   to a solid `--primary` fill (itself neutral, resolving to `--c-s-50`;
+   see globals.css's own `--primary` comment) rather than this gradient, by
+   direct instruction ("still some buttons use the old instagram look").
+   The ramp itself is kept rather than deleted — still fully defined,
+   contrast-checked, and one variable swap away from being wired back up to
+   any of the above — since it represents real, deliberate design work
+   (the Instagram-palette research, the AA-contrast tuning below) that
+   nothing here currently needs gone for good, just switched off.
+
+   The purple in particular needed real lightening past the Instagram
+   brand reference to have EVER been legible as a gradient stop: a fill
+   with fixed-color text over its FULL span needs every point along it to
+   clear 4.5:1, and the brand purple's own contrast against that text sits
+   well under 4.5:1 at every lightness closer to the reference. Pink and
+   orange both cleared AA at (near-)reference strength on their own; purple
+   is the one hue tuned noticeably softer than Instagram's own #833AB4,
+   for whenever this ramp is a fill again. */
 
 /* Light mode: deep, ink-adjacent versions of all three hues, same
    treatment the old single-hue ramps (green, then pink/orange) both used
-   for their own light variants — `.cta-fill`'s text is near-WHITE here
-   (this theme's `--c-s-950` ground is near-white paper), so a dark gradient
-   under light text is what's actually needed, the opposite of dark mode's
-   near-black-text-on-vivid-gradient. */
+   for their own light variants. */
 [data-mode="light"] {
   --c-a-100: 58 4 25;
   --c-a-200: 95 6 40;

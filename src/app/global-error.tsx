@@ -98,7 +98,10 @@ export default function GlobalError({
               cursor: "pointer",
               border: "none",
               borderRadius: 999,
-              background: "#f77737",
+              // Neutral, not accent — the "premium black and white" pass
+              // now covers real CTAs too, so nothing in the app fills a
+              // button with the accent gradient anymore.
+              background: "#F5F5F5",
               color: "#0A0A0A",
               padding: "11px 22px",
               fontSize: 14,

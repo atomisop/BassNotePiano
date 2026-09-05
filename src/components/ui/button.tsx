@@ -11,17 +11,21 @@ const buttonVariants = cva(
     variants: {
       variant: {
         /* "Liquid glass" chemistry, adapted from a 21st.dev reference —
-           layered inner highlight + outer shadow, accent-tinted gradient,
-           tactile hover brighten — onto real theme tokens (`--c-a-400/500`)
-           instead of the reference's literal hex fills, so it retints
-           correctly across every theme and accent choice rather than only
-           looking right in the one the reference happened to be built in.
-           Left out: the reference's SVG-turbulence backdrop distortion
-           (`backdrop-filter: url(#id)`) — unsupported in Safari entirely,
-           and exactly the kind of decorative novelty effect this project's
-           own design direction rules out for buttons. What's kept — the
-           gradient, the shadow, the hover response — renders identically in
-           every real browser.
+           layered inner highlight + outer shadow, tactile hover brighten —
+           onto real theme tokens (`--primary`) instead of the reference's
+           literal hex fills, so it retints correctly across every theme
+           rather than only looking right in the one the reference happened
+           to be built in. Left out: the reference's SVG-turbulence backdrop
+           distortion (`backdrop-filter: url(#id)`) — unsupported in Safari
+           entirely, and exactly the kind of decorative novelty effect this
+           project's own design direction rules out for buttons. What's
+           kept — the fill, the shadow, the hover response — renders
+           identically in every real browser.
+           Solid `--primary` now, not an accent gradient (`--c-a-mid/400/
+           500`, still there, just no longer read for a button fill — see
+           globals.css's own `.cta-fill` comment): the "premium black and
+           white" pass now covers real CTAs too, by direct instruction, so
+           nothing in the app renders the accent ramp as a fill anymore.
            Every variant below except `link` also lifts on hover and presses
            down on click (-translate-y-0.5 / translate-y-px), on top of
            whatever color/fill response it already had. Direct instruction:
@@ -30,7 +34,7 @@ const buttonVariants = cva(
            styled as inline text, not a button, so a 3D lift would fight
            its own look the same way it would on marketing's `.btn-quiet`. */
         default:
-          "relative border border-[rgb(var(--c-a-500)/0.5)] bg-gradient-to-b from-[rgb(var(--c-a-mid))] via-[rgb(var(--c-a-400))] to-[rgb(var(--c-a-500))] text-primary-foreground shadow-[0_1px_1px_rgba(255,255,255,0.25)_inset,0_-1px_1px_rgba(0,0,0,0.12)_inset,0_6px_16px_-6px_rgba(0,0,0,0.4)] transition-[filter,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_1px_1px_rgba(255,255,255,0.25)_inset,0_-1px_1px_rgba(0,0,0,0.12)_inset,0_10px_24px_-8px_rgba(0,0,0,0.5)] active:translate-y-px active:brightness-95 active:shadow-[0_1px_1px_rgba(255,255,255,0.25)_inset,0_-1px_1px_rgba(0,0,0,0.12)_inset,0_2px_8px_-4px_rgba(0,0,0,0.4)]",
+          "relative border border-[rgb(var(--primary)/0.5)] bg-[rgb(var(--primary))] text-primary-foreground shadow-[0_1px_1px_rgba(255,255,255,0.25)_inset,0_-1px_1px_rgba(0,0,0,0.12)_inset,0_6px_16px_-6px_rgba(0,0,0,0.4)] transition-[filter,transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_1px_1px_rgba(255,255,255,0.25)_inset,0_-1px_1px_rgba(0,0,0,0.12)_inset,0_10px_24px_-8px_rgba(0,0,0,0.5)] active:translate-y-px active:brightness-95 active:shadow-[0_1px_1px_rgba(255,255,255,0.25)_inset,0_-1px_1px_rgba(0,0,0,0.12)_inset,0_2px_8px_-4px_rgba(0,0,0,0.4)]",
         destructive:
           "bg-destructive text-destructive-foreground transition-[background-color,transform,box-shadow] duration-200 hover:bg-destructive/90 hover:-translate-y-0.5 hover:shadow-[0_10px_20px_-8px_rgba(0,0,0,0.5)] active:translate-y-px active:shadow-none",
         outline:

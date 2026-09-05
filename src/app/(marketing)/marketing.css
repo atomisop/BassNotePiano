@@ -48,17 +48,16 @@
   --c-s-900: 41 41 41;      /* recessed surface */
   --c-s-950: 26 26 26;      /* the ground */
 
-  /* ---- Accent ramp: the Instagram gradient ------------------------------
+  /* ---- Accent ramp: the Instagram gradient (currently unused) -----------
      Same values as `[data-mode="dark"]` in themes.css (the app's one and
      only accent — purple/pink/orange verified against the real Instagram
      brand palette, replacing the earlier plain pink→orange duotone, itself
-     replacing the original single-hue signal green). `--c-s-950` on
-     `--c-a-400` clears AA, so the ground colour stays the readable text on
-     the accent, same relationship the app's token bridge already assumes
-     (see globals.css), so shadcn's `--primary-foreground` keeps working
-     untouched. `--c-a-mid` (the purple) is the one addition — used only as
-     the middle stop in `.btn-primary`'s own gradient below, never as a
-     plain solid fill/text colour the way 100-500 are. */
+     replacing the original single-hue signal green) — kept defined, but
+     nothing on this page actually renders it: `.btn-primary` below reads
+     `--primary` (neutral) for its fill now, not this ramp, per the
+     "premium black and white, accent only on true CTAs" instruction. See
+     themes.css's own "Accent" comment for the full reasoning on why the
+     ramp stays defined rather than being deleted. */
   --c-a-100: 255 214 225;   /* highlight wash */
   --c-a-200: 255 163 197;   /* hover text */
   --c-a-300: 255 100 160;   /* accent TEXT */
@@ -114,11 +113,10 @@
   --card-foreground: var(--c-s-50);
   --popover: var(--c-s-900);
   --popover-foreground: var(--c-s-50);
-  /* Neutral, not the accent — same reasoning as globals.css's own
-     `--primary`/`--ring` comment: these feed generic shadcn-pattern roles
-     and the universal focus ring, not calls-to-action. `.btn-primary`
-     below reads `--c-a-mid`/`--c-a-400`/`--c-a-500` directly, so it keeps
-     the gradient regardless. */
+  /* Neutral — same reasoning as globals.css's own `--primary`/`--ring`
+     comment. `.btn-primary` below reads this same `--primary` for its
+     fill now too (see its own comment), so there's no separate accent
+     path left to reconcile with. */
   --primary: var(--c-s-50);
   --primary-foreground: var(--c-s-950);
   --secondary: var(--c-s-800);
@@ -457,17 +455,22 @@
 }
 
 /* Same liquid-glass chemistry as the in-app `Button` primitive's `default`
-   variant — accent gradient, layered inset highlight + outer shadow,
+   variant — solid fill, layered inset highlight + outer shadow,
    brighten-on-hover — so a primary CTA feels identical whether it's the
    React component (dashboard, auth, dialogs) or this CSS-class button
    (marketing's plain `<Link>`/`<a>` tags). Same reasoning as that variant's
-   own comment: gradient + shadow only, no SVG-turbulence backdrop distortion
+   own comment: fill + shadow only, no SVG-turbulence backdrop distortion
    (unsupported in Safari, ruled out earlier in this project's own design
-   direction). */
+   direction).
+
+   Solid `--primary`, not the accent gradient — see globals.css's own
+   `.cta-fill` comment: the "premium black and white" pass now covers real
+   CTAs too, by direct instruction, so nothing in the app renders the
+   accent ramp as a fill anymore. */
 [data-surface="marketing"] .btn-primary {
-  background-image: linear-gradient(rgb(var(--c-a-mid)), rgb(var(--c-a-400)), rgb(var(--c-a-500)));
-  border: 1px solid rgb(var(--c-a-500) / 0.5);
-  color: rgb(var(--c-s-950));
+  background: rgb(var(--primary));
+  border: 1px solid rgb(var(--primary) / 0.5);
+  color: rgb(var(--primary-foreground));
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.25),
     inset 0 -1px 1px rgba(0, 0, 0, 0.12),
