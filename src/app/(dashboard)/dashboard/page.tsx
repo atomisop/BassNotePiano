@@ -74,22 +74,8 @@ export default async function DashboardPage() {
       {/* ---- The one thing to do next ------------------------------------
           The single `.glass-surface-elevated` on this screen, per the design
           system: elevation here means "this is the answer to why you opened
-          the page", so nothing else on it may compete. `relative isolate
-          overflow-hidden` plus the glow div right after are new: this is the
-          dashboard's own hero card, so it gets the same gradient-accent
-          treatment as the marketing Hero, by direct instruction — `isolate`
-          contains the glow's negative z-index to this card alone rather than
-          the nearest ancestor stacking context, so it can never paint behind
-          unrelated content elsewhere on the page. */}
-      <div className="glass-surface-elevated relative isolate mt-7 overflow-hidden p-6 sm:p-8">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-20 -top-20 -z-10 h-56 w-56 rounded-full"
-          style={{
-            background: "radial-gradient(closest-side, rgb(var(--c-a-300) / 0.22), transparent)",
-            filter: "blur(8px)",
-          }}
-        />
+          the page", so nothing else on it may compete. */}
+      <div className="glass-surface-elevated mt-7 p-6 sm:p-8">
         <p className="eyebrow">Your next step</p>
         <h2 className="mt-2 font-serif text-2xl text-slate-50 sm:text-3xl">{nextStep.action}</h2>
         <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-400">{nextStep.detail}</p>

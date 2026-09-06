@@ -48,21 +48,22 @@
   --c-s-900: 41 41 41;      /* recessed surface */
   --c-s-950: 26 26 26;      /* the ground */
 
-  /* ---- Accent ramp: Electric Indigo / Deep Violet -----------------------
+  /* ---- Accent ramp: the Instagram gradient (currently unused) -----------
      Same values as `[data-mode="dark"]` in themes.css (the app's one and
-     only accent — see its own "Accent" comment for the full reasoning:
-     two literal Tailwind Indigo hexes, #6366F1/#4F46E5, plus a lightened
-     #818CF8 for small accent text on this page's near-black ground). Back
-     in active use, scoped to what was asked for — selection states, the
-     active root note, badges, and a gradient accent on hero cards, this
-     page's own Hero.tsx included — not `.btn-primary` below, which still
-     reads `--primary` (neutral) for its fill, untouched on purpose. */
-  --c-a-100: 224 231 255;   /* #E0E7FF Indigo 100 — highlight wash */
-  --c-a-200: 199 210 254;   /* #C7D2FE Indigo 200 — hover text, 11.7:1 */
-  --c-a-300: 99 102 241;    /* #6366F1 Indigo 500 — border/icon/large text */
-  --c-a-400: 129 140 248;   /* #818CF8 Indigo 400 — accent TEXT, 5.8:1 */
-  --c-a-500: 79 70 229;     /* #4F46E5 Indigo 600 — solid fill w/ white text, pressed / second gradient stop */
-  --c-a-mid: 89 86 235;     /* midpoint of the two anchors — third gradient stop */
+     only accent — purple/pink/orange verified against the real Instagram
+     brand palette, replacing the earlier plain pink→orange duotone, itself
+     replacing the original single-hue signal green) — kept defined, but
+     nothing on this page actually renders it: `.btn-primary` below reads
+     `--primary` (neutral) for its fill now, not this ramp, per the
+     "premium black and white, accent only on true CTAs" instruction. See
+     themes.css's own "Accent" comment for the full reasoning on why the
+     ramp stays defined rather than being deleted. */
+  --c-a-100: 255 214 225;   /* highlight wash */
+  --c-a-200: 255 163 197;   /* hover text */
+  --c-a-300: 255 100 160;   /* accent TEXT */
+  --c-a-400: 250 56 121;    /* CTA fill / accent */
+  --c-a-500: 247 119 55;    /* borders, pressed / third gradient stop */
+  --c-a-mid: 186 112 235;   /* middle gradient stop only */
 
   /* ---- The scrim rule -------------------------------------------------
      Ratios above are against the bare ground. The homepage's real backdrop

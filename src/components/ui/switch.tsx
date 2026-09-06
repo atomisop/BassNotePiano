@@ -17,14 +17,10 @@ import { cn } from "@/lib/utils"
  * (track + thumb, translate-x transition, focus ring, disabled state) onto
  * the primitive already in use everywhere else here.
  *
- * The off state goes through the same shadcn token bridge as `Button`/
- * `Input` (`bg-input`), so it retints correctly under every theme
- * automatically. The on/checked state reads the accent ramp directly
- * (`--c-a-500`) instead of `bg-primary` — a toggle's checked state is
- * exactly the "selection state" the Electric Indigo/Deep Violet accent was
- * reintroduced for, by direct instruction, while `--primary` itself stays
- * the neutral every real CTA still reads (see globals.css's own `--primary`
- * comment).
+ * Colors go through the same shadcn token bridge as `Button`/`Input`
+ * (`bg-primary` on, `bg-input` off), so it retints correctly under every
+ * theme automatically — no per-theme override needed here, same as
+ * everything else built on that bridge.
  */
 const Switch = React.forwardRef<
   React.ElementRef<typeof SwitchPrimitives.Root>,
@@ -32,7 +28,7 @@ const Switch = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SwitchPrimitives.Root
     className={cn(
-      "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-[rgb(var(--c-a-500))] data-[state=unchecked]:bg-input",
+      "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input",
       className
     )}
     {...props}

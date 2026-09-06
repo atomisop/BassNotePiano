@@ -79,11 +79,11 @@ export function PricingTierGrid() {
             className="glass-surface relative flex flex-col gap-4 rounded-2xl border border-transparent p-5 transition hover:border-[rgb(var(--c-s-50)/0.3)] sm:p-6"
           >
             {isSingleCredit ? (
-              <span className="absolute right-3 top-3 rounded-full bg-[rgb(var(--c-a-500))] px-2 py-0.5 text-[10px] font-bold tabular-nums text-white">
+              <span className="absolute right-3 top-3 rounded-full bg-[rgb(var(--c-s-50))] px-2 py-0.5 text-[10px] font-bold tabular-nums text-slate-950">
                 -{CREDIT_DISCOUNT_PERCENT}%
               </span>
             ) : (
-              <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-[rgb(var(--c-a-500))] px-2 py-0.5 text-[10px] font-bold tabular-nums text-white">
+              <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-[rgb(var(--c-s-50))] px-2 py-0.5 text-[10px] font-bold tabular-nums text-slate-950">
                 Limited time · -{tier.total.originalDiscountPercent}%
               </span>
             )}

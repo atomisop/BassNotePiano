@@ -154,62 +154,76 @@
 /* ==========================================================================
    Accent
    --------------------------------------------------------------------------
-   One accent, everywhere: Electric Indigo paired with Deep Violet, by direct
-   instruction — replacing the Instagram-style purple/pink/orange gradient
-   that sat here fully defined but unrendered through the "premium black and
-   white" pass (see git history — every real CTA read `--primary`, a
-   neutral, instead). This ramp is back in active use, scoped to exactly
-   what was asked for: selection states, the active root note in the scale
-   explorer, badges, and a gradient accent on hero cards — not buttons
-   (`.cta-fill`/`.btn-primary`/`Button`'s `default` variant/`Toaster`'s
-   action button all still read `--primary`, untouched, on purpose), not
-   body chrome, not a wholesale return of an accent-everywhere look.
+   One accent, everywhere: the Instagram gradient — purple → pink → orange —
+   replacing the plain pink→orange duotone by direct instruction ("check
+   instagram theme and apply it"). Verified against the actual current
+   Instagram brand palette (unchanged since 2016): #833AB4 purple,
+   #C13584/#E1306C pink, #F77737 orange, #FCAF45 gold at the warm end,
+   #405DE6/#5851DB blue at the cool end we don't use here. Themes and accent
+   color used to be independent choices (three themes x six accents),
+   removed by direct instruction in favor of one uniform design language
+   (see themes.ts's own comment) — that decision (one accent, not a matrix
+   of choices) stands; only which colour(s) fill the one slot has changed,
+   and has changed more than once by direct instruction since (see
+   themes.ts's own note on this).
 
-   Anchored on two literal hexes, both named steps of Tailwind's own Indigo
-   scale (the same scale the request itself used to describe them):
-     #6366F1 — Indigo 500, "Electric Indigo"
-     #4F46E5 — Indigo 600, "Deep Violet"
-   --c-a-300 and --c-a-500 ARE those two hexes, byte-exact, in both modes —
-   a border/icon/large-text use (--c-a-300, clears 3:1 everywhere it's used
-   here) or a solid fill paired with fixed white text (--c-a-500, 6.3:1)
-   doesn't need to shift per theme the way small accent-colored TEXT does.
+   Still keyed on data-mode, not data-theme: the accent has to clear 4.5:1
+   against the ground it sits on, and that requirement is the same for every
+   dark theme and every light one. Two blocks, one per mode.
 
-   --c-a-400 is the one step that DOES change per mode: what "Electric
-   Indigo" becomes when it has to be small text sitting directly on the
-   theme's own ground rather than a fill or a border — #6366F1 itself only
-   clears 3.9:1 on Ink's near-black ground (fine for a border, short of the
-   4.5:1 text needs). Dark mode lightens one real step up the same Tailwind
-   scale — Indigo 400, #818CF8 — to 5.8:1; light mode instead reaches for
-   the already-darker of the two given hexes, Indigo 600, which alone clears
-   5.8:1 on Paper's cream ground (so --c-a-400 and --c-a-500 coincide there
-   — both #4F46E5 — which is fine, nothing requires them to differ). Same
-   move the old ramp's own purple stop made (lightened well past its brand
-   reference to clear AA as a fill+text color); here it's a choice of which
-   of the two GIVEN hexes to reach for, not a new tint invented to fit.
+   Three named steps carry hue, not just lightness: 100-300 ramp the pink
+   hue at rising saturation, 400 is that pink at its most vivid (the
+   workhorse — has to work BOTH as a fill and as text on the ground, same
+   requirement the old single-hue ramp had), 500 is the orange, and
+   --c-a-mid is the purple stop, historically used only by a three-stop
+   gradient, never as a plain solid fill/text color the way 100-500 are.
 
-   100/200 are a subtle wash/hover-text pair, same inverted-by-mode pattern
-   the old ramp used: light tints in dark mode (Indigo 100/200), dark tints
-   in light mode (Indigo 950/900), so hover TEXT stays legible against
-   whichever ground is active — both check out well past 4.5:1 (10.6:1 and
-   11.7:1 respectively). --c-a-mid is the arithmetic midpoint of the two
-   anchor hexes, for the one place a 3-point gradient reads better than a
-   flat 2-point one (see Hero.tsx's own gradient accent). */
+   As of the "premium black and white" pass, NOTHING in the app actually
+   renders this ramp anymore — accent is reserved for true CTAs only, and
+   even those (`.cta-fill`, `.btn-primary`, `Button`'s `default` variant,
+   `Toaster`'s action button, the email/error-page CTA buttons) were moved
+   to a solid `--primary` fill (itself neutral, resolving to `--c-s-50`;
+   see globals.css's own `--primary` comment) rather than this gradient, by
+   direct instruction ("still some buttons use the old instagram look").
+   The ramp itself is kept rather than deleted — still fully defined,
+   contrast-checked, and one variable swap away from being wired back up to
+   any of the above — since it represents real, deliberate design work
+   (the Instagram-palette research, the AA-contrast tuning below) that
+   nothing here currently needs gone for good, just switched off.
 
+   The purple in particular needed real lightening past the Instagram
+   brand reference to have EVER been legible as a gradient stop: a fill
+   with fixed-color text over its FULL span needs every point along it to
+   clear 4.5:1, and the brand purple's own contrast against that text sits
+   well under 4.5:1 at every lightness closer to the reference. Pink and
+   orange both cleared AA at (near-)reference strength on their own; purple
+   is the one hue tuned noticeably softer than Instagram's own #833AB4,
+   for whenever this ramp is a fill again. */
+
+/* Light mode: deep, ink-adjacent versions of all three hues, same
+   treatment the old single-hue ramps (green, then pink/orange) both used
+   for their own light variants. */
 [data-mode="light"] {
-  --c-a-100: 30 27 75; /* #1E1B4B Indigo 950 — wash, dark-on-light */
-  --c-a-200: 49 46 129; /* #312E81 Indigo 900 — hover text, 10.6:1 */
-  --c-a-300: 99 102 241; /* #6366F1 Indigo 500 — border/icon/large text, 4.1:1 */
-  --c-a-400: 79 70 229; /* #4F46E5 Indigo 600 — accent TEXT on the ground, 5.8:1 */
-  --c-a-500: 79 70 229; /* #4F46E5 Indigo 600 — solid fill w/ white text, 6.3:1 */
-  --c-a-mid: 89 86 235; /* midpoint of the two anchors — gradients only */
+  --c-a-100: 58 4 25;
+  --c-a-200: 95 6 40;
+  --c-a-300: 130 8 52; /* 10.2:1 */
+  --c-a-400: 170 9 62; /* 6.9:1 */
+  --c-a-500: 145 54 8; /* 7.1:1 */
+  --c-a-mid: 82 18 125; /* 11.2:1 */
 }
 
+/* Dark mode: hsl(340 95% 60%) for the pink (400, hue read directly off
+   Instagram's own #E1306C/#C13584), #F77737 for the orange (500) kept
+   byte-exact from the brand reference since it already clears AA
+   comfortably at full strength, and hsl(276 75% 68%) for the purple
+   (--c-a-mid) — same hue as #833AB4, lightened well past the reference for
+   the reason above. */
 [data-mode="dark"] {
-  --c-a-100: 224 231 255; /* #E0E7FF Indigo 100 — wash, light-on-dark */
-  --c-a-200: 199 210 254; /* #C7D2FE Indigo 200 — hover text, 11.7:1 */
-  --c-a-300: 99 102 241; /* #6366F1 Indigo 500 — border/icon/large text, 3.9:1 */
-  --c-a-400: 129 140 248; /* #818CF8 Indigo 400 — accent TEXT on the ground, 5.8:1 */
-  --c-a-500: 79 70 229; /* #4F46E5 Indigo 600 — solid fill w/ white text, 6.3:1 */
-  --c-a-mid: 89 86 235; /* midpoint of the two anchors — gradients only */
+  --c-a-100: 255 214 225;
+  --c-a-200: 255 163 197;
+  --c-a-300: 255 100 160;
+  --c-a-400: 250 56 121; /* 4.9:1 */
+  --c-a-500: 247 119 55; /* 6.3:1 */
+  --c-a-mid: 186 112 235; /* 5.5:1 */
 }
 
