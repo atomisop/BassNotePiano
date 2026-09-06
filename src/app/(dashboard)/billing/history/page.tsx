@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { getUserPaymentHistory } from "@/lib/payments";
-import { calculateClassCreditTotal } from "@/lib/classCreditPricing";
+import { calculateClassCreditTotal, describePaymentPlan } from "@/lib/classCreditPricing";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -29,10 +30,18 @@ function describePayment(payment: {
   purpose: string;
   lessonQuantity: number | null;
   lessonType: string | null;
+  installmentNumber: number | null;
   scaleGroup: { code: string; title: string } | null;
+  paymentPlan: { cadence: PaymentPlanCadence; term: PaymentPlanTerm; termMonths: number } | null;
 }): { eyebrow: string; title: string } {
   if (payment.purpose === "CURRICULUM") {
     return { eyebrow: "Curriculum", title: "Full platform unlock" };
+  }
+  if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlan) {
+    return {
+      eyebrow: describePaymentPlan(payment.paymentPlan.cadence, payment.paymentPlan.term),
+      title: `Installment ${payment.installmentNumber ?? "?"} of ${payment.paymentPlan.termMonths}`,
+    };
   }
   if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
     if (payment.lessonType) {

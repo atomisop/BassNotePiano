@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PendingZellePayment } from "@/lib/payments";
-import { calculateClassCreditTotal } from "@/lib/classCreditPricing";
+import { calculateClassCreditTotal, describePaymentPlan } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
 export interface PaymentQueueProps {
@@ -43,6 +43,12 @@ function describePayment(payment: PendingZellePayment): { eyebrow: string; title
     return {
       eyebrow: "Family bundle",
       title: `${payment.lessonQuantity} credit${payment.lessonQuantity === 1 ? "" : "s"} × ${recipientCount} account${recipientCount === 1 ? "" : "s"}`,
+    };
+  }
+  if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlan) {
+    return {
+      eyebrow: describePaymentPlan(payment.paymentPlan.cadence, payment.paymentPlan.term),
+      title: `Installment ${payment.installmentNumber ?? "?"} of ${payment.paymentPlan.termMonths}`,
     };
   }
   // Legacy Pay-As-You-Go row from before per-scale purchase was retired.

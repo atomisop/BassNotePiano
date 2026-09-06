@@ -43,6 +43,11 @@ function notificationHref(type: string): string | null {
       return "/dashboard";
     case "ASSISTANT_ESCALATION":
       return "/admin/support";
+    case "PAYMENT_PLAN_INSTALLMENT_DUE":
+    case "PAYMENT_PLAN_INSTALLMENT_OVERDUE":
+    case "PAYMENT_PLAN_COMPLETED":
+    case "PAYMENT_PLAN_CANCELED":
+      return "/billing/plans";
     default:
       return null;
   }
@@ -88,6 +93,10 @@ const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>
   PAYMENT_APPROVED: { key: "billing", label: "Billing" },
   PAYMENT_REJECTED: { key: "billing", label: "Billing" },
   CREDIT_ADJUSTED: { key: "billing", label: "Billing" },
+  PAYMENT_PLAN_INSTALLMENT_DUE: { key: "billing", label: "Billing" },
+  PAYMENT_PLAN_INSTALLMENT_OVERDUE: { key: "billing", label: "Billing" },
+  PAYMENT_PLAN_COMPLETED: { key: "billing", label: "Billing" },
+  PAYMENT_PLAN_CANCELED: { key: "billing", label: "Billing" },
   ROLE_UPDATED: { key: "account", label: "Account" },
   FRIEND_REQUEST_RECEIVED: { key: "friends", label: "Friends" },
   FRIEND_REQUEST_ACCEPTED: { key: "friends", label: "Friends" },

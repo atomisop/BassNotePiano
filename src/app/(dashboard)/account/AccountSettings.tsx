@@ -785,7 +785,11 @@ function TutorialsSection() {
 }
 
 const NOTIFICATION_TOGGLES: { key: keyof NotificationPreferencesInput; label: string; description: string }[] = [
-  { key: "notifyEmailPayments", label: "Payment approvals", description: "Zelle payments verified or rejected." },
+  {
+    key: "notifyEmailPayments",
+    label: "Payment approvals",
+    description: "Zelle payments verified or rejected, plus payment plan installment invoices and reminders.",
+  },
   { key: "notifyEmailRoleUpdates", label: "Role updates", description: "Granted Admin access." },
   { key: "notifyEmailSocial", label: "Social", description: "Friend requests and new messages." },
   {

@@ -42,6 +42,14 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   ANNOUNCEMENT: { label: "See announcement", url: getAppUrl("/dashboard"), kind: "default" },
   CREDIT_ADJUSTED: { label: "View your credits", url: getAppUrl("/lessons"), kind: "default" },
   ASSISTANT_ESCALATION: { label: "Open Support Chat", url: getAppUrl("/admin/support"), kind: "default" },
+  // PAYMENT_PLAN_INSTALLMENT_DUE/OVERDUE are deliberately absent here: they
+  // never pass emailCategory to createNotification (see the scheduled
+  // reminder function in netlify/functions/payment-plan-installments.ts),
+  // since their email is a dedicated itemized invoice
+  // (sendPaymentPlanInvoiceEmail in email.ts), not this generic CTA-button
+  // template — an entry here would be dead code.
+  PAYMENT_PLAN_COMPLETED: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "default" },
+  PAYMENT_PLAN_CANCELED: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "notice" },
 };
 
 /**

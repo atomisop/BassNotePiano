@@ -243,6 +243,87 @@ export async function sendNotificationEmailWithCta(
   await sendEmail({ to, subject: `${title} — Bass Note Piano`, html, text });
 }
 
+function formatUsdCents(cents: number): string {
+  return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+}
+
+export interface PaymentPlanInvoiceDetails {
+  /** e.g. "6-Month plan — 60 min/week" */
+  planLabel: string;
+  /** e.g. "Installment 3 of 6" — not a date range: credits never expire and aren't consumed on a calendar schedule, so a hard period would imply a use-it-or-lose-it window that doesn't exist. */
+  installmentLabel: string;
+  amountCents: number;
+  dueDate: Date;
+  zelleHandle: string;
+  cta: { label: string; url: string };
+  /** Present only for the overdue variant — its presence, not a separate flag, is what picks the template's copy/accent. */
+  overdueDays?: number;
+}
+
+/**
+ * The one dedicated "invoice" email in this app — every other transactional
+ * email goes through sendNotificationEmail(WithCta) above, whose body is a
+ * single plain paragraph and can't carry an itemized amount/due-date/Zelle
+ * summary. One template serves both the due-soon (kind: "default") and
+ * overdue (kind: "notice", the existing red accent) cases — an overdue
+ * reminder is just "resend the same invoice, more urgently," not a
+ * different layout. See netlify/functions/payment-plan-installments.ts for
+ * the scheduled job that calls this.
+ */
+export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPlanInvoiceDetails): Promise<void> {
+  const isOverdue = typeof details.overdueDays === "number";
+  const heading = isOverdue ? "Installment overdue" : "Installment due";
+  const dueDateLabel = details.dueDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const intro = isOverdue
+    ? `This installment is now ${details.overdueDays} day${details.overdueDays === 1 ? "" : "s"} overdue. Please send it as soon as you can.`
+    : "Here's your next installment.";
+
+  const rowBorder = "border-top:1px solid rgba(255,255,255,0.08);";
+  const summaryHtml = `
+    <table role="presentation" width="100%" style="margin:4px 0 20px;border-collapse:collapse;">
+      <tr>
+        <td style="padding:6px 0;color:#999999;font-size:13px;">Plan</td>
+        <td style="padding:6px 0;color:#f5f5f5;font-size:13px;text-align:right;">${escapeHtml(details.planLabel)}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;color:#999999;font-size:13px;${rowBorder}">Installment</td>
+        <td style="padding:6px 0;color:#f5f5f5;font-size:13px;text-align:right;${rowBorder}">${escapeHtml(details.installmentLabel)}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;color:#999999;font-size:13px;${rowBorder}">Amount due</td>
+        <td style="padding:6px 0;color:#f5f5f5;font-size:16px;font-weight:bold;text-align:right;${rowBorder}">${formatUsdCents(details.amountCents)}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;color:#999999;font-size:13px;${rowBorder}">Due date</td>
+        <td style="padding:6px 0;color:#f5f5f5;font-size:13px;text-align:right;${rowBorder}">${escapeHtml(dueDateLabel)}</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 0;color:#999999;font-size:13px;${rowBorder}">Pay via Zelle to</td>
+        <td style="padding:6px 0;color:#f5f5f5;font-size:13px;text-align:right;${rowBorder}">${escapeHtml(details.zelleHandle)}</td>
+      </tr>
+    </table>
+  `;
+
+  const html = emailShell(
+    heading,
+    `<p style="margin:0 0 4px;">${escapeHtml(intro)}</p>${summaryHtml}${ctaButtonHtml(details.cta)}`,
+    { kind: isOverdue ? "notice" : "default" },
+  );
+  const text = [
+    intro,
+    "",
+    `Plan: ${details.planLabel}`,
+    `Installment: ${details.installmentLabel}`,
+    `Amount due: ${formatUsdCents(details.amountCents)}`,
+    `Due date: ${dueDateLabel}`,
+    `Pay via Zelle to: ${details.zelleHandle}`,
+    "",
+    `${details.cta.label}: ${details.cta.url}`,
+  ].join("\n");
+
+  await sendEmail({ to, subject: `${heading} — Bass Note Piano`, html, text });
+}
+
 /** First-time-only welcome email, fired the moment email verification succeeds (see verify-email/actions.ts). */
 export async function sendWelcomeEmail(to: string, name: string | null) {
   const firstName = name?.trim().split(" ")[0];
