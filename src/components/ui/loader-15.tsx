@@ -3,11 +3,14 @@
 import * as React from "react";
 
 /**
- * Loader-15 — a teal→blue animated gradient ring, sourced from a
- * 21st.dev community component of the same name (whose original was
- * pink→orange — recolored here specifically so Atom's icon reads as its
- * own character, complementary to rather than matching the house
- * pink/orange accent; see AssistantWidget.tsx's own top comment).
+ * Loader-15 — a cool-grey animated gradient ring, sourced from a 21st.dev
+ * community component of the same name (whose original was pink→orange).
+ * Recolored to a neutral light-grey→white sweep, matching the app's own
+ * cool-grey monochrome system (see themes.css's own "Accent" comment) —
+ * Atom used to run its own distinct teal→blue identity, deliberately
+ * different from the house look; reverted by direct instruction in favor
+ * of Atom actually matching the rest of the app now (see
+ * AssistantWidget.tsx's own top comment).
  *
  * Ported from the original's `styled-components` to `<style jsx>` —
  * Next.js's own built-in scoped-CSS mechanism — instead of pulling a whole
@@ -37,7 +40,7 @@ import * as React from "react";
  * this is still the *decorative* build (60–200px: Atom's launcher and
  * chat-panel icon). For inline/button-sized loading state — form submits,
  * file uploads, any small "this is working" indicator — use `SpinnerIcon`
- * from `components/ui/icons.tsx` instead: the same pink→orange gradient,
+ * from `components/ui/icons.tsx` instead: a plain `currentColor` spinner,
  * unblurred and legible down to ~12px, and already wired through
  * `Button`'s own `loading` prop everywhere that's used.
  */
@@ -99,10 +102,10 @@ export default function Loader({ size = 200, className }: { size?: number; class
           filter: url(#${filterId});
         }
         .stopp1 {
-          stop-color: #00e0c6;
+          stop-color: #b9bfca;
         }
         .stopp2 {
-          stop-color: #00a3ff;
+          stop-color: #eef1f8;
         }
         .halvan {
           animation: loader15-snurra 10s infinite linear;
