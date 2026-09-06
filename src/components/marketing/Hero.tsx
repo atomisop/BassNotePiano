@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { QUIZ_PASS_THRESHOLD } from "@/lib/access";
 import { CheckIcon, ArrowRightIcon } from "@/components/ui/icons";
@@ -86,6 +88,108 @@ const HERO_VIDEO_URL = "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/mark
  * PianoKeyboard.tsx/Fretboard.tsx components used inside lessons), not
  * new claims invented for this grid.
  */
+// Cool, on-brand synonyms for "best" in this exact slot, cycled on a
+// timer by direct instruction: best -> only -> right -> the three below ->
+// loop. The three additions lean into the app's actual positioning
+// (correctness of the scale system, cultural fit, modern teaching) rather
+// than generic hype adjectives.
+const HERO_ROTATING_WORDS = ["best", "only", "right", "definitive", "authentic", "smartest"];
+const HERO_WORD_INTERVAL_MS = 2000;
+
+// Longest word above, in characters, plus a little slack. The headline
+// uses `text-balance` across a `max-w-[18ch]` box, so swapping in a
+// longer/shorter word here would otherwise nudge that balance calculation
+// and re-wrap the *entire* h1 onto different lines every 2s. Reserving a
+// constant slot keeps the sentence's line breaks fixed no matter which
+// word is currently showing.
+const HERO_ROTATING_WORD_SLOT = "11ch";
+
+/**
+ * Styled after 21st.dev's own "text rotate" genre of component, by direct
+ * instruction, rather than this project's own plain crossfade: each letter
+ * flips up into place on a slight per-letter delay instead of the whole
+ * word fading in as one block. This sandbox has no network access to
+ * 21st.dev itself (same restriction already hit on bassnotepiano.com/the
+ * R2 CDN elsewhere in this app), so this reproduces that component genre's
+ * actual choreography (per-character stagger, spring physics, clipped
+ * vertical flip) from scratch rather than a byte-for-byte copy — the same
+ * "adapt the reference's chemistry, not its literal file" precedent
+ * already documented in button.tsx's own comment for its own 21st.dev
+ * reference.
+ *
+ * `useReducedMotion` gates the interval itself, not just the per-letter
+ * transition: marketing.css's own `prefers-reduced-motion` block only
+ * forces CSS animations/transitions to their resting state, but this loop
+ * is a JS `setInterval`, so it needs its own check, the same way
+ * CountUpNumber.tsx does. Reduced motion renders the first word, plainly,
+ * forever — "a complete, static composition," per that same stylesheet's
+ * own comment, not a degraded version of the loop.
+ *
+ * The rotating word is `aria-hidden` and paired with a plain `sr-only`
+ * rendering of the full, unanimated sentence (see the h1 below): a screen
+ * reader announcing a new adjective every 2 seconds would be a WCAG 2.2.2
+ * "moving content" problem, not a nice touch.
+ */
+function RotatingHeroWord() {
+  const prefersReducedMotion = useReducedMotion();
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    const id = setInterval(() => {
+      setIndex((current) => (current + 1) % HERO_ROTATING_WORDS.length);
+    }, HERO_WORD_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [prefersReducedMotion]);
+
+  // Same tree shape either way (rather than branching to a plain static
+  // <span> under reduced motion): this app's global `<MotionConfig
+  // reducedMotion="user">` (providers.tsx) is documented to collapse
+  // spring transitions to their end state automatically, but empirically
+  // that collapse doesn't reach a spring shared across a staggered
+  // variants tree the way it does a component's own inline transition —
+  // the letters were observed stuck at their hidden (opacity: 0) state
+  // instead of snapping to visible. Computing a plain zero-duration
+  // transition here directly sidesteps that instead of depending on it,
+  // and freezing `index` at 0 (see the effect above) means AnimatePresence's
+  // `key` never changes for a reduced-motion visitor, so there's only the
+  // one instant mount, never a loop.
+  const word = HERO_ROTATING_WORDS[prefersReducedMotion ? 0 : index];
+  const letterTransition = prefersReducedMotion ? { duration: 0 } : { type: "spring", damping: 18, stiffness: 300 };
+
+  return (
+    <span className="inline-block" style={{ minWidth: HERO_ROTATING_WORD_SLOT }}>
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={word}
+          className="inline-flex overflow-hidden"
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          variants={{
+            visible: { transition: { staggerChildren: prefersReducedMotion ? 0 : 0.03 } },
+            exit: { transition: { staggerChildren: prefersReducedMotion ? 0 : 0.02, staggerDirection: -1 } },
+          }}
+        >
+          {word.split("").map((char, i) => (
+            <motion.span
+              key={i}
+              className="inline-block"
+              variants={{
+                hidden: { y: "100%", opacity: 0 },
+                visible: { y: 0, opacity: 1, transition: letterTransition },
+                exit: { y: "-120%", opacity: 0, transition: letterTransition },
+              }}
+            >
+              {char === " " ? " " : char}
+            </motion.span>
+          ))}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  );
+}
+
 export function Hero() {
   const { data: session } = useSession();
   const isLoggedIn = Boolean(session?.user);
@@ -115,7 +219,10 @@ export function Hero() {
 
       <div className="mx-auto w-full max-w-4xl px-6">
         <h1 className="display-1 max-w-[18ch] text-balance">
-          The best way to learn Ethiopian music.
+          <span aria-hidden="true">
+            The <RotatingHeroWord /> way to learn Ethiopian music.
+          </span>
+          <span className="sr-only">The best way to learn Ethiopian music.</span>
         </h1>
         <p className="lead mt-6 max-w-lg text-slate-300">Six scales, spelled correctly in every key.</p>
 
