@@ -117,6 +117,17 @@ const HERO_ROTATING_WORD_SLOT = "11ch";
  * already documented in button.tsx's own comment for its own 21st.dev
  * reference.
  *
+ * `AnimatePresence mode="popLayout"`, not the default `"wait"`: `"wait"`
+ * holds the incoming word until the outgoing one's exit (letters and all)
+ * fully finishes, which reads as a dead gap between words, by direct
+ * instruction ("remove that delay"). `"popLayout"` pops the exiting word
+ * out of flow immediately so the next one enters at the same time,
+ * closing that gap — which also makes the whole flip noticeably quicker
+ * since exit and enter now overlap instead of running back to back. The
+ * per-letter spring (stiffness 500 / damping 32) is tuned snappy for the
+ * same reason: each word should land fast and then hold for the full
+ * `HERO_WORD_INTERVAL_MS`, not visibly spend part of it settling in.
+ *
  * `useReducedMotion` gates the interval itself, not just the per-letter
  * transition: marketing.css's own `prefers-reduced-motion` block only
  * forces CSS animations/transitions to their resting state, but this loop
@@ -155,11 +166,11 @@ function RotatingHeroWord() {
   // `key` never changes for a reduced-motion visitor, so there's only the
   // one instant mount, never a loop.
   const word = HERO_ROTATING_WORDS[prefersReducedMotion ? 0 : index];
-  const letterTransition = prefersReducedMotion ? { duration: 0 } : { type: "spring", damping: 18, stiffness: 300 };
+  const letterTransition = prefersReducedMotion ? { duration: 0 } : { type: "spring", damping: 32, stiffness: 500 };
 
   return (
-    <span className="inline-block" style={{ minWidth: HERO_ROTATING_WORD_SLOT }}>
-      <AnimatePresence mode="wait">
+    <span className="relative inline-block" style={{ minWidth: HERO_ROTATING_WORD_SLOT }}>
+      <AnimatePresence mode="popLayout">
         <motion.span
           key={word}
           className="inline-flex overflow-hidden"
@@ -167,8 +178,8 @@ function RotatingHeroWord() {
           animate="visible"
           exit="exit"
           variants={{
-            visible: { transition: { staggerChildren: prefersReducedMotion ? 0 : 0.03 } },
-            exit: { transition: { staggerChildren: prefersReducedMotion ? 0 : 0.02, staggerDirection: -1 } },
+            visible: { transition: { staggerChildren: prefersReducedMotion ? 0 : 0.015 } },
+            exit: { transition: { staggerChildren: prefersReducedMotion ? 0 : 0.01, staggerDirection: -1 } },
           }}
         >
           {word.split("").map((char, i) => (
