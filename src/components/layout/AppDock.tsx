@@ -223,7 +223,7 @@ export function AppDock({ unreadMessageCount }: AppDockProps) {
     <div
       role="navigation"
       aria-label="Primary"
-      className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center pb-[env(safe-area-inset-bottom)]"
+      className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center pb-[env(safe-area-inset-bottom)]"
     >
       <motion.div
         ref={wrapperRef}
@@ -270,9 +270,23 @@ export function AppDock({ unreadMessageCount }: AppDockProps) {
               tap-only flash; this addresses a persistent one). Removing the
               backdrop-filter here removes the bug's precondition entirely,
               without needing `overflow: hidden` (which would also clip the
-              glow this bar is meant to have). */}
+              glow this bar is meant to have).
+
+              `!shadow-[...]` overrides `glass-surface-elevated`'s own
+              `--elev-shadow` for the same reason as the three overrides
+              above: that token is a *dark* drop shadow (tuned for a card
+              sitting on a lighter surface), which all but disappears
+              underneath a bar that's forced solid black sitting on this
+              app's own near-black page ground — direct instruction: "the
+              dock is not a freely suspended thing, it's lying on [the
+              bottom edge]." A dark shadow can't read as elevation once
+              there's no lighter surface for it to fall on, so this pairs a
+              normal dark contact shadow (still doing real work wherever the
+              page behind happens to be lighter, e.g. the Paper theme) with
+              a soft white ambient glow, the same light-not-dark technique
+              the icons above already use to read as lit against black. */}
           <Dock
-            className="items-end pb-3 !bg-black !bg-none !border-white/10 !backdrop-blur-none"
+            className="items-end pb-3 !bg-black !bg-none !border-white/10 !backdrop-blur-none !shadow-[0_14px_32px_-10px_rgba(0,0,0,0.65),0_0_40px_-4px_rgba(255,255,255,0.12)]"
             magnification={72}
             distance={140}
             panelHeight={60}
