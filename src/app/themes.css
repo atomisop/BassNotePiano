@@ -115,8 +115,12 @@
   --c-ink: 255 255 255;
   --c-scrim: 10 10 10;
 
+  /* First fleck now echoes the signal-green accent (byte-exact --c-a-400,
+     rgb(5 233 1)) rather than the orange left over from the amber era —
+     this exact green/white pairing is what the original Midnight Glass
+     theme's own page-texture used, back when green was last live. */
   --page-texture:
-    radial-gradient(circle at 15% 20%, rgba(247, 119, 55, 0.035), transparent 45%),
+    radial-gradient(circle at 15% 20%, rgba(5, 233, 1, 0.035), transparent 45%),
     radial-gradient(circle at 85% 75%, rgba(255, 255, 255, 0.02), transparent 40%);
 
   /* --c-surface-solid at 46 46 46 matches the spec's own `--nav-button`
@@ -154,76 +158,48 @@
 /* ==========================================================================
    Accent
    --------------------------------------------------------------------------
-   One accent, everywhere: the Instagram gradient — purple → pink → orange —
-   replacing the plain pink→orange duotone by direct instruction ("check
-   instagram theme and apply it"). Verified against the actual current
-   Instagram brand palette (unchanged since 2016): #833AB4 purple,
-   #C13584/#E1306C pink, #F77737 orange, #FCAF45 gold at the warm end,
-   #405DE6/#5851DB blue at the cool end we don't use here. Themes and accent
-   color used to be independent choices (three themes x six accents),
-   removed by direct instruction in favor of one uniform design language
-   (see themes.ts's own comment) — that decision (one accent, not a matrix
-   of choices) stands; only which colour(s) fill the one slot has changed,
-   and has changed more than once by direct instruction since (see
-   themes.ts's own note on this).
+   Back to signal green — the ORIGINAL single-hue accent this whole ramp
+   started as (see themes.ts's own comment for why there's only ever one
+   accent slot at all, not a matrix of theme x color choices). It's since
+   gone pink→orange, then a full Instagram-brand purple→pink→orange
+   gradient, then briefly neutralized to nothing ("premium black and
+   white"), then a brief Electric Indigo/Deep Violet detour, then a fully
+   monochrome "Vercel" pass with a cool-grey ground and no accent at all —
+   each swap by direct instruction, none of them this file's own idea.
+   Restored to green byte-exact from its own original commit (229ad8d,
+   "Simplify theming to light/dark only, one accent") rather than
+   re-derived, by direct instruction — "black, white, and the light green I
+   used." Three tones now: the ground/ink ramp above (true neutral again,
+   not the cool-grey tried in between), white, and this one green.
 
    Still keyed on data-mode, not data-theme: the accent has to clear 4.5:1
-   against the ground it sits on, and that requirement is the same for every
-   dark theme and every light one. Two blocks, one per mode.
+   against the ground it sits on, and that requirement is the same for
+   every dark theme and every light one. Two blocks, one per mode.
 
-   Three named steps carry hue, not just lightness: 100-300 ramp the pink
-   hue at rising saturation, 400 is that pink at its most vivid (the
-   workhorse — has to work BOTH as a fill and as text on the ground, same
-   requirement the old single-hue ramp had), 500 is the orange, and
-   --c-a-mid is the purple stop, historically used only by a three-stop
-   gradient, never as a plain solid fill/text color the way 100-500 are.
-
-   As of the "premium black and white" pass, NOTHING in the app actually
-   renders this ramp anymore — accent is reserved for true CTAs only, and
-   even those (`.cta-fill`, `.btn-primary`, `Button`'s `default` variant,
-   `Toaster`'s action button, the email/error-page CTA buttons) were moved
-   to a solid `--primary` fill (itself neutral, resolving to `--c-s-50`;
-   see globals.css's own `--primary` comment) rather than this gradient, by
-   direct instruction ("still some buttons use the old instagram look").
-   The ramp itself is kept rather than deleted — still fully defined,
-   contrast-checked, and one variable swap away from being wired back up to
-   any of the above — since it represents real, deliberate design work
-   (the Instagram-palette research, the AA-contrast tuning below) that
-   nothing here currently needs gone for good, just switched off.
-
-   The purple in particular needed real lightening past the Instagram
-   brand reference to have EVER been legible as a gradient stop: a fill
-   with fixed-color text over its FULL span needs every point along it to
-   clear 4.5:1, and the brand purple's own contrast against that text sits
-   well under 4.5:1 at every lightness closer to the reference. Pink and
-   orange both cleared AA at (near-)reference strength on their own; purple
-   is the one hue tuned noticeably softer than Instagram's own #833AB4,
-   for whenever this ramp is a fill again. */
-
-/* Light mode: deep, ink-adjacent versions of all three hues, same
-   treatment the old single-hue ramps (green, then pink/orange) both used
-   for their own light variants. */
+   hsl(119 99% 46%) = rgb(5 233 1), used byte-exact in dark mode rather
+   than softened for a dark ground the way most other accents this ramp
+   has carried needed to be — it already comes with its own real neon
+   quality, and at 10.5:1 against Ink's near-black ground it has enormous
+   headroom to spare. Light mode gets a deep forest-green version of the
+   same hue instead, since the vivid source itself only clears ~1.6:1 on a
+   light ground — nowhere near AA. 400 is the workhorse in both: bright
+   enough to double as a fill (paired with dark `text-slate-950`, the same
+   pairing every other fill-role step in this app already uses — green is
+   far too light for white text to read on) and as text straight on the
+   ground; 500 is one step deeper, for borders/pressed states. */
 [data-mode="light"] {
-  --c-a-100: 58 4 25;
-  --c-a-200: 95 6 40;
-  --c-a-300: 130 8 52; /* 10.2:1 */
-  --c-a-400: 170 9 62; /* 6.9:1 */
-  --c-a-500: 145 54 8; /* 7.1:1 */
-  --c-a-mid: 82 18 125; /* 11.2:1 */
+  --c-a-100: 4 46 2;
+  --c-a-200: 3 66 2;
+  --c-a-300: 3 92 2;
+  --c-a-400: 2 122 3; /* 5.5:1 */
+  --c-a-500: 2 145 4;
 }
 
-/* Dark mode: hsl(340 95% 60%) for the pink (400, hue read directly off
-   Instagram's own #E1306C/#C13584), #F77737 for the orange (500) kept
-   byte-exact from the brand reference since it already clears AA
-   comfortably at full strength, and hsl(276 75% 68%) for the purple
-   (--c-a-mid) — same hue as #833AB4, lightened well past the reference for
-   the reason above. */
 [data-mode="dark"] {
-  --c-a-100: 255 214 225;
-  --c-a-200: 255 163 197;
-  --c-a-300: 255 100 160;
-  --c-a-400: 250 56 121; /* 4.9:1 */
-  --c-a-500: 247 119 55; /* 6.3:1 */
-  --c-a-mid: 186 112 235; /* 5.5:1 */
+  --c-a-100: 214 250 195;
+  --c-a-200: 172 247 148;
+  --c-a-300: 100 240 70;
+  --c-a-400: 5 233 1; /* 10.5:1 */
+  --c-a-500: 4 196 1; /* 7.4:1 */
 }
 

@@ -48,22 +48,19 @@
   --c-s-900: 41 41 41;      /* recessed surface */
   --c-s-950: 26 26 26;      /* the ground */
 
-  /* ---- Accent ramp: the Instagram gradient (currently unused) -----------
-     Same values as `[data-mode="dark"]` in themes.css (the app's one and
-     only accent — purple/pink/orange verified against the real Instagram
-     brand palette, replacing the earlier plain pink→orange duotone, itself
-     replacing the original single-hue signal green) — kept defined, but
-     nothing on this page actually renders it: `.btn-primary` below reads
-     `--primary` (neutral) for its fill now, not this ramp, per the
-     "premium black and white, accent only on true CTAs" instruction. See
-     themes.css's own "Accent" comment for the full reasoning on why the
-     ramp stays defined rather than being deleted. */
-  --c-a-100: 255 214 225;   /* highlight wash */
-  --c-a-200: 255 163 197;   /* hover text */
-  --c-a-300: 255 100 160;   /* accent TEXT */
-  --c-a-400: 250 56 121;    /* CTA fill / accent */
-  --c-a-500: 247 119 55;    /* borders, pressed / third gradient stop */
-  --c-a-mid: 186 112 235;   /* middle gradient stop only */
+  /* ---- Accent ramp: signal green, back again -----------------------------
+     Same values as `[data-mode="dark"]` in themes.css — see that file's
+     own "Accent" comment for the full history (green, then pink/orange,
+     then Instagram, then off, then Indigo/Violet, then off again, now
+     green again, byte-exact from its own original 229ad8d commit). Live
+     again on this page too: `.btn-primary` still reads `--primary`
+     (neutral, untouched), but selection states, badges, and the hero's
+     own accent below all read this ramp now. */
+  --c-a-100: 214 250 195;
+  --c-a-200: 172 247 148;
+  --c-a-300: 100 240 70;
+  --c-a-400: 5 233 1;       /* 10.5:1 */
+  --c-a-500: 4 196 1;       /* 7.4:1 */
 
   /* ---- The scrim rule -------------------------------------------------
      Ratios above are against the bare ground. The homepage's real backdrop
@@ -113,10 +110,10 @@
   --card-foreground: var(--c-s-50);
   --popover: var(--c-s-900);
   --popover-foreground: var(--c-s-50);
-  /* Neutral — same reasoning as globals.css's own `--primary`/`--ring`
-     comment. `.btn-primary` below reads this same `--primary` for its
-     fill now too (see its own comment), so there's no separate accent
-     path left to reconcile with. */
+  /* Neutral — same reasoning as globals.css's own `--primary` comment: a
+     green `.btn-primary` was tried and reverted by direct instruction in
+     favor of white buttons with green reserved for badges/selection
+     states/Atom. */
   --primary: var(--c-s-50);
   --primary-foreground: var(--c-s-950);
   --secondary: var(--c-s-800);
@@ -463,10 +460,10 @@
    (unsupported in Safari, ruled out earlier in this project's own design
    direction).
 
-   Solid `--primary`, not the accent gradient — see globals.css's own
-   `.cta-fill` comment: the "premium black and white" pass now covers real
-   CTAs too, by direct instruction, so nothing in the app renders the
-   accent ramp as a fill anymore. */
+   Solid `--primary`, neutral — see globals.css's own `--primary` and
+   `.cta-fill` comments: green was tried here too and reverted by direct
+   instruction, in favor of white buttons with green reserved for
+   badges/selection states/Atom. */
 [data-surface="marketing"] .btn-primary {
   background: rgb(var(--primary));
   border: 1px solid rgb(var(--primary) / 0.5);

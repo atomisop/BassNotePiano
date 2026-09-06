@@ -226,14 +226,14 @@
 }
 
 @utility chip-accent {
-  /* The small token chips — spelled notes, transposition cells. Neutral
-     now, not accent-tinted — same values as `.chip-neutral` below, by
-     direct instruction ("premium black and white... accent only on true
-     CTAs"). Kept as its own named utility (rather than switching every
-     `chip-accent` call site over to `chip-neutral`) so this one edit
-     covers every consumer at once. */
-  border: 1px solid rgb(var(--c-s-50) / 0.08);
-  background: rgb(var(--c-s-50) / 0.04);
+  /* The small token chips — spelled notes, transposition cells, badges.
+     Accent-tinted again, by direct instruction bringing signal green back
+     as the one accent (see themes.css's own "Accent" comment) — badges
+     being exactly this utility's own job. Diverged back out from
+     `.chip-neutral` below. amber-300 is this ramp's own byte-exact green
+     (--c-a-300), safely inside AA even at low opacity. */
+  border: 1px solid rgb(var(--c-a-300) / 0.35);
+  background: rgb(var(--c-a-300) / 0.1);
 }
 
 @utility chip-neutral {
@@ -373,14 +373,12 @@
      (not the Button component) add `.cta-fill` alongside `.cta-sheen` to
      get both material and motion.
 
-     Solid `--primary` now, not the accent gradient — by direct instruction
-     ("still some buttons use the old instagram look"), the "premium black
-     and white" pass extends all the way to real CTAs too: there's no
-     colour left anywhere in the app now, not even the one place it was
-     originally kept. `--primary`/`--c-a-*` themselves are untouched (see
-     themes.css's own "Accent" comment for what `--c-a-*` still holds and
-     why it's kept rather than deleted), just nothing references the accent
-     ramp for a button fill anymore. */
+     Solid `--primary`, neutral (`--c-s-50`) — repointing it straight at
+     the signal-green accent ramp was tried and reverted by direct
+     instruction: white buttons, with green reserved for badges/selection
+     states/Atom (see globals.css's own `--primary` comment and themes.css's
+     "Accent" comment for the fuller history), is the combination that
+     actually stuck. */
   background: rgb(var(--primary));
   border: 1px solid rgb(var(--primary) / 0.5);
   color: rgb(var(--primary-foreground));
@@ -476,14 +474,14 @@
     --popover: var(--c-surface-solid);
     --popover-foreground: var(--c-s-50);
 
-    /* Neutral — `--primary` feeds shadcn-pattern components generically
-       (Switch's "on" state, the `link` Button variant's text colour, focus
-       rings below) and, as of the "premium black and white" pass, the real
-       CTAs too (`.cta-fill`, `.btn-primary`, `Button`'s own `default`
-       variant, `Toaster`'s action button all read this same `--primary`
-       for their fill now — see each one's own comment). There's no
-       separate accent path left anywhere in the app; this is the one
-       colour every one of those renders. */
+    /* Neutral — tried repointing this straight at the signal-green accent
+       so every CTA (`.cta-fill`, `.btn-primary`, `Button`'s own `default`
+       variant, `Toaster`'s action button) would pick it up too, but by
+       direct instruction that's reverted: white buttons plus the green
+       reserved for badges/selection states/Atom is the combination that
+       actually reads as the brand, not green filling every button as
+       well. `--primary` stays `--c-s-50`, exactly as the "premium black
+       and white" pass left it. */
     --primary: var(--c-s-50);
     --primary-foreground: var(--c-s-950);
 

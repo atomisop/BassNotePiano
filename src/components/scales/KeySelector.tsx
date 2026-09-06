@@ -19,7 +19,7 @@ export function KeySelector({ value, onChange }: KeySelectorProps) {
           aria-pressed={key === value}
           className={`h-9 min-w-[2.5rem] rounded-lg border px-2 text-sm font-medium transition ${
             key === value
-              ? "border-[rgb(var(--c-s-50))] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
+              ? "border-amber-400 bg-amber-400/10 text-amber-400"
               : "border-ink/10 text-slate-400 hover:border-ink/15 hover:text-slate-100"
           }`}
         >

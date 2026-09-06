@@ -15,14 +15,15 @@ import { FULLSCREEN_NAV_EVENT } from "@/lib/overlayNav";
  * once in providers.tsx, same pattern as Toaster/CookieConsentBanner).
  *
  * The launcher (and the open panel's header icon) run the `loader-15` ui
- * component — a cool-grey animated gradient ring, `components/ui/loader-15.tsx`
- * — as Atom's icon. Atom used to run its own distinct color identity here
- * (teal/blue, before that green, before that whatever the house accent
+ * component — a signal-green animated gradient ring, `components/ui/
+ * loader-15.tsx` — as Atom's icon. Atom used to run its own distinct
+ * color identity here (teal/blue, before that whatever the house accent
  * wasn't at the time — see themes.css's own "Accent" comment), on the
  * theory that it should read as its own character rather than blend into
  * the app's chrome. Reverted by direct instruction: Atom now matches the
- * app's own cool-grey monochrome exactly, everywhere below — no separate
- * hue anywhere in this file anymore. This replaces an earlier
+ * app exactly, everywhere below, including the signal green that's the
+ * house accent again — no separate identity anymore. This replaces an
+ * earlier
  * `PulsingBorder` WebGL shader treatment (this app's own signal-green
  * identity): that version needed its own feature-detection-and-fallback
  * machinery (a shader canvas that *throws*, not warns, on a device with no
@@ -168,7 +169,7 @@ function FeedbackButtons({
         aria-label="Helpful"
         aria-pressed={rating === "UP"}
         className={`flex h-5 w-5 items-center justify-center rounded transition ${
-          rating === "UP" ? "text-[rgb(var(--c-s-50))]" : "text-slate-600 hover:text-slate-400"
+          rating === "UP" ? "text-amber-400" : "text-slate-600 hover:text-slate-400"
         } disabled:cursor-default disabled:opacity-60`}
       >
         <svg viewBox="0 0 24 24" fill={rating === "UP" ? "currentColor" : "none"} className="h-3 w-3">
@@ -227,7 +228,7 @@ function renderMessageContent(content: string, accentLink: boolean) {
       <Link
         key={key++}
         href={href}
-        className={`underline underline-offset-2 ${accentLink ? "text-slate-950" : "text-[rgb(var(--c-s-50))] hover:opacity-70"}`}
+        className={`underline underline-offset-2 ${accentLink ? "text-slate-950" : "text-amber-400 hover:opacity-70"}`}
       >
         {label}
       </Link>,
@@ -257,7 +258,7 @@ function MessageBubble({
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
         className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm ${
-          isMine ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "border border-ink/10 bg-slate-950 text-slate-100"
+          isMine ? "bg-amber-400 text-slate-950" : "border border-ink/10 bg-slate-950 text-slate-100"
         }`}
       >
         <p className="whitespace-pre-wrap break-words">{renderMessageContent(message.content, isMine)}</p>
@@ -282,9 +283,9 @@ function ThreadMessageBubble({ message }: { message: ThreadMessage }) {
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
         className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm ${
           isVisitor
-            ? "bg-[rgb(var(--c-s-50))] text-slate-950"
+            ? "bg-amber-400 text-slate-950"
             : message.sender === "SUPPORT"
-              ? "border border-[rgb(var(--c-s-50)/0.35)] bg-[rgb(var(--c-s-50)/0.1)] text-slate-100"
+              ? "border border-amber-400/35 bg-amber-400/10 text-slate-100"
               : "border border-ink/10 bg-slate-950 text-slate-100"
         }`}
       >
@@ -716,16 +717,18 @@ export function AssistantWidget() {
             // the rest of the app. Reverted by direct instruction — this
             // panel now reads the same `--elev-border`/`--elev-bg` every
             // other `glass-surface-elevated` on the site does, so it looks
-            // like the rest of the app (cool-grey Ink, or warm Paper),
+            // like the rest of the app (near-black Ink, or warm Paper),
             // rather than its own thing.
             className="glass-surface-elevated flex h-[min(70vh,560px)] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl"
             role="dialog"
             aria-label="Chat with Atom"
           >
             {/* Used to carry a mobile-only teal→blue wash here, echoing the
-                icon's old color mix — moot now that the icon itself is
-                cool-grey, so the header is just plain neutral at every
-                width, matching the rest of the app. */}
+                icon's old color mix — the icon is signal green now (the
+                house accent, not a distinct identity), and green filling
+                the whole header would compete with the message bubbles
+                below that also use it, so the header stays plain neutral
+                at every width instead. */}
             <div className="flex items-center gap-3 border-b border-ink/10 px-4 py-3">
               <div className="h-8 w-8 shrink-0">
                 <Loader size={32} />
@@ -789,7 +792,7 @@ export function AssistantWidget() {
                       <button
                         type="button"
                         onClick={resetToAtom}
-                        className="text-xs font-medium text-[rgb(var(--c-s-50))] underline-offset-2 hover:underline"
+                        className="text-xs font-medium text-amber-400 underline-offset-2 hover:underline"
                       >
                         Start a new question with Atom
                       </button>
@@ -817,7 +820,7 @@ export function AssistantWidget() {
                       type="button"
                       onClick={confirmHandoff}
                       disabled={escalationSubmitting}
-                      className="flex flex-1 items-center justify-center rounded-lg bg-[rgb(var(--c-s-50))] py-1.5 text-xs font-semibold text-slate-950 transition disabled:opacity-60"
+                      className="flex flex-1 items-center justify-center rounded-lg bg-amber-400 py-1.5 text-xs font-semibold text-slate-950 transition disabled:opacity-60"
                     >
                       {escalationSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {escalationSubmitting ? "Connecting…" : "Yes, connect me"}
@@ -841,7 +844,7 @@ export function AssistantWidget() {
                     autoFocus
                     maxLength={320}
                     disabled={escalationSubmitting}
-                    className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-1.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.4)]"
+                    className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-1.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-400/40"
                   />
                   {escalationError && <p className="text-xs text-red-400">{escalationError}</p>}
                   <div className="flex gap-2">
@@ -856,7 +859,7 @@ export function AssistantWidget() {
                     <button
                       type="submit"
                       disabled={escalationSubmitting || !escalationEmail.trim()}
-                      className="flex flex-1 items-center justify-center rounded-lg bg-[rgb(var(--c-s-50))] py-1.5 text-xs font-semibold text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex flex-1 items-center justify-center rounded-lg bg-amber-400 py-1.5 text-xs font-semibold text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {escalationSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {escalationSubmitting ? "Sending…" : "Notify the team"}
@@ -876,7 +879,7 @@ export function AssistantWidget() {
                     type="button"
                     onClick={() => sendMessage(s)}
                     disabled={loading}
-                    className="rounded-full border border-ink/10 px-2.5 py-1 text-xs text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] disabled:opacity-50"
+                    className="rounded-full border border-ink/10 px-2.5 py-1 text-xs text-slate-300 transition hover:border-amber-400/40 hover:text-amber-400 disabled:opacity-50"
                   >
                     {s}
                   </button>
@@ -885,7 +888,7 @@ export function AssistantWidget() {
                   type="button"
                   onClick={offerHandoff}
                   disabled={loading}
-                  className="rounded-full border border-ink/10 px-2.5 py-1 text-xs text-slate-400 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] disabled:opacity-50"
+                  className="rounded-full border border-ink/10 px-2.5 py-1 text-xs text-slate-400 transition hover:border-amber-400/40 hover:text-amber-400 disabled:opacity-50"
                 >
                   Talk to our team
                 </button>
@@ -901,13 +904,13 @@ export function AssistantWidget() {
                 placeholder={isResolved ? "This conversation is closed" : inSupportMode ? "Message support…" : "Ask Atom anything…"}
                 maxLength={2000}
                 disabled={loading || isResolved}
-                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.4)] disabled:opacity-50"
+                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-400/40 disabled:opacity-50"
               />
               <button
                 type="submit"
                 disabled={loading || isResolved || !input.trim()}
                 aria-label={loading ? "Sending…" : "Send"}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgb(var(--c-s-50))] text-slate-950 transition disabled:opacity-40"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-400 text-slate-950 transition disabled:opacity-40"
               >
                 {loading ? (
                   <MorphingSquare size={16} />

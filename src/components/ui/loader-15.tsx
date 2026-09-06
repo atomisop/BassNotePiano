@@ -3,13 +3,13 @@
 import * as React from "react";
 
 /**
- * Loader-15 — a cool-grey animated gradient ring, sourced from a 21st.dev
- * community component of the same name (whose original was pink→orange).
- * Recolored to a neutral light-grey→white sweep, matching the app's own
- * cool-grey monochrome system (see themes.css's own "Accent" comment) —
- * Atom used to run its own distinct teal→blue identity, deliberately
- * different from the house look; reverted by direct instruction in favor
- * of Atom actually matching the rest of the app now (see
+ * Loader-15 — a signal-green animated gradient ring, sourced from a
+ * 21st.dev community component of the same name (whose original was
+ * pink→orange). Recolored to this app's own accent ramp (--c-a-400/500,
+ * see themes.css's own "Accent" comment) — Atom used to run its own
+ * distinct teal→blue identity, deliberately different from the house
+ * look; reverted by direct instruction in favor of Atom actually matching
+ * the rest of the app now (see
  * AssistantWidget.tsx's own top comment).
  *
  * Ported from the original's `styled-components` to `<style jsx>` —
@@ -102,10 +102,10 @@ export default function Loader({ size = 200, className }: { size?: number; class
           filter: url(#${filterId});
         }
         .stopp1 {
-          stop-color: #b9bfca;
+          stop-color: #04c401;
         }
         .stopp2 {
-          stop-color: #eef1f8;
+          stop-color: #05e901;
         }
         .halvan {
           animation: loader15-snurra 10s infinite linear;

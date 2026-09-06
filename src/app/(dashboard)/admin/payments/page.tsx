@@ -33,7 +33,7 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
             key={filter.value}
             href={filter.value === "PENDING_REVIEW" ? "/admin/payments" : `/admin/payments?status=${filter.value}`}
             className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-              activeFilter === filter.value ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "text-slate-400 hover:text-slate-100"
+              activeFilter === filter.value ? "bg-amber-400 text-slate-950" : "text-slate-400 hover:text-slate-100"
             }`}
           >
             {filter.label}

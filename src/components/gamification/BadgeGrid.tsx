@@ -70,7 +70,7 @@ export function BadgeGrid({ earnedCodes }: BadgeGridProps) {
                       transition={prefersReducedMotion ? { duration: 0 } : earned ? { delay: index * 0.04 } : undefined}
                       className={`flex h-16 w-16 flex-col items-center justify-center rounded-2xl border text-center transition ${
                         earned
-                          ? "border-[rgb(var(--c-s-50)/0.5)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
+                          ? "border-amber-400/50 bg-amber-400/10 text-amber-400"
                           : "border-ink/10 bg-surface text-slate-600 opacity-50"
                       }`}
                     >

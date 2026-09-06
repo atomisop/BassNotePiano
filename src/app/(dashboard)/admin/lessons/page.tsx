@@ -30,7 +30,7 @@ export default async function AdminLessonsPage({ searchParams }: { searchParams:
             key={scale.slug}
             href={`/admin/lessons?scale=${scale.slug}`}
             className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-              activeSlug === scale.slug ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "text-slate-400 hover:text-slate-100"
+              activeSlug === scale.slug ? "bg-amber-400 text-slate-950" : "text-slate-400 hover:text-slate-100"
             }`}
           >
             {scale.code}

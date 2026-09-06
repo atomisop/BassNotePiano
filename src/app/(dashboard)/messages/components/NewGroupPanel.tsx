@@ -93,7 +93,7 @@ export function NewGroupPanel({
                     disabled={!f.username}
                     onClick={() => toggle(f.username)}
                     className={`flex w-full items-center gap-2.5 rounded-lg p-2.5 text-left transition ${
-                      checked ? "bg-[rgb(var(--c-s-50)/0.1)]" : "hover:bg-ink/5"
+                      checked ? "bg-amber-400/10" : "hover:bg-ink/5"
                     } disabled:opacity-40`}
                   >
                     <Avatar image={f.image} label={f.name ?? f.username ?? "?"} className="h-8 w-8 text-xs" />
@@ -103,7 +103,7 @@ export function NewGroupPanel({
                     </div>
                     <div
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-                        checked ? "border-[rgb(var(--c-s-50))] bg-[rgb(var(--c-s-50))] text-slate-950" : "border-ink/15"
+                        checked ? "border-amber-400 bg-amber-400 text-slate-950" : "border-ink/15"
                       }`}
                     >
                       {checked && (

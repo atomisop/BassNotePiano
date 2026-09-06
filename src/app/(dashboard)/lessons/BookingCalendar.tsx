@@ -164,7 +164,7 @@ export function BookingCalendar({
               title={info ? `${info.count} class${info.count === 1 ? "" : "es"}` : undefined}
               className={`relative mx-auto flex h-8 w-8 flex-col items-center justify-center rounded-full text-xs transition ${
                 isSelected
-                  ? "bg-[rgb(var(--c-s-50))] font-semibold text-slate-950"
+                  ? "bg-amber-400 font-semibold text-slate-950"
                   : clickable
                     ? info?.hasOpenSlot
                       ? "font-medium text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.15)]"

@@ -142,7 +142,7 @@ function StepMarker({
   // on it before reading any of the cards.
   if (isCurrent) {
     return (
-      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgb(var(--c-s-50))] text-sm font-semibold text-slate-950">
+      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-400 text-sm font-semibold text-slate-950">
         {index + 1}
       </div>
     );
@@ -249,7 +249,7 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
                       // it. Not `.glass-surface-elevated` — the dashboard
                       // already spends that on the next-step card, and using it
                       // twice on a screen stops it meaning "the important one".
-                      "border-[rgb(var(--c-s-50)/0.5)] bg-surface shadow-card"
+                      "border-amber-400/50 bg-surface shadow-card"
                     : locked
                       ? "border-ink/10 bg-ink/5 hover:border-[rgb(var(--c-s-50)/0.3)]"
                       : "border-ink/10 bg-surface hover:border-[rgb(var(--c-s-50)/0.3)]"
@@ -260,10 +260,11 @@ export function ScaleRoadmap({ roadmap }: ScaleRoadmapProps) {
                     {scale.scaleGroup.code}
                   </p>
                   {/* One badge, and only the current step gets it — status
-                      text alone is enough for the rest. Neutral, not
-                      accent-tinted, now: accent is reserved for true CTAs. */}
+                      text alone is enough for the rest. Accent-tinted
+                      again, by direct instruction bringing signal green
+                      back as the one accent. */}
                   {isCurrent ? (
-                    <span className="rounded-full bg-[rgb(var(--c-s-50)/0.15)] px-2 py-0.5 text-[11px] font-medium text-[rgb(var(--c-s-50))]">
+                    <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-400">
                       You&apos;re here
                     </span>
                   ) : (

@@ -21,11 +21,11 @@ const buttonVariants = cva(
            project's own design direction rules out for buttons. What's
            kept — the fill, the shadow, the hover response — renders
            identically in every real browser.
-           Solid `--primary` now, not an accent gradient (`--c-a-mid/400/
-           500`, still there, just no longer read for a button fill — see
-           globals.css's own `.cta-fill` comment): the "premium black and
-           white" pass now covers real CTAs too, by direct instruction, so
-           nothing in the app renders the accent ramp as a fill anymore.
+           Solid `--primary`, neutral — repointing it straight at the
+           signal-green accent was tried and reverted by direct
+           instruction (see globals.css's own `--primary` comment): white
+           buttons plus green reserved for badges/selection states/Atom is
+           the combination that stuck, not green filling every button too.
            Every variant below except `link` also lifts on hover and presses
            down on click (-translate-y-0.5 / translate-y-px), on top of
            whatever color/fill response it already had. Direct instruction:

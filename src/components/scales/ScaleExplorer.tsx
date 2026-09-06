@@ -55,7 +55,7 @@ export function ScaleExplorer({ variants, instrument }: ScaleExplorerProps) {
                 aria-pressed={i === activeVariantIndex}
                 className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition ${
                   i === activeVariantIndex
-                    ? "bg-[rgb(var(--c-s-50))] text-slate-950"
+                    ? "bg-amber-400 text-slate-950"
                     : "text-slate-400 hover:text-slate-100"
                 }`}
               >
