@@ -21,12 +21,11 @@
    before. Only the values behind those names change.
 
    ── Where the palette comes from ────────────────────────────────────────
-   The same cool-grey neutral ramp and (dormant) Instagram-style accent as
-   the rest of the app (see themes.css's `[data-theme="ink"]` and
-   `[data-mode="dark"]` blocks — that file's own "Accent" comment has the
-   full history, including the Electric Indigo/Deep Violet detour and why
-   it was reverted) — mirrored here in raw values rather than referenced,
-   because
+   The same neutral black/white ramp and Instagram-style purple/pink/orange
+   accent as the rest of the app (see themes.css's `[data-theme="ink"]` and
+   `[data-mode="dark"]` blocks — this trio is the only accent now, see
+   themes.ts's own comment) — mirrored here in raw values rather than
+   referenced, because
    these are inherited custom properties: re-pointing `--c-a-400` this far
    down the tree only works if it's redeclared at this scope, not aliased to
    the ancestor's already-resolved one.
@@ -34,31 +33,31 @@
 
 [data-surface="marketing"] {
   /* ---- Neutral ramp: ground ↔ text -----------------------------------
-     Cool grey, not true neutral — same values and same reasoning as
-     `[data-theme="ink"]` in themes.css: a small, consistent blue lean at
-     every step (R a touch under, B a touch over, G left as the luminance
-     anchor) rather than a literal R=G=B grey, matching how Vercel/Apple/
-     GitHub/Linear/Stripe actually build a "premium" dark surface. Contrast
-     ratios below are measured against the ground (--c-s-950). */
-  --c-s-50: 238 241 248;    /* headings            16.2:1 */
-  --c-s-100: 223 227 235;   /* strong body         14.2:1 */
-  --c-s-200: 204 209 219;   /* body copy           11.9:1 */
-  --c-s-300: 185 191 202;   /* secondary body       9.9:1 */
-  --c-s-400: 157 164 177;   /* de-emphasised        7.3:1 */
-  --c-s-500: 141 149 164;   /* mono labels          6.1:1 */
-  --c-s-600: 108 116 131;   /* disabled             3.9:1 — non-text, always */
-  --c-s-700: 56 62 74;      /* hairlines, rules */
-  --c-s-800: 42 47 58;      /* raised surface */
-  --c-s-900: 33 38 48;      /* recessed surface */
-  --c-s-950: 18 21 28;      /* the ground */
+     True neutral grey, matching `[data-theme="ink"]` exactly — no warm or
+     cool bias. Contrast ratios below are measured against the ground
+     (--c-s-950). */
+  --c-s-50: 245 245 245;    /* headings            17.9:1 */
+  --c-s-100: 230 230 230;   /* strong body         15.6:1 */
+  --c-s-200: 212 212 212;   /* body copy           13.1:1 */
+  --c-s-300: 194 194 194;   /* secondary body      10.8:1 */
+  --c-s-400: 168 168 168;   /* de-emphasised        7.8:1 */
+  --c-s-500: 153 153 153;   /* mono labels          6.5:1 */
+  --c-s-600: 120 120 120;   /* disabled             4.4:1 — non-text, always */
+  --c-s-700: 66 66 66;      /* hairlines, rules */
+  --c-s-800: 51 51 51;      /* raised surface */
+  --c-s-900: 41 41 41;      /* recessed surface */
+  --c-s-950: 26 26 26;      /* the ground */
 
-  /* ---- Accent ramp: the Instagram gradient (dormant) --------------------
-     Same values as `[data-mode="dark"]` in themes.css. Briefly repointed
-     to an Electric Indigo/Deep Violet pair this session, then reverted by
-     direct instruction in favor of this page's own `.btn-primary` reading
-     plain `--primary` (neutral) for its fill — the monochrome "Vercel"
-     model: ground, ink, and one non-hued accent, nothing else. See
-     themes.css's own "Accent" comment for the full history. */
+  /* ---- Accent ramp: the Instagram gradient (currently unused) -----------
+     Same values as `[data-mode="dark"]` in themes.css (the app's one and
+     only accent — purple/pink/orange verified against the real Instagram
+     brand palette, replacing the earlier plain pink→orange duotone, itself
+     replacing the original single-hue signal green) — kept defined, but
+     nothing on this page actually renders it: `.btn-primary` below reads
+     `--primary` (neutral) for its fill now, not this ramp, per the
+     "premium black and white, accent only on true CTAs" instruction. See
+     themes.css's own "Accent" comment for the full reasoning on why the
+     ramp stays defined rather than being deleted. */
   --c-a-100: 255 214 225;   /* highlight wash */
   --c-a-200: 255 163 197;   /* hover text */
   --c-a-300: 255 100 160;   /* accent TEXT */

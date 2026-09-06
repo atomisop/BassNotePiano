@@ -87,31 +87,24 @@
 }
 
 /* ── Editorial Ink (dark) ───────────────────────────────────────────────────
-   Cool grey now, not true neutral — by direct instruction, studying how
-   Vercel/Apple/GitHub/Linear/Stripe actually build a "premium" dark
-   surface: none of them run a literal R=G=B grey (which is what this ramp
-   was — see git history). Each step here keeps its predecessor's exact
-   lightness/contrast budget (recomputed against the new, slightly darker
-   ground below) but adds a small, consistent blue lean — R a little under
-   the middle value, B a little over, G left as the anchor since it
-   dominates perceived luminance. Same recipe at every step is what makes it
-   read as one deliberate grey rather than a random tint: the app's own
-   Tailwind alias for this ramp has been "slate" all along; this is the
-   first time the actual values earn that name. This is the app's default
-   theme (see DEFAULT_THEME in themes.ts) and the one every logged-out
-   visitor sees. */
+   The paper system after dark: same warm-not-blue-black ground Editorial
+   Paper uses inverted, now carrying the same universal glass treatment: a
+   real `backdrop-filter` blur, one step heavier than Paper's own above
+   since a dark ground can carry more of it before it reads as haze. This is
+   the app's default theme (see DEFAULT_THEME in themes.ts) and the one
+   every logged-out visitor sees. */
 [data-theme="ink"] {
-  --c-s-50: 238 241 248; /* near-white text, cool-leaning, 16.2:1 */
-  --c-s-100: 223 227 235;
-  --c-s-200: 204 209 219;
-  --c-s-300: 185 191 202;
-  --c-s-400: 157 164 177;
-  --c-s-500: 141 149 164; /* muted-foreground, 6.1:1 */
-  --c-s-600: 108 116 131;
-  --c-s-700: 56 62 74; /* border/input */
-  --c-s-800: 42 47 58; /* muted */
-  --c-s-900: 33 38 48;
-  --c-s-950: 18 21 28; /* background/ground */
+  --c-s-50: 245 245 245; /* 0% 96% — near-white text */
+  --c-s-100: 230 230 230;
+  --c-s-200: 212 212 212;
+  --c-s-300: 194 194 194;
+  --c-s-400: 168 168 168;
+  --c-s-500: 153 153 153; /* 0% 60% — muted-foreground */
+  --c-s-600: 120 120 120;
+  --c-s-700: 66 66 66;
+  --c-s-800: 51 51 51; /* 0% 20% — border/input */
+  --c-s-900: 41 41 41; /* 0% 16% — muted */
+  --c-s-950: 26 26 26; /* 0% 10% — background/ground */
 
   --c-em-300: 134 239 172;
   --c-em-400: 74 222 128;
@@ -122,18 +115,14 @@
   --c-ink: 255 255 255;
   --c-scrim: 10 10 10;
 
-  /* Both specks now the same cool-white, matching the ramp's own lean —
-     the first one used to be a faint orange fleck (a leftover from an
-     earlier, warmer era of this page), the one stray hue left anywhere
-     outside the neutral ramp and the semantic red/green. Gone by the same
-     "only three colours" instruction that reverted the accent below. */
   --page-texture:
-    radial-gradient(circle at 15% 20%, rgba(215, 224, 238, 0.035), transparent 45%),
+    radial-gradient(circle at 15% 20%, rgba(247, 119, 55, 0.035), transparent 45%),
     radial-gradient(circle at 85% 75%, rgba(255, 255, 255, 0.02), transparent 40%);
 
-  /* --c-surface-solid, cool-tinted the same way as the ramp above — a
-     distinct, slightly-lighter opaque chrome fill, not the bare ground. */
-  --c-surface-solid: 40 44 54;
+  /* --c-surface-solid at 46 46 46 matches the spec's own `--nav-button`
+     (0 0% 18%) — a distinct, slightly-lighter opaque chrome fill, not the
+     bare ground. */
+  --c-surface-solid: 46 46 46;
   --surface-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
   --surface-border: rgba(255, 255, 255, 0.1);
   --surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px -4px rgba(0, 0, 0, 0.5);
@@ -159,7 +148,7 @@
   --scrim-light: 0.42;
   --scrim-standard: 0.62;
   --scrim-dense: 0.82;
-  --scrim-rgb: 15 17 22; /* cool-tinted, same recipe as the ramp above */
+  --scrim-rgb: 20 20 20; /* matches --hero-bg (0 0% 8%) from the spec */
 }
 
 /* ==========================================================================
@@ -176,15 +165,7 @@
    (see themes.ts's own comment) — that decision (one accent, not a matrix
    of choices) stands; only which colour(s) fill the one slot has changed,
    and has changed more than once by direct instruction since (see
-   themes.ts's own note on this). Most recently: briefly wired back up as
-   an Electric Indigo/Deep Violet pair (#6366F1/#4F46E5), scoped to
-   selection states, the active root note, badges, and a hero-card
-   gradient — reverted the same session, by direct instruction, in favor
-   of the monochrome "Vercel" model (ground/ink/one non-hued accent, no
-   separate brand hue at all) after a side-by-side study of real companies'
-   systems. The indigo values themselves aren't preserved here the way the
-   Instagram ones are below — recoverable from git history if a future
-   session wants them back.
+   themes.ts's own note on this).
 
    Still keyed on data-mode, not data-theme: the accent has to clear 4.5:1
    against the ground it sits on, and that requirement is the same for every

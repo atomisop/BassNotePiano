@@ -16,12 +16,9 @@ export const contentType = "image/png";
 // for true CTAs only ("premium black and white" direction; see themes.css's
 // own "Accent" comment for the full history of what that one accent has
 // been over time).
-// Cool-grey, matching themes.css's own [data-theme="ink"] ramp (--c-s-950/
-// --c-s-50/--c-s-500) — Satori can't read CSS custom properties, so these
-// stay hardcoded literals, kept in sync by hand.
-const INK = "#12151C";
-const PAPER = "#EEF1F8";
-const MUTED = "#8D95A4";
+const INK = "#1A1A1A";
+const PAPER = "#F5F5F5";
+const MUTED = "#999999";
 
 /**
  * Satori (which backs ImageResponse) cannot use a CSS-declared webfont — it
@@ -93,7 +90,7 @@ export default async function OpengraphImage() {
           // its parser with "Missing comma before color stops" — which surfaces
           // as a prerender error that fails the whole build, not a silent
           // style fallback.
-          backgroundImage: `radial-gradient(circle at 8% 108%, rgba(238,241,248,0.16) 0%, rgba(238,241,248,0) 62%)`,
+          backgroundImage: `radial-gradient(circle at 8% 108%, rgba(245,245,245,0.16) 0%, rgba(245,245,245,0) 62%)`,
         }}
       >
         {/* Wordmark rail */}
@@ -156,7 +153,7 @@ export default async function OpengraphImage() {
                 display: "flex",
                 padding: "11px 24px",
                 borderRadius: 999,
-                border: `1px solid rgba(238,241,248,0.20)`,
+                border: `1px solid rgba(245,245,245,0.20)`,
                 color: PAPER,
                 fontSize: 25,
               }}
