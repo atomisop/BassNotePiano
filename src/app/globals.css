@@ -226,14 +226,17 @@
 }
 
 @utility chip-accent {
-  /* The small token chips — spelled notes, transposition cells. Neutral
-     now, not accent-tinted — same values as `.chip-neutral` below, by
-     direct instruction ("premium black and white... accent only on true
-     CTAs"). Kept as its own named utility (rather than switching every
-     `chip-accent` call site over to `chip-neutral`) so this one edit
-     covers every consumer at once. */
-  border: 1px solid rgb(var(--c-s-50) / 0.08);
-  background: rgb(var(--c-s-50) / 0.04);
+  /* The small token chips — spelled notes, transposition cells, badges.
+     Accent-tinted again, by direct instruction reintroducing Electric
+     Indigo/Deep Violet scoped to selection states, the active root note,
+     badges, and hero-card gradients — badges being exactly this utility's
+     own job. Diverged back out from `.chip-neutral` below (they'd been
+     collapsed to the same values during the "premium black and white"
+     pass); border/wash both read `--c-a-300` (the byte-exact #6366F1
+     anchor — a border only needs 3:1, which it clears in both themes, see
+     themes.css's own "Accent" comment). */
+  border: 1px solid rgb(var(--c-a-300) / 0.35);
+  background: rgb(var(--c-a-300) / 0.1);
 }
 
 @utility chip-neutral {

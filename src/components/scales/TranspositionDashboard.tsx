@@ -113,7 +113,7 @@ function InstrumentSwitcher({
             aria-pressed={isActive}
             className={`flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
               isActive
-                ? "bg-[rgb(var(--c-s-50))] text-slate-950"
+                ? "bg-[rgb(var(--c-a-500))] text-white"
                 : "text-slate-400 hover:text-slate-100"
             }`}
           >
@@ -291,12 +291,12 @@ export function TranspositionDashboard({ variant, root, player, instrument, onIn
             {ROOT_KEYS.map((key) => (
               <tr
                 key={key}
-                className={`border-t border-ink/5 ${key === root ? "bg-[rgb(var(--c-s-50)/0.05)]" : ""}`}
+                className={`border-t border-ink/5 ${key === root ? "bg-[rgb(var(--c-a-300)/0.08)]" : ""}`}
               >
                 <th
                   scope="row"
                   className={`py-2 pr-4 text-left font-medium ${
-                    key === root ? "text-[rgb(var(--c-s-50))]" : "text-slate-300"
+                    key === root ? "text-[rgb(var(--c-a-400))]" : "text-slate-300"
                   }`}
                 >
                   {key}

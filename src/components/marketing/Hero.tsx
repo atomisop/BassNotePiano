@@ -111,6 +111,20 @@ export function Hero() {
               "linear-gradient(to top, rgb(var(--c-s-950)) 0%, rgb(var(--c-s-950) / 0.75) 30%, rgb(var(--c-s-950) / 0.15) 65%, transparent 100%)",
           }}
         />
+        {/* The one gradient accent on this page, by direct instruction
+            reintroducing Electric Indigo/Deep Violet scoped to (among other
+            things) "gradient accents on hero cards" — this section being
+            the hero. Kept to the same restraint the rest of Hero.tsx argues
+            for: a soft radial wash behind the headline, not a new shape or
+            a second color competing with the photography. */}
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(50% 45% at 28% 72%, rgb(var(--c-a-300) / 0.22), transparent 70%)",
+          }}
+        />
       </div>
 
       <div className="mx-auto w-full max-w-4xl px-6">

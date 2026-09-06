@@ -76,10 +76,10 @@ export function PricingPageContent() {
               limited, which it isn't. The card border between them now
               makes it unambiguous that this is a separate promo tag. */}
           <div className="absolute -top-3.5 right-6 flex items-center gap-1.5 sm:-top-4 sm:right-8">
-            <span className="rounded-full bg-slate-950 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[rgb(var(--c-s-50))] ring-1 ring-inset ring-[rgb(var(--c-s-50)/0.4)]">
+            <span className="rounded-full bg-slate-950 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[rgb(var(--c-a-400))] ring-1 ring-inset ring-[rgb(var(--c-a-400)/0.4)]">
               Limited time offer
             </span>
-            <span className="rounded-full bg-[rgb(var(--c-s-50))] px-2.5 py-1 text-[11px] font-bold tabular-nums text-slate-950">
+            <span className="rounded-full bg-[rgb(var(--c-a-500))] px-2.5 py-1 text-[11px] font-bold tabular-nums text-white">
               -{CURRICULUM_DISCOUNT_PERCENT}%
             </span>
           </div>

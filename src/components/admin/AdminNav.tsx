@@ -64,7 +64,7 @@ function DesktopAdminPills() {
             key={item.href}
             href={item.href}
             className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition ${
-              active ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "text-slate-400 hover:text-slate-100"
+              active ? "bg-[rgb(var(--c-a-500))] text-white" : "text-slate-400 hover:text-slate-100"
             }`}
           >
             {item.label}

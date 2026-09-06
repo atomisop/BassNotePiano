@@ -17,14 +17,14 @@ export function ConversationListItem({
 }) {
   const c = conversation;
   return (
-    <div className={`group flex items-center gap-1 rounded-lg transition ${active ? "bg-[rgb(var(--c-s-50)/0.1)]" : "hover:bg-ink/5"}`}>
+    <div className={`group flex items-center gap-1 rounded-lg transition ${active ? "bg-[rgb(var(--c-a-300)/0.12)]" : "hover:bg-ink/5"}`}>
       <button type="button" onClick={onSelect} className="flex min-w-0 flex-1 items-center gap-2.5 p-2.5 text-left">
         <Avatar image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-9 w-9 text-xs" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <p className="truncate text-sm text-slate-100">{c.friendName ?? `@${c.friendUsername}`}</p>
             {c.unreadCount > 0 && (
-              <span className="flex h-4 min-w-[1rem] shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50))] px-1 text-[10px] font-bold text-slate-950">
+              <span className="flex h-4 min-w-[1rem] shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-a-500))] px-1 text-[10px] font-bold text-white">
                 {c.unreadCount > 9 ? "9+" : c.unreadCount}
               </span>
             )}

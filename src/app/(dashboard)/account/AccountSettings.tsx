@@ -162,7 +162,7 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
                 onClick={() => onSelect(tab.id)}
                 className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm transition ${
                   activeTab === tab.id
-                    ? "border-[rgb(var(--c-s-50)/0.4)] bg-slate-800 text-slate-50"
+                    ? "border-[rgb(var(--c-a-300)/0.5)] bg-slate-800 text-[rgb(var(--c-a-400))]"
                     : "border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
                 }`}
               >

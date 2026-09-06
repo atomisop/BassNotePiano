@@ -35,7 +35,7 @@ export function PinnedGrid({
                 type="button"
                 onClick={() => onSelect(c.friendId)}
                 className={`overflow-hidden rounded-full border-2 transition ${
-                  active ? "border-[rgb(var(--c-s-50))]" : "border-ink/10 hover:border-ink/20"
+                  active ? "border-[rgb(var(--c-a-300))]" : "border-ink/10 hover:border-ink/20"
                 }`}
               >
                 <Avatar image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-16 w-16 text-lg" />
