@@ -111,18 +111,6 @@ export function Hero() {
               "linear-gradient(to top, rgb(var(--c-s-950)) 0%, rgb(var(--c-s-950) / 0.75) 30%, rgb(var(--c-s-950) / 0.15) 65%, transparent 100%)",
           }}
         />
-        {/* The one gradient accent on this page, by direct instruction
-            bringing signal green back as the one accent — a soft radial
-            wash behind the headline, not a new shape or a second color
-            competing with the photography. */}
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(50% 45% at 28% 72%, rgb(var(--c-a-400) / 0.16), transparent 70%)",
-          }}
-        />
       </div>
 
       <div className="mx-auto w-full max-w-4xl px-6">
