@@ -7,6 +7,7 @@ import {
   calculateFamilyBundleTotal,
   MIN_FAMILY_BUNDLE_RECIPIENTS,
 } from "@/lib/classCreditPricing";
+import { addCalendarMonthsClamped } from "@/lib/paymentPlans";
 import { createNotification } from "@/lib/notifications";
 import { assertRateLimit } from "@/lib/rateLimit";
 
@@ -30,7 +31,14 @@ const PENDING_PAYMENT_EXPIRY_DAYS = 7;
 async function expireStalePendingPayments() {
   const cutoff = new Date(Date.now() - PENDING_PAYMENT_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
   await prisma.zellePayment.updateMany({
-    where: { status: "AWAITING_TRANSFER", createdAt: { lt: cutoff } },
+    // Excludes PAYMENT_PLAN_INSTALLMENT on purpose: EXPIRED is a dead end
+    // (submitZellePaymentReference only accepts resubmission from
+    // AWAITING_TRANSFER/REJECTED), and an installment left unpaid past its
+    // due date is exactly the "overdue, keep reminding, let a human decide"
+    // case this app's payment-plan reminders are built around — not
+    // something that should silently become unpayable the next time anyone
+    // loads a billing page.
+    where: { status: "AWAITING_TRANSFER", createdAt: { lt: cutoff }, purpose: { not: "PAYMENT_PLAN_INSTALLMENT" } },
     data: { status: "EXPIRED" },
   });
 }
@@ -290,6 +298,7 @@ export async function submitZellePaymentReference(
 
 const paymentWithScaleInclude = {
   scaleGroup: { select: { slug: true, code: true, title: true } },
+  paymentPlan: { select: { cadence: true, term: true, termMonths: true } },
 } satisfies Prisma.ZellePaymentInclude;
 
 export type UserPaymentRecord = Prisma.ZellePaymentGetPayload<{ include: typeof paymentWithScaleInclude }>;
@@ -314,6 +323,10 @@ const pendingPaymentInclude = {
   // So the admin queue can list who a FAMILY_BUNDLE payment actually
   // credits, not just who paid. Empty array for every other purpose.
   familyBundleRecipients: { include: { user: { select: { name: true, email: true } } } },
+  // So the admin queue can label a PAYMENT_PLAN_INSTALLMENT row with its
+  // plan's cadence/term instead of just a bare credit count. Null for every
+  // other purpose.
+  paymentPlan: { select: { cadence: true, term: true, termMonths: true } },
 } satisfies Prisma.ZellePaymentInclude;
 
 export type PendingZellePayment = Prisma.ZellePaymentGetPayload<{ include: typeof pendingPaymentInclude }>;
@@ -372,6 +385,32 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
       for (const recipient of recipients) {
         await addClassCredits(recipient.userId, recipient.creditsGranted, tx);
       }
+    } else if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId && payment.lessonQuantity) {
+      // Quantity is snapshotted onto the payment row at installment-creation
+      // time (see createPaymentPlan/getOrCreateOpenInstallmentPayment in
+      // paymentPlans.ts), so this reads exactly like CLASS_CREDITS above —
+      // no new addClassCredits shape needed.
+      await addClassCredits(payment.userId, payment.lessonQuantity, tx);
+
+      const plan = await tx.paymentPlan.findUnique({ where: { id: payment.paymentPlanId } });
+      // The plan may have been canceled after this installment was created
+      // but before review cleared (an admin cancellation racing a student's
+      // in-flight Zelle transfer). Credits are still granted above — real
+      // money changed hands, and refusing them would just generate a
+      // support conversation — but a canceled plan's own progress is left
+      // alone rather than resurrected by a late approval.
+      if (plan && plan.status === "ACTIVE") {
+        const installmentsPaid = plan.installmentsPaid + 1;
+        const isComplete = installmentsPaid >= plan.termMonths;
+        await tx.paymentPlan.update({
+          where: { id: plan.id },
+          data: {
+            installmentsPaid,
+            status: isComplete ? "COMPLETED" : "ACTIVE",
+            nextDueDate: isComplete ? plan.nextDueDate : addCalendarMonthsClamped(plan.nextDueDate, 1),
+          },
+        });
+      }
     } else if (payment.scaleGroupId) {
       // Legacy Pay-As-You-Go row from before per-scale purchase was retired.
       const scaleGroup = await tx.scaleGroup.findUniqueOrThrow({ where: { id: payment.scaleGroupId } });
@@ -390,6 +429,13 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
     notificationBody = `Your ${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} payment was verified${discountNote}. Credits are on your account.`;
   } else if (payment.purpose === "FAMILY_BUNDLE" && payment.lessonQuantity) {
     notificationBody = `Your family bundle payment was verified. ${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} each went out to everyone in the bundle.`;
+  } else if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId && payment.lessonQuantity) {
+    const plan = await prisma.paymentPlan.findUnique({ where: { id: payment.paymentPlanId } });
+    const ordinal = payment.installmentNumber ?? plan?.installmentsPaid ?? 1;
+    const creditsNote = `${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} ${payment.lessonQuantity === 1 ? "is" : "are"} on your account`;
+    notificationBody = plan
+      ? `Installment ${ordinal} of ${plan.termMonths} was verified. ${creditsNote}.`
+      : `Your payment plan installment was verified. ${creditsNote}.`;
   } else if (payment.scaleGroupId) {
     const scaleGroup = await prisma.scaleGroup.findUniqueOrThrow({ where: { id: payment.scaleGroupId } });
     notificationBody = `Your payment for ${scaleGroup.code} — ${scaleGroup.title} was verified. It's unlocked now.`;
@@ -402,6 +448,23 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
     body: notificationBody,
     emailCategory: "payments",
   });
+
+  // A completed plan is a distinct milestone worth its own bell entry, on
+  // top of the ordinary "payment approved" above — same "more than one
+  // notification can come out of one approval" shape FAMILY_BUNDLE already
+  // uses below for its per-recipient notices.
+  if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId) {
+    const plan = await prisma.paymentPlan.findUnique({ where: { id: payment.paymentPlanId } });
+    if (plan?.status === "COMPLETED") {
+      await createNotification({
+        userId: payment.userId,
+        type: "PAYMENT_PLAN_COMPLETED",
+        title: "Payment plan complete",
+        body: `You've paid off your ${plan.termMonths}-month plan in full. Nice work.`,
+        emailCategory: "payments",
+      });
+    }
+  }
 
   // Every recipient who isn't the payer themselves gets their own "credits
   // just appeared" notice. Approving the payment above already granted

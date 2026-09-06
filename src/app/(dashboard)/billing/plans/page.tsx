@@ -1,0 +1,94 @@
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { getServerAuthSession } from "@/lib/auth";
+import { getActivePaymentPlan, getUserPaymentPlans, getOrCreateOpenInstallmentPayment } from "@/lib/paymentPlans";
+import { describePaymentPlan } from "@/lib/classCreditPricing";
+import { ArrowLeftIcon } from "@/components/ui/icons";
+import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
+
+export default async function BillingPlansPage() {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  // Class credits (and now payment plans) are an add-on to the curriculum,
+  // not a standalone purchase — same gate /billing/lessons already applies.
+  if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=plans");
+
+  const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
+
+  const [activePlan, allPlans] = await Promise.all([
+    getActivePaymentPlan(session.user.id),
+    getUserPaymentPlans(session.user.id),
+  ]);
+
+  // Ensures the current installment exists (idempotent) the moment an
+  // active plan's own page is viewed, rather than waiting on the scheduled
+  // reminder's 7-day lead window — a student who wants to pay ahead of
+  // schedule isn't blocked from doing so; the lead window only governs when
+  // the *automated* reminder proactively reaches out, not when payment is
+  // allowed.
+  const openInstallment = activePlan
+    ? (await getOrCreateOpenInstallmentPayment(activePlan.id, zelleHandle)).payment
+    : null;
+
+  const pastPlans = allPlans.filter((plan) => plan.status !== "ACTIVE");
+
+  return (
+    <div className="w-full max-w-lg">
+      <Link href="/lessons" className="mb-4 flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100">
+        <ArrowLeftIcon size={16} />
+        Back to classes
+      </Link>
+      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
+      <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Payment plan</h1>
+      <p className="mt-3 text-sm leading-relaxed text-slate-400">
+        Commit to 3, 6, or 12 months of weekly classes for a lower monthly rate, paid one Zelle installment at a time —
+        never all at once, never auto-charged. We&apos;ll email an invoice as each installment comes due.
+      </p>
+
+      <div className="mt-8">
+        <PaymentPlanEnrollmentFlow
+          zelleHandle={zelleHandle}
+          activePlan={
+            activePlan
+              ? {
+                  id: activePlan.id,
+                  cadence: activePlan.cadence,
+                  term: activePlan.term,
+                  installmentsPaid: activePlan.installmentsPaid,
+                  termMonths: activePlan.termMonths,
+                }
+              : null
+          }
+          openInstallment={
+            openInstallment
+              ? {
+                  id: openInstallment.id,
+                  status: openInstallment.status,
+                  rejectionReason: openInstallment.rejectionReason,
+                  amountCents: openInstallment.amountCents,
+                  installmentNumber: openInstallment.installmentNumber,
+                }
+              : null
+          }
+        />
+      </div>
+
+      {pastPlans.length > 0 && (
+        <div className="mt-10 border-t border-ink/10 pt-6">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Plan history</p>
+          <div className="mt-4 space-y-3">
+            {pastPlans.map((plan) => (
+              <div key={plan.id} className="glass-surface p-4">
+                <p className="text-sm text-slate-100">{describePaymentPlan(plan.cadence, plan.term)}</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {plan.installmentsPaid} of {plan.termMonths} installments paid ·{" "}
+                  {plan.status === "COMPLETED" ? "Completed" : "Canceled"}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

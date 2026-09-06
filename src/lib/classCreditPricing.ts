@@ -2,6 +2,12 @@
 // which must never end up in a "use client" bundle (the purchase page's
 // quantity/tier picker needs this pure math client-side).
 
+// Type-only: erased at compile time, so importing it here doesn't pull
+// Prisma's runtime into a client bundle — same trick already used elsewhere
+// in this codebase for a client component that needs a Prisma-defined union
+// (e.g. ZellePaymentStatus) without needing the client itself.
+import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
+
 export const CREDIT_BASE_PRICE_CENTS = 3499; // $34.99 per credit (1 credit = 30 min), full price
 
 /** Pre-discount per-credit price, kept only so marketing pages can show a struck-through "was" price and a % off badge. */
@@ -137,5 +143,110 @@ export function calculateFamilyBundleTotal(tierQuantity: number, recipientCount:
     combinedBeforeFamilyDiscountCents,
     familyDiscountCents: combinedBeforeFamilyDiscountCents - totalCents,
     totalCents,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Payment plans: 3/6/12-month term commitments to class credits, paid in
+// monthly installments — never upfront, never auto-billed (see
+// src/lib/paymentPlans.ts for the actual Zelle/installment machinery this
+// feeds). A separate ladder from TIERS above, on purpose: that one discounts
+// a single upfront purchase by *quantity*; this one discounts a *recurring
+// monthly commitment* by how many months are locked in. Neither replaces the
+// other — /billing/lessons (a-la-carte, TIERS) and /billing/plans (a term
+// commitment, below) are independent purchase paths.
+//
+// Type-only import: PaymentPlanCadence/PaymentPlanTerm are erased at compile
+// time, so this stays safe in a "use client" picker, same constraint as the
+// rest of this file (see the header comment).
+// ---------------------------------------------------------------------------
+
+// $120/mo (30 min/week) and $240/mo (60 min/week) — the confirmed anchor,
+// close to today's live CREDIT_BASE_PRICE_CENTS rate rather than a return to
+// CREDIT_ORIGINAL_PRICE_CENTS, so this term ladder rewards a longer
+// commitment without also pushing through a price increase.
+const PLAN_CADENCE_MONTHLY_BASE_CENTS: Record<PaymentPlanCadence, number> = {
+  MIN_30_WEEKLY: 12000,
+  MIN_60_WEEKLY: 24000,
+};
+
+// 1 credit = 30 min (matches classSchedule.ts). A plan just supplies the
+// monthly credit total — booking itself, and SOLO_MAX_CREDITS's own 2-credit
+// per-booking ceiling, are unaffected.
+const PLAN_CADENCE_CREDITS_PER_INSTALLMENT: Record<PaymentPlanCadence, number> = {
+  MIN_30_WEEKLY: 4,
+  MIN_60_WEEKLY: 8,
+};
+
+// 10% / 20% / 30% off — the same three percentages TIERS already uses at its
+// 4/10/20-credit breakpoints, just keyed by committed months instead of
+// quantity.
+const PLAN_TERM_DISCOUNT_RATE: Record<PaymentPlanTerm, number> = {
+  TERM_3: 0.1,
+  TERM_6: 0.2,
+  TERM_12: 0.3,
+};
+
+const PLAN_TERM_MONTHS: Record<PaymentPlanTerm, number> = {
+  TERM_3: 3,
+  TERM_6: 6,
+  TERM_12: 12,
+};
+
+const PLAN_CADENCE_LABEL: Record<PaymentPlanCadence, string> = {
+  MIN_30_WEEKLY: "30 min/week",
+  MIN_60_WEEKLY: "60 min/week",
+};
+
+const PLAN_TERM_LABEL: Record<PaymentPlanTerm, string> = {
+  TERM_3: "3-Month",
+  TERM_6: "6-Month",
+  TERM_12: "Yearly",
+};
+
+/**
+ * e.g. "6-Month plan — 60 min/week" — the one shared label for a
+ * cadence+term combination, used by the enrollment picker, the student's
+ * plan page, the admin list, and describePayment()'s installment branch
+ * (PaymentQueue.tsx and billing/history/page.tsx), so the wording can't
+ * drift between them.
+ */
+export function describePaymentPlan(cadence: PaymentPlanCadence, term: PaymentPlanTerm): string {
+  return `${PLAN_TERM_LABEL[term]} plan — ${PLAN_CADENCE_LABEL[cadence]}`;
+}
+
+export interface PaymentPlanRate {
+  installmentAmountCents: number;
+  creditsPerInstallment: number;
+  termMonths: number;
+  discountRate: number;
+  /** installmentAmountCents * termMonths — the total being committed to across the whole term, shown on the enrollment page for transparency. Not charged as one lump sum; see src/lib/paymentPlans.ts. */
+  totalCommittedCents: number;
+}
+
+/**
+ * The locked monthly rate for a cadence + term combination. Snapshotted onto
+ * a PaymentPlan row at enrollment (createPaymentPlan in
+ * src/lib/paymentPlans.ts) and never recomputed from this function again for
+ * that plan, even if the ladder below changes later — a plan's rate is a
+ * promise made at signup, not a live price.
+ *
+ * No charm-price (.99) rounding here, unlike calculateClassCreditTotal above
+ * — the confirmed ladder already lands on whole dollars by construction
+ * ($120/$108/$96/$84, $240/$216/$192/$168). Math.round is purely a defensive
+ * guard against float error from the 0.1/0.2/0.3 multipliers.
+ */
+export function calculatePaymentPlanRate(cadence: PaymentPlanCadence, term: PaymentPlanTerm): PaymentPlanRate {
+  const baseCents = PLAN_CADENCE_MONTHLY_BASE_CENTS[cadence];
+  const discountRate = PLAN_TERM_DISCOUNT_RATE[term];
+  const installmentAmountCents = Math.round(baseCents * (1 - discountRate));
+  const termMonths = PLAN_TERM_MONTHS[term];
+
+  return {
+    installmentAmountCents,
+    creditsPerInstallment: PLAN_CADENCE_CREDITS_PER_INSTALLMENT[cadence],
+    termMonths,
+    discountRate,
+    totalCommittedCents: installmentAmountCents * termMonths,
   };
 }

@@ -59,6 +59,14 @@ export default async function BillingLessonsPage({ searchParams }: { searchParam
             not yours.
           </p>
         </div>
+        <div className="mt-6 space-y-3 border-t border-ink/10 pt-6 text-sm text-slate-400">
+          <p className="font-medium text-slate-300">Taking classes every week, long-term?</p>
+          <p className="leading-relaxed">
+            A <Link href="/billing/plans" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">payment plan</Link>{" "}
+            locks in a lower monthly rate for a 3, 6, or 12-month commitment, paid one Zelle installment at a time instead
+            of buying a bundle whenever you run low.
+          </p>
+        </div>
       </div>
 
       <div className="mt-8 lg:col-span-7 lg:mt-0">

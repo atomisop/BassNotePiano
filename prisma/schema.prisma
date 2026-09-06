@@ -43,6 +43,89 @@ enum PaymentPurpose {
   SCALE_UNLOCK // legacy Pay-As-You-Go per-scale unlock — no longer purchasable, kept for historical rows
   CLASS_CREDITS // class-credit bundle purchase (renamed from LESSON_PACKAGE — the old 1:1 online/in-person lesson system was replaced by the weekly group-class schedule below)
   FAMILY_BUNDLE // one credit tier bought for 2+ separate, already-existing accounts at once, an extra 25% off the combined price. See FamilyBundleRecipient below for who actually receives the credits
+  PAYMENT_PLAN_INSTALLMENT // one monthly installment of a PaymentPlan term commitment — same AWAITING_TRANSFER/PENDING_REVIEW/VERIFIED lifecycle as any other purchase, see PaymentPlan below
+}
+
+// A student's standing commitment to pay for class credits in periodic
+// monthly installments over a locked term (3/6/12 months), at that term's
+// discounted rate — Zelle only, no auto-billing, ever. This model is the
+// commitment itself (cadence, term, locked rate, progress); it never moves
+// money or grants credits on its own. Each individual installment's actual
+// payment is an ordinary ZellePayment row (purpose PAYMENT_PLAN_INSTALLMENT,
+// paymentPlanId pointing back here), going through the exact same
+// AWAITING_TRANSFER -> PENDING_REVIEW -> VERIFIED/REJECTED lifecycle, and the
+// exact same /admin/payments queue, as any other purchase — see
+// approveZellePayment's PAYMENT_PLAN_INSTALLMENT branch in payments.ts.
+//
+// installmentAmountCents/creditsPerInstallment/termMonths are snapshotted at
+// enrollment from calculatePaymentPlanRate() and never recomputed later, even
+// if the pricing ladder itself changes — unlike a one-time ZellePayment (a
+// single frozen amountCents is enough), a plan's locked-rate promise has to
+// survive many future installment-creation events over up to a year, so
+// every number that promise depends on is frozen here.
+//
+// No stored "overdue" status: derived at read time as
+// `status == ACTIVE && nextDueDate < now`, since nothing needs to notice the
+// date passed and flip a flag — same "the fewest moving parts that can't
+// drift" reasoning as the rest of this app's status handling.
+model PaymentPlan {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation("PaymentPlanStudent", fields: [userId], references: [id], onDelete: Cascade)
+
+  cadence PaymentPlanCadence
+  term    PaymentPlanTerm
+
+  installmentAmountCents Int
+  creditsPerInstallment  Int
+  termMonths             Int
+
+  installmentsPaid Int               @default(0)
+  // Anchored to the ORIGINAL schedule and advanced from its own prior value
+  // on each approval, never from the approval date itself — a late payment
+  // shows up as late next time, it doesn't quietly reset the clock.
+  nextDueDate      DateTime
+  status           PaymentPlanStatus @default(ACTIVE)
+
+  canceledAt       DateTime?
+  canceledById     String?
+  canceledBy       User?     @relation("PaymentPlanCanceledBy", fields: [canceledById], references: [id])
+  cancellationNote String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  installmentPayments ZellePayment[]
+
+  @@index([userId])
+  @@index([status, nextDueDate])
+}
+
+// 4 or 8 credits per monthly installment (30 or 60 min/week), matching
+// SOLO_MAX_CREDITS in classSchedule.ts — this is a pricing/credit-quantity
+// label only, not a scheduling reservation. Enrolling doesn't reserve a
+// recurring class slot; booking stays the same self-serve system against
+// live ClassSchedule occurrences it always is.
+enum PaymentPlanCadence {
+  MIN_30_WEEKLY
+  MIN_60_WEEKLY
+}
+
+// How many monthly installments are locked in at enrollment, and which
+// discount tier that unlocks (10% / 20% / 30% off) — see
+// calculatePaymentPlanRate in classCreditPricing.ts. Deliberately no
+// "MONTHLY" term here: a no-commitment single month is just today's existing
+// a-la-carte purchase at /billing/lessons, not a PaymentPlan.
+enum PaymentPlanTerm {
+  TERM_3
+  TERM_6
+  TERM_12
+}
+
+enum PaymentPlanStatus {
+  ACTIVE
+  COMPLETED
+  CANCELED
 }
 
 // Kept only for LessonType/LessonBooking below, which are now historical —
@@ -177,6 +260,10 @@ enum NotificationType {
   ANNOUNCEMENT // fanned out to every user when an admin publishes an announcement
   CREDIT_ADJUSTED // to the student, when an admin manually grants or deducts class credits
   ASSISTANT_ESCALATION // to admins, when a visitor asks the Atom widget to connect them to a person
+  PAYMENT_PLAN_INSTALLMENT_DUE // to the student, when the next installment of their PaymentPlan opens for payment
+  PAYMENT_PLAN_INSTALLMENT_OVERDUE // to the student, escalating reminder while an installment stays unpaid past its due date
+  PAYMENT_PLAN_COMPLETED // to the student, when their final installment is verified and the plan is fully paid off
+  PAYMENT_PLAN_CANCELED // to the student, when an admin cancels their plan
 }
 
 // The in-app inbox is the source of truth — always written regardless of
@@ -500,6 +587,9 @@ model User {
   reviewedPayments ZellePayment[]  @relation("PaymentReviewer")
   lessonBookings   LessonBooking[] @relation("LessonBookingStudent") // historical — see LessonBooking model comment
   classBookings    ClassBooking[]  @relation("ClassBookingStudent")
+
+  paymentPlans         PaymentPlan[] @relation("PaymentPlanStudent")
+  paymentPlansCanceled PaymentPlan[] @relation("PaymentPlanCanceledBy") // admin side of an admin-canceled plan
 
   creditAdjustmentsReceived CreditAdjustment[] @relation("CreditAdjustmentRecipient")
   creditAdjustmentsGranted  CreditAdjustment[] @relation("CreditAdjustmentGrantedBy")
@@ -969,6 +1059,18 @@ model ZellePayment {
   lessonQuantity Int?
   lessonType     LessonType?
 
+  // Only set when purpose == PAYMENT_PLAN_INSTALLMENT. paymentPlanId links
+  // this installment's payment back to its parent commitment; no `onDelete`
+  // keyword (same as scaleGroupId above) means ON DELETE SET NULL, so a
+  // payment record never disappears if the plan row ever did. installmentNumber
+  // is snapshotted as plan.installmentsPaid + 1 at creation time and never
+  // recomputed — needed so history/admin views can still render "Installment
+  // 3 of 6" correctly for an old row after the plan's own counter has moved
+  // past it.
+  paymentPlanId     String?
+  paymentPlan       PaymentPlan? @relation(fields: [paymentPlanId], references: [id])
+  installmentNumber Int?
+
   amountCents Int
   zelleHandle String // platform's receiving handle/email shown to the user at request time
 
@@ -994,6 +1096,7 @@ model ZellePayment {
 
   @@index([status])
   @@index([userId])
+  @@index([paymentPlanId])
 }
 
 // Who actually receives credits from a FAMILY_BUNDLE ZellePayment, and how
