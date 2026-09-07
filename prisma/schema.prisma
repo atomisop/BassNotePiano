@@ -112,11 +112,15 @@ enum PaymentPlanCadence {
 }
 
 // How many monthly installments are locked in at enrollment, and which
-// discount tier that unlocks (10% / 20% / 30% off) — see
-// calculatePaymentPlanRate in classCreditPricing.ts. Deliberately no
-// "MONTHLY" term here: a no-commitment single month is just today's existing
-// a-la-carte purchase at /billing/lessons, not a PaymentPlan.
+// discount tier that unlocks (0% / 10% / 20% / 30% off) — see
+// calculatePaymentPlanRate in classCreditPricing.ts. MONTHLY (termMonths=1,
+// 0% off) is the no-commitment tier: the old a-la-carte individual purchase
+// flow at /billing/lessons was fully removed once this existed, so this is
+// now the only way to buy solo class credits without a multi-month term. A
+// MONTHLY plan completes (and needs re-enrolling) after its one installment
+// clears, same completion logic as any other term.
 enum PaymentPlanTerm {
+  MONTHLY
   TERM_3
   TERM_6
   TERM_12

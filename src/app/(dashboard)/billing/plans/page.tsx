@@ -1,12 +1,17 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { getActivePaymentPlan, getUserPaymentPlans, getOrCreateOpenInstallmentPayment } from "@/lib/paymentPlans";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
 
-export default async function BillingPlansPage() {
+export default async function BillingPlansPage({
+  searchParams,
+}: {
+  searchParams: { cadence?: string; term?: string };
+}) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
   // Class credits (and now payment plans) are an add-on to the curriculum,
@@ -14,6 +19,14 @@ export default async function BillingPlansPage() {
   if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=plans");
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
+
+  // Lets a specific tile on the marketing pricing page (PaymentPlanTierGrid,
+  // ?cadence=X&term=Y) land the picker already on that combination instead
+  // of always defaulting and making the student reselect it — same reasoning
+  // the old ?quantity= param on /billing/lessons used to have. Validated
+  // against the real enums (query params are just strings) rather than cast.
+  const initialCadence = Object.values(PaymentPlanCadence).find((c) => c === searchParams.cadence);
+  const initialTerm = Object.values(PaymentPlanTerm).find((t) => t === searchParams.term);
 
   const [activePlan, allPlans] = await Promise.all([
     getActivePaymentPlan(session.user.id),
@@ -41,13 +54,16 @@ export default async function BillingPlansPage() {
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
       <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Payment plan</h1>
       <p className="mt-3 text-sm leading-relaxed text-slate-400">
-        Commit to 3, 6, or 12 months of weekly classes for a lower monthly rate, paid one Zelle installment at a time —
-        never all at once, never auto-charged. We&apos;ll email an invoice as each installment comes due.
+        Pick a weekly cadence and pay month to month, or commit to 3, 6, or 12 months for a lower rate — one Zelle
+        installment at a time, never all at once, never auto-charged. We&apos;ll email an invoice as each installment
+        comes due.
       </p>
 
       <div className="mt-8">
         <PaymentPlanEnrollmentFlow
           zelleHandle={zelleHandle}
+          initialCadence={initialCadence}
+          initialTerm={initialTerm}
           activePlan={
             activePlan
               ? {

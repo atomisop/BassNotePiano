@@ -17,6 +17,7 @@ const CADENCE_OPTIONS: { value: PaymentPlanCadence; label: string }[] = [
 ];
 
 const TERM_OPTIONS: { value: PaymentPlanTerm; label: string; discountPercent: number }[] = [
+  { value: "MONTHLY", label: "Monthly", discountPercent: 0 },
   { value: "TERM_3", label: "3-Month", discountPercent: 10 },
   { value: "TERM_6", label: "6-Month", discountPercent: 20 },
   { value: "TERM_12", label: "Yearly", discountPercent: 30 },
@@ -42,22 +43,26 @@ interface PaymentPlanEnrollmentFlowProps {
   zelleHandle: string;
   activePlan: ActivePlanSummary | null;
   openInstallment: OpenInstallmentSummary | null;
+  /** Preselects the picker from a specific marketing-page tile (PaymentPlanTierGrid's ?cadence=&term= links) instead of always defaulting. */
+  initialCadence?: PaymentPlanCadence;
+  initialTerm?: PaymentPlanTerm;
 }
 
 /**
  * Handles both states of /billing/plans: no active plan (the cadence/term
  * picker below) and an active plan with something to pay (progress +
  * ZelleUnlockGate) — same "one component switches on local state, not two
- * separate pages" shape IndividualCreditsFlow already uses for the
- * a-la-carte credit purchase.
+ * separate pages" shape the old a-la-carte credit purchase flow used to use.
  */
 export function PaymentPlanEnrollmentFlow({
   zelleHandle,
   activePlan: initialPlan,
   openInstallment: initialInstallment,
+  initialCadence,
+  initialTerm,
 }: PaymentPlanEnrollmentFlowProps) {
-  const [cadence, setCadence] = useState<PaymentPlanCadence>("MIN_30_WEEKLY");
-  const [term, setTerm] = useState<PaymentPlanTerm>("TERM_6");
+  const [cadence, setCadence] = useState<PaymentPlanCadence>(initialCadence ?? "MIN_30_WEEKLY");
+  const [term, setTerm] = useState<PaymentPlanTerm>(initialTerm ?? "TERM_6");
   const [acknowledged, setAcknowledged] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -146,7 +151,7 @@ export function PaymentPlanEnrollmentFlow({
 
       <div>
         <p className="mb-2 text-xs font-medium text-slate-400">Term</p>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {TERM_OPTIONS.map((option) => {
             const active = term === option.value;
             return (
@@ -159,7 +164,9 @@ export function PaymentPlanEnrollmentFlow({
                 }`}
               >
                 <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
-                <p className="mt-0.5 text-xs text-slate-500">−{option.discountPercent}%</p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {option.discountPercent > 0 ? `−${option.discountPercent}%` : "No commitment"}
+                </p>
               </button>
             );
           })}
@@ -169,17 +176,20 @@ export function PaymentPlanEnrollmentFlow({
       <div className="rounded-xl border border-ink/10 p-4 sm:p-5">
         <div className="flex items-center justify-between text-sm text-slate-400">
           <span>
-            {formatUsd(rate.installmentAmountCents)}/month × {rate.termMonths} months
+            {rate.termMonths === 1
+              ? `${formatUsd(rate.installmentAmountCents)}, one month`
+              : `${formatUsd(rate.installmentAmountCents)}/month × ${rate.termMonths} months`}
           </span>
           <span>{formatUsd(rate.totalCommittedCents)}</span>
         </div>
         <div className="mt-2 flex items-center justify-between border-t border-ink/10 pt-2 text-base font-semibold text-slate-50">
-          <span>Due each month</span>
+          <span>{rate.termMonths === 1 ? "Due now" : "Due each month"}</span>
           <span>{formatUsd(rate.installmentAmountCents)}</span>
         </div>
         <p className="mt-2 text-xs text-slate-500">
-          Billed one installment at a time via Zelle, never all at once — we&apos;ll email you an invoice as each one comes
-          due.
+          {rate.termMonths === 1
+            ? "One Zelle payment for one month of credits — no term, re-enroll any time."
+            : "Billed one installment at a time via Zelle, never all at once — we’ll email you an invoice as each one comes due."}
         </p>
       </div>
 
@@ -191,7 +201,9 @@ export function PaymentPlanEnrollmentFlow({
           className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-s-50))]"
         />
         <span>
-          I&apos;m committing to {rate.termMonths} monthly installments of {formatUsd(rate.installmentAmountCents)} each.
+          {rate.termMonths === 1
+            ? `I'm paying for one month of credits (${formatUsd(rate.installmentAmountCents)}), no further commitment.`
+            : `I'm committing to ${rate.termMonths} monthly installments of ${formatUsd(rate.installmentAmountCents)} each.`}{" "}
           Enrolling doesn&apos;t reserve a recurring class time — booking stays the same self-serve system it always is.
           Money spent is <span className="font-medium text-[rgb(var(--c-s-50))]">non-refundable</span> once a credit is
           used, same as any class credit purchase.

@@ -45,44 +45,31 @@ async function expireStalePendingPayments() {
 
 interface PendingPaymentParams {
   userId: string;
-  purpose: "CURRICULUM" | "CLASS_CREDITS";
+  purpose: "CURRICULUM";
   amountCents: number;
   zelleHandle: string;
-  // Field name kept as lessonQuantity in the DB (pre-dates the class-credit
-  // system, and the underlying meaning never changed — it's always been
-  // "count of 30-minute units") rather than adding another rename migration
-  // on top of the purpose rename this same change already makes.
-  lessonQuantity?: number;
 }
 
 /**
  * Finds the in-flight Zelle payment for this user+purpose if one exists, or
- * creates a fresh AWAITING_TRANSFER row. Idempotent by design — the billing
- * pages call this on every load, and a page refresh shouldn't spawn a new
- * row every time a student revisits before submitting a reference code.
+ * creates a fresh AWAITING_TRANSFER row. Idempotent by design — the
+ * curriculum billing page calls this on every load, and a page refresh
+ * shouldn't spawn a new row every time a student revisits before submitting
+ * a reference code.
  *
- * For CLASS_CREDITS, quantity is part of the identity key rather than just
- * being stored — a student who changes their quantity selector between
- * visits should get a fresh pending row for the new total, not have their
- * earlier in-flight row silently mutated. Any row left behind by an
- * abandoned quantity choice self-expires via expireStalePendingPayments().
+ * Only CURRICULUM goes through this now. CLASS_CREDITS's own individual
+ * a-la-carte purchase path was removed once Payment Plans covered every
+ * solo case (see paymentPlans.ts) — FAMILY_BUNDLE and
+ * PAYMENT_PLAN_INSTALLMENT both already had their own, non-idempotent
+ * creation paths for reasons specific to each (see createFamilyBundlePayment
+ * and getOrCreateOpenInstallmentPayment), so this was never their shared
+ * helper to begin with.
  */
-async function getOrCreatePendingZellePayment({
-  userId,
-  purpose,
-  amountCents,
-  zelleHandle,
-  lessonQuantity,
-}: PendingPaymentParams) {
+async function getOrCreatePendingZellePayment({ userId, purpose, amountCents, zelleHandle }: PendingPaymentParams) {
   await expireStalePendingPayments();
 
   const existing = await prisma.zellePayment.findFirst({
-    where: {
-      userId,
-      purpose,
-      lessonQuantity: lessonQuantity ?? null,
-      status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] },
-    },
+    where: { userId, purpose, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
     orderBy: { createdAt: "desc" },
   });
   // A reused row can predate a price change for this purpose (e.g. the
@@ -98,23 +85,12 @@ async function getOrCreatePendingZellePayment({
   }
 
   return prisma.zellePayment.create({
-    data: { userId, purpose, amountCents, zelleHandle, lessonQuantity, status: "AWAITING_TRANSFER" },
+    data: { userId, purpose, amountCents, zelleHandle, status: "AWAITING_TRANSFER" },
   });
 }
 
 export function getOrCreatePendingCurriculumPayment(userId: string, amountCents: number, zelleHandle: string) {
   return getOrCreatePendingZellePayment({ userId, purpose: "CURRICULUM", amountCents, zelleHandle });
-}
-
-export function getOrCreatePendingClassCreditsPayment(userId: string, quantity: number, zelleHandle: string) {
-  const { totalCents } = calculateClassCreditTotal(quantity);
-  return getOrCreatePendingZellePayment({
-    userId,
-    purpose: "CLASS_CREDITS",
-    amountCents: totalCents,
-    zelleHandle,
-    lessonQuantity: quantity,
-  });
 }
 
 // ---------------------------------------------------------------------------
