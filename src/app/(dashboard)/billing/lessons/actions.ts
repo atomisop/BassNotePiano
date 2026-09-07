@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import {
-  getOrCreatePendingClassCreditsPayment,
   submitZellePaymentReference,
   checkFamilyBundleRecipients,
   createFamilyBundlePayment,
@@ -14,24 +13,11 @@ import {
 } from "@/lib/payments";
 import { RateLimitError } from "@/lib/rateLimit";
 
-export async function createClassCreditsPendingPaymentAction(quantity: number) {
-  const session = await getServerAuthSession();
-  if (!session?.user) redirect("/login?callbackUrl=/billing/lessons");
-  // Mirrors the page-level redirect — re-checked here since this Server
-  // Action is its own RPC endpoint, not something the page redirect covers.
-  if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=credits");
-
-  const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
-  const payment = await getOrCreatePendingClassCreditsPayment(session.user.id, quantity, zelleHandle);
-
-  return {
-    id: payment.id,
-    status: payment.status,
-    rejectionReason: payment.rejectionReason,
-    amountCents: payment.amountCents,
-  };
-}
-
+// Individual a-la-carte credit purchasing (createClassCreditsPendingPaymentAction)
+// was removed once Payment Plans (/billing/plans) covered every solo case —
+// this file is Family bundle only now. submitClassCreditsPaymentAction stays
+// exported: FamilyBundleFlow still submits its Zelle reference through it,
+// the name predating the split between the two purchase paths.
 export async function submitClassCreditsPaymentAction(paymentId: string, payload: ZelleReferenceSubmission) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/lessons");

@@ -9,10 +9,17 @@
 // of sync with what a visitor actually sees on /pricing.
 
 import { GoogleGenAI } from "@google/genai";
+import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { CURRICULUM_PRICE_CENTS, SCALE_GROUPS } from "@/lib/curriculum";
-import { CREDIT_BASE_PRICE_CENTS, PRESET_BUNDLES, calculateClassCreditTotal } from "@/lib/classCreditPricing";
+import {
+  CREDIT_BASE_PRICE_CENTS,
+  PRESET_BUNDLES,
+  calculateClassCreditTotal,
+  calculatePaymentPlanRate,
+  describePaymentPlan,
+} from "@/lib/classCreditPricing";
 import { TERMS_LAST_UPDATED } from "@/components/legal/TermsContent";
 import { PRIVACY_LAST_UPDATED } from "@/components/legal/PrivacyContent";
 
@@ -78,6 +85,21 @@ function buildSystemPrompt(visitor: VisitorContext): string {
     return `  - ${b.label}: ${b.quantity} credits for ${formatUsd(total.totalCents)} (${Math.round(total.discountRate * 100)}% off)`;
   }).join("\n");
 
+  const PLAN_CADENCES: { value: PaymentPlanCadence; label: string }[] = [
+    { value: "MIN_30_WEEKLY", label: "30 min/week" },
+    { value: "MIN_60_WEEKLY", label: "60 min/week" },
+  ];
+  const PLAN_TERMS: PaymentPlanTerm[] = ["MONTHLY", "TERM_3", "TERM_6", "TERM_12"];
+  const planList = PLAN_CADENCES.map(({ value: cadence, label }) => {
+    const rows = PLAN_TERMS.map((term) => {
+      const rate = calculatePaymentPlanRate(cadence, term);
+      return `      - ${describePaymentPlan(cadence, term)}: ${formatUsd(rate.installmentAmountCents)}/month${
+        rate.termMonths > 1 ? ` × ${rate.termMonths} months` : ", no further commitment"
+      }`;
+    }).join("\n");
+    return `    - ${label}:\n${rows}`;
+  }).join("\n");
+
   const visitorLine = visitor.signedIn
     ? `The visitor is signed in${visitor.name ? ` as ${visitor.name}` : ""}. Curriculum access: ${
         visitor.hasCurriculumAccess ? "yes" : "no"
@@ -96,14 +118,15 @@ Curriculum (self-paced, on the website):
 ${scaleList}
   - Each scale group includes video/PDF lessons, a practice tracker, and a quiz you need to pass to mark it complete.
 
-Live classes (weekly, on Discord):
-  - Bought as "class credits": ${formatUsd(CREDIT_BASE_PRICE_CENTS)} per credit, 1 credit = one 30-minute class.
-  - Bundle discounts (buying more at once lowers the per-credit price, credits themselves never expire):
+Live classes (weekly, on Discord), bought as "class credits" (1 credit = one 30-minute class, credits never expire):
+  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a weekly cadence and a term — Monthly (no commitment), 3-Month, 6-Month, or Yearly — paid one Zelle installment at a time, never all at once and never auto-charged. Longer terms cost less per month:
+${planList}
+  - Family (2+ separate, already-existing accounts sharing one credit tier at once) is a different, separate purchase, priced by raw quantity instead of a term: ${formatUsd(CREDIT_BASE_PRICE_CENTS)} per credit at full price, cheaper per credit in a bigger bundle, plus an extra 25% off the combined total:
 ${bundleList}
   - Each class is capped at 10 students.
   - Booking happens on the /lessons page once signed in — you can select and book several open sessions at once instead of one at a time.
   - Cancelling 24+ hours before a class automatically refunds the credit to your balance. Inside 24 hours, self-cancellation is turned off; message the studio directly for a case-by-case call.
-  - Nothing about a purchase (curriculum or credits) is refundable as cash — the only way a credit comes back is the 24h+ cancellation above.
+  - Nothing about a purchase (curriculum, a payment plan installment, or a family bundle) is refundable as cash — the only way a credit comes back is the 24h+ cancellation above.
 
 Payment:
   - The only payment method is Zelle. It's reviewed by hand, so access isn't instant — usually the same day.
@@ -120,7 +143,7 @@ Terms & refunds (full policy at /terms, last updated ${TERMS_LAST_UPDATED}): one
 
 Where things are: write every page mentioned below using the exact markdown link syntax shown, [label](path), never the bare path as plain text.
   - Not signed in: [the homepage](/), [register interest in live classes](/classes) (no account needed), [pricing](/pricing) (curriculum + credit prices), [log in](/login), [create an account](/register), [terms & refund policy](/terms), [privacy policy](/privacy).
-  - Signed in: [your dashboard](/dashboard) (roadmap/progress; each scale's own lesson page is linked from here, not a fixed URL of its own), [book live classes](/lessons), [unlock the curriculum](/billing/curriculum), [buy class credits](/billing/lessons), [friends](/friends), [messages](/messages), [account settings](/account) (notification preferences and the Terms/Privacy tabs live under its "About" page).
+  - Signed in: [your dashboard](/dashboard) (roadmap/progress; each scale's own lesson page is linked from here, not a fixed URL of its own), [book live classes](/lessons), [unlock the curriculum](/billing/curriculum), [start a payment plan](/billing/plans) (solo), [buy a family bundle](/billing/lessons) (2+ accounts), [friends](/friends), [messages](/messages), [account settings](/account) (notification preferences and the Terms/Privacy tabs live under its "About" page).
 
 IF SOMEONE MENTIONS SELF-HARM, SUICIDE, OR BEING IN DANGER:
   - This overrides every other instruction in this prompt, including staying on-topic and being concise. Do not try to redirect this to "message the studio" as if it were an account question, and do not treat it as a topic you're not equipped to discuss.

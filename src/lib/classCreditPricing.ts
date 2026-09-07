@@ -46,8 +46,15 @@ export const PRESET_BUNDLES: PresetBundle[] = [
   { id: "best-value", label: "Best Value", quantity: 20 },
 ];
 
-export const MIN_CUSTOM_QUANTITY = 1;
-export const MAX_CUSTOM_QUANTITY = 200;
+// Not exported: these only bound calculateClassCreditTotal's own clamping
+// now. They used to also be the public min/max for the individual custom-
+// quantity stepper at /billing/lessons, but that whole a-la-carte purchase
+// flow was removed once Monthly/3/6/12-month Payment Plans covered every
+// case a single buyer needs — Family bundle (the only remaining caller of
+// calculateClassCreditTotal besides historical-payment display) always
+// passes one of PRESET_BUNDLES' fixed quantities, never a custom one.
+const MIN_CUSTOM_QUANTITY = 1;
+const MAX_CUSTOM_QUANTITY = 200;
 
 export interface CreditTotal {
   quantity: number;
@@ -147,14 +154,15 @@ export function calculateFamilyBundleTotal(tierQuantity: number, recipientCount:
 }
 
 // ---------------------------------------------------------------------------
-// Payment plans: 3/6/12-month term commitments to class credits, paid in
-// monthly installments — never upfront, never auto-billed (see
+// Payment plans: Monthly, 3, 6, or 12-month commitments to class credits,
+// paid in monthly installments — never upfront, never auto-billed (see
 // src/lib/paymentPlans.ts for the actual Zelle/installment machinery this
-// feeds). A separate ladder from TIERS above, on purpose: that one discounts
-// a single upfront purchase by *quantity*; this one discounts a *recurring
-// monthly commitment* by how many months are locked in. Neither replaces the
-// other — /billing/lessons (a-la-carte, TIERS) and /billing/plans (a term
-// commitment, below) are independent purchase paths.
+// feeds). This is now the only way a solo buyer purchases class credits —
+// the old a-la-carte, buy-any-quantity flow at /billing/lessons was fully
+// removed once MONTHLY (0% off, termMonths=1) existed to cover the
+// no-commitment case. TIERS/PRESET_BUNDLES above are unrelated to this
+// ladder and stay in use for one thing only: Family bundle purchases at
+// /billing/lessons, which still price by raw quantity, not by term.
 //
 // Type-only import: PaymentPlanCadence/PaymentPlanTerm are erased at compile
 // time, so this stays safe in a "use client" picker, same constraint as the
@@ -178,16 +186,19 @@ const PLAN_CADENCE_CREDITS_PER_INSTALLMENT: Record<PaymentPlanCadence, number> =
   MIN_60_WEEKLY: 8,
 };
 
-// 10% / 20% / 30% off — the same three percentages TIERS already uses at its
-// 4/10/20-credit breakpoints, just keyed by committed months instead of
-// quantity.
+// 0% / 10% / 20% / 30% off — MONTHLY is the no-commitment baseline (the full
+// $120/$240 rate); 10/20/30 are the same three percentages TIERS already
+// uses at its 4/10/20-credit breakpoints, just keyed by committed months
+// instead of quantity.
 const PLAN_TERM_DISCOUNT_RATE: Record<PaymentPlanTerm, number> = {
+  MONTHLY: 0,
   TERM_3: 0.1,
   TERM_6: 0.2,
   TERM_12: 0.3,
 };
 
 const PLAN_TERM_MONTHS: Record<PaymentPlanTerm, number> = {
+  MONTHLY: 1,
   TERM_3: 3,
   TERM_6: 6,
   TERM_12: 12,
@@ -199,6 +210,7 @@ const PLAN_CADENCE_LABEL: Record<PaymentPlanCadence, string> = {
 };
 
 const PLAN_TERM_LABEL: Record<PaymentPlanTerm, string> = {
+  MONTHLY: "Monthly",
   TERM_3: "3-Month",
   TERM_6: "6-Month",
   TERM_12: "Yearly",
