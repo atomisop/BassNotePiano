@@ -190,17 +190,25 @@ model CreditGrant {
   paymentPlanId String?
   paymentPlan   PaymentPlan? @relation(fields: [paymentPlanId], references: [id])
 
-  creditsGranted   Int
+  creditsGranted         Int
   // Drawn down by drawDownCredits as the student actually spends credits
   // (soonest-expiring grants first) and by expireDueCreditGrants once
   // expiresAt passes. Best-effort: this can drift from the truth
   // (User.classCredits) under concurrent activity, and that's an accepted,
   // bounded trade-off — see creditLedger.ts's own comment.
-  creditsRemaining Int
-  expiresAt        DateTime?
+  creditsRemaining       Int
+  expiresAt              DateTime?
   // Stamped once expireDueCreditGrants has processed this row, so a repeat
   // sweep run never double-decrements it.
-  expiredAt        DateTime?
+  expiredAt              DateTime?
+  // Stamped once warnExpiringSoonCreditGrants has sent the student a
+  // heads-up that this grant is about to lapse, so a repeat daily run
+  // never re-sends it. Never reset: expiresAt itself is immutable once a
+  // grant is created (each installment approval creates its own new grant
+  // rather than ever updating an existing one's expiresAt), so a grant's
+  // warning is a one-time event, not a recurring toggle the way a
+  // schedule's active flag is.
+  expiringSoonNotifiedAt DateTime?
 
   grantedAt DateTime @default(now())
   createdAt DateTime @default(now())
@@ -347,6 +355,7 @@ enum NotificationType {
   PAYMENT_PLAN_COMPLETED // to the student, when their final installment is verified and the plan is fully paid off
   PAYMENT_PLAN_CANCELED // to the student, when an admin cancels their plan
   CREDITS_EXPIRED // to the student, when unused Payment Plan credits lapse at the end of their paid cycle
+  CREDITS_EXPIRING_SOON // to the student, a few days ahead of CREDITS_EXPIRED, while there's still time to use them
   RESERVED_SLOT_UNAVAILABLE // to the student, when an admin deactivates the weekly schedule their Payment Plan reserves
 }
 
