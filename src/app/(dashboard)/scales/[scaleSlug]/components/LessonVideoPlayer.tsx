@@ -44,6 +44,24 @@ export function LessonVideoPlayer({
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
+  // iOS Safari's native-video fullscreen path (see toggleFullscreen below)
+  // fires its own pair of events on the <video> element instead of the
+  // standard `fullscreenchange` on `document` handled above — without this,
+  // the button's icon would get stuck on whatever it last showed once an
+  // iPhone/iPad visitor actually uses that path.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const handleBegin = () => setFullscreen(true);
+    const handleEnd = () => setFullscreen(false);
+    video.addEventListener("webkitbeginfullscreen", handleBegin);
+    video.addEventListener("webkitendfullscreen", handleEnd);
+    return () => {
+      video.removeEventListener("webkitbeginfullscreen", handleBegin);
+      video.removeEventListener("webkitendfullscreen", handleEnd);
+    };
+  }, []);
+
   function togglePlay() {
     const video = videoRef.current;
     if (!video) return;
@@ -87,12 +105,48 @@ export function LessonVideoPlayer({
     setMuted(video.muted);
   }
 
+  /**
+   * iOS Safari only ever reliably supports fullscreen for actual video
+   * playback through the <video> element's own native chrome
+   * (`webkitEnterFullscreen`) — a WebKit extension that exists on iPhone/
+   * iPad specifically and not on desktop Safari, so feature-detecting it is
+   * a safe way to single out iOS without a user-agent sniff (the same check
+   * video.js/Plyr/hls.js use for this exact case).
+   *
+   * The standard `Element.requestFullscreen()` on this wrapping container —
+   * what used to run unconditionally here — is what iOS was actually
+   * getting, and iOS has a long-standing WebKit bug where the page's zoom/
+   * scroll state doesn't reliably restore once that kind of fullscreen
+   * exits: reported live as the dock and top bar going missing after
+   * finishing a lesson video, recoverable only by manually pinching to zoom
+   * back out. Native video fullscreen hands the screen to iOS's own player
+   * chrome instead (so the custom ±15s/volume bar is swapped for Apple's
+   * own controls while fullscreen, same as every other iOS video app), but
+   * it's the one path iOS actually restores the page correctly from on exit.
+   */
   function toggleFullscreen() {
-    if (!containerRef.current) return;
+    const video = videoRef.current;
+    const container = containerRef.current;
+    if (!video || !container) return;
+
+    const iosVideo = video as HTMLVideoElement & {
+      webkitEnterFullscreen?: () => void;
+      webkitExitFullscreen?: () => void;
+      webkitDisplayingFullscreen?: boolean;
+    };
+    if (typeof iosVideo.webkitEnterFullscreen === "function") {
+      if (iosVideo.webkitDisplayingFullscreen) {
+        iosVideo.webkitExitFullscreen?.();
+      } else {
+        iosVideo.webkitEnterFullscreen();
+      }
+      return;
+    }
+
     if (document.fullscreenElement) {
       document.exitFullscreen();
     } else {
-      containerRef.current.requestFullscreen();
+      container.requestFullscreen();
     }
   }
 
@@ -102,6 +156,15 @@ export function LessonVideoPlayer({
         <video
           ref={videoRef}
           src={src}
+          // Without this, iOS Safari's default behavior is to hijack `play()`
+          // into its own native fullscreen player regardless of which control
+          // triggered it — so a lesson would jump to full-screen the instant
+          // playback started, on every phone, never showing this custom
+          // control bar (±15s, volume, the reference-LMS layout) at all.
+          // `playsInline` (React's prop, renders the `playsinline` attribute)
+          // is what keeps playback inline like every other browser already
+          // does, leaving fullscreen an explicit choice via the button below.
+          playsInline
           className="aspect-video w-full bg-black"
           onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
           onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
