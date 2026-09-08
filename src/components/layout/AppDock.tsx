@@ -220,214 +220,239 @@ export function AppDock({ unreadMessageCount }: AppDockProps) {
   const effectivelyVisible = !autoHideEnabled || visible || hasFocusWithin || tourForcedVisible;
 
   return (
-    <div
-      role="navigation"
-      aria-label="Primary"
-      className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center pb-[env(safe-area-inset-bottom)]"
-    >
-      <motion.div
-        ref={wrapperRef}
-        className="pointer-events-auto"
-        animate={{ y: effectivelyVisible ? 0 : "calc(100% + 24px)", opacity: effectivelyVisible ? 1 : 0 }}
-        transition={{ type: "spring", bounce: 0, duration: 0.35 }}
+    <>
+      {/* Every card app-wide sits at `--c-surface-solid` (a lighter "raised"
+          tone, by design — the same one the dock's own comments contrast
+          against) on top of the plain `--c-s-950` page ground. Whatever the
+          visitor happens to have scrolled to the bottom of the page is just
+          as likely to be one of those lighter cards as it is plain ground —
+          the roadmap's own "current step" card among them — and the dock
+          floating directly on top of a lighter card edge, in its own forced
+          pure black (see the override below), reads as a hard, unintended
+          seam of mismatched dark greys: reported live as "a different shade
+          of dark grey" right at the bottom. This doesn't touch either color
+          (cards keep their normal elevation everywhere else; the dock stays
+          pure black) — it just fades whatever's approaching the dock's own
+          floating zone back to the page's own ground tone first, so the
+          dock only ever meets that, never a lighter card straight-on.
+          Ground-token-based, not a hardcoded black, since Editorial Paper's
+          ground is a light cream — a fade to black there would be its own,
+          worse mismatch. `h-52`/z-30: tall and low enough to sit fully
+          behind the dock's resting AND hover-magnified states without
+          poking out as its own visible edge. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-52 bg-gradient-to-t from-[rgb(var(--c-s-950))] to-transparent"
+      />
+      <div
+        role="navigation"
+        aria-label="Primary"
+        className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center pb-[env(safe-area-inset-bottom)]"
       >
-        {/* A slow, continuous bob — the same idle-float touch the reference
-            dock has at rest. Independent of the hide/show transform above
-            (that one's a one-shot spring to a target, this one's an
-            infinite loop), so it's its own nested motion.div rather than
-            merged into the same animate prop. Off entirely under reduced
-            motion, same as the hide/reveal slide itself. */}
         <motion.div
-          animate={reducedMotion ? undefined : { y: [-2, 2, -2] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          ref={wrapperRef}
+          className="pointer-events-auto"
+          animate={{ y: effectivelyVisible ? 0 : "calc(100% + 24px)", opacity: effectivelyVisible ? 1 : 0 }}
+          transition={{ type: "spring", bounce: 0, duration: 0.35 }}
         >
-          {/* !bg-black/!bg-none/!border-white/10 override `glass-surface-
-              elevated`'s own theme-driven glass background — solid black
-              regardless of theme or accent, by direct instruction. Both
-              `!bg-black` AND `!bg-none` are needed: `glass-surface-elevated`
-              sets `background` as a shorthand (a translucent gradient, see
-              `--elev-bg`), and Tailwind's `bg-*` utility only overrides the
-              shorthand's background-color slot — the gradient's own
-              background-image would otherwise keep painting over the black,
-              a soft wash rather than the requested pitch black. The `!` is
-              load-bearing on both: `glass-surface-elevated` sets these via a
-              plain class rule, not an inline style, so an unmarked override
-              isn't guaranteed to win the cascade against it.
-
-              `!backdrop-blur-none` removes `glass-surface-elevated`'s own
-              `backdrop-filter: blur(...)`, which is pure dead weight on a
-              100%-opaque black bar — there's nothing behind it left to blur
-              into view. It's also the precondition for a well-documented
-              WebKit rendering bug: `backdrop-filter` combined with
-              `border-radius` on an element that doesn't otherwise clip its
-              own content (this bar is `overflow: visible`, so its box-shadow
-              glow can extend past its own box) can leak a faint square-
-              cornered halo at each rounded corner in Safari, because the
-              blur's own compositing layer doesn't reliably mask itself to
-              the rounded shape — reported as "a light gray sharp corner on
-              all sides of the smooth corners" surviving even after the
-              tap-highlight fix (that fix addressed a real, separate
-              tap-only flash; this addresses a persistent one). Removing the
-              backdrop-filter here removes the bug's precondition entirely,
-              without needing `overflow: hidden` (which would also clip the
-              glow this bar is meant to have).
-
-              `!shadow-[...]` overrides `glass-surface-elevated`'s own
-              `--elev-shadow` for the same reason as the three overrides
-              above: that token is a *dark* drop shadow (tuned for a card
-              sitting on a lighter surface), which all but disappears
-              underneath a bar that's forced solid black sitting on this
-              app's own near-black page ground — direct instruction: "the
-              dock is not a freely suspended thing, it's lying on [the
-              bottom edge]." A dark shadow can't read as elevation once
-              there's no lighter surface for it to fall on, so this pairs a
-              normal dark contact shadow (still doing real work wherever the
-              page behind happens to be lighter, e.g. the Paper theme) with
-              a soft white ambient glow, the same light-not-dark technique
-              the icons above already use to read as lit against black. */}
-          <Dock
-            className="items-end pb-3 !bg-black !bg-none !border-white/10 !backdrop-blur-none !shadow-[0_14px_32px_-10px_rgba(0,0,0,0.65),0_0_40px_-4px_rgba(255,255,255,0.12)]"
-            magnification={72}
-            distance={140}
-            panelHeight={60}
+          {/* A slow, continuous bob — the same idle-float touch the reference
+              dock has at rest. Independent of the hide/show transform above
+              (that one's a one-shot spring to a target, this one's an
+              infinite loop), so it's its own nested motion.div rather than
+              merged into the same animate prop. Off entirely under reduced
+              motion, same as the hide/reveal slide itself. */}
+          <motion.div
+            animate={reducedMotion ? undefined : { y: [-2, 2, -2] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           >
-            {NAV_ITEMS.map((item) => {
-              const active = pathname === item.href;
-              const badge = item.href === "/messages" ? unreadMessageCount : 0;
-              const Icon = NAV_ICON[item.icon];
-
-              return (
-                // Badge lives on this wrapper, not inside `DockItem` — that
-                // component clones its direct children unconditionally (see
-                // dock.tsx), so a third, sometimes-`false` child there
-                // crashes it. `DockItem` gets exactly one static child
-                // (`DockIcon`), always; the caption sits outside it entirely.
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-label={item.label}
-                  data-tour={"dataTour" in item ? item.dataTour : undefined}
-                  className="relative flex flex-col items-center gap-1"
-                >
-                  {/* The active-tab indicator: a real liquid-glass droplet,
-                      not a flat tint — blurred/saturated backdrop (the
-                      actual "bends light" part: it visibly refracts
-                      whatever's behind it, the dock's own black plus the
-                      icon and label it overlaps), a diagonal highlight
-                      gradient and a bright inset rim on the near edge
-                      (light catching curved glass), plus the same soft
-                      outer glow every icon already carries.
-
-                      Sized against `Link`'s own box — icon *and* label
-                      together (`Link` is `flex flex-col`, so its box is
-                      already exactly their union) — not just the icon's,
-                      by direct instruction: a puck sized to the icon alone
-                      only brushed the top of the label underneath, which
-                      read as "the bubble doesn't cover the text." This one
-                      wraps both in a single rounded pill, the way a real
-                      water droplet would sit over the whole tapped area
-                      rather than just its top half — also closer to the
-                      original Instagram reference (a pill backing icon
-                      *and* label, not a ring around the icon alone).
-
-                      A sibling of the icon's own wrapper div, not nested
-                      inside it — keeps this exactly where the old icon-only
-                      puck lived in the tree, just measured against the
-                      outer `Link` instead of the inner icon box.
-
-                      `layoutId` (one shared id across every tab) is what
-                      makes it slide between tabs on navigation instead of
-                      one fading out while another fades in — Framer Motion
-                      animates the single element's position/size across
-                      the layout change automatically.
-
-                      Insets are asymmetric, each tuned against the dock
-                      bar's own measured bounds (a fixed 60px) rather than
-                      one uniform value: `-top-1` (4px) — the label/icon
-                      stack already used most of the bar's height, leaving
-                      only ~7px of headroom above the icon, so anything
-                      bigger pushed the puck's top rim past the bar's own
-                      rounded edge (visible as the glass bulging out of the
-                      dock's silhouette). `-bottom-2` (8px) — more room
-                      below the label than above the icon, but still not
-                      unlimited before hitting the bar's own bottom edge.
-                      `-left-3 -right-3` (12px) — plenty of clear room on
-                      both sides at every tab's own horizontal position, so
-                      this one gets the full, generous "covers the whole
-                      area" value with no edge to worry about. */}
-                  {active && (
-                    <motion.div
-                      layoutId="dock-active-glass"
-                      transition={{ type: "spring", bounce: 0.15, duration: 0.55 }}
-                      className="pointer-events-none absolute -left-3 -right-3 -top-1 -bottom-2 rounded-full"
-                      style={{
-                        background:
-                          "linear-gradient(135deg, rgba(255,255,255,0.42), rgba(255,255,255,0.08) 55%, rgba(255,255,255,0.18) 100%)",
-                        backdropFilter: "blur(10px) saturate(180%)",
-                        WebkitBackdropFilter: "blur(10px) saturate(180%)",
-                        border: "1px solid rgba(255,255,255,0.4)",
-                        boxShadow:
-                          "inset 0 1px 1.5px rgba(255,255,255,0.8), inset 0 -3px 6px rgba(255,255,255,0.06), 0 0 22px 4px rgba(255,255,255,0.3)",
-                      }}
-                    />
-                  )}
-                  <div className="relative">
-                    <motion.div whileTap={{ scale: 0.9 }} className="relative">
-                      {/* White at every step, not accent-colored — same
-                          direct instruction as the dock's own background.
-                          Active vs inactive is opacity *and* glow: every
-                          icon carries a soft white ambient glow at rest (a
-                          `drop-shadow` on the icon itself, since that
-                          follows the glyph's own shape rather than boxing it
-                          like `box-shadow` would), and the active tab's icon
-                          glows brighter still, on top of the glass puck
-                          above. */}
-                      <DockItem
-                        aria-label={item.label}
-                        className={`rounded-full transition-colors duration-200 ${active ? "" : "hover:bg-white/8"}`}
-                      >
-                        <DockIcon>
-                          <Icon
-                            className={`h-full w-full transition-[color,filter] duration-200 ${
-                              active
-                                ? "text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]"
-                                : "text-white/60 drop-shadow-[0_0_4px_rgba(255,255,255,0.3)]"
-                            }`}
-                          />
-                        </DockIcon>
-                      </DockItem>
-                    </motion.div>
-                  </div>
-                  {/* relative z-10: the glass droplet above now deliberately
-                      sits fully over this label too (see its own comment —
-                      it's sized against the whole tab, not just the icon),
-                      so this label is entirely inside the puck's box
-                      whenever its tab is active, by design. Measured and
-                      confirmed: without a z-index here, an unpositioned
-                      static element paints *before* a positioned one in the
-                      same stacking context regardless of DOM order, so the
-                      glass's own blur/translucency would wash the label out
-                      instead of reading as light bending around crisp text.
-                      z-10 promotes this span into its own positioned layer
-                      so it always paints on top of the glass, the same way
-                      a droplet of water refracts what's behind it rather
-                      than obscuring it. */}
-                  <span
-                    className={`relative z-10 text-[9px] font-medium leading-none ${active ? "text-white" : "text-white/50"}`}
+            {/* !bg-black/!bg-none/!border-white/10 override `glass-surface-
+                elevated`'s own theme-driven glass background — solid black
+                regardless of theme or accent, by direct instruction. Both
+                `!bg-black` AND `!bg-none` are needed: `glass-surface-elevated`
+                sets `background` as a shorthand (a translucent gradient, see
+                `--elev-bg`), and Tailwind's `bg-*` utility only overrides the
+                shorthand's background-color slot — the gradient's own
+                background-image would otherwise keep painting over the black,
+                a soft wash rather than the requested pitch black. The `!` is
+                load-bearing on both: `glass-surface-elevated` sets these via a
+                plain class rule, not an inline style, so an unmarked override
+                isn't guaranteed to win the cascade against it.
+  
+                `!backdrop-blur-none` removes `glass-surface-elevated`'s own
+                `backdrop-filter: blur(...)`, which is pure dead weight on a
+                100%-opaque black bar — there's nothing behind it left to blur
+                into view. It's also the precondition for a well-documented
+                WebKit rendering bug: `backdrop-filter` combined with
+                `border-radius` on an element that doesn't otherwise clip its
+                own content (this bar is `overflow: visible`, so its box-shadow
+                glow can extend past its own box) can leak a faint square-
+                cornered halo at each rounded corner in Safari, because the
+                blur's own compositing layer doesn't reliably mask itself to
+                the rounded shape — reported as "a light gray sharp corner on
+                all sides of the smooth corners" surviving even after the
+                tap-highlight fix (that fix addressed a real, separate
+                tap-only flash; this addresses a persistent one). Removing the
+                backdrop-filter here removes the bug's precondition entirely,
+                without needing `overflow: hidden` (which would also clip the
+                glow this bar is meant to have).
+  
+                `!shadow-[...]` overrides `glass-surface-elevated`'s own
+                `--elev-shadow` for the same reason as the three overrides
+                above: that token is a *dark* drop shadow (tuned for a card
+                sitting on a lighter surface), which all but disappears
+                underneath a bar that's forced solid black sitting on this
+                app's own near-black page ground — direct instruction: "the
+                dock is not a freely suspended thing, it's lying on [the
+                bottom edge]." A dark shadow can't read as elevation once
+                there's no lighter surface for it to fall on, so this pairs a
+                normal dark contact shadow (still doing real work wherever the
+                page behind happens to be lighter, e.g. the Paper theme) with
+                a soft white ambient glow, the same light-not-dark technique
+                the icons above already use to read as lit against black. */}
+            <Dock
+              className="items-end pb-3 !bg-black !bg-none !border-white/10 !backdrop-blur-none !shadow-[0_14px_32px_-10px_rgba(0,0,0,0.65),0_0_40px_-4px_rgba(255,255,255,0.12)]"
+              magnification={72}
+              distance={140}
+              panelHeight={60}
+            >
+              {NAV_ITEMS.map((item) => {
+                const active = pathname === item.href;
+                const badge = item.href === "/messages" ? unreadMessageCount : 0;
+                const Icon = NAV_ICON[item.icon];
+  
+                return (
+                  // Badge lives on this wrapper, not inside `DockItem` — that
+                  // component clones its direct children unconditionally (see
+                  // dock.tsx), so a third, sometimes-`false` child there
+                  // crashes it. `DockItem` gets exactly one static child
+                  // (`DockIcon`), always; the caption sits outside it entirely.
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-label={item.label}
+                    data-tour={"dataTour" in item ? item.dataTour : undefined}
+                    className="relative flex flex-col items-center gap-1"
                   >
-                    {item.label}
-                  </span>
-                  {Boolean(badge) && (
-                    <span className="pointer-events-none absolute right-1 top-1 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-[rgb(var(--c-s-50))] px-1 text-[9px] font-bold text-slate-950">
-                      {badge > 9 ? "9+" : badge}
+                    {/* The active-tab indicator: a real liquid-glass droplet,
+                        not a flat tint — blurred/saturated backdrop (the
+                        actual "bends light" part: it visibly refracts
+                        whatever's behind it, the dock's own black plus the
+                        icon and label it overlaps), a diagonal highlight
+                        gradient and a bright inset rim on the near edge
+                        (light catching curved glass), plus the same soft
+                        outer glow every icon already carries.
+  
+                        Sized against `Link`'s own box — icon *and* label
+                        together (`Link` is `flex flex-col`, so its box is
+                        already exactly their union) — not just the icon's,
+                        by direct instruction: a puck sized to the icon alone
+                        only brushed the top of the label underneath, which
+                        read as "the bubble doesn't cover the text." This one
+                        wraps both in a single rounded pill, the way a real
+                        water droplet would sit over the whole tapped area
+                        rather than just its top half — also closer to the
+                        original Instagram reference (a pill backing icon
+                        *and* label, not a ring around the icon alone).
+  
+                        A sibling of the icon's own wrapper div, not nested
+                        inside it — keeps this exactly where the old icon-only
+                        puck lived in the tree, just measured against the
+                        outer `Link` instead of the inner icon box.
+  
+                        `layoutId` (one shared id across every tab) is what
+                        makes it slide between tabs on navigation instead of
+                        one fading out while another fades in — Framer Motion
+                        animates the single element's position/size across
+                        the layout change automatically.
+  
+                        Insets are asymmetric, each tuned against the dock
+                        bar's own measured bounds (a fixed 60px) rather than
+                        one uniform value: `-top-1` (4px) — the label/icon
+                        stack already used most of the bar's height, leaving
+                        only ~7px of headroom above the icon, so anything
+                        bigger pushed the puck's top rim past the bar's own
+                        rounded edge (visible as the glass bulging out of the
+                        dock's silhouette). `-bottom-2` (8px) — more room
+                        below the label than above the icon, but still not
+                        unlimited before hitting the bar's own bottom edge.
+                        `-left-3 -right-3` (12px) — plenty of clear room on
+                        both sides at every tab's own horizontal position, so
+                        this one gets the full, generous "covers the whole
+                        area" value with no edge to worry about. */}
+                    {active && (
+                      <motion.div
+                        layoutId="dock-active-glass"
+                        transition={{ type: "spring", bounce: 0.15, duration: 0.55 }}
+                        className="pointer-events-none absolute -left-3 -right-3 -top-1 -bottom-2 rounded-full"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, rgba(255,255,255,0.42), rgba(255,255,255,0.08) 55%, rgba(255,255,255,0.18) 100%)",
+                          backdropFilter: "blur(10px) saturate(180%)",
+                          WebkitBackdropFilter: "blur(10px) saturate(180%)",
+                          border: "1px solid rgba(255,255,255,0.4)",
+                          boxShadow:
+                            "inset 0 1px 1.5px rgba(255,255,255,0.8), inset 0 -3px 6px rgba(255,255,255,0.06), 0 0 22px 4px rgba(255,255,255,0.3)",
+                        }}
+                      />
+                    )}
+                    <div className="relative">
+                      <motion.div whileTap={{ scale: 0.9 }} className="relative">
+                        {/* White at every step, not accent-colored — same
+                            direct instruction as the dock's own background.
+                            Active vs inactive is opacity *and* glow: every
+                            icon carries a soft white ambient glow at rest (a
+                            `drop-shadow` on the icon itself, since that
+                            follows the glyph's own shape rather than boxing it
+                            like `box-shadow` would), and the active tab's icon
+                            glows brighter still, on top of the glass puck
+                            above. */}
+                        <DockItem
+                          aria-label={item.label}
+                          className={`rounded-full transition-colors duration-200 ${active ? "" : "hover:bg-white/8"}`}
+                        >
+                          <DockIcon>
+                            <Icon
+                              className={`h-full w-full transition-[color,filter] duration-200 ${
+                                active
+                                  ? "text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]"
+                                  : "text-white/60 drop-shadow-[0_0_4px_rgba(255,255,255,0.3)]"
+                              }`}
+                            />
+                          </DockIcon>
+                        </DockItem>
+                      </motion.div>
+                    </div>
+                    {/* relative z-10: the glass droplet above now deliberately
+                        sits fully over this label too (see its own comment —
+                        it's sized against the whole tab, not just the icon),
+                        so this label is entirely inside the puck's box
+                        whenever its tab is active, by design. Measured and
+                        confirmed: without a z-index here, an unpositioned
+                        static element paints *before* a positioned one in the
+                        same stacking context regardless of DOM order, so the
+                        glass's own blur/translucency would wash the label out
+                        instead of reading as light bending around crisp text.
+                        z-10 promotes this span into its own positioned layer
+                        so it always paints on top of the glass, the same way
+                        a droplet of water refracts what's behind it rather
+                        than obscuring it. */}
+                    <span
+                      className={`relative z-10 text-[9px] font-medium leading-none ${active ? "text-white" : "text-white/50"}`}
+                    >
+                      {item.label}
                     </span>
-                  )}
-                </Link>
-              );
-            })}
-          </Dock>
+                    {Boolean(badge) && (
+                      <span className="pointer-events-none absolute right-1 top-1 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-[rgb(var(--c-s-50))] px-1 text-[9px] font-bold text-slate-950">
+                        {badge > 9 ? "9+" : badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </Dock>
+          </motion.div>
         </motion.div>
-      </motion.div>
-    </div>
+      </div>
+    </>
   );
 }
