@@ -65,6 +65,21 @@ export function themeMode(theme: ThemeId): "light" | "dark" {
   return THEMES.find((t) => t.id === theme)?.mode ?? "light";
 }
 
+/**
+ * The theme's page ground, as a hex color — reuses the picker's own
+ * `swatch[0]` rather than a parallel color table, so there's exactly one
+ * place (this array, above) that knows what a theme's background actually
+ * is. Feeds the `<meta name="theme-color">` tag (see RootLayout's `viewport`
+ * export and ThemeProvider's `applyToDocument`), which is what stops iOS
+ * Safari's own chrome (the strip around the address bar, and the strip
+ * around the bottom toolbar) from rendering in the browser's own default
+ * gray instead of the app's actual background — reported as a mismatched
+ * band that reads like an unwanted extra frame sitting below the dock.
+ */
+export function themeGroundColor(theme: ThemeId): string {
+  return THEMES.find((t) => t.id === theme)?.swatch[0] ?? "#FAF6EC";
+}
+
 export function isThemeId(value: unknown): value is ThemeId {
   return typeof value === "string" && (THEME_IDS as readonly string[]).includes(value);
 }
