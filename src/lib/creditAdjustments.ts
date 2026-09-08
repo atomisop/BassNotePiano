@@ -7,6 +7,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
+import { recordCreditGrant, drawDownCredits } from "@/lib/creditLedger";
 
 export class CreditAdjustmentError extends Error {}
 
@@ -104,6 +105,18 @@ export async function adjustUserCredits(
 
     return { balance: updated.classCredits };
   });
+
+  // Best-effort ledger bookkeeping, outside the transaction on purpose (see
+  // creditLedger.ts's file header) — the real, correctness-critical balance
+  // change already committed above unchanged. A grant records a
+  // non-expiring CreditGrant (an admin adjustment is never the expiring
+  // kind); a deduction draws down existing grants the same way a real spend
+  // would.
+  if (amount > 0) {
+    await recordCreditGrant(userId, amount, { source: "ADMIN_ADJUSTMENT", expiresAt: null });
+  } else {
+    await drawDownCredits(userId, Math.abs(amount));
+  }
 
   const magnitude = Math.abs(amount);
   await createNotification({

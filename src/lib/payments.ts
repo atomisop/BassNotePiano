@@ -1,7 +1,7 @@
 import type { Prisma, ZellePaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AccessDeniedError, unlockScaleForUser, grantCurriculumAccess } from "@/lib/access";
-import { addClassCredits } from "@/lib/classSchedule";
+import { grantCredits } from "@/lib/creditLedger";
 import {
   calculateClassCreditTotal,
   calculateFamilyBundleTotal,
@@ -353,29 +353,43 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
     if (payment.purpose === "CURRICULUM") {
       await grantCurriculumAccess(payment.userId, tx);
     } else if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
-      await addClassCredits(payment.userId, payment.lessonQuantity, tx);
+      // Legacy rows only (the a-la-carte purchase path itself was removed) —
+      // non-expiring, same as it always was for anyone who bought this way.
+      await grantCredits(payment.userId, payment.lessonQuantity, { source: "CLASS_CREDITS", expiresAt: null }, tx);
     } else if (payment.purpose === "FAMILY_BUNDLE") {
       // Credits go to every recipient row, not payment.userId: the payer
       // isn't necessarily a recipient themselves (see createFamilyBundlePayment).
+      // Non-expiring — only a Payment Plan installment's credits expire.
       const recipients = await tx.familyBundleRecipient.findMany({ where: { paymentId: payment.id } });
       for (const recipient of recipients) {
-        await addClassCredits(recipient.userId, recipient.creditsGranted, tx);
+        await grantCredits(recipient.userId, recipient.creditsGranted, { source: "FAMILY_BUNDLE", expiresAt: null }, tx);
       }
     } else if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId && payment.lessonQuantity) {
+      // Fetched before granting (unlike the other branches) because the
+      // grant's own expiresAt needs it: this installment's credits are good
+      // through the end of the cycle it's paying for — exactly when the
+      // *next* installment becomes due. cycleEnd is computed once and
+      // reused for both, below.
+      const plan = await tx.paymentPlan.findUnique({ where: { id: payment.paymentPlanId } });
+      const cycleEnd = plan ? addCalendarMonthsClamped(plan.nextDueDate, 1) : null;
+
       // Quantity is snapshotted onto the payment row at installment-creation
       // time (see createPaymentPlan/getOrCreateOpenInstallmentPayment in
-      // paymentPlans.ts), so this reads exactly like CLASS_CREDITS above —
-      // no new addClassCredits shape needed.
-      await addClassCredits(payment.userId, payment.lessonQuantity, tx);
+      // paymentPlans.ts).
+      await grantCredits(
+        payment.userId,
+        payment.lessonQuantity,
+        { source: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: payment.paymentPlanId, expiresAt: cycleEnd },
+        tx,
+      );
 
-      const plan = await tx.paymentPlan.findUnique({ where: { id: payment.paymentPlanId } });
       // The plan may have been canceled after this installment was created
       // but before review cleared (an admin cancellation racing a student's
       // in-flight Zelle transfer). Credits are still granted above — real
       // money changed hands, and refusing them would just generate a
       // support conversation — but a canceled plan's own progress is left
       // alone rather than resurrected by a late approval.
-      if (plan && plan.status === "ACTIVE") {
+      if (plan && plan.status === "ACTIVE" && cycleEnd) {
         const installmentsPaid = plan.installmentsPaid + 1;
         const isComplete = installmentsPaid >= plan.termMonths;
         await tx.paymentPlan.update({
@@ -383,7 +397,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
           data: {
             installmentsPaid,
             status: isComplete ? "COMPLETED" : "ACTIVE",
-            nextDueDate: isComplete ? plan.nextDueDate : addCalendarMonthsClamped(plan.nextDueDate, 1),
+            nextDueDate: isComplete ? plan.nextDueDate : cycleEnd,
           },
         });
       }

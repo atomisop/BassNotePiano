@@ -50,6 +50,8 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   // template — an entry here would be dead code.
   PAYMENT_PLAN_COMPLETED: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "default" },
   PAYMENT_PLAN_CANCELED: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "notice" },
+  CREDITS_EXPIRED: { label: "View your credits", url: getAppUrl("/billing/plans"), kind: "notice" },
+  RESERVED_SLOT_UNAVAILABLE: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "notice" },
 };
 
 /**

@@ -250,12 +250,14 @@ function formatUsdCents(cents: number): string {
 export interface PaymentPlanInvoiceDetails {
   /** e.g. "6-Month plan — 60 min/week" */
   planLabel: string;
-  /** e.g. "Installment 3 of 6" — not a date range: credits never expire and aren't consumed on a calendar schedule, so a hard period would imply a use-it-or-lose-it window that doesn't exist. */
+  /** e.g. "Installment 3 of 6" */
   installmentLabel: string;
   amountCents: number;
   dueDate: Date;
   zelleHandle: string;
   cta: { label: string; url: string };
+  /** When this installment's credits (and the exclusive hold on the student's reserved weekly slot) actually lapse if unused — computed the same way the CreditGrant itself is (addCalendarMonthsClamped(plan.nextDueDate, 1), already known ahead of approval since only approval advances nextDueDate). Optional and rendered as one more summary row only when present, so a caller that doesn't have it handy doesn't need to fake one. */
+  cycleEndsAt?: Date;
   /** Present only for the overdue variant — its presence, not a separate flag, is what picks the template's copy/accent. */
   overdueDays?: number;
 }
@@ -279,6 +281,7 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
     : "Here's your next installment.";
 
   const rowBorder = "border-top:1px solid rgba(255,255,255,0.08);";
+  const cycleEndsAtLabel = details.cycleEndsAt?.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const summaryHtml = `
     <table role="presentation" width="100%" style="margin:4px 0 20px;border-collapse:collapse;">
       <tr>
@@ -297,6 +300,14 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
         <td style="padding:6px 0;color:#999999;font-size:13px;${rowBorder}">Due date</td>
         <td style="padding:6px 0;color:#f5f5f5;font-size:13px;text-align:right;${rowBorder}">${escapeHtml(dueDateLabel)}</td>
       </tr>
+      ${
+        cycleEndsAtLabel
+          ? `<tr>
+        <td style="padding:6px 0;color:#999999;font-size:13px;${rowBorder}">Credits valid through</td>
+        <td style="padding:6px 0;color:#f5f5f5;font-size:13px;text-align:right;${rowBorder}">${escapeHtml(cycleEndsAtLabel)}</td>
+      </tr>`
+          : ""
+      }
       <tr>
         <td style="padding:6px 0;color:#999999;font-size:13px;${rowBorder}">Pay via Zelle to</td>
         <td style="padding:6px 0;color:#f5f5f5;font-size:13px;text-align:right;${rowBorder}">${escapeHtml(details.zelleHandle)}</td>
@@ -316,6 +327,7 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
     `Installment: ${details.installmentLabel}`,
     `Amount due: ${formatUsdCents(details.amountCents)}`,
     `Due date: ${dueDateLabel}`,
+    ...(cycleEndsAtLabel ? [`Credits valid through: ${cycleEndsAtLabel}`] : []),
     `Pay via Zelle to: ${details.zelleHandle}`,
     "",
     `${details.cta.label}: ${details.cta.url}`,

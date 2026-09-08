@@ -3,7 +3,7 @@ import { schedule } from "@netlify/functions";
 import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
 import { sendPaymentPlanInvoiceEmail, getAppUrl } from "../../src/lib/email";
-import { getOrCreateOpenInstallmentPayment } from "../../src/lib/paymentPlans";
+import { getOrCreateOpenInstallmentPayment, addCalendarMonthsClamped } from "../../src/lib/paymentPlans";
 import { describePaymentPlan } from "../../src/lib/classCreditPricing";
 
 // How far ahead of nextDueDate to open the next installment for payment and
@@ -57,6 +57,10 @@ async function notifyInstallment(
     installmentLabel,
     amountCents: payment.amountCents,
     dueDate: plan.nextDueDate,
+    // Same value approveZellePayment computes for this installment's own
+    // CreditGrant.expiresAt at approval time — knowable ahead of approval
+    // since only approval itself ever advances nextDueDate.
+    cycleEndsAt: addCalendarMonthsClamped(plan.nextDueDate, 1),
     zelleHandle: payment.zelleHandle,
     cta: { label: "Pay your installment", url: getAppUrl("/billing/plans") },
     overdueDays,

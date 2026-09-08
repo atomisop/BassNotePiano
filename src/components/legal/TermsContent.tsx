@@ -40,8 +40,16 @@ export function TermsContent() {
 
       <TermsSection title="Class credits & bundles">
         <p>
-          Credits are $34.99 each (1 credit = 30 minutes), with a bigger discount the more you buy at once: 10% off at
-          4+, 20% off at 10+, 30% off at 20+. Credits never expire.
+          Solo class credits come from a Payment Plan — Monthly, 3-Month, 6-Month, or Yearly, paid one Zelle
+          installment at a time, longer terms at a lower rate. Enrolling reserves your weekly day and time
+          exclusively and auto-books it every week for as long as the plan stays active. If you skip a week, make
+          it up on another week before that installment&apos;s monthly cycle ends — an unused credit is forfeited
+          once its cycle expires.
+        </p>
+        <p>
+          Family bundles are priced differently: $34.99 per credit at full price, with a bigger discount the more
+          you buy at once (10% off at 4+, 20% off at 10+, 30% off at 20+), plus an extra 25% off the combined total.
+          Family credits never expire.
         </p>
         <p>
           <span className="font-medium text-[rgb(var(--c-s-50))]">Money spent on credits is non-refundable.</span> The only way

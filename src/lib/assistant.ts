@@ -118,13 +118,13 @@ Curriculum (self-paced, on the website):
 ${scaleList}
   - Each scale group includes video/PDF lessons, a practice tracker, and a quiz you need to pass to mark it complete.
 
-Live classes (weekly, on Discord), bought as "class credits" (1 credit = one 30-minute class, credits never expire):
-  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a weekly cadence and a term — Monthly (no commitment), 3-Month, 6-Month, or Yearly — paid one Zelle installment at a time, never all at once and never auto-charged. Longer terms cost less per month:
+Live classes (weekly, on Discord), bought as "class credits" (1 credit = one 30-minute class):
+  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a weekly cadence and a term — Monthly (no commitment), 3-Month, 6-Month, or Yearly — paid one Zelle installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active — skip a week and make it up on another week before that installment's monthly cycle ends, since an unused credit is forfeited once its cycle expires. Longer terms cost less per month:
 ${planList}
-  - Family (2+ separate, already-existing accounts sharing one credit tier at once) is a different, separate purchase, priced by raw quantity instead of a term: ${formatUsd(CREDIT_BASE_PRICE_CENTS)} per credit at full price, cheaper per credit in a bigger bundle, plus an extra 25% off the combined total:
+  - Family (2+ separate, already-existing accounts sharing one credit tier at once) is a different, separate purchase, priced by raw quantity instead of a term: ${formatUsd(CREDIT_BASE_PRICE_CENTS)} per credit at full price, cheaper per credit in a bigger bundle, plus an extra 25% off the combined total — these credits never expire:
 ${bundleList}
   - Each class is capped at 10 students.
-  - Booking happens on the /lessons page once signed in — you can select and book several open sessions at once instead of one at a time.
+  - Booking happens on the /lessons page once signed in — that covers Family sessions and any extra one-off classes on top of a Payment Plan's own auto-booked weekly slot; you can select and book several open sessions at once instead of one at a time.
   - Cancelling 24+ hours before a class automatically refunds the credit to your balance. Inside 24 hours, self-cancellation is turned off; message the studio directly for a case-by-case call.
   - Nothing about a purchase (curriculum, a payment plan installment, or a family bundle) is refundable as cash — the only way a credit comes back is the 24h+ cancellation above.
 

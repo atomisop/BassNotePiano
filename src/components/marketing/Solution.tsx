@@ -64,8 +64,8 @@ const FEATURES = [
     body: "One-on-one with your teacher, or a family session if siblings are learning together, booked on your own schedule over Discord.",
   },
   {
-    title: "Credits that never expire",
-    body: "Buy once, book whenever. Nothing is charged until the lesson actually happens.",
+    title: "A reserved weekly slot",
+    body: "Enroll in a plan and that day and time is yours, every week — nothing is charged until the lesson actually happens.",
   },
 ];
 

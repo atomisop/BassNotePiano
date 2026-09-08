@@ -102,7 +102,8 @@ export function PaymentPlanTierGrid() {
               </div>
 
               <p className="flex-1 text-xs leading-relaxed text-slate-400">
-                Paid one Zelle installment at a time, never all at once. Credits never expire.
+                Paid one Zelle installment at a time, never all at once. Reserves your weekly time with the
+                teacher for as long as you&apos;re enrolled.
               </p>
 
               <Link

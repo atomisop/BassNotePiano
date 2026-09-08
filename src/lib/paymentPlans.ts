@@ -1,6 +1,7 @@
 import { PaymentPlanCadence, PaymentPlanTerm, type Prisma, type PaymentPlanStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { calculatePaymentPlanRate } from "@/lib/classCreditPricing";
+import { calculatePaymentPlanRate, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { chunksForSchedule, livePaymentPlanConditions, nextOccurrenceDates, computeScheduledAt, OCCURRENCES_PER_SLOT } from "@/lib/classSchedule";
 import { createNotification } from "@/lib/notifications";
 
 export class PaymentPlanError extends Error {}
@@ -19,24 +20,32 @@ export class PaymentPlanError extends Error {}
 // ---------------------------------------------------------------------------
 
 /**
- * Starts a new payment plan. One ACTIVE plan per user at a time (v1
- * constraint, enforced here in application code — same class of trust as
- * getOrCreatePendingZellePayment's own dedup invariant in payments.ts, no DB
- * constraint backing it). Creates the PaymentPlan and installment #1's
- * ZellePayment as one nested Prisma write, atomic by construction — the
- * same trick createFamilyBundlePayment (payments.ts) already uses for its
- * nested familyBundleRecipients create, no explicit $transaction needed for
- * a single create() call.
+ * Starts a new payment plan against a specific reserved weekly slot. One
+ * ACTIVE plan per user at a time, and one live reservation per
+ * schedule+chunk at a time — both v1 constraints, both enforced here inside
+ * a single Serializable transaction (matching bookClass's own pattern in
+ * classSchedule.ts for scarce weekly resources), not two separate
+ * un-transacted checks: the previous version's "one active plan" check ran
+ * before the write with no transaction backing it at all, a real gap this
+ * closes at the same time as adding the slot-exclusivity check. Creates the
+ * PaymentPlan and installment #1's ZellePayment as one nested Prisma write
+ * inside that transaction, same trick createFamilyBundlePayment
+ * (payments.ts) uses for its own nested create.
  *
  * nextDueDate starts at "now" — a plan's first installment isn't a
  * reminder-ahead-of-time situation, it's the thing that actually starts the
- * plan.
+ * plan. The reserved slot's first actual booking isn't created here either
+ * — that's left to the next run of the daily reservation-maintenance job
+ * (netlify/functions/payment-plan-reservations.ts), the same single code
+ * path that creates every subsequent week's booking too.
  */
 export async function createPaymentPlan(
   userId: string,
   cadence: PaymentPlanCadence,
   term: PaymentPlanTerm,
   zelleHandle: string,
+  reservedScheduleId: string,
+  reservedChunkIndex: number,
 ) {
   // A Server Action's params are only compile-time-typed — a raw request
   // against the same endpoint could send anything. Validate against the
@@ -50,38 +59,93 @@ export async function createPaymentPlan(
     throw new PaymentPlanError(`"${term}" isn't a valid term.`);
   }
 
-  const existing = await getActivePaymentPlan(userId);
-  if (existing) {
-    throw new PaymentPlanError("You already have an active payment plan. Finish or cancel it before starting another.");
-  }
-
   const rate = calculatePaymentPlanRate(cadence, term);
+  const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
 
-  return prisma.paymentPlan.create({
-    data: {
-      userId,
-      cadence,
-      term,
-      installmentAmountCents: rate.installmentAmountCents,
-      creditsPerInstallment: rate.creditsPerInstallment,
-      termMonths: rate.termMonths,
-      nextDueDate: new Date(),
-      installmentPayments: {
-        create: [
-          {
-            userId,
-            purpose: "PAYMENT_PLAN_INSTALLMENT",
-            amountCents: rate.installmentAmountCents,
-            zelleHandle,
-            lessonQuantity: rate.creditsPerInstallment,
-            installmentNumber: 1,
-            status: "AWAITING_TRANSFER",
+  try {
+    return await prisma.$transaction(
+      async (tx) => {
+        const existingPlan = await tx.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
+        if (existingPlan) {
+          throw new PaymentPlanError("You already have an active payment plan. Finish or cancel it before starting another.");
+        }
+
+        const schedule = await tx.classSchedule.findUniqueOrThrow({ where: { id: reservedScheduleId } });
+        if (!schedule.active) throw new PaymentPlanError("That class time is no longer offered — pick another.");
+        const chunk = chunksForSchedule(schedule)[reservedChunkIndex];
+        if (!chunk) throw new PaymentPlanError("That time slot doesn't exist.");
+        if (chunk.creditCost < creditsPerWeek) {
+          throw new PaymentPlanError("That time slot is too short for this cadence.");
+        }
+
+        const reservedByAnother = await tx.paymentPlan.findFirst({
+          where: { reservedScheduleId, reservedChunkIndex, OR: livePaymentPlanConditions() },
+          select: { id: true },
+        });
+        if (reservedByAnother) throw new PaymentPlanError("That slot was just taken — try again.");
+
+        // A chunk with no other PaymentPlan reservation can still have a
+        // pre-existing ordinary ClassBooking (from the self-serve bookClass/
+        // bookFamilyClass flow, made before this reservation existed) on
+        // one of its own upcoming OCCURRENCES_PER_SLOT occurrences —
+        // reserving over that would let the daily maintenance job silently
+        // create a second, conflicting booking for that same instant the
+        // next time it runs. Checked against the exact same rolling window
+        // the job itself maintains; excludes this same student's own
+        // pre-existing booking (nothing wrong with reserving over your own
+        // booking — the job's own existing-row check already handles that
+        // cleanly).
+        const occurrenceDates = nextOccurrenceDates(schedule.dayOfWeek, OCCURRENCES_PER_SLOT);
+        const conflictingBooking = await tx.classBooking.findFirst({
+          where: {
+            scheduleId: reservedScheduleId,
+            status: "SCHEDULED",
+            studentId: { not: userId },
+            OR: occurrenceDates.map((occurrenceDate) => ({ occurrenceDate, scheduledAt: computeScheduledAt(schedule, occurrenceDate, chunk) })),
           },
-        ],
+          select: { id: true },
+        });
+        if (conflictingBooking) {
+          throw new PaymentPlanError("Someone already has a booking on one of this slot's upcoming weeks — pick another time.");
+        }
+
+        return tx.paymentPlan.create({
+          data: {
+            userId,
+            cadence,
+            term,
+            installmentAmountCents: rate.installmentAmountCents,
+            creditsPerInstallment: rate.creditsPerInstallment,
+            termMonths: rate.termMonths,
+            nextDueDate: new Date(),
+            reservedScheduleId,
+            reservedChunkIndex,
+            installmentPayments: {
+              create: [
+                {
+                  userId,
+                  purpose: "PAYMENT_PLAN_INSTALLMENT",
+                  amountCents: rate.installmentAmountCents,
+                  zelleHandle,
+                  lessonQuantity: rate.creditsPerInstallment,
+                  installmentNumber: 1,
+                  status: "AWAITING_TRANSFER",
+                },
+              ],
+            },
+          },
+          include: { installmentPayments: true },
+        });
       },
-    },
-    include: { installmentPayments: true },
-  });
+      { isolationLevel: "Serializable" },
+    );
+  } catch (err) {
+    if (err instanceof PaymentPlanError) throw err;
+    if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2034") {
+      throw new PaymentPlanError("That slot was just taken — try again.");
+    }
+    throw err;
+  }
 }
 
 export async function getActivePaymentPlan(userId: string) {
@@ -169,6 +233,7 @@ export function addCalendarMonthsClamped(date: Date, months: number): Date {
 
 const adminPaymentPlanInclude = {
   user: { select: { id: true, name: true, email: true } },
+  reservedSchedule: { select: { id: true, label: true, dayOfWeek: true, startTime: true } },
 } satisfies Prisma.PaymentPlanInclude;
 
 export type AdminPaymentPlan = Prisma.PaymentPlanGetPayload<{ include: typeof adminPaymentPlanInclude }> & {
@@ -196,29 +261,42 @@ export async function getAdminPaymentPlans(status?: PaymentPlanStatus): Promise<
  * student self-service cancel, matching how every other cancellation in
  * this app is already an explicit, human-triggered action; a student who
  * wants to stop messages the admin, the same way an inside-24h class
- * cancellation already works). Only flips the plan's own status/audit
- * fields — deliberately does not touch any in-flight installment payment.
- * Once a plan drops out of ACTIVE it disappears from the student's "current
- * plan" view (the only normal path to that installment's payment gate), and
- * the scheduled reminder function's overdue query is filtered to
- * `paymentPlan.status === "ACTIVE"`, so a stray open installment simply
- * stops generating reminders on its own — no second write path to keep in
- * sync.
+ * cancellation already works). Flips the plan's own status/audit fields and
+ * bulk-cancels its future auto-created reserved bookings (reservedByPlanId)
+ * in one transaction — frees the slot immediately rather than leaving it
+ * sitting booked-but-uncharged until each occurrence's own scheduledAt
+ * passes. Deliberately does not touch any in-flight installment payment: a
+ * canceled plan drops out of "current plan" (the only normal path to that
+ * installment's payment gate), and the scheduled reminder function's
+ * overdue query is filtered to `paymentPlan.status === "ACTIVE"`, so a
+ * stray open installment simply stops generating reminders on its own — no
+ * second write path to keep in sync.
  */
 export async function cancelPaymentPlan(planId: string, adminId: string, note: string): Promise<void> {
-  const plan = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId } });
-  if (plan.status !== "ACTIVE") {
-    throw new PaymentPlanError(`This plan isn't active (status: ${plan.status}).`);
-  }
-
   const trimmedNote = note.trim();
   if (!trimmedNote) {
     throw new PaymentPlanError("A cancellation note is required.");
   }
 
-  await prisma.paymentPlan.update({
-    where: { id: planId },
-    data: { status: "CANCELED", canceledAt: new Date(), canceledById: adminId, cancellationNote: trimmedNote },
+  const plan = await prisma.$transaction(async (tx) => {
+    const current = await tx.paymentPlan.findUniqueOrThrow({ where: { id: planId } });
+    if (current.status !== "ACTIVE") {
+      throw new PaymentPlanError(`This plan isn't active (status: ${current.status}).`);
+    }
+
+    await tx.paymentPlan.update({
+      where: { id: planId },
+      data: { status: "CANCELED", canceledAt: new Date(), canceledById: adminId, cancellationNote: trimmedNote },
+    });
+
+    // Only the plan's own auto-created future bookings — never a booking
+    // the student separately made by hand for something else.
+    await tx.classBooking.updateMany({
+      where: { reservedByPlanId: planId, status: "SCHEDULED", scheduledAt: { gt: new Date() } },
+      data: { status: "CANCELED", refunded: true },
+    });
+
+    return current;
   });
 
   await createNotification({
