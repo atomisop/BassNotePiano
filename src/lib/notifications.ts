@@ -51,6 +51,10 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   PAYMENT_PLAN_COMPLETED: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "default" },
   PAYMENT_PLAN_CANCELED: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "notice" },
   CREDITS_EXPIRED: { label: "View your credits", url: getAppUrl("/billing/plans"), kind: "notice" },
+  // Points to /lessons, not /billing/plans like its CREDITS_EXPIRED sibling
+  // — this fires while there's still time to act, and the actual action is
+  // booking a makeup class, not reviewing plan/payment status.
+  CREDITS_EXPIRING_SOON: { label: "Book a class", url: getAppUrl("/lessons"), kind: "notice" },
   RESERVED_SLOT_UNAVAILABLE: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "notice" },
 };
 

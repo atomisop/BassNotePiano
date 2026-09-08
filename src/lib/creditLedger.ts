@@ -160,3 +160,52 @@ export async function expireDueCreditGrants(now: Date = new Date()): Promise<Exp
   }
   return summaries;
 }
+
+// How far ahead of a grant's own expiresAt to send the one-time "these are
+// about to lapse" notice — long enough that a student who skipped a week
+// still has a real chance to book a makeup class before forfeiture, short
+// enough that the warning is still relevant to *this* cycle rather than
+// firing against credits that still have weeks of normal use left.
+const EXPIRY_WARNING_LEAD_DAYS = 5;
+
+export interface ExpiringSoonGrantSummary {
+  userId: string;
+  grantId: string;
+  creditsRemaining: number;
+  expiresAt: Date;
+}
+
+/**
+ * Finds CreditGrants expiring within the next EXPIRY_WARNING_LEAD_DAYS days
+ * that still have unused credits and haven't already been warned about,
+ * and marks them warned. Purely a heads-up: unlike expireDueCreditGrants,
+ * this never touches classCredits or creditsRemaining — nothing has
+ * actually lapsed yet, so there's nothing to charge or reconcile, just a
+ * notify-once guard to set. Low enough stakes (a duplicate notice at worst,
+ * never a balance error) that this doesn't need expireDueCreditGrants's own
+ * per-row transaction — one query to find the grants, one to mark them.
+ *
+ * Returns one summary per grant just warned, for the caller
+ * (netlify/functions/credit-expiry.ts) to notify the student from.
+ */
+export async function warnExpiringSoonCreditGrants(now: Date = new Date()): Promise<ExpiringSoonGrantSummary[]> {
+  const warningWindowEnd = new Date(now.getTime() + EXPIRY_WARNING_LEAD_DAYS * 24 * 60 * 60 * 1000);
+  const dueSoon = await prisma.creditGrant.findMany({
+    where: {
+      expiresAt: { gt: now, lte: warningWindowEnd },
+      expiringSoonNotifiedAt: null,
+      expiredAt: null,
+      creditsRemaining: { gt: 0 },
+    },
+  });
+  if (dueSoon.length === 0) return [];
+
+  await prisma.creditGrant.updateMany({ where: { id: { in: dueSoon.map((g) => g.id) } }, data: { expiringSoonNotifiedAt: now } });
+
+  return dueSoon.map((grant) => ({
+    userId: grant.userId,
+    grantId: grant.id,
+    creditsRemaining: grant.creditsRemaining,
+    expiresAt: grant.expiresAt!, // guaranteed by the where clause's expiresAt: { gt: now } above
+  }));
+}
