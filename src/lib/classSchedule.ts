@@ -4,6 +4,7 @@ import { createNotification } from "@/lib/notifications";
 import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { getRoadmap, type ScaleAccessState } from "@/lib/access";
 import { resolveNextStep } from "@/lib/next-step";
+import { drawDownCredits } from "@/lib/creditLedger";
 
 export class ClassBookingError extends Error {}
 
@@ -29,8 +30,12 @@ export const GROUP_CREDITS_PER_STUDENT = 2;
 export const CANCELLATION_CUTOFF_HOURS = 24;
 // How many upcoming weeks of each weekly slot to surface as bookable —
 // a fixed planning horizon rather than an unbounded "forever" list, since
-// the schedule itself repeats indefinitely.
-const OCCURRENCES_PER_SLOT = 4;
+// the schedule itself repeats indefinitely. Exported: the reservation-
+// maintenance job (netlify/functions/payment-plan-reservations.ts) keeps
+// this exact same rolling window auto-booked for a Payment Plan's reserved
+// slot, not just "next week" — the same horizon a student sees, kept
+// actually booked rather than just displayed.
+export const OCCURRENCES_PER_SLOT = 4;
 const ET_ZONE = "America/New_York";
 
 // ---------------------------------------------------------------------------
@@ -110,7 +115,7 @@ interface ScheduleChunk {
   creditCost: number;
 }
 
-function chunksForSchedule(schedule: { durationMin: number }): ScheduleChunk[] {
+export function chunksForSchedule(schedule: { durationMin: number }): ScheduleChunk[] {
   const chunks: ScheduleChunk[] = [];
   for (let offsetMin = 0; offsetMin < schedule.durationMin; offsetMin += CHUNK_MIN) {
     const remainingMin = schedule.durationMin - offsetMin;
@@ -136,13 +141,55 @@ export interface ClassOccurrence {
   isBooked: boolean;
 }
 
+/**
+ * The next `count` calendar dates (ET, stored as UTC midnight) that fall on
+ * `dayOfWeek`, starting from today — the date-walking half of
+ * getUpcomingOccurrences's own loop, factored out so the reservation-
+ * maintenance job (payment-plan-reservations.ts) can walk one specific
+ * schedule's dayOfWeek the exact same way, without a second copy of this
+ * logic. Deliberately time-of-day-agnostic (that's chunksForSchedule's
+ * concern) — this only matches calendar dates, and always returns up to
+ * `count` of them regardless of whether the earliest ones are already in
+ * the past today (see this function's only caller below for why that's
+ * correct: the actual "already passed" filtering happens per-chunk, not
+ * per-date).
+ */
+export function nextOccurrenceDates(dayOfWeek: number, count: number): Date[] {
+  const { year, month, day } = todayInEt();
+  const todayUtcMidnight = Date.UTC(year, month - 1, day);
+
+  const dates: Date[] = [];
+  // 8 weeks is comfortably more than enough to find `count` matches for any
+  // weekday; this is just a safety bound, not a real limit.
+  for (let offsetDays = 0; offsetDays < 56 && dates.length < count; offsetDays++) {
+    const candidateDate = new Date(todayUtcMidnight + offsetDays * 86_400_000);
+    if (candidateDate.getUTCDay() !== dayOfWeek) continue;
+    dates.push(candidateDate);
+  }
+  return dates;
+}
+
+/**
+ * The real UTC instant a specific chunk of a schedule starts on a specific
+ * occurrence date — the same etWallTimeToUtc + chunk.offsetMin computation
+ * bookClass/bookFamilyClass/getUpcomingOccurrences each already do inline,
+ * factored out here so the reservation-maintenance job
+ * (payment-plan-reservations.ts) can compute it for a plan's own reserved
+ * chunk without a second copy of the logic.
+ */
+export function computeScheduledAt(schedule: { startTime: string }, occurrenceDate: Date, chunk: ScheduleChunk): Date {
+  const { hour, minute } = parseStartTime(schedule.startTime);
+  return new Date(
+    etWallTimeToUtc(occurrenceDate.getUTCFullYear(), occurrenceDate.getUTCMonth() + 1, occurrenceDate.getUTCDate(), hour, minute).getTime() +
+      chunk.offsetMin * 60_000,
+  );
+}
+
 /** Every active weekly slot's next OCCURRENCES_PER_SLOT bookable chunks, with live availability. */
 export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
   const schedules = await prisma.classSchedule.findMany({ where: { active: true }, orderBy: { dayOfWeek: "asc" } });
   if (schedules.length === 0) return [];
 
-  const { year, month, day } = todayInEt();
-  const todayUtcMidnight = Date.UTC(year, month - 1, day);
   const now = Date.now();
 
   const candidates: {
@@ -155,14 +202,8 @@ export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
   for (const schedule of schedules) {
     const { hour, minute } = parseStartTime(schedule.startTime);
     const chunks = chunksForSchedule(schedule);
-    let found = 0;
-    // 8 weeks is comfortably more than enough to find OCCURRENCES_PER_SLOT
-    // matches for any weekday; this is just a safety bound, not a real limit.
-    for (let offsetDays = 0; offsetDays < 56 && found < OCCURRENCES_PER_SLOT; offsetDays++) {
-      const candidateUtcMidnight = todayUtcMidnight + offsetDays * 86_400_000;
-      const candidateDate = new Date(candidateUtcMidnight);
-      if (candidateDate.getUTCDay() !== schedule.dayOfWeek) continue;
 
+    for (const candidateDate of nextOccurrenceDates(schedule.dayOfWeek, OCCURRENCES_PER_SLOT)) {
       const baseScheduledAt = etWallTimeToUtc(
         candidateDate.getUTCFullYear(),
         candidateDate.getUTCMonth() + 1,
@@ -176,7 +217,6 @@ export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
         if (scheduledAt.getTime() <= now) continue; // this chunk already started/passed today
         candidates.push({ schedule, chunk, occurrenceDate: candidateDate, scheduledAt });
       }
-      found++;
     }
   }
 
@@ -217,6 +257,22 @@ export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
 // ---------------------------------------------------------------------------
 // Booking
 // ---------------------------------------------------------------------------
+
+/**
+ * Matches a PaymentPlan whose weekly reservation (reservedScheduleId/
+ * reservedChunkIndex) is still "live" — ACTIVE, or COMPLETED with a
+ * not-yet-expired CreditGrant against it. The COMPLETED-with-a-live-grant
+ * case matters because a plan finishing its final paid installment
+ * shouldn't instantly lose its exclusivity and auto-booking the moment that
+ * last payment clears — the credits from that last cycle are still good and
+ * the student is still using the slot. Shared by every reservation-
+ * exclusivity check in this file (and by paymentPlans.ts's own enrollment-
+ * time check), so "what counts as a live reservation" can't drift between
+ * them.
+ */
+export function livePaymentPlanConditions(): Prisma.PaymentPlanWhereInput[] {
+  return [{ status: "ACTIVE" }, { status: "COMPLETED", creditGrants: { some: { expiresAt: { gt: new Date() }, expiredAt: null } } }];
+}
 
 /**
  * A student's own credit balance minus whatever's already reserved by their
@@ -305,6 +361,22 @@ export async function bookClass(
         const takenByAnyone = await tx.classBooking.findFirst({ where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED" } });
         if (takenByAnyone && takenByAnyone.studentId !== studentId) {
           throw new ClassBookingError("This time was just booked by someone else — pick another slot.");
+        }
+
+        // Defense-in-depth against a Payment Plan's own reserved slot —
+        // layer 3 of 3 (see livePaymentPlanConditions's own comment and
+        // PaymentPlan.reservedScheduleId's schema comment). In the normal
+        // case the daily reservation-maintenance job already makes this
+        // slot show up as taken above, once its own ClassBooking rows
+        // exist; this covers the gap between an enrollment and that job's
+        // next run. The reservation holder booking their own slot is
+        // allowed through — only a *different* student is blocked.
+        const reservedByOtherPlan = await tx.paymentPlan.findFirst({
+          where: { reservedScheduleId: scheduleId, reservedChunkIndex: chunkIndex, userId: { not: studentId }, OR: livePaymentPlanConditions() },
+          select: { id: true },
+        });
+        if (reservedByOtherPlan) {
+          throw new ClassBookingError("This time is reserved for another student's payment plan.");
         }
 
         // (studentId, scheduleId, occurrenceDate) is unique, so a student who
@@ -640,6 +712,19 @@ export async function bookFamilyClass(
         const takenByAnyone = await tx.classBooking.findFirst({ where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED" } });
         if (takenByAnyone) throw new ClassBookingError("This time was just booked — pick another slot.");
 
+        // Same defense-in-depth as bookClass's own guard (see its comment) —
+        // a family booking never coincides with a solo Payment Plan
+        // reservation on the same chunk, regardless of who's in the family
+        // group, since the reservation's own auto-booking is always a solo
+        // row for exactly one student.
+        const reservedByPlan = await tx.paymentPlan.findFirst({
+          where: { reservedScheduleId: scheduleId, reservedChunkIndex: chunkIndex, OR: livePaymentPlanConditions() },
+          select: { id: true },
+        });
+        if (reservedByPlan) {
+          throw new ClassBookingError("This time is reserved for another student's payment plan.");
+        }
+
         const created: Prisma.ClassBookingGetPayload<Record<string, never>>[] = [];
         for (const email of normalizedEmails) {
           const attendee = byEmail.get(email)!;
@@ -698,6 +783,166 @@ export async function bookFamilyClass(
   ).catch((err) => console.error("Admin family booking notification failed (non-blocking):", err));
 
   return bookings;
+}
+
+// ---------------------------------------------------------------------------
+// Reserved recurring slots — a Payment Plan's own weekly day/time, held
+// exclusively for as long as the plan (or its final still-live CreditGrant)
+// stays active. See PaymentPlan.reservedScheduleId's schema comment and
+// paymentPlans.ts's createPaymentPlan for enrollment; the daily
+// netlify/functions/payment-plan-reservations.ts job is what actually keeps
+// a rolling OCCURRENCES_PER_SLOT window of real ClassBooking rows booked
+// against a reservation, using createReservedBookingIfAbsent below.
+// ---------------------------------------------------------------------------
+
+export interface ReservableSlot {
+  scheduleId: string;
+  label: string | null;
+  dayOfWeek: number;
+  startTime: string;
+  chunkIndex: number;
+  /** This chunk's own credit ceiling — always >= creditsPerWeek, the same meaning ClassOccurrence.creditCost has. */
+  creditCost: number;
+}
+
+/**
+ * Every active schedule's chunks with room for `creditsPerWeek`, excluding
+ * (a) any chunk another live Payment Plan already reserves (see
+ * livePaymentPlanConditions) and (b) any chunk that isn't reserved by a
+ * plan but already has an ordinary self-serve ClassBooking (from bookClass/
+ * bookFamilyClass, made before any reservation existed) on one of its own
+ * upcoming OCCURRENCES_PER_SLOT occurrences — reserving over that would let
+ * the maintenance job silently create a second, conflicting booking for the
+ * same instant the next time it runs. Feeds the enrollment slot picker.
+ * Unlike getUpcomingOccurrences, this is otherwise not about any specific
+ * week: a reservation is a standing claim on the recurring slot itself.
+ */
+export async function getReservableSlots(creditsPerWeek: number): Promise<ReservableSlot[]> {
+  const [schedules, reservedPlans] = await Promise.all([
+    prisma.classSchedule.findMany({ where: { active: true }, orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }] }),
+    prisma.paymentPlan.findMany({
+      where: { reservedScheduleId: { not: null }, OR: livePaymentPlanConditions() },
+      select: { reservedScheduleId: true, reservedChunkIndex: true },
+    }),
+  ]);
+
+  const reservedKeys = new Set(reservedPlans.map((p) => `${p.reservedScheduleId}:${p.reservedChunkIndex}`));
+
+  const candidates: { schedule: (typeof schedules)[number]; chunk: ScheduleChunk }[] = [];
+  for (const schedule of schedules) {
+    for (const chunk of chunksForSchedule(schedule)) {
+      if (chunk.creditCost < creditsPerWeek) continue;
+      if (reservedKeys.has(`${schedule.id}:${chunk.chunkIndex}`)) continue;
+      candidates.push({ schedule, chunk });
+    }
+  }
+  if (candidates.length === 0) return [];
+
+  // One grouped query across every remaining candidate's own upcoming
+  // occurrences, same shape as getUpcomingOccurrences's own bookedKeys
+  // query, rather than one query per candidate.
+  const instants = candidates.flatMap(({ schedule, chunk }) =>
+    nextOccurrenceDates(schedule.dayOfWeek, OCCURRENCES_PER_SLOT).map((occurrenceDate) => ({
+      chunkKey: `${schedule.id}:${chunk.chunkIndex}`,
+      scheduleId: schedule.id,
+      occurrenceDate,
+      scheduledAt: computeScheduledAt(schedule, occurrenceDate, chunk),
+    })),
+  );
+  const bookedCounts = await prisma.classBooking.groupBy({
+    by: ["scheduleId", "occurrenceDate", "scheduledAt"],
+    where: {
+      status: "SCHEDULED",
+      OR: instants.map((i) => ({ scheduleId: i.scheduleId, occurrenceDate: i.occurrenceDate, scheduledAt: i.scheduledAt })),
+    },
+    _count: { _all: true },
+  });
+  const bookedInstantKeys = new Set(
+    bookedCounts.filter((b) => b._count._all > 0).map((b) => `${b.scheduleId}:${b.occurrenceDate.getTime()}:${b.scheduledAt.getTime()}`),
+  );
+  const chunksWithConflict = new Set(
+    instants
+      .filter((i) => bookedInstantKeys.has(`${i.scheduleId}:${i.occurrenceDate.getTime()}:${i.scheduledAt.getTime()}`))
+      .map((i) => i.chunkKey),
+  );
+
+  return candidates
+    .filter(({ schedule, chunk }) => !chunksWithConflict.has(`${schedule.id}:${chunk.chunkIndex}`))
+    .map(({ schedule, chunk }) => ({
+      scheduleId: schedule.id,
+      label: schedule.label,
+      dayOfWeek: schedule.dayOfWeek,
+      startTime: schedule.startTime,
+      chunkIndex: chunk.chunkIndex,
+      creditCost: chunk.creditCost,
+    }));
+}
+
+export interface ReservedBookingParams {
+  studentId: string;
+  scheduleId: string;
+  occurrenceDate: Date;
+  scheduledAt: Date;
+  creditsSpent: number;
+  planId: string;
+}
+
+/**
+ * Creates (or reuses a CANCELED row for) one week's booking backing a
+ * Payment Plan's reservation — the building block
+ * netlify/functions/payment-plan-reservations.ts calls once per plan per
+ * occurrence in its rolling window. Same "reuse a CANCELED row for this
+ * occurrence instead of hitting the unique constraint" idiom bookClass
+ * already uses. No-ops (returns null) if a SCHEDULED row for this exact
+ * (studentId, scheduleId, occurrenceDate) already exists — from an earlier
+ * run of this same job, or the student booking it themselves — rather than
+ * erroring, since "already booked" is the steady state here most days, not
+ * a failure. `db` defaults to the plain client, same convention as
+ * addClassCredits — the caller wraps in its own transaction/retry if it
+ * needs one (see the P2002 handling in payment-plan-reservations.ts).
+ */
+export async function createReservedBookingIfAbsent(
+  params: ReservedBookingParams,
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+) {
+  const { studentId, scheduleId, occurrenceDate, scheduledAt, creditsSpent, planId } = params;
+
+  const existing = await db.classBooking.findUnique({
+    where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId, occurrenceDate } },
+  });
+  if (existing?.status === "SCHEDULED") return null;
+
+  // Defense-in-depth against a different student somehow already holding
+  // this exact instant despite the enrollment-time conflict check
+  // (createPaymentPlan) and bookClass/bookFamilyClass's own reserved-slot
+  // guard — should be unreachable in practice, but this is what stops the
+  // maintenance job from ever creating a second, silently conflicting
+  // SCHEDULED row instead of just skipping and letting an admin notice.
+  const conflict = await db.classBooking.findFirst({
+    where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED", studentId: { not: studentId } },
+    select: { id: true },
+  });
+  if (conflict) {
+    console.error(
+      `Reserved booking conflict: plan ${planId}'s student ${studentId} vs. existing booking ${conflict.id} at schedule ${scheduleId}, ${occurrenceDate.toISOString()} — skipped, needs admin attention.`,
+    );
+    return null;
+  }
+
+  const data = {
+    scheduledAt,
+    creditsSpent,
+    status: "SCHEDULED" as const,
+    attendance: null,
+    refunded: false,
+    canceledReason: null,
+    familyBookingGroupId: null,
+    reservedByPlanId: planId,
+  };
+
+  return existing
+    ? db.classBooking.update({ where: { id: existing.id }, data })
+    : db.classBooking.create({ data: { studentId, scheduleId, occurrenceDate, ...data } });
 }
 
 export async function getClassCreditBalance(userId: string): Promise<number> {
@@ -916,6 +1161,15 @@ export async function markAttendance(bookingId: string, attendance: AttendanceSt
       await tx.user.update({ where: { id: booking.studentId }, data: { classCredits: { decrement: booking.creditsSpent } } });
     }
   });
+  // Best-effort ledger draw-down, outside the transaction above on purpose
+  // (see drawDownCredits's own comment) — the real charge already landed
+  // unconditionally, this just keeps CreditGrant's bookkeeping roughly in
+  // sync with it. Skipped entirely on a re-mark (alreadyCharged): the one
+  // real charge, and the one real draw-down, both already happened on the
+  // first call.
+  if (!alreadyCharged) {
+    await drawDownCredits(booking.studentId, booking.creditsSpent);
+  }
 }
 
 /**
@@ -1011,7 +1265,24 @@ export async function createClassSchedule(input: ClassScheduleInput) {
   });
 }
 
+/**
+ * Blocks a day/time/duration edit while any ACTIVE Payment Plan reserves
+ * this schedule (any chunk within it) — an edit here would silently move or
+ * shrink a slot a student is actively paying to hold. Deliberately not
+ * checked in setClassScheduleActive (deactivation): the daily reservation
+ * job's own notify-once-and-skip handling is the intended path for that
+ * case, not a blocked action here — see PaymentPlan.reservedSlotInactiveNotifiedAt.
+ */
 export async function updateClassSchedule(scheduleId: string, input: ClassScheduleInput) {
+  const reservationCount = await prisma.paymentPlan.count({ where: { reservedScheduleId: scheduleId, status: "ACTIVE" } });
+  if (reservationCount > 0) {
+    throw new ClassScheduleError(
+      `${reservationCount} active payment plan${reservationCount === 1 ? "" : "s"} reserve${reservationCount === 1 ? "s" : ""} this schedule — cancel ${
+        reservationCount === 1 ? "it" : "them"
+      } or wait for ${reservationCount === 1 ? "it" : "them"} to complete before changing its time.`,
+    );
+  }
+
   const durationMin = resolveDurationMin(input.startTime, input.endTime);
   return prisma.classSchedule.update({
     where: { id: scheduleId },

@@ -28,6 +28,16 @@ const STATUS_STYLE: Record<string, string> = {
   CANCELED: "bg-slate-800 text-slate-500",
 };
 
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** Same small "HH:mm" -> "H:MM AM/PM" formatter AdminScheduleManager.tsx already has, duplicated on purpose rather than shared — same convention this codebase already uses for small per-boundary formatting helpers. */
+function formatTimeLabel(hhmm: string): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
+}
+
 /**
  * Admin-only visibility + the one manual action this app offers for a plan:
  * canceling it. Approving/rejecting an individual installment's actual
@@ -93,6 +103,14 @@ export function PaymentPlanList({ plans, onCancel, emptyMessage = "No plans to s
             <div>
               <dt className="text-xs text-slate-600">Started</dt>
               <dd className="text-slate-300">{new Date(plan.createdAt).toLocaleDateString()}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-slate-600">Reserved slot</dt>
+              <dd className="text-slate-300">
+                {plan.reservedSchedule
+                  ? `${DAY_LABELS[plan.reservedSchedule.dayOfWeek]} ${formatTimeLabel(plan.reservedSchedule.startTime)}${plan.reservedSchedule.label ? ` · ${plan.reservedSchedule.label}` : ""}`
+                  : "None"}
+              </dd>
             </div>
           </dl>
 

@@ -53,7 +53,7 @@ const FAQS = [
   },
   {
     q: "How do live lessons work?",
-    a: `Book one-on-one time with your teacher (up to ${SOLO_MAX_CREDITS} credits, about an hour), or a family session if siblings are learning together (${FAMILY_CREDITS_PER_STUDENT} credits per student). Solo credits come from a Payment Plan — Monthly, 3-Month, 6-Month, or Yearly, paid one Zelle installment at a time — while family bundles are still priced per credit at ${formatUsd(CREDIT_BASE_PRICE_CENTS)} at full price. Either way, credits never expire.`,
+    a: `Book one-on-one time with your teacher (up to ${SOLO_MAX_CREDITS} credits, about an hour), or a family session if siblings are learning together (${FAMILY_CREDITS_PER_STUDENT} credits per student). Solo credits come from a Payment Plan — Monthly, 3-Month, 6-Month, or Yearly, paid one Zelle installment at a time — which reserves your weekly day and time exclusively and expires with that installment's monthly cycle if unused. Family bundles are priced per credit at ${formatUsd(CREDIT_BASE_PRICE_CENTS)} at full price and never expire.`,
   },
   {
     q: "Can I cancel a booked lesson?",

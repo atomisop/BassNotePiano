@@ -50,12 +50,12 @@ enum PaymentPurpose {
 // monthly installments over a locked term (3/6/12 months), at that term's
 // discounted rate — Zelle only, no auto-billing, ever. This model is the
 // commitment itself (cadence, term, locked rate, progress); it never moves
-// money or grants credits on its own. Each individual installment's actual
-// payment is an ordinary ZellePayment row (purpose PAYMENT_PLAN_INSTALLMENT,
-// paymentPlanId pointing back here), going through the exact same
-// AWAITING_TRANSFER -> PENDING_REVIEW -> VERIFIED/REJECTED lifecycle, and the
-// exact same /admin/payments queue, as any other purchase — see
-// approveZellePayment's PAYMENT_PLAN_INSTALLMENT branch in payments.ts.
+// money on its own — each individual installment's actual payment is an
+// ordinary ZellePayment row (purpose PAYMENT_PLAN_INSTALLMENT, paymentPlanId
+// pointing back here), going through the exact same AWAITING_TRANSFER ->
+// PENDING_REVIEW -> VERIFIED/REJECTED lifecycle, and the exact same
+// /admin/payments queue, as any other purchase — see approveZellePayment's
+// PAYMENT_PLAN_INSTALLMENT branch in payments.ts.
 //
 // installmentAmountCents/creditsPerInstallment/termMonths are snapshotted at
 // enrollment from calculatePaymentPlanRate() and never recomputed later, even
@@ -68,6 +68,18 @@ enum PaymentPurpose {
 // `status == ACTIVE && nextDueDate < now`, since nothing needs to notice the
 // date passed and flip a flag — same "the fewest moving parts that can't
 // drift" reasoning as the rest of this app's status handling.
+//
+// reservedScheduleId/reservedChunkIndex: the plan's own weekly day/time,
+// exclusively theirs for as long as the plan (or its final still-live
+// CreditGrant) stays active — see src/lib/classSchedule.ts's
+// getReservableSlots/createReservedBookingIfAbsent and the daily
+// netlify/functions/payment-plan-reservations.ts job that keeps a rolling
+// window of real ClassBooking rows booked against it. Null only for a
+// hypothetical plan enrolled before this existed; every new enrollment sets
+// both. reservedSlotInactiveNotifiedAt guards the one-time "your slot isn't
+// offered anymore" notice if an admin deactivates the underlying schedule —
+// reset to null if it's reactivated, so a later deactivation can notify
+// again.
 model PaymentPlan {
   id     String @id @default(cuid())
   userId String
@@ -83,9 +95,16 @@ model PaymentPlan {
   installmentsPaid Int               @default(0)
   // Anchored to the ORIGINAL schedule and advanced from its own prior value
   // on each approval, never from the approval date itself — a late payment
-  // shows up as late next time, it doesn't quietly reset the clock.
+  // shows up as late next time, it doesn't quietly reset the clock. Also
+  // doubles as the paid-cycle boundary: the CreditGrant created by that same
+  // approval expires at exactly this new value (see payments.ts).
   nextDueDate      DateTime
   status           PaymentPlanStatus @default(ACTIVE)
+
+  reservedScheduleId             String?
+  reservedSchedule               ClassSchedule? @relation(fields: [reservedScheduleId], references: [id])
+  reservedChunkIndex             Int?
+  reservedSlotInactiveNotifiedAt DateTime?
 
   canceledAt       DateTime?
   canceledById     String?
@@ -96,16 +115,19 @@ model PaymentPlan {
   updatedAt DateTime @updatedAt
 
   installmentPayments ZellePayment[]
+  creditGrants        CreditGrant[]
+  reservedBookings    ClassBooking[]
 
   @@index([userId])
   @@index([status, nextDueDate])
+  @@index([reservedScheduleId, reservedChunkIndex, status])
 }
 
 // 4 or 8 credits per monthly installment (30 or 60 min/week), matching
-// SOLO_MAX_CREDITS in classSchedule.ts — this is a pricing/credit-quantity
-// label only, not a scheduling reservation. Enrolling doesn't reserve a
-// recurring class slot; booking stays the same self-serve system against
-// live ClassSchedule occurrences it always is.
+// SOLO_MAX_CREDITS in classSchedule.ts, and also 1 or 2 credits/week (see
+// PLAN_CADENCE_CREDITS_PER_WEEK in classCreditPricing.ts) — what the plan's
+// reserved weekly slot (PaymentPlan.reservedScheduleId/reservedChunkIndex)
+// costs to auto-book each week.
 enum PaymentPlanCadence {
   MIN_30_WEEKLY
   MIN_60_WEEKLY
@@ -130,6 +152,62 @@ enum PaymentPlanStatus {
   ACTIVE
   COMPLETED
   CANCELED
+}
+
+// Secondary bookkeeping only — never a replacement for User.classCredits,
+// which stays the fast, authoritative balance every existing reader keeps
+// using unchanged. This table exists purely to answer "which batch of
+// credits is this, where did it come from, when does it lapse" — see
+// src/lib/creditLedger.ts's grantCredits/drawDownCredits/
+// expireDueCreditGrants, all best-effort against this table (never allowed
+// to block or fail the real User.classCredits mutation they run alongside).
+// Only PAYMENT_PLAN_INSTALLMENT grants ever carry a real expiresAt — a
+// Payment Plan credit is good for the ~month the installment paid for, per
+// direct instruction; every other source (Family bundle, legacy a-la-carte,
+// admin grants, and the one-time PRE_LEDGER_BALANCE backfill below) stays
+// genuinely non-expiring, expiresAt null.
+enum CreditGrantSource {
+  PAYMENT_PLAN_INSTALLMENT
+  FAMILY_BUNDLE
+  CLASS_CREDITS
+  ADMIN_ADJUSTMENT
+  PRE_LEDGER_BALANCE // one-time migration backfill for balances that predate this table — see that migration's data backfill
+}
+
+model CreditGrant {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  source CreditGrantSource
+
+  // Only set for source == PAYMENT_PLAN_INSTALLMENT — links this grant back
+  // to the plan whose reservation it's keeping alive (see PaymentPlan's own
+  // "COMPLETED with a live grant still counts" reservation-maintenance
+  // logic). No onDelete keyword (defaults to SetNull): a grant row is a
+  // historical/audit record and should outlive its plan if the plan row
+  // itself is ever removed.
+  paymentPlanId String?
+  paymentPlan   PaymentPlan? @relation(fields: [paymentPlanId], references: [id])
+
+  creditsGranted   Int
+  // Drawn down by drawDownCredits as the student actually spends credits
+  // (soonest-expiring grants first) and by expireDueCreditGrants once
+  // expiresAt passes. Best-effort: this can drift from the truth
+  // (User.classCredits) under concurrent activity, and that's an accepted,
+  // bounded trade-off — see creditLedger.ts's own comment.
+  creditsRemaining Int
+  expiresAt        DateTime?
+  // Stamped once expireDueCreditGrants has processed this row, so a repeat
+  // sweep run never double-decrements it.
+  expiredAt        DateTime?
+
+  grantedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([userId, creditsRemaining])
+  @@index([expiresAt])
+  @@index([paymentPlanId])
 }
 
 // Kept only for LessonType/LessonBooking below, which are now historical —
@@ -268,6 +346,8 @@ enum NotificationType {
   PAYMENT_PLAN_INSTALLMENT_OVERDUE // to the student, escalating reminder while an installment stays unpaid past its due date
   PAYMENT_PLAN_COMPLETED // to the student, when their final installment is verified and the plan is fully paid off
   PAYMENT_PLAN_CANCELED // to the student, when an admin cancels their plan
+  CREDITS_EXPIRED // to the student, when unused Payment Plan credits lapse at the end of their paid cycle
+  RESERVED_SLOT_UNAVAILABLE // to the student, when an admin deactivates the weekly schedule their Payment Plan reserves
 }
 
 // The in-app inbox is the source of truth — always written regardless of
@@ -595,6 +675,8 @@ model User {
   paymentPlans         PaymentPlan[] @relation("PaymentPlanStudent")
   paymentPlansCanceled PaymentPlan[] @relation("PaymentPlanCanceledBy") // admin side of an admin-canceled plan
 
+  creditGrants CreditGrant[]
+
   creditAdjustmentsReceived CreditAdjustment[] @relation("CreditAdjustmentRecipient")
   creditAdjustmentsGranted  CreditAdjustment[] @relation("CreditAdjustmentGrantedBy")
 
@@ -606,12 +688,12 @@ model User {
   loginEvents       LoginEvent[]
   badges            UserBadge[]
 
-  assistantFeedback              AssistantFeedback[]
-  assistantEscalations           AssistantEscalation[] @relation("AssistantEscalationSubmitter")
-  assistantEscalationsResolved   AssistantEscalation[] @relation("AssistantEscalationResolver")
-  supportMessagesSent            SupportMessage[]       @relation("SupportMessageSentBy")
-  assistantConversation          AssistantConversationMessage[]
-  familyBundlesReceived          FamilyBundleRecipient[]
+  assistantFeedback            AssistantFeedback[]
+  assistantEscalations         AssistantEscalation[]          @relation("AssistantEscalationSubmitter")
+  assistantEscalationsResolved AssistantEscalation[]          @relation("AssistantEscalationResolver")
+  supportMessagesSent          SupportMessage[]               @relation("SupportMessageSentBy")
+  assistantConversation        AssistantConversationMessage[]
+  familyBundlesReceived        FamilyBundleRecipient[]
 
   sentFriendRequests     FriendRequest[]      @relation("FriendRequestSender")
   receivedFriendRequests FriendRequest[]      @relation("FriendRequestReceiver")
@@ -857,23 +939,23 @@ enum AssistantEscalationStatus {
 // createAssistantEscalation in src/lib/assistantEscalation.ts) is what
 // leads an admin to /admin/support to pick it up.
 model AssistantEscalation {
-  id           String                     @id @default(cuid())
-  identifier   String
-  userId       String?
-  user         User?                      @relation("AssistantEscalationSubmitter", fields: [userId], references: [id], onDelete: SetNull)
-  contactName  String?
-  contactEmail String
-  status       AssistantEscalationStatus @default(OPEN)
+  id              String                    @id @default(cuid())
+  identifier      String
+  userId          String?
+  user            User?                     @relation("AssistantEscalationSubmitter", fields: [userId], references: [id], onDelete: SetNull)
+  contactName     String?
+  contactEmail    String
+  status          AssistantEscalationStatus @default(OPEN)
   // Bumped every time any admin opens this thread in /admin/support — a
   // single shared "last read" rather than per-admin, same collective-inbox
   // model messages.ts already uses for admin threads. Drives the unread dot
   // in the thread list: any SupportMessage(sender: VISITOR) newer than this
   // is unread. Null means "never opened."
   adminLastReadAt DateTime?
-  resolvedAt   DateTime?
-  resolvedById String?
-  resolvedBy   User?                      @relation("AssistantEscalationResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
-  createdAt    DateTime                   @default(now())
+  resolvedAt      DateTime?
+  resolvedById    String?
+  resolvedBy      User?                     @relation("AssistantEscalationResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  createdAt       DateTime                  @default(now())
 
   messages SupportMessage[]
 
@@ -1184,7 +1266,8 @@ model ClassSchedule {
 
   createdAt DateTime @default(now())
 
-  bookings ClassBooking[]
+  bookings        ClassBooking[]
+  reservedByPlans PaymentPlan[]
 
   @@index([dayOfWeek, active])
 }
@@ -1223,6 +1306,16 @@ model ClassBooking {
   // Null for a solo 1:1 booking, which needs no such grouping.
   familyBookingGroupId String?
 
+  // Set only on a row the daily reservation job auto-created for a Payment
+  // Plan's own reserved weekly slot (see PaymentPlan.reservedScheduleId) —
+  // never set on a booking a student made by hand, even for that same
+  // schedule/chunk. Lets cancelPaymentPlan bulk-cancel exactly its own
+  // plan's future auto-bookings without touching anything else. No
+  // onDelete keyword (defaults to SetNull): a booking's own history should
+  // outlive the plan row if it's ever removed.
+  reservedByPlanId String?
+  reservedByPlan   PaymentPlan? @relation(fields: [reservedByPlanId], references: [id])
+
   status         ClassBookingStatus @default(SCHEDULED)
   attendance     AttendanceStatus? // set by admin after the class happens; null until marked
   // True once this booking was actually canceled before ever being charged
@@ -1239,6 +1332,7 @@ model ClassBooking {
   @@index([scheduleId, occurrenceDate, status])
   @@index([studentId, status])
   @@index([familyBookingGroupId])
+  @@index([reservedByPlanId])
 }
 
 // Audit trail for every manual admin change to a student's classCredits

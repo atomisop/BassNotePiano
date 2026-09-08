@@ -1,14 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { PaymentPlanCadence, PaymentPlanTerm, ZellePaymentStatus } from "@prisma/client";
 import { calculatePaymentPlanRate, describePaymentPlan } from "@/lib/classCreditPricing";
+import type { ReservableSlot } from "@/lib/classSchedule";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { enrollInPaymentPlanAction, submitPlanInstallmentPaymentAction } from "./actions";
+import { enrollInPaymentPlanAction, getReservableSlotsAction, submitPlanInstallmentPaymentAction } from "./actions";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+}
+
+const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+/** "14:00" -> "2:00 PM" — matches AdminScheduleManager.tsx's own formatTimeLabel, kept as its own small copy rather than a shared import across the admin/student boundary (same "duplicated on purpose" convention this codebase already uses for e.g. requireAdmin()). */
+function formatTimeLabel(hhmm: string): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
 }
 
 const CADENCE_OPTIONS: { value: PaymentPlanCadence; label: string }[] = [
@@ -63,6 +74,9 @@ export function PaymentPlanEnrollmentFlow({
 }: PaymentPlanEnrollmentFlowProps) {
   const [cadence, setCadence] = useState<PaymentPlanCadence>(initialCadence ?? "MIN_30_WEEKLY");
   const [term, setTerm] = useState<PaymentPlanTerm>(initialTerm ?? "TERM_6");
+  const [slots, setSlots] = useState<ReservableSlot[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(true);
+  const [selectedSlot, setSelectedSlot] = useState<ReservableSlot | null>(null);
   const [acknowledged, setAcknowledged] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,10 +86,31 @@ export function PaymentPlanEnrollmentFlow({
 
   const rate = calculatePaymentPlanRate(cadence, term);
 
+  // Re-fetched whenever cadence changes (not term — a slot's room only
+  // depends on the weekly credit cost, which is cadence-only, see
+  // PLAN_CADENCE_CREDITS_PER_WEEK). Selection is cleared on change rather
+  // than silently carried over, since the previous pick might not even be
+  // in the new list.
+  useEffect(() => {
+    let cancelled = false;
+    setSlotsLoading(true);
+    setSelectedSlot(null);
+    getReservableSlotsAction(cadence).then((result) => {
+      if (!cancelled) {
+        setSlots(result);
+        setSlotsLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [cadence]);
+
   async function handleEnroll() {
+    if (!selectedSlot) return;
     setLoading(true);
     setError(null);
-    const result = await enrollInPaymentPlanAction(cadence, term);
+    const result = await enrollInPaymentPlanAction(cadence, term, selectedSlot.scheduleId, selectedSlot.chunkIndex);
     setLoading(false);
     if (!result.ok || !result.planId || !result.installmentPaymentId || result.amountCents === null) {
       setError(result.error ?? "Something went wrong starting your plan.");
@@ -173,6 +208,40 @@ export function PaymentPlanEnrollmentFlow({
         </div>
       </div>
 
+      <div>
+        <p className="mb-2 text-xs font-medium text-slate-400">Your weekly time</p>
+        {slotsLoading ? (
+          <div className="flex items-center justify-center rounded-lg border border-ink/10 py-6">
+            <MorphingSquare size={16} />
+          </div>
+        ) : slots.length === 0 ? (
+          <p className="rounded-lg border border-ink/10 px-3.5 py-3 text-xs text-slate-500">
+            No open weekly times for this cadence right now — message us and we&apos;ll help you find one.
+          </p>
+        ) : (
+          <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+            {slots.map((slot) => {
+              const active = selectedSlot?.scheduleId === slot.scheduleId && selectedSlot?.chunkIndex === slot.chunkIndex;
+              return (
+                <button
+                  key={`${slot.scheduleId}:${slot.chunkIndex}`}
+                  type="button"
+                  onClick={() => setSelectedSlot(slot)}
+                  className={`flex w-full items-center justify-between rounded-lg border px-3.5 py-2.5 text-left transition ${
+                    active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
+                  }`}
+                >
+                  <span className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>
+                    {DAY_LABELS[slot.dayOfWeek]} {formatTimeLabel(slot.startTime)}
+                  </span>
+                  {slot.label && <span className="text-xs text-slate-500">{slot.label}</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <div className="rounded-xl border border-ink/10 p-4 sm:p-5">
         <div className="flex items-center justify-between text-sm text-slate-400">
           <span>
@@ -185,6 +254,10 @@ export function PaymentPlanEnrollmentFlow({
         <div className="mt-2 flex items-center justify-between border-t border-ink/10 pt-2 text-base font-semibold text-slate-50">
           <span>{rate.termMonths === 1 ? "Due now" : "Due each month"}</span>
           <span>{formatUsd(rate.installmentAmountCents)}</span>
+        </div>
+        <div className="mt-1 flex items-center justify-between text-xs text-slate-500">
+          <span>= {formatUsd(Math.round(rate.installmentAmountCents / rate.creditsPerInstallment))}/credit (30 min)</span>
+          <span>{rate.creditsPerInstallment} credits/month</span>
         </div>
         <p className="mt-2 text-xs text-slate-500">
           {rate.termMonths === 1
@@ -204,9 +277,11 @@ export function PaymentPlanEnrollmentFlow({
           {rate.termMonths === 1
             ? `I'm paying for one month of credits (${formatUsd(rate.installmentAmountCents)}), no further commitment.`
             : `I'm committing to ${rate.termMonths} monthly installments of ${formatUsd(rate.installmentAmountCents)} each.`}{" "}
-          Enrolling doesn&apos;t reserve a recurring class time — booking stays the same self-serve system it always is.
-          Money spent is <span className="font-medium text-[rgb(var(--c-s-50))]">non-refundable</span> once a credit is
-          used, same as any class credit purchase.
+          My selected weekly time is reserved for me exclusively and auto-booked every week this plan stays
+          active. If I skip a week, I make it up on another week before that installment&apos;s cycle ends — an
+          unused credit is <span className="font-medium text-[rgb(var(--c-s-50))]">forfeited</span> once its cycle
+          expires. Money spent is <span className="font-medium text-[rgb(var(--c-s-50))]">non-refundable</span> once
+          a credit is used.
         </span>
       </label>
 
@@ -215,7 +290,7 @@ export function PaymentPlanEnrollmentFlow({
       <button
         type="button"
         onClick={handleEnroll}
-        disabled={loading || !acknowledged}
+        disabled={loading || !acknowledged || !selectedSlot}
         className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading && <MorphingSquare size={14} className="mr-2 shrink-0" />}

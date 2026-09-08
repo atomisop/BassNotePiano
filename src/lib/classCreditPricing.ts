@@ -186,6 +186,17 @@ const PLAN_CADENCE_CREDITS_PER_INSTALLMENT: Record<PaymentPlanCadence, number> =
   MIN_60_WEEKLY: 8,
 };
 
+// What the plan's own reserved weekly slot costs to auto-book each week —
+// PLAN_CADENCE_CREDITS_PER_INSTALLMENT / 4 weeks, kept as its own explicit
+// map rather than divided out at each call site. Used by
+// getReservableSlots/the enrollment slot picker (does this chunk have
+// room?) and the daily reservation-maintenance job (does the student have
+// enough left for this week's occurrence?) — see classSchedule.ts.
+export const PLAN_CADENCE_CREDITS_PER_WEEK: Record<PaymentPlanCadence, number> = {
+  MIN_30_WEEKLY: 1,
+  MIN_60_WEEKLY: 2,
+};
+
 // 0% / 10% / 20% / 30% off — MONTHLY is the no-commitment baseline (the full
 // $120/$240 rate); 10/20/30 are the same three percentages TIERS already
 // uses at its 4/10/20-credit breakpoints, just keyed by committed months

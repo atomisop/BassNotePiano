@@ -47,6 +47,8 @@ function notificationHref(type: string): string | null {
     case "PAYMENT_PLAN_INSTALLMENT_OVERDUE":
     case "PAYMENT_PLAN_COMPLETED":
     case "PAYMENT_PLAN_CANCELED":
+    case "CREDITS_EXPIRED":
+    case "RESERVED_SLOT_UNAVAILABLE":
       return "/billing/plans";
     default:
       return null;
@@ -97,6 +99,8 @@ const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>
   PAYMENT_PLAN_INSTALLMENT_OVERDUE: { key: "billing", label: "Billing" },
   PAYMENT_PLAN_COMPLETED: { key: "billing", label: "Billing" },
   PAYMENT_PLAN_CANCELED: { key: "billing", label: "Billing" },
+  CREDITS_EXPIRED: { key: "billing", label: "Billing" },
+  RESERVED_SLOT_UNAVAILABLE: { key: "billing", label: "Billing" },
   ROLE_UPDATED: { key: "account", label: "Account" },
   FRIEND_REQUEST_RECEIVED: { key: "friends", label: "Friends" },
   FRIEND_REQUEST_ACCEPTED: { key: "friends", label: "Friends" },
