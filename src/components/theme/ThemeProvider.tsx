@@ -8,6 +8,7 @@ import {
   THEME_STORAGE_KEY,
   isLoggedOutPath,
   isThemeId,
+  themeGroundColor,
   themeMode,
   type ThemeChoice,
   type ThemeId,
@@ -32,12 +33,22 @@ function resolve(choice: ThemeChoice): ThemeId {
   return choice === "system" ? systemTheme() : choice;
 }
 
-/** The one place that writes theme/mode onto <html>. */
+/**
+ * The one place that writes theme/mode onto <html> — and, since RootLayout's
+ * `viewport` export can only ever bake in one static default (Paper vs. Ink
+ * is a signed-in-only, client-stored preference, so the server can't know
+ * it ahead of time), the one place that keeps `<meta name="theme-color">` in
+ * sync with whichever theme actually resolved. By the time this runs the
+ * meta tag is already in the DOM (Next renders it from `viewport` on the
+ * server, well before this client effect fires), so this only ever updates
+ * an existing tag rather than racing its insertion.
+ */
 function applyToDocument(theme: ThemeId) {
   const el = document.documentElement;
   el.setAttribute("data-theme", theme);
   el.setAttribute("data-mode", themeMode(theme));
   el.style.colorScheme = themeMode(theme);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", themeGroundColor(theme));
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {

@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Sora, Baloo_2, JetBrains_Mono } from "next/font/google";
 import { Providers } from "./providers";
-import { THEME_BOOT_SCRIPT } from "@/lib/themes";
+import { LOGGED_OUT_THEME, THEME_BOOT_SCRIPT, themeGroundColor } from "@/lib/themes";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -37,6 +37,22 @@ const mono = JetBrains_Mono({
   variable: "--font-mono",
   weight: ["400", "500"],
 });
+
+// Tints iOS/Android browser chrome (the strip around the address bar, and
+// the strip around the bottom toolbar) to match the app instead of the
+// browser's own default gray — without it, that mismatched strip reads as
+// an unwanted extra frame around the real UI, worst right below the fixed
+// bottom dock where there's no page content left to visually cover it.
+// Statically "ink" (not theme-reactive: `viewport` renders on the server,
+// which has no access to a signed-in visitor's client-stored theme choice)
+// — correct for every logged-out page (marketing/auth are locked to Ink,
+// see `LOGGED_OUT_THEME`) and for the default in-app theme; ThemeProvider's
+// `applyToDocument` corrects this client-side for a signed-in visitor who's
+// actually chosen Paper, the same "server guesses, client corrects before
+// paint" split THEME_BOOT_SCRIPT already uses for `data-theme`.
+export const viewport: Viewport = {
+  themeColor: themeGroundColor(LOGGED_OUT_THEME),
+};
 
 // metadataBase is what turns every relative `openGraph.images` / canonical
 // path in the app into an absolute URL. Without it Next emits relative OG
