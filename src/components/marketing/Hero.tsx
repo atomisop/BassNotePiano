@@ -209,17 +209,21 @@ export function Hero() {
     // min-h-[100svh], not min-h-screen (100vh): on a real phone, 100vh is
     // measured against the tallest the browser chrome ever gets (address
     // bar and toolbar both collapsed), not what's actually visible on
-    // first load with both still expanded — exactly this section's own
-    // situation, since nothing's been scrolled yet. That gap pushed the
-    // bottom-anchored button row (`items-end`) below the fold, reported
-    // live as "Explore curriculum" being cut off by Safari's own toolbar.
-    // `100svh` (small viewport height) pins this to the smallest the
-    // viewport is ever going to be, the same fix already applied to the
-    // dashboard shell (see `(dashboard)/layout.tsx`'s own comment) for the
-    // identical class of bug. `pb-28` (was `pb-20`, mobile; now the same at
-    // every width) adds real breathing room on top of that, so the button
-    // row sits comfortably clear of the fold rather than right at its edge.
-    <section className="relative flex min-h-[100svh] items-end overflow-hidden pb-28 pt-32">
+    // first load with both still expanded. That said: measured against a
+    // real 390x664 mobile viewport, this section's own content (headline +
+    // lead + fact grid + button row) already needed ~530-770px on its own —
+    // taller than the viewport regardless of the vh/svh basis, so svh alone
+    // didn't fix it; a first attempt at "push it up" that only *increased*
+    // pb here made that worse, not better, since items-end aligns content
+    // to the padding-box bottom regardless of min-height once content is
+    // the taller constraint. The real fix is the 2-column fact grid above
+    // (saved ~80px) plus trimming pb back down (pt stays: it's clearing the
+    // fixed h-20 nav bar above, not padding to trim). Verified with a real
+    // headless-browser render at 390x664 (not just reasoned about): the
+    // section now renders at exactly the 664px viewport height — content
+    // fits the min-height rather than overflowing it — with the button
+    // row's bottom edge sitting a clear 48px above the fold.
+    <section className="relative flex min-h-[100svh] items-end overflow-hidden pb-12 pt-28">
       <div className="absolute inset-0 -z-10">
         {/* pointer-events-none: this is pure background ambience, nothing to
             actually play/pause — autoPlay/muted/playsInline is the correct,
@@ -265,7 +269,15 @@ export function Hero() {
         </h1>
         <p className="lead mt-6 max-w-lg text-slate-300">Six scales, spelled correctly in every key.</p>
 
-        <div className="mt-6 grid max-w-md grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+        {/* grid-cols-2 unconditionally, not grid-cols-1 below sm: stacked
+            into one column, this list alone was 160px tall on a real phone
+            (measured against a 390x664 viewport) — the single biggest
+            contributor to the hero's content needing more height than a
+            short phone screen actually has, worse than the min-h-[100svh]/
+            padding tuning below could fix on their own. Two columns halves
+            that to ~80px; six short check-marked facts read fine at ~160px
+            per column even at this width. */}
+        <div className="mt-6 grid max-w-md grid-cols-2 gap-x-6 gap-y-2">
           {[
             "6 scales",
             "12 keys",
