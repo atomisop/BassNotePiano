@@ -314,9 +314,30 @@ export function AppDock({ unreadMessageCount }: AppDockProps) {
                 normal dark contact shadow (still doing real work wherever the
                 page behind happens to be lighter, e.g. the Paper theme) with
                 a soft white ambient glow, the same light-not-dark technique
-                the icons above already use to read as lit against black. */}
+                the icons above already use to read as lit against black.
+
+                `!rounded-full` fixes the actual, still-unaddressed source of
+                the corner artifact reported after the backdrop-filter fix
+                above (that fix was real — it closed a genuine bug class —
+                but it wasn't this one). `dock.tsx`'s own `Dock` hardcodes
+                `rounded-2xl` (1rem) on the very same element that also
+                carries `glass-surface-elevated`, which sets its own
+                `border-radius: var(--surface-radius)` (0.75rem on Paper,
+                0.5rem on Ink) — two same-specificity classes fighting over
+                one property, on the one element none of the four overrides
+                above ever touched. Nothing here ever decided which wins;
+                it was just whichever the build's own class order happened
+                to emit last. Either way, 0.5-1rem on a 60px-tall bar is a
+                visibly squared corner, not the smooth capsule this bar is
+                designed to be — and a genuine cascade tie is exactly the
+                kind of thing that can paint one way in one browser/engine
+                and differently in another, which fits "the curve is there
+                but so is a frame around it" better than a single clean
+                radius ever would. Forcing one explicit, fully-rounded value
+                here removes the conflict outright instead of relying on a
+                tiebreak this file never actually chose. */}
             <Dock
-              className="items-center !bg-black !bg-none !border-white/10 !backdrop-blur-none !shadow-[0_14px_32px_-10px_rgba(0,0,0,0.65),0_0_40px_-4px_rgba(255,255,255,0.12)]"
+              className="items-center !rounded-full !bg-black !bg-none !border-white/10 !backdrop-blur-none !shadow-[0_14px_32px_-10px_rgba(0,0,0,0.65),0_0_40px_-4px_rgba(255,255,255,0.12)]"
               magnification={72}
               distance={140}
               panelHeight={60}
