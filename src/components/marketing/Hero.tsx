@@ -206,15 +206,43 @@ export function Hero() {
   const isLoggedIn = Boolean(session?.user);
 
   return (
-    <section className="relative flex min-h-screen items-end overflow-hidden pb-20 pt-32 sm:pb-28">
+    // min-h-[100svh], not min-h-screen (100vh): on a real phone, 100vh is
+    // measured against the tallest the browser chrome ever gets (address
+    // bar and toolbar both collapsed), not what's actually visible on
+    // first load with both still expanded — exactly this section's own
+    // situation, since nothing's been scrolled yet. That gap pushed the
+    // bottom-anchored button row (`items-end`) below the fold, reported
+    // live as "Explore curriculum" being cut off by Safari's own toolbar.
+    // `100svh` (small viewport height) pins this to the smallest the
+    // viewport is ever going to be, the same fix already applied to the
+    // dashboard shell (see `(dashboard)/layout.tsx`'s own comment) for the
+    // identical class of bug. `pb-28` (was `pb-20`, mobile; now the same at
+    // every width) adds real breathing room on top of that, so the button
+    // row sits comfortably clear of the fold rather than right at its edge.
+    <section className="relative flex min-h-[100svh] items-end overflow-hidden pb-28 pt-32">
       <div className="absolute inset-0 -z-10">
+        {/* pointer-events-none: this is pure background ambience, nothing to
+            actually play/pause — autoPlay/muted/playsInline is the correct,
+            complete set of attributes for reliable autoplay, but a visitor's
+            own browser settings (iOS Low Power Mode in particular silently
+            blocks autoplaying video regardless of those attributes, as a
+            battery-saving measure this site has no business overriding) can
+            still legitimately leave it paused. Without this, a tap anywhere
+            on that open video area was reaching the raw <video> element and
+            surfacing the browser's own default "tap to play" glyph right in
+            the middle of the hero copy — reported live as "what's up with
+            the play button?". Blocking pointer-events means there's no
+            tappable target for the browser to offer that affordance on in
+            the first place, so a blocked-autoplay visitor just sees the
+            video's first frame sitting still, same as a static photo,
+            instead of a stray, non-functional button. */}
         <video
           aria-hidden
           autoPlay
           loop
           muted
           playsInline
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover pointer-events-none"
         >
           <source src={HERO_VIDEO_URL} type="video/mp4" />
         </video>
