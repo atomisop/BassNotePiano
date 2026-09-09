@@ -55,10 +55,22 @@ import * as React from "react";
  * this matrix's own intercept or an equivalent `feComponentTransfer`/
  * `feFuncA` step, blanks the *entire* filtered element in Chromium, well
  * before the spec's own final [0,1] clamp ever comes into it. A
- * positive-only multiply (`20 0`, no intercept) still steepens the blur
- * into the same solid glow, and it just never lets alpha go negative on
+ * positive-only multiply (no intercept) never lets alpha go negative on
  * the way there, which turns out to be the difference between rendering
  * and not.
+ *
+ * That alone isn't the whole story, though: the source's other coefficient,
+ * `stdDeviation={7}` on the blur itself, is tuned for a ring with real
+ * breathing room around it, not this one. At the size Atom actually
+ * displays this (a ring whose own stroke band is about 23 units wide, on
+ * the same 200-unit scale as the blur), a 7-unit blur floods clean across
+ * the ring's inner gap and the gap before the trailing dash, so a fixed
+ * alpha row was rendering, just as a single shapeless green blob with no
+ * visible ring or dash left in it, not the actual "loading ring" shape
+ * this component is named for. Dropped to `stdDeviation={1.5}` (paired
+ * with a milder `16` on the alpha row, retuned together) so the ring and
+ * its dash still read as themselves, softened at the edges rather than
+ * dissolved into each other.
  */
 export default function Loader({ size = 200, className }: { size?: number; className?: string }) {
   const uid = React.useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -71,8 +83,8 @@ export default function Loader({ size = 200, className }: { size?: number; class
       <svg className="gegga">
         <defs>
           <filter id={filterId}>
-            <feGaussianBlur in="SourceGraphic" stdDeviation={7} result="blur" />
-            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 0" result="inreGegga" />
+            <feGaussianBlur in="SourceGraphic" stdDeviation={1.5} result="blur" />
+            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 16 0" result="inreGegga" />
             <feComposite in="SourceGraphic" in2="inreGegga" operator="atop" />
           </filter>
         </defs>
