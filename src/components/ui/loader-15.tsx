@@ -15,12 +15,12 @@ import * as React from "react";
  * Ported from the original's `styled-components` to `<style jsx>` —
  * Next.js's own built-in scoped-CSS mechanism — instead of pulling a whole
  * new CSS-in-JS runtime into an otherwise Tailwind-first codebase for one
- * decorative component. The visual output (the gooey blur via
- * `feGaussianBlur`/`feColorMatrix`, the two out-of-phase dash-offset
- * sweeps) is unchanged from the source; only the styling mechanism moved,
- * and the gradient/filter ids are now generated per-instance (`useId`)
- * instead of the original's hardcoded strings, so two `<Loader />`s
- * mounted at once don't collide.
+ * decorative component. The two out-of-phase dash-offset sweeps are
+ * unchanged from the source; the glow filter behind them is not (see its
+ * own comment further down, that's a separate, later story), and the
+ * gradient/filter ids are now generated per-instance (`useId`) instead of
+ * the original's hardcoded strings, so two `<Loader />`s mounted at once
+ * don't collide.
  *
  * The source component's second copy of the ring (a blurred "shadow" pass,
  * offset a few px and rendered at low opacity) is deliberately dropped
@@ -44,33 +44,45 @@ import * as React from "react";
  * unblurred and legible down to ~12px, and already wired through
  * `Button`'s own `loading` prop everywhere that's used.
  *
- * The gooey `feColorMatrix` below (the alpha-steepening step that turns
- * the soft blur into a solid-edged blob) originally carried the source
- * component's own coefficients verbatim: `20 -10` on the alpha row, a
- * textbook hard cutoff at 50% blurred alpha. That negative intercept is
- * exactly what made Atom's icon fully invisible, not misplaced and not
- * faint but painting nothing at all, at every screen size. Confirmed by
- * rendering this widget directly and then isolating each filter
- * primitive: any negative alpha value computed mid-chain, whether from
- * this matrix's own intercept or an equivalent `feComponentTransfer`/
- * `feFuncA` step, blanks the *entire* filtered element in Chromium, well
- * before the spec's own final [0,1] clamp ever comes into it. A
- * positive-only multiply (no intercept) never lets alpha go negative on
- * the way there, which turns out to be the difference between rendering
- * and not.
+ * The glow filter below has been rewritten twice since the port above,
+ * both times for real bugs found the same way: rendering this widget
+ * directly and comparing what actually painted against the source shapes
+ * unfiltered, not just reading the filter graph and trusting the recipe
+ * it was copied from.
  *
- * That alone isn't the whole story, though: the source's other coefficient,
- * `stdDeviation={7}` on the blur itself, is tuned for a ring with real
- * breathing room around it, not this one. At the size Atom actually
- * displays this (a ring whose own stroke band is about 23 units wide, on
- * the same 200-unit scale as the blur), a 7-unit blur floods clean across
- * the ring's inner gap and the gap before the trailing dash, so a fixed
- * alpha row was rendering, just as a single shapeless green blob with no
- * visible ring or dash left in it, not the actual "loading ring" shape
- * this component is named for. Dropped to `stdDeviation={1.5}` (paired
- * with a milder `16` on the alpha row, retuned together) so the ring and
- * its dash still read as themselves, softened at the edges rather than
- * dissolved into each other.
+ * Round one: the source's own "gooey" recipe (`feGaussianBlur` into a
+ * `feColorMatrix` alpha row of `20 -10`, a textbook hard cutoff at 50%
+ * blurred alpha, composited back over the crisp shape with `feComposite`)
+ * made Atom's icon fully invisible, not misplaced and not faint but
+ * painting nothing at all, at every screen size. Isolating each filter
+ * primitive traced it to that intercept specifically: any negative alpha
+ * value computed mid-chain, from that matrix or an equivalent
+ * `feComponentTransfer`/`feFuncA` step, blanks the *entire* filtered
+ * element in Chromium, well before the spec's own final `[0,1]` clamp
+ * ever comes into it.
+ *
+ * Round two: a positive-only matrix fixed that, but left the source's
+ * other coefficient untouched, `stdDeviation={7}` on the blur, sized for
+ * a ring with real breathing room around it, not this one. At the size
+ * Atom actually displays this (a ring whose own stroke band is about 23
+ * units wide, on the same 200-unit scale as the blur), a 7-unit blur
+ * floods clean across the ring's inner gap and the gap before the
+ * trailing dash, so the icon rendered, just as a single shapeless green
+ * blob with no ring or dash left in it.
+ *
+ * A smaller blur fixed the blob, but then read as chunky specifically on
+ * ordinary 1x desktop displays (fine on any high-DPI screen, phone or
+ * laptop alike): the whole "steepen the blurred alpha into a hard edge,
+ * then composite the crisp shape back over it" idea is inherently
+ * sensitive to how many actual pixels the browser has to compute that
+ * steepening with, and a plain 1x monitor doesn't have many for a ring
+ * this thin. So the alpha matrix is gone. What's below now is a plain
+ * glow instead: blur a copy of the ring, then `feMerge` the always-crisp,
+ * never-blurred original back on top of it. The visible ring is
+ * pixel-identical to its own unfiltered shape at any pixel density, full
+ * stop, since nothing ever touches it; only the soft halo behind it is
+ * blur-derived, and a halo reading a little smoother or coarser at
+ * different pixel densities was never something a viewer could notice.
  */
 export default function Loader({ size = 200, className }: { size?: number; className?: string }) {
   const uid = React.useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -83,9 +95,11 @@ export default function Loader({ size = 200, className }: { size?: number; class
       <svg className="gegga">
         <defs>
           <filter id={filterId}>
-            <feGaussianBlur in="SourceGraphic" stdDeviation={1.5} result="blur" />
-            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 16 0" result="inreGegga" />
-            <feComposite in="SourceGraphic" in2="inreGegga" operator="atop" />
+            <feGaussianBlur in="SourceGraphic" stdDeviation={8} result="glow" />
+            <feMerge>
+              <feMergeNode in="glow" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
           </filter>
         </defs>
       </svg>
