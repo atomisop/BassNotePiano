@@ -83,7 +83,7 @@ function ResetPasswordForm() {
         variants={cardVariants}
         initial="hidden"
         animate="visible"
-        className="w-full max-w-sm glass-surface-elevated p-7 text-center"
+        className="w-full max-w-sm glass-surface-elevated p-6 text-center sm:p-7"
       >
         <p className="text-sm text-slate-400">
           Missing email.{" "}
@@ -97,27 +97,33 @@ function ResetPasswordForm() {
   }
 
   return (
+    // Padding/gaps below step down on narrow phones (`sm:` restores the
+    // original spacing everywhere else) — this is the tallest auth screen
+    // (three fields, each with its own hint line, vs. one or two elsewhere),
+    // and the shared (auth)/layout.tsx shell was leaving it just short of
+    // fitting one real phone viewport without a scroll. See that layout's
+    // own comment for the shell-level half of this fix (svh + its padding).
     <motion.div
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-sm glass-surface-elevated p-7"
+      className="w-full max-w-sm glass-surface-elevated p-5 sm:p-7"
     >
       {/* Codes get mistyped, or someone starts this flow and changes their
           mind about which account to sign into. The only way out used to
           be the logo up in the layout header, which leaves the whole
           reset flow for the marketing homepage rather than back to login. */}
-      <Link href="/login" className="mb-4 flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-300">
+      <Link href="/login" className="mb-3 flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-300 sm:mb-4">
         <ArrowLeftIcon size={16} />
         Back to login
       </Link>
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Reset password</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Choose a new password</h1>
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="mt-1.5 text-sm text-slate-500 sm:mt-2">
         We sent a 6-digit code to <span className="text-slate-300">{email}</span>.
       </p>
 
-      <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">
+      <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-3 space-y-2 sm:mt-6 sm:space-y-4">
         <div>
           <Label htmlFor="code" className={fieldLabel}>
             Code
@@ -215,7 +221,7 @@ function ResetPasswordForm() {
       <button
         type="button"
         onClick={handleResend}
-        className="mt-4 w-full text-center text-sm text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
+        className="mt-2 w-full text-center text-sm text-slate-500 transition hover:text-[rgb(var(--c-s-50))] sm:mt-4"
       >
         Didn&apos;t get a code? Resend
       </button>
