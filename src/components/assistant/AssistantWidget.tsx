@@ -677,11 +677,24 @@ export function AssistantWidget() {
   // "Done with support, back to normal Q&A" — leaves the thread itself
   // untouched (still there for the admin, still reachable if the visitor
   // sends into it again), just stops routing this widget's composer to it.
+  //
+  // Also clears `feedback`/`feedbackBusy`, not just `messages`: `feedback`
+  // is keyed by index into `messages` (see its own declaration comment —
+  // "messages never reorders/truncates client-side, so the index stays a
+  // stable key"), an invariant this function itself was the one place that
+  // broke it. Resetting `messages` back to [] without also resetting
+  // `feedback` left old index -> rating entries in place, so a fresh
+  // question asked after a resolved support thread could land its reply at
+  // the same index a *previous* conversation's message had been rated at
+  // and immediately show that stale thumbs-up/down on a reply the visitor
+  // never actually rated.
   function resetToAtom() {
     setActiveEscalationId(null);
     setThreadMessages([]);
     setThreadStatus(null);
     setMessages([]);
+    setFeedback({});
+    setFeedbackBusy(null);
     setError(null);
   }
 
