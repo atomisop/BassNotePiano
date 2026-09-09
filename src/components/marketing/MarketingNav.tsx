@@ -252,7 +252,19 @@ export function MarketingNav() {
             animate={{ opacity: 1, y: 0 }}
             exit={reduced ? { opacity: 0 } : { opacity: 0, y: -12 }}
             transition={{ duration: reduced ? 0.15 : 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-50 bg-[rgb(var(--c-s-950)/0.97)] backdrop-blur-2xl md:hidden"
+            // overflow-y-auto/overscroll-contain: this panel's own link list
+            // (Classes/Pricing/Shop, +Profile/Settings/Log out once signed
+            // in, +Discord, +the Dashboard/Start-learning button) is taller
+            // than the visible area on plenty of real phones, especially
+            // signed in — and the effect below locks `document.body` itself
+            // to `overflow: hidden` the whole time this is open, so without
+            // its own scroll the overflow isn't just visually cut off, it's
+            // completely unreachable: reported live as the bottom button
+            // being cut off by Safari's own toolbar with no way to get to
+            // it. Same `overscroll-contain` convention `<main>` already uses
+            // in `(dashboard)/layout.tsx`, so this panel's own scroll can't
+            // rubber-band chain up into the (already non-scrolling) body.
+            className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-[rgb(var(--c-s-950)/0.97)] backdrop-blur-2xl md:hidden"
           >
             <div className="flex h-20 items-center justify-between px-6">
               <span className="font-serif text-lg font-bold lowercase text-[rgb(var(--c-s-50))]">
@@ -270,7 +282,12 @@ export function MarketingNav() {
               </button>
             </div>
 
-            <div className="flex flex-col px-6 pt-8">
+            {/* pb-10 plus the safe-area env(), not just pb-10 alone: the
+                Dashboard/Start-learning button is the last thing in this
+                list, so it's the one that would otherwise land flush
+                against the home indicator (or, pre-scroll-fix above, get
+                clipped by it entirely) on a notched phone. */}
+            <div className="flex flex-col px-6 pt-8 pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
               {[...LINKS, ...(secondary ? [secondary] : [])].map((link) => {
                 const isActive = pathname === link.href;
                 return (
