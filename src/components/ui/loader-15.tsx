@@ -43,6 +43,22 @@ import * as React from "react";
  * from `components/ui/icons.tsx` instead: a plain `currentColor` spinner,
  * unblurred and legible down to ~12px, and already wired through
  * `Button`'s own `loading` prop everywhere that's used.
+ *
+ * The gooey `feColorMatrix` below (the alpha-steepening step that turns
+ * the soft blur into a solid-edged blob) originally carried the source
+ * component's own coefficients verbatim: `20 -10` on the alpha row, a
+ * textbook hard cutoff at 50% blurred alpha. That negative intercept is
+ * exactly what made Atom's icon fully invisible, not misplaced and not
+ * faint but painting nothing at all, at every screen size. Confirmed by
+ * rendering this widget directly and then isolating each filter
+ * primitive: any negative alpha value computed mid-chain, whether from
+ * this matrix's own intercept or an equivalent `feComponentTransfer`/
+ * `feFuncA` step, blanks the *entire* filtered element in Chromium, well
+ * before the spec's own final [0,1] clamp ever comes into it. A
+ * positive-only multiply (`20 0`, no intercept) still steepens the blur
+ * into the same solid glow, and it just never lets alpha go negative on
+ * the way there, which turns out to be the difference between rendering
+ * and not.
  */
 export default function Loader({ size = 200, className }: { size?: number; className?: string }) {
   const uid = React.useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -56,7 +72,7 @@ export default function Loader({ size = 200, className }: { size?: number; class
         <defs>
           <filter id={filterId}>
             <feGaussianBlur in="SourceGraphic" stdDeviation={7} result="blur" />
-            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 -10" result="inreGegga" />
+            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 20 0" result="inreGegga" />
             <feComposite in="SourceGraphic" in2="inreGegga" operator="atop" />
           </filter>
         </defs>
