@@ -365,7 +365,7 @@ export function CustomerProfile({
                   onChange={(e) => setCreditReason(e.target.value)}
                   placeholder="e.g. Paid via Venmo instead of Zelle"
                   disabled={creditConfirming}
-                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
                 />
               </div>
               {!creditConfirming && (
@@ -422,7 +422,7 @@ export function CustomerProfile({
                             value={cancelReason}
                             onChange={(e) => setCancelReason(e.target.value)}
                             placeholder="Reason (optional, shown to the student)"
-                            className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-red-400/60"
+                            className="w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-red-400/60"
                           />
                           <div className="flex gap-2">
                             <button

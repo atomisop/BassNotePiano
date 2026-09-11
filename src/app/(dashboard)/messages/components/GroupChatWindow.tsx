@@ -150,7 +150,10 @@ export function GroupChatWindow({
           onChange={(e) => setDraft(e.target.value)}
           placeholder="Write a message…"
           maxLength={2000}
-          className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+          // text-base, not text-sm — see the identical comment in
+          // ChatWindow.tsx (the 1:1 equivalent of this input); this is the
+          // group-chat message box hitting the same iOS auto-zoom bug.
+          className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
         />
         <button
           type="submit"

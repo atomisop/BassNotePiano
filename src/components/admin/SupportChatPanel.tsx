@@ -364,7 +364,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                 placeholder="Reply as Support…"
                 maxLength={2000}
                 disabled={sending}
-                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.4)]"
+                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-base text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.4)]"
               />
               <button
                 type="submit"

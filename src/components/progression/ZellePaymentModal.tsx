@@ -222,7 +222,7 @@ export function ZellePaymentModal({
                           value={senderName}
                           onChange={(e) => setSenderName(e.target.value)}
                           placeholder="Jordan Alemu"
-                          className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                          className="w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
                         />
                       </div>
                       <div>
@@ -231,7 +231,7 @@ export function ZellePaymentModal({
                           value={referenceCode}
                           onChange={(e) => setReferenceCode(e.target.value)}
                           placeholder="e.g. ZL2K9F71M"
-                          className="w-full glass-surface-subtle px-3 py-2 font-mono text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                          className="w-full glass-surface-subtle px-3 py-2 font-mono text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
                         />
                       </div>
                       <div>
@@ -241,7 +241,7 @@ export function ZellePaymentModal({
                           onChange={(e) => setNote(e.target.value)}
                           rows={2}
                           placeholder="Anything that helps us match the transfer"
-                          className="w-full resize-none glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                          className="w-full resize-none glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
                         />
                       </div>
 

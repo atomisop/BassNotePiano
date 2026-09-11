@@ -253,7 +253,7 @@ function AttendeeEmailRow({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="student@email.com"
-        className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+        className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
       />
       <span className="w-28 shrink-0 text-xs">
         {value.trim() === "" ? null : status?.checking ? (
@@ -783,7 +783,7 @@ export function ClassBookingClient({
                                     value={chosen}
                                     onChange={(e) => setCreditsFor(row, Number(e.target.value))}
                                     disabled={bookingKey !== null || bundleSubmitting}
-                                    className="glass-surface-subtle rounded-md px-2 py-1 text-xs text-slate-200 outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="glass-surface-subtle rounded-md px-2 py-1 text-base text-slate-200 outline-none disabled:cursor-not-allowed disabled:opacity-60"
                                   >
                                     {durationOptions.map((n) => (
                                       <option key={n} value={n}>

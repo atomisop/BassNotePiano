@@ -31,6 +31,15 @@ function isActive(href: string, pathname: string): boolean {
  * section" job in the footprint mobile actually has room for — same split
  * AccountSettings already uses (DesktopSettingsNav vs. MobileSettingsMenu)
  * for its own many-sections problem.
+ *
+ * text-base, not text-sm, on the <select> below: under 16px, tapping it
+ * makes iOS Safari zoom the whole page in, and this is the *only* way to
+ * move between admin sections on a phone — so every visit to another
+ * section re-triggered it. iOS doesn't reliably restore zoom/scroll after,
+ * which is what actually got reported ("the whole screen shifts weirdly
+ * going between admin and roadmap, need to pinch to fix it, can't scroll
+ * to reveal the top"). Same root cause and same fix as the lesson-video
+ * fullscreen bug documented in LessonVideoPlayer.tsx.
  */
 function MobileAdminSelect() {
   const router = useRouter();
@@ -42,7 +51,7 @@ function MobileAdminSelect() {
       value={current}
       onChange={(e) => router.push(e.target.value)}
       aria-label="Admin section"
-      className="glass-surface-subtle w-full rounded-xl px-3 py-2.5 text-sm font-medium text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] sm:hidden"
+      className="glass-surface-subtle w-full rounded-xl px-3 py-2.5 text-base font-medium text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] sm:hidden"
     >
       {NAV_ITEMS.map((item) => (
         <option key={item.href} value={item.href}>

@@ -234,7 +234,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
                                 placeholder="Reason (optional, shown to the student)"
-                                className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-red-400/60"
+                                className="w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-red-400/60"
                               />
                               <div className="flex gap-2">
                                 <button

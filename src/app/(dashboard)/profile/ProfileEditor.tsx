@@ -396,7 +396,7 @@ function NameSection({ initialName, onDone }: { initialName: string | null; onDo
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={submitting}
-          className="flex-1 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+          className="flex-1 glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
         />
         <button
           type="submit"
@@ -445,7 +445,7 @@ function UsernameSection({ initialUsername }: { initialUsername: string | null }
             required
             value={username}
             onChange={(e) => setUsernameValue(e.target.value)}
-            className="w-full bg-transparent px-2 py-2 text-sm text-slate-100 outline-none"
+            className="w-full bg-transparent px-2 py-2 text-base text-slate-100 outline-none"
           />
         </div>
         <button

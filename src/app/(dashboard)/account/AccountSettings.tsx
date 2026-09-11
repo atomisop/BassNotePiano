@@ -727,7 +727,7 @@ function DangerZoneSection() {
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               disabled={deleting}
-              className="w-full glass-surface-subtle px-3 py-2 text-center text-sm tracking-[0.4em] text-slate-100 outline-none transition focus:border-red-400/60 disabled:opacity-60"
+              className="w-full glass-surface-subtle px-3 py-2 text-center text-base tracking-[0.4em] text-slate-100 outline-none transition focus:border-red-400/60 disabled:opacity-60"
             />
             <label className="flex items-start gap-2 text-xs text-slate-400">
               <input

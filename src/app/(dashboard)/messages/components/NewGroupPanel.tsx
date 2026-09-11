@@ -69,7 +69,7 @@ export function NewGroupPanel({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Tizita crew"
-              className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+              className="w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
             />
           </div>
           <p className="text-xs font-medium text-slate-400">Add friends</p>

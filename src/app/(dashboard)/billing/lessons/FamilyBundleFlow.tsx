@@ -230,7 +230,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                     value={email}
                     onChange={(e) => updateEmail(index, e.target.value)}
                     placeholder={`Recipient ${index + 1} email`}
-                    className="w-full rounded-lg border border-ink/10 bg-slate-950/40 px-3.5 py-2.5 pr-9 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.5)]"
+                    className="w-full rounded-lg border border-ink/10 bg-slate-950/40 px-3.5 py-2.5 pr-9 text-base text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.5)]"
                   />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
                     {status.kind === "checking" && <SpinnerIcon className="text-slate-500" />}

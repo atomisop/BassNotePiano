@@ -85,7 +85,7 @@ export function DataTable<TData, TValue>({
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder={searchPlaceholder}
-            className="w-full max-w-xs glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.6)]"
+            className="w-full max-w-xs glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.6)]"
           />
         </div>
       )}

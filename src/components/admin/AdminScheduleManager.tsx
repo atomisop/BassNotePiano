@@ -80,7 +80,7 @@ function ScheduleForm({
             value={dayOfWeek}
             onChange={(e) => setDayOfWeek(Number(e.target.value))}
             disabled={submitting}
-            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
           >
             {DAY_LABELS.map((d, i) => (
               <option key={i} value={i}>
@@ -97,7 +97,7 @@ function ScheduleForm({
             onChange={(e) => setStartTime(e.target.value)}
             required
             disabled={submitting}
-            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
           />
         </label>
         <label className="text-xs text-slate-500">
@@ -108,7 +108,7 @@ function ScheduleForm({
             onChange={(e) => setEndTime(e.target.value)}
             required
             disabled={submitting}
-            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
           />
         </label>
       </div>
@@ -120,7 +120,7 @@ function ScheduleForm({
           onChange={(e) => setLabel(e.target.value)}
           placeholder="e.g. Monday class"
           disabled={submitting}
-          className="mt-1 w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+          className="mt-1 w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
         />
       </label>
       {error && <p className="text-xs text-red-400">{error}</p>}

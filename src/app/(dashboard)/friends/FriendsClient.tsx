@@ -157,7 +157,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search @username"
-            className="flex-1 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+            className="flex-1 glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
           />
           <button
             type="submit"

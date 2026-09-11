@@ -65,7 +65,7 @@ export function UserManagementTable({
         value={query}
         onChange={(e) => handleSearchChange(e.target.value)}
         placeholder="Search by name or email…"
-        className="w-full max-w-sm glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+        className="w-full max-w-sm glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
       />
 
       {error && <p className="mt-3 text-xs text-red-400">{error}</p>}

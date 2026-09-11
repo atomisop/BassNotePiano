@@ -213,7 +213,7 @@ export function AdminLessonManager({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Reading the Bati formula"
               disabled={uploading}
-              className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+              className="w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
             />
           </div>
           <div>
@@ -223,7 +223,7 @@ export function AdminLessonManager({
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               disabled={uploading}
-              className="w-full resize-none glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+              className="w-full resize-none glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
             />
           </div>
           <div>

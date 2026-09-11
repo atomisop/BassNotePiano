@@ -191,7 +191,7 @@ export function OnboardingWizard() {
                 value={username}
                 onChange={(e) => setUsernameValue(e.target.value)}
                 placeholder="yourname"
-                className="w-full bg-transparent px-2 py-3 text-sm text-slate-100 outline-none"
+                className="w-full bg-transparent px-2 py-3 text-base text-slate-100 outline-none"
               />
             </div>
           )}

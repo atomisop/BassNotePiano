@@ -149,7 +149,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search students by name or email…"
-          className="w-full glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+          className="w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
         />
 
         <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">
@@ -220,7 +220,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   rows={2}
                   disabled={confirming}
                   placeholder="e.g. Paid via Venmo instead of Zelle"
-                  className="mt-1 w-full resize-none glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+                  className="mt-1 w-full resize-none glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
                 />
               </div>
 

@@ -128,7 +128,12 @@ export function ChatWindow({
           onChange={(e) => handleDraftChange(e.target.value)}
           placeholder="Write a message…"
           maxLength={2000}
-          className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+          // text-base (16px), not text-sm: below 16px, iOS Safari auto-zooms
+          // the whole page in on focus and doesn't reliably zoom back out
+          // after — reported live as "the message box zooms in and I can't
+          // even see who I'm writing to." Same fix applied to every real
+          // text-entry control across the signed-in app, not just this one.
+          className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
         />
         <button
           type="submit"
