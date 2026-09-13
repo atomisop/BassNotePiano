@@ -58,7 +58,10 @@ export default async function AdminFeedbackPage() {
                 <p className="text-xs text-slate-500">{plan.canceledAt ? formatDate(plan.canceledAt) : ""}</p>
               </div>
 
-              <p className="mt-3 text-xs text-slate-500">{describePaymentPlan(plan.cadence, plan.term)}</p>
+              <p className="mt-3 text-xs text-slate-500">
+                {describePaymentPlan(plan.cadence, plan.term)} · {plan.installmentsPaid} of {plan.termMonths}{" "}
+                installment{plan.termMonths === 1 ? "" : "s"} paid
+              </p>
 
               <div className="mt-2 rounded-lg border border-ink/10 bg-slate-900/40 p-3">
                 <p className="text-xs font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">

@@ -395,11 +395,19 @@ async function assertNoOpenInstallment(planId: string): Promise<void> {
  * on. installmentsPaid carries forward unchanged, it's real payment
  * history, not something a term change should erase; an already-created
  * installment's own snapshotted amountCents never changes either (see
- * ZellePayment.installmentNumber's own comment on why those stay put). If
- * the student has already paid at least as many installments as the new,
- * shorter term calls for, the plan is marked COMPLETED right away instead
- * of ACTIVE: they've already paid for that much (or more), there's nothing
- * left to owe.
+ * ZellePayment.installmentNumber's own comment on why those stay put).
+ *
+ * Refuses a change to any term whose own termMonths is at or below what's
+ * already been paid. Allowing that would let a student capture a longer
+ * term's deeper discount rate (30% off for TERM_12, say), pay exactly one
+ * installment at that rate, then "downgrade" to MONTHLY and have the plan
+ * immediately marked COMPLETED, having genuinely honored only one month of
+ * a twelve-month-priced commitment, repeatably (COMPLETED, not CANCELED,
+ * doesn't block re-enrolling and doing it again). If a student wants to
+ * stop paying with fewer installments in than their current term's rate
+ * assumes, that's a cancellation (cancelPaymentPlanBySelf below), not a
+ * term change, one that's honestly recorded as canceled early rather than
+ * dressed up as a completed shorter plan they were never actually on.
  */
 export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlanTerm): Promise<void> {
   if (!Object.values(PaymentPlanTerm).includes(newTerm)) {
@@ -413,7 +421,11 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
   await assertNoOpenInstallment(plan.id);
 
   const rate = calculatePaymentPlanRate(plan.cadence, newTerm);
-  const isComplete = plan.installmentsPaid >= rate.termMonths;
+  if (plan.installmentsPaid >= rate.termMonths) {
+    throw new PaymentPlanError(
+      "You've already paid enough installments that this term wouldn't ask for any more. If you want to stop here, cancel your plan instead.",
+    );
+  }
 
   await prisma.paymentPlan.update({
     where: { id: plan.id },
@@ -422,7 +434,6 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
       installmentAmountCents: rate.installmentAmountCents,
       creditsPerInstallment: rate.creditsPerInstallment,
       termMonths: rate.termMonths,
-      status: isComplete ? "COMPLETED" : "ACTIVE",
     },
   });
 }
