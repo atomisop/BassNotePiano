@@ -315,6 +315,7 @@ export async function bookClass(
   occurrenceDateMs: number,
   chunkIndex: number,
   creditsToBook?: number,
+  options: { isAdminAssisted?: boolean } = {},
 ) {
   const schedule = await prisma.classSchedule.findUniqueOrThrow({ where: { id: scheduleId } });
   if (!schedule.active) throw new ClassBookingError("This class is no longer offered.");
@@ -355,9 +356,20 @@ export async function bookClass(
   // remove. Plain inline query rather than importing getActivePaymentPlan
   // from paymentPlans.ts, that module already imports from this one, and a
   // one-line lookup isn't worth the circular dependency.
-  const activePlan = await prisma.paymentPlan.findFirst({ where: { userId: studentId, status: "ACTIVE" }, select: { id: true } });
-  if (activePlan) {
-    throw new ClassBookingError("Your weekly class is already set by your payment plan. Head to Schedule to check your week or add an extra session.");
+  //
+  // isAdminAssisted exists for exactly one caller, adminBookClass below.
+  // An admin helping a specific student with a booking issue directly is
+  // the judgment call this guard exists to require instead of open self-
+  // service, not something it should also block (it also skips the "a
+  // student booked a class" admin notification further down, for the same
+  // reason: the admin doing the booking already knows). Every other check
+  // in this function (real occurrence, real capacity, real credit balance)
+  // still applies unconditionally either way.
+  if (!options.isAdminAssisted) {
+    const activePlan = await prisma.paymentPlan.findFirst({ where: { userId: studentId, status: "ACTIVE" }, select: { id: true } });
+    if (activePlan) {
+      throw new ClassBookingError("Your weekly class is already set by your payment plan. Head to Schedule to check your week or add an extra session.");
+    }
   }
 
   // STEP 20: a real student booking their week's classes might reasonably
@@ -460,12 +472,40 @@ export async function bookClass(
   // booked short of checking the roster themselves. Same pattern
   // classRegistration.ts already uses for new registrations: notify every
   // ADMIN (today, just the one account), non-blocking so a notification
-  // hiccup never fails a real booking.
-  notifyAdminsOfBooking(studentId, schedule, scheduledAt, credits).catch((err) =>
-    console.error("Admin booking notification failed (non-blocking):", err),
-  );
+  // hiccup never fails a real booking. Skipped when an admin made this
+  // booking themselves (adminBookClass below), notifying the admin that
+  // the admin just booked something is noise, not news.
+  if (!options.isAdminAssisted) {
+    notifyAdminsOfBooking(studentId, schedule, scheduledAt, credits).catch((err) =>
+      console.error("Admin booking notification failed (non-blocking):", err),
+    );
+  }
 
   return booking;
+}
+
+/**
+ * Admin-assisted direct booking, the escape hatch for a student whose own
+ * path is stuck: an active Payment Plan subscriber can no longer self-book
+ * an ad hoc class at all (see bookClass's own guard above), so a one-off
+ * scheduling problem (they're sick this week and want a different day, a
+ * family situation needs a human, whatever it is) has nowhere for them to
+ * go except contacting support, per the note already on /schedule. This is
+ * that support action: an admin picks the student and the exact open time,
+ * on the student's behalf, after hearing from them directly.
+ *
+ * Thin wrapper over bookClass with isAdminAssisted set, nothing else
+ * changes: the occurrence still has to be real and open, and the student
+ * still has to have a free credit to spend, same as any other booking.
+ */
+export async function adminBookClass(
+  studentId: string,
+  scheduleId: string,
+  occurrenceDateMs: number,
+  chunkIndex: number,
+  creditsToBook?: number,
+) {
+  return bookClass(studentId, scheduleId, occurrenceDateMs, chunkIndex, creditsToBook, { isAdminAssisted: true });
 }
 
 async function notifyAdminsOfBooking(
