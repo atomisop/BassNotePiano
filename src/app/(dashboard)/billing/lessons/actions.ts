@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import {
   submitZellePaymentReference,
@@ -71,7 +72,8 @@ export interface FamilyBundlePaymentResult {
  * showed. That check is just UX, this is the real gate.
  */
 export async function createFamilyBundlePaymentAction(
-  tierQuantity: number,
+  cadence: PaymentPlanCadence,
+  term: PaymentPlanTerm,
   recipientEmails: string[],
 ): Promise<FamilyBundlePaymentResult> {
   const session = await getServerAuthSession();
@@ -83,7 +85,8 @@ export async function createFamilyBundlePaymentAction(
   try {
     const payment = await createFamilyBundlePayment({
       buyerId: session.user.id,
-      tierQuantity,
+      cadence,
+      term,
       recipientEmails,
       zelleHandle,
     });

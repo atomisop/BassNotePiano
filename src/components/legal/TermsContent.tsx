@@ -49,9 +49,10 @@ export function TermsContent() {
           once its cycle expires.
         </p>
         <p>
-          Family bundles are priced differently: $34.99 per credit at full price, with a bigger discount the more
-          you buy at once (10% off at 4+, 20% off at 10+, 30% off at 20+), plus an extra{" "}
-          {FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total. Family credits never expire.
+          Family bundles use the same cadence and term rates a solo Payment Plan does, for 2 or more separate,
+          already-existing accounts at once, paid as a single upfront payment for the whole term instead of monthly
+          installments, plus an extra {FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total. Family credits
+          never expire.
         </p>
         <p>
           <span className="font-medium text-[rgb(var(--c-s-50))]">Money spent on credits is non-refundable.</span> The only way

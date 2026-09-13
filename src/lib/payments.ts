@@ -1,4 +1,4 @@
-import type { Prisma, ZellePaymentStatus } from "@prisma/client";
+import { PaymentPlanCadence, PaymentPlanTerm, type Prisma, type ZellePaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AccessDeniedError, unlockScaleForUser, grantCurriculumAccess } from "@/lib/access";
 import { grantCredits } from "@/lib/creditLedger";
@@ -94,10 +94,11 @@ export function getOrCreatePendingCurriculumPayment(userId: string, amountCents:
 }
 
 // ---------------------------------------------------------------------------
-// Family bundle: one credit tier bought at once for 2+ separate,
-// already-existing accounts (a parent buying the same bundle for each of
-// her kids' own accounts, say), an extra 10% off the combined total. The
-// entire point of this section is that "2+ real accounts" is *verified*,
+// Family bundle: the same cadence + term ladder Payment Plans use, bought
+// at once for 2+ separate, already-existing accounts (a parent buying the
+// same term for each of her kids' own accounts, say), an extra 10% off the
+// combined total. The entire point of this section is that "2+ real
+// accounts" is *verified*,
 // not just asserted. Someone could otherwise get the extra discount by
 // typing in fabricated-looking or duplicate addresses and never actually
 // sharing credits with anyone.
@@ -149,7 +150,8 @@ export async function checkFamilyBundleRecipients(callerId: string, emails: stri
 
 export interface FamilyBundlePurchaseInput {
   buyerId: string;
-  tierQuantity: number;
+  cadence: PaymentPlanCadence;
+  term: PaymentPlanTerm;
   recipientEmails: string[];
   zelleHandle: string;
 }
@@ -160,12 +162,21 @@ export interface FamilyBundlePurchaseInput {
  * client's own live-check UI showed, since that's just UX, not the actual
  * authorization boundary. Not idempotent the way getOrCreatePendingZellePayment
  * is (a repeat visit always creates a fresh row): matching an "identical"
- * prior attempt would mean comparing tier + the exact set of recipient
- * emails, which isn't worth the complexity for what should be a rare,
- * deliberate purchase. An abandoned row still self-expires via
+ * prior attempt would mean comparing cadence + term + the exact set of
+ * recipient emails, which isn't worth the complexity for what should be a
+ * rare, deliberate purchase. An abandoned row still self-expires via
  * expireStalePendingPayments() like every other pending payment does.
  */
 export async function createFamilyBundlePayment(input: FamilyBundlePurchaseInput) {
+  // A Server Action's params are only compile-time-typed, same reasoning
+  // createPaymentPlan validates cadence/term for in paymentPlans.ts.
+  if (!Object.values(PaymentPlanCadence).includes(input.cadence)) {
+    throw new FamilyBundleError(`"${input.cadence}" isn't a valid cadence.`);
+  }
+  if (!Object.values(PaymentPlanTerm).includes(input.term)) {
+    throw new FamilyBundleError(`"${input.term}" isn't a valid term.`);
+  }
+
   const normalized = input.recipientEmails.map((e) => e.trim().toLowerCase()).filter(Boolean);
 
   if (normalized.length < MIN_FAMILY_BUNDLE_RECIPIENTS) {
@@ -196,8 +207,7 @@ export async function createFamilyBundlePayment(input: FamilyBundlePurchaseInput
     throw new FamilyBundleError("Each recipient needs to be a different account.");
   }
 
-  const creditsPerRecipient = calculateClassCreditTotal(input.tierQuantity).quantity;
-  const { totalCents } = calculateFamilyBundleTotal(input.tierQuantity, normalized.length);
+  const { totalCents, creditsPerRecipient } = calculateFamilyBundleTotal(input.cadence, input.term, normalized.length);
 
   await expireStalePendingPayments();
 
