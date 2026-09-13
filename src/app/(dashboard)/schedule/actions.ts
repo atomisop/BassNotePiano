@@ -6,6 +6,8 @@ import { getServerAuthSession } from "@/lib/auth";
 import {
   getOrCreatePendingExtraSessionPayment,
   submitZellePaymentReference,
+  ExtraSessionError,
+  type ExtraSessionOccurrence,
   type ZelleReferenceSubmission,
 } from "@/lib/payments";
 
@@ -18,20 +20,28 @@ export interface ExtraSessionPaymentResult {
 }
 
 /**
- * Opens (or reuses an already-open) flat-rate single-credit top-up payment
- * for the signed-in student. Idempotent the same way the curriculum page's
- * own pending-payment fetch is (see getOrCreatePendingZellePayment in
- * payments.ts): revisiting the Schedule screen never spawns a duplicate row.
+ * Opens (or reuses an already-open) flat-rate top-up payment for the exact
+ * occurrence the student just picked on the Schedule screen. Idempotent the
+ * same way the curriculum page's own pending-payment fetch is: revisiting
+ * (or picking a different open time before paying) never spawns a
+ * duplicate row, it just updates the one already in flight.
  */
-export async function createExtraSessionPaymentAction(): Promise<ExtraSessionPaymentResult> {
+export async function createExtraSessionPaymentAction(occurrence: ExtraSessionOccurrence): Promise<ExtraSessionPaymentResult> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/schedule");
   if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=schedule");
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
-  const payment = await getOrCreatePendingExtraSessionPayment(session.user.id, zelleHandle);
-  revalidatePath("/schedule");
-  return { ok: true, id: payment.id, status: payment.status, amountCents: payment.amountCents, error: null };
+  try {
+    const payment = await getOrCreatePendingExtraSessionPayment(session.user.id, zelleHandle, occurrence);
+    revalidatePath("/schedule");
+    return { ok: true, id: payment.id, status: payment.status, amountCents: payment.amountCents, error: null };
+  } catch (err) {
+    if (err instanceof ExtraSessionError) {
+      return { ok: false, id: null, status: null, amountCents: null, error: err.message };
+    }
+    throw err;
+  }
 }
 
 export async function submitExtraSessionPaymentAction(paymentId: string, payload: ZelleReferenceSubmission) {

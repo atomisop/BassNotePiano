@@ -9,6 +9,7 @@ import {
   FAMILY_MIN_ATTENDEES,
   FAMILY_CREDITS_PER_STUDENT,
 } from "@/lib/classSchedule";
+import { getActivePaymentPlan } from "@/lib/paymentPlans";
 import { getSupportContactId } from "@/lib/admin";
 import { ClassBookingClient } from "./ClassBookingClient";
 
@@ -19,6 +20,14 @@ export default async function LessonsPage() {
   // already can't be bought without it (see billing/lessons/page.tsx), but
   // this covers anyone who somehow already holds credits without it too.
   if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=lessons");
+
+  // A student on an active Payment Plan already has their one weekly slot
+  // auto-booked, and bookClass itself now refuses this same student's ad
+  // hoc self-booking anyway (see classSchedule.ts), so sending them here at
+  // all would just be a dead end. /schedule is their one real home now:
+  // their week at a glance, plus the guided, directly-booked extra-session
+  // flow that replaces self-serve booking for them.
+  if (await getActivePaymentPlan(session.user.id)) redirect("/schedule");
 
   const [credits, occurrences, bookings, supportContactId] = await Promise.all([
     // Effective, not raw: a credit already reserved by another SCHEDULED
