@@ -157,16 +157,40 @@ export async function getUserPaymentPlans(userId: string) {
   return prisma.paymentPlan.findMany({ where: { userId }, orderBy: { createdAt: "desc" } });
 }
 
+// How far ahead of nextDueDate the *next* installment becomes payable at
+// all. Exported (not a local const in the scheduled function anymore) so
+// both callers of getOrCreateOpenInstallmentPayment below share the exact
+// same number. This used to live only in netlify/functions/payment-plan-
+// installments.ts, governing when the *automated* reminder opened one, with
+// no equivalent gate on the student's own /billing/plans page. That gap is
+// exactly what let a student pay ahead of schedule, installment after
+// installment, back to back in one sitting, instead of one a month, adding
+// up to a 12-month plan's whole year of credits landing at once by direct
+// instruction, this is now closed: getOrCreateOpenInstallmentPayment
+// enforces this window itself, so neither caller can reopen it by accident.
+export const INSTALLMENT_OPEN_LEAD_DAYS = 7;
+
 export interface OpenInstallmentPayment {
-  payment: Prisma.ZellePaymentGetPayload<Record<string, never>>;
+  /** Null when the plan has no open installment *and* isn't within INSTALLMENT_OPEN_LEAD_DAYS of its next one yet. See nextDueDate below for when it will be. */
+  payment: Prisma.ZellePaymentGetPayload<Record<string, never>> | null;
   /** True only the instant this row was created by this call — the scheduled reminder function uses this (not a timestamp comparison) to send the "here's your invoice" notice exactly once per installment, regardless of how many times or how close together it runs while the row stays open. */
   wasCreated: boolean;
+  /** Set only when payment is null: the plan's own nextDueDate, so the caller can render "your next installment opens on X" instead of silently showing nothing. */
+  nextDueDate?: Date;
 }
 
 /**
  * The open (AWAITING_TRANSFER or PENDING_REVIEW) installment payment for a
  * plan, creating the next one from the plan's own locked rate if none exists
- * yet. Never recomputes amountCents from live pricing — a plan's rate is
+ * yet AND the plan's nextDueDate is within INSTALLMENT_OPEN_LEAD_DAYS (or
+ * already past). Outside that window, this deliberately creates nothing and
+ * returns payment: null. One Zelle payment a month is the actual product,
+ * not "pay however many months you want, whenever you want": without this
+ * gate, a student who finishes an installment can immediately trigger the
+ * next one the moment they're back on /billing/plans (nothing else ever
+ * checked nextDueDate before creating), and repeat that indefinitely to
+ * front-load an entire term's worth of credits in one sitting. Never
+ * recomputes amountCents from live pricing either way, a plan's rate is
  * locked at enrollment (see createPaymentPlan/calculatePaymentPlanRate).
  *
  * Deliberately does NOT reuse getOrCreatePendingZellePayment (payments.ts):
@@ -179,9 +203,15 @@ export interface OpenInstallmentPayment {
  * Called from both the student's own billing page and the scheduled
  * reminder function, hence zelleHandle is a plain parameter rather than an
  * env read buried in here — same dependency-injection shape every other
- * pending-payment creator in this codebase already uses.
+ * pending-payment creator in this codebase already uses. `now` is likewise a
+ * parameter (defaulting to the real clock) purely so a caller (or a future
+ * test) can pin it, the same pattern expireDueCreditGrants already uses.
  */
-export async function getOrCreateOpenInstallmentPayment(planId: string, zelleHandle: string): Promise<OpenInstallmentPayment> {
+export async function getOrCreateOpenInstallmentPayment(
+  planId: string,
+  zelleHandle: string,
+  now: Date = new Date(),
+): Promise<OpenInstallmentPayment> {
   const plan = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId } });
 
   const existing = await prisma.zellePayment.findFirst({
@@ -189,6 +219,11 @@ export async function getOrCreateOpenInstallmentPayment(planId: string, zelleHan
     orderBy: { createdAt: "desc" },
   });
   if (existing) return { payment: existing, wasCreated: false };
+
+  const opensAt = new Date(plan.nextDueDate.getTime() - INSTALLMENT_OPEN_LEAD_DAYS * 24 * 60 * 60 * 1000);
+  if (now < opensAt) {
+    return { payment: null, wasCreated: false, nextDueDate: plan.nextDueDate };
+  }
 
   const payment = await prisma.zellePayment.create({
     data: {
