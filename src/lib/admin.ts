@@ -233,6 +233,41 @@ export async function searchUsers(query: string): Promise<AdminUserRow[]> {
   }));
 }
 
+export interface BookableStudent {
+  id: string;
+  name: string | null;
+  email: string;
+  hasCurriculumAccess: boolean;
+  classCredits: number;
+}
+
+/**
+ * Lightweight student lookup for the admin manual-booking tool
+ * (AdminManualBooking.tsx), deliberately its own query rather than reusing
+ * searchUsers above: that one already joins curriculum progress and Atom
+ * message counts for the full user-management table, neither of which this
+ * picker needs, just enough to show a name/email and know whether booking
+ * them even makes sense (curriculum access, a free credit). Requires an
+ * actual query rather than searchUsers' "empty means everyone": dumping
+ * every signed-up user into a picker before the admin has typed anything
+ * isn't useful the way it is on the dedicated Users page.
+ */
+export async function searchStudentsForBooking(query: string): Promise<BookableStudent[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+
+  const users = await prisma.user.findMany({
+    where: {
+      OR: [{ email: { contains: trimmed, mode: "insensitive" } }, { name: { contains: trimmed, mode: "insensitive" } }],
+    },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, email: true, hasCurriculumAccess: true, classCredits: true },
+    take: 20,
+  });
+
+  return users;
+}
+
 export async function setUserRole(userId: string, role: Role) {
   const before = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { role: true } });
   const updated = await prisma.user.update({ where: { id: userId }, data: { role } });

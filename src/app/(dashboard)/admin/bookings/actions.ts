@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { AttendanceStatus } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
-import { markAttendance, adminCancelClassBooking, ClassBookingError } from "@/lib/classSchedule";
+import { markAttendance, adminCancelClassBooking, adminBookClass, ClassBookingError } from "@/lib/classSchedule";
+import { searchStudentsForBooking, type BookableStudent } from "@/lib/admin";
 
 // The admin layout's redirect only protects rendering — Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
@@ -26,6 +27,28 @@ export async function adminCancelBookingAction(bookingId: string, reason?: strin
   await requireAdmin();
   try {
     await adminCancelClassBooking(bookingId, reason);
+    revalidatePath("/admin/bookings");
+    return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+  }
+}
+
+export async function searchStudentsForBookingAction(query: string): Promise<BookableStudent[]> {
+  await requireAdmin();
+  return searchStudentsForBooking(query);
+}
+
+export async function adminBookClassAction(
+  studentId: string,
+  scheduleId: string,
+  occurrenceDateMs: number,
+  chunkIndex: number,
+  creditsToBook: number,
+) {
+  await requireAdmin();
+  try {
+    await adminBookClass(studentId, scheduleId, occurrenceDateMs, chunkIndex, creditsToBook);
     revalidatePath("/admin/bookings");
     return { ok: true as const };
   } catch (err) {
