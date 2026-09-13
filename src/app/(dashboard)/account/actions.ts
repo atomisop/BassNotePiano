@@ -1,13 +1,15 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
-import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel } from "@prisma/client";
+import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel, PaymentPlanTerm, PlanCancellationReason } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { setUsername, SocialError } from "@/lib/social";
 import { createPresignedAvatarUpload, deleteObject, keyFromPublicUrl, isObjectStorageConfigured } from "@/lib/storage";
 import { createAndSendCode, verifyCode, RateLimitError } from "@/lib/verification";
+import { changePaymentPlanTerm, cancelPaymentPlanBySelf, PaymentPlanError } from "@/lib/paymentPlans";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -279,4 +281,35 @@ export async function confirmAccountDeletionAction(currentPassword: string, code
   }
 
   return { ok: true as const };
+}
+
+// ---------------------------------------------------------------------------
+// Manage Subscriptions: self-service term change and cancellation for the
+// signed-in student's own Payment Plan. See paymentPlans.ts for the real
+// logic; these just add the session check and translate PaymentPlanError
+// into the same {ok, error} shape every other action in this file uses.
+// ---------------------------------------------------------------------------
+
+export async function changePaymentPlanTermAction(newTerm: PaymentPlanTerm) {
+  const { id } = await requireSession();
+  try {
+    await changePaymentPlanTerm(id, newTerm);
+    revalidatePath("/account");
+    return { ok: true as const, error: null };
+  } catch (err) {
+    if (err instanceof PaymentPlanError) return { ok: false as const, error: err.message };
+    throw err;
+  }
+}
+
+export async function cancelPaymentPlanBySelfAction(reason: PlanCancellationReason, reasonNote: string | null) {
+  const { id } = await requireSession();
+  try {
+    await cancelPaymentPlanBySelf(id, reason, reasonNote);
+    revalidatePath("/account");
+    return { ok: true as const, error: null };
+  } catch (err) {
+    if (err instanceof PaymentPlanError) return { ok: false as const, error: err.message };
+    throw err;
+  }
 }
