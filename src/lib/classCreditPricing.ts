@@ -118,13 +118,13 @@ export function calculateClassCreditTotal(quantity: number): CreditTotal {
 // separate, already-existing accounts (see createFamilyBundlePayment in
 // payments.ts for the account verification this is paired with; this file
 // only does the math, on purpose, same "no Prisma in here" reason as the
-// header comment). An *additional* 25% off, stacked on top of whatever
+// header comment). An *additional* 10% off, stacked on top of whatever
 // price the chosen tier already carries (its own size discount, via
 // calculateClassCreditTotal above), e.g. 3x Starter is 3 × Starter's own
-// current price, then 25% off that combined total.
+// current price, then 10% off that combined total.
 // ---------------------------------------------------------------------------
 
-export const FAMILY_BUNDLE_DISCOUNT_RATE = 0.25;
+export const FAMILY_BUNDLE_DISCOUNT_RATE = 0.1;
 export const MIN_FAMILY_BUNDLE_RECIPIENTS = 2;
 export const MAX_FAMILY_BUNDLE_RECIPIENTS = 20; // matches MAX_CUSTOM_QUANTITY's own order of magnitude, a ceiling, not an expectation
 

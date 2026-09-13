@@ -15,6 +15,7 @@ import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { CURRICULUM_PRICE_CENTS, SCALE_GROUPS } from "@/lib/curriculum";
 import {
   CREDIT_BASE_PRICE_CENTS,
+  FAMILY_BUNDLE_DISCOUNT_RATE,
   PRESET_BUNDLES,
   calculateClassCreditTotal,
   calculatePaymentPlanRate,
@@ -121,7 +122,7 @@ ${scaleList}
 Live classes (weekly, on Discord), bought as "class credits" (1 credit = one 30-minute class):
   - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a weekly cadence and a term — Monthly (no commitment), 3-Month, 6-Month, or Yearly — paid one Zelle installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active — skip a week and make it up on another week before that installment's monthly cycle ends, since an unused credit is forfeited once its cycle expires. Longer terms cost less per month:
 ${planList}
-  - Family (2+ separate, already-existing accounts sharing one credit tier at once) is a different, separate purchase, priced by raw quantity instead of a term: ${formatUsd(CREDIT_BASE_PRICE_CENTS)} per credit at full price, cheaper per credit in a bigger bundle, plus an extra 25% off the combined total — these credits never expire:
+  - Family (2+ separate, already-existing accounts sharing one credit tier at once) is a different, separate purchase, priced by raw quantity instead of a term: ${formatUsd(CREDIT_BASE_PRICE_CENTS)} per credit at full price, cheaper per credit in a bigger bundle, plus an extra ${FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total (these credits never expire):
 ${bundleList}
   - Each class is capped at 10 students.
   - Booking happens on the /lessons page once signed in — that covers Family sessions and any extra one-off classes on top of a Payment Plan's own auto-booked weekly slot; you can select and book several open sessions at once instead of one at a time.

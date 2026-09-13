@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CURRICULUM_PRICE_CENTS, CURRICULUM_ORIGINAL_PRICE_CENTS, CURRICULUM_DISCOUNT_PERCENT } from "@/lib/curriculum";
+import { FAMILY_BUNDLE_DISCOUNT_RATE } from "@/lib/classCreditPricing";
 import { TiltGlow } from "@/components/ui/TiltGlow";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
@@ -146,7 +147,7 @@ export function PricingPageContent() {
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-[rgb(var(--c-s-50))]">Family bundle</p>
             <p className="mt-1.5 text-sm text-slate-300">
               Buying for 2 or more kids? Bundle a credit tier across their accounts and get an{" "}
-              <span className="text-slate-100">extra 25% off</span> the combined total, for a limited time. Each
+              <span className="text-slate-100">extra {FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off</span> the combined total, for a limited time. Each
               recipient just needs their own account already.
             </p>
           </div>

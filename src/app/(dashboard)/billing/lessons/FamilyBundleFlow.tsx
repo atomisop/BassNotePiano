@@ -7,6 +7,7 @@ import {
   PRESET_BUNDLES,
   MIN_FAMILY_BUNDLE_RECIPIENTS,
   MAX_FAMILY_BUNDLE_RECIPIENTS,
+  FAMILY_BUNDLE_DISCOUNT_RATE,
   calculateClassCreditTotal,
   calculateFamilyBundleTotal,
 } from "@/lib/classCreditPricing";
@@ -44,11 +45,11 @@ type RowStatus =
 /**
  * Buying one credit tier at once for 2+ separate, already-existing accounts
  * (e.g. a parent buying the same bundle for each of her kids), for an extra
- * 25% off the combined total. Every recipient has to already have a Bass
+ * 10% off the combined total. Every recipient has to already have a Bass
  * Note Piano account: this can't just be a list of email addresses,
  * because the credits have to land on real accounts, and because letting
  * anyone claim "2+ kids" for a flat discount with no verification would be
- * an easy way to buy at 25% off with fabricated-looking addresses. The live
+ * an easy way to buy at 10% off with fabricated-looking addresses. The live
  * per-row check below is purely a UX convenience (catch a typo before
  * paying); createFamilyBundlePaymentAction re-verifies everything
  * server-side regardless of what this UI already showed.
@@ -167,7 +168,10 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           <p className="text-sm text-slate-100">
             {perRecipientCredits} credits each, for {emails.length} accounts ({emails.length * perRecipientCredits} credits total)
           </p>
-          <p className="mt-1 text-xs text-emerald-400">25% family bundle discount applied (limited time), on top of the tier&apos;s own price</p>
+          <p className="mt-1 text-xs text-emerald-400">
+            {FAMILY_BUNDLE_DISCOUNT_RATE * 100}% family bundle discount applied (limited time), on top of the
+            tier&apos;s own price
+          </p>
         </div>
         <ZelleUnlockGate
           status={payment.status}
@@ -305,7 +309,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           <span>{formatUsd(total.combinedBeforeFamilyDiscountCents)}</span>
         </div>
         <div className="mt-1 flex items-center justify-between text-sm text-emerald-400">
-          <span>Family bundle discount (25%, limited time)</span>
+          <span>Family bundle discount ({FAMILY_BUNDLE_DISCOUNT_RATE * 100}%, limited time)</span>
           <span>−{formatUsd(total.familyDiscountCents)}</span>
         </div>
         <div className="mt-2 flex items-center justify-between border-t border-ink/10 pt-2 text-base font-semibold text-slate-50">
