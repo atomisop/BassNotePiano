@@ -3,6 +3,7 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { verifyCode, createSilentCode, createAndSendCode, RateLimitError, type VerifyCodeResult } from "@/lib/verification";
+import { withTimingFloor } from "@/lib/timingSafe";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -50,13 +51,18 @@ export async function resetPasswordAction(email: string, code: string, newPasswo
 }
 
 /** Doesn't leak account existence — a RateLimitError is swallowed for the
- *  same reason as forgot-password's requestPasswordResetAction. */
+ *  same reason as forgot-password's requestPasswordResetAction. Wrapped in
+ *  withTimingFloor for the same reason too: the early return for "no such
+ *  account" is fast, while a real account goes on to a real email send —
+ *  without the floor, that gap is measurable in response time alone. */
 export async function resendResetCodeAction(email: string) {
-  const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
-  if (!user?.passwordHash) return;
-  try {
-    await createAndSendCode({ email: user.email, userId: user.id, purpose: "PASSWORD_RESET" });
-  } catch (err) {
-    if (!(err instanceof RateLimitError)) throw err;
-  }
+  return withTimingFloor(async () => {
+    const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
+    if (!user?.passwordHash) return;
+    try {
+      await createAndSendCode({ email: user.email, userId: user.id, purpose: "PASSWORD_RESET" });
+    } catch (err) {
+      if (!(err instanceof RateLimitError)) throw err;
+    }
+  });
 }

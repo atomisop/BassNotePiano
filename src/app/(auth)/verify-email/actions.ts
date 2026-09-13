@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyCode, createAndSendCode, createSilentCode, RateLimitError, type VerifyCodeResult } from "@/lib/verification";
 import { sendWelcomeEmail } from "@/lib/email";
+import { withTimingFloor } from "@/lib/timingSafe";
 
 const REASON_MESSAGES: Record<string, string> = {
   not_found: "We couldn't find an active code for this email. Request a new one below.",
@@ -50,13 +51,16 @@ export async function verifyEmailAction(email: string, code: string) {
 
 /** Doesn't leak account existence — nothing to resend if already verified, and
  *  a RateLimitError is swallowed for the same reason (see forgot-password's
- *  requestPasswordResetAction for the full reasoning). */
+ *  requestPasswordResetAction for the full reasoning). Wrapped in
+ *  withTimingFloor for the same reason too — see requestPasswordResetAction. */
 export async function resendVerificationEmailAction(email: string) {
-  const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
-  if (!user || user.emailVerified) return;
-  try {
-    await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
-  } catch (err) {
-    if (!(err instanceof RateLimitError)) throw err;
-  }
+  return withTimingFloor(async () => {
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    if (!user || user.emailVerified) return;
+    try {
+      await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
+    } catch (err) {
+      if (!(err instanceof RateLimitError)) throw err;
+    }
+  });
 }

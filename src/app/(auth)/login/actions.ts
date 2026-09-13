@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { createAndSendCode, createSilentCode, RateLimitError as CodeRateLimitError } from "@/lib/verification";
 import { assertRateLimit, RateLimitError as LockoutError } from "@/lib/rateLimit";
+import { withTimingFloor } from "@/lib/timingSafe";
 
 export type LoginStepOneResult =
   | { ok: false; error: string }
@@ -46,8 +47,18 @@ async function recordFailedAttempt(email: string): Promise<void> {
  *    itself single-step and code-free from the user's perspective, per the
  *    2026-08-07 decision to only require a code for account creation and
  *    password reset.
+ *
+ * Wrapped in withTimingFloor: the early return below for an email with no
+ * account is fast (one lookup), while a real account goes on to a bcrypt
+ * compare and possibly a real email send — without the floor, that gap is
+ * measurable in response time even though every branch's response body
+ * already treats both cases identically.
  */
 export async function loginStepOneAction(email: string, password: string): Promise<LoginStepOneResult> {
+  return withTimingFloor(() => loginStepOneWork(email, password));
+}
+
+async function loginStepOneWork(email: string, password: string): Promise<LoginStepOneResult> {
   const normalizedEmail = email.trim().toLowerCase();
 
   // Checked before the user lookup or any bcrypt work, so a locked-out
