@@ -111,6 +111,16 @@ model PaymentPlan {
   canceledBy       User?     @relation("PaymentPlanCanceledBy", fields: [canceledById], references: [id])
   cancellationNote String?
 
+  // Only set when the student canceled this themselves (see
+  // cancelPaymentPlanBySelf in paymentPlans.ts), never on an admin
+  // cancellation, cancellationNote above stays the admin-only field it
+  // always was. Null reason means either still ACTIVE, or an admin
+  // cancellation with no structured reason attached. cancellationReasonNote
+  // is required when reason is OTHER, optional free-text alongside any
+  // other preset reason.
+  cancellationReason     PlanCancellationReason?
+  cancellationReasonNote String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -152,6 +162,22 @@ enum PaymentPlanStatus {
   ACTIVE
   COMPLETED
   CANCELED
+}
+
+// The 8 premade options a student picks from when self-canceling a Payment
+// Plan on /account (see cancelPaymentPlanBySelf in paymentPlans.ts), plus
+// OTHER as the 9th, freeform via cancellationReasonNote. Read by admins on
+// /admin/feedback. Order here is display order in the picker.
+enum PlanCancellationReason {
+  TOO_EXPENSIVE
+  NOT_ENOUGH_TIME
+  SCHEDULE_CONFLICT
+  TAKING_A_BREAK
+  SWITCHING_TEACHER
+  NOT_SATISFIED
+  GOALS_ACHIEVED
+  TECHNICAL_ISSUES
+  OTHER
 }
 
 // Secondary bookkeeping only — never a replacement for User.classCredits,
@@ -353,10 +379,11 @@ enum NotificationType {
   PAYMENT_PLAN_INSTALLMENT_DUE // to the student, when the next installment of their PaymentPlan opens for payment
   PAYMENT_PLAN_INSTALLMENT_OVERDUE // to the student, escalating reminder while an installment stays unpaid past its due date
   PAYMENT_PLAN_COMPLETED // to the student, when their final installment is verified and the plan is fully paid off
-  PAYMENT_PLAN_CANCELED // to the student, when an admin cancels their plan
+  PAYMENT_PLAN_CANCELED // to the student, when their plan is canceled, by an admin or by themselves
   CREDITS_EXPIRED // to the student, when unused Payment Plan credits lapse at the end of their paid cycle
   CREDITS_EXPIRING_SOON // to the student, a few days ahead of CREDITS_EXPIRED, while there's still time to use them
   RESERVED_SLOT_UNAVAILABLE // to the student, when an admin deactivates the weekly schedule their Payment Plan reserves
+  PLAN_CANCELLATION_FEEDBACK // to admins, when a student self-cancels their Payment Plan and leaves a reason, see /admin/feedback
 }
 
 // The in-app inbox is the source of truth — always written regardless of

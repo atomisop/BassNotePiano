@@ -43,6 +43,8 @@ function notificationHref(type: string): string | null {
       return "/dashboard";
     case "ASSISTANT_ESCALATION":
       return "/admin/support";
+    case "PLAN_CANCELLATION_FEEDBACK":
+      return "/admin/feedback";
     case "PAYMENT_PLAN_INSTALLMENT_DUE":
     case "PAYMENT_PLAN_INSTALLMENT_OVERDUE":
     case "PAYMENT_PLAN_COMPLETED":
@@ -89,6 +91,7 @@ const CATEGORY_ICONS = {
   announcements:
     "M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5z",
   support: "M4 5.5A1.5 1.5 0 015.5 4h13A1.5 1.5 0 0120 5.5v9a1.5 1.5 0 01-1.5 1.5H9l-5 4v-4H5.5A1.5 1.5 0 014 14.5v-9z",
+  feedback: "M8 10h8M8 14h5M21 12c0 4.42-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l1.3-3.9A7.9 7.9 0 013 12c0-4.42 4.03-8 9-8s9 3.58 9 8z",
 } as const;
 
 type CategoryKey = keyof typeof CATEGORY_ICONS;
@@ -115,6 +118,7 @@ const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>
   LESSON_BOOKING_CANCELED: { key: "bookings", label: "Bookings" },
   ANNOUNCEMENT: { key: "announcements", label: "Announcements" },
   ASSISTANT_ESCALATION: { key: "support", label: "Support requests" },
+  PLAN_CANCELLATION_FEEDBACK: { key: "feedback", label: "Feedback" },
 };
 
 function categoryFor(type: string): { key: CategoryKey; label: string } {
