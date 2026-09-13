@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, Shield } from "lucide-react";
+import { Shield } from "lucide-react";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -75,17 +75,6 @@ export function TopBar({ isAdmin }: { isAdmin: boolean }) {
             <Shield className="h-[18px] w-[18px]" strokeWidth={1.5} />
           </Link>
         )}
-        {/* Same matched-pair treatment as the admin icon above: a plain
-            utility icon button, not a sixth AppDock tab, sitting right next
-            to notifications since both are "check in on something" actions
-            rather than a primary destination. */}
-        <Link
-          href="/schedule"
-          aria-label="Schedule"
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-ink/10 bg-surface text-slate-400 transition hover:border-ink/15 hover:bg-ink/5 hover:text-slate-200"
-        >
-          <Calendar className="h-[18px] w-[18px]" strokeWidth={1.5} />
-        </Link>
         <NotificationBell />
         <ProfileAvatarLink />
       </div>

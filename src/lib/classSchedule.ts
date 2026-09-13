@@ -346,8 +346,8 @@ export async function bookClass(
 
   // A student on an active Payment Plan already has their one weekly slot
   // auto-booked for them (see createReservedBookingIfAbsent) and, if they
-  // want more than that, a guided pick-a-time-and-pay flow on /schedule
-  // (getOrCreatePendingExtraSessionPayment, booked directly by
+  // want more than that, a guided pick-a-time-and-pay flow right on their
+  // own /lessons page (getOrCreatePendingExtraSessionPayment, booked directly by
   // bookExtraSessionOccurrence once the payment clears). Nothing routes
   // through this ad hoc path for them anymore, on purpose, by direct
   // instruction: letting a subscriber spend a banked balance here however
@@ -490,9 +490,9 @@ export async function bookClass(
  * an ad hoc class at all (see bookClass's own guard above), so a one-off
  * scheduling problem (they're sick this week and want a different day, a
  * family situation needs a human, whatever it is) has nowhere for them to
- * go except contacting support, per the note already on /schedule. This is
- * that support action: an admin picks the student and the exact open time,
- * on the student's behalf, after hearing from them directly.
+ * go except contacting support, per the note already on their /lessons
+ * page. This is that support action: an admin picks the student and the
+ * exact open time, on the student's behalf, after hearing from them directly.
  *
  * Thin wrapper over bookClass with isAdminAssisted set, nothing else
  * changes: the occurrence still has to be real and open, and the student
@@ -1110,13 +1110,14 @@ export interface WeeklyCreditUsage {
   creditsUsedThisWeek: number;
   /** Null when the student has no ACTIVE Payment Plan (a family-bundle-only
       or between-plans student has no fixed weekly commitment to compare
-      against, so the Schedule screen just shows their raw usage instead). */
+      against, so their own /lessons page just shows raw usage instead). */
   weeklyAllotment: number | null;
 }
 
 /**
- * Powers the "this week" card on /schedule: how much of a student's own
- * weekly commitment they've actually used, calendar-week (Sun-Sat) based
+ * Powers the "this week" card a Payment Plan subscriber sees on /lessons:
+ * how much of a student's own weekly commitment they've actually used,
+ * calendar-week (Sun-Sat) based
  * rather than a rolling 7 days, matching how a person actually thinks about
  * "this week" versus "next week." Counts SCHEDULED and COMPLETED bookings
  * (a CANCELED one was never actually going to cost anything, see
