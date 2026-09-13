@@ -2,13 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import type { ZellePaymentStatus } from "@prisma/client";
+import type { PaymentPlanCadence, PaymentPlanTerm, ZellePaymentStatus } from "@prisma/client";
 import {
-  PRESET_BUNDLES,
   MIN_FAMILY_BUNDLE_RECIPIENTS,
   MAX_FAMILY_BUNDLE_RECIPIENTS,
   FAMILY_BUNDLE_DISCOUNT_RATE,
-  calculateClassCreditTotal,
+  calculatePaymentPlanRate,
   calculateFamilyBundleTotal,
 } from "@/lib/classCreditPricing";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
@@ -34,6 +33,24 @@ function formatUsd(cents: number) {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Same options, labels and order as PaymentPlanEnrollmentFlow.tsx's own
+// CADENCE_OPTIONS/TERM_OPTIONS (billing/plans). A family bundle applies
+// one of these to every recipient at once, the same choice a solo Payment
+// Plan buyer makes for themself, kept as its own small copy rather than a
+// shared import across the two flows, same "duplicated on purpose"
+// convention this codebase already uses for e.g. formatTimeLabel.
+const CADENCE_OPTIONS: { value: PaymentPlanCadence; label: string }[] = [
+  { value: "MIN_30_WEEKLY", label: "30 min/week" },
+  { value: "MIN_60_WEEKLY", label: "60 min/week" },
+];
+
+const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
+  { value: "MONTHLY", label: "Monthly" },
+  { value: "TERM_3", label: "3-Month" },
+  { value: "TERM_6", label: "6-Month" },
+  { value: "TERM_12", label: "Yearly" },
+];
+
 type RowStatus =
   | { kind: "empty" }
   | { kind: "invalid" }
@@ -43,20 +60,27 @@ type RowStatus =
   | { kind: "not-found" };
 
 /**
- * Buying one credit tier at once for 2+ separate, already-existing accounts
- * (e.g. a parent buying the same bundle for each of her kids), for an extra
- * 10% off the combined total. Every recipient has to already have a Bass
- * Note Piano account: this can't just be a list of email addresses,
- * because the credits have to land on real accounts, and because letting
- * anyone claim "2+ kids" for a flat discount with no verification would be
- * an easy way to buy at 10% off with fabricated-looking addresses. The live
- * per-row check below is purely a UX convenience (catch a typo before
- * paying); createFamilyBundlePaymentAction re-verifies everything
- * server-side regardless of what this UI already showed.
+ * Buying the same cadence + term a solo Payment Plan buyer would pick, at
+ * once for 2+ separate, already-existing accounts (e.g. a parent buying the
+ * same term for each of her kids), for an extra 10% off the combined total.
+ * Every recipient has to already have a Bass Note Piano account: this can't
+ * just be a list of email addresses, because the credits have to land on
+ * real accounts, and because letting anyone claim "2+ kids" for a flat
+ * discount with no verification would be an easy way to buy at 10% off with
+ * fabricated-looking addresses. The live per-row check below is purely a UX
+ * convenience (catch a typo, or point a buyer at registering a kid's
+ * account before paying); createFamilyBundlePaymentAction re-verifies
+ * everything server-side regardless of what this UI already showed.
+ *
+ * Unlike a solo Payment Plan, this is still one upfront Zelle payment for
+ * the whole term's credits, not a recurring monthly installment: picking
+ * "6-Month" grants every recipient that whole term's worth of credits (24
+ * for 30 min/week) in one shot, non-expiring, the same as a family bundle
+ * always granted its credits, see calculateFamilyBundleTotal's own comment.
  */
 export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
-  const [selectedId, setSelectedId] = useState<string>(PRESET_BUNDLES[0].id);
-  const quantity = PRESET_BUNDLES.find((b) => b.id === selectedId)?.quantity ?? PRESET_BUNDLES[0].quantity;
+  const [cadence, setCadence] = useState<PaymentPlanCadence>("MIN_30_WEEKLY");
+  const [term, setTerm] = useState<PaymentPlanTerm>("TERM_6");
 
   const [emails, setEmails] = useState<string[]>(["", ""]);
   const [results, setResults] = useState<Record<string, FamilyBundleRecipientCheck>>({});
@@ -135,8 +159,8 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
   }
 
   const filledCount = normalized.filter(Boolean).length;
-  const total = calculateFamilyBundleTotal(quantity, filledCount || MIN_FAMILY_BUNDLE_RECIPIENTS);
-  const perRecipientCredits = calculateClassCreditTotal(quantity).quantity;
+  const total = calculateFamilyBundleTotal(cadence, term, filledCount || MIN_FAMILY_BUNDLE_RECIPIENTS);
+  const perRecipientCredits = total.creditsPerRecipient;
 
   const allRowsVerified =
     emails.length >= MIN_FAMILY_BUNDLE_RECIPIENTS && emails.every((_, i) => rowStatus(i).kind === "found");
@@ -145,7 +169,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
   async function handleContinue() {
     setLoading(true);
     setSubmitError(null);
-    const result = await createFamilyBundlePaymentAction(quantity, emails);
+    const result = await createFamilyBundlePaymentAction(cadence, term, emails);
     setLoading(false);
     if (!result.ok || !result.id || !result.status || result.amountCents === null) {
       setSubmitError(result.error ?? "Something went wrong creating this payment. Please try again.");
@@ -170,7 +194,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           </p>
           <p className="mt-1 text-xs text-emerald-400">
             {FAMILY_BUNDLE_DISCOUNT_RATE * 100}% family bundle discount applied (limited time), on top of the
-            tier&apos;s own price
+            term&apos;s own price
           </p>
         </div>
         <ZelleUnlockGate
@@ -190,24 +214,47 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
   return (
     <div className="space-y-6">
       <div>
-        <p className="mb-2 text-xs font-medium text-slate-400">Choose a tier, applied once per recipient</p>
-        <div className="grid grid-cols-3 gap-3">
-          {PRESET_BUNDLES.map((bundle) => {
-            const bundleTotal = calculateClassCreditTotal(bundle.quantity);
-            const active = selectedId === bundle.id;
+        <p className="mb-2 text-xs font-medium text-slate-400">Weekly cadence, applied to every recipient</p>
+        <div className="grid grid-cols-2 gap-3">
+          {CADENCE_OPTIONS.map((option) => {
+            const active = cadence === option.value;
             return (
               <button
-                key={bundle.id}
+                key={option.value}
                 type="button"
-                onClick={() => setSelectedId(bundle.id)}
+                onClick={() => setCadence(option.value)}
                 className={`rounded-lg border px-3.5 py-3 text-left transition ${
                   active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
                 }`}
               >
-                <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{bundle.label}</p>
-                <p className="mt-1 text-xs text-slate-600 line-through">{formatUsd(bundleTotal.originalTotalCents)}</p>
+                <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  {bundle.quantity} credits · {formatUsd(bundleTotal.perCreditCents)}/credit
+                  {calculatePaymentPlanRate(option.value, term).creditsPerInstallment} credits/month
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-2 text-xs font-medium text-slate-400">Term, applied to every recipient</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {TERM_OPTIONS.map((option) => {
+            const active = term === option.value;
+            const optionRate = calculatePaymentPlanRate(cadence, option.value);
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setTerm(option.value)}
+                className={`rounded-lg border px-3 py-3 text-center transition ${
+                  active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
+                }`}
+              >
+                <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {optionRate.discountRate > 0 ? `−${Math.round(optionRate.discountRate * 100)}%` : "No commitment"}
                 </p>
               </button>
             );
@@ -273,9 +320,14 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
             );
           }
           if (status.kind === "not-found") {
+            const registerHref = `/register?email=${encodeURIComponent(normalized[index])}&callbackUrl=${encodeURIComponent("/billing/lessons")}`;
             return (
               <p key={`err-${index}`} className="mt-1.5 text-xs text-red-400">
-                Recipient {index + 1}: no account yet at that email. They need to register before this bundle can include them.
+                Recipient {index + 1}: no account yet at that email.{" "}
+                <Link href={registerHref} target="_blank" className="underline hover:opacity-70">
+                  Create their account
+                </Link>{" "}
+                first, then come back here to add them.
               </p>
             );
           }

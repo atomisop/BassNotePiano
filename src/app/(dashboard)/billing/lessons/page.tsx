@@ -9,7 +9,7 @@ import { FamilyBundleFlow } from "./FamilyBundleFlow";
 // (/billing/plans) replaced it entirely — Monthly/3/6/12-month terms now
 // cover every case a single buyer needs, including the old one-off/no-
 // discount purchase. This page is Family bundle only now: buying the same
-// credit tier at once for 2+ separate, already-existing accounts.
+// cadence and term at once for 2+ separate, already-existing accounts.
 export default async function BillingLessonsPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/lessons");
@@ -32,7 +32,7 @@ export default async function BillingLessonsPage() {
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
         <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Family bundle</h1>
         <p className="mt-3 text-sm leading-relaxed text-slate-400">
-          Buying the same credit tier at once for 2 or more separate, already-existing accounts gets an extra{" "}
+          Buying the same cadence and term at once for 2 or more separate, already-existing accounts gets an extra{" "}
           {FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total, for a limited time. Each recipient needs their
           own Bass Note Piano account already, since the credits land directly on their account, not yours.
         </p>
