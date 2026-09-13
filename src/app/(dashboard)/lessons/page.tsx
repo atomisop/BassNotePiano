@@ -4,6 +4,7 @@ import {
   getEffectiveClassCredits,
   getUpcomingOccurrences,
   getUserClassBookings,
+  getWeeklyCreditUsage,
   CANCELLATION_CUTOFF_HOURS,
   SOLO_MAX_CREDITS,
   FAMILY_MIN_ATTENDEES,
@@ -11,8 +12,24 @@ import {
 } from "@/lib/classSchedule";
 import { getActivePaymentPlan } from "@/lib/paymentPlans";
 import { getSupportContactId } from "@/lib/admin";
+import { EXTRA_SESSION_FLAT_PRICE_CENTS } from "@/lib/classCreditPricing";
 import { ClassBookingClient } from "./ClassBookingClient";
+import { ScheduleClient } from "../schedule/ScheduleClient";
 
+/**
+ * A student on an active Payment Plan doesn't get sent away from here
+ * (they used to get redirected to /schedule, which reads as "you're
+ * blocked from this tab" even though nothing about their access changed).
+ * They're not blocked from Lessons, they're blocked from self-service
+ * *editing* of a schedule they already paid for and locked in. This page
+ * still shows them their week, right here: usage, upcoming classes, and a
+ * guided way to add an extra session. bookClass itself still refuses their
+ * ad hoc self-booking either way (see its own comment in classSchedule.ts),
+ * that restriction was never about this page, only the old open calendar.
+ *
+ * Everyone else (no active plan, historical Family Bundle credits, between
+ * plans) keeps the full open booking calendar exactly as before.
+ */
 export default async function LessonsPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
@@ -21,13 +38,51 @@ export default async function LessonsPage() {
   // this covers anyone who somehow already holds credits without it too.
   if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=lessons");
 
-  // A student on an active Payment Plan already has their one weekly slot
-  // auto-booked, and bookClass itself now refuses this same student's ad
-  // hoc self-booking anyway (see classSchedule.ts), so sending them here at
-  // all would just be a dead end. /schedule is their one real home now:
-  // their week at a glance, plus the guided, directly-booked extra-session
-  // flow that replaces self-serve booking for them.
-  if (await getActivePaymentPlan(session.user.id)) redirect("/schedule");
+  const activePlan = await getActivePaymentPlan(session.user.id);
+
+  if (activePlan) {
+    const [credits, weeklyUsage, occurrences, bookings, supportContactId] = await Promise.all([
+      getEffectiveClassCredits(session.user.id),
+      getWeeklyCreditUsage(session.user.id),
+      getUpcomingOccurrences(),
+      getUserClassBookings(session.user.id),
+      getSupportContactId(),
+    ]);
+
+    const now = Date.now();
+    const upcomingBookings = bookings
+      .filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > now)
+      .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
+
+    // Single-credit only: EXTRA_SESSION_FLAT_PRICE_CENTS is a flat rate for
+    // exactly one 30-min session, so a 2-credit chunk is left out here
+    // rather than shown as something this button can't actually buy.
+    const openSlots = occurrences.filter((o) => !o.isBooked && o.creditCost === 1).slice(0, 6);
+
+    return (
+      <ScheduleClient
+        zelleHandle={process.env.ZELLE_HANDLE ?? "payments@yourplatform.com"}
+        credits={credits}
+        creditsUsedThisWeek={weeklyUsage.creditsUsedThisWeek}
+        weeklyAllotment={weeklyUsage.weeklyAllotment}
+        supportContactId={supportContactId}
+        extraSessionPriceCents={EXTRA_SESSION_FLAT_PRICE_CENTS}
+        upcomingBookings={upcomingBookings.map((b) => ({
+          id: b.id,
+          label: b.schedule.label,
+          scheduledAt: b.scheduledAt.toISOString(),
+          creditsSpent: b.creditsSpent,
+        }))}
+        openSlots={openSlots.map((o) => ({
+          scheduleId: o.scheduleId,
+          occurrenceDateMs: o.occurrenceDate.getTime(),
+          chunkIndex: o.chunkIndex,
+          label: o.label,
+          scheduledAt: o.scheduledAt.toISOString(),
+        }))}
+      />
+    );
+  }
 
   const [credits, occurrences, bookings, supportContactId] = await Promise.all([
     // Effective, not raw: a credit already reserved by another SCHEDULED

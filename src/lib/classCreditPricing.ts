@@ -18,8 +18,10 @@ export const CREDIT_DISCOUNT_PERCENT = Math.floor((1 - CREDIT_BASE_PRICE_CENTS /
 
 /**
  * A flat $35 for one extra class, on top of whatever a student's own
- * Payment Plan already covers that week, bought from the Schedule screen
- * (see /schedule). Deliberately its own plain number, not derived from
+ * Payment Plan already covers that week, bought right from /lessons (a
+ * subscriber's own weekly class screen, not the open ad hoc calendar
+ * everyone else sees there). Deliberately its own plain number, not derived
+ * from
  * CREDIT_BASE_PRICE_CENTS or any tier: this is a single, occasional add-on
  * for someone who already has a plan and wants one more session, not a
  * bundle purchase, so it skips the charm-price/volume-discount machinery
