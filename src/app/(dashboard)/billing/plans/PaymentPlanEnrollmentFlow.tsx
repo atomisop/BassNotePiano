@@ -54,6 +54,8 @@ interface PaymentPlanEnrollmentFlowProps {
   zelleHandle: string;
   activePlan: ActivePlanSummary | null;
   openInstallment: OpenInstallmentSummary | null;
+  /** ISO date string. Set only when activePlan exists but openInstallment doesn't yet: the next installment isn't payable until it's within INSTALLMENT_OPEN_LEAD_DAYS of this date (see getOrCreateOpenInstallmentPayment). Renders as a "your next installment opens on X" state instead of a payable invoice. */
+  nextInstallmentDueDate?: string;
   /** Preselects the picker from a specific marketing-page tile (PaymentPlanTierGrid's ?cadence=&term= links) instead of always defaulting. */
   initialCadence?: PaymentPlanCadence;
   initialTerm?: PaymentPlanTerm;
@@ -69,6 +71,7 @@ export function PaymentPlanEnrollmentFlow({
   zelleHandle,
   activePlan: initialPlan,
   openInstallment: initialInstallment,
+  nextInstallmentDueDate,
   initialCadence,
   initialTerm,
 }: PaymentPlanEnrollmentFlowProps) {
@@ -80,8 +83,11 @@ export function PaymentPlanEnrollmentFlow({
   const [acknowledged, setAcknowledged] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [enrolled, setEnrolled] = useState<{ plan: ActivePlanSummary; installment: OpenInstallmentSummary } | null>(
-    initialPlan && initialInstallment ? { plan: initialPlan, installment: initialInstallment } : null,
+  // installment is nullable now: an active plan can have nothing payable yet
+  // (see nextInstallmentDueDate above), that's still "enrolled", just
+  // between installments, not the picker below.
+  const [enrolled, setEnrolled] = useState<{ plan: ActivePlanSummary; installment: OpenInstallmentSummary | null } | null>(
+    initialPlan ? { plan: initialPlan, installment: initialInstallment } : null,
   );
 
   const rate = calculatePaymentPlanRate(cadence, term);
@@ -144,16 +150,35 @@ export function PaymentPlanEnrollmentFlow({
             <div className="h-full rounded-full bg-[rgb(var(--c-s-50))]" style={{ width: `${progressPercent}%` }} />
           </div>
         </div>
-        <ZelleUnlockGate
-          status={installment.status}
-          rejectionReason={installment.rejectionReason}
-          scaleCode={`Installment ${installment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`}
-          scaleTitle={planLabel}
-          eyebrowLabel="Payment Plan"
-          amountCents={installment.amountCents}
-          zelleHandle={zelleHandle}
-          onSubmitPayment={submitPlanInstallmentPaymentAction.bind(null, installment.id)}
-        />
+        {installment ? (
+          <ZelleUnlockGate
+            status={installment.status}
+            rejectionReason={installment.rejectionReason}
+            scaleCode={`Installment ${installment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`}
+            scaleTitle={planLabel}
+            eyebrowLabel="Payment Plan"
+            amountCents={installment.amountCents}
+            zelleHandle={zelleHandle}
+            onSubmitPayment={submitPlanInstallmentPaymentAction.bind(null, installment.id)}
+          />
+        ) : (
+          // Between installments, on purpose: one Zelle payment a month is
+          // the actual product, not "pay as many months as you want,
+          // whenever you want," see getOrCreateOpenInstallmentPayment's own
+          // comment. This is the normal, expected state for most of every
+          // month, not an error.
+          <div className="rounded-xl border border-ink/10 p-4 text-center">
+            <p className="text-sm text-slate-100">You&apos;re all paid up for now.</p>
+            <p className="mt-1 text-xs text-slate-500">
+              {nextInstallmentDueDate
+                ? `Your next installment opens for payment on ${new Date(nextInstallmentDueDate).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                  })}. We'll email you when it's ready.`
+                : "We'll email you when your next installment is ready to pay."}
+            </p>
+          </div>
+        )}
       </div>
     );
   }

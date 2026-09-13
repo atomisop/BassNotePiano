@@ -3,12 +3,8 @@ import { schedule } from "@netlify/functions";
 import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
 import { sendPaymentPlanInvoiceEmail, getAppUrl } from "../../src/lib/email";
-import { getOrCreateOpenInstallmentPayment, addCalendarMonthsClamped } from "../../src/lib/paymentPlans";
+import { getOrCreateOpenInstallmentPayment, addCalendarMonthsClamped, INSTALLMENT_OPEN_LEAD_DAYS } from "../../src/lib/paymentPlans";
 import { describePaymentPlan } from "../../src/lib/classCreditPricing";
-
-// How far ahead of nextDueDate to open the next installment for payment and
-// send the first "here's your invoice" notice.
-const INSTALLMENT_REMINDER_LEAD_DAYS = 7;
 
 // Escalating overdue reminders, then stop — capped, not infinite. This cap
 // is a real design constraint, not a tunable detail: notifyEmailPayments is
@@ -86,7 +82,7 @@ async function notifyInstallment(
 //      never-created invoice.
 export const handler = schedule("0 16 * * *", async () => {
   const now = new Date();
-  const leadWindowEnd = new Date(now.getTime() + INSTALLMENT_REMINDER_LEAD_DAYS * 24 * 60 * 60 * 1000);
+  const leadWindowEnd = new Date(now.getTime() + INSTALLMENT_OPEN_LEAD_DAYS * 24 * 60 * 60 * 1000);
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
 
   const duePlans = await prisma.paymentPlan.findMany({
@@ -95,8 +91,13 @@ export const handler = schedule("0 16 * * *", async () => {
 
   let opened = 0;
   for (const plan of duePlans) {
-    const { payment, wasCreated } = await getOrCreateOpenInstallmentPayment(plan.id, zelleHandle);
-    if (!wasCreated) continue; // already open (and already notified) from an earlier run
+    const { payment, wasCreated } = await getOrCreateOpenInstallmentPayment(plan.id, zelleHandle, now);
+    // !wasCreated covers both "already open from an earlier run" and "not
+    // within INSTALLMENT_OPEN_LEAD_DAYS yet." The latter shouldn't actually
+    // happen here since duePlans is already filtered to that same window,
+    // but the null check is what the type (rather than that invariant) can
+    // actually guarantee.
+    if (!wasCreated || !payment) continue;
     await notifyInstallment(plan, payment, "PAYMENT_PLAN_INSTALLMENT_DUE");
     opened++;
   }
