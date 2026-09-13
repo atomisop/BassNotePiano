@@ -343,6 +343,23 @@ export async function bookClass(
     throw new ClassBookingError("That class has already started or passed.");
   }
 
+  // A student on an active Payment Plan already has their one weekly slot
+  // auto-booked for them (see createReservedBookingIfAbsent) and, if they
+  // want more than that, a guided pick-a-time-and-pay flow on /schedule
+  // (getOrCreatePendingExtraSessionPayment, booked directly by
+  // bookExtraSessionOccurrence once the payment clears). Nothing routes
+  // through this ad hoc path for them anymore, on purpose, by direct
+  // instruction: letting a subscriber spend a banked balance here however
+  // they want is exactly the "buy credits, then go schedule it all
+  // yourself" friction (and same-day binge risk) this flow was built to
+  // remove. Plain inline query rather than importing getActivePaymentPlan
+  // from paymentPlans.ts, that module already imports from this one, and a
+  // one-line lookup isn't worth the circular dependency.
+  const activePlan = await prisma.paymentPlan.findFirst({ where: { userId: studentId, status: "ACTIVE" }, select: { id: true } });
+  if (activePlan) {
+    throw new ClassBookingError("Your weekly class is already set by your payment plan. Head to Schedule to check your week or add an extra session.");
+  }
+
   // STEP 20: a real student booking their week's classes might reasonably
   // book several in a row — 20/hour covers that comfortably while still
   // stopping a scripted attempt to hammer capacity/credit checks.
@@ -704,6 +721,28 @@ export async function bookFamilyClass(
     throw new ClassBookingError(`These emails aren't verified accounts on file: ${unresolved.join(", ")}.`);
   }
 
+  // Same rule bookClass enforces for a solo self-booking, applied per
+  // attendee here: each attendee spends their own classCredits once
+  // markAttendance runs (see this function's own doc comment above), so an
+  // attendee with an active Payment Plan spending some of that balance on an
+  // ad hoc family booking is exactly the same side door bookClass already
+  // closes, just reached by naming them as someone else's family-booking
+  // attendee instead of booking for themselves directly. The initiator
+  // isn't assumed to be one of the attendees, but nothing stops them from
+  // naming themselves, so this has to check every resolved attendee, not
+  // just initiatorId.
+  const attendeesWithActivePlans = await prisma.paymentPlan.findMany({
+    where: { userId: { in: attendees.map((a) => a.id) }, status: "ACTIVE" },
+    select: { userId: true },
+  });
+  if (attendeesWithActivePlans.length > 0) {
+    const activeIds = new Set(attendeesWithActivePlans.map((p) => p.userId));
+    const namesOnPlans = normalizedEmails.filter((e) => activeIds.has(byEmail.get(e)!.id));
+    throw new ClassBookingError(
+      `${namesOnPlans.join(", ")} already ${namesOnPlans.length === 1 ? "has" : "have"} an active payment plan and can't be added to an ad hoc family booking, message support to change anything about their schedule.`,
+    );
+  }
+
   const familyBookingGroupId = crypto.randomUUID();
 
   let bookings;
@@ -944,6 +983,60 @@ export async function createReservedBookingIfAbsent(
   return existing
     ? db.classBooking.update({ where: { id: existing.id }, data })
     : db.classBooking.create({ data: { studentId, scheduleId, occurrenceDate, ...data } });
+}
+
+/**
+ * Best-effort direct booking for the one-off occurrence a student already
+ * paid EXTRA_SESSION_FLAT_PRICE_CENTS for (see
+ * getOrCreatePendingExtraSessionPayment in payments.ts). Called from
+ * approveZellePayment once that payment verifies, not from the student's
+ * own request, so unlike bookClass there's no rate limit or credit-balance
+ * check here, the credit itself is granted separately in the same
+ * transaction; this only claims the seat. Same conflict-checking idiom as
+ * createReservedBookingIfAbsent above, minus reservedByPlanId (this is an
+ * ordinary one-off booking, not a standing weekly reservation).
+ *
+ * Returns false, never throws, if the exact instant was claimed by someone
+ * else in the gap between the student picking it and the payment clearing
+ * review, that gap is normally hours to a couple of days, not the seconds
+ * bookClass's own transaction races against. The caller still grants the
+ * credit either way (real money changed hands) and just leaves the student
+ * to pick a different open time themselves, the same behavior this flow
+ * replaces for everyone except this one edge case.
+ */
+export async function bookExtraSessionOccurrence(
+  params: { studentId: string; scheduleId: string; occurrenceDate: Date; scheduledAt: Date; creditsSpent: number },
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+): Promise<boolean> {
+  const { studentId, scheduleId, occurrenceDate, scheduledAt, creditsSpent } = params;
+
+  const existing = await db.classBooking.findUnique({
+    where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId, occurrenceDate } },
+  });
+  if (existing?.status === "SCHEDULED") return true; // already booked somehow (a retried approval, say), nothing to do
+
+  const conflict = await db.classBooking.findFirst({
+    where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED", studentId: { not: studentId } },
+    select: { id: true },
+  });
+  if (conflict) return false;
+
+  const data = {
+    scheduledAt,
+    creditsSpent,
+    status: "SCHEDULED" as const,
+    attendance: null,
+    refunded: false,
+    canceledReason: null,
+    familyBookingGroupId: null,
+    reservedByPlanId: null,
+  };
+  if (existing) {
+    await db.classBooking.update({ where: { id: existing.id }, data });
+  } else {
+    await db.classBooking.create({ data: { studentId, scheduleId, occurrenceDate, ...data } });
+  }
+  return true;
 }
 
 export async function getClassCreditBalance(userId: string): Promise<number> {

@@ -8,12 +8,17 @@ import { ScheduleClient } from "./ScheduleClient";
 /**
  * "My week," at a glance: how much of a student's own weekly commitment
  * they've used, their own upcoming classes, and other open times if they
- * want an extra session (paid separately, see EXTRA_SESSION_FLAT_PRICE_CENTS).
- * Deliberately not a rebuild of /lessons' own full booking calendar, that
- * page still owns actually booking a specific open slot and canceling a
- * booking; this one owns the "how am I doing this week" summary plus the
- * one thing /lessons doesn't do, buying a single extra credit outside a
- * Payment Plan or Family Bundle.
+ * want an extra session. Picking one of those times and paying
+ * EXTRA_SESSION_FLAT_PRICE_CENTS is the whole purchase, once the payment
+ * verifies, the exact slot they picked is booked automatically
+ * (bookExtraSessionOccurrence in classSchedule.ts, called from
+ * approveZellePayment), nothing left to go do at /lessons afterward.
+ * That's also the only door left open for "more than my plan gives me": a
+ * student with an active Payment Plan can no longer self-book an ad hoc
+ * class there either (bookClass blocks it), by direct instruction, since a
+ * spendable balance a subscriber can use however and whenever they want is
+ * exactly the "buy credits, then go schedule it all yourself" friction and
+ * same-day-binge risk this page exists to remove.
  *
  * No self-service reschedule action anywhere on this page, by direct
  * instruction: a Payment Plan's reserved weekly day/time is locked in at
@@ -42,9 +47,12 @@ export default async function SchedulePage() {
     .filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > now)
     .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
 
-  // Soonest few open (not-yet-booked) occurrences only, a teaser, not the
-  // full rolling-window calendar /lessons already shows in full.
-  const openSlots = occurrences.filter((o) => !o.isBooked).slice(0, 6);
+  // Soonest few open (not-yet-booked), single-credit occurrences only, a
+  // teaser, not the full rolling-window calendar /lessons already shows in
+  // full. Single-credit only: EXTRA_SESSION_FLAT_PRICE_CENTS is a flat rate
+  // for exactly one 30-min session, so a 2-credit chunk is left out here
+  // rather than shown as something this button can't actually buy.
+  const openSlots = occurrences.filter((o) => !o.isBooked && o.creditCost === 1).slice(0, 6);
 
   return (
     <ScheduleClient
@@ -62,10 +70,10 @@ export default async function SchedulePage() {
       }))}
       openSlots={openSlots.map((o) => ({
         scheduleId: o.scheduleId,
+        occurrenceDateMs: o.occurrenceDate.getTime(),
         chunkIndex: o.chunkIndex,
         label: o.label,
         scheduledAt: o.scheduledAt.toISOString(),
-        creditCost: o.creditCost,
       }))}
     />
   );

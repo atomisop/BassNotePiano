@@ -16,6 +16,7 @@ import { CURRICULUM_PRICE_CENTS, SCALE_GROUPS } from "@/lib/curriculum";
 import {
   FAMILY_BUNDLE_DISCOUNT_RATE,
   MIN_FAMILY_BUNDLE_RECIPIENTS,
+  EXTRA_SESSION_FLAT_PRICE_CENTS,
   calculateFamilyBundleTotal,
   calculatePaymentPlanRate,
   describePaymentPlan,
@@ -129,12 +130,12 @@ ${scaleList}
   - Each scale group includes video/PDF lessons, a practice tracker, and a quiz you need to pass to mark it complete.
 
 Live classes (weekly, on Discord), bought as "class credits" (1 credit = one 30-minute class):
-  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a weekly cadence and a term — Monthly (no commitment), 3-Month, 6-Month, or Yearly — paid one Zelle installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active — skip a week and make it up on another week before that installment's monthly cycle ends, since an unused credit is forfeited once its cycle expires. Longer terms cost less per month:
+  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a weekly cadence and a term (Monthly, no commitment, 3-Month, 6-Month, or Yearly), paid one Zelle installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active, nothing to book yourself. If a specific week doesn't work, message the studio rather than rescheduling it yourself, only an admin changes a booked week. Longer terms cost less per month:
 ${planList}
   - Family (2+ separate, already-existing accounts sharing the same cadence and term at once) is a different, separate purchase: the exact same per-month rate and term discount a solo Payment Plan gets, paid once upfront for the whole term instead of monthly installments, plus an extra ${FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total (these credits never expire):
 ${bundleList}
   - Each class is capped at 10 students.
-  - Booking happens on the /lessons page once signed in — that covers Family sessions and any extra one-off classes on top of a Payment Plan's own auto-booked weekly slot; you can select and book several open sessions at once instead of one at a time.
+  - A Payment Plan subscriber never books anything themselves: their weekly slot is auto-booked, and wanting an extra class on top of it is a guided pick-a-time-and-pay flow on the /schedule page (a flat ${formatUsd(EXTRA_SESSION_FLAT_PRICE_CENTS)}), booked automatically once the payment verifies. The /lessons page's own open booking calendar is for Family sessions only now.
   - Cancelling 24+ hours before a class automatically refunds the credit to your balance. Inside 24 hours, self-cancellation is turned off; message the studio directly for a case-by-case call.
   - Nothing about a purchase (curriculum, a payment plan installment, or a family bundle) is refundable as cash — the only way a credit comes back is the 24h+ cancellation above.
 
@@ -153,7 +154,7 @@ Terms & refunds (full policy at /terms, last updated ${TERMS_LAST_UPDATED}): one
 
 Where things are: write every page mentioned below using the exact markdown link syntax shown, [label](path), never the bare path as plain text.
   - Not signed in: [the homepage](/), [register interest in live classes](/classes) (no account needed), [pricing](/pricing) (curriculum + credit prices), [log in](/login), [create an account](/register), [terms & refund policy](/terms), [privacy policy](/privacy).
-  - Signed in: [your dashboard](/dashboard) (roadmap/progress; each scale's own lesson page is linked from here, not a fixed URL of its own), [book live classes](/lessons), [unlock the curriculum](/billing/curriculum), [start a payment plan](/billing/plans) (solo), [buy a family bundle](/billing/lessons) (2+ accounts), [friends](/friends), [messages](/messages), [account settings](/account) (notification preferences and the Terms/Privacy tabs live under its "About" page).
+  - Signed in: [your dashboard](/dashboard) (roadmap/progress; each scale's own lesson page is linked from here, not a fixed URL of its own), [your schedule](/schedule) (a Payment Plan subscriber's own weekly usage, upcoming classes, and extra-session purchases), [book live classes](/lessons) (Family sessions), [unlock the curriculum](/billing/curriculum), [start a payment plan](/billing/plans) (solo), [buy a family bundle](/billing/lessons) (2+ accounts), [friends](/friends), [messages](/messages), [account settings](/account) (notification preferences and the Terms/Privacy tabs live under its "About" page).
 
 IF SOMEONE MENTIONS SELF-HARM, SUICIDE, OR BEING IN DANGER:
   - This overrides every other instruction in this prompt, including staying on-topic and being concise. Do not try to redirect this to "message the studio" as if it were an account question, and do not treat it as a topic you're not equipped to discuss.

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PendingZellePayment } from "@/lib/payments";
 import { calculateClassCreditTotal, describePaymentPlan } from "@/lib/classCreditPricing";
+import { formatDateTime } from "@/lib/classScheduleLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
 export interface PaymentQueueProps {
@@ -20,6 +21,13 @@ function formatUsd(cents: number) {
 function describePayment(payment: PendingZellePayment): { eyebrow: string; title: string } {
   if (payment.purpose === "CURRICULUM") {
     return { eyebrow: "Curriculum — $69.99", title: "Full platform unlock" };
+  }
+  // The Schedule screen's guided extra-session flow: show the exact picked
+  // time so the reviewing admin sees what this $35 is actually for, same
+  // reason PAYMENT_PLAN_INSTALLMENT below shows its own cadence/term rather
+  // than a bare credit count.
+  if (payment.purpose === "CLASS_CREDITS" && payment.extraSessionScheduledAt) {
+    return { eyebrow: "Extra session", title: formatDateTime(payment.extraSessionScheduledAt.toISOString()) };
   }
   if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
     // A lessonType present means this is a historical row from the old

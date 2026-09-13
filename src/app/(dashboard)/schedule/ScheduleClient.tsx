@@ -22,10 +22,14 @@ interface UpcomingBooking {
 
 interface OpenSlot {
   scheduleId: string;
+  occurrenceDateMs: number;
   chunkIndex: number;
   label: string | null;
   scheduledAt: string;
-  creditCost: number;
+}
+
+function slotKey(slot: OpenSlot) {
+  return `${slot.scheduleId}:${slot.occurrenceDateMs}:${slot.chunkIndex}`;
 }
 
 interface ExtraSessionPayment {
@@ -33,6 +37,7 @@ interface ExtraSessionPayment {
   status: ZellePaymentStatus;
   rejectionReason: string | null;
   amountCents: number;
+  slot: OpenSlot;
 }
 
 interface ScheduleClientProps {
@@ -58,22 +63,33 @@ export function ScheduleClient({
   openSlots,
 }: ScheduleClientProps) {
   const [extraPayment, setExtraPayment] = useState<ExtraSessionPayment | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [pendingSlotKey, setPendingSlotKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const weekProgressPercent =
     weeklyAllotment && weeklyAllotment > 0 ? Math.min(100, (creditsUsedThisWeek / weeklyAllotment) * 100) : null;
 
-  async function handleBuyExtraSession() {
-    setLoading(true);
+  // One click picks the time and starts the purchase in the same motion,
+  // no separate "select a slot, then confirm" step, by direct instruction:
+  // buying should be exactly as easy as picking the time you want.
+  // scheduledAt itself is display-only (formatDateTime below), never sent:
+  // the server recomputes the real instant from scheduleId + occurrenceDate
+  // + chunkIndex on its own, the same way bookClass never trusts a raw
+  // scheduledAt from the client either.
+  async function handleBuySlot(slot: OpenSlot) {
+    setPendingSlotKey(slotKey(slot));
     setError(null);
-    const result = await createExtraSessionPaymentAction();
-    setLoading(false);
+    const result = await createExtraSessionPaymentAction({
+      scheduleId: slot.scheduleId,
+      occurrenceDateMs: slot.occurrenceDateMs,
+      chunkIndex: slot.chunkIndex,
+    });
+    setPendingSlotKey(null);
     if (!result.ok || !result.id || !result.status || result.amountCents === null) {
       setError(result.error ?? "Something went wrong starting that purchase. Please try again.");
       return;
     }
-    setExtraPayment({ id: result.id, status: result.status as ZellePaymentStatus, rejectionReason: null, amountCents: result.amountCents });
+    setExtraPayment({ id: result.id, status: result.status as ZellePaymentStatus, rejectionReason: null, amountCents: result.amountCents, slot });
   }
 
   return (
@@ -112,9 +128,7 @@ export function ScheduleClient({
       <div className="glass-surface rounded-2xl p-5 sm:p-6">
         <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">Your classes</p>
         {upcomingBookings.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">
-            Nothing booked yet. <Link href="/lessons" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">Book a class</Link>.
-          </p>
+          <p className="mt-3 text-sm text-slate-500">Nothing booked yet. Pick a time below to add your first extra session.</p>
         ) : (
           <div className="mt-3 space-y-2.5">
             {upcomingBookings.map((booking) => (
@@ -155,34 +169,18 @@ export function ScheduleClient({
       <div className="glass-surface rounded-2xl p-5 sm:p-6">
         <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">Want more this week?</p>
         <p className="mt-1.5 text-sm text-slate-300">
-          A flat {formatUsd(extraSessionPriceCents)} adds one extra class credit on top of whatever your plan already covers,
-          no new commitment. Here are some open times coming up:
+          Pick an open time below and pay a flat {formatUsd(extraSessionPriceCents)}, that&apos;s the whole purchase. Once
+          it&apos;s verified, this exact class is booked for you automatically.
         </p>
-
-        {openSlots.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">Nothing open right now. Check back soon or message support.</p>
-        ) : (
-          <div className="mt-3 space-y-2">
-            {openSlots.map((slot) => (
-              <div
-                key={`${slot.scheduleId}:${slot.chunkIndex}:${slot.scheduledAt}`}
-                className="flex items-center gap-2.5 rounded-lg border border-ink/10 px-3.5 py-2 text-sm text-slate-300"
-              >
-                <Calendar className="h-[15px] w-[15px] shrink-0 text-slate-500" strokeWidth={1.5} />
-                <span>{formatDateTime(slot.scheduledAt)}</span>
-                <span className="ml-auto text-xs text-slate-500">{slot.creditCost} credit{slot.creditCost === 1 ? "" : "s"}</span>
-              </div>
-            ))}
-          </div>
-        )}
 
         {extraPayment ? (
           <div className="mt-4">
+            <p className="mb-3 text-sm text-slate-300">{formatDateTime(extraPayment.slot.scheduledAt)}</p>
             <ZelleUnlockGate
               status={extraPayment.status}
               rejectionReason={extraPayment.rejectionReason}
               scaleCode="Extra session"
-              scaleTitle="1 extra class credit"
+              scaleTitle={extraPayment.slot.label ?? "Extra class"}
               eyebrowLabel="Schedule"
               amountCents={extraPayment.amountCents}
               zelleHandle={zelleHandle}
@@ -192,25 +190,36 @@ export function ScheduleClient({
         ) : (
           <>
             {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
-            <button
-              type="button"
-              onClick={handleBuyExtraSession}
-              disabled={loading}
-              className="cta-sheen cta-fill mt-4 flex w-full items-center justify-center rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-6"
-            >
-              {loading && <MorphingSquare size={14} className="mr-2 shrink-0" />}
-              {loading ? "Loading…" : `Buy 1 extra credit · ${formatUsd(extraSessionPriceCents)}`}
-            </button>
+            {openSlots.length === 0 ? (
+              <p className="mt-3 text-sm text-slate-500">Nothing open right now. Check back soon or message support.</p>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {openSlots.map((slot) => {
+                  const pending = pendingSlotKey === slotKey(slot);
+                  return (
+                    <button
+                      key={slotKey(slot)}
+                      type="button"
+                      onClick={() => handleBuySlot(slot)}
+                      disabled={pendingSlotKey !== null}
+                      className="flex w-full items-center gap-2.5 rounded-lg border border-ink/10 px-3.5 py-2.5 text-left text-sm text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:bg-[rgb(var(--c-s-50)/0.06)] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {pending ? (
+                        <MorphingSquare size={15} className="shrink-0" />
+                      ) : (
+                        <Calendar className="h-[15px] w-[15px] shrink-0 text-slate-500" strokeWidth={1.5} />
+                      )}
+                      <span>{formatDateTime(slot.scheduledAt)}</span>
+                      <span className="ml-auto text-xs font-medium text-[rgb(var(--c-s-50))]">
+                        {pending ? "Starting…" : formatUsd(extraSessionPriceCents)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </>
         )}
-
-        <p className="mt-3 text-xs text-slate-500">
-          Once verified, the credit lands on your balance above. Book any open time from{" "}
-          <Link href="/lessons" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
-            the Lessons page
-          </Link>
-          .
-        </p>
       </div>
     </div>
   );

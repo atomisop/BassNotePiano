@@ -1166,6 +1166,19 @@ model ZellePayment {
   paymentPlan       PaymentPlan? @relation(fields: [paymentPlanId], references: [id])
   installmentNumber Int?
 
+  // Only set on a CLASS_CREDITS row created through the Schedule screen's
+  // guided "buy an extra session" flow (getOrCreatePendingExtraSessionPayment
+  // in payments.ts), the exact one-off occurrence the student picked before
+  // paying. approveZellePayment books it directly the moment the payment
+  // verifies (bookExtraSessionOccurrence in classSchedule.ts), so the student
+  // never has to go spend the credit themselves at /lessons. Null for every
+  // other CLASS_CREDITS row, including a legacy bare credit purchase from
+  // before this flow existed.
+  extraSessionScheduleId     String?
+  extraSessionSchedule       ClassSchedule? @relation(fields: [extraSessionScheduleId], references: [id])
+  extraSessionOccurrenceDate DateTime?
+  extraSessionScheduledAt    DateTime?
+
   amountCents Int
   zelleHandle String // platform's receiving handle/email shown to the user at request time
 
@@ -1275,8 +1288,9 @@ model ClassSchedule {
 
   createdAt DateTime @default(now())
 
-  bookings        ClassBooking[]
-  reservedByPlans PaymentPlan[]
+  bookings             ClassBooking[]
+  reservedByPlans      PaymentPlan[]
+  extraSessionPayments ZellePayment[]
 
   @@index([dayOfWeek, active])
 }

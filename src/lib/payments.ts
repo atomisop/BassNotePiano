@@ -2,6 +2,7 @@ import { PaymentPlanCadence, PaymentPlanTerm, type Prisma, type ZellePaymentStat
 import { prisma } from "@/lib/prisma";
 import { AccessDeniedError, unlockScaleForUser, grantCurriculumAccess } from "@/lib/access";
 import { grantCredits } from "@/lib/creditLedger";
+import { bookExtraSessionOccurrence, chunksForSchedule, computeScheduledAt } from "@/lib/classSchedule";
 import {
   calculateClassCreditTotal,
   calculateFamilyBundleTotal,
@@ -98,22 +99,84 @@ export function getOrCreatePendingCurriculumPayment(userId: string, amountCents:
   return getOrCreatePendingZellePayment({ userId, purpose: "CURRICULUM", amountCents, zelleHandle });
 }
 
+export class ExtraSessionError extends Error {}
+
+export interface ExtraSessionOccurrence {
+  scheduleId: string;
+  occurrenceDateMs: number;
+  chunkIndex: number;
+}
+
 /**
- * The Schedule screen's "buy one extra session" top-up: a flat
- * EXTRA_SESSION_FLAT_PRICE_CENTS for exactly one non-expiring class credit,
- * for a student who already has (or had) a Payment Plan and just wants one
- * more session this week, without enrolling in a whole new plan. Reuses the
- * CLASS_CREDITS purpose, quantity always 1, granted the same way any other
- * CLASS_CREDITS row already is (approveZellePayment's CLASS_CREDITS
- * branch), no volume tier, no charm pricing.
+ * The Schedule screen's "buy an extra session" flow: a flat
+ * EXTRA_SESSION_FLAT_PRICE_CENTS for exactly one specific one-off occurrence
+ * the student picked before paying, for a student who already has (or had) a
+ * Payment Plan and just wants one more class this week, without enrolling in
+ * a whole new plan. Deliberately its own creation path rather than going
+ * through getOrCreatePendingZellePayment above, same reasoning
+ * createFamilyBundlePayment and getOrCreateOpenInstallmentPayment already
+ * have their own paths: this purpose now carries occurrence-specific fields
+ * that helper knows nothing about, and "reuse the open row" here means
+ * updating it to whichever occurrence the student picked most recently, not
+ * just refreshing amountCents.
+ *
+ * Takes chunkIndex, not a raw scheduledAt, same reason bookClass never
+ * trusts a client-supplied scheduledAt either: scheduledAt and the chunk's
+ * own creditCost are both recomputed here from the schedule itself, never
+ * taken as given. Skipping that (an earlier version of this function did)
+ * would let a client request any timestamp it wants, real occurrence or
+ * not, and would let a 2-credit chunk get flat-rate-priced as if it were
+ * the single 30-min credit this price is actually for.
+ *
+ * approveZellePayment books the exact occurrence directly the moment this
+ * payment verifies (bookExtraSessionOccurrence in classSchedule.ts), the
+ * student never has to separately go spend anything at /lessons, picking a
+ * time and paying for it is the whole purchase.
  */
-export function getOrCreatePendingExtraSessionPayment(userId: string, zelleHandle: string) {
-  return getOrCreatePendingZellePayment({
-    userId,
-    purpose: "CLASS_CREDITS",
+export async function getOrCreatePendingExtraSessionPayment(
+  userId: string,
+  zelleHandle: string,
+  occurrence: ExtraSessionOccurrence,
+) {
+  await expireStalePendingPayments();
+
+  const schedule = await prisma.classSchedule.findUnique({ where: { id: occurrence.scheduleId } });
+  if (!schedule || !schedule.active) throw new ExtraSessionError("That class time is no longer offered, pick another.");
+
+  const chunk = chunksForSchedule(schedule)[occurrence.chunkIndex];
+  if (!chunk) throw new ExtraSessionError("That time slot doesn't exist.");
+  if (chunk.creditCost !== 1) {
+    throw new ExtraSessionError("That time is longer than a single extra session covers, pick a 30-minute time instead.");
+  }
+
+  const occurrenceDate = new Date(occurrence.occurrenceDateMs);
+  const scheduledAt = computeScheduledAt(schedule, occurrenceDate, chunk);
+  if (scheduledAt.getTime() <= Date.now()) {
+    throw new ExtraSessionError("That class has already started or passed, pick another.");
+  }
+
+  const taken = await prisma.classBooking.findFirst({
+    where: { scheduleId: occurrence.scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED" },
+    select: { id: true },
+  });
+  if (taken) throw new ExtraSessionError("That time was just booked by someone else, pick another.");
+
+  const existing = await prisma.zellePayment.findFirst({
+    where: { userId, purpose: "CLASS_CREDITS", extraSessionScheduleId: { not: null }, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
+    orderBy: { createdAt: "desc" },
+  });
+  const data = {
     amountCents: EXTRA_SESSION_FLAT_PRICE_CENTS,
-    zelleHandle,
     lessonQuantity: 1,
+    extraSessionScheduleId: occurrence.scheduleId,
+    extraSessionOccurrenceDate: occurrenceDate,
+    extraSessionScheduledAt: scheduledAt,
+  };
+  if (existing) {
+    return prisma.zellePayment.update({ where: { id: existing.id }, data });
+  }
+  return prisma.zellePayment.create({
+    data: { userId, purpose: "CLASS_CREDITS", zelleHandle, status: "AWAITING_TRANSFER", ...data },
   });
 }
 
@@ -373,83 +436,128 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
   // either the whole thing commits, or none of it does. The notification
   // stays outside: it's a best-effort side effect, not part of what has to
   // be atomic, and a notification failure shouldn't roll back a real grant.
-  const payment = await prisma.$transaction(async (tx) => {
-    const payment = await tx.zellePayment.findUniqueOrThrow({ where: { id: paymentId } });
-    if (payment.status !== "PENDING_REVIEW") {
-      throw new Error(`Payment ${paymentId} is not pending review (status: ${payment.status})`);
-    }
+  // Only meaningful for a CLASS_CREDITS row carrying extraSessionScheduleId
+  // (the Schedule screen's guided flow), set inside the transaction below,
+  // read afterward to pick the right notification copy. Undefined for every
+  // other purpose, and for a legacy CLASS_CREDITS row with no occurrence to
+  // book at all.
+  let extraSessionBooked: boolean | undefined;
 
-    await tx.zellePayment.update({
-      where: { id: paymentId },
-      data: { status: "VERIFIED", reviewedAt: new Date(), reviewedById: reviewerId },
-    });
+  // Serializable, matching bookClass/bookFamilyClass/createPaymentPlan's own
+  // isolation level for the exact same reason: bookExtraSessionOccurrence
+  // below does its own find-then-create for the CLASS_CREDITS branch, and
+  // Read Committed wouldn't stop two concurrent approvals for two different
+  // students' extra sessions on the same occurrence from both passing that
+  // check before either commits. Caught below the same way those callers
+  // already catch it, a friendly retry message instead of a raw P2034.
+  let payment;
+  try {
+    payment = await prisma.$transaction(
+      async (tx) => {
+        const payment = await tx.zellePayment.findUniqueOrThrow({ where: { id: paymentId } });
+        if (payment.status !== "PENDING_REVIEW") {
+          throw new Error(`Payment ${paymentId} is not pending review (status: ${payment.status})`);
+        }
 
-    if (payment.purpose === "CURRICULUM") {
-      await grantCurriculumAccess(payment.userId, tx);
-    } else if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
-      // Legacy rows only (the a-la-carte purchase path itself was removed) —
-      // non-expiring, same as it always was for anyone who bought this way.
-      await grantCredits(payment.userId, payment.lessonQuantity, { source: "CLASS_CREDITS", expiresAt: null }, tx);
-    } else if (payment.purpose === "FAMILY_BUNDLE") {
-      // Credits go to every recipient row, not payment.userId: the payer
-      // isn't necessarily a recipient themselves (see createFamilyBundlePayment).
-      // Non-expiring — only a Payment Plan installment's credits expire.
-      const recipients = await tx.familyBundleRecipient.findMany({ where: { paymentId: payment.id } });
-      for (const recipient of recipients) {
-        await grantCredits(recipient.userId, recipient.creditsGranted, { source: "FAMILY_BUNDLE", expiresAt: null }, tx);
-      }
-    } else if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId && payment.lessonQuantity) {
-      // Fetched before granting (unlike the other branches) because the
-      // grant's own expiresAt needs it: this installment's credits are good
-      // through the end of the cycle it's paying for — exactly when the
-      // *next* installment becomes due. cycleEnd is computed once and
-      // reused for both, below.
-      const plan = await tx.paymentPlan.findUnique({ where: { id: payment.paymentPlanId } });
-      const cycleEnd = plan ? addCalendarMonthsClamped(plan.nextDueDate, 1) : null;
-
-      // Quantity is snapshotted onto the payment row at installment-creation
-      // time (see createPaymentPlan/getOrCreateOpenInstallmentPayment in
-      // paymentPlans.ts).
-      await grantCredits(
-        payment.userId,
-        payment.lessonQuantity,
-        { source: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: payment.paymentPlanId, expiresAt: cycleEnd },
-        tx,
-      );
-
-      // The plan may have been canceled after this installment was created
-      // but before review cleared (an admin cancellation racing a student's
-      // in-flight Zelle transfer). Credits are still granted above — real
-      // money changed hands, and refusing them would just generate a
-      // support conversation — but a canceled plan's own progress is left
-      // alone rather than resurrected by a late approval.
-      if (plan && plan.status === "ACTIVE" && cycleEnd) {
-        const installmentsPaid = plan.installmentsPaid + 1;
-        const isComplete = installmentsPaid >= plan.termMonths;
-        await tx.paymentPlan.update({
-          where: { id: plan.id },
-          data: {
-            installmentsPaid,
-            status: isComplete ? "COMPLETED" : "ACTIVE",
-            nextDueDate: isComplete ? plan.nextDueDate : cycleEnd,
-          },
+        await tx.zellePayment.update({
+          where: { id: paymentId },
+          data: { status: "VERIFIED", reviewedAt: new Date(), reviewedById: reviewerId },
         });
-      }
-    } else if (payment.scaleGroupId) {
-      // Legacy Pay-As-You-Go row from before per-scale purchase was retired.
-      const scaleGroup = await tx.scaleGroup.findUniqueOrThrow({ where: { id: payment.scaleGroupId } });
-      await unlockScaleForUser(payment.userId, scaleGroup.slug, tx);
-    }
 
-    return payment;
-  });
+        if (payment.purpose === "CURRICULUM") {
+          await grantCurriculumAccess(payment.userId, tx);
+        } else if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
+          // Non-expiring, same as any CLASS_CREDITS grant always was. Two shapes
+          // share this branch: a legacy bare credit purchase (from before this
+          // purpose's a-la-carte page was removed, extraSessionScheduleId null,
+          // nothing more to do), and the Schedule screen's guided extra-session
+          // flow, which also has a specific occurrence to book directly, so the
+          // student never has to go spend the credit themselves at /lessons.
+          await grantCredits(payment.userId, payment.lessonQuantity, { source: "CLASS_CREDITS", expiresAt: null }, tx);
+          if (payment.extraSessionScheduleId && payment.extraSessionOccurrenceDate && payment.extraSessionScheduledAt) {
+            extraSessionBooked = await bookExtraSessionOccurrence(
+              {
+                studentId: payment.userId,
+                scheduleId: payment.extraSessionScheduleId,
+                occurrenceDate: payment.extraSessionOccurrenceDate,
+                scheduledAt: payment.extraSessionScheduledAt,
+                creditsSpent: payment.lessonQuantity,
+              },
+              tx,
+            );
+          }
+        } else if (payment.purpose === "FAMILY_BUNDLE") {
+          // Credits go to every recipient row, not payment.userId: the payer
+          // isn't necessarily a recipient themselves (see createFamilyBundlePayment).
+          // Non-expiring, only a Payment Plan installment's credits expire.
+          const recipients = await tx.familyBundleRecipient.findMany({ where: { paymentId: payment.id } });
+          for (const recipient of recipients) {
+            await grantCredits(recipient.userId, recipient.creditsGranted, { source: "FAMILY_BUNDLE", expiresAt: null }, tx);
+          }
+        } else if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId && payment.lessonQuantity) {
+          // Fetched before granting (unlike the other branches) because the
+          // grant's own expiresAt needs it: this installment's credits are good
+          // through the end of the cycle it's paying for, exactly when the
+          // *next* installment becomes due. cycleEnd is computed once and
+          // reused for both, below.
+          const plan = await tx.paymentPlan.findUnique({ where: { id: payment.paymentPlanId } });
+          const cycleEnd = plan ? addCalendarMonthsClamped(plan.nextDueDate, 1) : null;
+
+          // Quantity is snapshotted onto the payment row at installment-creation
+          // time (see createPaymentPlan/getOrCreateOpenInstallmentPayment in
+          // paymentPlans.ts).
+          await grantCredits(
+            payment.userId,
+            payment.lessonQuantity,
+            { source: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: payment.paymentPlanId, expiresAt: cycleEnd },
+            tx,
+          );
+
+          // The plan may have been canceled after this installment was created
+          // but before review cleared (an admin cancellation racing a student's
+          // in-flight Zelle transfer). Credits are still granted above, real
+          // money changed hands, and refusing them would just generate a
+          // support conversation, but a canceled plan's own progress is left
+          // alone rather than resurrected by a late approval.
+          if (plan && plan.status === "ACTIVE" && cycleEnd) {
+            const installmentsPaid = plan.installmentsPaid + 1;
+            const isComplete = installmentsPaid >= plan.termMonths;
+            await tx.paymentPlan.update({
+              where: { id: plan.id },
+              data: {
+                installmentsPaid,
+                status: isComplete ? "COMPLETED" : "ACTIVE",
+                nextDueDate: isComplete ? plan.nextDueDate : cycleEnd,
+              },
+            });
+          }
+        } else if (payment.scaleGroupId) {
+          // Legacy Pay-As-You-Go row from before per-scale purchase was retired.
+          const scaleGroup = await tx.scaleGroup.findUniqueOrThrow({ where: { id: payment.scaleGroupId } });
+          await unlockScaleForUser(payment.userId, scaleGroup.slug, tx);
+        }
+
+        return payment;
+      },
+      { isolationLevel: "Serializable" },
+    );
+  } catch (err) {
+    if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2034") {
+      throw new Error("That payment was just processed elsewhere, please try approving it again.");
+    }
+    throw err;
+  }
 
   let notificationBody = "Your payment was verified.";
   if (payment.purpose === "CURRICULUM") {
     notificationBody = "Your $69.99 curriculum payment was verified — every scale is unlocked, for good.";
+  } else if (payment.purpose === "CLASS_CREDITS" && payment.extraSessionScheduleId) {
+    notificationBody = extraSessionBooked
+      ? "Your extra session payment was verified and the class is booked. See it on your Schedule."
+      : "Your extra session payment was verified, but that time was taken in the meantime. Pick another open time from Lessons, your credit is already on your account.";
   } else if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
     const { discountCents } = calculateClassCreditTotal(payment.lessonQuantity);
-    const discountNote = discountCents > 0 ? " — bundle discount applied" : "";
+    const discountNote = discountCents > 0 ? ", bundle discount applied" : "";
     notificationBody = `Your ${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} payment was verified${discountNote}. Credits are on your account.`;
   } else if (payment.purpose === "FAMILY_BUNDLE" && payment.lessonQuantity) {
     notificationBody = `Your family bundle payment was verified. ${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} each went out to everyone in the bundle.`;

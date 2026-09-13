@@ -302,11 +302,10 @@ export function PaymentPlanEnrollmentFlow({
           {rate.termMonths === 1
             ? `I'm paying for one month of credits (${formatUsd(rate.installmentAmountCents)}), no further commitment.`
             : `I'm committing to ${rate.termMonths} monthly installments of ${formatUsd(rate.installmentAmountCents)} each.`}{" "}
-          My selected weekly time is reserved for me exclusively and auto-booked every week this plan stays
-          active. If I skip a week, I make it up on another week before that installment&apos;s cycle ends — an
-          unused credit is <span className="font-medium text-[rgb(var(--c-s-50))]">forfeited</span> once its cycle
-          expires. Money spent is <span className="font-medium text-[rgb(var(--c-s-50))]">non-refundable</span> once
-          a credit is used.
+          My selected weekly time is reserved for me exclusively and auto-booked automatically every week this
+          plan stays active, I don&apos;t need to book it myself. If a specific week doesn&apos;t work for me, I&apos;ll
+          message support rather than rescheduling it myself. Money spent is{" "}
+          <span className="font-medium text-[rgb(var(--c-s-50))]">non-refundable</span> once a class happens.
         </span>
       </label>
 
