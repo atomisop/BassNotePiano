@@ -5,6 +5,7 @@ import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { getRoadmap, type ScaleAccessState } from "@/lib/access";
 import { resolveNextStep } from "@/lib/next-step";
 import { drawDownCredits } from "@/lib/creditLedger";
+import { PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 
 export class ClassBookingError extends Error {}
 
@@ -968,6 +969,49 @@ export async function getUserClassBookings(studentId: string) {
     include: { schedule: true },
     orderBy: { scheduledAt: "desc" },
   });
+}
+
+export interface WeeklyCreditUsage {
+  weekStartMs: number;
+  weekEndMs: number;
+  creditsUsedThisWeek: number;
+  /** Null when the student has no ACTIVE Payment Plan (a family-bundle-only
+      or between-plans student has no fixed weekly commitment to compare
+      against, so the Schedule screen just shows their raw usage instead). */
+  weeklyAllotment: number | null;
+}
+
+/**
+ * Powers the "this week" card on /schedule: how much of a student's own
+ * weekly commitment they've actually used, calendar-week (Sun-Sat) based
+ * rather than a rolling 7 days, matching how a person actually thinks about
+ * "this week" versus "next week." Counts SCHEDULED and COMPLETED bookings
+ * (a CANCELED one was never actually going to cost anything, see
+ * cancelClassBooking) whose scheduledAt falls in that window, regardless of
+ * source (a plan's own auto-booked slot, a manually booked extra session,
+ * or a family session): the number a student cares about is "how much of
+ * my week is spoken for," not which purchase paid for which class.
+ */
+export async function getWeeklyCreditUsage(studentId: string): Promise<WeeklyCreditUsage> {
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekStart = new Date(startOfToday.getTime() - startOfToday.getDay() * 24 * 60 * 60 * 1000);
+  const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const [plan, bookings] = await Promise.all([
+    prisma.paymentPlan.findFirst({ where: { userId: studentId, status: "ACTIVE" }, select: { cadence: true } }),
+    prisma.classBooking.findMany({
+      where: { studentId, status: { in: ["SCHEDULED", "COMPLETED"] }, scheduledAt: { gte: weekStart, lt: weekEnd } },
+      select: { creditsSpent: true },
+    }),
+  ]);
+
+  return {
+    weekStartMs: weekStart.getTime(),
+    weekEndMs: weekEnd.getTime(),
+    creditsUsedThisWeek: bookings.reduce((sum, b) => sum + b.creditsSpent, 0),
+    weeklyAllotment: plan ? PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence] : null,
+  };
 }
 
 /**

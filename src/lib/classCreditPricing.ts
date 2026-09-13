@@ -16,6 +16,20 @@ export const CREDIT_ORIGINAL_PRICE_CENTS = 5000;
 /** Rounded down so the badge never overstates the real discount. */
 export const CREDIT_DISCOUNT_PERCENT = Math.floor((1 - CREDIT_BASE_PRICE_CENTS / CREDIT_ORIGINAL_PRICE_CENTS) * 100);
 
+/**
+ * A flat $35 for one extra class, on top of whatever a student's own
+ * Payment Plan already covers that week, bought from the Schedule screen
+ * (see /schedule). Deliberately its own plain number, not derived from
+ * CREDIT_BASE_PRICE_CENTS or any tier: this is a single, occasional add-on
+ * for someone who already has a plan and wants one more session, not a
+ * bundle purchase, so it skips the charm-price/volume-discount machinery
+ * above entirely. Granted as an ordinary, non-expiring CLASS_CREDITS
+ * credit (see getOrCreatePendingExtraSessionPayment in payments.ts), the
+ * same purpose a solo a-la-carte purchase always used, just reintroduced
+ * through a different, flat-rate door.
+ */
+export const EXTRA_SESSION_FLAT_PRICE_CENTS = 3500;
+
 interface PriceTier {
   minQuantity: number;
   discountRate: number;

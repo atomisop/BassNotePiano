@@ -6,6 +6,7 @@ import {
   calculateClassCreditTotal,
   calculateFamilyBundleTotal,
   MIN_FAMILY_BUNDLE_RECIPIENTS,
+  EXTRA_SESSION_FLAT_PRICE_CENTS,
 } from "@/lib/classCreditPricing";
 import { addCalendarMonthsClamped } from "@/lib/paymentPlans";
 import { createNotification } from "@/lib/notifications";
@@ -45,9 +46,11 @@ async function expireStalePendingPayments() {
 
 interface PendingPaymentParams {
   userId: string;
-  purpose: "CURRICULUM";
+  purpose: "CURRICULUM" | "CLASS_CREDITS";
   amountCents: number;
   zelleHandle: string;
+  /** Only meaningful for CLASS_CREDITS, how many credits this row grants once verified. */
+  lessonQuantity?: number;
 }
 
 /**
@@ -57,15 +60,17 @@ interface PendingPaymentParams {
  * shouldn't spawn a new row every time a student revisits before submitting
  * a reference code.
  *
- * Only CURRICULUM goes through this now. CLASS_CREDITS's own individual
- * a-la-carte purchase path was removed once Payment Plans covered every
- * solo case (see paymentPlans.ts) — FAMILY_BUNDLE and
- * PAYMENT_PLAN_INSTALLMENT both already had their own, non-idempotent
- * creation paths for reasons specific to each (see createFamilyBundlePayment
- * and getOrCreateOpenInstallmentPayment), so this was never their shared
- * helper to begin with.
+ * CURRICULUM and CLASS_CREDITS both go through this. FAMILY_BUNDLE and
+ * PAYMENT_PLAN_INSTALLMENT have their own, non-idempotent creation paths for
+ * reasons specific to each (see createFamilyBundlePayment and
+ * getOrCreateOpenInstallmentPayment), so this was never their shared helper
+ * to begin with. CLASS_CREDITS's own old *a-la-carte, buy-any-quantity*
+ * purchase page was removed once Payment Plans covered every solo case, but
+ * the purpose itself lives on: getOrCreatePendingExtraSessionPayment below
+ * reuses it for the Schedule screen's flat-rate single-session top-up,
+ * which is idempotent in exactly this same "reuse an open row" way.
  */
-async function getOrCreatePendingZellePayment({ userId, purpose, amountCents, zelleHandle }: PendingPaymentParams) {
+async function getOrCreatePendingZellePayment({ userId, purpose, amountCents, zelleHandle, lessonQuantity }: PendingPaymentParams) {
   await expireStalePendingPayments();
 
   const existing = await prisma.zellePayment.findFirst({
@@ -85,12 +90,31 @@ async function getOrCreatePendingZellePayment({ userId, purpose, amountCents, ze
   }
 
   return prisma.zellePayment.create({
-    data: { userId, purpose, amountCents, zelleHandle, status: "AWAITING_TRANSFER" },
+    data: { userId, purpose, amountCents, zelleHandle, lessonQuantity, status: "AWAITING_TRANSFER" },
   });
 }
 
 export function getOrCreatePendingCurriculumPayment(userId: string, amountCents: number, zelleHandle: string) {
   return getOrCreatePendingZellePayment({ userId, purpose: "CURRICULUM", amountCents, zelleHandle });
+}
+
+/**
+ * The Schedule screen's "buy one extra session" top-up: a flat
+ * EXTRA_SESSION_FLAT_PRICE_CENTS for exactly one non-expiring class credit,
+ * for a student who already has (or had) a Payment Plan and just wants one
+ * more session this week, without enrolling in a whole new plan. Reuses the
+ * CLASS_CREDITS purpose, quantity always 1, granted the same way any other
+ * CLASS_CREDITS row already is (approveZellePayment's CLASS_CREDITS
+ * branch), no volume tier, no charm pricing.
+ */
+export function getOrCreatePendingExtraSessionPayment(userId: string, zelleHandle: string) {
+  return getOrCreatePendingZellePayment({
+    userId,
+    purpose: "CLASS_CREDITS",
+    amountCents: EXTRA_SESSION_FLAT_PRICE_CENTS,
+    zelleHandle,
+    lessonQuantity: 1,
+  });
 }
 
 // ---------------------------------------------------------------------------
