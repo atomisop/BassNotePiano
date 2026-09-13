@@ -96,7 +96,7 @@ export function getOrCreatePendingCurriculumPayment(userId: string, amountCents:
 // ---------------------------------------------------------------------------
 // Family bundle: one credit tier bought at once for 2+ separate,
 // already-existing accounts (a parent buying the same bundle for each of
-// her kids' own accounts, say), an extra 25% off the combined total. The
+// her kids' own accounts, say), an extra 10% off the combined total. The
 // entire point of this section is that "2+ real accounts" is *verified*,
 // not just asserted. Someone could otherwise get the extra discount by
 // typing in fabricated-looking or duplicate addresses and never actually

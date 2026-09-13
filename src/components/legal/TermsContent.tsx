@@ -4,6 +4,8 @@
 // "Terms & refunds" tab. Keeping this in one place means the two surfaces
 // can never quietly drift out of sync with each other.
 
+import { FAMILY_BUNDLE_DISCOUNT_RATE } from "@/lib/classCreditPricing";
+
 export const TERMS_LAST_UPDATED = "August 25, 2026";
 
 function TermsSection({ title, children }: { title: string; children: React.ReactNode }) {
@@ -48,8 +50,8 @@ export function TermsContent() {
         </p>
         <p>
           Family bundles are priced differently: $34.99 per credit at full price, with a bigger discount the more
-          you buy at once (10% off at 4+, 20% off at 10+, 30% off at 20+), plus an extra 25% off the combined total.
-          Family credits never expire.
+          you buy at once (10% off at 4+, 20% off at 10+, 30% off at 20+), plus an extra{" "}
+          {FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total. Family credits never expire.
         </p>
         <p>
           <span className="font-medium text-[rgb(var(--c-s-50))]">Money spent on credits is non-refundable.</span> The only way
