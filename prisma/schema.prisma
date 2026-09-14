@@ -42,8 +42,17 @@ enum PaymentPurpose {
   CURRICULUM // one-time $69.99 full-curriculum unlock (renamed from PRO_LIFETIME)
   SCALE_UNLOCK // legacy Pay-As-You-Go per-scale unlock — no longer purchasable, kept for historical rows
   CLASS_CREDITS // class-credit bundle purchase (renamed from LESSON_PACKAGE — the old 1:1 online/in-person lesson system was replaced by the weekly group-class schedule below)
-  FAMILY_BUNDLE // one credit tier bought for 2+ separate, already-existing accounts at once, an extra 25% off the combined price. See FamilyBundleRecipient below for who actually receives the credits
+  FAMILY_BUNDLE // one credit tier bought for 2+ separate, already-existing accounts at once, an extra 10% off the combined price (FAMILY_BUNDLE_DISCOUNT_RATE in classCreditPricing.ts). See FamilyBundleRecipient below for who actually receives the credits
   PAYMENT_PLAN_INSTALLMENT // one monthly installment of a PaymentPlan term commitment — same AWAITING_TRANSFER/PENDING_REVIEW/VERIFIED lifecycle as any other purchase, see PaymentPlan below
+  // Same shape as FAMILY_BUNDLE but for curriculum access instead of class
+  // credits, 2+ separate, already-existing accounts unlocking the full
+  // curriculum in one purchase, 20% off the combined price
+  // (CURRICULUM_FAMILY_BUNDLE_DISCOUNT_RATE in curriculum.ts). Also uses
+  // FamilyBundleRecipient below, with creditsGranted always 0 there (a
+  // curriculum grant isn't a credit count, that field just goes unused for
+  // this purpose); approveZellePayment's own branch keys off payment.purpose,
+  // not that field, to decide what each recipient actually receives.
+  CURRICULUM_FAMILY_BUNDLE
 }
 
 // A student's standing commitment to pay for class credits in periodic
@@ -384,6 +393,7 @@ enum NotificationType {
   CREDITS_EXPIRING_SOON // to the student, a few days ahead of CREDITS_EXPIRED, while there's still time to use them
   RESERVED_SLOT_UNAVAILABLE // to the student, when an admin deactivates the weekly schedule their Payment Plan reserves
   PLAN_CANCELLATION_FEEDBACK // to admins, when a student self-cancels their Payment Plan and leaves a reason, see /admin/feedback
+  CURRICULUM_ACCESS_GRANTED // to a curriculum family bundle recipient who wasn't the buyer. PAYMENT_APPROVED's own CTA points at /billing/history, empty for a recipient who never paid, this points at the roadmap they can now actually use
 }
 
 // The in-app inbox is the source of truth — always written regardless of

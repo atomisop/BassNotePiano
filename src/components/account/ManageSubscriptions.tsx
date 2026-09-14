@@ -178,10 +178,25 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                 {/* Classes/month, not a raw credit count, by direct
                     instruction: same reasoning as PaymentPlanEnrollmentFlow's
                     own classesPerMonth, both cadences work out to 4 classes
-                    a month, just a different length each. */}
-                <p className="text-[11px] text-slate-500">
-                  per month · {rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence]} classes
-                </p>
+                    a month, just a different length each. The total-over-
+                    term line below it is new: showing only "4/month" made
+                    a 6- or 12-month card look identical to Monthly at a
+                    glance, so what a longer term actually adds (more total
+                    classes locked in, not a different rate) wasn't visible
+                    without doing the multiplication yourself. */}
+                {(() => {
+                  const perMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
+                  return (
+                    <>
+                      <p className="text-[11px] text-slate-500">per month · {perMonth} classes</p>
+                      {option.value !== "MONTHLY" && (
+                        <p className="text-[11px] text-slate-500">
+                          {perMonth * rate.termMonths} total over {rate.termMonths} months
+                        </p>
+                      )}
+                    </>
+                  );
+                })()}
 
                 {activePlan ? (
                   <button

@@ -53,6 +53,13 @@ function describePayment(payment: PendingZellePayment): { eyebrow: string; title
       title: `${payment.lessonQuantity} credit${payment.lessonQuantity === 1 ? "" : "s"} × ${recipientCount} account${recipientCount === 1 ? "" : "s"}`,
     };
   }
+  if (payment.purpose === "CURRICULUM_FAMILY_BUNDLE") {
+    const recipientCount = payment.familyBundleRecipients.length;
+    return {
+      eyebrow: "Curriculum family bundle",
+      title: `Full curriculum × ${recipientCount} account${recipientCount === 1 ? "" : "s"}`,
+    };
+  }
   if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlan) {
     return {
       eyebrow: describePaymentPlan(payment.paymentPlan.cadence, payment.paymentPlan.term),

@@ -2,13 +2,32 @@ import { spellDegree, type RootKey } from "@/lib/music-theory";
 import { SCALE_CONTENT, type ScaleVariant } from "@/lib/scale-content";
 
 // ============================================================================
-// Deterministic quiz generation. No randomness (no Math.random/Date.now) is
-// used anywhere in here — every "pick" is arithmetic on a fixed index. That
-// means generateScaleQuiz(slug) always returns the exact same question set,
-// in the exact same choice order, every time it's called. That determinism
-// is what lets grading regenerate the quiz server-side (with correct
-// answers) from nothing but the scaleSlug, instead of having to persist the
+// Deterministic quiz generation, seeded. No randomness inside this file
+// itself (no Math.random/Date.now), every "pick" is still arithmetic on a
+// fixed index, `seed` is just one more number that arithmetic runs on. That
+// means generateScaleQuiz(slug, seed) always returns the exact same question
+// set for the same (slug, seed) pair, in the exact same choice order, every
+// time it's called. That determinism is what lets grading regenerate the
+// quiz server-side (with correct answers) from nothing but the scaleSlug and
+// the seed the student was actually shown, instead of having to persist the
 // generated quiz somewhere between "show it" and "grade it".
+//
+// The randomness itself lives one layer up, in QuizModal: it rolls a fresh
+// random seed every time the quiz is (re)started, by direct instruction
+// ("creates new quiz questions upon redoing the quiz so it won't [be] easy
+// to memorize and pass"). A different seed rotates which degree questions
+// make the cut (a scale with more possible degree-spelling questions than
+// fit in one quiz can now surface a different subset, not just the same
+// leading ones every time), which root key each one uses, and the order/
+// wrong-answer choices for every question, so retaking genuinely shows a
+// different run, not the same six questions with a coat of paint. There's
+// no security property being protected here (the correct answers aren't
+// secret, this is spaced-repetition hygiene, not access control), so a
+// client-supplied seed on submission needs no server-side issuance or
+// signing: grading just regenerates from whatever seed the submission
+// claims and checks the submitted answers against that, so a mismatched or
+// made-up seed only ever grades against content the student wasn't
+// actually shown, never in their favor.
 // ============================================================================
 
 export interface QuizQuestion {
@@ -86,17 +105,34 @@ function buildDegreeQuestion(variant: ScaleVariant, degreeToken: string, root: R
  * then round-robins across variants up to QUESTIONS_PER_QUIZ — so a
  * 3-variant chapter like Bati still gets a short, balanced quiz instead of
  * one variant dominating (or the quiz ballooning to 15 questions).
+ *
+ * `seed` defaults to 0 (the original, always-the-same quiz) for any caller
+ * that just wants a stable question count or doesn't care about variety,
+ * see e.g. the scale page's own server-rendered "X/Y" score label, which
+ * only ever reads `.length`. QuizModal is the one caller that rolls a real
+ * random seed on every (re)start.
  */
-export function generateScaleQuiz(scaleSlug: string): QuizQuestion[] {
+export function generateScaleQuiz(scaleSlug: string, seed = 0): QuizQuestion[] {
   const variants = SCALE_CONTENT[scaleSlug] ?? [];
   if (variants.length === 0) return [];
 
+  // Guards against a malformed/adversarial seed from a public server action
+  // (submitQuizAction) turning into NaN part-way through the modulo
+  // arithmetic below, which would otherwise surface as array[NaN] ->
+  // undefined -> a spellDegree() crash rather than a clean, safe fallback.
+  const safeSeed = Number.isFinite(seed) ? Math.trunc(seed) : 0;
+
   const pools: QuizQuestion[][] = variants.map((variant, variantIndex) => {
-    const degreeTokens = variant.formula.split("-").filter((t) => t !== "1");
-    const pool = [buildFormulaQuestion(variant, variantIndex * 11)];
+    const allDegreeTokens = variant.formula.split("-").filter((t) => t !== "1");
+    // Seed rotates which degree tokens lead this variant's own pool, so a
+    // wider formula (more possible degree questions than fit in one quiz)
+    // can surface a different subset each attempt instead of always the
+    // same leading ones.
+    const degreeTokens = rotate(allDegreeTokens, safeSeed + variantIndex);
+    const pool = [buildFormulaQuestion(variant, safeSeed + variantIndex * 11)];
     degreeTokens.forEach((token, degreeIndex) => {
-      const root = QUIZ_ROOTS_CYCLE[(variantIndex * 3 + degreeIndex) % QUIZ_ROOTS_CYCLE.length];
-      pool.push(buildDegreeQuestion(variant, token, root, variantIndex * 11 + degreeIndex + 1));
+      const root = QUIZ_ROOTS_CYCLE[((safeSeed + variantIndex * 3 + degreeIndex) % QUIZ_ROOTS_CYCLE.length + QUIZ_ROOTS_CYCLE.length) % QUIZ_ROOTS_CYCLE.length];
+      pool.push(buildDegreeQuestion(variant, token, root, safeSeed + variantIndex * 11 + degreeIndex + 1));
     });
     return pool;
   });
@@ -127,9 +163,9 @@ export interface QuizGradeResult {
   results: Array<{ questionId: string; selectedIndex: number; correct: boolean }>;
 }
 
-/** Regenerates the same deterministic quiz and grades submitted answers against it. */
-export function gradeQuiz(scaleSlug: string, submissions: QuizAnswerSubmission[]): QuizGradeResult {
-  const questions = generateScaleQuiz(scaleSlug);
+/** Regenerates the same deterministic (scaleSlug, seed) quiz and grades submitted answers against it. */
+export function gradeQuiz(scaleSlug: string, seed: number, submissions: QuizAnswerSubmission[]): QuizGradeResult {
+  const questions = generateScaleQuiz(scaleSlug, seed);
   const byId = new Map(questions.map((q) => [q.id, q]));
 
   let score = 0;

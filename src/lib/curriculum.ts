@@ -75,6 +75,43 @@ export const CURRICULUM_DISCOUNT_PERCENT = Math.floor(
   (1 - CURRICULUM_PRICE_CENTS / CURRICULUM_ORIGINAL_PRICE_CENTS) * 100,
 );
 
+// ---------------------------------------------------------------------------
+// Family bundle: the same one-time curriculum unlock, bought at once for 2+
+// separate, already-existing accounts (a parent unlocking it for each of
+// her kids), for an extra 20% off the combined total. Same shape as
+// FAMILY_BUNDLE's own class-credit bundle in classCreditPricing.ts
+// (calculateFamilyBundleTotal), just a flat per-recipient price instead of a
+// cadence/term-dependent one, since curriculum access is a single flat
+// purchase with no term or cadence to pick. See createCurriculumFamilyBundlePayment
+// in payments.ts for the account verification (and the "does anyone already
+// have access" check, unique to this bundle) this is paired with.
+// ---------------------------------------------------------------------------
+
+export const CURRICULUM_FAMILY_BUNDLE_DISCOUNT_RATE = 0.2;
+export const MIN_CURRICULUM_FAMILY_BUNDLE_RECIPIENTS = 2;
+export const MAX_CURRICULUM_FAMILY_BUNDLE_RECIPIENTS = 20; // matches the class-credit bundle's own ceiling
+
+export interface CurriculumFamilyBundleTotal {
+  recipientCount: number;
+  /** CURRICULUM_PRICE_CENTS, unchanged. Shown so the combined math is checkable against what one person would pay alone. */
+  perRecipientCents: number;
+  combinedBeforeFamilyDiscountCents: number;
+  familyDiscountCents: number;
+  totalCents: number;
+}
+
+export function calculateCurriculumFamilyBundleTotal(recipientCount: number): CurriculumFamilyBundleTotal {
+  const combinedBeforeFamilyDiscountCents = CURRICULUM_PRICE_CENTS * recipientCount;
+  const totalCents = combinedBeforeFamilyDiscountCents - Math.round(combinedBeforeFamilyDiscountCents * CURRICULUM_FAMILY_BUNDLE_DISCOUNT_RATE);
+  return {
+    recipientCount,
+    perRecipientCents: CURRICULUM_PRICE_CENTS,
+    combinedBeforeFamilyDiscountCents,
+    familyDiscountCents: combinedBeforeFamilyDiscountCents - totalCents,
+    totalCents,
+  };
+}
+
 export function scaleIndexFromSlug(slug: string): number {
   return SCALE_SLUGS.indexOf(slug);
 }

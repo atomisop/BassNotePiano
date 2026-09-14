@@ -9,6 +9,7 @@ import {
   MIN_FAMILY_BUNDLE_RECIPIENTS,
   EXTRA_SESSION_FLAT_PRICE_CENTS,
 } from "@/lib/classCreditPricing";
+import { calculateCurriculumFamilyBundleTotal, MIN_CURRICULUM_FAMILY_BUNDLE_RECIPIENTS } from "@/lib/curriculum";
 import { addCalendarMonthsClamped } from "@/lib/paymentPlans";
 import { createNotification } from "@/lib/notifications";
 import { assertRateLimit } from "@/lib/rateLimit";
@@ -316,6 +317,80 @@ export async function createFamilyBundlePayment(input: FamilyBundlePurchaseInput
   });
 }
 
+export interface CurriculumFamilyBundlePurchaseInput {
+  buyerId: string;
+  recipientEmails: string[];
+  zelleHandle: string;
+}
+
+/**
+ * Same shape as createFamilyBundlePayment above, for curriculum access
+ * instead of class credits. One real difference: curriculum access is a
+ * one-time boolean grant, not a stackable credit count, so paying to unlock
+ * it again for someone who already has it would just waste the buyer's
+ * money for nothing. Checked and refused here, a check the credits version
+ * has no equivalent of (more credits is never wasteful).
+ */
+export async function createCurriculumFamilyBundlePayment(input: CurriculumFamilyBundlePurchaseInput) {
+  const normalized = input.recipientEmails.map((e) => e.trim().toLowerCase()).filter(Boolean);
+
+  if (normalized.length < MIN_CURRICULUM_FAMILY_BUNDLE_RECIPIENTS) {
+    throw new FamilyBundleError(`A family bundle needs at least ${MIN_CURRICULUM_FAMILY_BUNDLE_RECIPIENTS} recipient accounts.`);
+  }
+  if (new Set(normalized).size !== normalized.length) {
+    throw new FamilyBundleError("Each recipient needs a different email. The same account can't be entered twice.");
+  }
+  for (const email of normalized) {
+    if (!EMAIL_RE.test(email)) throw new FamilyBundleError(`"${email}" isn't a valid email address.`);
+  }
+
+  const users = await prisma.user.findMany({
+    where: { email: { in: normalized } },
+    select: { id: true, email: true, hasCurriculumAccess: true },
+  });
+  const byEmail = new Map(users.map((u) => [u.email, u]));
+
+  const missing = normalized.filter((email) => !byEmail.has(email));
+  if (missing.length > 0) {
+    throw new FamilyBundleError(
+      `These emails don't have a Bass Note Piano account yet. Everyone needs to register before you can bundle their curriculum access: ${missing.join(", ")}`,
+    );
+  }
+
+  const alreadyUnlocked = normalized.filter((email) => byEmail.get(email)!.hasCurriculumAccess);
+  if (alreadyUnlocked.length > 0) {
+    throw new FamilyBundleError(
+      `These accounts already have curriculum access, remove them from the bundle before continuing: ${alreadyUnlocked.join(", ")}`,
+    );
+  }
+
+  const recipientUserIds = normalized.map((email) => byEmail.get(email)!.id);
+  if (new Set(recipientUserIds).size !== recipientUserIds.length) {
+    throw new FamilyBundleError("Each recipient needs to be a different account.");
+  }
+
+  const { totalCents } = calculateCurriculumFamilyBundleTotal(normalized.length);
+
+  await expireStalePendingPayments();
+
+  return prisma.zellePayment.create({
+    data: {
+      userId: input.buyerId,
+      purpose: "CURRICULUM_FAMILY_BUNDLE",
+      amountCents: totalCents,
+      zelleHandle: input.zelleHandle,
+      status: "AWAITING_TRANSFER",
+      // creditsGranted always 0 here, unused for this purpose (see the
+      // PaymentPurpose.CURRICULUM_FAMILY_BUNDLE schema comment).
+      // approveZellePayment's own branch grants curriculum access per row,
+      // never reads this field for it.
+      familyBundleRecipients: {
+        create: recipientUserIds.map((userId) => ({ userId, creditsGranted: 0 })),
+      },
+    },
+  });
+}
+
 export interface ZelleReferenceSubmission {
   senderName: string;
   note?: string;
@@ -506,6 +581,14 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
           for (const recipient of recipients) {
             await grantCredits(recipient.userId, recipient.creditsGranted, { source: "FAMILY_BUNDLE", expiresAt: null }, tx);
           }
+        } else if (payment.purpose === "CURRICULUM_FAMILY_BUNDLE") {
+          // Same recipient list shape as FAMILY_BUNDLE above, curriculum
+          // access instead of credits. creditsGranted on these rows is
+          // always 0 and unused, see createCurriculumFamilyBundlePayment.
+          const recipients = await tx.familyBundleRecipient.findMany({ where: { paymentId: payment.id } });
+          for (const recipient of recipients) {
+            await grantCurriculumAccess(recipient.userId, tx);
+          }
         } else if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId && payment.lessonQuantity) {
           // Fetched before granting (unlike the other branches) because the
           // grant's own expiresAt needs it: this installment's credits are good
@@ -573,6 +656,8 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
     notificationBody = `Your ${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} payment was verified${discountNote}. Credits are on your account.`;
   } else if (payment.purpose === "FAMILY_BUNDLE" && payment.lessonQuantity) {
     notificationBody = `Your family bundle payment was verified. ${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} each went out to everyone in the bundle.`;
+  } else if (payment.purpose === "CURRICULUM_FAMILY_BUNDLE") {
+    notificationBody = "Your curriculum family bundle payment was verified. Every scale is unlocked, for good, for everyone in the bundle.";
   } else if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId && payment.lessonQuantity) {
     const plan = await prisma.paymentPlan.findUnique({ where: { id: payment.paymentPlanId } });
     const ordinal = payment.installmentNumber ?? plan?.installmentsPaid ?? 1;
@@ -628,6 +713,26 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
           body: "Someone bundled a family purchase that included your account. The credits are on your balance now.",
           emailCategory: "payments",
         }).catch((err) => console.error(`Failed to notify family bundle recipient ${r.userId} (non-blocking):`, err)),
+      ),
+    );
+  }
+
+  // Same reasoning as FAMILY_BUNDLE's own per-recipient notice above, for
+  // curriculum access instead of credits.
+  if (payment.purpose === "CURRICULUM_FAMILY_BUNDLE") {
+    const recipients = await prisma.familyBundleRecipient.findMany({
+      where: { paymentId: payment.id, userId: { not: payment.userId } },
+      select: { userId: true },
+    });
+    await Promise.all(
+      recipients.map((r) =>
+        createNotification({
+          userId: r.userId,
+          type: "CURRICULUM_ACCESS_GRANTED",
+          title: "Curriculum unlocked",
+          body: "Someone bundled a family purchase that included your account. Every scale is unlocked now, for good.",
+          emailCategory: "payments",
+        }).catch((err) => console.error(`Failed to notify curriculum bundle recipient ${r.userId} (non-blocking):`, err)),
       ),
     );
   }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
-import { calculatePaymentPlanRate } from "@/lib/classCreditPricing";
+import { calculatePaymentPlanRate, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 
 const CADENCE_OPTIONS: { value: PaymentPlanCadence; label: string }[] = [
   { value: "MIN_30_WEEKLY", label: "30 min/week" },
@@ -74,6 +74,14 @@ export function PaymentPlanTierGrid() {
         {TERM_OPTIONS.map((option) => {
           const rate = calculatePaymentPlanRate(cadence, option.value);
           const isMonthly = option.value === "MONTHLY";
+          // Classes, not a raw credit count, by direct instruction: every
+          // cadence works out to the same 4 classes a month, they only
+          // differ in length. The "total" figure on a multi-month term is
+          // new too, so a 6- or 12-month card visibly shows what a longer
+          // term actually buys (more classes locked in, not a different
+          // monthly rate) instead of looking identical to Monthly at a
+          // glance.
+          const classesPerMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
           return (
             <motion.div
               key={option.value}
@@ -97,7 +105,8 @@ export function PaymentPlanTierGrid() {
                   {formatUsd(rate.installmentAmountCents)}
                 </p>
                 <p className="mt-1 text-xs text-slate-500">
-                  per month · {rate.creditsPerInstallment} credits{isMonthly ? "" : ` · ${rate.termMonths} months`}
+                  per month · {classesPerMonth} classes
+                  {!isMonthly && ` · ${classesPerMonth * rate.termMonths} total over ${rate.termMonths} months`}
                 </p>
               </div>
 

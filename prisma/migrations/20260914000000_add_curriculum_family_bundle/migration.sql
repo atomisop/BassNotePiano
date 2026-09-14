@@ -1,0 +1,5 @@
+-- AlterEnum
+ALTER TYPE "PaymentPurpose" ADD VALUE 'CURRICULUM_FAMILY_BUNDLE';
+
+-- AlterEnum
+ALTER TYPE "NotificationType" ADD VALUE 'CURRICULUM_ACCESS_GRANTED';

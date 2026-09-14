@@ -292,6 +292,32 @@ export async function getEffectiveClassCredits(userId: string): Promise<number> 
 }
 
 /**
+ * One class a day, no exceptions for a different time or a different
+ * class, by direct instruction. Keyed on `occurrenceDate` (the same ET
+ * calendar-day identifier capacity/uniqueness already use elsewhere in this
+ * file), not `scheduledAt`, since that's the actual day boundary a student
+ * thinks in. `excludeScheduleId` lets a student re-book (or a family
+ * booking re-claim) their own existing row on this exact schedule+day
+ * without tripping over themselves, that's not a second class, it's the
+ * same one. Runs inside the caller's own transaction so it's checked
+ * against the same consistent snapshot as the rest of that booking attempt.
+ */
+async function assertNoOtherBookingSameDay(
+  tx: Prisma.TransactionClient,
+  studentId: string,
+  occurrenceDate: Date,
+  excludeScheduleId: string,
+): Promise<void> {
+  const otherBookingSameDay = await tx.classBooking.findFirst({
+    where: { studentId, occurrenceDate, status: "SCHEDULED", NOT: { scheduleId: excludeScheduleId } },
+    select: { id: true },
+  });
+  if (otherBookingSameDay) {
+    throw new ClassBookingError("You can only book one class per day, message support if you need a second class on the same day.");
+  }
+}
+
+/**
  * Books a specific occurrence for one student alone. Solo 1:1 is the
  * default tier now: `creditsToBook` is 1 or 2 (30 or 60 minutes), the
  * student's own choice, capped at SOLO_MAX_CREDITS regardless of how long
@@ -421,6 +447,14 @@ export async function bookClass(
         });
         if (existing?.status === "SCHEDULED") {
           throw new ClassBookingError("You've already booked this class.");
+        }
+
+        // Skipped for an admin-assisted booking, same reasoning as the
+        // active-plan guard above: an admin fixing a specific booking issue
+        // directly is the judgment call this exists to require instead of
+        // open self-service, not something it should also block.
+        if (!options.isAdminAssisted) {
+          await assertNoOtherBookingSameDay(tx, studentId, occurrenceDate, scheduleId);
         }
 
         const [user, pending] = await Promise.all([
@@ -814,6 +848,14 @@ export async function bookFamilyClass(
           });
           if (existing?.status === "SCHEDULED") {
             throw new ClassBookingError(`${email} already has a booking for this occurrence.`);
+          }
+
+          const otherBookingSameDay = await tx.classBooking.findFirst({
+            where: { studentId: attendee.id, occurrenceDate, status: "SCHEDULED", NOT: { scheduleId } },
+            select: { id: true },
+          });
+          if (otherBookingSameDay) {
+            throw new ClassBookingError(`${email} already has a different class booked that day, one class per day per student.`);
           }
 
           const [user, pending] = await Promise.all([

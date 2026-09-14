@@ -166,6 +166,7 @@
   border: 1px solid var(--surface-border);
   border-radius: var(--surface-radius);
   box-shadow: var(--surface-shadow);
+  -webkit-backdrop-filter: blur(var(--surface-blur));
   backdrop-filter: blur(var(--surface-blur));
 }
 
@@ -180,6 +181,7 @@
   background: var(--subtle-bg);
   border: 1px solid var(--subtle-border);
   border-radius: var(--surface-radius);
+  -webkit-backdrop-filter: blur(var(--subtle-blur));
   backdrop-filter: blur(var(--subtle-blur));
 }
 
@@ -191,6 +193,13 @@
   border: 1px solid var(--elev-border);
   border-radius: var(--surface-radius);
   box-shadow: var(--elev-shadow);
+  /* -webkit- prefix required for Safari/iOS to blur at all: without it,
+     Safari silently drops the whole declaration and this renders as a
+     plain translucent panel with no frosting, reported live as the
+     ProfileMenu dropdown ("the profile icon") opening "a transparent
+     window". Same fix applied to every other glass-surface-* utility below
+     that uses backdrop-filter, since they all had the identical gap. */
+  -webkit-backdrop-filter: blur(var(--elev-blur));
   backdrop-filter: blur(var(--elev-blur));
 }
 
@@ -217,6 +226,7 @@
   background: var(--surface-bg);
   border: 1px solid var(--surface-border);
   box-shadow: var(--surface-shadow);
+  -webkit-backdrop-filter: blur(var(--surface-blur));
   backdrop-filter: blur(var(--surface-blur));
 }
 

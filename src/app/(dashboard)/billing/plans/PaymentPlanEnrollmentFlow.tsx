@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { PaymentPlanCadence, PaymentPlanTerm, ZellePaymentStatus } from "@prisma/client";
 import { calculatePaymentPlanRate, describePaymentPlan, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import type { ReservableSlot } from "@/lib/classSchedule";
@@ -99,6 +99,23 @@ export function PaymentPlanEnrollmentFlow({
   // correct if the pricing table above it ever changes.
   const classesPerMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
   const classMinutes = cadence === "MIN_60_WEEKLY" ? 60 : 30;
+  const termPhrase = rate.termMonths === 1 ? "this month" : `your whole ${rate.termMonths}-month term`;
+
+  // Grouped by day, not one flat list: the same weekday can legitimately
+  // offer more than one start time (a longer admin-defined window split
+  // into several bookable chunks), which used to render as the day name
+  // repeated back to back for each time, reading as a bug ("the days
+  // double up") rather than what it actually is, more than one option on
+  // that day.
+  const slotsByDay = useMemo(() => {
+    const groups = new Map<number, ReservableSlot[]>();
+    for (const slot of slots) {
+      const forDay = groups.get(slot.dayOfWeek) ?? [];
+      forDay.push(slot);
+      groups.set(slot.dayOfWeek, forDay);
+    }
+    return Array.from(groups.entries()).sort(([a], [b]) => a - b);
+  }, [slots]);
 
   // Re-fetched whenever cadence changes (not term — a slot's room only
   // depends on the weekly credit cost, which is cadence-only, see
@@ -239,35 +256,45 @@ export function PaymentPlanEnrollmentFlow({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium text-slate-400">Your weekly time</p>
+        <p className="text-xs font-medium text-slate-400">Your weekly time</p>
+        <p className="mt-0.5 mb-2 text-xs text-slate-500">
+          Pick one below, it&apos;s yours every week for {termPhrase}, booked for you automatically.
+        </p>
         {slotsLoading ? (
           <div className="flex items-center justify-center rounded-lg border border-ink/10 py-6">
             <MorphingSquare size={16} />
           </div>
         ) : slots.length === 0 ? (
           <p className="rounded-lg border border-ink/10 px-3.5 py-3 text-xs text-slate-500">
-            No open weekly times for this cadence right now — message us and we&apos;ll help you find one.
+            No open weekly times for this cadence right now, message us and we&apos;ll help you find one.
           </p>
         ) : (
-          <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
-            {slots.map((slot) => {
-              const active = selectedSlot?.scheduleId === slot.scheduleId && selectedSlot?.chunkIndex === slot.chunkIndex;
-              return (
-                <button
-                  key={`${slot.scheduleId}:${slot.chunkIndex}`}
-                  type="button"
-                  onClick={() => setSelectedSlot(slot)}
-                  className={`flex w-full items-center justify-between rounded-lg border px-3.5 py-2.5 text-left transition ${
-                    active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
-                  }`}
-                >
-                  <span className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>
-                    {DAY_LABELS[slot.dayOfWeek]} {formatTimeLabel(slot.startTime)}
-                  </span>
-                  {slot.label && <span className="text-xs text-slate-500">{slot.label}</span>}
-                </button>
-              );
-            })}
+          <div className="max-h-56 space-y-3 overflow-y-auto pr-1">
+            {slotsByDay.map(([dayOfWeek, daySlots]) => (
+              <div key={dayOfWeek}>
+                <p className="mb-1 text-xs font-medium text-slate-500">{DAY_LABELS[dayOfWeek]}</p>
+                <div className="space-y-1.5">
+                  {daySlots.map((slot) => {
+                    const active = selectedSlot?.scheduleId === slot.scheduleId && selectedSlot?.chunkIndex === slot.chunkIndex;
+                    return (
+                      <button
+                        key={`${slot.scheduleId}:${slot.chunkIndex}`}
+                        type="button"
+                        onClick={() => setSelectedSlot(slot)}
+                        className={`flex w-full items-center justify-between rounded-lg border px-3.5 py-2.5 text-left transition ${
+                          active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
+                        }`}
+                      >
+                        <span className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>
+                          {formatTimeLabel(slot.startTime)}
+                        </span>
+                        {slot.label && <span className="text-xs text-slate-500">{slot.label}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -287,7 +314,10 @@ export function PaymentPlanEnrollmentFlow({
         </div>
         <div className="mt-1 flex items-center justify-between text-xs text-slate-500">
           <span>{classMinutes}-min classes</span>
-          <span>{classesPerMonth} classes/month</span>
+          <span>
+            {classesPerMonth} classes/month
+            {rate.termMonths > 1 && ` · ${classesPerMonth * rate.termMonths} total over ${rate.termMonths} months`}
+          </span>
         </div>
         <p className="mt-2 text-xs text-slate-500">
           {rate.termMonths === 1

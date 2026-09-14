@@ -64,10 +64,27 @@ export default async function LessonsPage() {
       .filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > now)
       .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
 
+    // Days this student already has a class on (their weekly reservation,
+    // a past extra session, whatever), a booked calendar day, not a
+    // booked time. Keyed on occurrenceDate (the same ET-calendar-day
+    // identifier assertNoOtherBookingSameDay checks server-side), not a
+    // day derived from scheduledAt: an evening ET class's real UTC instant
+    // can already be past midnight into the next UTC date, so deriving a
+    // day key from scheduledAt directly would occasionally disagree with
+    // which ET day the class actually falls on. One class a day is the
+    // rule now, so an open slot on a day they're already spoken for is
+    // filtered out here rather than offered as something they could pay
+    // for and then not actually be able to book (bookExtraSessionOccurrence
+    // can't retroactively refuse it once the Zelle payment's already
+    // cleared, see its own comment).
+    const bookedDays = new Set(upcomingBookings.map((b) => b.occurrenceDate.getTime()));
+
     // Single-credit only: EXTRA_SESSION_FLAT_PRICE_CENTS is a flat rate for
     // exactly one 30-min session, so a 2-credit chunk is left out here
     // rather than shown as something this button can't actually buy.
-    const openSlots = occurrences.filter((o) => !o.isBooked && o.creditCost === 1).slice(0, 6);
+    const openSlots = occurrences
+      .filter((o) => !o.isBooked && o.creditCost === 1 && !bookedDays.has(o.occurrenceDate.getTime()))
+      .slice(0, 6);
 
     return (
       <ScheduleClient

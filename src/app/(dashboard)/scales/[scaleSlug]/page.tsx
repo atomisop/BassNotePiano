@@ -35,6 +35,7 @@ export default async function ScalePage({ params }: { params: { scaleSlug: strin
   return (
     <div className="space-y-10">
       <CoursePlayer
+        scaleSlug={scaleGroup.slug}
         scaleGroup={{
           code: scaleGroup.code,
           title: scaleGroup.title,

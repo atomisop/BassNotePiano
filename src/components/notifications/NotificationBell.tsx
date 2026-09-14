@@ -30,6 +30,7 @@ function notificationHref(type: string): string | null {
     case "ROLE_UPDATED":
       return "/admin";
     case "PRACTICE_REMINDER":
+    case "CURRICULUM_ACCESS_GRANTED":
       return "/dashboard";
     case "CLASS_REGISTRATION_RECEIVED":
     case "CLASS_REGISTRATION_APPROVED":
@@ -99,6 +100,7 @@ type CategoryKey = keyof typeof CATEGORY_ICONS;
 const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>> = {
   PAYMENT_APPROVED: { key: "billing", label: "Billing" },
   PAYMENT_REJECTED: { key: "billing", label: "Billing" },
+  CURRICULUM_ACCESS_GRANTED: { key: "billing", label: "Billing" },
   CREDIT_ADJUSTED: { key: "billing", label: "Billing" },
   PAYMENT_PLAN_INSTALLMENT_DUE: { key: "billing", label: "Billing" },
   PAYMENT_PLAN_INSTALLMENT_OVERDUE: { key: "billing", label: "Billing" },
