@@ -3,6 +3,7 @@ import { sendEmailIfEnabled } from "@/lib/notifications";
 import { getAppUrl } from "@/lib/email";
 import { isFriend, getFriendsList, SocialError } from "@/lib/social";
 import { assertRateLimit } from "@/lib/rateLimit";
+import { REACTION_EMOJI } from "@/lib/reactions";
 
 const MAX_MESSAGE_LENGTH = 2000;
 
@@ -45,7 +46,14 @@ async function canConverse(userIdA: string, userIdB: string): Promise<boolean> {
 // admin, in which case it's always allowed (the admin messaging center
 // needs to reach anyone, not just friends). Also gives this a natural
 // spam/safety boundary without a separate moderation layer.
-export async function sendMessage(senderId: string, recipientId: string, body: string) {
+//
+// `replyToId`, when given, is re-verified against this exact conversation
+// (not just "some message that exists"), never trusted from the client as
+// a bare id. A reply's own preview shows a snippet of the original message
+// it points at, so accepting an id from a different conversation entirely
+// would leak that message's content into a thread neither of its own
+// participants is part of.
+export async function sendMessage(senderId: string, recipientId: string, body: string, replyToId?: string) {
   const trimmed = body.trim();
   if (!trimmed) throw new SocialError("Message can't be empty.");
   if (trimmed.length > MAX_MESSAGE_LENGTH) throw new SocialError(`Message is too long (${MAX_MESSAGE_LENGTH} characters max).`);
@@ -53,6 +61,14 @@ export async function sendMessage(senderId: string, recipientId: string, body: s
 
   if (!(await canConverse(senderId, recipientId))) throw new SocialError("You can only message friends.");
   if (await isBlockedEitherWay(senderId, recipientId)) throw new SocialError("You can't message this user.");
+
+  if (replyToId) {
+    const original = await prisma.message.findUnique({ where: { id: replyToId }, select: { senderId: true, recipientId: true } });
+    const inThisConversation =
+      original && ((original.senderId === senderId && original.recipientId === recipientId) ||
+        (original.senderId === recipientId && original.recipientId === senderId));
+    if (!inThisConversation) throw new SocialError("That message can't be replied to here.");
+  }
 
   // STEP 20: 30/minute is well above any real conversation's pace but stops
   // a compromised or scripted account from flooding a recipient's inbox.
@@ -62,7 +78,7 @@ export async function sendMessage(senderId: string, recipientId: string, body: s
     { windowMinutes: 1, max: 30, message: "You're sending messages too fast — please slow down." },
   );
 
-  const message = await prisma.message.create({ data: { senderId, recipientId, body: trimmed } });
+  const message = await prisma.message.create({ data: { senderId, recipientId, body: trimmed, replyToId: replyToId ?? null } });
 
   // A message landing is a much stronger signal than "typing" — clear it
   // immediately rather than waiting out TYPING_STALE_MS.
@@ -235,7 +251,57 @@ export async function getConversationMessages(userId: string, friendId: string, 
     },
     orderBy: { createdAt: "asc" },
     take: limit,
+    // replyTo: just enough for the quoted-preview UI, never the full row
+    // (the sender's own id/body is all a preview needs, no readAt etc).
+    // reactions: every reaction on this message, however many people left
+    // one, small numbers in practice (a 1:1 thread), not worth paginating.
+    include: {
+      replyTo: { select: { id: true, senderId: true, body: true } },
+      reactions: { select: { userId: true, emoji: true } },
+    },
   });
+}
+
+/**
+ * Add, change, or remove (by re-picking the same emoji) this user's own
+ * reaction to a message: one per person per message, same as iMessage's
+ * own Tapback. `messageId` is checked against this user's own actual
+ * conversations first: without that, any signed-in user could react to (and
+ * thereby confirm the existence of, and attach their own visible reaction
+ * to) an arbitrary message id from a conversation they have no part in.
+ *
+ * Also checks isBlockedEitherWay, same as sendMessage: reacting is a new,
+ * active, visible-to-the-other-party interaction, not a passive read of
+ * history (getConversationMessages doesn't check blocks, since old
+ * conversations stay viewable after a block, only sending new ones is
+ * disabled). Without this a block wouldn't actually stop either party from
+ * still reaching the other through the thread's own old messages.
+ */
+export async function reactToMessage(userId: string, messageId: string, emoji: string): Promise<{ removed: boolean }> {
+  if (!REACTION_EMOJI.includes(emoji as (typeof REACTION_EMOJI)[number])) {
+    throw new SocialError("Not a real reaction.");
+  }
+
+  const message = await prisma.message.findUnique({ where: { id: messageId }, select: { senderId: true, recipientId: true } });
+  if (!message || (message.senderId !== userId && message.recipientId !== userId)) {
+    throw new SocialError("You can't react to that message.");
+  }
+
+  const otherPartyId = message.senderId === userId ? message.recipientId : message.senderId;
+  if (await isBlockedEitherWay(userId, otherPartyId)) throw new SocialError("You can't react to this conversation.");
+
+  const existing = await prisma.messageReaction.findUnique({ where: { messageId_userId: { messageId, userId } } });
+  if (existing?.emoji === emoji) {
+    await prisma.messageReaction.delete({ where: { id: existing.id } });
+    return { removed: true };
+  }
+
+  await prisma.messageReaction.upsert({
+    where: { messageId_userId: { messageId, userId } },
+    create: { messageId, userId, emoji },
+    update: { emoji },
+  });
+  return { removed: false };
 }
 
 export async function markConversationRead(userId: string, friendId: string): Promise<void> {

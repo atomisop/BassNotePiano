@@ -292,6 +292,32 @@ export async function getEffectiveClassCredits(userId: string): Promise<number> 
 }
 
 /**
+ * One class a day, no exceptions for a different time or a different
+ * class, by direct instruction. Keyed on `occurrenceDate` (the same ET
+ * calendar-day identifier capacity/uniqueness already use elsewhere in this
+ * file), not `scheduledAt`, since that's the actual day boundary a student
+ * thinks in. `excludeScheduleId` lets a student re-book (or a family
+ * booking re-claim) their own existing row on this exact schedule+day
+ * without tripping over themselves, that's not a second class, it's the
+ * same one. Runs inside the caller's own transaction so it's checked
+ * against the same consistent snapshot as the rest of that booking attempt.
+ */
+async function assertNoOtherBookingSameDay(
+  tx: Prisma.TransactionClient,
+  studentId: string,
+  occurrenceDate: Date,
+  excludeScheduleId: string,
+): Promise<void> {
+  const otherBookingSameDay = await tx.classBooking.findFirst({
+    where: { studentId, occurrenceDate, status: "SCHEDULED", NOT: { scheduleId: excludeScheduleId } },
+    select: { id: true },
+  });
+  if (otherBookingSameDay) {
+    throw new ClassBookingError("You can only book one class per day, message support if you need a second class on the same day.");
+  }
+}
+
+/**
  * Books a specific occurrence for one student alone. Solo 1:1 is the
  * default tier now: `creditsToBook` is 1 or 2 (30 or 60 minutes), the
  * student's own choice, capped at SOLO_MAX_CREDITS regardless of how long
@@ -421,6 +447,14 @@ export async function bookClass(
         });
         if (existing?.status === "SCHEDULED") {
           throw new ClassBookingError("You've already booked this class.");
+        }
+
+        // Skipped for an admin-assisted booking, same reasoning as the
+        // active-plan guard above: an admin fixing a specific booking issue
+        // directly is the judgment call this exists to require instead of
+        // open self-service, not something it should also block.
+        if (!options.isAdminAssisted) {
+          await assertNoOtherBookingSameDay(tx, studentId, occurrenceDate, scheduleId);
         }
 
         const [user, pending] = await Promise.all([
@@ -816,6 +850,14 @@ export async function bookFamilyClass(
             throw new ClassBookingError(`${email} already has a booking for this occurrence.`);
           }
 
+          const otherBookingSameDay = await tx.classBooking.findFirst({
+            where: { studentId: attendee.id, occurrenceDate, status: "SCHEDULED", NOT: { scheduleId } },
+            select: { id: true },
+          });
+          if (otherBookingSameDay) {
+            throw new ClassBookingError(`${email} already has a different class booked that day, one class per day per student.`);
+          }
+
           const [user, pending] = await Promise.all([
             tx.user.findUniqueOrThrow({ where: { id: attendee.id }, select: { classCredits: true } }),
             tx.classBooking.aggregate({ where: { studentId: attendee.id, status: "SCHEDULED" }, _sum: { creditsSpent: true } }),
@@ -1037,12 +1079,14 @@ export async function createReservedBookingIfAbsent(
  * ordinary one-off booking, not a standing weekly reservation).
  *
  * Returns false, never throws, if the exact instant was claimed by someone
- * else in the gap between the student picking it and the payment clearing
- * review, that gap is normally hours to a couple of days, not the seconds
- * bookClass's own transaction races against. The caller still grants the
- * credit either way (real money changed hands) and just leaves the student
- * to pick a different open time themselves, the same behavior this flow
- * replaces for everyone except this one edge case.
+ * else, or if the student's own calendar day is no longer free (one class
+ * a day, see assertNoOtherBookingSameDay), in the gap between the student
+ * picking it and the payment clearing review, that gap is normally hours to
+ * a couple of days, not the seconds bookClass's own transaction races
+ * against. The caller still grants the credit either way (real money
+ * changed hands) and just leaves the student to pick a different open time
+ * themselves, the same behavior this flow replaces for everyone except
+ * this one edge case.
  */
 export async function bookExtraSessionOccurrence(
   params: { studentId: string; scheduleId: string; occurrenceDate: Date; scheduledAt: Date; creditsSpent: number },
@@ -1060,6 +1104,21 @@ export async function bookExtraSessionOccurrence(
     select: { id: true },
   });
   if (conflict) return false;
+
+  // One class a day, same rule assertNoOtherBookingSameDay enforces for
+  // bookClass/bookFamilyClass. getOrCreatePendingExtraSessionPayment already
+  // refuses to sell an extra session for a day the student's already
+  // booked, but this is the gap that check can't close by itself: the
+  // student could book a regular class in the hours-to-days between paying
+  // for the extra and an admin actually approving it. Same "return false,
+  // don't throw" idiom as the conflict check above, for the same reason,
+  // the credit is granted either way (real money changed hands), this only
+  // ever refuses the specific seat.
+  const sameDayConflict = await db.classBooking.findFirst({
+    where: { studentId, occurrenceDate, status: "SCHEDULED", NOT: { scheduleId } },
+    select: { id: true },
+  });
+  if (sameDayConflict) return false;
 
   const data = {
     scheduledAt,

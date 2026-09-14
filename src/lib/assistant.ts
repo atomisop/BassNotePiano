@@ -248,6 +248,28 @@ export async function clearPersistedHistory(userId: string): Promise<void> {
   await prisma.assistantConversationMessage.deleteMany({ where: { userId } });
 }
 
+// Once an account has explicitly dismissed Atom's greeting bubble this many
+// times, it stops being offered at all. See the User.atomGreetingDismissCount
+// column's own comment and AssistantWidget's dismissGreeting().
+export const ATOM_GREETING_DISMISS_LIMIT = 3;
+
+export async function getAtomGreetingDismissCount(userId: string): Promise<number> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { atomGreetingDismissCount: true } });
+  return user?.atomGreetingDismissCount ?? 0;
+}
+
+/** Capped at ATOM_GREETING_DISMISS_LIMIT: once reached, further calls are no-ops rather than counting past it forever. Returns the count after this call. */
+export async function recordAtomGreetingDismissal(userId: string): Promise<number> {
+  const current = await getAtomGreetingDismissCount(userId);
+  if (current >= ATOM_GREETING_DISMISS_LIMIT) return current;
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { atomGreetingDismissCount: { increment: 1 } },
+    select: { atomGreetingDismissCount: true },
+  });
+  return updated.atomGreetingDismissCount;
+}
+
 export async function askAssistant(
   history: AssistantMessage[],
   visitor: VisitorContext,

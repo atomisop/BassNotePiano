@@ -56,13 +56,36 @@ const LINKS = [
 ];
 
 export function MarketingNav() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const isLoggedIn = Boolean(session?.user);
   const reduced = useReducedMotion();
   const pathname = usePathname();
 
   const [lifted, setLifted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // `image` isn't on the session (see the avatar route's own comment), so
+  // this is the client-side equivalent of TopBar's server-side DB fetch:
+  // one small authenticated GET, only once actually signed in, cached in
+  // local state for the rest of this mount. Was hardcoded null before,
+  // which is why the homepage's own profile icon always showed the
+  // name-initial fallback even for an account with a real photo.
+  const [image, setImage] = useState<string | null>(null);
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    let cancelled = false;
+    fetch("/api/account/avatar")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data) setImage(data.image);
+      })
+      .catch(() => {
+        // Best-effort: the initial-letter fallback is a perfectly fine
+        // result if this fetch fails for any reason, not worth surfacing.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [status]);
 
   // Passive read of the existing window scroll. Deliberately not a second
   // scroll *engine* — Lenis still drives the position, this only observes it.
@@ -211,7 +234,7 @@ export function MarketingNav() {
                 name={session?.user?.name ?? null}
                 username={null}
                 email={session?.user?.email ?? null}
-                image={null}
+                image={image}
                 triggerClassName="!h-9 !w-9"
               />
             )}

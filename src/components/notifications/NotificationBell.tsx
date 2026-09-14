@@ -30,6 +30,7 @@ function notificationHref(type: string): string | null {
     case "ROLE_UPDATED":
       return "/admin";
     case "PRACTICE_REMINDER":
+    case "CURRICULUM_ACCESS_GRANTED":
       return "/dashboard";
     case "CLASS_REGISTRATION_RECEIVED":
     case "CLASS_REGISTRATION_APPROVED":
@@ -99,6 +100,7 @@ type CategoryKey = keyof typeof CATEGORY_ICONS;
 const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>> = {
   PAYMENT_APPROVED: { key: "billing", label: "Billing" },
   PAYMENT_REJECTED: { key: "billing", label: "Billing" },
+  CURRICULUM_ACCESS_GRANTED: { key: "billing", label: "Billing" },
   CREDIT_ADJUSTED: { key: "billing", label: "Billing" },
   PAYMENT_PLAN_INSTALLMENT_DUE: { key: "billing", label: "Billing" },
   PAYMENT_PLAN_INSTALLMENT_OVERDUE: { key: "billing", label: "Billing" },
@@ -434,8 +436,15 @@ export function NotificationBell() {
                 // Opaque white panel. This one scrolls its own notification
                 // list, so a blur here would have cost a repaint on every
                 // scroll frame inside the panel, not just during the slide-in.
+                //
+                // h-[100svh], not inset-0's own implicit bottom:0 sizing,
+                // same fix as QuizModal's own full-screen panel (see its
+                // comment): sizing a position:fixed element off Safari's
+                // *large* viewport (as if the toolbar were always hidden)
+                // can leave a gap or get clipped once the toolbar's
+                // actually showing.
                 style={{ willChange: "transform" }}
-                className="fixed inset-0 z-50 flex flex-col bg-surface"
+                className="fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full flex-col bg-surface"
               >
                 <div className="flex items-center gap-4 border-b border-ink/10 px-6 py-5">
                   <button
@@ -463,7 +472,14 @@ export function NotificationBell() {
                   )}
                 </div>
 
-                <div className="mx-auto w-full max-w-xl flex-1 overflow-y-auto px-6 py-6">
+                {/* overscroll-contain: same fix as SlideOverPanel's own
+                    content div, for the identical reason. This list sits
+                    below a static header (Back/Notifications/Mark all
+                    read above) in a panel portaled straight to
+                    document.body, so an uncontained rubber-band bounce
+                    here can visibly slide over that header for an instant
+                    on the way back from the bottom. */}
+                <div className="mx-auto w-full max-w-xl flex-1 overflow-y-auto overscroll-contain px-6 py-6">
                   {notifications.length === 0 ? (
                     <div className="flex flex-col items-center gap-3 pt-20 text-center">
                       <span className="flex h-14 w-14 items-center justify-center rounded-full border border-ink/10 text-slate-600">

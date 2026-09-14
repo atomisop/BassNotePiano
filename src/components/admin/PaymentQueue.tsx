@@ -53,6 +53,13 @@ function describePayment(payment: PendingZellePayment): { eyebrow: string; title
       title: `${payment.lessonQuantity} credit${payment.lessonQuantity === 1 ? "" : "s"} × ${recipientCount} account${recipientCount === 1 ? "" : "s"}`,
     };
   }
+  if (payment.purpose === "CURRICULUM_FAMILY_BUNDLE") {
+    const recipientCount = payment.familyBundleRecipients.length;
+    return {
+      eyebrow: "Curriculum family bundle",
+      title: `Full curriculum × ${recipientCount} account${recipientCount === 1 ? "" : "s"}`,
+    };
+  }
   if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlan) {
     return {
       eyebrow: describePaymentPlan(payment.paymentPlan.cadence, payment.paymentPlan.term),
@@ -155,14 +162,10 @@ export function PaymentQueue({
             </div>
           </div>
 
-          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-3">
+          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
             <div>
               <dt className="text-xs text-slate-600">Sender name</dt>
               <dd className="text-slate-300">{payment.senderName ?? "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-slate-600">Reference code</dt>
-              <dd className="font-mono text-slate-300">{payment.referenceCode ?? "—"}</dd>
             </div>
             <div>
               <dt className="text-xs text-slate-600">Submitted</dt>

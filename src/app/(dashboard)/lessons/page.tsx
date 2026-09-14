@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import {
   getEffectiveClassCredits,
   getUpcomingOccurrences,
@@ -22,10 +23,17 @@ import { ScheduleClient } from "../schedule/ScheduleClient";
  * blocked from this tab" even though nothing about their access changed).
  * They're not blocked from Lessons, they're blocked from self-service
  * *editing* of a schedule they already paid for and locked in. This page
- * still shows them their week, right here: usage, upcoming classes, and a
- * guided way to add an extra session. bookClass itself still refuses their
- * ad hoc self-booking either way (see its own comment in classSchedule.ts),
- * that restriction was never about this page, only the old open calendar.
+ * still shows them their week, right here: upcoming classes and a guided
+ * way to add an extra session. bookClass itself still refuses their ad hoc
+ * self-booking either way (see its own comment in classSchedule.ts), that
+ * restriction was never about this page, only the old open calendar.
+ *
+ * No credit numbers on this branch, by direct instruction: a subscriber
+ * never sees "X of Y credits" or picks a duration, they just see whether
+ * this week's class is booked, and if not, plainly why (see
+ * ScheduleClient's own weeklyTime/hasClassThisWeek props). Credits/cadence
+ * math still exists, it's just admin-facing bookkeeping now (CustomerProfile,
+ * the feedback page's installments-paid figure, etc.), never shown here.
  *
  * Everyone else (no active plan, historical Family Bundle credits, between
  * plans) keeps the full open booking calendar exactly as before.
@@ -41,12 +49,14 @@ export default async function LessonsPage() {
   const activePlan = await getActivePaymentPlan(session.user.id);
 
   if (activePlan) {
-    const [credits, weeklyUsage, occurrences, bookings, supportContactId] = await Promise.all([
-      getEffectiveClassCredits(session.user.id),
+    const [weeklyUsage, occurrences, bookings, supportContactId, reservedSchedule] = await Promise.all([
       getWeeklyCreditUsage(session.user.id),
       getUpcomingOccurrences(),
       getUserClassBookings(session.user.id),
       getSupportContactId(),
+      activePlan.reservedScheduleId
+        ? prisma.classSchedule.findUnique({ where: { id: activePlan.reservedScheduleId }, select: { dayOfWeek: true, startTime: true } })
+        : null,
     ]);
 
     const now = Date.now();
@@ -54,19 +64,35 @@ export default async function LessonsPage() {
       .filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > now)
       .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
 
+    // Days this student already has a class on (their weekly reservation,
+    // a past extra session, whatever), a booked calendar day, not a
+    // booked time. Keyed on occurrenceDate (the same ET-calendar-day
+    // identifier assertNoOtherBookingSameDay checks server-side), not a
+    // day derived from scheduledAt: an evening ET class's real UTC instant
+    // can already be past midnight into the next UTC date, so deriving a
+    // day key from scheduledAt directly would occasionally disagree with
+    // which ET day the class actually falls on. One class a day is the
+    // rule now, so an open slot on a day they're already spoken for is
+    // filtered out here rather than offered as something they could pay
+    // for and then not actually be able to book (bookExtraSessionOccurrence
+    // can't retroactively refuse it once the Zelle payment's already
+    // cleared, see its own comment).
+    const bookedDays = new Set(upcomingBookings.map((b) => b.occurrenceDate.getTime()));
+
     // Single-credit only: EXTRA_SESSION_FLAT_PRICE_CENTS is a flat rate for
     // exactly one 30-min session, so a 2-credit chunk is left out here
     // rather than shown as something this button can't actually buy.
-    const openSlots = occurrences.filter((o) => !o.isBooked && o.creditCost === 1).slice(0, 6);
+    const openSlots = occurrences
+      .filter((o) => !o.isBooked && o.creditCost === 1 && !bookedDays.has(o.occurrenceDate.getTime()))
+      .slice(0, 6);
 
     return (
       <ScheduleClient
         zelleHandle={process.env.ZELLE_HANDLE ?? "payments@yourplatform.com"}
-        credits={credits}
-        creditsUsedThisWeek={weeklyUsage.creditsUsedThisWeek}
-        weeklyAllotment={weeklyUsage.weeklyAllotment}
         supportContactId={supportContactId}
         extraSessionPriceCents={EXTRA_SESSION_FLAT_PRICE_CENTS}
+        hasClassThisWeek={weeklyUsage.creditsUsedThisWeek > 0}
+        weeklyTime={reservedSchedule}
         upcomingBookings={upcomingBookings.map((b) => ({
           id: b.id,
           label: b.schedule.label,

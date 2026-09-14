@@ -40,34 +40,54 @@ interface ExtraSessionPayment {
   slot: OpenSlot;
 }
 
+// "HH:mm" -> "2:00 PM", shown as the raw ET wall-clock digits with no
+// per-viewer timezone conversion. Matches AdminScheduleManager.tsx's and
+// PaymentPlanEnrollmentFlow.tsx's own formatTimeLabel exactly, kept as its
+// own small copy rather than a shared import across the admin/student
+// boundary, same "duplicated on purpose" convention this codebase already
+// uses elsewhere (e.g. requireAdmin()).
+const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+function formatTimeLabel(hhmm: string): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
+}
+
+interface WeeklyTime {
+  dayOfWeek: number;
+  startTime: string;
+}
+
 interface ScheduleClientProps {
   zelleHandle: string;
-  credits: number;
-  creditsUsedThisWeek: number;
-  /** Null when the student has no ACTIVE Payment Plan right now. */
-  weeklyAllotment: number | null;
   supportContactId: string | null;
   extraSessionPriceCents: number;
+  /** Whether this calendar week already has a class on the books. A
+      subscriber never sees a credit count, just whether this week is
+      handled or needs attention. */
+  hasClassThisWeek: boolean;
+  /** The student's own recurring weekly day/time. Null only if a Payment
+      Plan was somehow never actually assigned one; see the "not
+      scheduled yet" message below, which is exactly the stuck state this
+      replaces (a silent, unexplained "0 of 2 credits" with no next step). */
+  weeklyTime: WeeklyTime | null;
   upcomingBookings: UpcomingBooking[];
   openSlots: OpenSlot[];
 }
 
 export function ScheduleClient({
   zelleHandle,
-  credits,
-  creditsUsedThisWeek,
-  weeklyAllotment,
   supportContactId,
   extraSessionPriceCents,
+  hasClassThisWeek,
+  weeklyTime,
   upcomingBookings,
   openSlots,
 }: ScheduleClientProps) {
   const [extraPayment, setExtraPayment] = useState<ExtraSessionPayment | null>(null);
   const [pendingSlotKey, setPendingSlotKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const weekProgressPercent =
-    weeklyAllotment && weeklyAllotment > 0 ? Math.min(100, (creditsUsedThisWeek / weeklyAllotment) * 100) : null;
 
   // One click picks the time and starts the purchase in the same motion,
   // no separate "select a slot, then confirm" step, by direct instruction:
@@ -105,21 +125,34 @@ export function ScheduleClient({
       {/* This week */}
       <div className="glass-surface rounded-2xl p-5 sm:p-6">
         <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">This week</p>
-        <div className="mt-3 flex items-end justify-between">
-          <p className="font-serif text-3xl text-slate-50">
-            {creditsUsedThisWeek}
-            {weeklyAllotment !== null && <span className="text-lg text-slate-500"> / {weeklyAllotment} credits</span>}
+        {hasClassThisWeek ? (
+          <p className="mt-2 text-sm text-slate-300">
+            <span className="text-[rgb(var(--c-s-50))]">✓ Booked</span>, see it under &ldquo;Your classes&rdquo; below.
           </p>
-          <p className="text-sm text-slate-400">{credits} credit{credits === 1 ? "" : "s"} available overall</p>
-        </div>
-        {weekProgressPercent !== null && (
-          <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
-            <div className="h-full rounded-full bg-[rgb(var(--c-s-50))]" style={{ width: `${weekProgressPercent}%` }} />
-          </div>
-        )}
-        {weeklyAllotment === null && (
-          <p className="mt-2 text-xs text-slate-500">
-            No active Payment Plan right now, so there&apos;s no fixed weekly amount to compare against, just your overall balance.
+        ) : weeklyTime ? (
+          <p className="mt-2 text-sm text-slate-300">
+            Your weekly time is <span className="text-slate-100">{DAY_LABELS[weeklyTime.dayOfWeek]}s at {formatTimeLabel(weeklyTime.startTime)}</span>.
+            This week&apos;s class is set to appear here automatically. If it hasn&apos;t by the day before,{" "}
+            {supportContactId ? (
+              <Link href={`/messages?with=${supportContactId}`} className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
+                message support
+              </Link>
+            ) : (
+              "message support"
+            )}{" "}
+            and we&apos;ll sort it out.
+          </p>
+        ) : (
+          <p className="mt-2 text-sm text-slate-300">
+            We haven&apos;t set your weekly time yet.{" "}
+            {supportContactId ? (
+              <Link href={`/messages?with=${supportContactId}`} className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
+                Message support
+              </Link>
+            ) : (
+              "Message support"
+            )}{" "}
+            and we&apos;ll get you scheduled.
           </p>
         )}
       </div>
@@ -139,9 +172,7 @@ export function ScheduleClient({
                     {booking.label ?? "Weekly class"} · ends {formatEndTime(booking.scheduledAt, booking.creditsSpent)}
                   </p>
                 </div>
-                <span className="text-xs text-slate-500">
-                  {booking.creditsSpent} credit{booking.creditsSpent === 1 ? "" : "s"}
-                </span>
+                <span className="text-xs text-slate-500">{booking.creditsSpent * 30} min</span>
               </div>
             ))}
           </div>

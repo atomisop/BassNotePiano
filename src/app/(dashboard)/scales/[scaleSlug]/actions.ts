@@ -10,11 +10,16 @@ import { gradeQuiz, type QuizAnswerSubmission } from "@/lib/quiz";
 // The quiz itself is regenerated here from scratch (via gradeQuiz ->
 // generateScaleQuiz) rather than trusting anything about correctness from
 // the client — the client only ever received choices, never an answer key.
-export async function submitQuizAction(scaleSlug: string, answers: QuizAnswerSubmission[]) {
+// `seed` is whatever QuizModal rolled for this attempt, echoed back here so
+// grading reconstructs the exact same questions/choices the student actually
+// saw. See quiz.ts's own header comment for why trusting a client-supplied
+// seed verbatim is fine: there's no secret being protected, a mismatched
+// seed only ever grades against content the student wasn't shown.
+export async function submitQuizAction(scaleSlug: string, seed: number, answers: QuizAnswerSubmission[]) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect(`/login?callbackUrl=/scales/${scaleSlug}`);
 
-  const { score, total, results } = gradeQuiz(scaleSlug, answers);
+  const { score, total, results } = gradeQuiz(scaleSlug, seed, answers);
   const { passed } = await recordQuizAttempt(session.user.id, scaleSlug, {
     score,
     totalQuestions: total,

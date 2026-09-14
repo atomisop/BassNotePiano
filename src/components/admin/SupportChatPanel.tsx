@@ -340,7 +340,12 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
               </div>
             )}
 
-            <div className="min-w-0 flex-1 space-y-3 overflow-y-auto p-4">
+            {/* overscroll-contain: same fix as the student-facing
+                ChatWindow's own message list. This sits below a static
+                thread header, so an uncontained bounce here can visibly
+                slide over it for an instant on the way back up from the
+                bottom. */}
+            <div className="min-w-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
               {messagesLoading ? (
                 <div className="flex h-full items-center justify-center gap-2 text-sm text-slate-500">
                   <MorphingSquare size={14} />
