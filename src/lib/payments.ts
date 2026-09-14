@@ -162,6 +162,19 @@ export async function getOrCreatePendingExtraSessionPayment(
   });
   if (taken) throw new ExtraSessionError("That time was just booked by someone else, pick another.");
 
+  // One class a day, same rule bookClass/bookFamilyClass enforce (see
+  // assertNoOtherBookingSameDay in classSchedule.ts). Checked here too so a
+  // student can't pay for a same-day conflict in the first place, rather
+  // than paying and then getting refused (or worse, silently double-booked)
+  // once an admin actually approves it.
+  const conflictingDay = await prisma.classBooking.findFirst({
+    where: { studentId: userId, occurrenceDate, status: "SCHEDULED" },
+    select: { id: true },
+  });
+  if (conflictingDay) {
+    throw new ExtraSessionError("You already have a class booked that day, one class per day, pick a different date.");
+  }
+
   const existing = await prisma.zellePayment.findFirst({
     where: { userId, purpose: "CLASS_CREDITS", extraSessionScheduleId: { not: null }, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
     orderBy: { createdAt: "desc" },

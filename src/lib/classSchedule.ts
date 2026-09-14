@@ -1079,12 +1079,14 @@ export async function createReservedBookingIfAbsent(
  * ordinary one-off booking, not a standing weekly reservation).
  *
  * Returns false, never throws, if the exact instant was claimed by someone
- * else in the gap between the student picking it and the payment clearing
- * review, that gap is normally hours to a couple of days, not the seconds
- * bookClass's own transaction races against. The caller still grants the
- * credit either way (real money changed hands) and just leaves the student
- * to pick a different open time themselves, the same behavior this flow
- * replaces for everyone except this one edge case.
+ * else, or if the student's own calendar day is no longer free (one class
+ * a day, see assertNoOtherBookingSameDay), in the gap between the student
+ * picking it and the payment clearing review, that gap is normally hours to
+ * a couple of days, not the seconds bookClass's own transaction races
+ * against. The caller still grants the credit either way (real money
+ * changed hands) and just leaves the student to pick a different open time
+ * themselves, the same behavior this flow replaces for everyone except
+ * this one edge case.
  */
 export async function bookExtraSessionOccurrence(
   params: { studentId: string; scheduleId: string; occurrenceDate: Date; scheduledAt: Date; creditsSpent: number },
@@ -1102,6 +1104,21 @@ export async function bookExtraSessionOccurrence(
     select: { id: true },
   });
   if (conflict) return false;
+
+  // One class a day, same rule assertNoOtherBookingSameDay enforces for
+  // bookClass/bookFamilyClass. getOrCreatePendingExtraSessionPayment already
+  // refuses to sell an extra session for a day the student's already
+  // booked, but this is the gap that check can't close by itself: the
+  // student could book a regular class in the hours-to-days between paying
+  // for the extra and an admin actually approving it. Same "return false,
+  // don't throw" idiom as the conflict check above, for the same reason,
+  // the credit is granted either way (real money changed hands), this only
+  // ever refuses the specific seat.
+  const sameDayConflict = await db.classBooking.findFirst({
+    where: { studentId, occurrenceDate, status: "SCHEDULED", NOT: { scheduleId } },
+    select: { id: true },
+  });
+  if (sameDayConflict) return false;
 
   const data = {
     scheduledAt,

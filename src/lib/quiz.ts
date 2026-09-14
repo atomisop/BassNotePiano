@@ -163,17 +163,31 @@ export interface QuizGradeResult {
   results: Array<{ questionId: string; selectedIndex: number; correct: boolean }>;
 }
 
-/** Regenerates the same deterministic (scaleSlug, seed) quiz and grades submitted answers against it. */
+/**
+ * Regenerates the same deterministic (scaleSlug, seed) quiz and grades
+ * submitted answers against it. Iterates the real, regenerated `questions`
+ * list, not the raw `submissions` array, and reads at most one submitted
+ * answer per real question id: submissions was client-supplied, and a
+ * client that already knows a question's real id (stripAnswers always
+ * sends it) could otherwise submit that same id many times with every
+ * possible selectedIndex, guaranteeing a match each time and inflating
+ * score arbitrarily past total. Grading by the true question set makes
+ * score <= total structurally, regardless of what submissions contains.
+ */
 export function gradeQuiz(scaleSlug: string, seed: number, submissions: QuizAnswerSubmission[]): QuizGradeResult {
   const questions = generateScaleQuiz(scaleSlug, seed);
-  const byId = new Map(questions.map((q) => [q.id, q]));
+  // Map, not the raw array: only the *last* submitted answer for a given
+  // question id is ever read, so repeating an id can't count twice.
+  const submittedByQuestion = new Map(submissions.map((s) => [s.questionId, s.selectedIndex]));
 
   let score = 0;
-  const results = submissions.map(({ questionId, selectedIndex }) => {
-    const question = byId.get(questionId);
-    const correct = question ? question.correctIndex === selectedIndex : false;
+  const results = questions.map((question) => {
+    const selectedIndex = submittedByQuestion.get(question.id);
+    const correct = selectedIndex !== undefined && question.correctIndex === selectedIndex;
     if (correct) score++;
-    return { questionId, selectedIndex, correct };
+    // -1: no real choice has this index, so an omitted answer never reads
+    // as accidentally correct.
+    return { questionId: question.id, selectedIndex: selectedIndex ?? -1, correct };
   });
 
   return { score, total: questions.length, results };
