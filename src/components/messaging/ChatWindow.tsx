@@ -99,7 +99,12 @@ export function ChatWindow({
         </button>
       </div>
 
-      <div className="min-w-0 flex-1 space-y-2 overflow-y-auto p-4">
+      {/* overscroll-contain: this list sits right below a static header row
+          (avatar/name/minimize above). Without it, scrolling to the
+          bottom of a thread and flinging back up rubber-bands and can
+          visibly slide over that header for an instant on iOS. Same fix
+          (dashboard)/layout.tsx already applies to its own <main>. */}
+      <div className="min-w-0 flex-1 space-y-2 overflow-y-auto overscroll-contain p-4">
         {messages.map((m) => {
           const isMine = m.senderId !== conversation.friendId;
           return (

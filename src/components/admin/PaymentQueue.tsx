@@ -155,14 +155,10 @@ export function PaymentQueue({
             </div>
           </div>
 
-          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-3">
+          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
             <div>
               <dt className="text-xs text-slate-600">Sender name</dt>
               <dd className="text-slate-300">{payment.senderName ?? "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-slate-600">Reference code</dt>
-              <dd className="font-mono text-slate-300">{payment.referenceCode ?? "—"}</dd>
             </div>
             <div>
               <dt className="text-xs text-slate-600">Submitted</dt>

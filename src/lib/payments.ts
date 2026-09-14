@@ -318,7 +318,6 @@ export async function createFamilyBundlePayment(input: FamilyBundlePurchaseInput
 
 export interface ZelleReferenceSubmission {
   senderName: string;
-  referenceCode: string;
   note?: string;
 }
 
@@ -327,6 +326,14 @@ export interface ZelleReferenceSubmission {
  * into PENDING_REVIEW. Allowed from AWAITING_TRANSFER (first submission) or
  * REJECTED (resubmission after a failed match) — anything else means the
  * payment is already settled or mid-review, so resubmitting is rejected.
+ *
+ * No reference/confirmation code is collected here on purpose, by direct
+ * instruction: it was a free-text field nothing actually validated against
+ * Zelle, so it just as easily could've been a made-up string typed to look
+ * like proof of a payment that never happened. Every submission is checked
+ * by hand against the real Zelle activity for this account regardless of
+ * what (if anything) a student types, so the field added a step without
+ * adding real verification.
  */
 export async function submitZellePaymentReference(
   userId: string,
@@ -356,7 +363,12 @@ export async function submitZellePaymentReference(
     where: { id: paymentId },
     data: {
       senderName: input.senderName,
-      referenceCode: input.referenceCode,
+      // Explicit null, not just omitted: a REJECTED payment being
+      // resubmitted could otherwise keep whatever referenceCode a legacy
+      // submission (from before this field was retired) left behind,
+      // which would misleadingly attach an old code to a new submission
+      // that never provided one.
+      referenceCode: null,
       note: input.note,
       status: "PENDING_REVIEW",
       submittedAt: new Date(),

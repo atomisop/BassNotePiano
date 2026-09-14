@@ -463,7 +463,14 @@ export function NotificationBell() {
                   )}
                 </div>
 
-                <div className="mx-auto w-full max-w-xl flex-1 overflow-y-auto px-6 py-6">
+                {/* overscroll-contain: same fix as SlideOverPanel's own
+                    content div, for the identical reason. This list sits
+                    below a static header (Back/Notifications/Mark all
+                    read above) in a panel portaled straight to
+                    document.body, so an uncontained rubber-band bounce
+                    here can visibly slide over that header for an instant
+                    on the way back from the bottom. */}
+                <div className="mx-auto w-full max-w-xl flex-1 overflow-y-auto overscroll-contain px-6 py-6">
                   {notifications.length === 0 ? (
                     <div className="flex flex-col items-center gap-3 pt-20 text-center">
                       <span className="flex h-14 w-14 items-center justify-center rounded-full border border-ink/10 text-slate-600">

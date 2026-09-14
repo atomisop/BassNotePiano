@@ -105,7 +105,18 @@ export function SlideOverPanel({
               </button>
               <h1 id={titleId} className="truncate font-serif text-lg text-slate-50">{title}</h1>
             </div>
-            <div data-sheet-scroll className="flex-1 overflow-y-auto p-6">{children}</div>
+            {/* overscroll-contain: this panel is portaled straight to
+                document.body and sits above literally everything else
+                (z-50), with its own static header row (the Back button/
+                title above) that never scrolls. Without this, scrolling
+                this content to the bottom and flinging back up past the
+                top rubber-bands right here. On iOS that bounce can
+                visibly slide the scrolled content up over the static
+                header for an instant before it springs back, reported live
+                as "it bounces back and covers a little bit of the top."
+                Same fix (dashboard)/layout.tsx already applies to its own
+                <main>, for the exact same reason. */}
+            <div data-sheet-scroll className="flex-1 overflow-y-auto overscroll-contain p-6">{children}</div>
             </motion.div>
           </motion.div>
         </motion.div>
