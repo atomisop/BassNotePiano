@@ -56,7 +56,14 @@ export function SlideOverPanel({
   return createPortal(
     <AnimatePresence>
       {open && (
-        <motion.div className="fixed inset-0 z-50 flex justify-end" initial="hidden" animate="visible" exit="hidden">
+        // h-[100svh], not inset-0's own implicit bottom:0 sizing. Same
+        // fix as QuizModal's own full-screen panel (see its comment): a
+        // position:fixed element sized against Safari's own *large*
+        // viewport (as if the toolbar were always hidden) can leave a gap
+        // or get clipped once the toolbar's actually showing, and this app
+        // shell already hit that exact bug once before, see
+        // (dashboard)/layout.tsx's own h-[100svh] comment.
+        <motion.div className="fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full justify-end" initial="hidden" animate="visible" exit="hidden">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

@@ -541,9 +541,38 @@ model Message {
   readAt      DateTime?
   createdAt   DateTime  @default(now())
 
+  // Swipe-to-reply, set at send time, never changed after. onDelete: SetNull
+  // (not Cascade) so deleting the original message just orphans the quoted
+  // reply into a plain message instead of taking a whole reply chain down
+  // with it. There's no message-delete feature today, but nothing here
+  // should assume there never will be.
+  replyToId String?
+  replyTo   Message?          @relation("MessageReplyTo", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   Message[]         @relation("MessageReplyTo")
+  reactions MessageReaction[]
+
   @@index([senderId, recipientId, createdAt])
   @@index([recipientId, senderId, createdAt])
   @@index([recipientId, readAt])
+  @@index([replyToId])
+}
+
+// One reaction per (message, user), like iMessage's own Tapback: picking a
+// different emoji replaces your previous one rather than stacking a second
+// row, and the same unique constraint is what makes "upsert" the right
+// write for reactToMessage regardless of whether this is a first reaction
+// or a change.
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation("MessageReactionUser", fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, userId])
+  @@index([messageId])
 }
 
 // A conversation "pinned" to the top of a user's own Messages sidebar —
@@ -619,7 +648,29 @@ model GroupMessage {
   body           String            @db.Text
   createdAt      DateTime          @default(now())
 
+  // Same shape as Message's own replyToId/reactions above, see those
+  // comments.
+  replyToId String?
+  replyTo   GroupMessage?          @relation("GroupMessageReplyTo", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   GroupMessage[]         @relation("GroupMessageReplyTo")
+  reactions GroupMessageReaction[]
+
   @@index([conversationId, createdAt])
+  @@index([replyToId])
+}
+
+// Same shape as MessageReaction above, for GroupMessage.
+model GroupMessageReaction {
+  id        String       @id @default(cuid())
+  messageId String
+  message   GroupMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation("GroupMessageReactionUser", fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
+  createdAt DateTime     @default(now())
+
+  @@unique([messageId, userId])
+  @@index([messageId])
 }
 
 // ---------------------------------------------------------------------------
@@ -703,6 +754,17 @@ model User {
   // only the automatic one-time trigger reads it.
   onboardingTourSeenAt DateTime?
 
+  // How many times this account has explicitly dismissed Atom's own
+  // greeting bubble (the X control on "Hi, I'm Atom..."; see
+  // AssistantWidget's dismissGreeting()). Opening the chat instead of
+  // dismissing it doesn't increment this: using Atom is already a
+  // stronger signal than closing an unread pitch. Once this reaches the
+  // limit defined alongside dismissGreeting(), the bubble stops appearing
+  // at all, on any device, forever. An anonymous visitor has no account to
+  // persist this on, so they get the same cap enforced from a localStorage
+  // counter on their own browser instead (see AssistantWidget.tsx).
+  atomGreetingDismissCount Int @default(0)
+
   accounts Account[]
   sessions Session[]
 
@@ -747,6 +809,7 @@ model User {
   blocksReceived         Block[]              @relation("BlockedUser")
   messagesSent           Message[]            @relation("MessageSender")
   messagesReceived       Message[]            @relation("MessageRecipient")
+  messageReactions       MessageReaction[]    @relation("MessageReactionUser")
   pinnedByMe             PinnedConversation[] @relation("PinnedByUser")
   pinnedByOthers         PinnedConversation[] @relation("PinnedFriend")
   typingStatusesSent     TypingStatus[]       @relation("TypingStatusSender")
@@ -755,9 +818,10 @@ model User {
   classRegistrations         ClassRegistration[] @relation("ClassRegistrant")
   reviewedClassRegistrations ClassRegistration[] @relation("ClassRegistrationReviewer")
 
-  createdGroups     GroupConversation[] @relation("GroupCreator")
-  groupMemberships  GroupMember[]       @relation("GroupMembership")
-  groupMessagesSent GroupMessage[]      @relation("GroupMessageSender")
+  createdGroups         GroupConversation[]    @relation("GroupCreator")
+  groupMemberships      GroupMember[]          @relation("GroupMembership")
+  groupMessagesSent     GroupMessage[]         @relation("GroupMessageSender")
+  groupMessageReactions GroupMessageReaction[] @relation("GroupMessageReactionUser")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

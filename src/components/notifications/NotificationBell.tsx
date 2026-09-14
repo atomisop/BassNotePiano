@@ -436,8 +436,15 @@ export function NotificationBell() {
                 // Opaque white panel. This one scrolls its own notification
                 // list, so a blur here would have cost a repaint on every
                 // scroll frame inside the panel, not just during the slide-in.
+                //
+                // h-[100svh], not inset-0's own implicit bottom:0 sizing,
+                // same fix as QuizModal's own full-screen panel (see its
+                // comment): sizing a position:fixed element off Safari's
+                // *large* viewport (as if the toolbar were always hidden)
+                // can leave a gap or get clipped once the toolbar's
+                // actually showing.
                 style={{ willChange: "transform" }}
-                className="fixed inset-0 z-50 flex flex-col bg-surface"
+                className="fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full flex-col bg-surface"
               >
                 <div className="flex items-center gap-4 border-b border-ink/10 px-6 py-5">
                   <button

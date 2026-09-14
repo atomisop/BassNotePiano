@@ -9,6 +9,7 @@ import {
   togglePin,
   setTyping,
   searchUsersForMessaging,
+  reactToMessage,
   type ConversationSummary,
   type MessageableUser,
 } from "@/lib/messages";
@@ -46,17 +47,33 @@ export async function getAdminConversationMessagesAction(userId: string): Promis
   const adminId = await requireAdminId();
   try {
     const messages = await getConversationMessages(adminId, userId);
-    return messages.map((m) => ({ id: m.id, senderId: m.senderId, body: m.body, createdAt: m.createdAt.toISOString() }));
+    return messages.map((m) => ({
+      id: m.id,
+      senderId: m.senderId,
+      body: m.body,
+      createdAt: m.createdAt.toISOString(),
+      replyTo: m.replyTo ? { id: m.replyTo.id, senderId: m.replyTo.senderId, body: m.replyTo.body } : null,
+      reactions: m.reactions,
+    }));
   } catch {
     return [];
   }
 }
 
-export async function sendAdminMessageAction(userId: string, body: string) {
+export async function sendAdminMessageAction(userId: string, body: string, replyToId?: string) {
   try {
     const adminId = await requireAdminId();
-    await sendMessage(adminId, userId, body);
+    await sendMessage(adminId, userId, body, replyToId);
     return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
+  }
+}
+
+export async function reactToAdminMessageAction(messageId: string, emoji: string) {
+  try {
+    const adminId = await requireAdminId();
+    return { ok: true as const, ...(await reactToMessage(adminId, messageId, emoji)) };
   } catch (err) {
     return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
   }

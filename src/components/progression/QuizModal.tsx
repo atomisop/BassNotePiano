@@ -143,7 +143,19 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
           initial="hidden"
           animate="visible"
           exit="exit"
-          className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-slate-950"
+          // h-[100svh], not inset-0's own implicit bottom:0 sizing: verified
+          // in Chromium's mobile emulation that inset-0 alone renders this
+          // genuinely full screen there, but reported live as "not full
+          // screen at least on mobile" on a real phone, and this exact app
+          // shell already hit the same class of bug once before (see
+          // (dashboard)/layout.tsx's own h-[100svh] comment): a
+          // position:fixed element sized off the *large* viewport (the one
+          // Safari reports as if its own toolbar were always hidden) gets
+          // clipped or leaves a gap once the toolbar is actually showing,
+          // which inset-0's bottom:0 constraint is exactly the shape of that
+          // bug. h-[100svh] pins this to the smallest the viewport is ever
+          // going to be instead, the same fix already proven here.
+          className="fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full flex-col overflow-hidden bg-slate-950"
         >
           {step === "result" && result?.passed && <SuccessGlowPulse />}
           <div className="h-1 w-full shrink-0 bg-gradient-to-r from-[rgb(var(--c-s-300)/0.4)] via-[rgb(var(--c-s-50))] to-[rgb(var(--c-s-300)/0.4)]" />

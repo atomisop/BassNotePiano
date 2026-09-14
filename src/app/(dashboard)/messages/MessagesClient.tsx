@@ -18,12 +18,14 @@ import {
   markConversationReadAction,
   togglePinAction,
   setTypingAction,
+  reactToMessageAction,
   getGroupsAction,
   getGroupMessagesAction,
   sendGroupMessageAction,
   markGroupReadAction,
   createGroupAction,
   leaveGroupAction,
+  reactToGroupMessageAction,
   type MessageRow,
   type GroupMessageRow,
 } from "./actions";
@@ -155,9 +157,9 @@ function MessagesInner({
     router.push("/messages");
   }
 
-  async function handleSend(body: string): Promise<boolean> {
+  async function handleSend(body: string, replyToId?: string): Promise<boolean> {
     if (!active) return false;
-    const result = await sendMessageAction(active.friendId, body);
+    const result = await sendMessageAction(active.friendId, body, replyToId);
     if (result.ok) {
       setMessages(await getConversationMessagesAction(active.friendId));
       setConversations(await getConversationsAction());
@@ -165,14 +167,26 @@ function MessagesInner({
     return result.ok;
   }
 
-  async function handleSendGroup(body: string): Promise<boolean> {
+  async function handleSendGroup(body: string, replyToId?: string): Promise<boolean> {
     if (!activeGroup) return false;
-    const result = await sendGroupMessageAction(activeGroup.id, body);
+    const result = await sendGroupMessageAction(activeGroup.id, body, replyToId);
     if (result.ok) {
       setGroupMessages(await getGroupMessagesAction(activeGroup.id));
       setGroups(await getGroupsAction());
     }
     return result.ok;
+  }
+
+  async function handleReact(messageId: string, emoji: string) {
+    if (!active) return;
+    await reactToMessageAction(messageId, emoji);
+    setMessages(await getConversationMessagesAction(active.friendId));
+  }
+
+  async function handleReactGroup(messageId: string, emoji: string) {
+    if (!activeGroup) return;
+    await reactToGroupMessageAction(messageId, emoji);
+    setGroupMessages(await getGroupMessagesAction(activeGroup.id));
   }
 
   async function handleTogglePin(friendId: string) {
@@ -225,7 +239,20 @@ function MessagesInner({
   }
 
   return (
-    <div className="glass-surface flex h-[calc(100vh-9rem)] overflow-hidden">
+    // 100dvh, not 100vh: unlike the app shell (which deliberately stays put
+    // through Safari's toolbar auto-hide, see (dashboard)/layout.tsx's own
+    // comment on that choice), this pane *should* shrink when the on-screen
+    // keyboard opens for the message input below. 100vh is measured against
+    // the large viewport and never accounts for the keyboard at all, so
+    // this box stayed its full height with the keyboard covering the
+    // bottom of it, and the only way anything could bring the now-hidden
+    // input back into view was scrolling the whole pane up, taking the
+    // header (the person you're actually talking to) off the top of the
+    // screen with it. 100dvh tracks the real visible viewport continuously,
+    // keyboard included, so the header and input (both fixed-size flex
+    // children, see ChatWindow's own h-full flex-col) stay pinned in place
+    // and only the message list in between actually shrinks.
+    <div className="glass-surface flex h-[calc(100dvh-9rem)] overflow-hidden">
       <div className={`${hasActivePane ? "hidden md:flex" : "flex"} md:w-[350px] md:shrink-0`}>
         <ConversationSidebar
           conversations={conversations}
@@ -245,9 +272,11 @@ function MessagesInner({
             key={active.friendId}
             conversation={active}
             messages={messages}
+            currentUserId={session?.user?.id ?? ""}
             onSend={handleSend}
             onMinimize={handleMinimize}
             onTyping={(friendId) => void setTypingAction(friendId)}
+            onReact={handleReact}
           />
         ) : activeGroup ? (
           <GroupChatWindow
@@ -258,6 +287,7 @@ function MessagesInner({
             onSend={handleSendGroup}
             onMinimize={handleMinimize}
             onLeave={handleLeaveGroup}
+            onReact={handleReactGroup}
           />
         ) : (
           <EmptyState />
