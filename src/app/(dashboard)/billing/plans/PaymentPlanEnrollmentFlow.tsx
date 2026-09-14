@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { PaymentPlanCadence, PaymentPlanTerm, ZellePaymentStatus } from "@prisma/client";
-import { calculatePaymentPlanRate, describePaymentPlan } from "@/lib/classCreditPricing";
+import { calculatePaymentPlanRate, describePaymentPlan, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { MorphingSquare } from "@/components/ui/morphing-square";
@@ -91,6 +91,14 @@ export function PaymentPlanEnrollmentFlow({
   );
 
   const rate = calculatePaymentPlanRate(cadence, term);
+  // Credits are internal bookkeeping now, by direct instruction: a student
+  // never sees a raw credit count, just how many classes a month and how
+  // long each one is. Both cadences work out to the same 4 classes a
+  // month, they only differ in length, dividing creditsPerInstallment by
+  // the cadence's own weekly cost (rather than hardcoding 4) keeps this
+  // correct if the pricing table above it ever changes.
+  const classesPerMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
+  const classMinutes = cadence === "MIN_60_WEEKLY" ? 60 : 30;
 
   // Re-fetched whenever cadence changes (not term — a slot's room only
   // depends on the weekly credit cost, which is cadence-only, see
@@ -200,9 +208,6 @@ export function PaymentPlanEnrollmentFlow({
                 }`}
               >
                 <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  {calculatePaymentPlanRate(option.value, term).creditsPerInstallment} credits/month
-                </p>
               </button>
             );
           })}
@@ -281,12 +286,12 @@ export function PaymentPlanEnrollmentFlow({
           <span>{formatUsd(rate.installmentAmountCents)}</span>
         </div>
         <div className="mt-1 flex items-center justify-between text-xs text-slate-500">
-          <span>= {formatUsd(Math.round(rate.installmentAmountCents / rate.creditsPerInstallment))}/credit (30 min)</span>
-          <span>{rate.creditsPerInstallment} credits/month</span>
+          <span>{classMinutes}-min classes</span>
+          <span>{classesPerMonth} classes/month</span>
         </div>
         <p className="mt-2 text-xs text-slate-500">
           {rate.termMonths === 1
-            ? "One Zelle payment for one month of credits — no term, re-enroll any time."
+            ? "One Zelle payment for one month, no term, re-enroll any time."
             : "Billed one installment at a time via Zelle, never all at once — we’ll email you an invoice as each one comes due."}
         </p>
       </div>
@@ -300,7 +305,7 @@ export function PaymentPlanEnrollmentFlow({
         />
         <span>
           {rate.termMonths === 1
-            ? `I'm paying for one month of credits (${formatUsd(rate.installmentAmountCents)}), no further commitment.`
+            ? `I'm paying for one month (${formatUsd(rate.installmentAmountCents)}), no further commitment.`
             : `I'm committing to ${rate.termMonths} monthly installments of ${formatUsd(rate.installmentAmountCents)} each.`}{" "}
           My selected weekly time is reserved for me exclusively and auto-booked automatically every week this
           plan stays active, I don&apos;t need to book it myself. If a specific week doesn&apos;t work for me, I&apos;ll
