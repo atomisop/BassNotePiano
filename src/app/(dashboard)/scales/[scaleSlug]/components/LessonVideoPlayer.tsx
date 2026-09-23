@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Maximize, Minimize, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX } from "lucide-react";
 
 function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds)) return "0:00";
@@ -204,16 +205,7 @@ export function LessonVideoPlayer({
               aria-label={playing ? "Pause" : "Play"}
               className="cta-sheen cta-fill flex h-8 w-8 items-center justify-center rounded-full"
             >
-              {playing ? (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="5" width="4" height="14" rx="1" />
-                  <rect x="14" y="5" width="4" height="14" rx="1" />
-                </svg>
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              )}
+              {playing ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
             </button>
             <button
               type="button"
@@ -221,9 +213,7 @@ export function LessonVideoPlayer({
               aria-label="Back 15 seconds"
               className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <RotateCcw size={16} />
             </button>
             <button
               type="button"
@@ -231,9 +221,7 @@ export function LessonVideoPlayer({
               aria-label="Forward 15 seconds"
               className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <RotateCw size={16} />
             </button>
             <span className="ml-1 text-xs text-slate-400">
               {formatTime(currentTime)} / {formatTime(duration)}
@@ -248,17 +236,7 @@ export function LessonVideoPlayer({
                 aria-label={muted ? "Unmute" : "Mute"}
                 className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
               >
-                {muted || volume === 0 ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M11 5 6 9H2v6h4l5 4V5Z" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M23 9 17 15M17 9l6 6" strokeLinecap="round" />
-                  </svg>
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M11 5 6 9H2v6h4l5 4V5Z" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" strokeLinecap="round" />
-                  </svg>
-                )}
+                {muted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
               </button>
               <input
                 type="range"
@@ -277,9 +255,7 @@ export function LessonVideoPlayer({
               aria-label={fullscreen ? "Exit fullscreen" : "Fullscreen"}
               className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              {fullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
             </button>
           </div>
         </div>
