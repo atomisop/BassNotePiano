@@ -201,16 +201,23 @@ function groupNotifications(notifications: NotificationRow[]): NotificationSecti
 
 /** One notification, however it's reached: a top-level row or expanded out of a stack. Pulled out so both places render it identically. */
 function NotificationEntry({ notification, onClick }: { notification: NotificationRow; onClick: (n: NotificationRow) => void }) {
-  // Unread rows get a faint whole-row tint, not just the dot — a pattern
-  // borrowed from 21st.dev's Notification Panel reference, which reads
-  // better at a glance than a small dot alone once a list has more than a
-  // couple of rows.
-  const itemClassName = `flex w-full items-start gap-3 rounded-xl border border-ink/10 px-4 py-3.5 text-left transition hover:bg-ink/5 ${
-    notification.read ? "bg-surface" : "bg-[rgb(var(--c-s-50)/0.05)]"
+  // Cards get their own bg-slate-900 rather than the panel's bg-surface —
+  // the two were identical before, which is exactly why every row read as
+  // one uniform gray field with nothing to tell "card" from "page." Unread
+  // rows layer a real accent tint plus a colored left edge on top of that
+  // dark card. Uses --c-a-400 (the app's one real accent, "signal-green"
+  // per themes.css), not --c-s-50 — that's this theme's near-white TEXT
+  // ramp (see themes.css's own comment on it), not a color at all, which
+  // is exactly why the original unread dot read as white instead of
+  // accented: it was built on the wrong token.
+  const itemClassName = `flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition ${
+    notification.read
+      ? "border-ink/10 bg-slate-900 hover:bg-ink/5"
+      : "border-l-[3px] border-y border-r border-y-[rgb(var(--c-a-400)/0.3)] border-r-[rgb(var(--c-a-400)/0.3)] border-l-[rgb(var(--c-a-400))] bg-[rgb(var(--c-a-400)/0.14)] hover:bg-[rgb(var(--c-a-400)/0.2)]"
   }`;
   const inner = (
     <>
-      <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${notification.read ? "bg-transparent" : "bg-[rgb(var(--c-s-50))]"}`} />
+      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.read ? "bg-transparent" : "bg-[rgb(var(--c-a-400))]"}`} />
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-medium text-slate-100">{notification.title}</span>
         {notification.body && <span className="mt-0.5 block text-sm text-slate-500">{notification.body}</span>}
@@ -262,9 +269,9 @@ function NotificationGroup({
       <div className="relative">
         {!expanded && (
           <>
-            <div className="absolute inset-x-2 -top-1.5 h-full rounded-xl border border-ink/10 bg-surface/60" aria-hidden />
+            <div className="absolute inset-x-2 -top-1.5 h-full rounded-xl border border-ink/10 bg-slate-900/70" aria-hidden />
             {items.length > 2 && (
-              <div className="absolute inset-x-4 -top-3 h-full rounded-xl border border-ink/10 bg-surface/40" aria-hidden />
+              <div className="absolute inset-x-4 -top-3 h-full rounded-xl border border-ink/10 bg-slate-900/50" aria-hidden />
             )}
           </>
         )}
@@ -272,9 +279,13 @@ function NotificationGroup({
           type="button"
           onClick={onToggle}
           aria-expanded={expanded}
-          className="relative flex w-full items-start gap-3 rounded-xl border border-ink/10 bg-surface px-4 py-3.5 text-left transition hover:bg-ink/5"
+          className={`relative flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition ${
+            hasUnread
+              ? "border-l-[3px] border-y border-r border-y-[rgb(var(--c-a-400)/0.3)] border-r-[rgb(var(--c-a-400)/0.3)] border-l-[rgb(var(--c-a-400))] bg-[rgb(var(--c-a-400)/0.14)] hover:bg-[rgb(var(--c-a-400)/0.2)]"
+              : "border-ink/10 bg-slate-900 hover:bg-ink/5"
+          }`}
         >
-          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.12)] text-[rgb(var(--c-s-50))]">
+          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-a-400)/0.15)] text-[rgb(var(--c-a-400))]">
             {(() => {
               const Icon = CATEGORY_ICONS[categoryKey];
               return <Icon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />;
@@ -284,7 +295,7 @@ function NotificationGroup({
             <span className="flex items-center gap-2">
               <span className="text-sm font-medium text-slate-100">{categoryLabel}</span>
               <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">{items.length}</span>
-              {hasUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[rgb(var(--c-s-50))]" aria-hidden />}
+              {hasUnread && <span className="h-2 w-2 shrink-0 rounded-full bg-[rgb(var(--c-a-400))]" aria-hidden />}
             </span>
             <span className="mt-0.5 block truncate text-sm text-slate-500">{latest.title}</span>
             <span className="mt-1.5 block text-xs text-slate-600">{relativeTime(latest.createdAt)}</span>
@@ -431,7 +442,11 @@ export function NotificationBell() {
                 initial={{ x: "100%" }}
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
-                transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+                // Slowed from 0.3s: fast enough that it wasn't reading as a
+                // slide at all, just a cut — this is the same spring
+                // (bounce 0, no overshoot) at a duration long enough to
+                // actually see it travel from off-screen.
+                transition={{ type: "spring", bounce: 0, duration: 0.45 }}
                 // Opaque white panel. This one scrolls its own notification
                 // list, so a blur here would have cost a repaint on every
                 // scroll frame inside the panel, not just during the slide-in.
