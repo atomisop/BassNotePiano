@@ -16,10 +16,10 @@ async function requireAdminId(): Promise<string> {
   return session.user.id;
 }
 
-export async function createAnnouncementAction(title: string, body: string) {
+export async function createAnnouncementAction(title: string, body: string, sendEmail: boolean) {
   try {
     const adminId = await requireAdminId();
-    await createAnnouncement(adminId, title, body);
+    await createAnnouncement(adminId, title, body, sendEmail);
     revalidatePath("/admin/announcements");
     return { ok: true as const };
   } catch (err) {

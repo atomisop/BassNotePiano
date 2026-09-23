@@ -233,6 +233,79 @@ export async function searchUsers(query: string): Promise<AdminUserRow[]> {
   }));
 }
 
+export interface AdminProgressScaleCell {
+  slug: string;
+  code: string;
+  order: number;
+  title: string;
+  status: "LOCKED" | "AVAILABLE" | "IN_PROGRESS" | "COMPLETED";
+  unlocked: boolean;
+  moduleRead: boolean;
+  practiceCompleted: boolean;
+  quizPassed: boolean;
+  quizScore: number | null;
+}
+
+export interface AdminProgressRow {
+  id: string;
+  name: string | null;
+  email: string;
+  hasCurriculumAccess: boolean;
+  scales: AdminProgressScaleCell[];
+}
+
+/**
+ * One row per student with every scale's full checklist state (not just
+ * unlocked/completed, like AdminUserRow.scaleUnlocks above) — feeds the
+ * dedicated /admin/progress matrix, which exists so a teacher can see
+ * exactly where a student is stuck (module read but quiz never passed,
+ * say) and lock/unlock in the same glance, instead of opening each
+ * student's full profile page just to check the roadmap.
+ */
+export async function getAdminProgressOverview(query: string): Promise<AdminProgressRow[]> {
+  const trimmed = query.trim();
+  const scaleGroups = await prisma.scaleGroup.findMany({ orderBy: { order: "asc" } });
+
+  const users = await prisma.user.findMany({
+    where: {
+      role: "STUDENT",
+      ...(trimmed
+        ? {
+            OR: [
+              { email: { contains: trimmed, mode: "insensitive" } },
+              { name: { contains: trimmed, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
+    orderBy: { createdAt: "desc" },
+    include: { progress: true },
+    take: 200,
+  });
+
+  return users.map((user) => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    hasCurriculumAccess: user.hasCurriculumAccess,
+    scales: scaleGroups.map((sg) => {
+      const row = user.progress.find((p) => p.scaleGroupId === sg.id);
+      return {
+        slug: sg.slug,
+        code: sg.code,
+        order: sg.order,
+        title: sg.kinitName ?? sg.title,
+        status: row?.status ?? "LOCKED",
+        unlocked: Boolean(row?.unlockedAt),
+        moduleRead: row?.moduleRead ?? false,
+        practiceCompleted: row?.practiceCompleted ?? false,
+        quizPassed: row?.quizPassed ?? false,
+        quizScore: row?.quizScore ?? null,
+      };
+    }),
+  }));
+}
+
 export interface BookableStudent {
   id: string;
   name: string | null;

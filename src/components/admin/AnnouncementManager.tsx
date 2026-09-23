@@ -20,16 +20,38 @@ function relativeTime(iso: Date): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-function ComposeForm({ onPublished }: { onPublished: () => void }) {
+function EmailToggle({ checked, onChange }: { checked: boolean; onChange: (next: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+        checked ? "bg-[rgb(var(--c-a-400))]" : "bg-slate-700"
+      }`}
+    >
+      <span
+        className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-slate-50 transition-transform ${
+          checked ? "translate-x-[20px]" : "translate-x-0"
+        }`}
+      />
+    </button>
+  );
+}
+
+function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublished: () => void }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [sendEmail, setSendEmail] = useState(false);
+  const [confirmingEmail, setConfirmingEmail] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit() {
+  async function publish() {
     setError(null);
     setSubmitting(true);
-    const result = await createAnnouncementAction(title, body);
+    const result = await createAnnouncementAction(title, body, sendEmail);
     setSubmitting(false);
     if (!result.ok) {
       setError(result.error);
@@ -37,15 +59,26 @@ function ComposeForm({ onPublished }: { onPublished: () => void }) {
     }
     setTitle("");
     setBody("");
+    setSendEmail(false);
+    setConfirmingEmail(false);
     onPublished();
+  }
+
+  function handlePublishClick() {
+    // Emailing every account is the one irreversible-feeling part of this
+    // form (an in-app banner can be deactivated after the fact; a sent
+    // email can't) — same in-place confirm step this file already uses
+    // for Delete below, gated only when the toggle is actually on.
+    if (sendEmail) {
+      setConfirmingEmail(true);
+      return;
+    }
+    void publish();
   }
 
   return (
     <div className="glass-surface p-6">
       <h2 className="font-serif text-lg text-slate-50">New announcement</h2>
-      <p className="mt-1 text-sm text-slate-500">
-        Publishes instantly — every signed-in user gets a dismissible banner and a notification, no email sent.
-      </p>
 
       <div className="mt-4 space-y-3">
         <input
@@ -66,17 +99,58 @@ function ComposeForm({ onPublished }: { onPublished: () => void }) {
         />
       </div>
 
+      <div className="mt-4 flex items-center justify-between rounded-lg border border-ink/10 px-3 py-2.5">
+        <div>
+          <p className="text-sm font-medium text-slate-200">Send email</p>
+          <p className="text-xs text-slate-500">Also emails every signed-up account, not just the in-app banner.</p>
+        </div>
+        <EmailToggle
+          checked={sendEmail}
+          onChange={(next) => {
+            setSendEmail(next);
+            setConfirmingEmail(false);
+          }}
+        />
+      </div>
+
       {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
 
-      <button
-        type="button"
-        onClick={handleSubmit}
-        disabled={submitting || !title.trim() || !body.trim()}
-        className="cta-sheen cta-fill mt-4 flex items-center justify-center rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-        {submitting ? "Publishing…" : "Publish to everyone"}
-      </button>
+      {confirmingEmail ? (
+        <div className="mt-4 space-y-2 rounded-lg border border-amber-400/20 bg-amber-400/5 p-3">
+          <p className="text-xs text-amber-300">
+            This will email all {totalUsers} account{totalUsers === 1 ? "" : "s"}. Send it?
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirmingEmail(false)}
+              disabled={submitting}
+              className="flex-1 rounded-lg border border-ink/10 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => void publish()}
+              disabled={submitting}
+              className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+              {submitting ? "Sending…" : `Confirm: email ${totalUsers}`}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={handlePublishClick}
+          disabled={submitting || !title.trim() || !body.trim()}
+          className="cta-sheen cta-fill mt-4 flex items-center justify-center rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+          {submitting ? "Publishing…" : "Publish to everyone"}
+        </button>
+      )}
     </div>
   );
 }
@@ -186,11 +260,10 @@ export function AnnouncementManager({
 
   return (
     <div className="space-y-6">
-      <ComposeForm onPublished={refresh} />
+      <ComposeForm totalUsers={totalUsers} onPublished={refresh} />
 
       <div className="glass-surface p-6">
         <h2 className="font-serif text-lg text-slate-50">History</h2>
-        <p className="mt-1 text-sm text-slate-500">Deactivating stops showing it to anyone who hasn&apos;t seen it yet — it doesn&apos;t recall it from users who already have.</p>
 
         <div className="mt-4 space-y-3">
           {initialAnnouncements.length === 0 ? (
