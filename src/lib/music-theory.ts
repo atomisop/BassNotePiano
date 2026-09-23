@@ -169,6 +169,7 @@ export const CHORD_QUALITIES = {
   minor11: { symbol: "m11", formula: "1-b3-5-b7-9-11" },
   thirteenth: { symbol: "13", formula: "1-3-5-b7-9-13" },
   altered7sharp9: { symbol: "7#9", formula: "1-3-b7-#9" },
+  sus4: { symbol: "sus4", formula: "1-4-5" },
 } as const satisfies Record<string, { symbol: string; formula: string }>;
 
 export type ChordQualityKey = keyof typeof CHORD_QUALITIES;

@@ -10,6 +10,10 @@ import { ScaleChordsPanel } from "@/components/scales/ScaleChordsPanel";
 import { useScalePlayer, useStopOnChange } from "@/components/scales/useScalePlayer";
 
 export interface ScaleExplorerProps {
+  /** Every scale is now standalone (one ScaleGroup, one variant) — see
+      SCALE_CONTENT in scale-content.ts. Still an array of length 1 rather
+      than a single ScaleVariant so this component doesn't need to change
+      how it reads its data. */
   variants: ScaleVariant[];
   /** The signed-in student's own instrument, used only as the *default* view
       below — see the instrumentView state right under this and
@@ -18,11 +22,10 @@ export interface ScaleExplorerProps {
   instrument: PrimaryInstrument | null;
 }
 
-/** Owns the shared root + variant selection so the dashboard and chords panel below always stay in sync. */
+/** Owns the shared root selection so the dashboard and chords panel below always stay in sync. */
 export function ScaleExplorer({ variants, instrument }: ScaleExplorerProps) {
-  const [activeVariantIndex, setActiveVariantIndex] = useState(0);
   const [root, setRoot] = useState<RootKey>("C");
-  const variant = variants[activeVariantIndex];
+  const variant = variants[0];
 
   // Defaults to the account's own instrument (set at onboarding, changeable
   // in Profile) but is a local, page-only view from here on — a guitar
@@ -38,34 +41,13 @@ export function ScaleExplorer({ variants, instrument }: ScaleExplorerProps) {
   // not just what you see.
   const player = useScalePlayer(instrumentView);
 
-  // Changing key, variant, or instrument mid-run would leave a scale sounding
-  // in the key (or voice) the user just navigated away from.
-  useStopOnChange(player.stop, `${root}-${activeVariantIndex}-${instrumentView}`);
+  // Changing key or instrument mid-run would leave a scale sounding in the
+  // key (or voice) the user just navigated away from.
+  useStopOnChange(player.stop, `${root}-${instrumentView}`);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        {variants.length > 1 ? (
-          <div className="flex flex-wrap gap-1.5 rounded-full border border-ink/10 p-1">
-            {variants.map((v, i) => (
-              <button
-                key={v.name}
-                type="button"
-                onClick={() => setActiveVariantIndex(i)}
-                aria-pressed={i === activeVariantIndex}
-                className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition ${
-                  i === activeVariantIndex
-                    ? "bg-amber-400 text-slate-950"
-                    : "text-slate-400 hover:text-slate-100"
-                }`}
-              >
-                {v.name}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <span />
-        )}
+      <div className="flex justify-end">
         <KeySelector value={root} onChange={setRoot} />
       </div>
 

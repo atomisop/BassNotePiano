@@ -35,8 +35,8 @@ import { SolutionScreenshotTabs } from "@/components/marketing/SolutionScreensho
  */
 const FEATURES = [
   {
-    title: "Six scales, all twelve keys",
-    body: "Tizita, Bati, Anchihoye, Mixolydian, and more, spelled correctly wherever a singer needs them, not just the easy keys.",
+    title: "15 scales, all twelve keys",
+    body: "Tizita, Bati, Anchihoye, Ambassel, and more, spelled correctly wherever a singer needs them, not just the easy keys.",
   },
   {
     title: "Chords built in, not bolted on",

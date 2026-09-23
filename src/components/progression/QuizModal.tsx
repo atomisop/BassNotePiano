@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { generateScaleQuiz, stripAnswers, type PublicQuizQuestion, type QuizAnswerSubmission } from "@/lib/quiz";
 import { CountUpNumber } from "@/components/ui/CountUpNumber";
@@ -37,11 +38,11 @@ function rollQuiz(scaleSlug: string): { seed: number; questions: PublicQuizQuest
 
 type Step = "question" | "submitting" | "result";
 
-// Full screen now, by direct instruction, not a centered popup with a
-// backdrop scrim behind it. A slide-up rather than the old fade/scale-in,
-// same reasoning SlideOverPanel's own full-width phone layout uses: this
-// covers the whole viewport, so it enters like a screen, not an object
-// floating in front of one.
+// Full screen, by direct instruction, not a centered popup with a backdrop
+// scrim behind it. A slide-up rather than a fade/scale-in, same reasoning
+// SlideOverPanel's own full-width phone layout uses: this covers the whole
+// viewport, so it enters like a screen, not an object floating in front of
+// one.
 const panelVariants = {
   hidden: { opacity: 0, y: 24 },
   visible: { opacity: 1, y: 0, transition: { type: "spring", bounce: 0, duration: 0.32 } },
@@ -60,6 +61,14 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
   const [selections, setSelections] = useState<Record<string, number>>({});
   const [result, setResult] = useState<{ passed: boolean; score: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Rendered via a portal onto document.body (below) rather than in place —
+  // the dashboard's page-enter animation puts a `transform` on an ancestor,
+  // which turns `position: fixed` into "fixed to that ancestor" instead of
+  // the viewport, the same containing-block gotcha this app's own
+  // page-enter CSS comment documents for the marketing header. Without the
+  // portal the app header bleeds through above a "fullscreen" quiz.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   // Lazy initializer: only actually matters for the very first render, since
   // this component stays mounted across isOpen toggles (see the effect
   // below); real re-rolls on every subsequent open happen there instead.
@@ -132,7 +141,9 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
     setStep("question");
   }
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -339,6 +350,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

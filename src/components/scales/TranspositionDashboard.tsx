@@ -269,19 +269,32 @@ export function TranspositionDashboard({ variant, root, player, instrument, onIn
         </p>
       )}
 
-      <div className="mt-8 overflow-x-auto">
-        <table className="w-full min-w-[560px] border-collapse text-sm">
+      {/* Pinned first column (adapted from 21st.dev's "Pinnable Columns
+          Table" pattern — plain CSS sticky rather than pulling in
+          @tanstack/react-table for a static 12-row reference table with no
+          sorting/pagination): on a phone this table is wider than the
+          screen, and without this the Key column scrolls away with
+          everything else, so there's nothing left to tell you which row
+          you're looking at. */}
+      <div className="mt-8 overflow-x-auto rounded-lg border border-ink/10">
+        {/* border-separate, not border-collapse: Chromium silently fails to
+            render position:sticky table cells (the pinned Key column above)
+            inside a collapsed-border table — the cells go visually blank. */}
+        <table className="w-full min-w-[560px] border-separate border-spacing-0 text-sm">
           <caption className="sr-only">
             {variant.name} spelled in all twelve keys. Current key: {root}.
           </caption>
           <thead>
             <tr className="text-left text-[11px] tracking-wide text-slate-500">
-              <th scope="col" className="pb-2 pr-4 font-medium uppercase">
+              <th
+                scope="col"
+                className="sticky left-0 z-10 bg-slate-900 pb-2 pl-4 pr-4 font-medium uppercase shadow-[inset_-1px_0_0] shadow-ink/10"
+              >
                 Key
               </th>
               {/* Degree tokens (b3, #4, ...) are case-sensitive — no uppercase transform here. */}
               {spelled.degrees.map((d, i) => (
-                <th scope="col" key={`${d}-${i}`} className="pb-2 pr-4 font-medium">
+                <th scope="col" key={`${d}-${i}`} className="pb-2 pr-4 font-medium first:pl-4">
                   {d}
                 </th>
               ))}
@@ -289,20 +302,20 @@ export function TranspositionDashboard({ variant, root, player, instrument, onIn
           </thead>
           <tbody>
             {ROOT_KEYS.map((key) => (
-              <tr
-                key={key}
-                className={`border-t border-ink/5 ${key === root ? "bg-amber-400/5" : ""}`}
-              >
+              <tr key={key} className="border-t border-ink/5">
                 <th
                   scope="row"
-                  className={`py-2 pr-4 text-left font-medium ${
-                    key === root ? "text-amber-400" : "text-slate-300"
+                  className={`sticky left-0 z-10 py-2 pl-4 pr-4 text-left font-medium shadow-[inset_-1px_0_0] shadow-ink/10 ${
+                    key === root ? "bg-amber-400/10 text-amber-400" : "bg-slate-900 text-slate-300"
                   }`}
                 >
                   {key}
                 </th>
                 {allKeys[key].map((note, i) => (
-                  <td key={i} className="py-2 pr-4 text-slate-400">
+                  <td
+                    key={i}
+                    className={`py-2 pr-4 text-slate-400 first:pl-4 ${key === root ? "bg-amber-400/5" : ""}`}
+                  >
                     {note}
                   </td>
                 ))}

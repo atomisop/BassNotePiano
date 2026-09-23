@@ -267,7 +267,7 @@ export function Hero() {
           </span>
           <span className="sr-only">The best way to learn Ethiopian music.</span>
         </h1>
-        <p className="lead mt-6 max-w-lg text-slate-300">Six scales, spelled correctly in every key.</p>
+        <p className="lead mt-6 max-w-lg text-slate-300">15 scales, spelled correctly in every key.</p>
 
         {/* grid-cols-2 unconditionally, not grid-cols-1 below sm: stacked
             into one column, this list alone was 160px tall on a real phone
@@ -279,7 +279,7 @@ export function Hero() {
             per column even at this width. */}
         <div className="mt-6 grid max-w-md grid-cols-2 gap-x-6 gap-y-2">
           {[
-            "6 scales",
+            "15 scales",
             "12 keys",
             "Live 1:1 teacher",
             `${Math.round(QUIZ_PASS_THRESHOLD * 100)}% quiz gate`,

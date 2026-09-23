@@ -7,17 +7,25 @@ export interface KeySelectorProps {
   onChange: (key: RootKey) => void;
 }
 
-/** The shared 12-key root picker driving both the Transposition Dashboard and the Chords panel. */
+/**
+ * The shared 12-key root picker driving both the Transposition Dashboard and
+ * the Chords panel. 21st.dev's segmented-control/toggle-group components are
+ * built for a handful of options (2-5) with no wrap behavior — none fit a
+ * 12-item single-select that needs to wrap onto a second row at narrow
+ * widths, so this keeps its own markup, restyled with the same
+ * role="group" + aria-pressed pattern those components use for accessible
+ * single-select button groups.
+ */
 export function KeySelector({ value, onChange }: KeySelectorProps) {
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div role="group" aria-label="Root key" className="flex flex-wrap gap-1.5">
       {ROOT_KEYS.map((key) => (
         <button
           key={key}
           type="button"
           onClick={() => onChange(key)}
           aria-pressed={key === value}
-          className={`h-9 min-w-[2.5rem] rounded-lg border px-2 text-sm font-medium transition ${
+          className={`h-9 min-w-[2.5rem] cursor-pointer rounded-lg border px-2 text-sm font-medium transition ${
             key === value
               ? "border-amber-400 bg-amber-400/10 text-amber-400"
               : "border-ink/10 text-slate-400 hover:border-ink/15 hover:text-slate-100"

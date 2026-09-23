@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import type { PublicQuizQuestion, QuizAnswerSubmission } from "@/lib/quiz";
@@ -11,9 +12,19 @@ import { CheckIcon, ArrowLeftIcon, ArrowRightIcon } from "@/components/ui/icons"
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { LessonVideoPlayer } from "./LessonVideoPlayer";
-import { LessonPdfPlayer } from "./LessonPdfPlayer";
 import { SectionRow } from "./SectionRow";
 import { SectionCompleteCelebration } from "./SectionCompleteCelebration";
+
+// react-pdf/pdfjs-dist adds well over 100kB to this route's first-load JS
+// (confirmed: 14.7kB -> 124kB with a static import) for a viewer nobody on
+// this scale page necessarily opens — no scale currently even has PDF
+// lesson content. Loaded on demand instead, only once a PDF lesson is
+// actually opened. ssr: false because react-pdf's Document needs a real
+// DOM/canvas to render into.
+const LessonPdfPlayer = dynamic(() => import("./LessonPdfPlayer").then((m) => m.LessonPdfPlayer), {
+  ssr: false,
+  loading: () => <div className="flex h-[75vh] w-full items-center justify-center rounded-2xl bg-slate-900 text-sm text-slate-500">Loading PDF viewer…</div>,
+});
 
 const listContainerVariants = {
   hidden: {},
@@ -196,19 +207,19 @@ export function CoursePlayer({
         </div>
 
         <div className="glass-surface-elevated p-2 sm:p-4">
+          {/* Neither player marks the lesson complete on its own anymore —
+              finishing a video or opening a PDF used to auto-complete it
+              (silently, before the student had necessarily engaged with
+              the content at all, for a PDF). The "Mark as complete" button
+              below is now the only path to completion for either type. */}
           {lesson.type === "VIDEO" ? (
             <LessonVideoPlayer
               src={lesson.fileUrl}
               title={lesson.title}
               subtitle={`${scaleGroup.code} — ${scaleGroup.title}`}
-              onEnded={() => handleLessonComplete(view.index)}
             />
           ) : (
-            <LessonPdfPlayer
-              src={lesson.fileUrl}
-              title={lesson.title}
-              onOpened={() => handleLessonComplete(view.index)}
-            />
+            <LessonPdfPlayer src={lesson.fileUrl} title={lesson.title} />
           )}
         </div>
 
