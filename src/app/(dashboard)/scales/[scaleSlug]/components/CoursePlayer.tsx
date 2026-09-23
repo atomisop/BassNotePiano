@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import type { PublicQuizQuestion, QuizAnswerSubmission } from "@/lib/quiz";
@@ -11,9 +12,19 @@ import { CheckIcon, ArrowLeftIcon, ArrowRightIcon } from "@/components/ui/icons"
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
 import { LessonVideoPlayer } from "./LessonVideoPlayer";
-import { LessonPdfPlayer } from "./LessonPdfPlayer";
 import { SectionRow } from "./SectionRow";
 import { SectionCompleteCelebration } from "./SectionCompleteCelebration";
+
+// react-pdf/pdfjs-dist adds well over 100kB to this route's first-load JS
+// (confirmed: 14.7kB -> 124kB with a static import) for a viewer nobody on
+// this scale page necessarily opens — no scale currently even has PDF
+// lesson content. Loaded on demand instead, only once a PDF lesson is
+// actually opened. ssr: false because react-pdf's Document needs a real
+// DOM/canvas to render into.
+const LessonPdfPlayer = dynamic(() => import("./LessonPdfPlayer").then((m) => m.LessonPdfPlayer), {
+  ssr: false,
+  loading: () => <div className="flex h-[75vh] w-full items-center justify-center rounded-2xl bg-slate-900 text-sm text-slate-500">Loading PDF viewer…</div>,
+});
 
 const listContainerVariants = {
   hidden: {},
