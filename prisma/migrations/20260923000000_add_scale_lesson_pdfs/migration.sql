@@ -9,13 +9,18 @@
 -- rather than a hardcoded id, since this app has exactly one admin and
 -- that id differs between this local throwaway database, real local dev,
 -- and production — a hardcoded id would silently insert nothing (or the
--- wrong thing) wherever that id doesn't match. The rest of every row
--- (scaleGroupId, order, title, fileUrl, fileName, fileSizeBytes) is fixed,
--- real data — these are actual uploaded lesson files, not placeholders.
+-- wrong thing) wherever that id doesn't match. Joined in (not a scalar
+-- subquery in the SELECT list) specifically so a database with no User
+-- rows at all — CI's own fresh postgres:16-alpine service, confirmed live:
+-- this migration failed CI with a NOT NULL violation on uploadedById
+-- before this fix — makes the whole INSERT a no-op (the join produces zero
+-- rows) instead of attempting 13 rows with a NULL uploadedById and
+-- crashing the build. Real environments (local dev, production) already
+-- have exactly one admin, so behavior there is unchanged.
 
 INSERT INTO "Lesson" (id, "scaleGroupId", "order", title, type, "fileUrl", "fileName", "fileSizeBytes", "uploadedById", "updatedAt")
 SELECT gen_random_uuid()::text, sg.id, v."order", v.title, 'PDF'::"LessonMediaType", v."fileUrl", v."fileName", v."fileSizeBytes",
-       (SELECT id FROM "User" WHERE role = 'ADMIN' ORDER BY "createdAt" ASC LIMIT 1),
+       admin.id,
        CURRENT_TIMESTAMP
 FROM (
   VALUES
@@ -33,7 +38,8 @@ FROM (
     ('parallel-minor', 0, 'Parallel Minor', 'https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/lessons/parallel-minor/1790168194726-Parallel-Minor.pdf', 'Parallel-Minor.pdf', 11011),
     ('chromatic-scale', 0, 'The Chromatic Scale', 'https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/lessons/chromatic-scale/1790168195339-Chromatic-Scale.pdf', 'Chromatic-Scale.pdf', 11465)
 ) AS v(slug, "order", title, "fileUrl", "fileName", "fileSizeBytes")
-JOIN "ScaleGroup" sg ON sg.slug = v.slug;
+JOIN "ScaleGroup" sg ON sg.slug = v.slug
+CROSS JOIN (SELECT id FROM "User" WHERE role = 'ADMIN' ORDER BY "createdAt" ASC LIMIT 1) AS admin;
 
 -- Rename Scale 1's title to reflect its new content (kept in sync with
 -- src/lib/curriculum.ts's SCALE_GROUPS in this same PR — the seed script
