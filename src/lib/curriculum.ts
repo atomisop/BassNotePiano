@@ -16,7 +16,7 @@ export const SCALE_GROUPS: ScaleGroupMeta[] = [
     slug: "major-scale",
     order: 0,
     code: "Scale 1",
-    title: "The Major Scale",
+    title: "The Major Scale and the Seven Modes",
     kinitName: null,
     formula: "1-2-3-4-5-6-7",
   },

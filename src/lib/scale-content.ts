@@ -24,7 +24,7 @@ export interface ScaleVariant {
 export const SCALE_CONTENT: Record<string, ScaleVariant[]> = {
   "major-scale": [
     {
-      name: "The Major Scale",
+      name: "The Major Scale and the Seven Modes",
       formula: "1-2-3-4-5-6-7",
       nativeChords: [
         { degree: "1", quality: "major", label: "I" },
