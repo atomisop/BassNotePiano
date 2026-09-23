@@ -50,7 +50,7 @@ export function SiteFooter() {
               </span>
             </Link>
             <p className="mt-4 max-w-xs text-sm text-slate-500">
-              A digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book: six scales,
+              A digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book: 15 scales,
               spelled correctly in every key, plus live one-on-one and family lessons on Discord.
             </p>
             <a

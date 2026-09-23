@@ -1,5 +1,6 @@
 import type { BadgeCode } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { SCALE_GROUPS } from "@/lib/curriculum";
 
 /** Idempotent — the unique (userId, code) constraint makes a re-award a no-op. */
 async function awardBadge(userId: string, code: BadgeCode) {
@@ -12,10 +13,13 @@ async function awardBadge(userId: string, code: BadgeCode) {
 
 const COURSE_MILESTONES: { completedCount: number; code: BadgeCode }[] = [
   { completedCount: 1, code: "FIRST_LESSON_DONE" },
-  { completedCount: 2, code: "SCALE_MASTER" },
-  { completedCount: 4, code: "RHYTHM_SPECIALIST" },
-  { completedCount: 5, code: "CHORD_MAESTRO" },
-  { completedCount: 6, code: "COURSE_GRADUATE" },
+  { completedCount: 4, code: "SCALE_MASTER" },
+  { completedCount: 8, code: "RHYTHM_SPECIALIST" },
+  { completedCount: 12, code: "CHORD_MAESTRO" },
+  // Derived from SCALE_GROUPS.length rather than hardcoded — the last time
+  // this was a literal (6), growing the curriculum to 15 scales silently
+  // made "Course Graduate" fire 9 scales early.
+  { completedCount: SCALE_GROUPS.length, code: "COURSE_GRADUATE" },
 ];
 
 /** Call after a ScaleProgress row transitions to COMPLETED. */

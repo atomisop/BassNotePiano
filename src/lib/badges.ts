@@ -1,4 +1,5 @@
 import type { BadgeCode } from "@prisma/client";
+import { SCALE_GROUPS } from "@/lib/curriculum";
 
 export type BadgeCategory = "COURSE" | "SOCIAL" | "STREAK";
 
@@ -25,25 +26,25 @@ export const BADGES: BadgeDefinition[] = [
   {
     code: "SCALE_MASTER",
     label: "Scale Master",
-    description: "Complete 2 scales.",
+    description: "Complete 4 scales.",
     category: "COURSE",
   },
   {
     code: "RHYTHM_SPECIALIST",
     label: "Rhythm Specialist",
-    description: "Complete 4 scales.",
+    description: "Complete 8 scales.",
     category: "COURSE",
   },
   {
     code: "CHORD_MAESTRO",
     label: "Chord Maestro",
-    description: "Complete 5 scales.",
+    description: "Complete 12 scales.",
     category: "COURSE",
   },
   {
     code: "COURSE_GRADUATE",
     label: "Course Graduate",
-    description: "Complete all 6 scales.",
+    description: `Complete all ${SCALE_GROUPS.length} scales.`,
     category: "COURSE",
   },
   {
