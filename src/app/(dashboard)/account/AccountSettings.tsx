@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { PasswordInput } from "@/components/ui/password-input";
 import { CheckIcon } from "@/components/ui/icons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { ManageSubscriptions, type ActivePlanInfo } from "@/components/account/ManageSubscriptions";
 import type { AssistantMessage } from "@/lib/assistant";
 import {
   updatePasswordAction,
@@ -17,14 +18,16 @@ import {
   updateNotificationPreferencesAction,
   requestAccountDeletionCodeAction,
   confirmAccountDeletionAction,
+  changePaymentPlanTermAction,
+  cancelPaymentPlanBySelfAction,
   type NotificationPreferencesInput,
 } from "./actions";
 
 interface AccountSettingsProps {
   hasCurriculumAccess: boolean;
-  classCredits: number;
   initialNotificationPreferences: NotificationPreferencesInput;
   assistantHistory: AssistantMessage[];
+  activePlan: ActivePlanInfo | null;
 }
 
 const TAB_ICONS = {
@@ -229,18 +232,18 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
 function TabContent({
   tab,
   hasCurriculumAccess,
-  classCredits,
   initialNotificationPreferences,
   assistantHistory,
+  activePlan,
 }: {
   tab: TabId;
   hasCurriculumAccess: boolean;
-  classCredits: number;
   initialNotificationPreferences: NotificationPreferencesInput;
   assistantHistory: AssistantMessage[];
+  activePlan: ActivePlanInfo | null;
 }) {
   if (tab === "notifications") return <NotificationSettingsSection initial={initialNotificationPreferences} />;
-  if (tab === "membership") return <MembershipSection hasCurriculumAccess={hasCurriculumAccess} classCredits={classCredits} />;
+  if (tab === "membership") return <MembershipSection hasCurriculumAccess={hasCurriculumAccess} activePlan={activePlan} />;
   if (tab === "appearance") return <AppearanceSection />;
   if (tab === "tutorials") return <TutorialsSection />;
   if (tab === "privacy") return <PrivacySection history={assistantHistory} />;
@@ -308,7 +311,12 @@ function AppearanceSection() {
   );
 }
 
-function AccountSettingsInner({ hasCurriculumAccess, classCredits, initialNotificationPreferences, assistantHistory }: AccountSettingsProps) {
+function AccountSettingsInner({
+  hasCurriculumAccess,
+  initialNotificationPreferences,
+  assistantHistory,
+  activePlan,
+}: AccountSettingsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
@@ -361,9 +369,9 @@ function AccountSettingsInner({ hasCurriculumAccess, classCredits, initialNotifi
           <TabContent
             tab={activeTab}
             hasCurriculumAccess={hasCurriculumAccess}
-            classCredits={classCredits}
             initialNotificationPreferences={initialNotificationPreferences}
             assistantHistory={assistantHistory}
+            activePlan={activePlan}
           />
         </div>
       </div>
@@ -377,9 +385,9 @@ function AccountSettingsInner({ hasCurriculumAccess, classCredits, initialNotifi
           <TabContent
             tab={mobileOpenTab}
             hasCurriculumAccess={hasCurriculumAccess}
-            classCredits={classCredits}
             initialNotificationPreferences={initialNotificationPreferences}
             assistantHistory={assistantHistory}
+            activePlan={activePlan}
           />
         )}
       </SlideOverPanel>
@@ -397,53 +405,48 @@ export function AccountSettings(props: AccountSettingsProps) {
 
 function MembershipSection({
   hasCurriculumAccess,
-  classCredits,
+  activePlan,
 }: {
   hasCurriculumAccess: boolean;
-  classCredits: number;
+  activePlan: ActivePlanInfo | null;
 }) {
   return (
-    <SectionCard title="Membership & purchases" description="Your plan, class credits, and payment history.">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink/10 p-4">
-        <div>
-          <p className="text-sm text-slate-100">{hasCurriculumAccess ? "Curriculum unlocked" : "Curriculum not yet purchased"}</p>
-          <p className="mt-0.5 text-xs text-slate-500">
-            {hasCurriculumAccess ? "All six scale groups are unlocked, for good." : "One-time $69.99 payment unlocks every scale, for good."}
-          </p>
+    <div className="space-y-6">
+      <SectionCard title="Membership & purchases" description="Your curriculum and payment history.">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink/10 p-4">
+          <div>
+            <p className="text-sm text-slate-100">{hasCurriculumAccess ? "Curriculum unlocked" : "Curriculum not yet purchased"}</p>
+            <p className="mt-0.5 text-xs text-slate-500">
+              {hasCurriculumAccess ? "All six scale groups are unlocked, for good." : "One-time $69.99 payment unlocks every scale, for good."}
+            </p>
+          </div>
+          {!hasCurriculumAccess && (
+            <Link href="/billing/curriculum" className="cta-sheen cta-fill rounded-lg px-4 py-2 text-xs font-semibold">
+              Unlock, $69.99
+            </Link>
+          )}
         </div>
-        {!hasCurriculumAccess && (
-          <Link
-            href="/billing/curriculum"
-            className="cta-sheen cta-fill rounded-lg px-4 py-2 text-xs font-semibold"
-          >
-            Unlock — $69.99
-          </Link>
-        )}
-      </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink/10 p-4">
-        <div>
-          <p className="text-sm text-slate-100">Weekly class credits</p>
-          <p className="mt-0.5 text-xs text-slate-500">
-            {classCredits} credit{classCredits === 1 ? "" : "s"} remaining · 1 credit = 30 min
-          </p>
-        </div>
         <Link
-          href="/billing/lessons"
-          className="rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+          href="/billing/history"
+          className="mt-3 flex items-center justify-between rounded-xl border border-ink/10 p-4 text-sm text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.3)] hover:text-[rgb(var(--c-s-50))]"
         >
-          Buy credits
+          Payment history
+          <span className="text-slate-500">→</span>
         </Link>
-      </div>
+      </SectionCard>
 
-      <Link
-        href="/billing/history"
-        className="mt-3 flex items-center justify-between rounded-xl border border-ink/10 p-4 text-sm text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.3)] hover:text-[rgb(var(--c-s-50))]"
+      <SectionCard
+        title="Manage subscriptions"
+        description="Your weekly class plan: switch terms, or cancel. The family bundle is here too, for buying a term for 2 or more kids."
       >
-        Payment history
-        <span className="text-slate-500">→</span>
-      </Link>
-    </SectionCard>
+        <ManageSubscriptions
+          activePlan={activePlan}
+          onChangeTerm={changePaymentPlanTermAction}
+          onCancel={cancelPaymentPlanBySelfAction}
+        />
+      </SectionCard>
+    </div>
   );
 }
 

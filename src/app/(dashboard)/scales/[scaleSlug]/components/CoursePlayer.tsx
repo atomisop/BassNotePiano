@@ -41,6 +41,7 @@ interface ScaleGroupInfo {
 type View = { mode: "list" } | { mode: "lesson"; index: number } | { mode: "celebration"; index: number };
 
 export interface CoursePlayerProps {
+  scaleSlug: string;
   scaleGroup: ScaleGroupInfo;
   ctaLabel: string;
   lessons: CourseLessonWithProgress[];
@@ -50,7 +51,7 @@ export interface CoursePlayerProps {
   quizPassThreshold: number;
   practiceCompleted: boolean;
   onMarkLessonComplete: (lessonId: string) => Promise<void>;
-  onSubmitQuiz: (answers: QuizAnswerSubmission[]) => Promise<{ passed: boolean; score: number; total: number }>;
+  onSubmitQuiz: (seed: number, answers: QuizAnswerSubmission[]) => Promise<{ passed: boolean; score: number; total: number }>;
   onMarkPracticeCompleted: () => Promise<void>;
 }
 
@@ -61,6 +62,7 @@ function formatDuration(seconds: number | null): string {
 }
 
 export function CoursePlayer({
+  scaleSlug,
   scaleGroup,
   ctaLabel,
   lessons,
@@ -119,8 +121,8 @@ export function CoursePlayer({
     }
   }
 
-  async function handleQuizSubmit(answers: QuizAnswerSubmission[]) {
-    const outcome = await onSubmitQuiz(answers);
+  async function handleQuizSubmit(seed: number, answers: QuizAnswerSubmission[]) {
+    const outcome = await onSubmitQuiz(seed, answers);
     if (outcome.passed) router.refresh();
     return outcome;
   }
@@ -398,7 +400,7 @@ export function CoursePlayer({
         isOpen={quizOpen}
         onClose={() => setQuizOpen(false)}
         scaleTitle={scaleGroup.title}
-        questions={quizQuestions}
+        scaleSlug={scaleSlug}
         onSubmit={handleQuizSubmit}
         passThreshold={quizPassThreshold}
       />

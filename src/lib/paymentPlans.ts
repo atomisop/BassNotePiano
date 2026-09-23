@@ -1,6 +1,6 @@
-import { PaymentPlanCadence, PaymentPlanTerm, type Prisma, type PaymentPlanStatus } from "@prisma/client";
+import { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason, type Prisma, type PaymentPlanStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { calculatePaymentPlanRate, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { calculatePaymentPlanRate, describePaymentPlan, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import { chunksForSchedule, livePaymentPlanConditions, nextOccurrenceDates, computeScheduledAt, OCCURRENCES_PER_SLOT } from "@/lib/classSchedule";
 import { createNotification } from "@/lib/notifications";
 
@@ -157,16 +157,40 @@ export async function getUserPaymentPlans(userId: string) {
   return prisma.paymentPlan.findMany({ where: { userId }, orderBy: { createdAt: "desc" } });
 }
 
+// How far ahead of nextDueDate the *next* installment becomes payable at
+// all. Exported (not a local const in the scheduled function anymore) so
+// both callers of getOrCreateOpenInstallmentPayment below share the exact
+// same number. This used to live only in netlify/functions/payment-plan-
+// installments.ts, governing when the *automated* reminder opened one, with
+// no equivalent gate on the student's own /billing/plans page. That gap is
+// exactly what let a student pay ahead of schedule, installment after
+// installment, back to back in one sitting, instead of one a month, adding
+// up to a 12-month plan's whole year of credits landing at once by direct
+// instruction, this is now closed: getOrCreateOpenInstallmentPayment
+// enforces this window itself, so neither caller can reopen it by accident.
+export const INSTALLMENT_OPEN_LEAD_DAYS = 7;
+
 export interface OpenInstallmentPayment {
-  payment: Prisma.ZellePaymentGetPayload<Record<string, never>>;
+  /** Null when the plan has no open installment *and* isn't within INSTALLMENT_OPEN_LEAD_DAYS of its next one yet. See nextDueDate below for when it will be. */
+  payment: Prisma.ZellePaymentGetPayload<Record<string, never>> | null;
   /** True only the instant this row was created by this call — the scheduled reminder function uses this (not a timestamp comparison) to send the "here's your invoice" notice exactly once per installment, regardless of how many times or how close together it runs while the row stays open. */
   wasCreated: boolean;
+  /** Set only when payment is null: the plan's own nextDueDate, so the caller can render "your next installment opens on X" instead of silently showing nothing. */
+  nextDueDate?: Date;
 }
 
 /**
  * The open (AWAITING_TRANSFER or PENDING_REVIEW) installment payment for a
  * plan, creating the next one from the plan's own locked rate if none exists
- * yet. Never recomputes amountCents from live pricing — a plan's rate is
+ * yet AND the plan's nextDueDate is within INSTALLMENT_OPEN_LEAD_DAYS (or
+ * already past). Outside that window, this deliberately creates nothing and
+ * returns payment: null. One Zelle payment a month is the actual product,
+ * not "pay however many months you want, whenever you want": without this
+ * gate, a student who finishes an installment can immediately trigger the
+ * next one the moment they're back on /billing/plans (nothing else ever
+ * checked nextDueDate before creating), and repeat that indefinitely to
+ * front-load an entire term's worth of credits in one sitting. Never
+ * recomputes amountCents from live pricing either way, a plan's rate is
  * locked at enrollment (see createPaymentPlan/calculatePaymentPlanRate).
  *
  * Deliberately does NOT reuse getOrCreatePendingZellePayment (payments.ts):
@@ -179,9 +203,15 @@ export interface OpenInstallmentPayment {
  * Called from both the student's own billing page and the scheduled
  * reminder function, hence zelleHandle is a plain parameter rather than an
  * env read buried in here — same dependency-injection shape every other
- * pending-payment creator in this codebase already uses.
+ * pending-payment creator in this codebase already uses. `now` is likewise a
+ * parameter (defaulting to the real clock) purely so a caller (or a future
+ * test) can pin it, the same pattern expireDueCreditGrants already uses.
  */
-export async function getOrCreateOpenInstallmentPayment(planId: string, zelleHandle: string): Promise<OpenInstallmentPayment> {
+export async function getOrCreateOpenInstallmentPayment(
+  planId: string,
+  zelleHandle: string,
+  now: Date = new Date(),
+): Promise<OpenInstallmentPayment> {
   const plan = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId } });
 
   const existing = await prisma.zellePayment.findFirst({
@@ -189,6 +219,11 @@ export async function getOrCreateOpenInstallmentPayment(planId: string, zelleHan
     orderBy: { createdAt: "desc" },
   });
   if (existing) return { payment: existing, wasCreated: false };
+
+  const opensAt = new Date(plan.nextDueDate.getTime() - INSTALLMENT_OPEN_LEAD_DAYS * 24 * 60 * 60 * 1000);
+  if (now < opensAt) {
+    return { payment: null, wasCreated: false, nextDueDate: plan.nextDueDate };
+  }
 
   const payment = await prisma.zellePayment.create({
     data: {
@@ -256,21 +291,42 @@ export async function getAdminPaymentPlans(status?: PaymentPlanStatus): Promise<
   return plans.map((plan) => ({ ...plan, isOverdue: plan.status === "ACTIVE" && plan.nextDueDate.getTime() < now }));
 }
 
+const feedbackInclude = {
+  user: { select: { id: true, name: true, email: true } },
+} satisfies Prisma.PaymentPlanInclude;
+
+export type PlanCancellationFeedback = Prisma.PaymentPlanGetPayload<{ include: typeof feedbackInclude }>;
+
 /**
- * Admin-only cancellation — the sole way a plan stops early in v1 (no
- * student self-service cancel, matching how every other cancellation in
- * this app is already an explicit, human-triggered action; a student who
- * wants to stop messages the admin, the same way an inside-24h class
- * cancellation already works). Flips the plan's own status/audit fields and
- * bulk-cancels its future auto-created reserved bookings (reservedByPlanId)
- * in one transaction — frees the slot immediately rather than leaving it
- * sitting booked-but-uncharged until each occurrence's own scheduledAt
- * passes. Deliberately does not touch any in-flight installment payment: a
- * canceled plan drops out of "current plan" (the only normal path to that
- * installment's payment gate), and the scheduled reminder function's
- * overdue query is filtered to `paymentPlan.status === "ACTIVE"`, so a
- * stray open installment simply stops generating reminders on its own — no
- * second write path to keep in sync.
+ * Every self-canceled plan that left a reason, newest first, for
+ * /admin/feedback. cancellationReason is only ever set by
+ * cancelPaymentPlanBySelf above, so this never surfaces an admin
+ * cancellation (cancellationNote, a distinct field, is that one's own
+ * free-text and stays admin-only, out of scope for this reader).
+ */
+export async function getPlanCancellationFeedback(): Promise<PlanCancellationFeedback[]> {
+  return prisma.paymentPlan.findMany({
+    where: { cancellationReason: { not: null } },
+    orderBy: { canceledAt: "desc" },
+    include: feedbackInclude,
+  });
+}
+
+/**
+ * Admin cancellation, note required, canceledById is the admin who acted.
+ * A student can also cancel their own plan now (cancelPaymentPlanBySelf
+ * below), this one is specifically for an admin doing it on a student's
+ * behalf (a support conversation resolved that way, say). Flips the plan's
+ * own status/audit fields and bulk-cancels its future auto-created reserved
+ * bookings (reservedByPlanId) in one transaction, frees the slot
+ * immediately rather than leaving it sitting booked-but-uncharged until
+ * each occurrence's own scheduledAt passes. Deliberately does not touch any
+ * in-flight installment payment: a canceled plan drops out of "current
+ * plan" (the only normal path to that installment's payment gate), and the
+ * scheduled reminder function's overdue query is filtered to
+ * `paymentPlan.status === "ACTIVE"`, so a stray open installment simply
+ * stops generating reminders on its own, no second write path to keep in
+ * sync.
  */
 export async function cancelPaymentPlan(planId: string, adminId: string, note: string): Promise<void> {
   const trimmedNote = note.trim();
@@ -306,4 +362,149 @@ export async function cancelPaymentPlan(planId: string, adminId: string, note: s
     body: `Your payment plan was canceled: ${trimmedNote}`,
     emailCategory: "payments",
   });
+}
+
+// ---------------------------------------------------------------------------
+// Self-service: term changes and cancellation, from /account's "Manage
+// Subscriptions" tab.
+// ---------------------------------------------------------------------------
+
+/**
+ * Blocks a term change (or a self-cancel, see cancelPaymentPlanBySelf
+ * below) while an installment is already in flight, so neither action ever
+ * has to reconcile against a payment that was created under the old term's
+ * rate. A student just waits until they're "all paid up" (the same state
+ * PaymentPlanEnrollmentFlow already shows between installments) before
+ * changing anything.
+ */
+async function assertNoOpenInstallment(planId: string): Promise<void> {
+  const openPayment = await prisma.zellePayment.findFirst({
+    where: { paymentPlanId: planId, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
+    select: { id: true },
+  });
+  if (openPayment) {
+    throw new PaymentPlanError("You have a payment in progress right now. Finish or wait for that to clear, then change your plan.");
+  }
+}
+
+/**
+ * Self-service term change, same cadence and reserved slot, a new term.
+ * "Upgrade" (a longer term) and "downgrade" (a shorter one) are the exact
+ * same operation in either direction: recompute the rate for newTerm at the
+ * plan's existing cadence and take it over for every installment from here
+ * on. installmentsPaid carries forward unchanged, it's real payment
+ * history, not something a term change should erase; an already-created
+ * installment's own snapshotted amountCents never changes either (see
+ * ZellePayment.installmentNumber's own comment on why those stay put).
+ *
+ * Refuses a change to any term whose own termMonths is at or below what's
+ * already been paid. Allowing that would let a student capture a longer
+ * term's deeper discount rate (30% off for TERM_12, say), pay exactly one
+ * installment at that rate, then "downgrade" to MONTHLY and have the plan
+ * immediately marked COMPLETED, having genuinely honored only one month of
+ * a twelve-month-priced commitment, repeatably (COMPLETED, not CANCELED,
+ * doesn't block re-enrolling and doing it again). If a student wants to
+ * stop paying with fewer installments in than their current term's rate
+ * assumes, that's a cancellation (cancelPaymentPlanBySelf below), not a
+ * term change, one that's honestly recorded as canceled early rather than
+ * dressed up as a completed shorter plan they were never actually on.
+ */
+export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlanTerm): Promise<void> {
+  if (!Object.values(PaymentPlanTerm).includes(newTerm)) {
+    throw new PaymentPlanError(`"${newTerm}" isn't a valid term.`);
+  }
+
+  const plan = await prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
+  if (!plan) throw new PaymentPlanError("You don't have an active payment plan.");
+  if (plan.term === newTerm) throw new PaymentPlanError("You're already on this term.");
+
+  await assertNoOpenInstallment(plan.id);
+
+  const rate = calculatePaymentPlanRate(plan.cadence, newTerm);
+  if (plan.installmentsPaid >= rate.termMonths) {
+    throw new PaymentPlanError(
+      "You've already paid enough installments that this term wouldn't ask for any more. If you want to stop here, cancel your plan instead.",
+    );
+  }
+
+  await prisma.paymentPlan.update({
+    where: { id: plan.id },
+    data: {
+      term: newTerm,
+      installmentAmountCents: rate.installmentAmountCents,
+      creditsPerInstallment: rate.creditsPerInstallment,
+      termMonths: rate.termMonths,
+    },
+  });
+}
+
+/**
+ * Self-service cancellation from /account. Unlike the admin path above, a
+ * student always has to pick a reason (see PlanCancellationReason in
+ * schema.prisma), required so /admin/feedback has something real to read,
+ * not an empty note nobody bothered filling in. canceledById is set to the
+ * student's own id, same field an admin cancellation uses for "who acted,"
+ * a plan's history reads the same way regardless of who did it.
+ *
+ * The actual "would you rather downgrade to 3 months" prompt for a TERM_6/
+ * TERM_12 plan lives entirely in the UI (ManageSubscriptions.tsx), this
+ * function only ever cancels, on purpose: by the time this runs, the
+ * student has already seen that offer and chosen to cancel anyway (or
+ * they're on MONTHLY/TERM_3, where there's no shorter term to offer).
+ */
+export async function cancelPaymentPlanBySelf(
+  userId: string,
+  reason: PlanCancellationReason,
+  reasonNote: string | null,
+): Promise<void> {
+  if (!Object.values(PlanCancellationReason).includes(reason)) {
+    throw new PaymentPlanError(`"${reason}" isn't a valid reason.`);
+  }
+  const trimmedNote = reasonNote?.trim() || null;
+  if (reason === "OTHER" && !trimmedNote) {
+    throw new PaymentPlanError('Tell us a bit more since you picked "Other."');
+  }
+
+  const plan = await prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
+  if (!plan) throw new PaymentPlanError("You don't have an active payment plan.");
+
+  await assertNoOpenInstallment(plan.id);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.paymentPlan.update({
+      where: { id: plan.id },
+      data: {
+        status: "CANCELED",
+        canceledAt: new Date(),
+        canceledById: userId,
+        cancellationReason: reason,
+        cancellationReasonNote: trimmedNote,
+      },
+    });
+
+    await tx.classBooking.updateMany({
+      where: { reservedByPlanId: plan.id, status: "SCHEDULED", scheduledAt: { gt: new Date() } },
+      data: { status: "CANCELED", refunded: true },
+    });
+  });
+
+  await createNotification({
+    userId,
+    type: "PAYMENT_PLAN_CANCELED",
+    title: "Payment plan canceled",
+    body: "Your payment plan was canceled. Your reserved weekly time is now open again.",
+    emailCategory: "payments",
+  });
+
+  const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
+  await Promise.all(
+    admins.map((admin) =>
+      createNotification({
+        userId: admin.id,
+        type: "PLAN_CANCELLATION_FEEDBACK",
+        title: "A student canceled their plan",
+        body: `${describePaymentPlan(plan.cadence, plan.term)} was self-canceled. See /admin/feedback for their reason.`,
+      }),
+    ),
+  );
 }

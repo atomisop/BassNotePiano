@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { PaymentPlanCadence, PaymentPlanTerm, ZellePaymentStatus } from "@prisma/client";
-import { calculatePaymentPlanRate, describePaymentPlan } from "@/lib/classCreditPricing";
+import { calculatePaymentPlanRate, describePaymentPlan, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { MorphingSquare } from "@/components/ui/morphing-square";
@@ -54,6 +54,8 @@ interface PaymentPlanEnrollmentFlowProps {
   zelleHandle: string;
   activePlan: ActivePlanSummary | null;
   openInstallment: OpenInstallmentSummary | null;
+  /** ISO date string. Set only when activePlan exists but openInstallment doesn't yet: the next installment isn't payable until it's within INSTALLMENT_OPEN_LEAD_DAYS of this date (see getOrCreateOpenInstallmentPayment). Renders as a "your next installment opens on X" state instead of a payable invoice. */
+  nextInstallmentDueDate?: string;
   /** Preselects the picker from a specific marketing-page tile (PaymentPlanTierGrid's ?cadence=&term= links) instead of always defaulting. */
   initialCadence?: PaymentPlanCadence;
   initialTerm?: PaymentPlanTerm;
@@ -69,6 +71,7 @@ export function PaymentPlanEnrollmentFlow({
   zelleHandle,
   activePlan: initialPlan,
   openInstallment: initialInstallment,
+  nextInstallmentDueDate,
   initialCadence,
   initialTerm,
 }: PaymentPlanEnrollmentFlowProps) {
@@ -80,11 +83,39 @@ export function PaymentPlanEnrollmentFlow({
   const [acknowledged, setAcknowledged] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [enrolled, setEnrolled] = useState<{ plan: ActivePlanSummary; installment: OpenInstallmentSummary } | null>(
-    initialPlan && initialInstallment ? { plan: initialPlan, installment: initialInstallment } : null,
+  // installment is nullable now: an active plan can have nothing payable yet
+  // (see nextInstallmentDueDate above), that's still "enrolled", just
+  // between installments, not the picker below.
+  const [enrolled, setEnrolled] = useState<{ plan: ActivePlanSummary; installment: OpenInstallmentSummary | null } | null>(
+    initialPlan ? { plan: initialPlan, installment: initialInstallment } : null,
   );
 
   const rate = calculatePaymentPlanRate(cadence, term);
+  // Credits are internal bookkeeping now, by direct instruction: a student
+  // never sees a raw credit count, just how many classes a month and how
+  // long each one is. Both cadences work out to the same 4 classes a
+  // month, they only differ in length, dividing creditsPerInstallment by
+  // the cadence's own weekly cost (rather than hardcoding 4) keeps this
+  // correct if the pricing table above it ever changes.
+  const classesPerMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
+  const classMinutes = cadence === "MIN_60_WEEKLY" ? 60 : 30;
+  const termPhrase = rate.termMonths === 1 ? "this month" : `your whole ${rate.termMonths}-month term`;
+
+  // Grouped by day, not one flat list: the same weekday can legitimately
+  // offer more than one start time (a longer admin-defined window split
+  // into several bookable chunks), which used to render as the day name
+  // repeated back to back for each time, reading as a bug ("the days
+  // double up") rather than what it actually is, more than one option on
+  // that day.
+  const slotsByDay = useMemo(() => {
+    const groups = new Map<number, ReservableSlot[]>();
+    for (const slot of slots) {
+      const forDay = groups.get(slot.dayOfWeek) ?? [];
+      forDay.push(slot);
+      groups.set(slot.dayOfWeek, forDay);
+    }
+    return Array.from(groups.entries()).sort(([a], [b]) => a - b);
+  }, [slots]);
 
   // Re-fetched whenever cadence changes (not term — a slot's room only
   // depends on the weekly credit cost, which is cadence-only, see
@@ -144,16 +175,35 @@ export function PaymentPlanEnrollmentFlow({
             <div className="h-full rounded-full bg-[rgb(var(--c-s-50))]" style={{ width: `${progressPercent}%` }} />
           </div>
         </div>
-        <ZelleUnlockGate
-          status={installment.status}
-          rejectionReason={installment.rejectionReason}
-          scaleCode={`Installment ${installment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`}
-          scaleTitle={planLabel}
-          eyebrowLabel="Payment Plan"
-          amountCents={installment.amountCents}
-          zelleHandle={zelleHandle}
-          onSubmitPayment={submitPlanInstallmentPaymentAction.bind(null, installment.id)}
-        />
+        {installment ? (
+          <ZelleUnlockGate
+            status={installment.status}
+            rejectionReason={installment.rejectionReason}
+            scaleCode={`Installment ${installment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`}
+            scaleTitle={planLabel}
+            eyebrowLabel="Payment Plan"
+            amountCents={installment.amountCents}
+            zelleHandle={zelleHandle}
+            onSubmitPayment={submitPlanInstallmentPaymentAction.bind(null, installment.id)}
+          />
+        ) : (
+          // Between installments, on purpose: one Zelle payment a month is
+          // the actual product, not "pay as many months as you want,
+          // whenever you want," see getOrCreateOpenInstallmentPayment's own
+          // comment. This is the normal, expected state for most of every
+          // month, not an error.
+          <div className="rounded-xl border border-ink/10 p-4 text-center">
+            <p className="text-sm text-slate-100">You&apos;re all paid up for now.</p>
+            <p className="mt-1 text-xs text-slate-500">
+              {nextInstallmentDueDate
+                ? `Your next installment opens for payment on ${new Date(nextInstallmentDueDate).toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                  })}. We'll email you when it's ready.`
+                : "We'll email you when your next installment is ready to pay."}
+            </p>
+          </div>
+        )}
       </div>
     );
   }
@@ -175,9 +225,6 @@ export function PaymentPlanEnrollmentFlow({
                 }`}
               >
                 <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  {calculatePaymentPlanRate(option.value, term).creditsPerInstallment} credits/month
-                </p>
               </button>
             );
           })}
@@ -209,35 +256,45 @@ export function PaymentPlanEnrollmentFlow({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium text-slate-400">Your weekly time</p>
+        <p className="text-xs font-medium text-slate-400">Your weekly time</p>
+        <p className="mt-0.5 mb-2 text-xs text-slate-500">
+          Pick one below, it&apos;s yours every week for {termPhrase}, booked for you automatically.
+        </p>
         {slotsLoading ? (
           <div className="flex items-center justify-center rounded-lg border border-ink/10 py-6">
             <MorphingSquare size={16} />
           </div>
         ) : slots.length === 0 ? (
           <p className="rounded-lg border border-ink/10 px-3.5 py-3 text-xs text-slate-500">
-            No open weekly times for this cadence right now — message us and we&apos;ll help you find one.
+            No open weekly times for this cadence right now, message us and we&apos;ll help you find one.
           </p>
         ) : (
-          <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
-            {slots.map((slot) => {
-              const active = selectedSlot?.scheduleId === slot.scheduleId && selectedSlot?.chunkIndex === slot.chunkIndex;
-              return (
-                <button
-                  key={`${slot.scheduleId}:${slot.chunkIndex}`}
-                  type="button"
-                  onClick={() => setSelectedSlot(slot)}
-                  className={`flex w-full items-center justify-between rounded-lg border px-3.5 py-2.5 text-left transition ${
-                    active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
-                  }`}
-                >
-                  <span className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>
-                    {DAY_LABELS[slot.dayOfWeek]} {formatTimeLabel(slot.startTime)}
-                  </span>
-                  {slot.label && <span className="text-xs text-slate-500">{slot.label}</span>}
-                </button>
-              );
-            })}
+          <div className="max-h-56 space-y-3 overflow-y-auto pr-1">
+            {slotsByDay.map(([dayOfWeek, daySlots]) => (
+              <div key={dayOfWeek}>
+                <p className="mb-1 text-xs font-medium text-slate-500">{DAY_LABELS[dayOfWeek]}</p>
+                <div className="space-y-1.5">
+                  {daySlots.map((slot) => {
+                    const active = selectedSlot?.scheduleId === slot.scheduleId && selectedSlot?.chunkIndex === slot.chunkIndex;
+                    return (
+                      <button
+                        key={`${slot.scheduleId}:${slot.chunkIndex}`}
+                        type="button"
+                        onClick={() => setSelectedSlot(slot)}
+                        className={`flex w-full items-center justify-between rounded-lg border px-3.5 py-2.5 text-left transition ${
+                          active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
+                        }`}
+                      >
+                        <span className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>
+                          {formatTimeLabel(slot.startTime)}
+                        </span>
+                        {slot.label && <span className="text-xs text-slate-500">{slot.label}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -256,12 +313,15 @@ export function PaymentPlanEnrollmentFlow({
           <span>{formatUsd(rate.installmentAmountCents)}</span>
         </div>
         <div className="mt-1 flex items-center justify-between text-xs text-slate-500">
-          <span>= {formatUsd(Math.round(rate.installmentAmountCents / rate.creditsPerInstallment))}/credit (30 min)</span>
-          <span>{rate.creditsPerInstallment} credits/month</span>
+          <span>{classMinutes}-min classes</span>
+          <span>
+            {classesPerMonth} classes/month
+            {rate.termMonths > 1 && ` · ${classesPerMonth * rate.termMonths} total over ${rate.termMonths} months`}
+          </span>
         </div>
         <p className="mt-2 text-xs text-slate-500">
           {rate.termMonths === 1
-            ? "One Zelle payment for one month of credits — no term, re-enroll any time."
+            ? "One Zelle payment for one month, no term, re-enroll any time."
             : "Billed one installment at a time via Zelle, never all at once — we’ll email you an invoice as each one comes due."}
         </p>
       </div>
@@ -275,13 +335,12 @@ export function PaymentPlanEnrollmentFlow({
         />
         <span>
           {rate.termMonths === 1
-            ? `I'm paying for one month of credits (${formatUsd(rate.installmentAmountCents)}), no further commitment.`
+            ? `I'm paying for one month (${formatUsd(rate.installmentAmountCents)}), no further commitment.`
             : `I'm committing to ${rate.termMonths} monthly installments of ${formatUsd(rate.installmentAmountCents)} each.`}{" "}
-          My selected weekly time is reserved for me exclusively and auto-booked every week this plan stays
-          active. If I skip a week, I make it up on another week before that installment&apos;s cycle ends — an
-          unused credit is <span className="font-medium text-[rgb(var(--c-s-50))]">forfeited</span> once its cycle
-          expires. Money spent is <span className="font-medium text-[rgb(var(--c-s-50))]">non-refundable</span> once
-          a credit is used.
+          My selected weekly time is reserved for me exclusively and auto-booked automatically every week this
+          plan stays active, I don&apos;t need to book it myself. If a specific week doesn&apos;t work for me, I&apos;ll
+          message support rather than rescheduling it myself. Money spent is{" "}
+          <span className="font-medium text-[rgb(var(--c-s-50))]">non-refundable</span> once a class happens.
         </span>
       </label>
 

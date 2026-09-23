@@ -76,6 +76,14 @@ const GREETING_SEEN_KEY = "bnp-atom-greeting-seen";
 const FEEDBACK_KEY = "bnp-atom-feedback";
 const ESCALATION_ID_KEY = "bnp-atom-escalation-id";
 const GREETING_DELAY_MS = 1800;
+
+// Anonymous-visitor mirror of the server-side ATOM_GREETING_DISMISS_LIMIT
+// (src/lib/assistant.ts). An anonymous visitor has no account for that
+// count to live on, so this browser's own localStorage stands in for it.
+// localStorage, not sessionStorage: this one needs to survive closing the
+// tab, unlike GREETING_SEEN_KEY above, which is deliberately per-tab.
+const ANONYMOUS_GREETING_DISMISS_KEY = "bnp-atom-greeting-dismiss-count";
+const ANONYMOUS_GREETING_DISMISS_LIMIT = 3;
 const SUPPORT_POLL_MS = 4000;
 
 const SUGGESTIONS = [
@@ -127,6 +135,15 @@ function readStoredEscalationId(): string | null {
     return window.sessionStorage.getItem(ESCALATION_ID_KEY);
   } catch {
     return null;
+  }
+}
+
+function readAnonymousGreetingDismissCount(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    return Number(window.localStorage.getItem(ANONYMOUS_GREETING_DISMISS_KEY)) || 0;
+  } catch {
+    return 0;
   }
 }
 
@@ -317,6 +334,11 @@ export function AssistantWidget() {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [showGreeting, setShowGreeting] = useState(false);
+  // Whether the greeting bubble has been explicitly dismissed enough times
+  // (see dismissGreeting) that it should never be offered again. Checked
+  // once mounted, server-side for a signed-in account or from this
+  // browser's own localStorage otherwise (see the effect below).
+  const [greetingSuppressed, setGreetingSuppressed] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -441,6 +463,28 @@ export function AssistantWidget() {
     };
   }, [activeEscalationId, open]);
 
+  // Whether the greeting has been explicitly canceled enough times to stop
+  // offering it at all. A signed-in account persists this server-side (so
+  // it holds across devices); an anonymous visitor only has this browser's
+  // own localStorage. Depends on session?.user?.id rather than just
+  // `mounted` since useSession() itself resolves a moment after mount; the
+  // brief window where that's still unsettled just reads the (harmless,
+  // usually-false) localStorage branch until it re-runs against the real
+  // session, well before GREETING_DELAY_MS could ever show the bubble.
+  useEffect(() => {
+    if (!mounted) return;
+    if (session?.user?.id) {
+      fetch("/api/assistant/greeting")
+        .then((res) => res.json())
+        .then((data) => setGreetingSuppressed(Boolean(data?.suppressed)))
+        .catch(() => {
+          // Best-effort: worst case the greeting shows once more than it should.
+        });
+    } else {
+      setGreetingSuppressed(readAnonymousGreetingDismissCount() >= ANONYMOUS_GREETING_DISMISS_LIMIT);
+    }
+  }, [mounted, session?.user?.id]);
+
   // Greeting bubble: once per browser session, only if the conversation is
   // still empty (a returning visitor mid-conversation doesn't need re-pitching).
   //
@@ -454,7 +498,7 @@ export function AssistantWidget() {
   // `CONSENT_DECIDED_EVENT` is dispatched by `writeConsent()` specifically
   // for this.
   useEffect(() => {
-    if (!mounted || messages.length > 0) return;
+    if (!mounted || messages.length > 0 || greetingSuppressed) return;
     if (window.sessionStorage.getItem(GREETING_SEEN_KEY)) return;
 
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -473,19 +517,51 @@ export function AssistantWidget() {
       window.removeEventListener(CONSENT_DECIDED_EVENT, onDecided);
       clearTimeout(timer);
     };
-  }, [mounted, messages.length]);
+  }, [mounted, messages.length, greetingSuppressed]);
 
-  function dismissGreeting() {
+  // Hides the bubble for the rest of this tab's session regardless of how
+  // that happened. Opening the chat (openPanel) counts just as much as an
+  // explicit cancel here; neither should keep re-pitching the same tab.
+  function hideGreetingForSession() {
     setShowGreeting(false);
     try {
       window.sessionStorage.setItem(GREETING_SEEN_KEY, "1");
     } catch {
-      // Non-fatal — worst case the greeting reappears once more.
+      // Non-fatal: worst case the greeting reappears once more.
+    }
+  }
+
+  /**
+   * The bubble's own explicit dismiss (X) control specifically, distinct
+   * from opening the chat (openPanel), which also hides the bubble for this
+   * tab but isn't "canceling" it: using Atom is already a stronger signal
+   * than closing an unread pitch, so it doesn't count toward the limit.
+   * Persisted server-side for a signed-in account (so the cap holds across
+   * every device, not just this browser); an anonymous visitor has no
+   * account for that, so this browser's own localStorage stands in.
+   */
+  function dismissGreeting() {
+    hideGreetingForSession();
+    if (session?.user?.id) {
+      fetch("/api/assistant/greeting", { method: "POST" })
+        .then((res) => res.json())
+        .then((data) => setGreetingSuppressed(Boolean(data?.suppressed)))
+        .catch(() => {
+          // Best-effort: worst case this dismissal just doesn't count.
+        });
+      return;
+    }
+    try {
+      const next = readAnonymousGreetingDismissCount() + 1;
+      window.localStorage.setItem(ANONYMOUS_GREETING_DISMISS_KEY, String(next));
+      if (next >= ANONYMOUS_GREETING_DISMISS_LIMIT) setGreetingSuppressed(true);
+    } catch {
+      // Non-fatal: worst case the greeting keeps reappearing on this browser.
     }
   }
 
   function openPanel() {
-    dismissGreeting();
+    hideGreetingForSession();
     setOpen(true);
     setTimeout(() => inputRef.current?.focus(), 250);
   }

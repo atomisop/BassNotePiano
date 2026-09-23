@@ -322,11 +322,6 @@ export function ClassBookingClient({
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [bundleSubmitting, setBundleSubmitting] = useState(false);
 
-  // A solo booking can run shorter than the schedule window (up to
-  // soloMaxCredits) — the student's own choice of how long to stay, keyed
-  // the same way bookingKey/selectedKeys are.
-  const [chosenCredits, setChosenCredits] = useState<Record<string, number>>({});
-
   // Family booking: which occurrence, and the list of attendee emails being
   // typed in. Only one family booking is composed at a time — picking a
   // different row for it replaces the in-progress one rather than stacking.
@@ -335,16 +330,15 @@ export function ClassBookingClient({
   const [familyChecks, setFamilyChecks] = useState<Record<string, { checking: boolean; found: boolean; verified: boolean; name: string | null }>>({});
   const [familySubmitting, setFamilySubmitting] = useState(false);
 
-  /** Defaults to the full window (capped at soloMaxCredits) when affordable, otherwise whatever's actually affordable right now. */
+  // Every class is its own fixed length now, by direct instruction: what
+  // used to be a student's own "stay until" choice (1 or 2 credits, up to
+  // an hour) is gone, so a slot always books for its whole defined window
+  // (capped at soloMaxCredits), with no shorter option and no silent
+  // auto-shrinking to whatever's affordable either. Insufficient balance is
+  // surfaced as a real block (insufficientCredits below), not a quietly
+  // truncated class.
   function creditsFor(row: OccurrenceRow): number {
-    const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
-    const maxForRow = Math.min(row.creditCost, soloMaxCredits);
-    return chosenCredits[key] ?? Math.max(1, Math.min(maxForRow, credits));
-  }
-
-  function setCreditsFor(row: OccurrenceRow, value: number) {
-    const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
-    setChosenCredits((prev) => ({ ...prev, [key]: value }));
+    return Math.min(row.creditCost, soloMaxCredits);
   }
 
   const displayRows = useMemo(
@@ -357,9 +351,8 @@ export function ClassBookingClient({
     [rows, selectedKeys],
   );
   const selectedCreditTotal = useMemo(
-    () => selectedRows.reduce((sum, r) => sum + creditsFor(r), 0),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selectedRows, chosenCredits],
+    () => selectedRows.reduce((sum, r) => sum + Math.min(r.creditCost, soloMaxCredits), 0),
+    [selectedRows, soloMaxCredits],
   );
   const selectedExceedsBalance = selectedCreditTotal > credits;
 
@@ -614,7 +607,7 @@ export function ClassBookingClient({
       </div>
       <p className="mt-2 text-xs text-slate-500">
         {mode === "SOLO"
-          ? `One-on-one time with the teacher — pick 1 or 2 credits (up to an hour) per class.`
+          ? `One-on-one time with the teacher: each open time below is a full class, ready to book as-is.`
           : `2+ verified students from the same family, taught together — ${familyCreditsPerStudent} credits each, regardless of how many join.`}
       </p>
 
@@ -748,14 +741,8 @@ export function ClassBookingClient({
                     const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
                     const chosen = creditsFor(row);
                     const insufficientCredits = credits < chosen;
-                    const maxForRow = Math.min(row.creditCost, soloMaxCredits);
                     const disabled = row.isBooked || insufficientCredits || bookingKey !== null || bundleSubmitting;
                     const isSelected = selectedKeys.has(key);
-                    // Every duration option shares row.scheduledAt as its
-                    // start — this offers *when it ends*, capped at
-                    // soloMaxCredits regardless of how long the underlying
-                    // window is.
-                    const durationOptions = Array.from({ length: maxForRow }, (_, i) => i + 1);
                     return (
                       <div key={key} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-6">
                         {mode === "SOLO" && (
@@ -771,29 +758,10 @@ export function ClassBookingClient({
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-slate-100">{formatOccurrenceDay(row.scheduledAt)}</p>
                           {mode === "SOLO" ? (
-                            <>
-                              <p className="mt-0.5 text-xs text-slate-500">
-                                {formatOccurrenceTime(row.scheduledAt)}–{formatEndTime(row.scheduledAt, chosen)} ·{" "}
-                                {chosen} credit{chosen === 1 ? "" : "s"}
-                              </p>
-                              {maxForRow > 1 && (
-                                <label className="mt-1.5 flex items-center gap-2 text-xs text-slate-500">
-                                  Stay until
-                                  <select
-                                    value={chosen}
-                                    onChange={(e) => setCreditsFor(row, Number(e.target.value))}
-                                    disabled={bookingKey !== null || bundleSubmitting}
-                                    className="glass-surface-subtle rounded-md px-2 py-1 text-base text-slate-200 outline-none disabled:cursor-not-allowed disabled:opacity-60"
-                                  >
-                                    {durationOptions.map((n) => (
-                                      <option key={n} value={n}>
-                                        {formatEndTime(row.scheduledAt, n)} ({n} credit{n === 1 ? "" : "s"})
-                                      </option>
-                                    ))}
-                                  </select>
-                                </label>
-                              )}
-                            </>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                              {formatOccurrenceTime(row.scheduledAt)}–{formatEndTime(row.scheduledAt, chosen)} ·{" "}
+                              {chosen} credit{chosen === 1 ? "" : "s"}
+                            </p>
                           ) : (
                             <p className="mt-0.5 text-xs text-slate-500">
                               {formatOccurrenceTime(row.scheduledAt)}–{formatEndTime(row.scheduledAt, familyCreditsPerStudent)} ·{" "}

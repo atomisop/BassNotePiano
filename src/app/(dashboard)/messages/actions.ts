@@ -8,6 +8,7 @@ import {
   markConversationRead,
   togglePin,
   setTyping,
+  reactToMessage,
   type ConversationSummary,
 } from "@/lib/messages";
 import {
@@ -18,6 +19,7 @@ import {
   sendGroupMessage,
   markGroupRead,
   leaveGroup,
+  reactToGroupMessage,
   type GroupSummary,
 } from "@/lib/groupMessages";
 import { getFriendsList, SocialError } from "@/lib/social";
@@ -41,17 +43,33 @@ export async function getConversationMessagesAction(friendId: string): Promise<M
   const userId = await requireUserId();
   try {
     const messages = await getConversationMessages(userId, friendId);
-    return messages.map((m) => ({ id: m.id, senderId: m.senderId, body: m.body, createdAt: m.createdAt.toISOString() }));
+    return messages.map((m) => ({
+      id: m.id,
+      senderId: m.senderId,
+      body: m.body,
+      createdAt: m.createdAt.toISOString(),
+      replyTo: m.replyTo ? { id: m.replyTo.id, senderId: m.replyTo.senderId, body: m.replyTo.body } : null,
+      reactions: m.reactions,
+    }));
   } catch {
     return [];
   }
 }
 
-export async function sendMessageAction(friendId: string, body: string) {
+export async function sendMessageAction(friendId: string, body: string, replyToId?: string) {
   try {
     const userId = await requireUserId();
-    await sendMessage(userId, friendId, body);
+    await sendMessage(userId, friendId, body, replyToId);
     return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
+  }
+}
+
+export async function reactToMessageAction(messageId: string, emoji: string) {
+  try {
+    const userId = await requireUserId();
+    return { ok: true as const, ...(await reactToMessage(userId, messageId, emoji)) };
   } catch (err) {
     return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
   }
@@ -76,6 +94,14 @@ export async function setTypingAction(friendId: string): Promise<void> {
   await setTyping(userId, friendId);
 }
 
+export interface GroupMessageReplyPreview {
+  id: string;
+  senderId: string;
+  senderName: string | null;
+  senderUsername: string | null;
+  body: string;
+}
+
 export interface GroupMessageRow {
   id: string;
   senderId: string;
@@ -84,6 +110,8 @@ export interface GroupMessageRow {
   senderImage: string | null;
   body: string;
   createdAt: string;
+  replyTo: GroupMessageReplyPreview | null;
+  reactions: { userId: string; emoji: string }[];
 }
 
 export async function getFriendsListAction() {
@@ -128,17 +156,36 @@ export async function getGroupMessagesAction(groupId: string): Promise<GroupMess
       senderImage: m.sender.image,
       body: m.body,
       createdAt: m.createdAt.toISOString(),
+      replyTo: m.replyTo
+        ? {
+            id: m.replyTo.id,
+            senderId: m.replyTo.senderId,
+            senderName: m.replyTo.sender.name,
+            senderUsername: m.replyTo.sender.username,
+            body: m.replyTo.body,
+          }
+        : null,
+      reactions: m.reactions,
     }));
   } catch {
     return [];
   }
 }
 
-export async function sendGroupMessageAction(groupId: string, body: string) {
+export async function sendGroupMessageAction(groupId: string, body: string, replyToId?: string) {
   try {
     const userId = await requireUserId();
-    await sendGroupMessage(userId, groupId, body);
+    await sendGroupMessage(userId, groupId, body, replyToId);
     return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
+  }
+}
+
+export async function reactToGroupMessageAction(messageId: string, emoji: string) {
+  try {
+    const userId = await requireUserId();
+    return { ok: true as const, ...(await reactToGroupMessage(userId, messageId, emoji)) };
   } catch (err) {
     return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
   }

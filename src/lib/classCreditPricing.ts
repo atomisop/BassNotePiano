@@ -16,6 +16,22 @@ export const CREDIT_ORIGINAL_PRICE_CENTS = 5000;
 /** Rounded down so the badge never overstates the real discount. */
 export const CREDIT_DISCOUNT_PERCENT = Math.floor((1 - CREDIT_BASE_PRICE_CENTS / CREDIT_ORIGINAL_PRICE_CENTS) * 100);
 
+/**
+ * A flat $35 for one extra class, on top of whatever a student's own
+ * Payment Plan already covers that week, bought right from /lessons (a
+ * subscriber's own weekly class screen, not the open ad hoc calendar
+ * everyone else sees there). Deliberately its own plain number, not derived
+ * from
+ * CREDIT_BASE_PRICE_CENTS or any tier: this is a single, occasional add-on
+ * for someone who already has a plan and wants one more session, not a
+ * bundle purchase, so it skips the charm-price/volume-discount machinery
+ * above entirely. Granted as an ordinary, non-expiring CLASS_CREDITS
+ * credit (see getOrCreatePendingExtraSessionPayment in payments.ts), the
+ * same purpose a solo a-la-carte purchase always used, just reintroduced
+ * through a different, flat-rate door.
+ */
+export const EXTRA_SESSION_FLAT_PRICE_CENTS = 3500;
+
 interface PriceTier {
   minQuantity: number;
   discountRate: number;
@@ -114,55 +130,20 @@ export function calculateClassCreditTotal(quantity: number): CreditTotal {
 }
 
 // ---------------------------------------------------------------------------
-// Family bundle: one of the four tiers above, bought at once for 2+
-// separate, already-existing accounts (see createFamilyBundlePayment in
-// payments.ts for the account verification this is paired with; this file
-// only does the math, on purpose, same "no Prisma in here" reason as the
-// header comment). An *additional* 25% off, stacked on top of whatever
-// price the chosen tier already carries (its own size discount, via
-// calculateClassCreditTotal above), e.g. 3x Starter is 3 × Starter's own
-// current price, then 25% off that combined total.
-// ---------------------------------------------------------------------------
-
-export const FAMILY_BUNDLE_DISCOUNT_RATE = 0.25;
-export const MIN_FAMILY_BUNDLE_RECIPIENTS = 2;
-export const MAX_FAMILY_BUNDLE_RECIPIENTS = 20; // matches MAX_CUSTOM_QUANTITY's own order of magnitude, a ceiling, not an expectation
-
-export interface FamilyBundleTotal {
-  tierQuantity: number;
-  recipientCount: number;
-  perRecipientCents: number; // the tier's own already-discounted price, unchanged, shown so the combined math is checkable
-  combinedBeforeFamilyDiscountCents: number;
-  familyDiscountCents: number;
-  totalCents: number;
-}
-
-export function calculateFamilyBundleTotal(tierQuantity: number, recipientCount: number): FamilyBundleTotal {
-  const recipients = Math.min(MAX_FAMILY_BUNDLE_RECIPIENTS, Math.max(MIN_FAMILY_BUNDLE_RECIPIENTS, Math.floor(recipientCount)));
-  const perRecipient = calculateClassCreditTotal(tierQuantity);
-  const combinedBeforeFamilyDiscountCents = perRecipient.totalCents * recipients;
-  const rawTotalCents = combinedBeforeFamilyDiscountCents - Math.round(combinedBeforeFamilyDiscountCents * FAMILY_BUNDLE_DISCOUNT_RATE);
-  const totalCents = toCharmPriceCents(rawTotalCents);
-  return {
-    tierQuantity: perRecipient.quantity,
-    recipientCount: recipients,
-    perRecipientCents: perRecipient.totalCents,
-    combinedBeforeFamilyDiscountCents,
-    familyDiscountCents: combinedBeforeFamilyDiscountCents - totalCents,
-    totalCents,
-  };
-}
-
-// ---------------------------------------------------------------------------
 // Payment plans: Monthly, 3, 6, or 12-month commitments to class credits,
 // paid in monthly installments — never upfront, never auto-billed (see
 // src/lib/paymentPlans.ts for the actual Zelle/installment machinery this
 // feeds). This is now the only way a solo buyer purchases class credits —
 // the old a-la-carte, buy-any-quantity flow at /billing/lessons was fully
 // removed once MONTHLY (0% off, termMonths=1) existed to cover the
-// no-commitment case. TIERS/PRESET_BUNDLES above are unrelated to this
-// ladder and stay in use for one thing only: Family bundle purchases at
-// /billing/lessons, which still price by raw quantity, not by term.
+// no-commitment case. TIERS/PRESET_BUNDLES/calculateClassCreditTotal above
+// are unrelated to this ladder now and stay in use for one thing only:
+// redisplaying legacy CLASS_CREDITS payments made before either purchase
+// flow existed (PaymentQueue.tsx, billing/history/page.tsx, the
+// notification body in payments.ts). Family bundle used to price by raw
+// quantity through that same TIERS table too, by direct instruction it now
+// reuses this cadence/term ladder instead, same as a solo Payment Plan
+// buyer sees, see calculateFamilyBundleTotal below.
 //
 // Type-only import: PaymentPlanCadence/PaymentPlanTerm are erased at compile
 // time, so this stays safe in a "use client" picker, same constraint as the
@@ -271,5 +252,63 @@ export function calculatePaymentPlanRate(cadence: PaymentPlanCadence, term: Paym
     termMonths,
     discountRate,
     totalCommittedCents: installmentAmountCents * termMonths,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Family bundle: the same cadence + term a solo Payment Plan buyer picks
+// (30/60 min per week, Monthly through Yearly), bought at once for 2+
+// separate, already-existing accounts (see createFamilyBundlePayment in
+// payments.ts for the account verification this is paired with; this file
+// only does the math, on purpose, same "no Prisma in here" reason as the
+// header comment). Unlike a solo plan, this is still a single upfront Zelle
+// payment for the whole term's credits, not a recurring monthly
+// installment: each recipient gets calculatePaymentPlanRate's own
+// totalCommittedCents worth of credits (creditsPerInstallment * termMonths)
+// in one grant, all at once, non-expiring (see createFamilyBundlePayment
+// and its own approveZellePayment branch), same as a family bundle always
+// granted its credits. An *additional* FAMILY_BUNDLE_DISCOUNT_RATE off,
+// stacked on top of whatever that combined term price already is, e.g. 3
+// kids on the 6-Month/30-min term is 3x that term's own already-discounted
+// price, then the family rate off that combined total.
+// ---------------------------------------------------------------------------
+
+export const FAMILY_BUNDLE_DISCOUNT_RATE = 0.1;
+export const MIN_FAMILY_BUNDLE_RECIPIENTS = 2;
+export const MAX_FAMILY_BUNDLE_RECIPIENTS = 20; // matches MAX_CUSTOM_QUANTITY's own order of magnitude, a ceiling, not an expectation
+
+export interface FamilyBundleTotal {
+  cadence: PaymentPlanCadence;
+  term: PaymentPlanTerm;
+  recipientCount: number;
+  /** creditsPerInstallment * termMonths: the full term's worth for one recipient, granted all at once. */
+  creditsPerRecipient: number;
+  /** That one recipient's own term price (calculatePaymentPlanRate's totalCommittedCents), unchanged, shown so the combined math is checkable against what a solo Payment Plan buyer would pay across the same term. */
+  perRecipientCents: number;
+  combinedBeforeFamilyDiscountCents: number;
+  familyDiscountCents: number;
+  totalCents: number;
+}
+
+export function calculateFamilyBundleTotal(
+  cadence: PaymentPlanCadence,
+  term: PaymentPlanTerm,
+  recipientCount: number,
+): FamilyBundleTotal {
+  const recipients = Math.min(MAX_FAMILY_BUNDLE_RECIPIENTS, Math.max(MIN_FAMILY_BUNDLE_RECIPIENTS, Math.floor(recipientCount)));
+  const rate = calculatePaymentPlanRate(cadence, term);
+  const perRecipientCents = rate.totalCommittedCents;
+  const combinedBeforeFamilyDiscountCents = perRecipientCents * recipients;
+  const rawTotalCents = combinedBeforeFamilyDiscountCents - Math.round(combinedBeforeFamilyDiscountCents * FAMILY_BUNDLE_DISCOUNT_RATE);
+  const totalCents = toCharmPriceCents(rawTotalCents);
+  return {
+    cadence,
+    term,
+    recipientCount: recipients,
+    creditsPerRecipient: rate.creditsPerInstallment * rate.termMonths,
+    perRecipientCents,
+    combinedBeforeFamilyDiscountCents,
+    familyDiscountCents: combinedBeforeFamilyDiscountCents - totalCents,
+    totalCents,
   };
 }

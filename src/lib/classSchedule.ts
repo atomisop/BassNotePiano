@@ -5,6 +5,7 @@ import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { getRoadmap, type ScaleAccessState } from "@/lib/access";
 import { resolveNextStep } from "@/lib/next-step";
 import { drawDownCredits } from "@/lib/creditLedger";
+import { PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 
 export class ClassBookingError extends Error {}
 
@@ -291,6 +292,32 @@ export async function getEffectiveClassCredits(userId: string): Promise<number> 
 }
 
 /**
+ * One class a day, no exceptions for a different time or a different
+ * class, by direct instruction. Keyed on `occurrenceDate` (the same ET
+ * calendar-day identifier capacity/uniqueness already use elsewhere in this
+ * file), not `scheduledAt`, since that's the actual day boundary a student
+ * thinks in. `excludeScheduleId` lets a student re-book (or a family
+ * booking re-claim) their own existing row on this exact schedule+day
+ * without tripping over themselves, that's not a second class, it's the
+ * same one. Runs inside the caller's own transaction so it's checked
+ * against the same consistent snapshot as the rest of that booking attempt.
+ */
+async function assertNoOtherBookingSameDay(
+  tx: Prisma.TransactionClient,
+  studentId: string,
+  occurrenceDate: Date,
+  excludeScheduleId: string,
+): Promise<void> {
+  const otherBookingSameDay = await tx.classBooking.findFirst({
+    where: { studentId, occurrenceDate, status: "SCHEDULED", NOT: { scheduleId: excludeScheduleId } },
+    select: { id: true },
+  });
+  if (otherBookingSameDay) {
+    throw new ClassBookingError("You can only book one class per day, message support if you need a second class on the same day.");
+  }
+}
+
+/**
  * Books a specific occurrence for one student alone. Solo 1:1 is the
  * default tier now: `creditsToBook` is 1 or 2 (30 or 60 minutes), the
  * student's own choice, capped at SOLO_MAX_CREDITS regardless of how long
@@ -314,6 +341,7 @@ export async function bookClass(
   occurrenceDateMs: number,
   chunkIndex: number,
   creditsToBook?: number,
+  options: { isAdminAssisted?: boolean } = {},
 ) {
   const schedule = await prisma.classSchedule.findUniqueOrThrow({ where: { id: scheduleId } });
   if (!schedule.active) throw new ClassBookingError("This class is no longer offered.");
@@ -340,6 +368,34 @@ export async function bookClass(
   );
   if (scheduledAt.getTime() <= Date.now()) {
     throw new ClassBookingError("That class has already started or passed.");
+  }
+
+  // A student on an active Payment Plan already has their one weekly slot
+  // auto-booked for them (see createReservedBookingIfAbsent) and, if they
+  // want more than that, a guided pick-a-time-and-pay flow right on their
+  // own /lessons page (getOrCreatePendingExtraSessionPayment, booked directly by
+  // bookExtraSessionOccurrence once the payment clears). Nothing routes
+  // through this ad hoc path for them anymore, on purpose, by direct
+  // instruction: letting a subscriber spend a banked balance here however
+  // they want is exactly the "buy credits, then go schedule it all
+  // yourself" friction (and same-day binge risk) this flow was built to
+  // remove. Plain inline query rather than importing getActivePaymentPlan
+  // from paymentPlans.ts, that module already imports from this one, and a
+  // one-line lookup isn't worth the circular dependency.
+  //
+  // isAdminAssisted exists for exactly one caller, adminBookClass below.
+  // An admin helping a specific student with a booking issue directly is
+  // the judgment call this guard exists to require instead of open self-
+  // service, not something it should also block (it also skips the "a
+  // student booked a class" admin notification further down, for the same
+  // reason: the admin doing the booking already knows). Every other check
+  // in this function (real occurrence, real capacity, real credit balance)
+  // still applies unconditionally either way.
+  if (!options.isAdminAssisted) {
+    const activePlan = await prisma.paymentPlan.findFirst({ where: { userId: studentId, status: "ACTIVE" }, select: { id: true } });
+    if (activePlan) {
+      throw new ClassBookingError("Your weekly class is already set by your payment plan. Head to Schedule to check your week or add an extra session.");
+    }
   }
 
   // STEP 20: a real student booking their week's classes might reasonably
@@ -393,6 +449,14 @@ export async function bookClass(
           throw new ClassBookingError("You've already booked this class.");
         }
 
+        // Skipped for an admin-assisted booking, same reasoning as the
+        // active-plan guard above: an admin fixing a specific booking issue
+        // directly is the judgment call this exists to require instead of
+        // open self-service, not something it should also block.
+        if (!options.isAdminAssisted) {
+          await assertNoOtherBookingSameDay(tx, studentId, occurrenceDate, scheduleId);
+        }
+
         const [user, pending] = await Promise.all([
           tx.user.findUniqueOrThrow({ where: { id: studentId }, select: { classCredits: true } }),
           tx.classBooking.aggregate({ where: { studentId, status: "SCHEDULED" }, _sum: { creditsSpent: true } }),
@@ -442,12 +506,40 @@ export async function bookClass(
   // booked short of checking the roster themselves. Same pattern
   // classRegistration.ts already uses for new registrations: notify every
   // ADMIN (today, just the one account), non-blocking so a notification
-  // hiccup never fails a real booking.
-  notifyAdminsOfBooking(studentId, schedule, scheduledAt, credits).catch((err) =>
-    console.error("Admin booking notification failed (non-blocking):", err),
-  );
+  // hiccup never fails a real booking. Skipped when an admin made this
+  // booking themselves (adminBookClass below), notifying the admin that
+  // the admin just booked something is noise, not news.
+  if (!options.isAdminAssisted) {
+    notifyAdminsOfBooking(studentId, schedule, scheduledAt, credits).catch((err) =>
+      console.error("Admin booking notification failed (non-blocking):", err),
+    );
+  }
 
   return booking;
+}
+
+/**
+ * Admin-assisted direct booking, the escape hatch for a student whose own
+ * path is stuck: an active Payment Plan subscriber can no longer self-book
+ * an ad hoc class at all (see bookClass's own guard above), so a one-off
+ * scheduling problem (they're sick this week and want a different day, a
+ * family situation needs a human, whatever it is) has nowhere for them to
+ * go except contacting support, per the note already on their /lessons
+ * page. This is that support action: an admin picks the student and the
+ * exact open time, on the student's behalf, after hearing from them directly.
+ *
+ * Thin wrapper over bookClass with isAdminAssisted set, nothing else
+ * changes: the occurrence still has to be real and open, and the student
+ * still has to have a free credit to spend, same as any other booking.
+ */
+export async function adminBookClass(
+  studentId: string,
+  scheduleId: string,
+  occurrenceDateMs: number,
+  chunkIndex: number,
+  creditsToBook?: number,
+) {
+  return bookClass(studentId, scheduleId, occurrenceDateMs, chunkIndex, creditsToBook, { isAdminAssisted: true });
 }
 
 async function notifyAdminsOfBooking(
@@ -703,6 +795,28 @@ export async function bookFamilyClass(
     throw new ClassBookingError(`These emails aren't verified accounts on file: ${unresolved.join(", ")}.`);
   }
 
+  // Same rule bookClass enforces for a solo self-booking, applied per
+  // attendee here: each attendee spends their own classCredits once
+  // markAttendance runs (see this function's own doc comment above), so an
+  // attendee with an active Payment Plan spending some of that balance on an
+  // ad hoc family booking is exactly the same side door bookClass already
+  // closes, just reached by naming them as someone else's family-booking
+  // attendee instead of booking for themselves directly. The initiator
+  // isn't assumed to be one of the attendees, but nothing stops them from
+  // naming themselves, so this has to check every resolved attendee, not
+  // just initiatorId.
+  const attendeesWithActivePlans = await prisma.paymentPlan.findMany({
+    where: { userId: { in: attendees.map((a) => a.id) }, status: "ACTIVE" },
+    select: { userId: true },
+  });
+  if (attendeesWithActivePlans.length > 0) {
+    const activeIds = new Set(attendeesWithActivePlans.map((p) => p.userId));
+    const namesOnPlans = normalizedEmails.filter((e) => activeIds.has(byEmail.get(e)!.id));
+    throw new ClassBookingError(
+      `${namesOnPlans.join(", ")} already ${namesOnPlans.length === 1 ? "has" : "have"} an active payment plan and can't be added to an ad hoc family booking, message support to change anything about their schedule.`,
+    );
+  }
+
   const familyBookingGroupId = crypto.randomUUID();
 
   let bookings;
@@ -734,6 +848,14 @@ export async function bookFamilyClass(
           });
           if (existing?.status === "SCHEDULED") {
             throw new ClassBookingError(`${email} already has a booking for this occurrence.`);
+          }
+
+          const otherBookingSameDay = await tx.classBooking.findFirst({
+            where: { studentId: attendee.id, occurrenceDate, status: "SCHEDULED", NOT: { scheduleId } },
+            select: { id: true },
+          });
+          if (otherBookingSameDay) {
+            throw new ClassBookingError(`${email} already has a different class booked that day, one class per day per student.`);
           }
 
           const [user, pending] = await Promise.all([
@@ -945,6 +1067,77 @@ export async function createReservedBookingIfAbsent(
     : db.classBooking.create({ data: { studentId, scheduleId, occurrenceDate, ...data } });
 }
 
+/**
+ * Best-effort direct booking for the one-off occurrence a student already
+ * paid EXTRA_SESSION_FLAT_PRICE_CENTS for (see
+ * getOrCreatePendingExtraSessionPayment in payments.ts). Called from
+ * approveZellePayment once that payment verifies, not from the student's
+ * own request, so unlike bookClass there's no rate limit or credit-balance
+ * check here, the credit itself is granted separately in the same
+ * transaction; this only claims the seat. Same conflict-checking idiom as
+ * createReservedBookingIfAbsent above, minus reservedByPlanId (this is an
+ * ordinary one-off booking, not a standing weekly reservation).
+ *
+ * Returns false, never throws, if the exact instant was claimed by someone
+ * else, or if the student's own calendar day is no longer free (one class
+ * a day, see assertNoOtherBookingSameDay), in the gap between the student
+ * picking it and the payment clearing review, that gap is normally hours to
+ * a couple of days, not the seconds bookClass's own transaction races
+ * against. The caller still grants the credit either way (real money
+ * changed hands) and just leaves the student to pick a different open time
+ * themselves, the same behavior this flow replaces for everyone except
+ * this one edge case.
+ */
+export async function bookExtraSessionOccurrence(
+  params: { studentId: string; scheduleId: string; occurrenceDate: Date; scheduledAt: Date; creditsSpent: number },
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+): Promise<boolean> {
+  const { studentId, scheduleId, occurrenceDate, scheduledAt, creditsSpent } = params;
+
+  const existing = await db.classBooking.findUnique({
+    where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId, occurrenceDate } },
+  });
+  if (existing?.status === "SCHEDULED") return true; // already booked somehow (a retried approval, say), nothing to do
+
+  const conflict = await db.classBooking.findFirst({
+    where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED", studentId: { not: studentId } },
+    select: { id: true },
+  });
+  if (conflict) return false;
+
+  // One class a day, same rule assertNoOtherBookingSameDay enforces for
+  // bookClass/bookFamilyClass. getOrCreatePendingExtraSessionPayment already
+  // refuses to sell an extra session for a day the student's already
+  // booked, but this is the gap that check can't close by itself: the
+  // student could book a regular class in the hours-to-days between paying
+  // for the extra and an admin actually approving it. Same "return false,
+  // don't throw" idiom as the conflict check above, for the same reason,
+  // the credit is granted either way (real money changed hands), this only
+  // ever refuses the specific seat.
+  const sameDayConflict = await db.classBooking.findFirst({
+    where: { studentId, occurrenceDate, status: "SCHEDULED", NOT: { scheduleId } },
+    select: { id: true },
+  });
+  if (sameDayConflict) return false;
+
+  const data = {
+    scheduledAt,
+    creditsSpent,
+    status: "SCHEDULED" as const,
+    attendance: null,
+    refunded: false,
+    canceledReason: null,
+    familyBookingGroupId: null,
+    reservedByPlanId: null,
+  };
+  if (existing) {
+    await db.classBooking.update({ where: { id: existing.id }, data });
+  } else {
+    await db.classBooking.create({ data: { studentId, scheduleId, occurrenceDate, ...data } });
+  }
+  return true;
+}
+
 export async function getClassCreditBalance(userId: string): Promise<number> {
   const user = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { classCredits: true } });
   return user.classCredits;
@@ -968,6 +1161,50 @@ export async function getUserClassBookings(studentId: string) {
     include: { schedule: true },
     orderBy: { scheduledAt: "desc" },
   });
+}
+
+export interface WeeklyCreditUsage {
+  weekStartMs: number;
+  weekEndMs: number;
+  creditsUsedThisWeek: number;
+  /** Null when the student has no ACTIVE Payment Plan (a family-bundle-only
+      or between-plans student has no fixed weekly commitment to compare
+      against, so their own /lessons page just shows raw usage instead). */
+  weeklyAllotment: number | null;
+}
+
+/**
+ * Powers the "this week" card a Payment Plan subscriber sees on /lessons:
+ * how much of a student's own weekly commitment they've actually used,
+ * calendar-week (Sun-Sat) based
+ * rather than a rolling 7 days, matching how a person actually thinks about
+ * "this week" versus "next week." Counts SCHEDULED and COMPLETED bookings
+ * (a CANCELED one was never actually going to cost anything, see
+ * cancelClassBooking) whose scheduledAt falls in that window, regardless of
+ * source (a plan's own auto-booked slot, a manually booked extra session,
+ * or a family session): the number a student cares about is "how much of
+ * my week is spoken for," not which purchase paid for which class.
+ */
+export async function getWeeklyCreditUsage(studentId: string): Promise<WeeklyCreditUsage> {
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekStart = new Date(startOfToday.getTime() - startOfToday.getDay() * 24 * 60 * 60 * 1000);
+  const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const [plan, bookings] = await Promise.all([
+    prisma.paymentPlan.findFirst({ where: { userId: studentId, status: "ACTIVE" }, select: { cadence: true } }),
+    prisma.classBooking.findMany({
+      where: { studentId, status: { in: ["SCHEDULED", "COMPLETED"] }, scheduledAt: { gte: weekStart, lt: weekEnd } },
+      select: { creditsSpent: true },
+    }),
+  ]);
+
+  return {
+    weekStartMs: weekStart.getTime(),
+    weekEndMs: weekEnd.getTime(),
+    creditsUsedThisWeek: bookings.reduce((sum, b) => sum + b.creditsSpent, 0),
+    weeklyAllotment: plan ? PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence] : null,
+  };
 }
 
 /**

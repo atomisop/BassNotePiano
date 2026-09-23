@@ -34,13 +34,13 @@ export default async function BillingPlansPage({
   ]);
 
   // Ensures the current installment exists (idempotent) the moment an
-  // active plan's own page is viewed, rather than waiting on the scheduled
-  // reminder's 7-day lead window — a student who wants to pay ahead of
-  // schedule isn't blocked from doing so; the lead window only governs when
-  // the *automated* reminder proactively reaches out, not when payment is
-  // allowed.
-  const openInstallment = activePlan
-    ? (await getOrCreateOpenInstallmentPayment(activePlan.id, zelleHandle)).payment
+  // active plan's own page is viewed, once it's actually within
+  // INSTALLMENT_OPEN_LEAD_DAYS of coming due. That gate lives inside
+  // getOrCreateOpenInstallmentPayment itself now, shared with the scheduled
+  // reminder function, so a student can't pay ahead of schedule installment
+  // after installment in one sitting (see that function's own comment).
+  const openInstallmentResult = activePlan
+    ? await getOrCreateOpenInstallmentPayment(activePlan.id, zelleHandle)
     : null;
 
   const pastPlans = allPlans.filter((plan) => plan.status !== "ACTIVE");
@@ -76,15 +76,18 @@ export default async function BillingPlansPage({
               : null
           }
           openInstallment={
-            openInstallment
+            openInstallmentResult?.payment
               ? {
-                  id: openInstallment.id,
-                  status: openInstallment.status,
-                  rejectionReason: openInstallment.rejectionReason,
-                  amountCents: openInstallment.amountCents,
-                  installmentNumber: openInstallment.installmentNumber,
+                  id: openInstallmentResult.payment.id,
+                  status: openInstallmentResult.payment.status,
+                  rejectionReason: openInstallmentResult.payment.rejectionReason,
+                  amountCents: openInstallmentResult.payment.amountCents,
+                  installmentNumber: openInstallmentResult.payment.installmentNumber,
                 }
               : null
+          }
+          nextInstallmentDueDate={
+            activePlan && !openInstallmentResult?.payment ? (openInstallmentResult?.nextDueDate ?? activePlan.nextDueDate).toISOString() : undefined
           }
         />
       </div>

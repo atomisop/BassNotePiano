@@ -3,6 +3,7 @@ import { sendEmailIfEnabled } from "@/lib/notifications";
 import { getAppUrl } from "@/lib/email";
 import { isFriend, normalizeUsername, SocialError } from "@/lib/social";
 import { assertRateLimit } from "@/lib/rateLimit";
+import { REACTION_EMOJI } from "@/lib/reactions";
 
 const MAX_MESSAGE_LENGTH = 2000;
 // Creator + up to 23 friends — generous headroom over a normal friend-group
@@ -146,16 +147,30 @@ export async function getGroupMessages(userId: string, groupId: string, limit = 
     where: { conversationId: groupId },
     orderBy: { createdAt: "asc" },
     take: limit,
-    include: { sender: { select: { id: true, name: true, username: true, image: true } } },
+    include: {
+      sender: { select: { id: true, name: true, username: true, image: true } },
+      replyTo: { select: { id: true, senderId: true, body: true, sender: { select: { name: true, username: true } } } },
+      reactions: { select: { userId: true, emoji: true } },
+    },
   });
 }
 
-export async function sendGroupMessage(senderId: string, groupId: string, body: string) {
+/**
+ * Same shape as 1-on-1 sendMessage's own replyToId handling: re-verified
+ * against this exact group (not just "some message that exists somewhere")
+ * before it's trusted, same reasoning as that comment.
+ */
+export async function sendGroupMessage(senderId: string, groupId: string, body: string, replyToId?: string) {
   const trimmed = body.trim();
   if (!trimmed) throw new SocialError("Message can't be empty.");
   if (trimmed.length > MAX_MESSAGE_LENGTH) throw new SocialError(`Message is too long (${MAX_MESSAGE_LENGTH} characters max).`);
 
   const membership = await requireMembership(senderId, groupId);
+
+  if (replyToId) {
+    const original = await prisma.groupMessage.findUnique({ where: { id: replyToId }, select: { conversationId: true } });
+    if (original?.conversationId !== groupId) throw new SocialError("That message can't be replied to here.");
+  }
 
   // STEP 20: same reasoning/limit as 1-on-1 sendMessage.
   await assertRateLimit(
@@ -165,7 +180,7 @@ export async function sendGroupMessage(senderId: string, groupId: string, body: 
   );
 
   const [message] = await prisma.$transaction([
-    prisma.groupMessage.create({ data: { conversationId: groupId, senderId, body: trimmed } }),
+    prisma.groupMessage.create({ data: { conversationId: groupId, senderId, body: trimmed, replyToId: replyToId ?? null } }),
     prisma.groupMember.update({ where: { id: membership.id }, data: { lastReadAt: new Date() } }),
   ]);
 
@@ -189,6 +204,30 @@ export async function sendGroupMessage(senderId: string, groupId: string, body: 
   );
 
   return message;
+}
+
+/** Same shape as 1-on-1 messages' own reactToMessage, see its comment. */
+export async function reactToGroupMessage(userId: string, messageId: string, emoji: string): Promise<{ removed: boolean }> {
+  if (!REACTION_EMOJI.includes(emoji as (typeof REACTION_EMOJI)[number])) {
+    throw new SocialError("Not a real reaction.");
+  }
+
+  const message = await prisma.groupMessage.findUnique({ where: { id: messageId }, select: { conversationId: true } });
+  if (!message) throw new SocialError("You can't react to that message.");
+  await requireMembership(userId, message.conversationId);
+
+  const existing = await prisma.groupMessageReaction.findUnique({ where: { messageId_userId: { messageId, userId } } });
+  if (existing?.emoji === emoji) {
+    await prisma.groupMessageReaction.delete({ where: { id: existing.id } });
+    return { removed: true };
+  }
+
+  await prisma.groupMessageReaction.upsert({
+    where: { messageId_userId: { messageId, userId } },
+    create: { messageId, userId, emoji },
+    update: { emoji },
+  });
+  return { removed: false };
 }
 
 export async function markGroupRead(userId: string, groupId: string): Promise<void> {

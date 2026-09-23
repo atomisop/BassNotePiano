@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import type { ConversationSummary, MessageableUser } from "@/lib/messages";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { ChatWindow } from "@/components/messaging/ChatWindow";
@@ -15,6 +16,7 @@ import {
   markAdminConversationReadAction,
   toggleAdminPinAction,
   setAdminTypingAction,
+  reactToAdminMessageAction,
   type MessageRow,
 } from "./actions";
 
@@ -24,6 +26,7 @@ const ACTIVE_CONVERSATION_POLL_MS = 2_500;
 function AdminMessagesInner({ initialConversations }: { initialConversations: ConversationSummary[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const activeUserId = searchParams.get("with");
 
   const [conversations, setConversations] = useState(initialConversations);
@@ -115,14 +118,20 @@ function AdminMessagesInner({ initialConversations }: { initialConversations: Co
     router.push(`/admin/messages?with=${user.id}`);
   }
 
-  async function handleSend(body: string): Promise<boolean> {
+  async function handleSend(body: string, replyToId?: string): Promise<boolean> {
     if (!active) return false;
-    const result = await sendAdminMessageAction(active.friendId, body);
+    const result = await sendAdminMessageAction(active.friendId, body, replyToId);
     if (result.ok) {
       setMessages(await getAdminConversationMessagesAction(active.friendId));
       setConversations(await getAdminConversationsAction());
     }
     return result.ok;
+  }
+
+  async function handleReact(messageId: string, emoji: string) {
+    if (!active) return;
+    await reactToAdminMessageAction(messageId, emoji);
+    setMessages(await getAdminConversationMessagesAction(active.friendId));
   }
 
   async function handleTogglePin(userId: string) {
@@ -138,7 +147,11 @@ function AdminMessagesInner({ initialConversations }: { initialConversations: Co
   const hasActivePane = Boolean(activeUserId);
 
   return (
-    <div className="glass-surface flex h-[calc(100vh-9rem)] overflow-hidden">
+    // 100dvh, not 100vh: same fix as the student-facing MessagesClient.tsx,
+    // for the same reason, this pane should shrink for the on-screen
+    // keyboard so the header stays visible instead of scrolling off with
+    // the rest of the pane while typing a reply.
+    <div className="glass-surface flex h-[calc(100dvh-9rem)] overflow-hidden">
       <div className={`${hasActivePane ? "hidden md:flex" : "flex"} md:w-[350px] md:shrink-0`}>
         <AdminConversationSidebar
           conversations={merged}
@@ -155,9 +168,11 @@ function AdminMessagesInner({ initialConversations }: { initialConversations: Co
             key={active.friendId}
             conversation={active}
             messages={messages}
+            currentUserId={session?.user?.id ?? ""}
             onSend={handleSend}
             onMinimize={handleMinimize}
             onTyping={(userId) => void setAdminTypingAction(userId)}
+            onReact={handleReact}
           />
         ) : (
           <EmptyState />

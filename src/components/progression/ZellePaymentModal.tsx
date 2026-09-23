@@ -19,7 +19,6 @@ export interface ZellePaymentModalProps {
   zelleHandle: string;
   onSubmit: (payload: {
     senderName: string;
-    referenceCode: string;
     note?: string;
   }) => Promise<void>;
 }
@@ -69,7 +68,6 @@ export function ZellePaymentModal({
 }: ZellePaymentModalProps) {
   const [step, setStep] = useState<Step>("instructions");
   const [senderName, setSenderName] = useState("");
-  const [referenceCode, setReferenceCode] = useState("");
   const [note, setNote] = useState("");
   const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -78,7 +76,6 @@ export function ZellePaymentModal({
   function reset() {
     setStep("instructions");
     setSenderName("");
-    setReferenceCode("");
     setNote("");
     setError(null);
   }
@@ -97,14 +94,14 @@ export function ZellePaymentModal({
   }
 
   async function handleSubmit() {
-    if (!senderName.trim() || !referenceCode.trim()) {
-      setError("Sender name and reference code are both required.");
+    if (!senderName.trim()) {
+      setError("Enter the name the transfer was sent under.");
       return;
     }
     setError(null);
     setSubmitting(true);
     try {
-      await onSubmit({ senderName: senderName.trim(), referenceCode: referenceCode.trim(), note: note.trim() || undefined });
+      await onSubmit({ senderName: senderName.trim(), note: note.trim() || undefined });
       setStep("pending");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong submitting your confirmation.");
@@ -194,11 +191,7 @@ export function ZellePaymentModal({
                       </li>
                       <li className="flex gap-2.5">
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-[11px] font-semibold text-[rgb(var(--c-s-50))]">2</span>
-                        Copy the confirmation/reference code your bank gives you.
-                      </li>
-                      <li className="flex gap-2.5">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-[11px] font-semibold text-[rgb(var(--c-s-50))]">3</span>
-                        Submit it here — access unlocks once we verify the transfer.
+                        Tell us you sent it, access unlocks once we verify the transfer.
                       </li>
                     </ol>
 
@@ -215,6 +208,9 @@ export function ZellePaymentModal({
                 {step === "confirming" && (
                   <motion.div key="confirming" variants={stepVariants} initial="enter" animate="center" exit="exit">
                     <div className="space-y-3.5">
+                      <p className="text-sm text-slate-400">
+                        Confirming your <span className="font-semibold text-[rgb(var(--c-s-50))]">{formatUsd(amountCents)}</span> payment.
+                      </p>
                       <div>
                         <label className="mb-1 block text-xs font-medium text-slate-400">Name on the Zelle transfer</label>
                         <input
@@ -223,15 +219,6 @@ export function ZellePaymentModal({
                           onChange={(e) => setSenderName(e.target.value)}
                           placeholder="Jordan Alemu"
                           className="w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-slate-400">Zelle reference / confirmation code</label>
-                        <input
-                          value={referenceCode}
-                          onChange={(e) => setReferenceCode(e.target.value)}
-                          placeholder="e.g. ZL2K9F71M"
-                          className="w-full glass-surface-subtle px-3 py-2 font-mono text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
                         />
                       </div>
                       <div>

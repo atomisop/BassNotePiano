@@ -243,12 +243,24 @@ export function AppDock({ unreadMessageCount }: AppDockProps) {
           dock only ever meets that, never a lighter card straight-on.
           Ground-token-based, not a hardcoded black, since Editorial Paper's
           ground is a light cream — a fade to black there would be its own,
-          worse mismatch. `h-52`/z-30: tall and low enough to sit fully
-          behind the dock's resting AND hover-magnified states without
-          poking out as its own visible edge. */}
+          worse mismatch.
+
+          Shrunk from h-52 down to h-20, and given a mid-stop instead of a
+          flat linear fade: at the original height, a straight linear
+          gradient stays visibly close to full ground-color for a good
+          portion of its own height, so on any page whose last card happens
+          to end within that tall a band (a long admin table, a full
+          message thread, anything reaching near the bottom), it read as
+          its own distinct dark rectangle sitting under the dock instead of
+          a gentle blend, reported live as the dock being "on a dark grey
+          rectangle" on those screens while looking like it was "freely in
+          the sky" on shorter ones with nothing nearby to darken. A shorter
+          band with an eased curve reaches transparent much sooner, so it
+          only ever softens a genuinely hard, close seam instead of tinting
+          a wide swath of whatever content happens to sit above it. */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-52 bg-gradient-to-t from-[rgb(var(--c-s-950))] to-transparent"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-20 bg-gradient-to-t from-[rgb(var(--c-s-950))] via-[rgb(var(--c-s-950)/0.35)] to-transparent"
       />
       <div
         role="navigation"

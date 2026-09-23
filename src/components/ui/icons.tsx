@@ -146,3 +146,40 @@ export function DiscordIcon({ className, size = 14 }: { className?: string; size
     </svg>
   );
 }
+
+export function ReplyArrowIcon({ className, size = 14 }: { className?: string; size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className={className}
+      aria-hidden
+    >
+      <path d="M9 17 4 12l5-5M4 12h11a5 5 0 0 1 5 5v1" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function SmileyPlusIcon({ className, size = 14 }: { className?: string; size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      className={className}
+      aria-hidden
+    >
+      <path d="M8.5 10.5v.01M13.5 10.5v.01" strokeLinecap="round" />
+      <path d="M8 15c.8 1 1.9 1.5 3 1.5s2.2-.5 3-1.5" strokeLinecap="round" />
+      <path d="M14.5 3.5A9 9 0 1 0 20.5 9.5" strokeLinecap="round" />
+      <path d="M18 2v5M15.5 4.5h5" strokeLinecap="round" />
+    </svg>
+  );
+}

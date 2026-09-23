@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getServerAuthSession } from "@/lib/auth";
 import { getOrCreatePendingCurriculumPayment } from "@/lib/payments";
-import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
+import { CURRICULUM_PRICE_CENTS, CURRICULUM_FAMILY_BUNDLE_DISCOUNT_RATE } from "@/lib/curriculum";
 import { CurriculumConsentGate } from "@/components/billing/CurriculumConsentGate";
 import { CheckIcon, ArrowLeftIcon } from "@/components/ui/icons";
 import { submitCurriculumPaymentAction } from "./actions";
@@ -64,6 +64,22 @@ export default async function BillingCurriculumPage({ searchParams }: { searchPa
             </li>
           ))}
         </ul>
+
+        <div className="mt-6 flex items-center justify-between gap-3 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] p-4">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">Family bundle</p>
+            <p className="mt-1 text-xs text-slate-400">
+              Unlocking for 2 or more kids gets an extra {CURRICULUM_FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the
+              combined total.
+            </p>
+          </div>
+          <Link
+            href="/billing/curriculum/family"
+            className="shrink-0 rounded-lg border border-ink/10 px-4 py-2 text-xs font-semibold text-slate-100 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+          >
+            Bundle &amp; save
+          </Link>
+        </div>
       </div>
 
       <div className="mt-8 lg:col-span-6 lg:mt-0">

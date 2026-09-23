@@ -56,7 +56,14 @@ export function SlideOverPanel({
   return createPortal(
     <AnimatePresence>
       {open && (
-        <motion.div className="fixed inset-0 z-50 flex justify-end" initial="hidden" animate="visible" exit="hidden">
+        // h-[100svh], not inset-0's own implicit bottom:0 sizing. Same
+        // fix as QuizModal's own full-screen panel (see its comment): a
+        // position:fixed element sized against Safari's own *large*
+        // viewport (as if the toolbar were always hidden) can leave a gap
+        // or get clipped once the toolbar's actually showing, and this app
+        // shell already hit that exact bug once before, see
+        // (dashboard)/layout.tsx's own h-[100svh] comment.
+        <motion.div className="fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full justify-end" initial="hidden" animate="visible" exit="hidden">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -105,7 +112,18 @@ export function SlideOverPanel({
               </button>
               <h1 id={titleId} className="truncate font-serif text-lg text-slate-50">{title}</h1>
             </div>
-            <div data-sheet-scroll className="flex-1 overflow-y-auto p-6">{children}</div>
+            {/* overscroll-contain: this panel is portaled straight to
+                document.body and sits above literally everything else
+                (z-50), with its own static header row (the Back button/
+                title above) that never scrolls. Without this, scrolling
+                this content to the bottom and flinging back up past the
+                top rubber-bands right here. On iOS that bounce can
+                visibly slide the scrolled content up over the static
+                header for an instant before it springs back, reported live
+                as "it bounces back and covers a little bit of the top."
+                Same fix (dashboard)/layout.tsx already applies to its own
+                <main>, for the exact same reason. */}
+            <div data-sheet-scroll className="flex-1 overflow-y-auto overscroll-contain p-6">{children}</div>
             </motion.div>
           </motion.div>
         </motion.div>

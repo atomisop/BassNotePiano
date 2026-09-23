@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CURRICULUM_PRICE_CENTS, CURRICULUM_ORIGINAL_PRICE_CENTS, CURRICULUM_DISCOUNT_PERCENT } from "@/lib/curriculum";
+import { FAMILY_BUNDLE_DISCOUNT_RATE } from "@/lib/classCreditPricing";
 import { TiltGlow } from "@/components/ui/TiltGlow";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
@@ -133,8 +134,9 @@ export function PricingPageContent() {
         {/* Sits under the four term cards, not as a fifth tile in that grid:
             its price depends on how many recipients you add, so it can't
             show a single number the way the other four cards do. Family
-            bundle purchasing is its own, separate flow from Payment Plans —
-            still a fixed-quantity tier, not a term commitment. */}
+            bundle purchasing is its own, separate flow from Payment Plans,
+            picking the same cadence/term as those four cards, just paid
+            once upfront for the whole term instead of monthly. */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -145,8 +147,8 @@ export function PricingPageContent() {
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-[rgb(var(--c-s-50))]">Family bundle</p>
             <p className="mt-1.5 text-sm text-slate-300">
-              Buying for 2 or more kids? Bundle a credit tier across their accounts and get an{" "}
-              <span className="text-slate-100">extra 25% off</span> the combined total, for a limited time. Each
+              Buying for 2 or more kids? Bundle the same cadence and term across their accounts and get an{" "}
+              <span className="text-slate-100">extra {FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off</span> the combined total, for a limited time. Each
               recipient just needs their own account already.
             </p>
           </div>

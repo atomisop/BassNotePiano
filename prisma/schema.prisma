@@ -42,8 +42,17 @@ enum PaymentPurpose {
   CURRICULUM // one-time $69.99 full-curriculum unlock (renamed from PRO_LIFETIME)
   SCALE_UNLOCK // legacy Pay-As-You-Go per-scale unlock — no longer purchasable, kept for historical rows
   CLASS_CREDITS // class-credit bundle purchase (renamed from LESSON_PACKAGE — the old 1:1 online/in-person lesson system was replaced by the weekly group-class schedule below)
-  FAMILY_BUNDLE // one credit tier bought for 2+ separate, already-existing accounts at once, an extra 25% off the combined price. See FamilyBundleRecipient below for who actually receives the credits
+  FAMILY_BUNDLE // one credit tier bought for 2+ separate, already-existing accounts at once, an extra 10% off the combined price (FAMILY_BUNDLE_DISCOUNT_RATE in classCreditPricing.ts). See FamilyBundleRecipient below for who actually receives the credits
   PAYMENT_PLAN_INSTALLMENT // one monthly installment of a PaymentPlan term commitment — same AWAITING_TRANSFER/PENDING_REVIEW/VERIFIED lifecycle as any other purchase, see PaymentPlan below
+  // Same shape as FAMILY_BUNDLE but for curriculum access instead of class
+  // credits, 2+ separate, already-existing accounts unlocking the full
+  // curriculum in one purchase, 20% off the combined price
+  // (CURRICULUM_FAMILY_BUNDLE_DISCOUNT_RATE in curriculum.ts). Also uses
+  // FamilyBundleRecipient below, with creditsGranted always 0 there (a
+  // curriculum grant isn't a credit count, that field just goes unused for
+  // this purpose); approveZellePayment's own branch keys off payment.purpose,
+  // not that field, to decide what each recipient actually receives.
+  CURRICULUM_FAMILY_BUNDLE
 }
 
 // A student's standing commitment to pay for class credits in periodic
@@ -111,6 +120,16 @@ model PaymentPlan {
   canceledBy       User?     @relation("PaymentPlanCanceledBy", fields: [canceledById], references: [id])
   cancellationNote String?
 
+  // Only set when the student canceled this themselves (see
+  // cancelPaymentPlanBySelf in paymentPlans.ts), never on an admin
+  // cancellation, cancellationNote above stays the admin-only field it
+  // always was. Null reason means either still ACTIVE, or an admin
+  // cancellation with no structured reason attached. cancellationReasonNote
+  // is required when reason is OTHER, optional free-text alongside any
+  // other preset reason.
+  cancellationReason     PlanCancellationReason?
+  cancellationReasonNote String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -152,6 +171,22 @@ enum PaymentPlanStatus {
   ACTIVE
   COMPLETED
   CANCELED
+}
+
+// The 8 premade options a student picks from when self-canceling a Payment
+// Plan on /account (see cancelPaymentPlanBySelf in paymentPlans.ts), plus
+// OTHER as the 9th, freeform via cancellationReasonNote. Read by admins on
+// /admin/feedback. Order here is display order in the picker.
+enum PlanCancellationReason {
+  TOO_EXPENSIVE
+  NOT_ENOUGH_TIME
+  SCHEDULE_CONFLICT
+  TAKING_A_BREAK
+  SWITCHING_TEACHER
+  NOT_SATISFIED
+  GOALS_ACHIEVED
+  TECHNICAL_ISSUES
+  OTHER
 }
 
 // Secondary bookkeeping only — never a replacement for User.classCredits,
@@ -353,10 +388,12 @@ enum NotificationType {
   PAYMENT_PLAN_INSTALLMENT_DUE // to the student, when the next installment of their PaymentPlan opens for payment
   PAYMENT_PLAN_INSTALLMENT_OVERDUE // to the student, escalating reminder while an installment stays unpaid past its due date
   PAYMENT_PLAN_COMPLETED // to the student, when their final installment is verified and the plan is fully paid off
-  PAYMENT_PLAN_CANCELED // to the student, when an admin cancels their plan
+  PAYMENT_PLAN_CANCELED // to the student, when their plan is canceled, by an admin or by themselves
   CREDITS_EXPIRED // to the student, when unused Payment Plan credits lapse at the end of their paid cycle
   CREDITS_EXPIRING_SOON // to the student, a few days ahead of CREDITS_EXPIRED, while there's still time to use them
   RESERVED_SLOT_UNAVAILABLE // to the student, when an admin deactivates the weekly schedule their Payment Plan reserves
+  PLAN_CANCELLATION_FEEDBACK // to admins, when a student self-cancels their Payment Plan and leaves a reason, see /admin/feedback
+  CURRICULUM_ACCESS_GRANTED // to a curriculum family bundle recipient who wasn't the buyer. PAYMENT_APPROVED's own CTA points at /billing/history, empty for a recipient who never paid, this points at the roadmap they can now actually use
 }
 
 // The in-app inbox is the source of truth — always written regardless of
@@ -504,9 +541,38 @@ model Message {
   readAt      DateTime?
   createdAt   DateTime  @default(now())
 
+  // Swipe-to-reply, set at send time, never changed after. onDelete: SetNull
+  // (not Cascade) so deleting the original message just orphans the quoted
+  // reply into a plain message instead of taking a whole reply chain down
+  // with it. There's no message-delete feature today, but nothing here
+  // should assume there never will be.
+  replyToId String?
+  replyTo   Message?          @relation("MessageReplyTo", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   Message[]         @relation("MessageReplyTo")
+  reactions MessageReaction[]
+
   @@index([senderId, recipientId, createdAt])
   @@index([recipientId, senderId, createdAt])
   @@index([recipientId, readAt])
+  @@index([replyToId])
+}
+
+// One reaction per (message, user), like iMessage's own Tapback: picking a
+// different emoji replaces your previous one rather than stacking a second
+// row, and the same unique constraint is what makes "upsert" the right
+// write for reactToMessage regardless of whether this is a first reaction
+// or a change.
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation("MessageReactionUser", fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, userId])
+  @@index([messageId])
 }
 
 // A conversation "pinned" to the top of a user's own Messages sidebar —
@@ -582,7 +648,29 @@ model GroupMessage {
   body           String            @db.Text
   createdAt      DateTime          @default(now())
 
+  // Same shape as Message's own replyToId/reactions above, see those
+  // comments.
+  replyToId String?
+  replyTo   GroupMessage?          @relation("GroupMessageReplyTo", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   GroupMessage[]         @relation("GroupMessageReplyTo")
+  reactions GroupMessageReaction[]
+
   @@index([conversationId, createdAt])
+  @@index([replyToId])
+}
+
+// Same shape as MessageReaction above, for GroupMessage.
+model GroupMessageReaction {
+  id        String       @id @default(cuid())
+  messageId String
+  message   GroupMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation("GroupMessageReactionUser", fields: [userId], references: [id], onDelete: Cascade)
+  emoji     String
+  createdAt DateTime     @default(now())
+
+  @@unique([messageId, userId])
+  @@index([messageId])
 }
 
 // ---------------------------------------------------------------------------
@@ -666,6 +754,17 @@ model User {
   // only the automatic one-time trigger reads it.
   onboardingTourSeenAt DateTime?
 
+  // How many times this account has explicitly dismissed Atom's own
+  // greeting bubble (the X control on "Hi, I'm Atom..."; see
+  // AssistantWidget's dismissGreeting()). Opening the chat instead of
+  // dismissing it doesn't increment this: using Atom is already a
+  // stronger signal than closing an unread pitch. Once this reaches the
+  // limit defined alongside dismissGreeting(), the bubble stops appearing
+  // at all, on any device, forever. An anonymous visitor has no account to
+  // persist this on, so they get the same cap enforced from a localStorage
+  // counter on their own browser instead (see AssistantWidget.tsx).
+  atomGreetingDismissCount Int @default(0)
+
   accounts Account[]
   sessions Session[]
 
@@ -710,6 +809,7 @@ model User {
   blocksReceived         Block[]              @relation("BlockedUser")
   messagesSent           Message[]            @relation("MessageSender")
   messagesReceived       Message[]            @relation("MessageRecipient")
+  messageReactions       MessageReaction[]    @relation("MessageReactionUser")
   pinnedByMe             PinnedConversation[] @relation("PinnedByUser")
   pinnedByOthers         PinnedConversation[] @relation("PinnedFriend")
   typingStatusesSent     TypingStatus[]       @relation("TypingStatusSender")
@@ -718,9 +818,10 @@ model User {
   classRegistrations         ClassRegistration[] @relation("ClassRegistrant")
   reviewedClassRegistrations ClassRegistration[] @relation("ClassRegistrationReviewer")
 
-  createdGroups     GroupConversation[] @relation("GroupCreator")
-  groupMemberships  GroupMember[]       @relation("GroupMembership")
-  groupMessagesSent GroupMessage[]      @relation("GroupMessageSender")
+  createdGroups         GroupConversation[]    @relation("GroupCreator")
+  groupMemberships      GroupMember[]          @relation("GroupMembership")
+  groupMessagesSent     GroupMessage[]         @relation("GroupMessageSender")
+  groupMessageReactions GroupMessageReaction[] @relation("GroupMessageReactionUser")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1166,6 +1267,19 @@ model ZellePayment {
   paymentPlan       PaymentPlan? @relation(fields: [paymentPlanId], references: [id])
   installmentNumber Int?
 
+  // Only set on a CLASS_CREDITS row created through the Schedule screen's
+  // guided "buy an extra session" flow (getOrCreatePendingExtraSessionPayment
+  // in payments.ts), the exact one-off occurrence the student picked before
+  // paying. approveZellePayment books it directly the moment the payment
+  // verifies (bookExtraSessionOccurrence in classSchedule.ts), so the student
+  // never has to go spend the credit themselves at /lessons. Null for every
+  // other CLASS_CREDITS row, including a legacy bare credit purchase from
+  // before this flow existed.
+  extraSessionScheduleId     String?
+  extraSessionSchedule       ClassSchedule? @relation(fields: [extraSessionScheduleId], references: [id])
+  extraSessionOccurrenceDate DateTime?
+  extraSessionScheduledAt    DateTime?
+
   amountCents Int
   zelleHandle String // platform's receiving handle/email shown to the user at request time
 
@@ -1275,8 +1389,9 @@ model ClassSchedule {
 
   createdAt DateTime @default(now())
 
-  bookings        ClassBooking[]
-  reservedByPlans PaymentPlan[]
+  bookings             ClassBooking[]
+  reservedByPlans      PaymentPlan[]
+  extraSessionPayments ZellePayment[]
 
   @@index([dayOfWeek, active])
 }

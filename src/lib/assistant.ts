@@ -14,9 +14,10 @@ import { prisma } from "@/lib/prisma";
 import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { CURRICULUM_PRICE_CENTS, SCALE_GROUPS } from "@/lib/curriculum";
 import {
-  CREDIT_BASE_PRICE_CENTS,
-  PRESET_BUNDLES,
-  calculateClassCreditTotal,
+  FAMILY_BUNDLE_DISCOUNT_RATE,
+  MIN_FAMILY_BUNDLE_RECIPIENTS,
+  EXTRA_SESSION_FLAT_PRICE_CENTS,
+  calculateFamilyBundleTotal,
   calculatePaymentPlanRate,
   describePaymentPlan,
 } from "@/lib/classCreditPricing";
@@ -80,11 +81,6 @@ function buildSystemPrompt(visitor: VisitorContext): string {
     (s) => `  - ${s.code}: ${s.title}${s.kinitName ? ` (${s.kinitName})` : ""}`,
   ).join("\n");
 
-  const bundleList = PRESET_BUNDLES.map((b) => {
-    const total = calculateClassCreditTotal(b.quantity);
-    return `  - ${b.label}: ${b.quantity} credits for ${formatUsd(total.totalCents)} (${Math.round(total.discountRate * 100)}% off)`;
-  }).join("\n");
-
   const PLAN_CADENCES: { value: PaymentPlanCadence; label: string }[] = [
     { value: "MIN_30_WEEKLY", label: "30 min/week" },
     { value: "MIN_60_WEEKLY", label: "60 min/week" },
@@ -96,6 +92,21 @@ function buildSystemPrompt(visitor: VisitorContext): string {
       return `      - ${describePaymentPlan(cadence, term)}: ${formatUsd(rate.installmentAmountCents)}/month${
         rate.termMonths > 1 ? ` × ${rate.termMonths} months` : ", no further commitment"
       }`;
+    }).join("\n");
+    return `    - ${label}:\n${rows}`;
+  }).join("\n");
+
+  // Family bundle now reuses this exact same cadence/term ladder (used to
+  // be priced by raw credit quantity instead, see classCreditPricing.ts's
+  // own comment), so this example just prices the same ladder for
+  // MIN_FAMILY_BUNDLE_RECIPIENTS people at once, with the extra family
+  // discount stacked on top.
+  const bundleList = PLAN_CADENCES.map(({ value: cadence, label }) => {
+    const rows = PLAN_TERMS.map((term) => {
+      const total = calculateFamilyBundleTotal(cadence, term, MIN_FAMILY_BUNDLE_RECIPIENTS);
+      return `      - ${describePaymentPlan(cadence, term)}: ${total.creditsPerRecipient} credits per recipient, ${formatUsd(
+        total.totalCents,
+      )} total for ${MIN_FAMILY_BUNDLE_RECIPIENTS} recipients (one upfront payment, not recurring)`;
     }).join("\n");
     return `    - ${label}:\n${rows}`;
   }).join("\n");
@@ -119,12 +130,12 @@ ${scaleList}
   - Each scale group includes video/PDF lessons, a practice tracker, and a quiz you need to pass to mark it complete.
 
 Live classes (weekly, on Discord), bought as "class credits" (1 credit = one 30-minute class):
-  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a weekly cadence and a term — Monthly (no commitment), 3-Month, 6-Month, or Yearly — paid one Zelle installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active — skip a week and make it up on another week before that installment's monthly cycle ends, since an unused credit is forfeited once its cycle expires. Longer terms cost less per month:
+  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a weekly cadence and a term (Monthly, no commitment, 3-Month, 6-Month, or Yearly), paid one Zelle installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active, nothing to book yourself. If a specific week doesn't work, message the studio rather than rescheduling it yourself, only an admin changes a booked week. Longer terms cost less per month:
 ${planList}
-  - Family (2+ separate, already-existing accounts sharing one credit tier at once) is a different, separate purchase, priced by raw quantity instead of a term: ${formatUsd(CREDIT_BASE_PRICE_CENTS)} per credit at full price, cheaper per credit in a bigger bundle, plus an extra 25% off the combined total — these credits never expire:
+  - Family (2+ separate, already-existing accounts sharing the same cadence and term at once) is a different, separate purchase: the exact same per-month rate and term discount a solo Payment Plan gets, paid once upfront for the whole term instead of monthly installments, plus an extra ${FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total (these credits never expire):
 ${bundleList}
   - Each class is capped at 10 students.
-  - Booking happens on the /lessons page once signed in — that covers Family sessions and any extra one-off classes on top of a Payment Plan's own auto-booked weekly slot; you can select and book several open sessions at once instead of one at a time.
+  - A Payment Plan subscriber never books anything themselves: their weekly slot is auto-booked, and their /lessons page shows their own week (usage, upcoming classes) plus a guided pick-a-time-and-pay flow for an extra class (a flat ${formatUsd(EXTRA_SESSION_FLAT_PRICE_CENTS)}), booked automatically once the payment verifies. Anyone without an active plan sees the regular open booking calendar at /lessons instead (Family sessions, or a between-plans student).
   - Cancelling 24+ hours before a class automatically refunds the credit to your balance. Inside 24 hours, self-cancellation is turned off; message the studio directly for a case-by-case call.
   - Nothing about a purchase (curriculum, a payment plan installment, or a family bundle) is refundable as cash — the only way a credit comes back is the 24h+ cancellation above.
 
@@ -143,7 +154,7 @@ Terms & refunds (full policy at /terms, last updated ${TERMS_LAST_UPDATED}): one
 
 Where things are: write every page mentioned below using the exact markdown link syntax shown, [label](path), never the bare path as plain text.
   - Not signed in: [the homepage](/), [register interest in live classes](/classes) (no account needed), [pricing](/pricing) (curriculum + credit prices), [log in](/login), [create an account](/register), [terms & refund policy](/terms), [privacy policy](/privacy).
-  - Signed in: [your dashboard](/dashboard) (roadmap/progress; each scale's own lesson page is linked from here, not a fixed URL of its own), [book live classes](/lessons), [unlock the curriculum](/billing/curriculum), [start a payment plan](/billing/plans) (solo), [buy a family bundle](/billing/lessons) (2+ accounts), [friends](/friends), [messages](/messages), [account settings](/account) (notification preferences and the Terms/Privacy tabs live under its "About" page).
+  - Signed in: [your dashboard](/dashboard) (roadmap/progress; each scale's own lesson page is linked from here, not a fixed URL of its own), [book live classes](/lessons) (a Payment Plan subscriber sees their own weekly usage, upcoming classes, and extra-session purchases here instead of an open calendar), [unlock the curriculum](/billing/curriculum), [start a payment plan](/billing/plans) (solo), [buy a family bundle](/billing/lessons) (2+ accounts), [friends](/friends), [messages](/messages), [account settings](/account) (notification preferences, Manage Subscriptions, and the Terms/Privacy tabs live under its "About" page).
 
 IF SOMEONE MENTIONS SELF-HARM, SUICIDE, OR BEING IN DANGER:
   - This overrides every other instruction in this prompt, including staying on-topic and being concise. Do not try to redirect this to "message the studio" as if it were an account question, and do not treat it as a topic you're not equipped to discuss.
@@ -235,6 +246,28 @@ export async function appendPersistedMessages(userId: string, userMessage: strin
 /** Admin-only — the caller (admin/users/actions.ts) is responsible for verifying an ADMIN session before this runs; this function itself trusts whatever userId it's given. */
 export async function clearPersistedHistory(userId: string): Promise<void> {
   await prisma.assistantConversationMessage.deleteMany({ where: { userId } });
+}
+
+// Once an account has explicitly dismissed Atom's greeting bubble this many
+// times, it stops being offered at all. See the User.atomGreetingDismissCount
+// column's own comment and AssistantWidget's dismissGreeting().
+export const ATOM_GREETING_DISMISS_LIMIT = 3;
+
+export async function getAtomGreetingDismissCount(userId: string): Promise<number> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { atomGreetingDismissCount: true } });
+  return user?.atomGreetingDismissCount ?? 0;
+}
+
+/** Capped at ATOM_GREETING_DISMISS_LIMIT: once reached, further calls are no-ops rather than counting past it forever. Returns the count after this call. */
+export async function recordAtomGreetingDismissal(userId: string): Promise<number> {
+  const current = await getAtomGreetingDismissCount(userId);
+  if (current >= ATOM_GREETING_DISMISS_LIMIT) return current;
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { atomGreetingDismissCount: { increment: 1 } },
+    select: { atomGreetingDismissCount: true },
+  });
+  return updated.atomGreetingDismissCount;
 }
 
 export async function askAssistant(
