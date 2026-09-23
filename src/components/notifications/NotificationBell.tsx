@@ -5,6 +5,20 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  ArrowLeft,
+  Bell,
+  Calendar,
+  CheckCheck,
+  ChevronRight,
+  ClipboardList,
+  CreditCard,
+  Headset,
+  Megaphone,
+  Settings,
+  Timer,
+  Users,
+} from "lucide-react";
+import {
   fetchNotificationsAction,
   markAllNotificationsReadAction,
   markNotificationReadAction,
@@ -78,17 +92,19 @@ function relativeTime(iso: string): string {
 // than a literal name.
 // ---------------------------------------------------------------------------
 
+// Same category set as before, restyled onto lucide-react (already this
+// app's icon library — see ScaleViewToggle/LessonVideoPlayer) instead of
+// hand-rolled inline SVG paths. The category-to-icon MAPPING below
+// (TYPE_CATEGORY) is unchanged; only which icon component renders per key.
 const CATEGORY_ICONS = {
-  billing: "M12.59 2.59L21 11l-9 9-8.41-8.41A2 2 0 013 10.17V4a1 1 0 011-1h6.17a2 2 0 011.42.59zM7 7h.01",
-  account:
-    "M10.3 3.3c.3-1 1.7-1 2 0l.2.7c.2.6.8 1 1.4.8l.7-.2c1-.3 1.8.7 1.3 1.6l-.4.6c-.3.5-.1 1.2.4 1.5l.6.4c.9.5.9 1.9 0 2.4l-.6.4c-.5.3-.7 1-.4 1.5l.4.6c.5.9-.3 1.9-1.3 1.6l-.7-.2c-.6-.2-1.2.2-1.4.8l-.2.7c-.3 1-1.7 1-2 0l-.2-.7c-.2-.6-.8-1-1.4-.8l-.7.2c-1 .3-1.8-.7-1.3-1.6l.4-.6c.3-.5.1-1.2-.4-1.5l-.6-.4c-.9-.5-.9-1.9 0-2.4l.6-.4c.5-.3.7-1 .4-1.5l-.4-.6c-.5-.9.3-1.9 1.3-1.6l.7.2c.6.2 1.2-.2 1.4-.8l.2-.7z",
-  friends: "M8 11a3 3 0 100-6 3 3 0 000 6zM3 20c0-3.3 2.7-6 6-6M17 11a3 3 0 100-6 3 3 0 000 6zM13.5 14c2.9.3 5.5 2.8 5.5 6",
-  reminders: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 3",
-  registrations: "M9 12h6M9 16h6M9 8h1M7 3h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z",
-  bookings: "M8 3v3M16 3v3M4 9h16M5 6h14a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1zM9 14l2 2 4-4",
-  announcements:
-    "M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5z",
-  support: "M4 5.5A1.5 1.5 0 015.5 4h13A1.5 1.5 0 0120 5.5v9a1.5 1.5 0 01-1.5 1.5H9l-5 4v-4H5.5A1.5 1.5 0 014 14.5v-9z",
+  billing: CreditCard,
+  account: Settings,
+  friends: Users,
+  reminders: Timer,
+  registrations: ClipboardList,
+  bookings: Calendar,
+  announcements: Megaphone,
+  support: Headset,
 } as const;
 
 type CategoryKey = keyof typeof CATEGORY_ICONS;
@@ -183,18 +199,15 @@ function groupNotifications(notifications: NotificationRow[]): NotificationSecti
   return sections;
 }
 
-function CategoryIcon({ path }: { path: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden>
-      <path d={path} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 /** One notification, however it's reached: a top-level row or expanded out of a stack. Pulled out so both places render it identically. */
 function NotificationEntry({ notification, onClick }: { notification: NotificationRow; onClick: (n: NotificationRow) => void }) {
-  const itemClassName =
-    "flex w-full items-start gap-3 rounded-xl border border-ink/10 bg-surface px-4 py-3.5 text-left transition hover:bg-ink/5";
+  // Unread rows get a faint whole-row tint, not just the dot — a pattern
+  // borrowed from 21st.dev's Notification Panel reference, which reads
+  // better at a glance than a small dot alone once a list has more than a
+  // couple of rows.
+  const itemClassName = `flex w-full items-start gap-3 rounded-xl border border-ink/10 px-4 py-3.5 text-left transition hover:bg-ink/5 ${
+    notification.read ? "bg-surface" : "bg-[rgb(var(--c-s-50)/0.05)]"
+  }`;
   const inner = (
     <>
       <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${notification.read ? "bg-transparent" : "bg-[rgb(var(--c-s-50))]"}`} />
@@ -262,7 +275,10 @@ function NotificationGroup({
           className="relative flex w-full items-start gap-3 rounded-xl border border-ink/10 bg-surface px-4 py-3.5 text-left transition hover:bg-ink/5"
         >
           <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.12)] text-[rgb(var(--c-s-50))]">
-            <CategoryIcon path={CATEGORY_ICONS[categoryKey]} />
+            {(() => {
+              const Icon = CATEGORY_ICONS[categoryKey];
+              return <Icon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />;
+            })()}
           </span>
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2">
@@ -273,9 +289,11 @@ function NotificationGroup({
             <span className="mt-0.5 block truncate text-sm text-slate-500">{latest.title}</span>
             <span className="mt-1.5 block text-xs text-slate-600">{relativeTime(latest.createdAt)}</span>
           </span>
-          <svg viewBox="0 0 24 24" fill="none" className={`mt-1 h-4 w-4 shrink-0 text-slate-600 transition-transform ${expanded ? "rotate-90" : ""}`} aria-hidden>
-            <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <ChevronRight
+            className={`mt-1 h-4 w-4 shrink-0 text-slate-600 transition-transform ${expanded ? "rotate-90" : ""}`}
+            strokeWidth={1.75}
+            aria-hidden
+          />
         </button>
       </div>
 
@@ -290,19 +308,6 @@ function NotificationGroup({
   );
 }
 
-function BellIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
-      <path
-        d="M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-      <path d="M9.5 19.5a2.5 2.5 0 005 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
@@ -410,7 +415,7 @@ export function NotificationBell() {
         data-tour="notification-bell"
         className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-ink/10 bg-surface text-slate-400 transition hover:border-ink/15 hover:bg-ink/5 hover:text-slate-200"
       >
-        <BellIcon />
+        <Bell size={18} strokeWidth={1.5} />
         {unreadCount > 0 && (
           <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-slate-950">
             {unreadCount > 9 ? "9+" : unreadCount}
@@ -440,9 +445,7 @@ export function NotificationBell() {
                     aria-label="Back"
                     className="flex h-9 w-9 items-center justify-center rounded-lg border border-ink/10 text-slate-300 transition hover:border-ink/15 hover:bg-ink/5"
                   >
-                    <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
-                      <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    <ArrowLeft size={18} strokeWidth={1.75} />
                   </button>
                   <div>
                     <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Inbox</p>
@@ -452,8 +455,9 @@ export function NotificationBell() {
                     <button
                       type="button"
                       onClick={handleMarkAllRead}
-                      className="ml-auto text-xs text-[rgb(var(--c-s-50))] transition hover:opacity-70"
+                      className="ml-auto inline-flex items-center gap-1.5 text-xs text-[rgb(var(--c-s-50))] transition hover:opacity-70"
                     >
+                      <CheckCheck size={14} strokeWidth={2} />
                       Mark all read
                     </button>
                   )}
@@ -463,15 +467,7 @@ export function NotificationBell() {
                   {notifications.length === 0 ? (
                     <div className="flex flex-col items-center gap-3 pt-20 text-center">
                       <span className="flex h-14 w-14 items-center justify-center rounded-full border border-ink/10 text-slate-600">
-                        <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
-                          <path
-                            d="M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5z"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinejoin="round"
-                          />
-                          <path d="M9.5 19.5a2.5 2.5 0 005 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                        </svg>
+                        <Bell size={24} strokeWidth={1.5} />
                       </span>
                       <p className="text-sm font-medium text-slate-400">You&apos;re all caught up — no notifications yet.</p>
                       <Link
