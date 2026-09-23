@@ -1,41 +1,65 @@
 import type { Metadata, Viewport } from "next";
-import { Sora, Baloo_2, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { Providers } from "./providers";
 import { LOGGED_OUT_THEME, THEME_BOOT_SCRIPT, themeGroundColor } from "@/lib/themes";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
-// Display and body are two different families now, by direct instruction
-// to study a real competitor's design (pianote.com) and match its
-// energy: a bold, rounded, friendly display face for headlines, not the
-// single geometric-sans-for-everything system this replaces. Baloo 2 is
-// the real, freely-licensed Google Font closest to that same rounded,
-// heavy-weight character (not pianote.com's own actual typeface, which
-// isn't reproduced here: this is an equivalent in the same spirit, the
-// same distinction this whole redesign pass draws between copying a
-// design's real content vs. its structural/visual style). Sora stays for
-// body copy, which wants to stay quiet and readable underneath a heavier
-// display face, not compete with it.
-const baloo = Baloo_2({
-  subsets: ["latin"],
+// Self-hosted (next/font/local), not next/font/google — by direct
+// instruction, after `next/font/google` repeatedly failed CI builds with
+// "Cannot read properties of null (reading '1')" inside Next's own Google
+// Fonts loader: a network hiccup fetching font metadata from
+// fonts.googleapis.com during `next build`, on GitHub Actions' own runners,
+// unrelated to anything in this app's code. Self-hosting removes the
+// network dependency from the build entirely — the exact same font files
+// Google would have served, just vendored into the repo once instead of
+// fetched on every build.
+//
+// Each of these three files is the one, single variable-weight woff2 file
+// Google Fonts' own CSS2 API already serves for EVERY weight of its family
+// (confirmed directly: requesting Baloo 2's 500/600/700/800 — or Sora's
+// 300-700, or JetBrains Mono's 400/500 — from
+// https://fonts.googleapis.com/css2 returns the identical latin-subset URL
+// for every weight requested, because each is a real variable font with a
+// wght axis wide enough to cover them: Baloo 2 400-800, Sora 100-800,
+// JetBrains Mono 400-800). So this isn't four separate static downloads
+// standing in for next/font/google's four weight requests, it's the same
+// one shared file next/font/google was already silently reusing under the
+// hood — `weight` is omitted below (not a fixed array) for exactly that
+// reason: a variable font supplies every weight in its axis range from one
+// file, which is also why this is smaller total payload than vendoring a
+// separate static file per weight would have been.
+//
+// Display and body are two different families, by direct instruction to
+// study a real competitor's design (pianote.com) and match its energy: a
+// bold, rounded, friendly display face for headlines, not the single
+// geometric-sans-for-everything system this replaces. Baloo 2 is the real,
+// freely-licensed Google Font closest to that same rounded, heavy-weight
+// character (not pianote.com's own actual typeface, which isn't reproduced
+// here). Sora stays for body copy, which wants to stay quiet and readable
+// underneath a heavier display face, not compete with it.
+const baloo = localFont({
+  src: "./fonts/Baloo2-Variable.woff2",
   variable: "--font-display",
-  weight: ["500", "600", "700", "800"],
+  weight: "500 800",
+  display: "swap",
 });
-const body = Sora({
-  subsets: ["latin"],
+const body = localFont({
+  src: "./fonts/Sora-Variable.woff2",
   variable: "--font-body",
-  weight: ["300", "400", "500", "600", "700"],
+  weight: "300 700",
+  display: "swap",
 });
 
 // The marketing pages' label voice — eyebrows, scale degrees, formulas, key
 // names. System mono resolves to SF Mono / Consolas / DejaVu depending on the
 // visitor's OS, which is three different designs for what is a signature
-// element of the marketing surface. Two weights only, so the cost stays to a
-// single woff2 subset.
-const mono = JetBrains_Mono({
-  subsets: ["latin"],
+// element of the marketing surface.
+const mono = localFont({
+  src: "./fonts/JetBrainsMono-Variable.woff2",
   variable: "--font-mono",
-  weight: ["400", "500"],
+  weight: "400 500",
+  display: "swap",
 });
 
 // Tints iOS/Android browser chrome (the strip around the address bar, and
