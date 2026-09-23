@@ -6,6 +6,10 @@ import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { Home, CalendarCheck, Users, MessageSquare, Settings, type LucideIcon } from "lucide-react";
 import { Dock, DockIcon, DockItem } from "@/components/ui/dock";
+import { fetchUnreadMessageCountAction } from "@/app/(dashboard)/notification-actions";
+
+// Same 30s cadence as NotificationBell's own poll, which this mirrors.
+const POLL_INTERVAL_MS = 30_000;
 
 // Swapped from the hand-drawn NavIcon/ICON_PATHS set (still used elsewhere —
 // see navIcons.tsx) to lucide-react for this dock specifically, by direct
@@ -119,7 +123,7 @@ const NAV_ITEMS = [
  * from under them), OnboardingTour spotlighting one of its icons, and
  * `!autoHideEnabled` itself (touch devices and reduced-motion).
  */
-export function AppDock({ unreadMessageCount }: AppDockProps) {
+export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDockProps) {
   const pathname = usePathname();
   // -1 on a page that isn't any dock destination itself (a scale's own
   // lesson page, say) — the per-item spotlight below treats that as "no
@@ -128,6 +132,52 @@ export function AppDock({ unreadMessageCount }: AppDockProps) {
   const activeIndex = NAV_ITEMS.findIndex((item) => pathname === item.href);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
+
+  // Seeded from the layout's own server-rendered count (no flash of 0 on
+  // first paint), then kept fresh client-side — this badge used to be that
+  // static prop alone, which only ever changed on a full re-run of the
+  // dashboard layout's data fetch (a hard reload), not a client-side route
+  // change within it. Reported live: reading every message in /messages
+  // left the dock's badge showing the old count until a manual refresh.
+  // Same 30s-poll-plus-visibilitychange shape as NotificationBell's own
+  // unread count, and additionally refetched on every pathname change
+  // (below) so leaving /messages after reading something updates it
+  // immediately rather than waiting out the rest of the interval.
+  const [unreadMessageCount, setUnreadMessageCount] = useState(initialUnreadMessageCount);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function refresh() {
+      try {
+        const count = await fetchUnreadMessageCountAction();
+        if (!cancelled) setUnreadMessageCount(count);
+      } catch (err) {
+        // Same non-blocking posture as NotificationBell's own poll — a
+        // backgrounded tab killing this request mid-flight is routine, and
+        // the next poll or pathname change just tries again.
+        console.error("Unread message count refresh failed (non-blocking, will retry):", err);
+      }
+    }
+
+    refresh();
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") refresh();
+    }, POLL_INTERVAL_MS);
+
+    function handleVisibility() {
+      if (document.visibilityState === "visible") refresh();
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+    // Deliberately re-runs on every pathname change (not just mount) — see
+    // the comment above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   // Auto-hide is a desktop-with-a-real-mouse thing only, by direct
   // instruction. iPad and phone keep the dock solid, and this is computed
@@ -227,41 +277,14 @@ export function AppDock({ unreadMessageCount }: AppDockProps) {
 
   return (
     <>
-      {/* Every card app-wide sits at `--c-surface-solid` (a lighter "raised"
-          tone, by design — the same one the dock's own comments contrast
-          against) on top of the plain `--c-s-950` page ground. Whatever the
-          visitor happens to have scrolled to the bottom of the page is just
-          as likely to be one of those lighter cards as it is plain ground —
-          the roadmap's own "current step" card among them — and the dock
-          floating directly on top of a lighter card edge, in its own forced
-          pure black (see the override below), reads as a hard, unintended
-          seam of mismatched dark greys: reported live as "a different shade
-          of dark grey" right at the bottom. This doesn't touch either color
-          (cards keep their normal elevation everywhere else; the dock stays
-          pure black) — it just fades whatever's approaching the dock's own
-          floating zone back to the page's own ground tone first, so the
-          dock only ever meets that, never a lighter card straight-on.
-          Ground-token-based, not a hardcoded black, since Editorial Paper's
-          ground is a light cream — a fade to black there would be its own,
-          worse mismatch.
-
-          Shrunk from h-52 down to h-20, and given a mid-stop instead of a
-          flat linear fade: at the original height, a straight linear
-          gradient stays visibly close to full ground-color for a good
-          portion of its own height, so on any page whose last card happens
-          to end within that tall a band (a long admin table, a full
-          message thread, anything reaching near the bottom), it read as
-          its own distinct dark rectangle sitting under the dock instead of
-          a gentle blend, reported live as the dock being "on a dark grey
-          rectangle" on those screens while looking like it was "freely in
-          the sky" on shorter ones with nothing nearby to darken. A shorter
-          band with an eased curve reaches transparent much sooner, so it
-          only ever softens a genuinely hard, close seam instead of tinting
-          a wide swath of whatever content happens to sit above it. */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-30 h-20 bg-gradient-to-t from-[rgb(var(--c-s-950))] via-[rgb(var(--c-s-950)/0.35)] to-transparent"
-      />
+      {/* No fade/blur band behind the dock anymore — by direct instruction,
+          the dock is meant to be the one thing freely floating above the
+          page, full stop. An earlier version of this file painted a
+          ground-toned gradient (then a blurred one) behind it to soften the
+          seam where a lighter card's edge met the dock's own forced-black
+          bar; on a phone's short viewport that band itself read as a
+          separate solid/hazy bar sitting under the dock rather than the
+          dock floating cleanly, which is exactly what this removes. */}
       <div
         role="navigation"
         aria-label="Primary"

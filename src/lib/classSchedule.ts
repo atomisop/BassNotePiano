@@ -36,7 +36,13 @@ export const CANCELLATION_CUTOFF_HOURS = 24;
 // this exact same rolling window auto-booked for a Payment Plan's reserved
 // slot, not just "next week" — the same horizon a student sees, kept
 // actually booked rather than just displayed.
-export const OCCURRENCES_PER_SLOT = 4;
+//
+// Raised from 4 to 8 weeks (one month to two) by direct instruction — a
+// student planning around work/school travel couldn't book more than four
+// weeks out, and a Payment Plan subscriber's own reservation window was
+// exactly as short, both real friction for anyone trying to lock in a
+// schedule further ahead than that.
+export const OCCURRENCES_PER_SLOT = 8;
 const ET_ZONE = "America/New_York";
 
 // ---------------------------------------------------------------------------
@@ -1243,6 +1249,187 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
   });
 
   return { refunded: true };
+}
+
+/**
+ * Self-service reschedule — by direct instruction, the one real gap in
+ * solo booking: moving a class used to mean cancel, then separately go
+ * re-book a different open slot, two round trips with a real risk of
+ * losing the old slot's credit hold before the new one is confirmed. This
+ * does both atomically: same >=CANCELLATION_CUTOFF_HOURS eligibility as
+ * cancelClassBooking (an inside-24h reschedule still isn't self-service,
+ * same reasoning — message us instead), then the target slot goes through
+ * the exact same capacity/reserved-plan/one-class-a-day/credit checks
+ * bookClass's own transaction runs, minus the Payment Plan self-book block
+ * (a plan subscriber's ad hoc bookings, as opposed to their standing
+ * reserved slot — see changeReservedSlot in paymentPlans.ts for that one —
+ * are still fair game here) since this is explicitly a *move*, not a new
+ * booking layered on top of an existing one.
+ *
+ * The old booking's own credits are treated as already freed for the
+ * purposes of the new slot's credit check (excluded from the "pending"
+ * sum, same idea as cancelClassBooking never actually charging anything),
+ * so a straight swap never requires more balance than the student already
+ * had reserved. Both the cancel and the new booking happen inside one
+ * Serializable transaction — a partial "old slot freed, new slot never
+ * claimed" outcome would be strictly worse than the plain two-step flow
+ * this replaces.
+ */
+export async function rescheduleClassBooking(
+  studentId: string,
+  bookingId: string,
+  newScheduleId: string,
+  newOccurrenceDateMs: number,
+  newChunkIndex: number,
+  newCreditsToBook?: number,
+) {
+  const oldBooking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
+  if (oldBooking.studentId !== studentId) throw new ClassBookingError("Not your booking.");
+  if (oldBooking.status !== "SCHEDULED") throw new ClassBookingError("This booking isn't active.");
+  if (oldBooking.reservedByPlanId) {
+    throw new ClassBookingError("Your weekly class is set by your payment plan — change your reserved day from the Lessons page instead.");
+  }
+
+  const hoursUntil = (oldBooking.scheduledAt.getTime() - Date.now()) / 3_600_000;
+  if (hoursUntil < CANCELLATION_CUTOFF_HOURS) {
+    throw new ClassBookingError(
+      `Too close to class time to reschedule yourself (inside ${CANCELLATION_CUTOFF_HOURS} hours) — message us and we'll help.`,
+    );
+  }
+
+  const newSchedule = await prisma.classSchedule.findUniqueOrThrow({ where: { id: newScheduleId } });
+  if (!newSchedule.active) throw new ClassBookingError("This class is no longer offered.");
+  const chunk = chunksForSchedule(newSchedule)[newChunkIndex];
+  if (!chunk) throw new ClassBookingError("That time slot doesn't exist.");
+
+  const maxCredits = Math.min(chunk.creditCost, SOLO_MAX_CREDITS);
+  const credits = newCreditsToBook ?? maxCredits;
+  if (!Number.isInteger(credits) || credits < 1 || credits > maxCredits) {
+    throw new ClassBookingError(`Choose between 1 and ${maxCredits} credits for this class.`);
+  }
+
+  const newOccurrenceDate = new Date(newOccurrenceDateMs);
+  const newScheduledAt = computeScheduledAt(newSchedule, newOccurrenceDate, chunk);
+  if (newScheduledAt.getTime() <= Date.now()) {
+    throw new ClassBookingError("That class has already started or passed.");
+  }
+  if (
+    newScheduleId === oldBooking.scheduleId &&
+    newOccurrenceDate.getTime() === oldBooking.occurrenceDate.getTime() &&
+    newScheduledAt.getTime() === oldBooking.scheduledAt.getTime()
+  ) {
+    throw new ClassBookingError("That's already your booked time.");
+  }
+
+  await assertRateLimit(
+    prisma.classBooking.count,
+    { studentId },
+    { windowMinutes: 60, max: 20, message: "You're rescheduling too fast — please wait a bit and try again." },
+  );
+
+  let newBooking;
+  try {
+    newBooking = await prisma.$transaction(
+      async (tx) => {
+        const takenByAnyone = await tx.classBooking.findFirst({
+          where: { scheduleId: newScheduleId, occurrenceDate: newOccurrenceDate, scheduledAt: newScheduledAt, status: "SCHEDULED" },
+        });
+        if (takenByAnyone && takenByAnyone.studentId !== studentId) {
+          throw new ClassBookingError("This time was just booked by someone else — pick another slot.");
+        }
+
+        const reservedByOtherPlan = await tx.paymentPlan.findFirst({
+          where: { reservedScheduleId: newScheduleId, reservedChunkIndex: newChunkIndex, userId: { not: studentId }, OR: livePaymentPlanConditions() },
+          select: { id: true },
+        });
+        if (reservedByOtherPlan) {
+          throw new ClassBookingError("This time is reserved for another student's payment plan.");
+        }
+
+        // Excludes both the target schedule (self-rebook idiom, same as
+        // bookClass) and the old booking being replaced — this is a move,
+        // not a second class on the same day.
+        const otherBookingSameDay = await tx.classBooking.findFirst({
+          where: {
+            studentId,
+            occurrenceDate: newOccurrenceDate,
+            status: "SCHEDULED",
+            NOT: [{ scheduleId: newScheduleId }, { id: oldBooking.id }],
+          },
+          select: { id: true },
+        });
+        if (otherBookingSameDay) {
+          throw new ClassBookingError("You can only book one class per day, message support if you need a second class on the same day.");
+        }
+
+        const [user, pendingOthers] = await Promise.all([
+          tx.user.findUniqueOrThrow({ where: { id: studentId }, select: { classCredits: true } }),
+          tx.classBooking.aggregate({
+            where: { studentId, status: "SCHEDULED", NOT: { id: oldBooking.id } },
+            _sum: { creditsSpent: true },
+          }),
+        ]);
+        const available = user.classCredits - (pendingOthers._sum.creditsSpent ?? 0);
+        if (available < credits) {
+          throw new ClassBookingError(
+            `You need ${credits} credit${credits === 1 ? "" : "s"} available — you have ${available} free right now.`,
+          );
+        }
+
+        await tx.classBooking.update({ where: { id: oldBooking.id }, data: { status: "CANCELED", refunded: true } });
+
+        // Same reuse-a-CANCELED-row idiom bookClass uses — this also
+        // transparently covers "same schedule, different time," since
+        // canceling the old booking above just made this exact
+        // (studentId, scheduleId, occurrenceDate) key available to reuse.
+        const existingTarget = await tx.classBooking.findUnique({
+          where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId: newScheduleId, occurrenceDate: newOccurrenceDate } },
+        });
+
+        if (existingTarget) {
+          return tx.classBooking.update({
+            where: { id: existingTarget.id },
+            data: {
+              status: "SCHEDULED",
+              scheduledAt: newScheduledAt,
+              creditsSpent: credits,
+              attendance: null,
+              refunded: false,
+              canceledReason: null,
+              familyBookingGroupId: null,
+            },
+          });
+        }
+
+        return tx.classBooking.create({
+          data: { studentId, scheduleId: newScheduleId, occurrenceDate: newOccurrenceDate, scheduledAt: newScheduledAt, creditsSpent: credits },
+        });
+      },
+      { isolationLevel: "Serializable" },
+    );
+  } catch (err) {
+    if (err instanceof ClassBookingError) throw err;
+    if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2002") {
+      throw new ClassBookingError("You've already booked this class.");
+    }
+    if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2034") {
+      throw new ClassBookingError("That slot was just taken — try again.");
+    }
+    throw err;
+  }
+
+  await createNotification({
+    userId: studentId,
+    type: "LESSON_BOOKING_CANCELED",
+    title: "Class rescheduled",
+    body: `Your class moved to ${newScheduledAt.toLocaleString()} — no credits were charged for the change.`,
+    emailCategory: "social",
+  });
+  notifyAdminsOfBooking(studentId, newSchedule, newScheduledAt, credits).catch((err) =>
+    console.error("Admin reschedule notification failed (non-blocking):", err),
+  );
+
+  return newBooking;
 }
 
 // ---------------------------------------------------------------------------
