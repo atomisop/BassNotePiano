@@ -21,12 +21,10 @@ export function LessonVideoPlayer({
   src,
   title,
   subtitle,
-  onEnded,
 }: {
   src: string;
   title: string;
   subtitle: string;
-  onEnded: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -171,10 +169,13 @@ export function LessonVideoPlayer({
           onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
-          onEnded={() => {
-            setPlaying(false);
-            onEnded();
-          }}
+          // Reaching the end of playback no longer auto-completes the
+          // lesson — only the explicit "Mark as complete" button in
+          // CoursePlayer does that now. A student rewatching, scrubbing
+          // past the end, or leaving it playing in the background
+          // shouldn't silently advance their progress; finishing the
+          // video is a cue to check it off, not the checkoff itself.
+          onEnded={() => setPlaying(false)}
           onClick={togglePlay}
         />
 

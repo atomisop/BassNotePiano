@@ -37,13 +37,14 @@ const SCALE_STEP = 0.2;
  * ships (see next.config.mjs), since that directive exists specifically to
  * block <object>/<embed>/<applet>.
  *
- * "Opened" still fires once, but now on the Document's actual first
- * successful render (onLoadSuccess) rather than unconditionally on mount —
- * a truer match for what "opened this PDF" means than firing before the
- * PDF has necessarily loaded at all.
+ * Loading/rendering the PDF does NOT mark the lesson complete — only the
+ * explicit "Mark as complete" button in CoursePlayer does that. This used
+ * to fire completion itself as soon as the PDF successfully rendered
+ * (onLoadSuccess), which meant just opening a PDF — without reading a word
+ * of it — silently checked it off. Rendering is now purely presentational;
+ * CoursePlayer owns the completion decision entirely.
  */
-export function LessonPdfPlayer({ src, title, onOpened }: { src: string; title: string; onOpened: () => void }) {
-  const firedRef = useRef(false);
+export function LessonPdfPlayer({ src, title }: { src: string; title: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [numPages, setNumPages] = useState<number | null>(null);
@@ -66,10 +67,6 @@ export function LessonPdfPlayer({ src, title, onOpened }: { src: string; title: 
   function handleLoadSuccess({ numPages: total }: { numPages: number }) {
     setNumPages(total);
     setPageNumber(1);
-    if (!firedRef.current) {
-      firedRef.current = true;
-      onOpened();
-    }
   }
 
   if (loadError) {

@@ -205,19 +205,19 @@ export function CoursePlayer({
         </div>
 
         <div className="glass-surface-elevated p-2 sm:p-4">
+          {/* Neither player marks the lesson complete on its own anymore —
+              finishing a video or opening a PDF used to auto-complete it
+              (silently, before the student had necessarily engaged with
+              the content at all, for a PDF). The "Mark as complete" button
+              below is now the only path to completion for either type. */}
           {lesson.type === "VIDEO" ? (
             <LessonVideoPlayer
               src={lesson.fileUrl}
               title={lesson.title}
               subtitle={`${scaleGroup.code} — ${scaleGroup.title}`}
-              onEnded={() => handleLessonComplete(view.index)}
             />
           ) : (
-            <LessonPdfPlayer
-              src={lesson.fileUrl}
-              title={lesson.title}
-              onOpened={() => handleLessonComplete(view.index)}
-            />
+            <LessonPdfPlayer src={lesson.fileUrl} title={lesson.title} />
           )}
         </div>
 
