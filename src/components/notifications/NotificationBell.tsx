@@ -308,13 +308,26 @@ function NotificationGroup({
         </button>
       </div>
 
-      {expanded && (
-        <div className="mt-2 space-y-2 border-l-2 border-ink/10 pl-3">
-          {items.map((n) => (
-            <NotificationEntry key={n.id} notification={n} onClick={onItemClick} />
-          ))}
-        </div>
-      )}
+      {/* Was a plain conditional render — instant, no transition at all,
+          which read as a snap/cut rather than something opening. Animates
+          height + opacity now so expanding a stack visibly unfolds. */}
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="mt-2 space-y-2 border-l-2 border-ink/10 pl-3">
+              {items.map((n) => (
+                <NotificationEntry key={n.id} notification={n} onClick={onItemClick} />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
