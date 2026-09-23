@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import type { PublicQuizQuestion, QuizAnswerSubmission } from "@/lib/quiz";
 import { CountUpNumber } from "@/components/ui/CountUpNumber";
@@ -25,15 +26,10 @@ export interface QuizModalProps {
 
 type Step = "question" | "submitting" | "result";
 
-const backdropVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1 },
-};
-
 const panelVariants = {
-  hidden: { opacity: 0, y: 24, scale: 0.96 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", bounce: 0, duration: 0.32 } },
-  exit: { opacity: 0, y: 16, scale: 0.97, transition: { duration: 0.15, ease: "easeIn" } },
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.2 } },
+  exit: { opacity: 0, transition: { duration: 0.15, ease: "easeIn" } },
 };
 
 const stepVariants = {
@@ -48,6 +44,14 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
   const [selections, setSelections] = useState<Record<string, number>>({});
   const [result, setResult] = useState<{ passed: boolean; score: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Rendered via a portal onto document.body (below) rather than in place —
+  // the dashboard's page-enter animation puts a `transform` on an ancestor,
+  // which turns `position: fixed` into "fixed to that ancestor" instead of
+  // the viewport, the same containing-block gotcha this app's own
+  // page-enter CSS comment documents for the marketing header. Without the
+  // portal the app header bleeds through above a "fullscreen" quiz.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const current = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
@@ -97,57 +101,46 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
     setStep("question");
   }
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="quiz-modal-title"
+          variants={panelVariants}
           initial="hidden"
           animate="visible"
-          exit="hidden"
+          exit="exit"
+          className="fixed inset-0 z-50 overflow-y-auto bg-[rgb(var(--c-surface-solid))]"
         >
-          <motion.div
-            variants={backdropVariants}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-scrim/60"
-            onClick={handleClose}
-          />
+          {step === "result" && result?.passed && <SuccessGlowPulse />}
+          <div className="h-1 w-full bg-gradient-to-r from-[rgb(var(--c-s-300)/0.4)] via-[rgb(var(--c-s-50))] to-[rgb(var(--c-s-300)/0.4)]" />
 
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="quiz-modal-title"
-            variants={panelVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="glass-surface-modal relative w-full max-w-md overflow-hidden"
-          >
-            {step === "result" && result?.passed && <SuccessGlowPulse />}
-            <div className="h-1 w-full bg-gradient-to-r from-[rgb(var(--c-s-300)/0.4)] via-[rgb(var(--c-s-50))] to-[rgb(var(--c-s-300)/0.4)]" />
-
-            <div className="px-6 pb-6 pt-5">
-              <div className="mb-5 flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
-                    Scale-Spelling Quiz
-                  </p>
-                  <h2 id="quiz-modal-title" className="mt-1 font-serif text-lg text-slate-50">
-                    {scaleTitle}
-                  </h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  disabled={step === "submitting"}
-                  aria-label="Close"
-                  className="rounded-full p-1 text-slate-400 transition hover:bg-slate-800 hover:text-slate-100 disabled:opacity-40"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
-                  </svg>
-                </button>
+          <div className="mx-auto w-full max-w-xl px-6 pb-16 pt-8 sm:pt-12">
+            <div className="mb-8 flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+                  Scale-Spelling Quiz
+                </p>
+                <h2 id="quiz-modal-title" className="mt-1 font-serif text-2xl text-slate-50">
+                  {scaleTitle}
+                </h2>
               </div>
+              <button
+                type="button"
+                onClick={handleClose}
+                disabled={step === "submitting"}
+                aria-label="Close"
+                className="rounded-full p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-slate-100 disabled:opacity-40"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
 
               <AnimatePresence mode="wait">
                 {(step === "question" || step === "submitting") && current && (
@@ -295,9 +288,9 @@ export function QuizModal({ isOpen, onClose, scaleTitle, questions, onSubmit, pa
                 )}
               </AnimatePresence>
             </div>
-          </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
