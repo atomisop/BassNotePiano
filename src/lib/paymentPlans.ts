@@ -305,8 +305,8 @@ const feedbackInclude = {
 export type PlanCancellationFeedback = Prisma.PaymentPlanGetPayload<{ include: typeof feedbackInclude }>;
 
 /**
- * Every self-canceled plan that left a reason, newest first, for
- * /admin/feedback. cancellationReason is only ever set by
+ * Every self-canceled plan that left a reason, newest first, for the
+ * Feedback tab of /admin/payment-plans. cancellationReason is only ever set by
  * cancelPaymentPlanBySelf above, so this never surfaces an admin
  * cancellation (cancellationNote, a distinct field, is that one's own
  * free-text and stays admin-only, out of scope for this reader).
@@ -562,7 +562,7 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
 /**
  * Self-service cancellation from /account. Unlike the admin path above, a
  * student always has to pick a reason (see PlanCancellationReason in
- * schema.prisma), required so /admin/feedback has something real to read,
+ * schema.prisma), required so the Feedback tab of /admin/payment-plans has something real to read,
  * not an empty note nobody bothered filling in. canceledById is set to the
  * student's own id, same field an admin cancellation uses for "who acted,"
  * a plan's history reads the same way regardless of who did it.
@@ -624,7 +624,7 @@ export async function cancelPaymentPlanBySelf(
         userId: admin.id,
         type: "PLAN_CANCELLATION_FEEDBACK",
         title: "A student canceled their plan",
-        body: `${describePaymentPlan(plan.cadence, plan.term)} was self-canceled. See /admin/feedback for their reason.`,
+        body: `${describePaymentPlan(plan.cadence, plan.term)} was self-canceled. See Payment Plans → Feedback for their reason.`,
       }),
     ),
   );

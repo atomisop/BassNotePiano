@@ -76,8 +76,8 @@ type CancelStage = "idle" | "downgrade-offer" | "reason" | "canceling";
  * Upgrade, or Downgrade against the plan's own term, by direct instruction.
  * Canceling a TERM_6/TERM_12 plan offers a downgrade to TERM_3 first,
  * also by direct instruction, before the reason picker that's required
- * either way (9 options, OTHER needs its own explanation) so /admin/feedback
- * has something real to read.
+ * either way (9 options, OTHER needs its own explanation) so the Feedback
+ * tab of /admin/payment-plans has something real to read.
  */
 export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: ManageSubscriptionsProps) {
   const router = useRouter();

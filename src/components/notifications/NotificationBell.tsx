@@ -62,7 +62,7 @@ function notificationHref(type: string): string | null {
     case "ASSISTANT_ESCALATION":
       return "/admin/support";
     case "PLAN_CANCELLATION_FEEDBACK":
-      return "/admin/feedback";
+      return "/admin/payment-plans?status=FEEDBACK";
     case "PAYMENT_PLAN_INSTALLMENT_DUE":
     case "PAYMENT_PLAN_INSTALLMENT_OVERDUE":
     case "PAYMENT_PLAN_COMPLETED":

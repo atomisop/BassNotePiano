@@ -29,6 +29,19 @@ function cellTooltip(cell: AdminProgressScaleCell): string {
   return parts.join(" · ");
 }
 
+// Same relative-time formatting the old /admin/roster page's table used —
+// carried over rather than dropped now that its "last active" figure lives
+// in this sticky column instead of its own table.
+function relativeDays(ms: number | null): string {
+  if (ms === null) return "Never";
+  const days = Math.floor((Date.now() - ms) / 86_400_000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 30) return `${days}d ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
+}
+
 export function ProgressMatrix({ rows, initialQuery, onToggleScale }: ProgressMatrixProps) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
@@ -121,6 +134,14 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale }: ProgressMa
                         Full profile →
                       </Link>
                     </div>
+                    {/* Folded in from the old, now-removed /admin/roster
+                        table — same four figures a teacher used to check on
+                        a separate page, now sitting right next to the
+                        per-scale detail they summarize. */}
+                    <p className="mt-1.5 whitespace-nowrap text-[11px] tabular-nums text-slate-500">
+                      {row.scalesCompleted}/{row.scales.length} scales · {row.currentStreak}-day streak ·{" "}
+                      {row.classCredits} credit{row.classCredits === 1 ? "" : "s"} · {relativeDays(row.lastActivityAt)}
+                    </p>
                   </td>
                   {row.scales.map((cell) => {
                     const key = `${row.id}:${cell.slug}`;

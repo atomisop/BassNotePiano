@@ -101,63 +101,12 @@ export async function getOverviewTrends(months = 6): Promise<OverviewTrends> {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Student roster — one sortable row per student
-// ---------------------------------------------------------------------------
-
-export interface StudentRosterRow {
-  id: string;
-  name: string;
-  email: string;
-  hasCurriculumAccess: boolean;
-  scalesCompleted: number;
-  classCredits: number;
-  currentStreak: number;
-  /** ms since epoch, or null. A number so the table can sort it. */
-  lastActivityAt: number | null;
-  joinedAt: number;
-}
-
-/**
- * Every student, with the handful of figures a teacher actually scans for.
- *
- * Admins are excluded — this is the roster of people being taught, and mixing
- * staff accounts into it makes counts like "how many students have curriculum
- * access" wrong.
- *
- * scalesCompleted is counted from ScaleProgress rows with status COMPLETED
- * rather than stored on the user, so it can't drift from the checklist the
- * student actually sees.
- */
-export async function getStudentRoster(): Promise<StudentRosterRow[]> {
-  const users = await prisma.user.findMany({
-    where: { role: "STUDENT" },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      hasCurriculumAccess: true,
-      classCredits: true,
-      currentStreak: true,
-      lastActivityDate: true,
-      createdAt: true,
-      progress: { where: { status: "COMPLETED" }, select: { id: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return users.map((u) => ({
-    id: u.id,
-    name: u.name ?? "—",
-    email: u.email,
-    hasCurriculumAccess: u.hasCurriculumAccess,
-    scalesCompleted: u.progress.length,
-    classCredits: u.classCredits,
-    currentStreak: u.currentStreak,
-    lastActivityAt: u.lastActivityDate ? u.lastActivityDate.getTime() : null,
-    joinedAt: u.createdAt.getTime(),
-  }));
-}
+// Student roster (name/email/curriculum/scales/credits/streak/last-active
+// per student) used to live here as its own /admin/roster page — folded
+// into /admin/progress instead (see AdminProgressRow/getAdminProgressOverview
+// below), by direct instruction, since it was the exact same student list
+// with the exact same summary figures, just missing the per-scale detail
+// the Progress page already had.
 
 export interface ModuleHealthRow {
   slug: string;
@@ -251,6 +200,11 @@ export interface AdminProgressRow {
   name: string | null;
   email: string;
   hasCurriculumAccess: boolean;
+  /** Folded in from the old, now-removed /admin/roster page — same figures a teacher used to check there, in the same row as the scale-by-scale detail. */
+  classCredits: number;
+  currentStreak: number;
+  lastActivityAt: number | null;
+  scalesCompleted: number;
   scales: AdminProgressScaleCell[];
 }
 
@@ -279,7 +233,16 @@ export async function getAdminProgressOverview(query: string): Promise<AdminProg
         : {}),
     },
     orderBy: { createdAt: "desc" },
-    include: { progress: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      hasCurriculumAccess: true,
+      classCredits: true,
+      currentStreak: true,
+      lastActivityDate: true,
+      progress: true,
+    },
     take: 200,
   });
 
@@ -288,6 +251,10 @@ export async function getAdminProgressOverview(query: string): Promise<AdminProg
     name: user.name,
     email: user.email,
     hasCurriculumAccess: user.hasCurriculumAccess,
+    classCredits: user.classCredits,
+    currentStreak: user.currentStreak,
+    lastActivityAt: user.lastActivityDate ? user.lastActivityDate.getTime() : null,
+    scalesCompleted: user.progress.filter((p) => p.status === "COMPLETED").length,
     scales: scaleGroups.map((sg) => {
       const row = user.progress.find((p) => p.scaleGroupId === sg.id);
       return {
