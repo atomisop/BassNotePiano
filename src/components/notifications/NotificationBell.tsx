@@ -47,6 +47,8 @@ function notificationHref(type: string): string | null {
     case "PRACTICE_REMINDER":
     case "CURRICULUM_ACCESS_GRANTED":
       return "/dashboard";
+    case "CURRICULUM_ACCESS_REVOKED":
+      return "/billing/curriculum";
     case "CLASS_REGISTRATION_RECEIVED":
     case "CLASS_REGISTRATION_APPROVED":
     case "CLASS_REGISTRATION_REJECTED":
@@ -121,6 +123,7 @@ const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>
   PAYMENT_APPROVED: { key: "billing", label: "Billing" },
   PAYMENT_REJECTED: { key: "billing", label: "Billing" },
   CURRICULUM_ACCESS_GRANTED: { key: "billing", label: "Billing" },
+  CURRICULUM_ACCESS_REVOKED: { key: "billing", label: "Billing" },
   CREDIT_ADJUSTED: { key: "billing", label: "Billing" },
   PAYMENT_PLAN_INSTALLMENT_DUE: { key: "billing", label: "Billing" },
   PAYMENT_PLAN_INSTALLMENT_OVERDUE: { key: "billing", label: "Billing" },
