@@ -56,7 +56,7 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   // booking a makeup class, not reviewing plan/payment status.
   CREDITS_EXPIRING_SOON: { label: "Book a class", url: getAppUrl("/lessons"), kind: "notice" },
   RESERVED_SLOT_UNAVAILABLE: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "notice" },
-  PLAN_CANCELLATION_FEEDBACK: { label: "Read feedback", url: getAppUrl("/admin/feedback"), kind: "default" },
+  PLAN_CANCELLATION_FEEDBACK: { label: "Read feedback", url: getAppUrl("/admin/payment-plans?status=FEEDBACK"), kind: "default" },
   // /dashboard, not PAYMENT_APPROVED's own /billing/history: a curriculum
   // family bundle recipient never paid anything themselves, so their own
   // billing history has nothing to do with this, the roadmap they can now

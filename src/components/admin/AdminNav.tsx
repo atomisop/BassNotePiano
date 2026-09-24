@@ -3,20 +3,25 @@
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
+// Trimmed from 15 items to this, by direct instruction ("too many buttons"):
+// Messages removed entirely (it was just this admin's own personal DM
+// inbox, the exact same feature every signed-in user already has via the
+// main app dock — never an admin tool, just also listed here). Feedback
+// folded into Payment Plans as a filter tab there (same PaymentPlan rows,
+// not a separate concern). Roster folded into Progress, which now shows
+// the same credits/streak/last-active figures right next to the per-scale
+// detail they used to sit apart from.
 const NAV_ITEMS = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/payments", label: "Payments" },
   { href: "/admin/payment-plans", label: "Payment Plans" },
-  { href: "/admin/feedback", label: "Feedback" },
   { href: "/admin/bookings", label: "Bookings" },
   { href: "/admin/schedule", label: "Schedule" },
   { href: "/admin/students", label: "Students" },
-  { href: "/admin/roster", label: "Roster" },
   { href: "/admin/progress", label: "Progress" },
   { href: "/admin/lessons", label: "Lessons" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/credits", label: "Credits" },
-  { href: "/admin/messages", label: "Messages" },
   { href: "/admin/support", label: "Support Chat" },
   { href: "/admin/announcements", label: "Announcements" },
 ];

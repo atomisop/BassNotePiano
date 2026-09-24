@@ -18,7 +18,7 @@ export interface MessageReactionRow {
   emoji: string;
 }
 
-/** Shared by both the student (/messages) and admin (/admin/messages) actions files — their exported MessageRow types match this shape structurally. */
+/** Matches /messages's own actions file's exported MessageRow type shape structurally. */
 export interface MessageRow {
   id: string;
   senderId: string;
