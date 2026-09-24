@@ -52,7 +52,7 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
           Review pending payments{stats.pendingPayments > 0 ? ` (${stats.pendingPayments})` : ""} →
         </Link>
         <Link
-          href="/admin/bookings"
+          href="/admin/schedule?view=ATTENDANCE"
           className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
         >
           Lesson bookings →

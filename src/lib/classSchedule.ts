@@ -4,7 +4,7 @@ import { createNotification } from "@/lib/notifications";
 import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { getRoadmap, type ScaleAccessState } from "@/lib/access";
 import { resolveNextStep } from "@/lib/next-step";
-import { drawDownCredits } from "@/lib/creditLedger";
+import { drawDownCredits, recordCreditGrant } from "@/lib/creditLedger";
 import { PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 
 export class ClassBookingError extends Error {}
@@ -1498,6 +1498,39 @@ export interface AdminOccurrenceGroup {
 
 const ADMIN_ROSTER_WINDOW_DAYS = 60;
 
+export interface PendingAttendanceRow {
+  bookingId: string;
+  studentName: string | null;
+  studentEmail: string;
+  scheduleLabel: string | null;
+  scheduledAt: Date;
+}
+
+/**
+ * Just the bookings actually needing a Present/No-show call right now —
+ * SCHEDULED and already in the past — for the TopBar's own quick-attendance
+ * panel. Deliberately its own light query rather than reusing
+ * getAdminOccurrences below: that one does a full 60-day window plus a
+ * per-student roadmap lookup for the whole Schedule page's roster view,
+ * far more than a small polled topbar badge needs on every refresh.
+ */
+export async function getPendingAttendanceBookings(limit = 20): Promise<PendingAttendanceRow[]> {
+  const bookings = await prisma.classBooking.findMany({
+    where: { status: "SCHEDULED", scheduledAt: { lte: new Date() } },
+    include: { student: { select: { name: true, email: true } }, schedule: { select: { label: true } } },
+    orderBy: { scheduledAt: "asc" },
+    take: limit,
+  });
+
+  return bookings.map((b) => ({
+    bookingId: b.id,
+    studentName: b.student.name,
+    studentEmail: b.student.email,
+    scheduleLabel: b.schedule.label,
+    scheduledAt: b.scheduledAt,
+  }));
+}
+
 /** Every occurrence with at least one non-canceled booking, in the recent-past-to-future window, newest first. */
 export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
   const windowStart = new Date(Date.now() - ADMIN_ROSTER_WINDOW_DAYS * 86_400_000);
@@ -1594,6 +1627,46 @@ export async function markAttendance(bookingId: string, attendance: AttendanceSt
   if (!alreadyCharged) {
     await drawDownCredits(booking.studentId, booking.creditsSpent);
   }
+}
+
+/**
+ * Fully reverses a mistaken attendance mark — not just correcting Present
+ * vs. No-show (markAttendance's own re-mark path already handles that,
+ * with no credit change either way, since both charge identically), but
+ * undoing the charge itself: back to SCHEDULED, attendance cleared, and
+ * the credit actually refunded. By direct instruction, after "this costs
+ * real credits, I want it to be reversible" — marking attendance was a
+ * one-way door before this, with no way back from a wrong call short of a
+ * manual admin credit adjustment on the separate Credits page.
+ *
+ * Only valid from COMPLETED — nothing to undo from any other status. The
+ * refund records a fresh, non-expiring CreditGrant (same ADMIN_ADJUSTMENT
+ * source and "never expires" shape adjustUserCredits' own positive-amount
+ * path already uses) rather than trying to resurrect whatever grant the
+ * original charge drew down from, which drawDownCredits doesn't track
+ * precisely enough to reverse — same "best-effort ledger, not a perfect
+ * mirror of the real balance" trade-off creditLedger.ts's own file header
+ * already documents.
+ */
+export async function undoAttendance(bookingId: string): Promise<void> {
+  const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
+  if (booking.status !== "COMPLETED") {
+    throw new ClassBookingError("This booking isn't marked yet — nothing to undo.");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.classBooking.update({ where: { id: bookingId }, data: { status: "SCHEDULED", attendance: null } });
+    await tx.user.update({ where: { id: booking.studentId }, data: { classCredits: { increment: booking.creditsSpent } } });
+  });
+  await recordCreditGrant(booking.studentId, booking.creditsSpent, { source: "ADMIN_ADJUSTMENT", expiresAt: null });
+
+  await createNotification({
+    userId: booking.studentId,
+    type: "CREDIT_ADJUSTED",
+    title: `${booking.creditsSpent} class credit${booking.creditsSpent === 1 ? "" : "s"} refunded`,
+    body: "An admin corrected an attendance mark on your account — this class is back on your schedule and the credit was refunded.",
+    emailCategory: "payments",
+  }).catch((err) => console.error(`Failed to notify user ${booking.studentId} of attendance-undo refund (non-blocking):`, err));
 }
 
 /**

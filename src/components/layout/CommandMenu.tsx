@@ -102,7 +102,7 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
             <CommandItem value="admin lessons upload" onSelect={() => go("/admin/lessons")}>
               Lesson content
             </CommandItem>
-            <CommandItem value="admin bookings roster" onSelect={() => go("/admin/bookings")}>
+            <CommandItem value="admin bookings roster schedule" onSelect={() => go("/admin/schedule?view=ATTENDANCE")}>
               Class bookings
             </CommandItem>
           </CommandGroup>

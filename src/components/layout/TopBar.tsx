@@ -3,6 +3,7 @@ import { Shield } from "lucide-react";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { AdminAttendanceQuickPanel } from "@/components/admin/AdminAttendanceQuickPanel";
 import { ProfileMenu } from "./ProfileMenu";
 import { BrandMark } from "./BrandMark";
 
@@ -75,6 +76,12 @@ export function TopBar({ isAdmin }: { isAdmin: boolean }) {
             <Shield className="h-[18px] w-[18px]" strokeWidth={1.5} />
           </Link>
         )}
+        {/* Quick Present/No-show from anywhere, by direct instruction — the
+            full roster at Schedule → Attendance still exists for
+            history/cancellation, this is just the fast path for the one
+            everyday action (mark today's classes) without a full admin-page
+            navigation first. */}
+        {isAdmin && <AdminAttendanceQuickPanel />}
         <NotificationBell />
         <ProfileAvatarLink />
       </div>

@@ -37,7 +37,7 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   CLASS_REGISTRATION_RECEIVED: { label: "Review registration", url: getAppUrl("/admin/students"), kind: "default" },
   CLASS_REGISTRATION_APPROVED: { label: "Go to your dashboard", url: getAppUrl("/dashboard"), kind: "default" },
   CLASS_REGISTRATION_REJECTED: { label: "View details", url: getAppUrl("/dashboard"), kind: "notice" },
-  LESSON_BOOKING_RECEIVED: { label: "Review booking", url: getAppUrl("/admin/bookings"), kind: "default" },
+  LESSON_BOOKING_RECEIVED: { label: "Review booking", url: getAppUrl("/admin/schedule?view=ATTENDANCE"), kind: "default" },
   LESSON_BOOKING_CANCELED: { label: "View your bookings", url: getAppUrl("/lessons"), kind: "notice" },
   ANNOUNCEMENT: { label: "See announcement", url: getAppUrl("/dashboard"), kind: "default" },
   CREDIT_ADJUSTED: { label: "View your credits", url: getAppUrl("/lessons"), kind: "default" },

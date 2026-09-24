@@ -292,15 +292,25 @@ export interface BookableStudent {
  * every signed-up user into a picker before the admin has typed anything
  * isn't useful the way it is on the dedicated Users page.
  */
+/**
+ * Empty query now returns a browsable default list (most recently active
+ * first) instead of nothing — by direct instruction, after "finding
+ * someone requires remembering their exact name or email" feedback on the
+ * manual-booking tool. Same "empty means show something useful, not
+ * nothing" convention searchUsersForCredits already uses on the Credits
+ * page, just ordered by lastActivityDate instead of createdAt: an admin
+ * helping with a booking issue is almost always looking for someone who
+ * was just active (mid-conversation about it right now), not a brand-new
+ * signup.
+ */
 export async function searchStudentsForBooking(query: string): Promise<BookableStudent[]> {
   const trimmed = query.trim();
-  if (!trimmed) return [];
 
   const users = await prisma.user.findMany({
-    where: {
-      OR: [{ email: { contains: trimmed, mode: "insensitive" } }, { name: { contains: trimmed, mode: "insensitive" } }],
-    },
-    orderBy: { name: "asc" },
+    where: trimmed
+      ? { OR: [{ email: { contains: trimmed, mode: "insensitive" } }, { name: { contains: trimmed, mode: "insensitive" } }] }
+      : undefined,
+    orderBy: trimmed ? { name: "asc" } : [{ lastActivityDate: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
     select: { id: true, name: true, email: true, hasCurriculumAccess: true, classCredits: true },
     take: 20,
   });

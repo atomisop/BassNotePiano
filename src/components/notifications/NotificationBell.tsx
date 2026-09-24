@@ -54,7 +54,7 @@ function notificationHref(type: string): string | null {
     case "CLASS_REGISTRATION_REJECTED":
       return "/admin/students";
     case "LESSON_BOOKING_RECEIVED":
-      return "/admin/bookings";
+      return "/admin/schedule?view=ATTENDANCE";
     case "LESSON_BOOKING_CANCELED":
       return "/lessons";
     case "ANNOUNCEMENT":
