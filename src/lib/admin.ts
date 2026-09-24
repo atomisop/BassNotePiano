@@ -370,11 +370,36 @@ export async function getSupportContactId(): Promise<string | null> {
   return admin?.id ?? null;
 }
 
+/**
+ * Admin manual grant/revoke of curriculum access — direct from /admin/users
+ * or a student's own profile there, entirely separate from the normal paid
+ * unlock flow (approveZellePayment's CURRICULUM/CURRICULUM_FAMILY_BUNDLE
+ * branches). That flow already notifies (PAYMENT_APPROVED, and
+ * CURRICULUM_ACCESS_GRANTED for a family-bundle recipient who never paid
+ * themselves) — this manual path had no notification at all until now, so
+ * a student granted access this way had no way to find out short of
+ * happening to revisit the dashboard and noticing scales were unlocked.
+ * Reuses the same CURRICULUM_ACCESS_GRANTED type the bundle-recipient path
+ * already uses; revoke gets its own message rather than silently reusing a
+ * "granted" type for the opposite event.
+ */
 export async function setCurriculumAccess(userId: string, hasAccess: boolean) {
-  return prisma.user.update({
+  const user = await prisma.user.update({
     where: { id: userId },
     data: hasAccess
       ? { hasCurriculumAccess: true, curriculumUnlockedAt: new Date() }
       : { hasCurriculumAccess: false, curriculumUnlockedAt: null },
   });
+
+  await createNotification({
+    userId,
+    type: hasAccess ? "CURRICULUM_ACCESS_GRANTED" : "CURRICULUM_ACCESS_REVOKED",
+    title: hasAccess ? "Curriculum unlocked" : "Curriculum access removed",
+    body: hasAccess
+      ? "You now have lifetime access to every scale in the curriculum."
+      : "Your curriculum access was removed. Message support if this looks wrong.",
+    emailCategory: "payments",
+  }).catch((err) => console.error(`Failed to notify user ${userId} of curriculum access change (non-blocking):`, err));
+
+  return user;
 }
