@@ -4,7 +4,7 @@ import { getCustomerProfile } from "@/lib/adminCustomer";
 import { CustomerProfile } from "@/components/admin/CustomerProfile";
 import { setCurriculumAccessAction, toggleScaleUnlockAction, clearAssistantHistoryAction, setUserRoleAction } from "../actions";
 import { adjustUserCreditsAction } from "../../credits/actions";
-import { adminCancelBookingAction } from "../../bookings/actions";
+import { adminCancelBookingAction } from "../../schedule/actions";
 import { adminForceSignOutAction } from "./actions";
 
 export default async function AdminCustomerPage({ params }: { params: { userId: string } }) {

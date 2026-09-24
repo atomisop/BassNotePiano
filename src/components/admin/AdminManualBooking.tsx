@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatDateTime } from "@/lib/classScheduleLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
@@ -61,16 +61,27 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  async function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    if (!query.trim()) return;
+  // Live, as-you-type, debounced — no more "remember their exact name or
+  // email and hit search." An empty query still runs (see
+  // searchStudentsForBooking's own comment): it's what populates the
+  // initial browsable list on mount and again any time the field is
+  // cleared, so there's always something to scroll through instead of a
+  // blank state waiting for input.
+  const searchSeq = useRef(0);
+  useEffect(() => {
+    if (student) return;
+    const seq = ++searchSeq.current;
     setSearching(true);
-    setError(null);
-    const found = await onSearchStudents(query);
-    setResults(found);
-    setSearched(true);
-    setSearching(false);
-  }
+    const timer = setTimeout(async () => {
+      const found = await onSearchStudents(query);
+      if (seq !== searchSeq.current) return; // a newer keystroke already superseded this request
+      setResults(found);
+      setSearched(true);
+      setSearching(false);
+    }, 250);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, student]);
 
   function pickStudent(s: BookableStudent) {
     setStudent(s);
@@ -116,38 +127,35 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
   return (
     <div className="glass-surface p-5 sm:p-6">
       <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">Book a student</p>
-      <p className="mt-1.5 text-sm text-slate-300">
-        For a booking issue you&apos;re helping someone with directly, find their account, pick an open time, and book it
-        for them. This works even for a student whose Payment Plan otherwise blocks self-booking.
-      </p>
 
       {success && <p className="mt-3 text-xs text-emerald-400">{success}</p>}
 
       {!student ? (
         <>
-          <form onSubmit={handleSearch} className="mt-4 flex gap-2">
+          <div className="relative mt-4">
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name or email"
-              className="glass-surface-subtle flex-1 rounded-lg px-3.5 py-2 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.5)]"
+              placeholder="Search by name or email, or just browse below"
+              className="glass-surface-subtle w-full rounded-lg px-3.5 py-2 pr-9 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.5)]"
             />
-            <button
-              type="submit"
-              disabled={searching || !query.trim()}
-              className="flex items-center justify-center rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {searching ? <MorphingSquare size={14} /> : "Search"}
-            </button>
-          </form>
+            {searching && (
+              <MorphingSquare size={14} className="absolute right-3 top-1/2 -translate-y-1/2 shrink-0" />
+            )}
+          </div>
 
-          {searched && results.length === 0 && (
-            <p className="mt-3 text-xs text-slate-500">No accounts match &quot;{query}&quot;.</p>
+          {searched && !searching && results.length === 0 && (
+            <p className="mt-3 text-xs text-slate-500">
+              {query.trim() ? `No accounts match "${query}".` : "No accounts yet."}
+            </p>
           )}
 
           {results.length > 0 && (
             <div className="mt-3 space-y-2">
+              <p className="text-[11px] uppercase tracking-wide text-slate-600">
+                {query.trim() ? "Matches" : "Recently active"}
+              </p>
               {results.map((s) => (
                 <button
                   key={s.id}

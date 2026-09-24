@@ -63,6 +63,7 @@ export interface AdminAttendanceRosterProps {
   occurrences: OccurrenceGroup[];
   onMarkAttendance: (bookingId: string, attendance: "PRESENT" | "NO_SHOW") => Promise<void>;
   onCancelBooking: (bookingId: string, reason?: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  onUndoAttendance: (bookingId: string) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
 function Avatar({ image, name }: { image: string | null; name: string }) {
@@ -80,18 +81,43 @@ function Avatar({ image, name }: { image: string | null; name: string }) {
   );
 }
 
-export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelBooking }: AdminAttendanceRosterProps) {
+export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelBooking, onUndoAttendance }: AdminAttendanceRosterProps) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // Which already-marked booking is showing its edit controls (re-pick
+  // Present/No-show, or undo the charge entirely) — by direct instruction,
+  // after "this costs real credits, I want it to be reversible." At most
+  // one row at a time, same single-thing-open-at-once idiom cancelingId
+  // already uses below.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [undoConfirmId, setUndoConfirmId] = useState<string | null>(null);
 
   async function handleMark(bookingId: string, attendance: "PRESENT" | "NO_SHOW") {
     setError(null);
     setBusyId(bookingId);
     try {
       await onMarkAttendance(bookingId, attendance);
+      setEditingId(null);
+      router.refresh();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleUndo(bookingId: string) {
+    setError(null);
+    setBusyId(bookingId);
+    try {
+      const result = await onUndoAttendance(bookingId);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setEditingId(null);
+      setUndoConfirmId(null);
       router.refresh();
     } finally {
       setBusyId(null);
@@ -169,14 +195,89 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                               </div>
                             </div>
 
-                            {entry.attendance ? (
-                              <span
-                                className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${
-                                  entry.attendance === "PRESENT" ? "bg-emerald-400/15 text-emerald-300" : "bg-red-400/15 text-red-400"
-                                }`}
-                              >
-                                {entry.attendance === "PRESENT" ? "Present" : "No-show"}
-                              </span>
+                            {entry.attendance && editingId !== entry.bookingId ? (
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${
+                                    entry.attendance === "PRESENT" ? "bg-emerald-400/15 text-emerald-300" : "bg-red-400/15 text-red-400"
+                                  }`}
+                                >
+                                  {entry.attendance === "PRESENT" ? "Present" : "No-show"}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setError(null);
+                                    setUndoConfirmId(null);
+                                    setEditingId(entry.bookingId);
+                                  }}
+                                  className="text-xs font-medium text-slate-500 underline underline-offset-2 transition hover:text-slate-300"
+                                >
+                                  Edit
+                                </button>
+                              </div>
+                            ) : entry.attendance && editingId === entry.bookingId ? (
+                              <div className="flex flex-col items-end gap-2">
+                                {undoConfirmId === entry.bookingId ? (
+                                  <div className="flex flex-wrap items-center justify-end gap-2 text-right">
+                                    <span className="text-xs text-amber-400/90">
+                                      Refund {entry.creditsSpent} credit{entry.creditsSpent === 1 ? "" : "s"} and put this
+                                      class back on the schedule?
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setUndoConfirmId(null)}
+                                      disabled={busyId === entry.bookingId}
+                                      className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                                    >
+                                      Never mind
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUndo(entry.bookingId)}
+                                      disabled={busyId === entry.bookingId}
+                                      className="flex items-center justify-center rounded-lg bg-amber-400/95 px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      {busyId === entry.bookingId && <MorphingSquare size={11} className="mr-1.5 shrink-0" />}
+                                      {busyId === entry.bookingId ? "Refunding…" : "Confirm undo & refund"}
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-wrap justify-end gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleMark(entry.bookingId, "PRESENT")}
+                                      disabled={busyId === entry.bookingId || entry.attendance === "PRESENT"}
+                                      className="rounded-lg border border-emerald-400/30 px-3 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-400/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                    >
+                                      Present
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleMark(entry.bookingId, "NO_SHOW")}
+                                      disabled={busyId === entry.bookingId || entry.attendance === "NO_SHOW"}
+                                      className="rounded-lg border border-red-400/30 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                    >
+                                      No-show
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setUndoConfirmId(entry.bookingId)}
+                                      disabled={busyId === entry.bookingId}
+                                      className="rounded-lg border border-amber-400/30 px-3 py-1.5 text-xs font-medium text-amber-400/90 transition hover:bg-amber-400/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      Undo &amp; refund
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingId(null)}
+                                      className="text-xs font-medium text-slate-500 underline underline-offset-2 transition hover:text-slate-300"
+                                    >
+                                      Done
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
                             ) : isCanceling ? null : (
                               <div className="flex flex-wrap gap-2">
                                 {canMarkAttendance && (
