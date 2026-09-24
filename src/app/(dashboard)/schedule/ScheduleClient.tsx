@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { ZellePaymentStatus } from "@prisma/client";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
@@ -8,6 +9,8 @@ import { Calendar } from "lucide-react";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { createExtraSessionPaymentAction, submitExtraSessionPaymentAction } from "./actions";
+import { getReservableSlotsForChangeAction, changeReservedSlotAction } from "../lessons/actions";
+import type { ReservableSlot } from "@/lib/classSchedule";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -85,9 +88,50 @@ export function ScheduleClient({
   upcomingBookings,
   openSlots,
 }: ScheduleClientProps) {
+  const router = useRouter();
   const [extraPayment, setExtraPayment] = useState<ExtraSessionPayment | null>(null);
   const [pendingSlotKey, setPendingSlotKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Self-service move of the standing weekly reservation — by direct
+  // instruction, replacing the previous "that's not self-service, message
+  // support" note entirely. Slots are fetched lazily on expand rather than
+  // on page load, same reasoning as PaymentPlanEnrollmentFlow's own
+  // cadence-driven slot fetch: nobody needs this list until they've said
+  // they actually want to change something.
+  const [changingTime, setChangingTime] = useState(false);
+  const [reservableSlots, setReservableSlots] = useState<ReservableSlot[] | null>(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [changingSlotKey, setChangingSlotKey] = useState<string | null>(null);
+  const [changeError, setChangeError] = useState<string | null>(null);
+  const [changeSuccess, setChangeSuccess] = useState(false);
+
+  async function openChangeTime() {
+    setChangingTime(true);
+    setChangeError(null);
+    setChangeSuccess(false);
+    if (reservableSlots !== null) return; // already loaded once this visit
+    setLoadingSlots(true);
+    const slots = await getReservableSlotsForChangeAction();
+    setLoadingSlots(false);
+    setReservableSlots(slots);
+  }
+
+  async function handleChangeTime(slot: ReservableSlot) {
+    const key = `${slot.scheduleId}:${slot.chunkIndex}`;
+    setChangingSlotKey(key);
+    setChangeError(null);
+    const result = await changeReservedSlotAction(slot.scheduleId, slot.chunkIndex);
+    setChangingSlotKey(null);
+    if (!result.ok) {
+      setChangeError(result.error);
+      return;
+    }
+    setChangeSuccess(true);
+    setChangingTime(false);
+    setReservableSlots(null); // force a fresh fetch next time — the slot just taken is no longer open
+    router.refresh(); // pulls the new weeklyTime/upcomingBookings server props (revalidatePath alone doesn't re-render an already-mounted page)
+  }
 
   // One click picks the time and starts the purchase in the same motion,
   // no separate "select a slot, then confirm" step, by direct instruction:
@@ -178,22 +222,83 @@ export function ScheduleClient({
           </div>
         )}
 
-        {/* Never a self-service reschedule action here, by direct
-            instruction: a Payment Plan's reserved weekly day/time is locked
-            in at enrollment and nothing in this app lets a student move it
-            themselves afterward. This note is what replaces that button,
-            not a placeholder for one. */}
-        <p className="mt-4 rounded-lg border border-ink/10 bg-slate-900/40 px-3.5 py-2.5 text-xs text-slate-500">
-          Need a different weekly day or time? That&apos;s not self-service.{" "}
-          {supportContactId ? (
-            <Link href={`/messages?with=${supportContactId}`} className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
-              Message support
-            </Link>
-          ) : (
-            "Message support"
-          )}{" "}
-          and we&apos;ll help with a change for that week.
-        </p>
+        {/* Self-service move of the standing weekly reservation — by direct
+            instruction, replacing the previous message-support-only note.
+            Changing your own recurring day/time used to be the one thing a
+            Payment Plan subscriber could never do without contacting
+            support at all; this is exactly that gap closed, gated the same
+            way solo self-reschedule is (a real open slot, no conflicts) via
+            changeReservedSlot. */}
+        {changeSuccess && (
+          <p className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/5 px-3.5 py-2.5 text-xs text-emerald-400">
+            Your weekly time changed — this week&apos;s class (and the weeks after it) now reflect the new day/time above.
+          </p>
+        )}
+
+        {changingTime ? (
+          <div className="mt-4 rounded-lg border border-ink/10 p-3.5">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-medium text-slate-300">Pick a new weekly time</p>
+              <button
+                type="button"
+                onClick={() => setChangingTime(false)}
+                className="text-xs font-medium text-slate-500 transition hover:text-slate-300"
+              >
+                Cancel
+              </button>
+            </div>
+            {changeError && <p className="mt-2 text-xs text-red-400">{changeError}</p>}
+            {loadingSlots ? (
+              <p className="mt-3 text-sm text-slate-500">Loading open times…</p>
+            ) : !reservableSlots || reservableSlots.length === 0 ? (
+              <p className="mt-3 text-sm text-slate-500">
+                Nothing open right now for your cadence.{" "}
+                {supportContactId ? (
+                  <Link href={`/messages?with=${supportContactId}`} className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
+                    Message support
+                  </Link>
+                ) : (
+                  "Message support"
+                )}{" "}
+                and we&apos;ll help you find one.
+              </p>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {reservableSlots.map((slot) => {
+                  const key = `${slot.scheduleId}:${slot.chunkIndex}`;
+                  const pending = changingSlotKey === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleChangeTime(slot)}
+                      disabled={changingSlotKey !== null}
+                      className="flex w-full items-center gap-2.5 rounded-lg border border-ink/10 px-3.5 py-2.5 text-left text-sm text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:bg-[rgb(var(--c-s-50)/0.06)] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {pending ? (
+                        <MorphingSquare size={15} className="shrink-0" />
+                      ) : (
+                        <Calendar className="h-[15px] w-[15px] shrink-0 text-slate-500" strokeWidth={1.5} />
+                      )}
+                      <span>
+                        {DAY_LABELS[slot.dayOfWeek]}s at {formatTimeLabel(slot.startTime)}
+                      </span>
+                      <span className="ml-auto text-xs font-medium text-[rgb(var(--c-s-50))]">{pending ? "Moving…" : "Choose"}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={openChangeTime}
+            className="mt-4 w-full rounded-lg border border-ink/10 bg-slate-900/40 px-3.5 py-2.5 text-left text-xs text-slate-400 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+          >
+            Need a different weekly day or time? Change it yourself →
+          </button>
+        )}
       </div>
 
       {/* Extra session */}

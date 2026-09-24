@@ -2,7 +2,14 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { bookClassAction, bookClassBundleAction, bookFamilyClassAction, checkFamilyClassAttendeesAction, cancelClassBookingAction } from "./actions";
+import {
+  bookClassAction,
+  bookClassBundleAction,
+  bookFamilyClassAction,
+  checkFamilyClassAttendeesAction,
+  cancelClassBookingAction,
+  rescheduleClassBookingAction,
+} from "./actions";
 import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { CheckIcon, XIcon } from "@/components/ui/icons";
@@ -108,21 +115,27 @@ function BookingCard({
   cancellationCutoffHours,
   supportContactId,
   cancelingId,
+  reschedulingBookingId,
   onCancel,
+  onStartReschedule,
 }: {
   booking: BookingRow;
   cancellationCutoffHours: number;
   supportContactId: string | null;
   cancelingId: string | null;
+  reschedulingBookingId: string | null;
   onCancel: (booking: BookingRow) => void;
+  onStartReschedule: (booking: BookingRow) => void;
 }) {
   const b = booking;
   const hoursUntil = (new Date(b.scheduledAt).getTime() - Date.now()) / 3_600_000;
-  // Self-cancel only exists >=24h out — inside that window there's
-  // no button at all (see cancelClassBooking), just a way to
-  // reach support for a manual, case-by-case call.
+  // Self-cancel and self-reschedule share the exact same >=24h eligibility
+  // (see cancelClassBooking / rescheduleClassBooking) — inside that window
+  // neither button shows, just a way to reach support for a manual,
+  // case-by-case call.
   const cancelEligible = b.status === "SCHEDULED" && hoursUntil >= cancellationCutoffHours;
   const pastSelfServeWindow = b.status === "SCHEDULED" && hoursUntil > 0 && hoursUntil < cancellationCutoffHours;
+  const isBeingRescheduled = reschedulingBookingId === b.id;
   return (
     <div className="glass-surface flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
@@ -146,6 +159,20 @@ function BookingCard({
         {b.status === "CANCELED" && <p className="mt-0.5 text-xs text-emerald-400">Canceled — no credits were charged</p>}
       </div>
       <div className="flex shrink-0 items-center gap-2">
+        {cancelEligible && (
+          <button
+            type="button"
+            onClick={() => onStartReschedule(b)}
+            disabled={cancelingId === b.id}
+            className={`flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              isBeingRescheduled
+                ? "border-[rgb(var(--c-s-50)/0.4)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
+                : "border-ink/10 text-slate-300 hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+            }`}
+          >
+            {isBeingRescheduled ? "Picking new time…" : "Reschedule"}
+          </button>
+        )}
         {cancelEligible && (
           <button
             type="button"
@@ -191,14 +218,18 @@ function MonthGroup({
   cancellationCutoffHours,
   supportContactId,
   cancelingId,
+  reschedulingBookingId,
   onCancel,
+  onStartReschedule,
 }: {
   group: { key: string; label: string; bookings: BookingRow[] };
   defaultOpen: boolean;
   cancellationCutoffHours: number;
   supportContactId: string | null;
   cancelingId: string | null;
+  reschedulingBookingId: string | null;
   onCancel: (booking: BookingRow) => void;
+  onStartReschedule: (booking: BookingRow) => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
@@ -223,7 +254,9 @@ function MonthGroup({
               cancellationCutoffHours={cancellationCutoffHours}
               supportContactId={supportContactId}
               cancelingId={cancelingId}
+              reschedulingBookingId={reschedulingBookingId}
               onCancel={onCancel}
+              onStartReschedule={onStartReschedule}
             />
           ))}
         </div>
@@ -308,6 +341,13 @@ export function ClassBookingClient({
   const [mode, setMode] = useState<BookingMode>("SOLO");
   const [bookingKey, setBookingKey] = useState<string | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
+  // Set by tapping "Reschedule" on an upcoming booking — while set, the
+  // "Book" button on every open slot below turns into "Move here," picking
+  // it as this booking's new time instead of adding a separate one. Only
+  // one reschedule is ever in flight at a time, same single-slot-in-progress
+  // idiom familyRowKey already uses below.
+  const [reschedulingBooking, setReschedulingBooking] = useState<BookingRow | null>(null);
+  const [reschedulingKey, setReschedulingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   // Set by clicking a lit day in BookingCalendar — narrows the list below to
@@ -499,6 +539,66 @@ export function ClassBookingClient({
     // nothing was charged yet (see cancelClassBookingAction).
     setCredits((c) => c + booking.creditsSpent);
     setSuccess("Canceled — no credits were charged.");
+  }
+
+  function startReschedule(booking: BookingRow) {
+    setError(null);
+    setSuccess(null);
+    // Toggling the same booking's button again cancels the in-progress pick
+    // rather than restarting it — same as clicking a lit calendar day twice.
+    setReschedulingBooking((prev) => (prev?.id === booking.id ? null : booking));
+    setMode("SOLO");
+    setSelectedKeys(new Set());
+    setFamilyRowKey(null);
+  }
+
+  async function handleReschedule(row: OccurrenceRow) {
+    if (!reschedulingBooking) return;
+    const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
+    const chosen = creditsFor(row);
+    const oldBooking = reschedulingBooking;
+    setError(null);
+    setSuccess(null);
+    setReschedulingKey(key);
+    const result = await rescheduleClassBookingAction(oldBooking.id, row.scheduleId, row.occurrenceDateMs, row.chunkIndex, chosen);
+    setReschedulingKey(null);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    setReschedulingBooking(null);
+    markRowBooked(row.scheduleId, row.occurrenceDateMs, row.chunkIndex);
+    // The old slot is free again — it may be the exact same schedule+day as
+    // the new one (a same-day time change), which markRowBooked above just
+    // (re)marked booked regardless, so this only touches a genuinely
+    // different old slot.
+    setRows((prev) =>
+      prev.map((r) =>
+        r.scheduledAt === oldBooking.scheduledAt && !(r.scheduleId === row.scheduleId && r.occurrenceDateMs === row.occurrenceDateMs && r.chunkIndex === row.chunkIndex)
+          ? { ...r, isBooked: false }
+          : r,
+      ),
+    );
+    setBookings((prev) => [
+      {
+        id: result.id,
+        label: row.label,
+        scheduledAt: row.scheduledAt,
+        creditsSpent: chosen,
+        status: "SCHEDULED",
+        refunded: false,
+        attendance: null,
+        canceledReason: null,
+      },
+      ...prev.filter((b) => b.id !== oldBooking.id),
+    ]);
+    // The old slot's held credits are released and the new one's are held
+    // instead — only a net change if the two differ in length (e.g. moving
+    // from a 30-min slot to a 60-min one).
+    setCredits((c) => c + oldBooking.creditsSpent - chosen);
+    setSuccess("Rescheduled — you're on the new time.");
   }
 
   function openFamilyBooking(row: OccurrenceRow) {
@@ -704,6 +804,24 @@ export function ClassBookingClient({
         </div>
       )}
 
+      {reschedulingBooking && (
+        <div className="glass-surface-elevated mt-8 flex flex-wrap items-center justify-between gap-4 p-5">
+          <div>
+            <p className="text-sm font-medium text-slate-100">
+              Rescheduling {reschedulingBooking.label ?? "your class"} — {formatDateTime(reschedulingBooking.scheduledAt)}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-500">Pick a new open time below. Nothing changes until you choose one.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setReschedulingBooking(null)}
+            className="shrink-0 text-xs font-medium text-slate-500 transition hover:text-slate-300"
+          >
+            Cancel reschedule
+          </button>
+        </div>
+      )}
+
       <div className="mt-8">
         <div className="mb-3 flex items-baseline justify-between gap-3">
           <h2 className="font-serif text-lg text-slate-100">
@@ -740,12 +858,22 @@ export function ClassBookingClient({
                   {group.rows.map((row) => {
                     const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
                     const chosen = creditsFor(row);
-                    const insufficientCredits = credits < chosen;
-                    const disabled = row.isBooked || insufficientCredits || bookingKey !== null || bundleSubmitting;
+                    // While rescheduling, the credits the old booking is
+                    // still holding (client-side — nothing's actually freed
+                    // until the swap commits) are added back for this check
+                    // only, since the real backend check treats them the
+                    // same way: freed by the same move, not double-spent.
+                    const effectiveCredits = reschedulingBooking ? credits + reschedulingBooking.creditsSpent : credits;
+                    const insufficientCredits = effectiveCredits < chosen;
+                    const isCurrentRescheduleSlot =
+                      reschedulingBooking !== null && row.scheduledAt === reschedulingBooking.scheduledAt;
+                    const disabled = reschedulingBooking
+                      ? row.isBooked || insufficientCredits || reschedulingKey !== null
+                      : row.isBooked || insufficientCredits || bookingKey !== null || bundleSubmitting;
                     const isSelected = selectedKeys.has(key);
                     return (
                       <div key={key} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-6">
-                        {mode === "SOLO" && (
+                        {mode === "SOLO" && !reschedulingBooking && (
                           <input
                             type="checkbox"
                             checked={isSelected}
@@ -770,9 +898,31 @@ export function ClassBookingClient({
                           )}
                         </div>
                         <p className="shrink-0 text-xs tabular-nums text-slate-500 sm:w-20 sm:text-right">
-                          {row.isBooked ? <span className="text-red-400">Booked</span> : "Available"}
+                          {isCurrentRescheduleSlot ? (
+                            <span className="text-[rgb(var(--c-s-50))]">Current time</span>
+                          ) : row.isBooked ? (
+                            <span className="text-red-400">Booked</span>
+                          ) : (
+                            "Available"
+                          )}
                         </p>
-                        {mode === "SOLO" ? (
+                        {reschedulingBooking ? (
+                          <button
+                            type="button"
+                            onClick={() => handleReschedule(row)}
+                            disabled={disabled}
+                            className="flex shrink-0 items-center justify-center rounded-lg border border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-xs font-semibold text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
+                          >
+                            {reschedulingKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                            {reschedulingKey === key
+                              ? "Moving…"
+                              : isCurrentRescheduleSlot
+                                ? "Current time"
+                                : insufficientCredits
+                                  ? "Not enough credits"
+                                  : "Move here"}
+                          </button>
+                        ) : mode === "SOLO" ? (
                           <button
                             type="button"
                             onClick={() => handleBook(row)}
@@ -815,7 +965,9 @@ export function ClassBookingClient({
                 cancellationCutoffHours={cancellationCutoffHours}
                 supportContactId={supportContactId}
                 cancelingId={cancelingId}
+                reschedulingBookingId={reschedulingBooking?.id ?? null}
                 onCancel={handleCancel}
+                onStartReschedule={startReschedule}
               />
             ))}
           </div>
@@ -843,7 +995,9 @@ export function ClassBookingClient({
                 cancellationCutoffHours={cancellationCutoffHours}
                 supportContactId={supportContactId}
                 cancelingId={cancelingId}
+                reschedulingBookingId={reschedulingBooking?.id ?? null}
                 onCancel={handleCancel}
+                onStartReschedule={startReschedule}
               />
             ))}
           </div>

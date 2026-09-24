@@ -44,6 +44,7 @@ export async function toggleScaleUnlockAction(targetUserId: string, scaleSlug: s
     await lockScaleForUser(targetUserId, scaleSlug);
   }
   revalidatePath("/admin/users");
+  revalidatePath("/admin/progress");
   revalidatePath("/admin");
 }
 

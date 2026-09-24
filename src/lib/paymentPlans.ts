@@ -1,7 +1,14 @@
 import { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason, type Prisma, type PaymentPlanStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { calculatePaymentPlanRate, describePaymentPlan, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
-import { chunksForSchedule, livePaymentPlanConditions, nextOccurrenceDates, computeScheduledAt, OCCURRENCES_PER_SLOT } from "@/lib/classSchedule";
+import {
+  chunksForSchedule,
+  livePaymentPlanConditions,
+  nextOccurrenceDates,
+  computeScheduledAt,
+  createReservedBookingIfAbsent,
+  OCCURRENCES_PER_SLOT,
+} from "@/lib/classSchedule";
 import { createNotification } from "@/lib/notifications";
 
 export class PaymentPlanError extends Error {}
@@ -436,6 +443,120 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
       termMonths: rate.termMonths,
     },
   });
+}
+
+/**
+ * Self-service reschedule of a Payment Plan subscriber's own standing
+ * weekly slot — by direct instruction, the one big piece of Payment Plan
+ * self-service that never existed: bookClass refuses a subscriber's ad hoc
+ * self-booking entirely (see its own comment), so up to now the only way to
+ * move a standing reservation to a different day/time was messaging support.
+ * Same conflict-checking shape as createPaymentPlan's own enrollment-time
+ * check (another live plan already holding this exact chunk, or a
+ * pre-existing ordinary ClassBooking on one of its upcoming occurrences),
+ * run inside one Serializable transaction for the same reason: this is a
+ * scarce weekly resource two people could otherwise both grab at once.
+ *
+ * Effective immediately, not just from the next scheduled-job run: this
+ * cancels the student's own still-SCHEDULED future bookings tied to the OLD
+ * reserved slot (freeing it for someone else right away, same no-charge
+ * shape as cancelClassBooking — nothing was ever actually charged against a
+ * SCHEDULED-but-not-yet-attended booking) and immediately books the NEW
+ * slot's own upcoming occurrences via createReservedBookingIfAbsent, the
+ * exact same building block payment-plan-reservations.ts's daily job calls
+ * — so a student doesn't wait up to 24h to see their new day/time actually
+ * reflected in their upcoming classes.
+ */
+export async function changeReservedSlot(userId: string, newScheduleId: string, newChunkIndex: number) {
+  const { plan, chunk, schedule } = await prisma.$transaction(
+    async (tx) => {
+      const plan = await tx.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
+      if (!plan) throw new PaymentPlanError("You don't have an active payment plan.");
+      if (!plan.reservedScheduleId || plan.reservedChunkIndex === null) {
+        throw new PaymentPlanError("Your plan doesn't have a reserved slot yet — message us and we'll help.");
+      }
+      if (plan.reservedScheduleId === newScheduleId && plan.reservedChunkIndex === newChunkIndex) {
+        throw new PaymentPlanError("That's already your weekly time.");
+      }
+
+      const schedule = await tx.classSchedule.findUniqueOrThrow({ where: { id: newScheduleId } });
+      if (!schedule.active) throw new PaymentPlanError("That class time is no longer offered — pick another.");
+      const chunk = chunksForSchedule(schedule)[newChunkIndex];
+      if (!chunk) throw new PaymentPlanError("That time slot doesn't exist.");
+      const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence];
+      if (chunk.creditCost < creditsPerWeek) {
+        throw new PaymentPlanError("That time slot is too short for this cadence.");
+      }
+
+      const reservedByAnother = await tx.paymentPlan.findFirst({
+        where: { reservedScheduleId: newScheduleId, reservedChunkIndex: newChunkIndex, userId: { not: userId }, OR: livePaymentPlanConditions() },
+        select: { id: true },
+      });
+      if (reservedByAnother) throw new PaymentPlanError("That slot was just taken — try again.");
+
+      const occurrenceDates = nextOccurrenceDates(schedule.dayOfWeek, OCCURRENCES_PER_SLOT);
+      const conflictingBooking = await tx.classBooking.findFirst({
+        where: {
+          scheduleId: newScheduleId,
+          status: "SCHEDULED",
+          studentId: { not: userId },
+          OR: occurrenceDates.map((occurrenceDate) => ({ occurrenceDate, scheduledAt: computeScheduledAt(schedule, occurrenceDate, chunk) })),
+        },
+        select: { id: true },
+      });
+      if (conflictingBooking) {
+        throw new PaymentPlanError("Someone already has a booking on one of this slot's upcoming weeks — pick another time.");
+      }
+
+      // Frees the old slot right away — same no-charge cancellation as
+      // cancelClassBooking, just triggered by the reservation moving rather
+      // than the student canceling one class at a time.
+      await tx.classBooking.updateMany({
+        where: { studentId: userId, reservedByPlanId: plan.id, status: "SCHEDULED", scheduledAt: { gt: new Date() } },
+        data: { status: "CANCELED", refunded: true },
+      });
+
+      const updatedPlan = await tx.paymentPlan.update({
+        where: { id: plan.id },
+        data: { reservedScheduleId: newScheduleId, reservedChunkIndex: newChunkIndex },
+      });
+
+      return { plan: updatedPlan, chunk, schedule };
+    },
+    { isolationLevel: "Serializable" },
+  );
+
+  // Best-effort, one occurrence at a time, same non-blocking posture as the
+  // daily maintenance job this mirrors — a hiccup on one week doesn't fail
+  // the reschedule itself (the plan's new reservedScheduleId/
+  // reservedChunkIndex already committed above); the next day's job run
+  // would catch up on whatever this loop missed regardless.
+  for (const occurrenceDate of nextOccurrenceDates(schedule.dayOfWeek, OCCURRENCES_PER_SLOT)) {
+    const scheduledAt = computeScheduledAt(schedule, occurrenceDate, chunk);
+    if (scheduledAt.getTime() <= Date.now()) continue;
+    try {
+      await createReservedBookingIfAbsent({
+        studentId: userId,
+        scheduleId: newScheduleId,
+        occurrenceDate,
+        scheduledAt,
+        creditsSpent: chunk.creditCost,
+        planId: plan.id,
+      });
+    } catch (err) {
+      console.error(`changeReservedSlot: failed to book occurrence ${occurrenceDate.toISOString()} for plan ${plan.id} (non-blocking, next daily run will catch up):`, err);
+    }
+  }
+
+  await createNotification({
+    userId,
+    type: "RESERVED_SLOT_CHANGED",
+    title: "Your weekly class time changed",
+    body: "Your standing weekly class moved to a new day/time — check Lessons for your updated schedule.",
+    emailCategory: "payments",
+  }).catch((err) => console.error("RESERVED_SLOT_CHANGED notification failed (non-blocking):", err));
+
+  return plan;
 }
 
 /**

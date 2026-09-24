@@ -9,9 +9,14 @@ import {
   bookFamilyClass,
   checkFamilyClassAttendees,
   cancelClassBooking,
+  rescheduleClassBooking,
+  getReservableSlots,
   ClassBookingError,
   type BundleBookingSelection,
+  type ReservableSlot,
 } from "@/lib/classSchedule";
+import { changeReservedSlot, getActivePaymentPlan, PaymentPlanError } from "@/lib/paymentPlans";
+import { PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import { RateLimitError } from "@/lib/rateLimit";
 
 export async function bookClassAction(scheduleId: string, occurrenceDateMs: number, chunkIndex: number, creditsToBook?: number) {
@@ -74,5 +79,48 @@ export async function cancelClassBookingAction(bookingId: string) {
     return { ok: true as const, refunded: result.refunded };
   } catch (err) {
     return { ok: false as const, error: err instanceof ClassBookingError || err instanceof RateLimitError ? err.message : "Something went wrong." };
+  }
+}
+
+export async function rescheduleClassBookingAction(
+  bookingId: string,
+  newScheduleId: string,
+  newOccurrenceDateMs: number,
+  newChunkIndex: number,
+  newCreditsToBook?: number,
+) {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/lessons");
+
+  try {
+    const booking = await rescheduleClassBooking(session.user.id, bookingId, newScheduleId, newOccurrenceDateMs, newChunkIndex, newCreditsToBook);
+    revalidatePath("/lessons");
+    return { ok: true as const, id: booking.id, scheduledAt: booking.scheduledAt.toISOString() };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof ClassBookingError || err instanceof RateLimitError ? err.message : "Something went wrong." };
+  }
+}
+
+/** Every open slot the caller's own active plan could move its reservation to — empty if they have no active plan. */
+export async function getReservableSlotsForChangeAction(): Promise<ReservableSlot[]> {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/lessons");
+
+  const plan = await getActivePaymentPlan(session.user.id);
+  if (!plan) return [];
+  return getReservableSlots(PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
+}
+
+/** Payment Plan subscriber's own self-service move of their standing weekly slot — see changeReservedSlot's own comment. */
+export async function changeReservedSlotAction(newScheduleId: string, newChunkIndex: number) {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/lessons");
+
+  try {
+    await changeReservedSlot(session.user.id, newScheduleId, newChunkIndex);
+    revalidatePath("/lessons");
+    return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof PaymentPlanError ? err.message : "Something went wrong." };
   }
 }
