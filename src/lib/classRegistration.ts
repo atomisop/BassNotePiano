@@ -1,3 +1,5 @@
+import { startTrialForEmail } from "@/lib/entitlement";
+import { TRIAL_DAYS } from "@/lib/entitlementRules";
 import type { ClassRegistrationStatus, PrimaryInstrument, SkillLevel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
@@ -114,7 +116,7 @@ async function notifyRegistrant(
   const title = outcome === "APPROVED" ? "Your class registration was approved" : "Update on your class registration";
   const body =
     outcome === "APPROVED"
-      ? `You're confirmed for ${INSTRUMENT_LABEL[registration.instrument]} lessons. We'll be in touch with next steps.`
+      ? `You're confirmed for ${INSTRUMENT_LABEL[registration.instrument]} lessons. You have a ${TRIAL_DAYS}-day free trial of the first lessons in the curriculum, and we'll be in touch with next steps.`
       : `We're not able to move forward with your registration for ${INSTRUMENT_LABEL[registration.instrument]} lessons right now.${reason ? ` ${reason}` : ""}`;
 
   // Always the address typed into the public form — never routed through
@@ -157,6 +159,12 @@ export async function approveClassRegistration(registrationId: string, adminId: 
     where: { id: registrationId },
     data: { status: "APPROVED", reviewedAt: new Date(), reviewedById: adminId, rejectionReason: null },
   });
+  // Starts the one-time free trial if they already have an account (an
+  // applicant who registers later gets it at sign-up). Best-effort: a
+  // failure here must not undo the approval itself.
+  await startTrialForEmail(registration.email).catch((err) =>
+    console.error("Starting the free trial failed (non-blocking):", err),
+  );
   await notifyRegistrant(registration, "APPROVED");
   await confirmReviewToAdmin(adminId, registration, "APPROVED");
   return registration;

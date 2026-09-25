@@ -9,6 +9,20 @@ export interface ProgressMatrixProps {
   rows: AdminProgressRow[];
   initialQuery: string;
   onToggleScale: (userId: string, scaleSlug: string, unlock: boolean) => Promise<void>;
+  /** Releases the student's next scale. `force` goes past the checklist and weekly-pace rules. */
+  onApproveNext: (userId: string, force: boolean) => Promise<void>;
+}
+
+const ACCESS_BADGE: Record<AdminProgressRow["accessKind"], { label: string; className: string }> = {
+  ADMIN: { label: "Admin", className: "bg-slate-800 text-slate-400" },
+  PAID: { label: "Live student", className: "bg-emerald-400/15 text-emerald-300" },
+  COMPED: { label: "Comped", className: "bg-emerald-400/15 text-emerald-300" },
+  TRIAL: { label: "Free trial", className: "bg-[rgb(var(--c-a-400)/0.15)] text-[rgb(var(--c-a-400))]" },
+  NONE: { label: "No plan", className: "bg-slate-800 text-slate-400" },
+};
+
+function formatShortDate(ms: number): string {
+  return new Date(ms).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 function cellClasses(cell: AdminProgressScaleCell): string {
@@ -42,7 +56,7 @@ function relativeDays(ms: number | null): string {
   return `${Math.floor(days / 365)}y ago`;
 }
 
-export function ProgressMatrix({ rows, initialQuery, onToggleScale }: ProgressMatrixProps) {
+export function ProgressMatrix({ rows, initialQuery, onToggleScale, onApproveNext }: ProgressMatrixProps) {
   const router = useRouter();
   const [query, setQuery] = useState(initialQuery);
   const [busyCell, setBusyCell] = useState<string | null>(null);
@@ -61,6 +75,19 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale }: ProgressMa
     setError(null);
     try {
       await onToggleScale(userId, cell.slug, !cell.unlocked);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setBusyCell(null);
+    }
+  }
+
+  async function handleApprove(userId: string, force: boolean) {
+    setBusyCell(`${userId}:approve`);
+    setError(null);
+    try {
+      await onApproveNext(userId, force);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -124,11 +151,11 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale }: ProgressMa
                     <p className="text-xs text-slate-500">{row.email}</p>
                     <div className="mt-1 flex items-center gap-2">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
-                          row.hasCurriculumAccess ? "bg-emerald-400/15 text-emerald-300" : "bg-slate-800 text-slate-400"
-                        }`}
+                        title={row.accessUntil ? `Access runs until ${formatShortDate(row.accessUntil)}` : undefined}
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${ACCESS_BADGE[row.accessKind].className}`}
                       >
-                        {row.hasCurriculumAccess ? "Curriculum" : "No curriculum"}
+                        {ACCESS_BADGE[row.accessKind].label}
+                        {row.accessUntil && row.accessKind !== "PAID" ? ` · ends ${formatShortDate(row.accessUntil)}` : ""}
                       </span>
                       <Link href={`/admin/users/${row.id}`} className="text-[10px] font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70">
                         Full profile →
@@ -138,6 +165,13 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale }: ProgressMa
                         table — same four figures a teacher used to check on
                         a separate page, now sitting right next to the
                         per-scale detail they summarize. */}
+                    {row.hasCurriculumAccess && row.accessKind !== "ADMIN" && (
+                      <NextScaleControl
+                        row={row}
+                        busy={busyCell === `${row.id}:approve`}
+                        onApprove={(force) => handleApprove(row.id, force)}
+                      />
+                    )}
                     <p className="mt-1.5 whitespace-nowrap text-[11px] tabular-nums text-slate-500">
                       {row.scalesCompleted}/{row.scales.length} scales · {row.currentStreak}-day streak ·{" "}
                       {row.classCredits} credit{row.classCredits === 1 ? "" : "s"} · {relativeDays(row.lastActivityAt)}
@@ -167,5 +201,47 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale }: ProgressMa
         </div>
       )}
     </div>
+  );
+}
+
+function NextScaleControl({ row, busy, onApprove }: { row: AdminProgressRow; busy: boolean; onApprove: (force: boolean) => void }) {
+  const next = row.nextApproval;
+  if (next.state === "ALL_UNLOCKED") return <p className="mt-1.5 text-[11px] text-slate-500">Every scale released.</p>;
+
+  const nextCode = row.scales.find((s) => s.slug === next.nextSlug)?.code ?? "next scale";
+  const forceButton = (label: string) => (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={() => onApprove(true)}
+      className="text-[11px] font-medium text-slate-400 underline transition hover:text-slate-200 disabled:opacity-40"
+    >
+      {label}
+    </button>
+  );
+
+  if (next.state === "READY") {
+    return (
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => onApprove(false)}
+        className="cta-sheen cta-fill mt-1.5 rounded-lg px-3 py-1 text-[11px] font-semibold disabled:opacity-40"
+      >
+        {busy ? "Releasing…" : `Approve ${nextCode}`}
+      </button>
+    );
+  }
+  if (next.state === "WAITING_PACE") {
+    return (
+      <p className="mt-1.5 text-[11px] text-slate-500">
+        {nextCode} ready {formatShortDate(next.availableAt)} (one per week). {forceButton("Release now")}
+      </p>
+    );
+  }
+  return (
+    <p className="mt-1.5 text-[11px] text-slate-500">
+      Still finishing the last scale. {forceButton(`Release ${nextCode} anyway`)}
+    </p>
   );
 }

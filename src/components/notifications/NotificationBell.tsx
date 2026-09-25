@@ -48,7 +48,7 @@ function notificationHref(type: string): string | null {
     case "CURRICULUM_ACCESS_GRANTED":
       return "/dashboard";
     case "CURRICULUM_ACCESS_REVOKED":
-      return "/billing/curriculum";
+      return "/billing/plans";
     case "CLASS_REGISTRATION_RECEIVED":
     case "CLASS_REGISTRATION_APPROVED":
     case "CLASS_REGISTRATION_REJECTED":

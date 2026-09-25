@@ -31,7 +31,6 @@ const TERM_OPTIONS: { value: PaymentPlanTerm; label: string; discountPercent: nu
   { value: "MONTHLY", label: "Monthly", discountPercent: 0 },
   { value: "TERM_3", label: "3-Month", discountPercent: 10 },
   { value: "TERM_6", label: "6-Month", discountPercent: 20 },
-  { value: "TERM_12", label: "Yearly", discountPercent: 30 },
 ];
 
 export interface ActivePlanSummary {

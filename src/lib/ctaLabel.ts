@@ -13,8 +13,10 @@
 import type { ScaleAccessState } from "@/lib/access";
 
 export function ctaLabel(scale: ScaleAccessState): string {
-  if (scale.requiresOverrideConfirm) return "Unlock ahead";
-  if (scale.reason === "locked") return "Unlock full curriculum — $69.99";
+  if (scale.reason === "locked") {
+    return scale.lockedBecause === "not-yet-approved" ? "Unlocks with your teacher" : "Start a class plan";
+  }
+  if (scale.reason === "trial") return "Start free trial";
   if (scale.status === "COMPLETED") return "Review";
   if (scale.status === "IN_PROGRESS") return "Continue";
   return "Start";

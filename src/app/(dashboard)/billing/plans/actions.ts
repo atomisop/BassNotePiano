@@ -21,10 +21,6 @@ export interface EnrollPaymentPlanResult {
 export async function getReservableSlotsAction(cadence: PaymentPlanCadence): Promise<ReservableSlot[]> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
-  // Mirrors the page-level redirect, same as enrollInPaymentPlanAction below
-  // — this Server Action is its own RPC endpoint, not something the page
-  // redirect covers.
-  if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=plans");
   if (!Object.values(PaymentPlanCadence).includes(cadence)) return [];
   return getReservableSlots(PLAN_CADENCE_CREDITS_PER_WEEK[cadence]);
 }
@@ -37,9 +33,6 @@ export async function enrollInPaymentPlanAction(
 ): Promise<EnrollPaymentPlanResult> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
-  // Mirrors the page-level redirect — re-checked here since this Server
-  // Action is its own RPC endpoint, not something the page redirect covers.
-  if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=plans");
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
 

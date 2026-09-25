@@ -181,7 +181,7 @@ export function CustomerProfile({
                     user.hasCurriculumAccess ? "bg-emerald-400/15 text-emerald-300" : "bg-slate-800 text-slate-400"
                   }`}
                 >
-                  {user.hasCurriculumAccess ? "Curriculum" : "No curriculum"}
+                  {user.hasCurriculumAccess ? "Comped" : "Not comped"}
                 </span>
               </div>
             </div>
@@ -190,8 +190,8 @@ export function CustomerProfile({
               {pendingAction === "curriculum" ? (
                 <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-1.5 text-xs text-slate-200">
                   {user.hasCurriculumAccess
-                    ? "Revoke curriculum access? They'll lose access to paid lessons immediately."
-                    : "Grant curriculum access to this account?"}
+                    ? "Remove complimentary access? Unless they have an active plan, they lose the curriculum immediately."
+                    : "Give this account complimentary curriculum access (no plan needed)? You still release it one scale at a time."}
                   <button
                     type="button"
                     disabled={busy}
@@ -212,7 +212,7 @@ export function CustomerProfile({
                   onClick={() => setPendingAction("curriculum")}
                   className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
                 >
-                  {user.hasCurriculumAccess ? "Revoke curriculum access" : "Grant curriculum access"}
+                  {user.hasCurriculumAccess ? "Remove complimentary access" : "Grant complimentary access"}
                 </button>
               )}
 

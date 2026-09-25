@@ -2,6 +2,9 @@ import type { Prisma, ProgressStatus, ScaleGroup } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { checkCourseBadges, recordPracticeActivity } from "@/lib/gamification";
 import { getLessonCompletionSummary } from "@/lib/courseContent";
+import { QUIZ_PASS_THRESHOLD } from "@/lib/curriculum";
+import { getCurriculumEntitlement } from "@/lib/entitlement";
+import { isFullAccess, TRIAL_SCALE_SLUG, type CurriculumAccessKind } from "@/lib/entitlementRules";
 
 // Badge/streak bookkeeping is a best-effort side effect — a hiccup here
 // should never fail the actual checklist mutation the student is waiting on.
@@ -14,8 +17,9 @@ async function trackGamification(userId: string, justCompleted: boolean) {
   }
 }
 
-/** Minimum score (0-1) to pass a scale's conceptual/spelling quiz. */
-export const QUIZ_PASS_THRESHOLD = 0.8;
+// Lives in curriculum.ts so client components can read it without pulling
+// this server-only module (and its email/DB dependencies) into the browser.
+export { QUIZ_PASS_THRESHOLD } from "@/lib/curriculum";
 
 export class AccessDeniedError extends Error {}
 
@@ -28,67 +32,42 @@ export interface ScaleAccessState {
   quizScore: number | null;
   canAccess: boolean;
   /**
-   * "unlocked" — this specific scale was granted individually (legacy
-   * per-scale purchase, or an admin override). "curriculum-access" — the
-   * blanket $69.99 purchase bypasses gating entirely. "locked" — neither;
-   * there's exactly one way forward now (buy the curriculum), regardless of
-   * where this scale sits in the sequence, since per-scale purchase no
-   * longer exists.
+   * "unlocked": the teacher approved this scale for the student (or it's
+   * their first scale, open the moment they have a plan). "curriculum-access":
+   * an admin browsing everything. "trial": the fixed free-trial slice.
+   * "locked": not reachable right now, see `lockedBecause` for which kind.
    */
-  reason: "unlocked" | "curriculum-access" | "locked";
-  /** Curriculum-access holder skipping ahead of the next-in-line scale — the
-   *  roadmap/link should show ProOverrideConfirmModal before navigating here. */
-  requiresOverrideConfirm: boolean;
+  reason: "unlocked" | "curriculum-access" | "trial" | "locked";
+  /**
+   * Only set when locked. "no-plan": the student has no live-class access
+   * (never had a plan, or it lapsed), so the way forward is a Payment Plan.
+   * "not-yet-approved": they're a paying student and this scale simply
+   * hasn't been released by their teacher yet.
+   */
+  lockedBecause: "no-plan" | "not-yet-approved" | null;
 }
 
 /**
  * DB-authoritative roadmap for a user: every scale group's checklist +
  * gating state, in curriculum order. The JWT claims middleware reads are a
- * cache of this same logic for the edge — pages and API routes should call
- * this (not trust the JWT alone) before rendering gated content or
- * accepting a checklist mutation, since the JWT can be briefly stale
- * between payment verification and the next session refresh.
+ * coarse cache (is access active at all); pages and API routes should call
+ * this before rendering gated content or accepting a checklist mutation,
+ * since it also knows which individual scales the teacher has approved.
  */
 export async function getRoadmap(userId: string): Promise<ScaleAccessState[]> {
-  const [user, scaleGroups, progressRows] = await Promise.all([
-    prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { hasCurriculumAccess: true } }),
+  const [entitlement, scaleGroups, progressRows] = await Promise.all([
+    getCurriculumEntitlement(userId),
     prisma.scaleGroup.findMany({ orderBy: { order: "asc" } }),
     prisma.scaleProgress.findMany({ where: { userId } }),
   ]);
 
   const progressByGroupId = new Map(progressRows.map((p) => [p.scaleGroupId, p]));
 
-  // Still needed even though per-scale purchase is gone — a curriculum-access
-  // holder skipping ahead of their own completed scales still gets the
-  // "are you sure?" override nudge (a pedagogical prompt, not a payment gate).
-  let highestCompletedIndex = -1;
-  for (const group of scaleGroups) {
-    if (progressByGroupId.get(group.id)?.status === "COMPLETED") {
-      highestCompletedIndex = Math.max(highestCompletedIndex, group.order);
-    }
-  }
-  const nextAllowedIndex = highestCompletedIndex + 1;
-
   return scaleGroups.map((scaleGroup) => {
     const row = progressByGroupId.get(scaleGroup.id);
-    const isUnlocked = Boolean(row?.unlockedAt);
-    const isOutOfOrder = scaleGroup.order > nextAllowedIndex;
-
-    let canAccess: boolean;
-    let reason: ScaleAccessState["reason"];
-    let requiresOverrideConfirm = false;
-
-    if (isUnlocked) {
-      canAccess = true;
-      reason = "unlocked";
-    } else if (user.hasCurriculumAccess) {
-      canAccess = true;
-      reason = "curriculum-access";
-      requiresOverrideConfirm = isOutOfOrder;
-    } else {
-      canAccess = false;
-      reason = "locked";
-    }
+    const { canAccess, reason, lockedBecause } = decideScaleAccess(entitlement.kind, scaleGroup, {
+      approved: Boolean(row?.unlockedAt),
+    });
 
     return {
       scaleGroup,
@@ -99,9 +78,35 @@ export async function getRoadmap(userId: string): Promise<ScaleAccessState[]> {
       quizScore: row?.quizScore ?? null,
       canAccess,
       reason,
-      requiresOverrideConfirm,
+      lockedBecause,
     };
   });
+}
+
+/**
+ * The single rule for "can this access kind open this scale." Full access
+ * opens the first scale automatically and every later one only after the
+ * teacher approved it (ScaleProgress.unlockedAt). A trial opens exactly the
+ * first scale (its lesson-level cap is applied where lessons are listed).
+ * No access opens nothing, whatever unlockedAt rows are left over from
+ * before, which is what makes a lapsed plan close everything at once.
+ */
+export function decideScaleAccess(
+  kind: CurriculumAccessKind,
+  scaleGroup: Pick<ScaleGroup, "slug" | "order">,
+  progress: { approved: boolean },
+): Pick<ScaleAccessState, "canAccess" | "reason" | "lockedBecause"> {
+  if (kind === "ADMIN") return { canAccess: true, reason: "curriculum-access", lockedBecause: null };
+  if (kind === "TRIAL") {
+    return scaleGroup.slug === TRIAL_SCALE_SLUG
+      ? { canAccess: true, reason: "trial", lockedBecause: null }
+      : { canAccess: false, reason: "locked", lockedBecause: "no-plan" };
+  }
+  if (isFullAccess(kind)) {
+    if (scaleGroup.order === 0 || progress.approved) return { canAccess: true, reason: "unlocked", lockedBecause: null };
+    return { canAccess: false, reason: "locked", lockedBecause: "not-yet-approved" };
+  }
+  return { canAccess: false, reason: "locked", lockedBecause: "no-plan" };
 }
 
 export async function canAccessScale(userId: string, scaleSlug: string): Promise<ScaleAccessState | null> {
@@ -113,6 +118,19 @@ async function requireAccess(userId: string, scaleSlug: string): Promise<ScaleAc
   const access = await canAccessScale(userId, scaleSlug);
   if (!access || !access.canAccess) {
     throw new AccessDeniedError(`User ${userId} does not currently have access to "${scaleSlug}"`);
+  }
+  return access;
+}
+
+/**
+ * The trial only opens a slice of one scale for reading and watching. Practice
+ * logs and quiz attempts are what advance a student toward the next scale, so
+ * they're reserved for paying students.
+ */
+async function requireFullAccess(userId: string, scaleSlug: string): Promise<ScaleAccessState> {
+  const access = await requireAccess(userId, scaleSlug);
+  if (access.reason === "trial") {
+    throw new AccessDeniedError(`User ${userId} is on the free trial, which doesn't include practice or quizzes`);
   }
   return access;
 }
@@ -169,7 +187,7 @@ export async function syncLessonCompletionToModuleRead(userId: string, scaleSlug
 }
 
 export async function markPracticeCompleted(userId: string, scaleSlug: string) {
-  const { scaleGroup } = await requireAccess(userId, scaleSlug);
+  const { scaleGroup } = await requireFullAccess(userId, scaleSlug);
   const row = await prisma.scaleProgress.upsert({
     where: { userId_scaleGroupId: { userId, scaleGroupId: scaleGroup.id } },
     update: { practiceCompleted: true, practiceCompletedAt: new Date() },
@@ -201,7 +219,7 @@ export interface QuizSubmission {
  * unlock from before Pay-As-You-Go was retired).
  */
 export async function recordQuizAttempt(userId: string, scaleSlug: string, submission: QuizSubmission) {
-  const { scaleGroup } = await requireAccess(userId, scaleSlug);
+  const { scaleGroup } = await requireFullAccess(userId, scaleSlug);
   const passed = submission.score / submission.totalQuestions >= QUIZ_PASS_THRESHOLD;
 
   await prisma.quizAttempt.create({
@@ -269,7 +287,11 @@ export async function unlockScaleForUser(
   });
 }
 
-/** Grants full-curriculum lifetime access. Called once a CURRICULUM payment flips to VERIFIED. */
+/**
+ * Grants complimentary full-curriculum access (the admin Grant button).
+ * Also still called for a legacy CURRICULUM payment that resolves late, but
+ * the curriculum is no longer purchasable on its own.
+ */
 export async function grantCurriculumAccess(userId: string, db: Prisma.TransactionClient | typeof prisma = prisma) {
   return db.user.update({
     where: { id: userId },

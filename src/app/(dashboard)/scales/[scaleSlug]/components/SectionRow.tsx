@@ -71,6 +71,7 @@ export function SectionRow({
   status,
   lockedReason,
   scoreLabel,
+  badge,
   onClick,
 }: {
   icon: "VIDEO" | "PDF" | "QUIZ";
@@ -80,6 +81,8 @@ export function SectionRow({
   status: SectionStatus;
   lockedReason?: string;
   scoreLabel?: string;
+  /** Small highlighted pill next to the title, e.g. "Free trial". */
+  badge?: string;
   onClick?: () => void;
 }) {
   const Icon = ICONS[icon];
@@ -117,6 +120,11 @@ export function SectionRow({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm text-slate-100">{title}</p>
+          {badge && (
+            <span className="rounded-full bg-[rgb(var(--c-a-400)/0.15)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[rgb(var(--c-a-400))]">
+              {badge}
+            </span>
+          )}
           {required && status !== "coming-soon" && (
             <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
               Required

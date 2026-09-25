@@ -706,8 +706,17 @@ model User {
   // Derived/cached entitlement flags — kept in sync whenever a ZellePayment
   // transitions to VERIFIED. Read by the NextAuth JWT callback so middleware
   // can gate routes without a DB round trip on the edge.
+  //
+  // As of the live-class-only model, hasCurriculumAccess is no longer set by
+  // any purchase: it's the admin's complimentary override only. Real access
+  // is derived from an active Payment Plan (src/lib/entitlement.ts).
   hasCurriculumAccess  Boolean   @default(false)
   curriculumUnlockedAt DateTime?
+
+  // Set once when a class application is approved (3 days out). Never
+  // cleared, so it doubles as the "already had a trial" marker: one per
+  // person, not one per application.
+  trialEndsAt DateTime?
 
   // 1 credit = 30 minutes of class, fixed regardless of which bundle it was
   // bought in — bundling only discounts the price paid, never the time

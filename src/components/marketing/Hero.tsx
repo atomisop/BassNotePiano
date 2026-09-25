@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useSession } from "next-auth/react";
-import { QUIZ_PASS_THRESHOLD } from "@/lib/access";
+import { QUIZ_PASS_THRESHOLD } from "@/lib/curriculum";
 import { CheckIcon, ArrowRightIcon } from "@/components/ui/icons";
 
 // Served from R2 (the same object storage the app already uses for lesson

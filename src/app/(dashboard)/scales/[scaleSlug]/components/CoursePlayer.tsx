@@ -50,6 +50,12 @@ export interface CoursePlayerProps {
   quizScore: number | null;
   quizPassThreshold: number;
   practiceCompleted: boolean;
+  /**
+   * Set only for a free-trial student. `lessons` then holds just the open
+   * slice; the rest arrive as titles only (never file URLs) so locked
+   * content can't be fished out of the page payload.
+   */
+  freeTrial?: { endsAt: string; lockedLessonTitles: string[] } | null;
   onMarkLessonComplete: (lessonId: string) => Promise<void>;
   onSubmitQuiz: (seed: number, answers: QuizAnswerSubmission[]) => Promise<{ passed: boolean; score: number; total: number }>;
   onMarkPracticeCompleted: () => Promise<void>;
@@ -71,6 +77,7 @@ export function CoursePlayer({
   quizScore,
   quizPassThreshold,
   practiceCompleted,
+  freeTrial = null,
   onMarkLessonComplete,
   onSubmitQuiz,
   onMarkPracticeCompleted,
@@ -89,7 +96,7 @@ export function CoursePlayer({
   const hasLessons = lessons.length > 0;
   const allLessonsComplete = hasLessons && lessons.every((l) => l.completed);
   const completedCount = lessons.filter((l) => l.completed).length;
-  const assessmentUnlocked = !hasLessons || allLessonsComplete;
+  const assessmentUnlocked = !freeTrial && (!hasLessons || allLessonsComplete);
 
   function isLessonUnlocked(index: number): boolean {
     if (index === 0) return true;
@@ -306,6 +313,7 @@ export function CoursePlayer({
             {ctaLabel}
           </button>
 
+          {!freeTrial && (
           <button
             type="button"
             onClick={handleTogglePractice}
@@ -324,7 +332,20 @@ export function CoursePlayer({
                 ? "Saving…"
                 : "Mark practice completed"}
           </button>
+          )}
         </div>
+
+        {freeTrial && (
+          <div className="mt-4 rounded-xl border border-[rgb(var(--c-a-400)/0.3)] bg-[rgb(var(--c-a-400)/0.08)] p-4 text-sm text-slate-300">
+            <p>
+              <span className="font-medium text-[rgb(var(--c-a-400))]">Free trial</span> until{" "}
+              {new Date(freeTrial.endsAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}. The first three lessons are open. The rest of the curriculum comes with live classes.
+            </p>
+            <Link href="/billing/plans" className="mt-2 inline-block font-medium text-[rgb(var(--c-s-50))] underline hover:opacity-70">
+              See class plans
+            </Link>
+          </div>
+        )}
 
         {actionError && (
           <p role="alert" className="mt-3 text-sm text-red-400">
@@ -374,6 +395,7 @@ export function CoursePlayer({
                 title={lesson.title}
                 duration={formatDuration(lesson.durationSeconds)}
                 required
+                badge={freeTrial ? "Free trial" : undefined}
                 status={lesson.completed ? "completed" : unlocked ? "ready" : "locked"}
                 lockedReason={!unlocked ? `Complete "${lessons[index - 1].title}" to unlock.` : undefined}
                 onClick={unlocked ? () => setView({ mode: "lesson", index }) : undefined}
@@ -384,13 +406,26 @@ export function CoursePlayer({
           <SectionRow icon="VIDEO" title="Lesson coming soon" required={false} status="coming-soon" />
         )}
 
+        {freeTrial?.lockedLessonTitles.map((title, i) => (
+          <SectionRow
+            key={`trial-locked-${i}`}
+            icon="VIDEO"
+            title={title}
+            required
+            status="locked"
+            lockedReason="Included with a live class plan."
+          />
+        ))}
+
         <SectionRow
           key="final-assessment"
           icon="QUIZ"
           title="Final Assessment"
           required
           status={quizPassed ? "completed" : assessmentUnlocked ? "ready" : "locked"}
-          lockedReason={!assessmentUnlocked ? "Finish every lesson above to unlock." : undefined}
+          lockedReason={
+            freeTrial ? "Included with a live class plan." : !assessmentUnlocked ? "Finish every lesson above to unlock." : undefined
+          }
           scoreLabel={quizPassed && quizScore != null ? `${quizScore}/${quizQuestions.length}` : undefined}
           onClick={assessmentUnlocked ? () => setQuizOpen(true) : undefined}
         />

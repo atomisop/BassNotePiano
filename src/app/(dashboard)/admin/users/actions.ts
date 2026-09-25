@@ -7,6 +7,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { setUserRole, setCurriculumAccess } from "@/lib/admin";
 import { unlockScaleForUser, lockScaleForUser } from "@/lib/access";
 import { clearPersistedHistory } from "@/lib/assistant";
+import { approveNextScale, ScaleApprovalError } from "@/lib/scaleApproval";
 
 // Same pattern as admin/payments/actions.ts — the admin layout's redirect
 // only protects rendering, not these Server Actions, so this re-check is
@@ -42,6 +43,24 @@ export async function toggleScaleUnlockAction(targetUserId: string, scaleSlug: s
     await unlockScaleForUser(targetUserId, scaleSlug);
   } else {
     await lockScaleForUser(targetUserId, scaleSlug);
+  }
+  revalidatePath("/admin/users");
+  revalidatePath("/admin/progress");
+  revalidatePath("/admin");
+}
+
+/**
+ * The teacher's "release the next scale" click. Errors the rules raise
+ * (previous scale unfinished, weekly pace, no active plan) are shown as
+ * plain messages; `force` is the teacher deliberately going past them.
+ */
+export async function approveNextScaleAction(targetUserId: string, force: boolean) {
+  await requireAdmin();
+  try {
+    await approveNextScale(targetUserId, { force });
+  } catch (err) {
+    if (err instanceof ScaleApprovalError) throw new Error(err.message);
+    throw err;
   }
   revalidatePath("/admin/users");
   revalidatePath("/admin/progress");

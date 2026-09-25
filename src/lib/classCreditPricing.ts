@@ -189,6 +189,18 @@ const PLAN_TERM_DISCOUNT_RATE: Record<PaymentPlanTerm, number> = {
   TERM_12: 0.3,
 };
 
+/**
+ * Terms nobody can newly enroll in. Yearly (TERM_12) was retired: there isn't
+ * a year of curriculum or programming to fill it, so committing anyone to
+ * twelve installments promised more than the studio delivers. The enum value
+ * and its label stay so existing rows still read and display correctly.
+ */
+export const RETIRED_PLAN_TERMS: readonly PaymentPlanTerm[] = ["TERM_12"];
+
+export function isPlanTermOffered(term: PaymentPlanTerm): boolean {
+  return !RETIRED_PLAN_TERMS.includes(term);
+}
+
 const PLAN_TERM_MONTHS: Record<PaymentPlanTerm, number> = {
   MONTHLY: 1,
   TERM_3: 3,

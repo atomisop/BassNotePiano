@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { canAccessScale, QUIZ_PASS_THRESHOLD } from "@/lib/access";
 import { ctaLabel } from "@/lib/ctaLabel";
 import { getLessonsWithProgress } from "@/lib/courseContent";
+import { getCurriculumEntitlement } from "@/lib/entitlement";
+import { TRIAL_LESSON_COUNT } from "@/lib/entitlementRules";
 import { SCALE_CONTENT } from "@/lib/scale-content";
 import { generateScaleQuiz, stripAnswers } from "@/lib/quiz";
 import { ScaleExplorer } from "@/components/scales/ScaleExplorer";
@@ -18,12 +20,25 @@ export default async function ScalePage({ params }: { params: { scaleSlug: strin
   if (!access) notFound();
 
   if (!access.canAccess) {
-    redirect("/billing/curriculum");
+    // No plan: the way forward is a class plan. A paying student whose
+    // teacher hasn't released this scale yet just goes back to the roadmap.
+    redirect(access.lockedBecause === "not-yet-approved" ? "/dashboard" : "/billing/plans");
   }
 
   const { scaleGroup } = access;
   const variants = SCALE_CONTENT[scaleGroup.slug] ?? [];
-  const lessons = await getLessonsWithProgress(scaleGroup.slug, session.user.id);
+  const allLessons = await getLessonsWithProgress(scaleGroup.slug, session.user.id);
+
+  // A trial opens only the first few lessons. The rest are reduced to titles
+  // here on the server so their file URLs never reach the browser.
+  const isTrial = access.reason === "trial";
+  const lessons = isTrial ? allLessons.slice(0, TRIAL_LESSON_COUNT) : allLessons;
+  const freeTrial = isTrial
+    ? {
+        endsAt: ((await getCurriculumEntitlement(session.user.id)).until ?? new Date()).toISOString(),
+        lockedLessonTitles: allLessons.slice(TRIAL_LESSON_COUNT).map((l) => l.title),
+      }
+    : null;
   // Picks which instrument view the explorer below renders — see
   // TranspositionDashboard's comment for why a guitar/bass student can't
   // just get the piano diagram every other scale page shows.
@@ -49,6 +64,7 @@ export default async function ScalePage({ params }: { params: { scaleSlug: strin
         quizScore={access.quizScore}
         quizPassThreshold={QUIZ_PASS_THRESHOLD}
         practiceCompleted={access.practiceCompleted}
+        freeTrial={freeTrial}
         onMarkLessonComplete={markLessonCompleteAction.bind(null, scaleGroup.slug)}
         onSubmitQuiz={submitQuizAction.bind(null, scaleGroup.slug)}
         onMarkPracticeCompleted={markPracticeCompletedAction.bind(null, scaleGroup.slug)}

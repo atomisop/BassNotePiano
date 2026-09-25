@@ -14,9 +14,6 @@ export default async function BillingPlansPage({
 }) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
-  // Class credits (and now payment plans) are an add-on to the curriculum,
-  // not a standalone purchase — same gate /billing/lessons already applies.
-  if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=plans");
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
 
@@ -54,7 +51,7 @@ export default async function BillingPlansPage({
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
       <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Payment plan</h1>
       <p className="mt-3 text-sm leading-relaxed text-slate-400">
-        Pick a weekly cadence and pay month to month, or commit to 3, 6, or 12 months for a lower rate — one Zelle
+        Pick a weekly cadence and pay month to month, or commit to 3 or 6 months for a lower rate — one Zelle
         installment at a time, never all at once, never auto-charged. We&apos;ll email an invoice as each installment
         comes due.
       </p>

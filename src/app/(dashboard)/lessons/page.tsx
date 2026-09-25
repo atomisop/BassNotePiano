@@ -44,7 +44,6 @@ export default async function LessonsPage() {
   // Booking a class requires curriculum access first — credits themselves
   // already can't be bought without it (see billing/lessons/page.tsx), but
   // this covers anyone who somehow already holds credits without it too.
-  if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=lessons");
 
   const activePlan = await getActivePaymentPlan(session.user.id);
 
