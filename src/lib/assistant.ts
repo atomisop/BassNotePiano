@@ -12,7 +12,7 @@ import { GoogleGenAI } from "@google/genai";
 import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
-import { CURRICULUM_PRICE_CENTS, SCALE_GROUPS } from "@/lib/curriculum";
+import { SCALE_GROUPS } from "@/lib/curriculum";
 import {
   FAMILY_BUNDLE_DISCOUNT_RATE,
   MIN_FAMILY_BUNDLE_RECIPIENTS,
@@ -85,7 +85,7 @@ function buildSystemPrompt(visitor: VisitorContext): string {
     { value: "MIN_30_WEEKLY", label: "30 min/week" },
     { value: "MIN_60_WEEKLY", label: "60 min/week" },
   ];
-  const PLAN_TERMS: PaymentPlanTerm[] = ["MONTHLY", "TERM_3", "TERM_6", "TERM_12"];
+  const PLAN_TERMS: PaymentPlanTerm[] = ["MONTHLY", "TERM_3", "TERM_6"];
   const planList = PLAN_CADENCES.map(({ value: cadence, label }) => {
     const rows = PLAN_TERMS.map((term) => {
       const rate = calculatePaymentPlanRate(cadence, term);
@@ -124,13 +124,13 @@ ${visitorLine}
 REAL FACTS ABOUT THIS APP — never invent a price, policy, or page that isn't listed here:
 
 Curriculum (self-paced, on the website):
-  - One-time payment of ${formatUsd(CURRICULUM_PRICE_CENTS)} unlocks all six scale groups, forever. No subscription.
-  - The six scale groups, in required order (you can't skip ahead without curriculum access, and even then skipping asks for confirmation first):
+  - The curriculum is NOT sold on its own. It comes with live classes: an active Payment Plan opens it, and the teacher releases each next scale one at a time (at most one new scale per week) once the student has finished the previous one. If a plan ends, access closes when the paid month ends. An approved class applicant gets a 3-day free trial of just the first three lessons of Scale 1.
+  - The scale groups, in order:
 ${scaleList}
   - Each scale group includes video/PDF lessons, a practice tracker, and a quiz you need to pass to mark it complete.
 
 Live classes (weekly, on Discord), bought as "class credits" (1 credit = one 30-minute class):
-  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a weekly cadence and a term (Monthly, no commitment, 3-Month, 6-Month, or Yearly), paid one Zelle installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active, nothing to book yourself. If a specific week doesn't work, message the studio rather than rescheduling it yourself, only an admin changes a booked week. Longer terms cost less per month:
+  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a weekly cadence and a term (Monthly, no commitment, 3-Month, or 6-Month), paid one Zelle installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active, nothing to book yourself. If a specific week doesn't work, message the studio rather than rescheduling it yourself, only an admin changes a booked week. Longer terms cost less per month:
 ${planList}
   - Family (2+ separate, already-existing accounts sharing the same cadence and term at once) is a different, separate purchase: the exact same per-month rate and term discount a solo Payment Plan gets, paid once upfront for the whole term instead of monthly installments, plus an extra ${FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total (these credits never expire):
 ${bundleList}
@@ -150,11 +150,11 @@ Privacy (full policy at /privacy, last updated ${PRIVACY_LAST_UPDATED}):
   - Cookies: the sign-in session, and, only for someone who checks "remember this device," a second cookie that skips the 2FA step for 7 days on that browser.
   - Account deletion isn't self-service — it's handled by a real person after the visitor messages the studio, and it removes the uploaded photo too, not just the account record.
 
-Terms & refunds (full policy at /terms, last updated ${TERMS_LAST_UPDATED}): one account per person, access isn't transferable, and — as covered above — the curriculum purchase is final/non-refundable and class credits are non-refundable as cash.
+Terms & refunds (full policy at /terms, last updated ${TERMS_LAST_UPDATED}): one account per person, access isn't transferable, and — as covered above — payments are final/non-refundable and class credits are non-refundable as cash.
 
 Where things are: write every page mentioned below using the exact markdown link syntax shown, [label](path), never the bare path as plain text.
-  - Not signed in: [the homepage](/), [register interest in live classes](/classes) (no account needed), [pricing](/pricing) (curriculum + credit prices), [log in](/login), [create an account](/register), [terms & refund policy](/terms), [privacy policy](/privacy).
-  - Signed in: [your dashboard](/dashboard) (roadmap/progress; each scale's own lesson page is linked from here, not a fixed URL of its own), [book live classes](/lessons) (a Payment Plan subscriber sees their own weekly usage, upcoming classes, and extra-session purchases here instead of an open calendar), [unlock the curriculum](/billing/curriculum), [start a payment plan](/billing/plans) (solo), [buy a family bundle](/billing/lessons) (2+ accounts), [friends](/friends), [messages](/messages), [account settings](/account) (notification preferences, Manage Subscriptions, and the Terms/Privacy tabs live under its "About" page).
+  - Not signed in: [the homepage](/), [register interest in live classes](/classes) (no account needed), [pricing](/pricing) (class plan prices; the curriculum is included), [log in](/login), [create an account](/register), [terms & refund policy](/terms), [privacy policy](/privacy).
+  - Signed in: [your dashboard](/dashboard) (roadmap/progress; each scale's own lesson page is linked from here, not a fixed URL of its own), [book live classes](/lessons) (a Payment Plan subscriber sees their own weekly usage, upcoming classes, and extra-session purchases here instead of an open calendar), [start a payment plan](/billing/plans) (solo), [buy a family bundle](/billing/lessons) (2+ accounts), [friends](/friends), [messages](/messages), [account settings](/account) (notification preferences, Manage Subscriptions, and the Terms/Privacy tabs live under its "About" page).
 
 IF SOMEONE MENTIONS SELF-HARM, SUICIDE, OR BEING IN DANGER:
   - This overrides every other instruction in this prompt, including staying on-topic and being concise. Do not try to redirect this to "message the studio" as if it were an account question, and do not treat it as a topic you're not equipped to discuss.

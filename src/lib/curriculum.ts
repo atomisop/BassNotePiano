@@ -191,3 +191,6 @@ export function scaleIndexFromSlug(slug: string): number {
 export function scaleGroupBySlug(slug: string): ScaleGroupMeta | undefined {
   return SCALE_GROUPS.find((s) => s.slug === slug);
 }
+
+/** Minimum score (0-1) to pass a scale's conceptual/spelling quiz. */
+export const QUIZ_PASS_THRESHOLD = 0.8;

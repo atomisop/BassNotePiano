@@ -13,9 +13,6 @@ import { FamilyBundleFlow } from "./FamilyBundleFlow";
 export default async function BillingLessonsPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/lessons");
-  // Class credits are an add-on to the curriculum, not a standalone
-  // purchase. Buy the $69.99 curriculum first, credits after.
-  if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=credits");
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
 
@@ -40,7 +37,7 @@ export default async function BillingLessonsPage() {
           <p className="font-medium text-slate-300">Buying for just your own account?</p>
           <p className="leading-relaxed">
             Use a <Link href="/billing/plans" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">Payment
-            Plan</Link> instead — Monthly, 3-Month, 6-Month, or Yearly, each paid one Zelle installment at a time,
+            Plan</Link> instead — Monthly, 3-Month, or 6-Month, each paid one Zelle installment at a time,
             never all at once.
           </p>
         </div>

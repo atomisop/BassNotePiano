@@ -1,6 +1,6 @@
 import { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason, type Prisma, type PaymentPlanStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { calculatePaymentPlanRate, describePaymentPlan, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { calculatePaymentPlanRate, describePaymentPlan, isPlanTermOffered, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import {
   chunksForSchedule,
   livePaymentPlanConditions,
@@ -64,6 +64,10 @@ export async function createPaymentPlan(
   }
   if (!Object.values(PaymentPlanTerm).includes(term)) {
     throw new PaymentPlanError(`"${term}" isn't a valid term.`);
+  }
+
+  if (!isPlanTermOffered(term)) {
+    throw new PaymentPlanError("That plan length is no longer offered. Pick Monthly, 3-Month, or 6-Month.");
   }
 
   const rate = calculatePaymentPlanRate(cadence, term);

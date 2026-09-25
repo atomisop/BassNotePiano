@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { scaleIndexFromSlug } from "@/lib/curriculum";
 
 const PUBLIC_PATHS = [
   "/",
@@ -16,13 +15,12 @@ function isPublic(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
-// Edge middleware can't hit Postgres directly, so gating decisions are made
-// entirely from entitlement claims baked into the NextAuth JWT (see
-// src/types/next-auth.d.ts). Those claims are refreshed server-side whenever
-// a ZellePayment is verified or a ScaleProgress row completes — this
-// middleware never needs to know *why* a slug is unlocked, only that it is.
+// Edge middleware can't hit Postgres directly, so it only handles what the
+// NextAuth JWT can answer on its own: signed in, onboarded, admin or not.
+// Curriculum access is checked against the database where the content is
+// served (see the note at the bottom of this function).
 export async function middleware(req: NextRequest) {
-  const { pathname, searchParams } = req.nextUrl;
+  const { pathname } = req.nextUrl;
 
   if (isPublic(pathname)) return NextResponse.next();
 
@@ -48,72 +46,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const scaleMatch = pathname.match(/^\/scales\/([^/]+)/);
-  if (!scaleMatch) return NextResponse.next();
-
-  const slug = scaleMatch[1];
-  const targetIndex = scaleIndexFromSlug(slug);
-  if (targetIndex === -1) return NextResponse.next(); // unknown slug — let the page 404
-
-  const hasCurriculumAccess = Boolean(token.hasCurriculumAccess);
-  const unlocked = token.unlockedScaleSlugs ?? [];
-  const completed = token.completedScaleSlugs ?? [];
-
-  const highestCompletedIndex = completed.reduce(
-    (max, s) => Math.max(max, scaleIndexFromSlug(s)),
-    -1,
-  );
-  const nextAllowedIndex = highestCompletedIndex + 1;
-
-  const isAlreadyUnlocked = unlocked.includes(slug) || completed.includes(slug);
-  const isOutOfOrder = targetIndex > nextAllowedIndex;
-
-  // Already unlocked (legacy per-scale grant, or completed) — always
-  // allowed, no interception needed.
-  if (isAlreadyUnlocked) {
-    return NextResponse.next();
-  }
-
-  if (hasCurriculumAccess) {
-    // Curriculum access bypasses sequencing entirely, but jumping ahead out
-    // of order gets routed through a confirmation interstitial (the
-    // ProOverrideConfirmModal lives on that page — middleware can only
-    // redirect, it can't render a Framer Motion modal itself).
-    if (isOutOfOrder) {
-      const alreadyConfirmed = req.cookies.get(`override_${slug}`)?.value === "1";
-      const justConfirmed = searchParams.get("override") === "confirmed";
-
-      if (alreadyConfirmed || justConfirmed) {
-        const res = NextResponse.next();
-        if (justConfirmed) {
-          res.cookies.set(`override_${slug}`, "1", {
-            maxAge: 60 * 60 * 24, // 24h — re-confirm daily rather than nag every click
-            httpOnly: true,
-            sameSite: "lax",
-          });
-        }
-        return res;
-      }
-
-      // No dedicated confirmation page exists — ProOverrideConfirmModal
-      // lives on the roadmap itself (src/components/progression/
-      // ScaleRoadmap.tsx), which re-navigates here with ?override=confirmed
-      // once the student confirms. A direct/bookmarked/back-button visit
-      // that skips that flow gets bounced to the roadmap to confirm there,
-      // rather than redirected to a page that doesn't exist (which used to
-      // loop: this same out-of-order check would re-fire on that URL too).
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
-    return NextResponse.next();
-  }
-
-  // No curriculum access and this scale was never individually unlocked
-  // (legacy grandfathered purchase) — the only way forward now is buying
-  // the full curriculum, regardless of where this scale sits in sequence
-  // (per-scale purchase no longer exists).
-  const billingUrl = new URL("/billing/curriculum", req.url);
-  billingUrl.searchParams.set("next", pathname);
-  return NextResponse.redirect(billingUrl);
+  // Scale access (plan, trial, teacher approval) is decided per request
+  // against the database in the scale page and its server actions, not here:
+  // it depends on time-based state a cached token can't keep fresh, and a
+  // stale claim would wrongly bounce a paying student.
+  return NextResponse.next();
 }
 
 export const config = {

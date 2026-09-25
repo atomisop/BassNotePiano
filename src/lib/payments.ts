@@ -6,6 +6,7 @@ import { bookExtraSessionOccurrence, chunksForSchedule, computeScheduledAt } fro
 import {
   calculateClassCreditTotal,
   calculateFamilyBundleTotal,
+  isPlanTermOffered,
   MIN_FAMILY_BUNDLE_RECIPIENTS,
   EXTRA_SESSION_FLAT_PRICE_CENTS,
 } from "@/lib/classCreditPricing";
@@ -276,6 +277,9 @@ export async function createFamilyBundlePayment(input: FamilyBundlePurchaseInput
   }
   if (!Object.values(PaymentPlanTerm).includes(input.term)) {
     throw new FamilyBundleError(`"${input.term}" isn't a valid term.`);
+  }
+  if (!isPlanTermOffered(input.term)) {
+    throw new FamilyBundleError("That plan length is no longer offered. Pick Monthly, 3-Month, or 6-Month.");
   }
 
   const normalized = input.recipientEmails.map((e) => e.trim().toLowerCase()).filter(Boolean);

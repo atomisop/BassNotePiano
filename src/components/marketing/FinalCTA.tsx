@@ -2,18 +2,10 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 
 // Matches Hero.tsx's own local copy — no shared `@/lib/format` module
 // exists in this codebase to import instead (checked before adding this).
-function formatUsd(cents: number) {
-  return (cents / 100).toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
-}
-
 /**
  * HOMEPAGE REPLACEMENT — 07 FINAL CTA.
  *
@@ -39,7 +31,7 @@ export function FinalCTA() {
         </p>
 
         <Link href={isLoggedIn ? "/dashboard" : "/register"} className="btn btn-primary group mt-8 inline-flex">
-          {isLoggedIn ? "Go to dashboard" : `Start learning for ${formatUsd(CURRICULUM_PRICE_CENTS)}`}
+          {isLoggedIn ? "Go to dashboard" : "Start learning live"}
           <svg
             width="15"
             height="15"

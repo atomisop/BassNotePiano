@@ -1,4 +1,3 @@
-import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
 import { QUIZ_PASS_THRESHOLD } from "@/lib/access";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import { Timeline } from "@/components/ui/Timeline";
@@ -35,15 +34,11 @@ import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
  * mirror of how SocialProof blurred the guitar photo back out after
  * InstrumentPicker.
  */
-function formatUsd(cents: number) {
-  return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
-}
-
 const STEPS = [
   {
     marker: "01",
-    title: "Unlock the curriculum",
-    description: `One payment of ${formatUsd(CURRICULUM_PRICE_CENTS)}, no subscription, and every scale group is available immediately.`,
+    title: "Start live classes",
+    description: "Pick a weekly class plan. The curriculum comes with it, opened one scale at a time as you and your teacher move through it.",
   },
   {
     marker: "02",

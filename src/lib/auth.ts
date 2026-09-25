@@ -6,6 +6,8 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { verifyCode } from "@/lib/verification";
+import { getCurriculumEntitlement } from "@/lib/entitlement";
+import { isFullAccess } from "@/lib/entitlementRules";
 
 type Entitlements = {
   role: "STUDENT" | "ADMIN";
@@ -63,7 +65,7 @@ const DEFAULT_ENTITLEMENTS: Entitlements = {
 // production. Anywhere that needs the real image fetches it directly from
 // the DB instead (see the /account page), never through the session.
 async function loadEntitlements(userId: string): Promise<Entitlements> {
-  const [user, verifiedUnlocks, unlockedProgress] = await Promise.all([
+  const [user, verifiedUnlocks, unlockedProgress, curriculumEntitlement] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { role: true, hasCurriculumAccess: true, name: true, onboardedAt: true, sessionVersion: true },
@@ -76,6 +78,7 @@ async function loadEntitlements(userId: string): Promise<Entitlements> {
       where: { userId, unlockedAt: { not: null } },
       select: { status: true, scaleGroup: { select: { slug: true } } },
     }),
+    getCurriculumEntitlement(userId),
   ]);
 
   const unlockedScaleSlugs = Array.from(
@@ -91,7 +94,10 @@ async function loadEntitlements(userId: string): Promise<Entitlements> {
 
   return {
     role: user?.role ?? "STUDENT",
-    hasCurriculumAccess: user?.hasCurriculumAccess ?? false,
+    // Derived from an active Payment Plan (or admin/comped), not the stored
+    // purchase flag. Display-only in the session: the edge no longer gates
+    // scales off it, and every scale page and mutation re-checks the DB.
+    hasCurriculumAccess: isFullAccess(curriculumEntitlement.kind),
     unlockedScaleSlugs,
     completedScaleSlugs,
     name: user?.name ?? null,

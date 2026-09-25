@@ -30,7 +30,6 @@ export interface ExtraSessionPaymentResult {
 export async function createExtraSessionPaymentAction(occurrence: ExtraSessionOccurrence): Promise<ExtraSessionPaymentResult> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
-  if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=lessons");
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
   try {
@@ -52,7 +51,6 @@ export async function submitExtraSessionPaymentAction(paymentId: string, payload
   // (the only way to get a pending CLASS_CREDITS row from this flow is
   // through that gated action), kept here anyway so this action stays
   // correct on its own rather than depending on another function's gate.
-  if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=lessons");
 
   await submitZellePaymentReference(session.user.id, paymentId, payload);
   revalidatePath("/lessons");

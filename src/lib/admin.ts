@@ -1,3 +1,5 @@
+import { getCurriculumEntitlements } from "@/lib/entitlement";
+import { computeNextApproval, isFullAccess, type CurriculumAccessKind, type NextApproval } from "@/lib/entitlementRules";
 import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { SCALE_SLUGS } from "@/lib/curriculum";
@@ -189,6 +191,8 @@ export interface AdminProgressScaleCell {
   title: string;
   status: "LOCKED" | "AVAILABLE" | "IN_PROGRESS" | "COMPLETED";
   unlocked: boolean;
+  /** ms epoch the teacher released (or the student opened) this scale, null if never. */
+  unlockedAt: number | null;
   moduleRead: boolean;
   practiceCompleted: boolean;
   quizPassed: boolean;
@@ -199,7 +203,13 @@ export interface AdminProgressRow {
   id: string;
   name: string | null;
   email: string;
+  /** True for a live student (active plan), complimentary access, or admin: anyone whose curriculum opens scale by scale. */
   hasCurriculumAccess: boolean;
+  accessKind: CurriculumAccessKind;
+  /** ms epoch access lapses (plan paid period or trial end), null when it doesn't. */
+  accessUntil: number | null;
+  /** What the teacher would release next and whether the automatic rules allow it yet. */
+  nextApproval: NextApproval;
   /** Folded in from the old, now-removed /admin/roster page — same figures a teacher used to check there, in the same row as the scale-by-scale detail. */
   classCredits: number;
   currentStreak: number;
@@ -246,16 +256,12 @@ export async function getAdminProgressOverview(query: string): Promise<AdminProg
     take: 200,
   });
 
-  return users.map((user) => ({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    hasCurriculumAccess: user.hasCurriculumAccess,
-    classCredits: user.classCredits,
-    currentStreak: user.currentStreak,
-    lastActivityAt: user.lastActivityDate ? user.lastActivityDate.getTime() : null,
-    scalesCompleted: user.progress.filter((p) => p.status === "COMPLETED").length,
-    scales: scaleGroups.map((sg) => {
+  const entitlements = await getCurriculumEntitlements(users.map((u) => u.id));
+  const nowMs = Date.now();
+
+  return users.map((user) => {
+    const entitlement = entitlements.get(user.id) ?? { kind: "NONE" as const, until: null };
+    const scales = scaleGroups.map((sg) => {
       const row = user.progress.find((p) => p.scaleGroupId === sg.id);
       return {
         slug: sg.slug,
@@ -264,13 +270,28 @@ export async function getAdminProgressOverview(query: string): Promise<AdminProg
         title: sg.kinitName ?? sg.title,
         status: row?.status ?? "LOCKED",
         unlocked: Boolean(row?.unlockedAt),
+        unlockedAt: row?.unlockedAt ? row.unlockedAt.getTime() : null,
         moduleRead: row?.moduleRead ?? false,
         practiceCompleted: row?.practiceCompleted ?? false,
         quizPassed: row?.quizPassed ?? false,
         quizScore: row?.quizScore ?? null,
       };
-    }),
-  }));
+    });
+    return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    hasCurriculumAccess: isFullAccess(entitlement.kind),
+    accessKind: entitlement.kind,
+    accessUntil: entitlement.until ? entitlement.until.getTime() : null,
+    nextApproval: computeNextApproval(scales, nowMs),
+    classCredits: user.classCredits,
+    currentStreak: user.currentStreak,
+    lastActivityAt: user.lastActivityDate ? user.lastActivityDate.getTime() : null,
+    scalesCompleted: user.progress.filter((p) => p.status === "COMPLETED").length,
+    scales,
+    };
+  });
 }
 
 export interface BookableStudent {
@@ -373,7 +394,7 @@ export async function setCurriculumAccess(userId: string, hasAccess: boolean) {
     type: hasAccess ? "CURRICULUM_ACCESS_GRANTED" : "CURRICULUM_ACCESS_REVOKED",
     title: hasAccess ? "Curriculum unlocked" : "Curriculum access removed",
     body: hasAccess
-      ? "You now have lifetime access to every scale in the curriculum."
+      ? "You now have complimentary access to the curriculum. Your teacher opens it one scale at a time."
       : "Your curriculum access was removed. Message support if this looks wrong.",
     emailCategory: "payments",
   }).catch((err) => console.error(`Failed to notify user ${userId} of curriculum access change (non-blocking):`, err));

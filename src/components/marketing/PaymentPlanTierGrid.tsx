@@ -15,7 +15,6 @@ const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
   { value: "MONTHLY", label: "Monthly" },
   { value: "TERM_3", label: "3-Month" },
   { value: "TERM_6", label: "6-Month" },
-  { value: "TERM_12", label: "Yearly" },
 ];
 
 function formatUsd(cents: number) {

@@ -45,16 +45,16 @@ export interface NextStep {
 export function resolveNextStep(roadmap: ScaleAccessState[]): NextStep {
   const reachable = roadmap.filter((scale) => scale.canAccess);
 
-  // Nothing unlocked at all — the only move is the one-time curriculum
-  // purchase, which opens every scale at once.
+  // Nothing unlocked at all: the curriculum comes with live classes now, so
+  // the only move is starting a class plan.
   if (reachable.length === 0) {
     return {
       kind: "buy-curriculum",
       scale: roadmap[0] ?? null,
-      action: "Unlock the curriculum",
-      detail: "One payment opens all six scale groups, for good.",
-      href: "/billing/curriculum",
-      cta: "See what's included",
+      action: "Start with live classes",
+      detail: "The curriculum comes with your live classes, opened one scale at a time as you and your teacher move through it.",
+      href: "/billing/plans",
+      cta: "See class plans",
     };
   }
 
@@ -68,7 +68,7 @@ export function resolveNextStep(roadmap: ScaleAccessState[]): NextStep {
       kind: "curriculum-complete",
       scale: last,
       action: "Revisit a scale",
-      detail: "You've completed every scale available to you. Revision is the work now.",
+      detail: "You've finished every scale open to you. Revise while your teacher releases the next one.",
       href: `/scales/${last.scaleGroup.slug}`,
       cta: "Review",
     };

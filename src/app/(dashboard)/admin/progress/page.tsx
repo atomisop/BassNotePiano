@@ -1,6 +1,6 @@
 import { getAdminProgressOverview } from "@/lib/admin";
 import { ProgressMatrix } from "@/components/admin/ProgressMatrix";
-import { toggleScaleUnlockAction } from "../users/actions";
+import { approveNextScaleAction, toggleScaleUnlockAction } from "../users/actions";
 
 // Absorbed the old, now-removed /admin/roster page's own two headline
 // figures (curriculum access count, active-this-week count) — same
@@ -20,11 +20,11 @@ export default async function AdminProgressPage({ searchParams }: { searchParams
       <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Progress</h1>
       <p className="mt-2 text-sm text-slate-500">
         {rows.length} student{rows.length === 1 ? "" : "s"}
-        {query ? ` matching "${query}"` : ""} · {withAccess} with curriculum access · {activeThisWeek} active this week
+        {query ? ` matching "${query}"` : ""} · {withAccess} with live-class access · {activeThisWeek} active this week
       </p>
 
       <div className="mt-8">
-        <ProgressMatrix rows={rows} initialQuery={query} onToggleScale={toggleScaleUnlockAction} />
+        <ProgressMatrix rows={rows} initialQuery={query} onToggleScale={toggleScaleUnlockAction} onApproveNext={approveNextScaleAction} />
       </div>
     </div>
   );

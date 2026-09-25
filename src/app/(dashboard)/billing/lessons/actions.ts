@@ -78,7 +78,6 @@ export async function createFamilyBundlePaymentAction(
 ): Promise<FamilyBundlePaymentResult> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/lessons");
-  if (!session.user.hasCurriculumAccess) redirect("/billing/curriculum?next=credits");
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
 

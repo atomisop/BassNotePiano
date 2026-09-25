@@ -141,6 +141,42 @@ to read it). Atom currently teaches piano/guitar/bass only — drums and
 voice are "coming soon" on the public interest-registration form, and the
 system prompt explicitly forbids implying either is bookable today.
 
+## Curriculum access: live classes only (as of 2026-09-25)
+
+The curriculum is **not sold on its own anymore.** It comes with live
+classes, and the old $69.99 purchase is gone (`/billing/curriculum` just
+redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
+
+- `src/lib/entitlementRules.ts` (pure, edge-safe) and
+  `src/lib/entitlement.ts` (DB) resolve a student to `ADMIN | PAID | COMPED |
+  TRIAL | NONE`. `PAID` = a Payment Plan with at least one approved
+  installment, through the end of the paid period (+3 days grace). Cancelling
+  keeps access to the end of the paid month. A COMPLETED plan (every Monthly
+  one) does not advance `nextDueDate` on its last installment, so its paid
+  period ends one month *after* it (easy to get wrong, it was).
+- `User.hasCurriculumAccess` is now only the admin's complimentary override
+  (`COMPED`). The migration cleared every existing flag (they were all free
+  grants). The JWT's copy is display-only; the edge no longer gates scales.
+  `getRoadmap`/`canAccessScale` in `src/lib/access.ts` (DB-authoritative) are
+  the real gate, via `decideScaleAccess`.
+- **Teacher-approved drip.** Full access opens Scale 1 only. Each next scale
+  opens when the teacher approves it (`approveNextScale` in
+  `src/lib/scaleApproval.ts`, button on `/admin/progress`): eligible when the
+  previous scale's checklist is complete and 7+ days passed since the last
+  unlock; the admin can force past both. Approval sets
+  `ScaleProgress.unlockedAt`, which only counts while entitlement is active.
+- **Free trial**: approving a class application sets `User.trialEndsAt` (3
+  days, once per person, never cleared) or it starts at registration if they
+  had no account yet. Trial opens only Scale 1's first 3 lessons
+  (`TRIAL_LESSON_COUNT`), no practice/quiz; locked lessons are sent to the
+  client as titles only.
+- **Yearly (`TERM_12`) is retired** for new enrollments
+  (`isPlanTermOffered`), enum value kept for existing rows. Note that term
+  discounts are still not a real commitment: a student can self-cancel.
+- Still open: lesson/PDF files live at public R2 URLs, so page gating doesn't
+  stop someone who has the URL. Watermarked, in-app-only PDFs are the planned
+  follow-up.
+
 ## Sessions can now be invalidated server-side
 
 `User.sessionVersion` (a plain incrementing int) plus a check in the NextAuth

@@ -6,7 +6,7 @@
 
 import { FAMILY_BUNDLE_DISCOUNT_RATE } from "@/lib/classCreditPricing";
 
-export const TERMS_LAST_UPDATED = "August 25, 2026";
+export const TERMS_LAST_UPDATED = "September 25, 2026";
 
 function TermsSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -28,21 +28,21 @@ export function TermsContent() {
         </p>
       </TermsSection>
 
-      <TermsSection title="Curriculum ($69.99, one-time)">
+      <TermsSection title="Curriculum (included with live classes)">
         <p>
-          The $69.99 curriculum purchase unlocks every scale module for that account, permanently. There&apos;s no
-          subscription and nothing else to buy for lesson content.
+          The curriculum isn&apos;t sold separately. It comes with an active class plan, and your teacher opens it one
+          scale at a time as you progress. When a plan ends, curriculum access continues until the end of the month
+          you already paid for, then closes. Approved applicants get a 3-day free trial of the first lessons.
         </p>
         <p>
-          <span className="font-medium text-[rgb(var(--c-s-50))]">Curriculum purchases are final.</span> Because access is
-          granted immediately and it&apos;s digital content, nothing about the $69.99 purchase is refundable, for any
-          reason, once it&apos;s bought.
+          <span className="font-medium text-[rgb(var(--c-s-50))]">Payments are final.</span> Curriculum content is digital
+          and shared only with the student it was opened for, so it can&apos;t be refunded once access is granted.
         </p>
       </TermsSection>
 
       <TermsSection title="Class credits & bundles">
         <p>
-          Solo class credits come from a Payment Plan — Monthly, 3-Month, 6-Month, or Yearly, paid one Zelle
+          Solo class credits come from a Payment Plan — Monthly, 3-Month, or 6-Month, paid one Zelle
           installment at a time, longer terms at a lower rate. Enrolling reserves your weekly day and time
           exclusively and auto-books it every week for as long as the plan stays active. If you skip a week, make
           it up on another week before that installment&apos;s monthly cycle ends — an unused credit is forfeited

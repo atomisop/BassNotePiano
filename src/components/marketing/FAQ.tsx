@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { CURRICULUM_PRICE_CENTS } from "@/lib/curriculum";
 import { CREDIT_BASE_PRICE_CENTS } from "@/lib/classCreditPricing";
 import { CANCELLATION_CUTOFF_HOURS, SOLO_MAX_CREDITS, FAMILY_CREDITS_PER_STUDENT } from "@/lib/classSchedule";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
@@ -48,12 +47,12 @@ const FAQS = [
     a: "Piano, guitar, and bass. It's the same curriculum for all three, correctly voiced for whichever one you're playing, and you can switch any time.",
   },
   {
-    q: `Is the ${formatUsd(CURRICULUM_PRICE_CENTS)} curriculum purchase refundable?`,
-    a: `No. Access is granted immediately and it's digital content, so the ${formatUsd(CURRICULUM_PRICE_CENTS)} purchase is final once it's bought, for any reason.`,
+    q: "Can I buy the curriculum without live classes?",
+    a: "No. The curriculum comes with live classes. Your teacher opens it one scale at a time as you progress, so you always learn each scale with guidance. Approved applicants get a 3-day free trial of the first lessons.",
   },
   {
     q: "How do live lessons work?",
-    a: `Book one-on-one time with your teacher (up to ${SOLO_MAX_CREDITS} credits, about an hour), or a family session if siblings are learning together (${FAMILY_CREDITS_PER_STUDENT} credits per student). Solo credits come from a Payment Plan — Monthly, 3-Month, 6-Month, or Yearly, paid one Zelle installment at a time — which reserves your weekly day and time exclusively and expires with that installment's monthly cycle if unused. Family bundles are priced per credit at ${formatUsd(CREDIT_BASE_PRICE_CENTS)} at full price and never expire.`,
+    a: `Book one-on-one time with your teacher (up to ${SOLO_MAX_CREDITS} credits, about an hour), or a family session if siblings are learning together (${FAMILY_CREDITS_PER_STUDENT} credits per student). Solo credits come from a Payment Plan — Monthly, 3-Month, or 6-Month, paid one Zelle installment at a time — which reserves your weekly day and time exclusively and expires with that installment's monthly cycle if unused. Family bundles are priced per credit at ${formatUsd(CREDIT_BASE_PRICE_CENTS)} at full price and never expire.`,
   },
   {
     q: "Can I cancel a booked lesson?",

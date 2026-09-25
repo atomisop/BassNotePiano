@@ -415,14 +415,16 @@ function MembershipSection({
       <SectionCard title="Membership & purchases" description="Your curriculum and payment history.">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink/10 p-4">
           <div>
-            <p className="text-sm text-slate-100">{hasCurriculumAccess ? "Curriculum unlocked" : "Curriculum not yet purchased"}</p>
+            <p className="text-sm text-slate-100">{hasCurriculumAccess ? "Curriculum included" : "No active class plan"}</p>
             <p className="mt-0.5 text-xs text-slate-500">
-              {hasCurriculumAccess ? "All six scale groups are unlocked, for good." : "One-time $69.99 payment unlocks every scale, for good."}
+              {hasCurriculumAccess
+                ? "The curriculum comes with your live classes. Your teacher opens each new scale as you progress."
+                : "The curriculum comes with live classes. Start a plan to unlock it."}
             </p>
           </div>
           {!hasCurriculumAccess && (
-            <Link href="/billing/curriculum" className="cta-sheen cta-fill rounded-lg px-4 py-2 text-xs font-semibold">
-              Unlock, $69.99
+            <Link href="/billing/plans" className="cta-sheen cta-fill rounded-lg px-4 py-2 text-xs font-semibold">
+              See class plans
             </Link>
           )}
         </div>

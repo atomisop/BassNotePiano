@@ -1,3 +1,4 @@
+import { hasApprovedRegistration, startTrialForEmail } from "@/lib/entitlement";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
@@ -41,6 +42,11 @@ export async function POST(req: Request) {
       data: { name, email, passwordHash },
       select: { id: true, email: true },
     });
+    // Someone approved for classes before they made an account gets their
+    // free trial now. Best-effort, never blocks sign-up.
+    if (await hasApprovedRegistration(user.email).catch(() => false)) {
+      await startTrialForEmail(user.email).catch((err) => console.error("Starting the free trial failed (non-blocking):", err));
+    }
     await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
     return NextResponse.json(user, { status: 201 });
   } catch (err) {

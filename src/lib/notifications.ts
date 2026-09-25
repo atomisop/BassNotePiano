@@ -62,7 +62,7 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   // billing history has nothing to do with this, the roadmap they can now
   // actually use does.
   CURRICULUM_ACCESS_GRANTED: { label: "Go to your dashboard", url: getAppUrl("/dashboard"), kind: "default" },
-  CURRICULUM_ACCESS_REVOKED: { label: "View curriculum access", url: getAppUrl("/billing/curriculum"), kind: "notice" },
+  CURRICULUM_ACCESS_REVOKED: { label: "See class plans", url: getAppUrl("/billing/plans"), kind: "notice" },
 };
 
 /**
