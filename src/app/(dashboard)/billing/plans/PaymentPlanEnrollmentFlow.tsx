@@ -27,10 +27,10 @@ const CADENCE_OPTIONS: { value: PaymentPlanCadence; label: string }[] = [
   { value: "MIN_60_WEEKLY", label: "60 min/week" },
 ];
 
-const TERM_OPTIONS: { value: PaymentPlanTerm; label: string; discountPercent: number }[] = [
-  { value: "MONTHLY", label: "Monthly", discountPercent: 0 },
-  { value: "TERM_3", label: "3-Month", discountPercent: 10 },
-  { value: "TERM_6", label: "6-Month", discountPercent: 20 },
+const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
+  { value: "MONTHLY", label: "Monthly" },
+  { value: "TERM_3", label: "3-Month" },
+  { value: "TERM_6", label: "6-Month" },
 ];
 
 export interface ActivePlanSummary {
@@ -235,6 +235,10 @@ export function PaymentPlanEnrollmentFlow({
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {TERM_OPTIONS.map((option) => {
             const active = term === option.value;
+            // Off the Monthly rate, from the real (rounded) prices, so the badge can't disagree with them.
+            const percentOff = Math.round(
+              (1 - calculatePaymentPlanRate(cadence, option.value).installmentAmountCents / calculatePaymentPlanRate(cadence, "MONTHLY").installmentAmountCents) * 100,
+            );
             return (
               <button
                 key={option.value}
@@ -246,7 +250,7 @@ export function PaymentPlanEnrollmentFlow({
               >
                 <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  {option.discountPercent > 0 ? `−${option.discountPercent}%` : "No commitment"}
+                  {percentOff > 0 ? `−${percentOff}%` : "No commitment"}
                 </p>
               </button>
             );
