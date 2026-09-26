@@ -4,7 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
-import { calculatePaymentPlanRate, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import {
+  calculateFamilyBundleTotal,
+  calculatePaymentPlanRate,
+  FAMILY_BUNDLE_DISCOUNT_RATE,
+  MIN_FAMILY_BUNDLE_RECIPIENTS,
+  PLAN_CADENCE_CREDITS_PER_WEEK,
+} from "@/lib/classCreditPricing";
 
 const CADENCE_OPTIONS: { value: PaymentPlanCadence; label: string }[] = [
   { value: "MIN_30_WEEKLY", label: "30 min/week" },
@@ -36,13 +42,19 @@ const cardItem = {
  * Best Value) now that individual credit purchasing only happens through
  * Payment Plans. Same card-grid visual language as that grid, describing
  * the term ladder that superseded it: a weekly-cadence toggle above four
- * term cards (Monthly/3/6/12-month). Every number comes from
+ * term cards (Monthly/3/6-month) plus the family bundle card. Every number comes from
  * calculatePaymentPlanRate — the same function /billing/plans itself
  * computes off of — so this can't quietly drift from the real price.
  */
 export function PaymentPlanTierGrid() {
   const [cadence, setCadence] = useState<PaymentPlanCadence>("MIN_30_WEEKLY");
   const monthlyBaseline = calculatePaymentPlanRate(cadence, "MONTHLY").installmentAmountCents;
+  // The family card quotes one student's monthly price at the minimum bundle
+  // size, so it reads like the other cards. The bundle itself is bought at
+  // /billing/lessons, where any term and recipient count can be picked.
+  const family = calculateFamilyBundleTotal(cadence, "MONTHLY", MIN_FAMILY_BUNDLE_RECIPIENTS);
+  const familyPerStudentCents = Math.round(family.totalCents / family.recipientCount);
+  const familyClassesPerMonth = family.creditsPerRecipient / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
 
   return (
     <div>
@@ -123,6 +135,33 @@ export function PaymentPlanTierGrid() {
             </motion.div>
           );
         })}
+
+        <motion.div
+          variants={cardItem}
+          className="glass-surface relative flex flex-col gap-4 rounded-2xl border border-[rgb(var(--c-s-50)/0.2)] p-5 transition hover:border-[rgb(var(--c-s-50)/0.3)] sm:p-6"
+        >
+          <span className="absolute right-3 top-3 rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-bold tabular-nums text-slate-950">
+            {`−${Math.round(FAMILY_BUNDLE_DISCOUNT_RATE * 100)}%`}
+          </span>
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-[rgb(var(--c-s-50))]">Family bundle</p>
+
+          <div>
+            <p className="text-sm tabular-nums text-slate-500 line-through">{formatUsd(monthlyBaseline)}/mo</p>
+            <p className="font-serif text-3xl tabular-nums text-slate-50 sm:text-4xl">{formatUsd(familyPerStudentCents)}</p>
+            <p className="mt-1 text-xs text-slate-500">
+              per student per month · {familyClassesPerMonth} classes · {MIN_FAMILY_BUNDLE_RECIPIENTS}+ students
+            </p>
+          </div>
+
+          <div className="flex-1" />
+
+          <Link
+            href="/billing/lessons"
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-ink/10 py-2.5 text-center text-sm font-semibold text-slate-100 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+          >
+            Bundle &amp; save
+          </Link>
+        </motion.div>
       </motion.div>
     </div>
   );
