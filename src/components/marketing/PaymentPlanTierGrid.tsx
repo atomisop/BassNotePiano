@@ -24,8 +24,8 @@ const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
   { value: "TERM_6", label: "6-Month" },
 ];
 
-/** The card that gets the animated border: the longest term, which is also the lowest monthly price. */
-const FEATURED_TERM: PaymentPlanTerm = "TERM_6";
+/** The card that gets the animated border and the "Best value" badge (a marketing choice, not the lowest price). */
+const FEATURED_TERM: PaymentPlanTerm = "TERM_3";
 
 type Audience = "solo" | "family";
 
