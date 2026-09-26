@@ -99,11 +99,7 @@ export function PaymentPlanTierGrid() {
           const isMonthly = option.value === "MONTHLY";
           const featured = option.value === FEATURED_TERM;
 
-          // The bundle is one upfront total for the whole term, so a per-month
-          // figure comparable to the solo card is total / students / months.
-          const perStudentCents = isFamily
-            ? Math.round(family.totalCents / family.recipientCount / rate.termMonths)
-            : rate.installmentAmountCents;
+          const perStudentCents = isFamily ? family.perStudentMonthlyCents : rate.installmentAmountCents;
           const classesPerMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
           const percentOff = Math.round((1 - perStudentCents / monthlyBaseline) * 100);
 

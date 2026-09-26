@@ -90,6 +90,17 @@ function toCharmPriceCents(cents: number): number {
   return Math.round(cents / 100) * 100 - 1;
 }
 
+/**
+ * Plan prices are shown and charged as "just under the next $5": round up to
+ * the next multiple of $5, then take a cent off ($97.17 becomes $99.99,
+ * $108 becomes $109.99, $120 becomes $119.99). Applies to Payment Plan
+ * installments and the family bundle's per-student rate. Existing plans keep
+ * the rate they enrolled at (it's snapshotted on the PaymentPlan row).
+ */
+function toPlanPriceCents(cents: number): number {
+  return Math.ceil(cents / 500) * 500 - 1;
+}
+
 export function calculateClassCreditTotal(quantity: number): CreditTotal {
   const q = Math.min(MAX_CUSTOM_QUANTITY, Math.max(MIN_CUSTOM_QUANTITY, Math.floor(quantity)));
   const tier = TIERS.find((t) => q >= t.minQuantity) ?? TIERS[TIERS.length - 1];
@@ -247,15 +258,15 @@ export interface PaymentPlanRate {
  * that plan, even if the ladder below changes later — a plan's rate is a
  * promise made at signup, not a live price.
  *
- * No charm-price (.99) rounding here, unlike calculateClassCreditTotal above
- * — the confirmed ladder already lands on whole dollars by construction
- * ($120/$108/$96/$84, $240/$216/$192/$168). Math.round is purely a defensive
- * guard against float error from the 0.1/0.2/0.3 multipliers.
+ * The discounted rate is then rounded up to just under the next $5
+ * (toPlanPriceCents), so the 30 min/week ladder is $119.99 / $109.99 /
+ * $99.99 and the 60 min/week ladder $239.99 / $219.99 / $194.99. Math.round
+ * on the discount step is a guard against float error from the multipliers.
  */
 export function calculatePaymentPlanRate(cadence: PaymentPlanCadence, term: PaymentPlanTerm): PaymentPlanRate {
   const baseCents = PLAN_CADENCE_MONTHLY_BASE_CENTS[cadence];
   const discountRate = PLAN_TERM_DISCOUNT_RATE[term];
-  const installmentAmountCents = Math.round(baseCents * (1 - discountRate));
+  const installmentAmountCents = toPlanPriceCents(Math.round(baseCents * (1 - discountRate)));
   const termMonths = PLAN_TERM_MONTHS[term];
 
   return {
@@ -299,6 +310,9 @@ export interface FamilyBundleTotal {
   perRecipientCents: number;
   combinedBeforeFamilyDiscountCents: number;
   familyDiscountCents: number;
+  /** One student's monthly rate inside the bundle: the solo rate for this term minus FAMILY_BUNDLE_DISCOUNT_RATE, rounded to just under the next $5. Comparable to the solo card's monthly price. */
+  perStudentMonthlyCents: number;
+  /** What is actually charged, once, up front: perStudentMonthlyCents * termMonths * recipients. */
   totalCents: number;
 }
 
@@ -311,8 +325,8 @@ export function calculateFamilyBundleTotal(
   const rate = calculatePaymentPlanRate(cadence, term);
   const perRecipientCents = rate.totalCommittedCents;
   const combinedBeforeFamilyDiscountCents = perRecipientCents * recipients;
-  const rawTotalCents = combinedBeforeFamilyDiscountCents - Math.round(combinedBeforeFamilyDiscountCents * FAMILY_BUNDLE_DISCOUNT_RATE);
-  const totalCents = toCharmPriceCents(rawTotalCents);
+  const perStudentMonthlyCents = toPlanPriceCents(Math.round(rate.installmentAmountCents * (1 - FAMILY_BUNDLE_DISCOUNT_RATE)));
+  const totalCents = perStudentMonthlyCents * rate.termMonths * recipients;
   return {
     cadence,
     term,
@@ -321,6 +335,7 @@ export function calculateFamilyBundleTotal(
     perRecipientCents,
     combinedBeforeFamilyDiscountCents,
     familyDiscountCents: combinedBeforeFamilyDiscountCents - totalCents,
+    perStudentMonthlyCents,
     totalCents,
   };
 }
