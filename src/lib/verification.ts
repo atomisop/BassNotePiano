@@ -100,8 +100,8 @@ export async function createAndSendCode(params: CreateCodeParams): Promise<{ ok:
 /**
  * Issues a fresh code WITHOUT emailing it, returning the raw code to the
  * caller instead. Only ever used when the caller has already established
- * trust through some other channel in the same request — a validated
- * trusted-device cookie, or a just-confirmed EMAIL_VERIFY code — so the
+ * trust through some other channel in the same request — a correct password
+ * on login, or a just-confirmed EMAIL_VERIFY/PASSWORD_RESET code — so the
  * caller can immediately turn around and submit this code to sign in, with
  * no second round trip through email.
  */

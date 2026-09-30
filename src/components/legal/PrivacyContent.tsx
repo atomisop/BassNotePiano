@@ -100,12 +100,10 @@ export function PrivacyContent() {
 
       <PrivacySection title="Cookies">
         <p>
-          Two cookies are strictly necessary and always on: the sign-in session that keeps you
-          logged in, and, only if you check &quot;remember this device&quot; at login, a second cookie
-          that skips the 2FA code step on that browser for 7 days. Nothing else is set without
-          asking first: the cookie banner offers an analytics category for future use, but as of
-          this writing no analytics tool is wired up in the app at all, so that choice does
-          nothing yet.
+          One cookie is strictly necessary and always on: the sign-in session that keeps you
+          logged in. Nothing else is set without asking first: the cookie banner offers an
+          analytics category for future use, but as of this writing no analytics tool is wired
+          up in the app at all, so that choice does nothing yet.
         </p>
       </PrivacySection>
 

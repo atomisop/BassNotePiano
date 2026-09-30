@@ -35,9 +35,6 @@ export async function resetPasswordAction(email: string, code: string, newPasswo
       data: { passwordHash },
       select: { id: true, email: true },
     });
-    // A password reset means the old password may have been compromised —
-    // any "remember me" trust established under it shouldn't carry over.
-    await tx.trustedDevice.deleteMany({ where: { userId: updated.id } });
     return updated;
   });
 
