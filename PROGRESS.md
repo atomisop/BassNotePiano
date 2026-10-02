@@ -16,6 +16,11 @@
 
 ## Decisions I approved
 
+- 2026-10-02 Fonts: keep Baloo 2 only for each screen's one Hero element; one clean font for everything else.
+- 2026-10-02 The "Continue" button (and every primary action) becomes green.
+- 2026-10-02 Success messages stop using green: white text plus a check icon instead.
+- 2026-10-02 Public pages (homepage, pricing, classes, shop, terms, privacy) are out of scope. Leave them alone.
+
 ## Notes for next session
 
-- STEP 1 audit done 2026-10-02. Waiting on the user's "go" and answers to the open questions (font, Continue button color, success color, marketing pages in scope) before STEP 1B.
+- STEP 1 audit done 2026-10-02. STEP 1B page-to-layout list proposed, waiting on approval before any width changes.
