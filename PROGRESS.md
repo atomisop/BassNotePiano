@@ -8,6 +8,7 @@
 - [ ] STEP 1B Narrow-column fix
 - [ ] STEP 2 Design system
 - [ ] STEP 2B Layout and wireframes
+- [ ] STEP 2C Depth, signal color, and type contrast
 - [ ] STEP 3 Component sources
 - [ ] STEP 4 Redesign screens
 - [ ] STEP 5 Piano keyboard visuals
