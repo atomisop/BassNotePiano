@@ -11,7 +11,7 @@ import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
 export default function BillingLoading() {
   return (
     <SkeletonScreen label="Loading billing">
-      <div className="glass-surface-elevated w-full max-w-md p-8">
+      <div className="glass-surface-elevated w-full p-8">
         <Skeleton className="h-3 w-20" />
         <Skeleton className="mt-3 h-7 w-full" />
         <Skeleton className="mt-1.5 h-7 w-2/3" />

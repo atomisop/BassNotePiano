@@ -1,3 +1,5 @@
+import { WideLayout } from "@/components/layout/PageLayouts";
+
 export default function BillingLayout({ children }: { children: React.ReactNode }) {
-  return <div className="flex min-h-[70vh] items-center justify-center">{children}</div>;
+  return <WideLayout>{children}</WideLayout>;
 }

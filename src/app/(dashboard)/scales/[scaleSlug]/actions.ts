@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { TRIAL_LESSON_COUNT } from "@/lib/entitlementRules";
 import { markLessonComplete } from "@/lib/courseContent";
 import { gradeQuiz, type QuizAnswerSubmission } from "@/lib/quiz";
+import { SCALE_NOTE_MAX_LENGTH } from "@/lib/scaleNotes";
 
 // The quiz itself is regenerated here from scratch (via gradeQuiz ->
 // generateScaleQuiz) rather than trusting anything about correctness from
@@ -73,4 +74,36 @@ export async function markLessonCompleteAction(scaleSlug: string, lessonId: stri
 
   revalidatePath(`/scales/${scaleSlug}`);
   revalidatePath("/dashboard");
+}
+
+/**
+ * Saves the student's own note for this scale (the lesson page's Notes
+ * tool autosaves through here). Scoped by the session's user id, never a
+ * client-supplied one, and only for a scale the student can currently open.
+ * An empty note deletes the row rather than keeping a blank one around.
+ */
+export async function saveScaleNoteAction(scaleSlug: string, body: string): Promise<{ ok: true; savedAt: string } | { ok: false; error: string }> {
+  const session = await getServerAuthSession();
+  if (!session?.user) return { ok: false, error: "Your session ended. Log in again to save notes." };
+  if (typeof body !== "string") return { ok: false, error: "That note couldn't be saved." };
+  if (body.length > SCALE_NOTE_MAX_LENGTH) {
+    return { ok: false, error: `Notes can be up to ${SCALE_NOTE_MAX_LENGTH.toLocaleString("en-US")} characters.` };
+  }
+
+  const access = await canAccessScale(session.user.id, scaleSlug);
+  if (!access?.canAccess) return { ok: false, error: "You don't have access to this scale right now." };
+
+  const where = { userId_scaleGroupId: { userId: session.user.id, scaleGroupId: access.scaleGroup.id } };
+  if (body.trim() === "") {
+    await prisma.scaleNote.deleteMany({ where: { userId: session.user.id, scaleGroupId: access.scaleGroup.id } });
+    return { ok: true, savedAt: new Date().toISOString() };
+  }
+
+  const note = await prisma.scaleNote.upsert({
+    where,
+    create: { userId: session.user.id, scaleGroupId: access.scaleGroup.id, body },
+    update: { body },
+    select: { updatedAt: true },
+  });
+  return { ok: true, savedAt: note.updatedAt.toISOString() };
 }

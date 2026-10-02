@@ -39,9 +39,9 @@ export function MetricCard({
 
   return (
     <div className="glass-surface p-5">
-      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">{label}</p>
-      <p className="mt-1.5 font-serif text-3xl tabular-nums text-slate-50">{value}</p>
-      {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+      <p className="text-small font-medium uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <p className="mt-1.5 text-body tabular-nums text-slate-50 font-semibold">{value}</p>
+      {hint && <p className="mt-1 text-small text-slate-500">{hint}</p>}
 
       {hasSeries && (
         <div className={`mt-4 h-14 w-full ${colorClass}`} aria-hidden>
@@ -96,7 +96,7 @@ function SparkTooltip({
   if (!active || !payload?.length) return null;
   const point = payload[0].payload;
   return (
-    <div className="rounded-md border border-ink/10 bg-surface px-2 py-1 text-[11px] text-slate-200 shadow-card">
+    <div className="rounded-md border border-ink/10 bg-surface px-2 py-1 text-small text-slate-200 shadow-card">
       <span className="text-slate-500">{point.label ?? label}: </span>
       <span className="tabular-nums">{point.value}</span>
     </div>

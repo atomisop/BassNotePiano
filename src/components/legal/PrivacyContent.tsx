@@ -21,7 +21,7 @@
 // an email they type has an account. Account deletion now actually deletes
 // the stored avatar file, not just the database row pointing at it: a real
 // gap this pass fixed in the code, not just in what this page claims.
-export const PRIVACY_LAST_UPDATED = "August 24, 2026";
+export const PRIVACY_LAST_UPDATED = "October 2, 2026";
 
 function PrivacySection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -39,7 +39,8 @@ export function PrivacyContent() {
         <p>
           What you give us directly: your name, email, and password when you register; your
           profile photo, instrument, skill level, and goals if you fill those in; messages you
-          send to friends or groups inside the app; and, when you pay by Zelle, the sender name
+          send to friends or groups inside the app; private notes you write on a scale&apos;s lesson
+          page (visible only to you, deleted with your account); and, when you pay by Zelle, the sender name
           and reference code you type in so we can match your transfer. If you use the class
           registration form before creating an account, that&apos;s your name, email, phone number,
           instrument, skill level, and anything you add in the notes field.

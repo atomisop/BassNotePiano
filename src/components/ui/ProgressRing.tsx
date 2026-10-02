@@ -76,12 +76,12 @@ export function ProgressRing({
             stroke="currentColor"
           />
         </svg>
-        <span className="absolute inset-0 flex items-center justify-center font-serif text-base tabular-nums text-slate-50">
+        <span className="absolute inset-0 flex items-center justify-center text-body tabular-nums text-slate-50">
           {Math.round(fraction * 100)}%
         </span>
       </div>
       {caption && (
-        <span className="mt-2 text-[11px] uppercase tracking-[0.14em] text-slate-500">
+        <span className="mt-2 text-small uppercase tracking-[0.14em] text-slate-400">
           {caption}
         </span>
       )}

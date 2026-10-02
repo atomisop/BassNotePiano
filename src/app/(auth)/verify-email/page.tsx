@@ -65,9 +65,9 @@ function VerifyEmailForm() {
         variants={cardVariants}
         initial="hidden"
         animate="visible"
-        className="w-full max-w-sm glass-surface-elevated p-7 text-center"
+        className="w-full glass-surface-elevated p-7 text-center"
       >
-        <p className="text-sm text-slate-400">
+        <p className="text-small text-slate-400">
           Missing email.{" "}
           <Link href="/register" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
             Start over
@@ -83,18 +83,18 @@ function VerifyEmailForm() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-sm glass-surface-elevated p-7"
+      className="w-full glass-surface-elevated p-7"
     >
       {/* Matches the "missing email" branch's own escape hatch below:
           register, not login, since there's no verified account to log
           into yet at this step. */}
-      <Link href="/register" className="mb-4 flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-300">
+      <Link href="/register" className="mb-4 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300">
         <ArrowLeftIcon size={16} />
         Back
       </Link>
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Almost there</p>
-      <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Verify your email</h1>
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Almost there</p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Verify your email</h1>
+      <p className="mt-2 text-small text-slate-500">
         We sent a 6-digit code to <span className="text-slate-300">{email}</span>.
       </p>
 
@@ -119,7 +119,7 @@ function VerifyEmailForm() {
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
             className={cn(
-              "h-12 text-center font-mono text-lg tracking-[0.5em]",
+              "h-12 text-center font-mono text-body tracking-[0.5em] font-semibold",
               error && fieldInvalid,
             )}
             placeholder="······"
@@ -127,12 +127,12 @@ function VerifyEmailForm() {
         </div>
 
         {error && (
-          <p role="alert" className="text-xs text-red-400">
+          <p role="alert" className="text-small text-red-400">
             {error}
           </p>
         )}
         {resent && (
-          <p role="status" className="text-xs text-emerald-400">
+          <p role="status" className="text-small text-emerald-400">
             New code sent.
           </p>
         )}
@@ -145,7 +145,7 @@ function VerifyEmailForm() {
       <button
         type="button"
         onClick={handleResend}
-        className="mt-4 w-full text-center text-sm text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
+        className="mt-4 w-full text-center text-small text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
       >
         Didn&apos;t get a code? Resend
       </button>

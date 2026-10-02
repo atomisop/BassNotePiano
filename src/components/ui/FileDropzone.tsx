@@ -110,10 +110,10 @@ export function FileDropzone({
           <path d="M12 16V4m0 0L7 9m5-5 5 5" strokeLinecap="round" strokeLinejoin="round" />
           <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" strokeLinecap="round" />
         </svg>
-        <span className="mt-3 text-sm font-medium text-slate-100">
+        <span className="mt-3 text-small font-medium text-slate-100">
           {dragging ? "Drop to upload" : "Drag a file here, or click to choose"}
         </span>
-        {hint && <span className="mt-1 text-xs text-slate-500">{hint}</span>}
+        {hint && <span className="mt-1 text-small text-slate-500">{hint}</span>}
       </label>
 
       <input
@@ -127,7 +127,7 @@ export function FileDropzone({
       />
 
       {error && (
-        <p role="alert" className="mt-2 text-xs text-red-400">
+        <p role="alert" className="mt-2 text-small text-red-400">
           {error}
         </p>
       )}
@@ -136,8 +136,8 @@ export function FileDropzone({
         <div className="mt-3 rounded-lg border border-ink/10 bg-slate-900 p-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-sm text-slate-100">{file.name}</p>
-              <p className="mt-0.5 text-xs text-slate-500">{formatBytes(file.size)}</p>
+              <p className="truncate text-small text-slate-100">{file.name}</p>
+              <p className="mt-0.5 text-small text-slate-500">{formatBytes(file.size)}</p>
             </div>
             {!uploading && (
               <button
@@ -146,7 +146,7 @@ export function FileDropzone({
                   onFileSelected(null);
                   if (inputRef.current) inputRef.current.value = "";
                 }}
-                className="shrink-0 cursor-pointer text-xs text-slate-500 transition hover:text-red-400"
+                className="shrink-0 cursor-pointer text-small text-slate-500 transition hover:text-red-400"
               >
                 Remove
               </button>
@@ -168,7 +168,7 @@ export function FileDropzone({
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <p className="mt-1.5 text-[11px] tabular-nums text-slate-500">
+              <p className="mt-1.5 text-small tabular-nums text-slate-500">
                 {Math.round(progress!)}% uploaded
               </p>
             </div>

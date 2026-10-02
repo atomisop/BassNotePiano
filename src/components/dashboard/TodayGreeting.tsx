@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Hero } from "@/components/ui/Hero";
 
 /**
  * Time-of-day greeting, resolved in the browser.
@@ -20,7 +21,8 @@ function greetingFor(hour: number): string {
   return "Good evening";
 }
 
-export function TodayGreeting({ name }: { name: string | null }) {
+/** The Home screen's one Hero element (STEP 2C). */
+export function TodayGreeting({ name, className }: { name: string | null; className?: string }) {
   const [greeting, setGreeting] = useState("Welcome back");
 
   useEffect(() => {
@@ -28,9 +30,9 @@ export function TodayGreeting({ name }: { name: string | null }) {
   }, []);
 
   return (
-    <h1 className="font-serif text-3xl text-slate-50 sm:text-4xl">
+    <Hero className={className}>
       {greeting}
       {name ? <>, {name.split(" ")[0]}</> : null}.
-    </h1>
+    </Hero>
   );
 }

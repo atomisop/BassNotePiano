@@ -17,9 +17,9 @@ export default async function AdminSupportPage({ searchParams }: { searchParams:
 
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-      <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Support Chat</h1>
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Support Chat</h1>
+      <p className="mt-2 text-small text-slate-500">
         {threads.length} conversation{threads.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()} — when a visitor
         asks Atom to connect them with a person, the full chat lands here. Your replies show up to them as
         &quot;Support&quot;, never your name.
@@ -30,8 +30,8 @@ export default async function AdminSupportPage({ searchParams }: { searchParams:
           <Link
             key={filter.value}
             href={filter.value === "OPEN" ? "/admin/support" : `/admin/support?status=${filter.value}`}
-            className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-              activeFilter === filter.value ? "bg-amber-400 text-slate-950" : "text-slate-400 hover:text-slate-100"
+            className={`rounded-full px-3 py-1.5 text-small font-medium transition ${
+              activeFilter === filter.value ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
             }`}
           >
             {filter.label}

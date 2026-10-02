@@ -21,14 +21,14 @@ export function GroupListItem({ group, active, onSelect }: { group: GroupSummary
       <GroupAvatar className="h-9 w-9" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-sm text-slate-100">{groupTitle(group)}</p>
+          <p className="truncate text-small text-slate-100">{groupTitle(group)}</p>
           {group.unreadCount > 0 && (
-            <span className="flex h-4 min-w-[1rem] shrink-0 items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-slate-950">
+            <span className="flex h-4 min-w-[1rem] shrink-0 items-center justify-center rounded-full bg-slate-50 px-1 text-small font-bold text-slate-950">
               {group.unreadCount > 9 ? "9+" : group.unreadCount}
             </span>
           )}
         </div>
-        <p className="truncate text-xs text-slate-500">
+        <p className="truncate text-small text-slate-500">
           {group.lastMessageBody ? `${group.lastMessageSenderName ?? "Someone"}: ${group.lastMessageBody}` : `${group.memberCount} members`}
         </p>
       </div>

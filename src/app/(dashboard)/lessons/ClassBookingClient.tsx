@@ -14,6 +14,7 @@ import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { CheckIcon, XIcon } from "@/components/ui/icons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 interface OccurrenceRow {
   scheduleId: string;
@@ -47,8 +48,8 @@ const STATUS_LABEL: Record<BookingRow["status"], string> = {
 };
 
 const STATUS_STYLE: Record<BookingRow["status"], string> = {
-  SCHEDULED: "bg-amber-400/15 text-amber-400",
-  COMPLETED: "bg-emerald-400/15 text-emerald-300",
+  SCHEDULED: "border border-ink/15 text-slate-50",
+  COMPLETED: "bg-[rgb(var(--c-s-50)/0.08)] text-slate-200",
   CANCELED: "bg-slate-800 text-slate-500",
 };
 
@@ -139,10 +140,10 @@ function BookingCard({
   return (
     <div className="glass-surface flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p className="text-sm text-slate-100">
+        <p className="text-small text-slate-100">
           {b.label ?? "Class"} — {formatDateTime(b.scheduledAt)}
         </p>
-        <p className="mt-0.5 text-xs text-slate-500">
+        <p className="mt-0.5 text-small text-slate-500">
           {b.creditsSpent} credit{b.creditsSpent === 1 ? "" : "s"}
           {b.status === "SCHEDULED" &&
             (cancelEligible
@@ -152,11 +153,11 @@ function BookingCard({
                 : "")}
         </p>
         {b.status === "COMPLETED" && b.attendance && (
-          <p className={`mt-0.5 text-xs ${b.attendance === "PRESENT" ? "text-emerald-400" : "text-red-400"}`}>
+          <p className={`mt-0.5 text-small ${b.attendance === "PRESENT" ? "text-emerald-400" : "text-red-400"}`}>
             {b.attendance === "PRESENT" ? "Attended" : "Marked no-show — still charged, per our terms"}
           </p>
         )}
-        {b.status === "CANCELED" && <p className="mt-0.5 text-xs text-emerald-400">Canceled — no credits were charged</p>}
+        {b.status === "CANCELED" && <p className="mt-0.5 text-small text-emerald-400">Canceled — no credits were charged</p>}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {cancelEligible && (
@@ -164,7 +165,7 @@ function BookingCard({
             type="button"
             onClick={() => onStartReschedule(b)}
             disabled={cancelingId === b.id}
-            className={`flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+            className={`flex items-center justify-center rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
               isBeingRescheduled
                 ? "border-[rgb(var(--c-s-50)/0.4)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
                 : "border-ink/10 text-slate-300 hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
@@ -178,7 +179,7 @@ function BookingCard({
             type="button"
             onClick={() => onCancel(b)}
             disabled={cancelingId === b.id}
-            className="flex items-center justify-center rounded-lg border border-red-400/20 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex items-center justify-center rounded-lg border border-red-400/20 px-3 py-1.5 text-small font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {cancelingId === b.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {cancelingId === b.id ? "Canceling…" : "Cancel"}
@@ -187,12 +188,12 @@ function BookingCard({
         {pastSelfServeWindow && supportContactId && (
           <Link
             href={`/messages?with=${supportContactId}`}
-            className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+            className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
           >
             Message support
           </Link>
         )}
-        <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${STATUS_STYLE[b.status]}`}>
+        <span className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[b.status]}`}>
           {STATUS_LABEL[b.status]}
         </span>
       </div>
@@ -239,8 +240,8 @@ function MonthGroup({
         onClick={() => setOpen((o) => !o)}
         className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-ink/5"
       >
-        <span className="text-sm font-medium text-slate-200">{group.label}</span>
-        <span className="flex items-center gap-2 text-xs text-slate-500">
+        <span className="text-small font-medium text-slate-200">{group.label}</span>
+        <span className="flex items-center gap-2 text-small text-slate-500">
           {group.bookings.length} booking{group.bookings.length === 1 ? "" : "s"}
           <ChevronIcon open={open} />
         </span>
@@ -286,9 +287,9 @@ function AttendeeEmailRow({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="student@email.com"
-        className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+        className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
       />
-      <span className="w-28 shrink-0 text-xs">
+      <span className="w-28 shrink-0 text-small">
         {value.trim() === "" ? null : status?.checking ? (
           <span className="text-slate-500">Checking…</span>
         ) : status?.verified ? (
@@ -653,356 +654,366 @@ export function ClassBookingClient({
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Live Lessons</p>
-      <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Book a class</h1>
-      <p className="mt-2 text-sm text-slate-500">
+    <WideLayout>
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Live Lessons</p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Book a class</h1>
+      <p className="mt-2 text-small text-slate-500">
         Live on Discord · 1 credit = 30 minutes · charged when attendance is taken, present or not.
       </p>
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 glass-surface p-5">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">Available to book</p>
-          <p className="mt-1 font-serif text-2xl text-slate-50">
-            {credits} credit{credits === 1 ? "" : "s"}
-          </p>
-        </div>
-        <Link
-          href="/billing/lessons"
-          className="rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
-        >
-          Buy credits
-        </Link>
-      </div>
-
-      {/* Mode picker — same segmented-pill pattern used elsewhere in the app. Group is listed but disabled, matching the "coming soon" treatment already used for other not-yet-available options. */}
-      <div className="mt-6 flex flex-wrap gap-1.5 rounded-full border border-ink/10 p-1">
-        <button
-          type="button"
-          onClick={() => setMode("SOLO")}
-          aria-pressed={mode === "SOLO"}
-          className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-            mode === "SOLO" ? "bg-amber-400 text-slate-950" : "text-slate-400 hover:text-slate-100"
-          }`}
-        >
-          One-on-one
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("FAMILY")}
-          aria-pressed={mode === "FAMILY"}
-          className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
-            mode === "FAMILY" ? "bg-amber-400 text-slate-950" : "text-slate-400 hover:text-slate-100"
-          }`}
-        >
-          Family
-        </button>
-        <span
-          title="Group classes are coming soon"
-          className="flex cursor-not-allowed items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium text-slate-600"
-        >
-          Group
-          <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] uppercase tracking-wide">Soon</span>
-        </span>
-      </div>
-      <p className="mt-2 text-xs text-slate-500">
-        {mode === "SOLO"
-          ? `One-on-one time with the teacher: each open time below is a full class, ready to book as-is.`
-          : `2+ verified students from the same family, taught together — ${familyCreditsPerStudent} credits each, regardless of how many join.`}
-      </p>
-
-      {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
-      {success && <p className="mt-4 text-sm text-emerald-400">{success}</p>}
-
-      {rows.length > 0 && (
-        <div className="mt-8">
-          <BookingCalendar occurrences={rows} selectedDateKey={selectedDateKey} onSelectDate={setSelectedDateKey} />
-        </div>
-      )}
-
-      {mode === "SOLO" && selectedKeys.size > 0 && (
-        <div className="glass-surface-elevated mt-8 flex flex-wrap items-center justify-between gap-4 p-5">
-          <div>
-            <p className="text-sm font-medium text-slate-100">
-              {selectedRows.length} class{selectedRows.length === 1 ? "" : "es"} selected
-            </p>
-            <p className={`mt-0.5 text-xs ${selectedExceedsBalance ? "text-red-400" : "text-slate-500"}`}>
-              {selectedCreditTotal} credit{selectedCreditTotal === 1 ? "" : "s"} total
-              {selectedExceedsBalance && ` — you only have ${credits}`}
-            </p>
+      {/* Two columns on desktop (STEP 4): booking on the left, your credits,
+          bookings, and history in a side panel that stays in view. On
+          smaller screens the panel comes first, so the balance is visible
+          before choosing a class. */}
+      <div className="mt-(--space-group) grid gap-(--space-group) lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+        <aside className="space-y-4 lg:sticky lg:top-0 lg:col-start-2 lg:row-start-1" aria-label="Your credits and bookings">
+          <div className="flex flex-wrap items-center justify-between gap-3 glass-surface p-5">
+            <div>
+              <p className="text-small uppercase tracking-wide text-slate-500">Available to book</p>
+              <p className="mt-1 text-body text-slate-50 font-semibold">
+                {credits} credit{credits === 1 ? "" : "s"}
+              </p>
+            </div>
+            <Link
+              href="/billing/lessons"
+              className="rounded-lg border border-ink/10 px-4 py-2 text-small font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+            >
+              Buy credits
+            </Link>
           </div>
-          <div className="flex items-center gap-3">
+
+          <div className="glass-surface p-5">
+            <h2 className="mb-3 text-body text-slate-100 font-semibold">Upcoming bookings</h2>
+            {upcoming.length === 0 ? (
+              <p className="text-small text-slate-600">No upcoming bookings.</p>
+            ) : (
+              <div className="space-y-2">
+                {upcoming.map((b) => (
+                  <BookingCard
+                    key={b.id}
+                    booking={b}
+                    cancellationCutoffHours={cancellationCutoffHours}
+                    supportContactId={supportContactId}
+                    cancelingId={cancelingId}
+                    reschedulingBookingId={reschedulingBooking?.id ?? null}
+                    onCancel={handleCancel}
+                    onStartReschedule={startReschedule}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="glass-surface p-5">
+            <div className="mb-3 flex items-baseline justify-between">
+              <h2 className="text-body text-slate-100 font-semibold">History</h2>
+              {history.length > 0 && (
+                <span className="text-small text-slate-600">
+                  {history.length} past booking{history.length === 1 ? "" : "s"}
+                </span>
+              )}
+            </div>
+            {historyGroups.length === 0 ? (
+              <p className="text-small text-slate-600">No past bookings yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {historyGroups.map((group, i) => (
+                  <MonthGroup
+                    key={group.key}
+                    group={group}
+                    defaultOpen={i === 0}
+                    cancellationCutoffHours={cancellationCutoffHours}
+                    supportContactId={supportContactId}
+                    cancelingId={cancelingId}
+                    reschedulingBookingId={reschedulingBooking?.id ?? null}
+                    onCancel={handleCancel}
+                    onStartReschedule={startReschedule}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </aside>
+
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+          {/* Mode picker — same segmented-pill pattern used elsewhere in the app. Group is listed but disabled, matching the "coming soon" treatment already used for other not-yet-available options. */}
+          <div className="flex w-fit flex-wrap gap-1.5 rounded-full border border-ink/10 p-1">
             <button
               type="button"
-              onClick={() => setSelectedKeys(new Set())}
-              disabled={bundleSubmitting}
-              className="text-xs font-medium text-slate-500 transition hover:text-slate-300 disabled:pointer-events-none disabled:opacity-50"
+              onClick={() => setMode("SOLO")}
+              aria-pressed={mode === "SOLO"}
+              className={`rounded-full px-4 py-1.5 text-small font-medium transition ${
+                mode === "SOLO" ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
+              }`}
             >
-              Clear
+              One-on-one
             </button>
             <button
               type="button"
-              onClick={handleBookBundle}
-              disabled={bundleSubmitting || selectedExceedsBalance}
-              className="cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() => setMode("FAMILY")}
+              aria-pressed={mode === "FAMILY"}
+              className={`rounded-full px-4 py-1.5 text-small font-medium transition ${
+                mode === "FAMILY" ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
+              }`}
             >
-              {bundleSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-              {bundleSubmitting ? "Booking…" : `Book ${selectedRows.length} class${selectedRows.length === 1 ? "" : "es"}`}
+              Family
             </button>
+            <span
+              title="Group classes are coming soon"
+              className="flex cursor-not-allowed items-center gap-1.5 rounded-full px-4 py-1.5 text-small font-medium text-slate-600"
+            >
+              Group
+              <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-small uppercase tracking-wide">Soon</span>
+            </span>
           </div>
-        </div>
-      )}
+          <p className="mt-2 text-small text-slate-500">
+            {mode === "SOLO"
+              ? `One-on-one time with the teacher: each open time below is a full class, ready to book as-is.`
+              : `2+ verified students from the same family, taught together — ${familyCreditsPerStudent} credits each, regardless of how many join.`}
+          </p>
 
-      {mode === "FAMILY" && familyRow && (
-        <div className="glass-surface-elevated mt-8 p-5">
-          <p className="text-sm font-medium text-slate-100">
-            Family booking — {formatOccurrenceDay(familyRow.scheduledAt)} at {formatOccurrenceTime(familyRow.scheduledAt)}
-          </p>
-          <p className="mt-1 text-xs text-slate-500">
-            Every student listed must already have a verified account. {familyCreditsPerStudent} credits will be reserved from each.
-          </p>
-          <div className="mt-4 space-y-2">
-            {familyEmails.map((email, i) => (
-              <AttendeeEmailRow
-                key={i}
-                value={email}
-                onChange={(v) => updateFamilyEmail(i, v)}
-                onRemove={() => setFamilyEmails((prev) => prev.filter((_, idx) => idx !== i))}
-                removable={familyEmails.length > familyMinAttendees}
-                status={familyChecks[email.trim().toLowerCase()]}
-              />
-            ))}
-          </div>
-          <div className="mt-3 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => setFamilyEmails((prev) => [...prev, ""])}
-              className="text-xs font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70"
-            >
-              + Add another student
-            </button>
-            <div className="flex items-center gap-3">
+          {error && <p className="mt-4 text-small text-red-400">{error}</p>}
+          {success && <p className="mt-4 text-small text-emerald-400">{success}</p>}
+
+          {rows.length > 0 && (
+            <div className="mt-8">
+              <BookingCalendar occurrences={rows} selectedDateKey={selectedDateKey} onSelectDate={setSelectedDateKey} />
+            </div>
+          )}
+
+          {mode === "SOLO" && selectedKeys.size > 0 && (
+            <div className="glass-surface-elevated mt-8 flex flex-wrap items-center justify-between gap-4 p-5">
+              <div>
+                <p className="text-small font-medium text-slate-100">
+                  {selectedRows.length} class{selectedRows.length === 1 ? "" : "es"} selected
+                </p>
+                <p className={`mt-0.5 text-small ${selectedExceedsBalance ? "text-red-400" : "text-slate-500"}`}>
+                  {selectedCreditTotal} credit{selectedCreditTotal === 1 ? "" : "s"} total
+                  {selectedExceedsBalance && ` — you only have ${credits}`}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedKeys(new Set())}
+                  disabled={bundleSubmitting}
+                  className="text-small font-medium text-slate-500 transition hover:text-slate-300 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBookBundle}
+                  disabled={bundleSubmitting || selectedExceedsBalance}
+                  className="cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {bundleSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                  {bundleSubmitting ? "Booking…" : `Book ${selectedRows.length} class${selectedRows.length === 1 ? "" : "es"}`}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {mode === "FAMILY" && familyRow && (
+            <div className="glass-surface-elevated mt-8 p-5">
+              <p className="text-small font-medium text-slate-100">
+                Family booking — {formatOccurrenceDay(familyRow.scheduledAt)} at {formatOccurrenceTime(familyRow.scheduledAt)}
+              </p>
+              <p className="mt-1 text-small text-slate-500">
+                Every student listed must already have a verified account. {familyCreditsPerStudent} credits will be reserved from each.
+              </p>
+              <div className="mt-4 space-y-2">
+                {familyEmails.map((email, i) => (
+                  <AttendeeEmailRow
+                    key={i}
+                    value={email}
+                    onChange={(v) => updateFamilyEmail(i, v)}
+                    onRemove={() => setFamilyEmails((prev) => prev.filter((_, idx) => idx !== i))}
+                    removable={familyEmails.length > familyMinAttendees}
+                    status={familyChecks[email.trim().toLowerCase()]}
+                  />
+                ))}
+              </div>
+              <div className="mt-3 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setFamilyEmails((prev) => [...prev, ""])}
+                  className="text-small font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70"
+                >
+                  + Add another student
+                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setFamilyRowKey(null)}
+                    disabled={familySubmitting}
+                    className="text-small font-medium text-slate-500 transition hover:text-slate-300 disabled:pointer-events-none disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBookFamily}
+                    disabled={!familyAllVerified || familySubmitting}
+                    className="cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {familySubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                    {familySubmitting ? "Booking…" : `Book for ${familyEmailsTrimmed.length || familyMinAttendees} students`}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {reschedulingBooking && (
+            <div className="glass-surface-elevated mt-8 flex flex-wrap items-center justify-between gap-4 p-5">
+              <div>
+                <p className="text-small font-medium text-slate-100">
+                  Rescheduling {reschedulingBooking.label ?? "your class"} — {formatDateTime(reschedulingBooking.scheduledAt)}
+                </p>
+                <p className="mt-0.5 text-small text-slate-500">Pick a new open time below. Nothing changes until you choose one.</p>
+              </div>
               <button
                 type="button"
-                onClick={() => setFamilyRowKey(null)}
-                disabled={familySubmitting}
-                className="text-xs font-medium text-slate-500 transition hover:text-slate-300 disabled:pointer-events-none disabled:opacity-50"
+                onClick={() => setReschedulingBooking(null)}
+                className="shrink-0 text-small font-medium text-slate-500 transition hover:text-slate-300"
               >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleBookFamily}
-                disabled={!familyAllVerified || familySubmitting}
-                className="cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {familySubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                {familySubmitting ? "Booking…" : `Book for ${familyEmailsTrimmed.length || familyMinAttendees} students`}
+                Cancel reschedule
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {reschedulingBooking && (
-        <div className="glass-surface-elevated mt-8 flex flex-wrap items-center justify-between gap-4 p-5">
-          <div>
-            <p className="text-sm font-medium text-slate-100">
-              Rescheduling {reschedulingBooking.label ?? "your class"} — {formatDateTime(reschedulingBooking.scheduledAt)}
-            </p>
-            <p className="mt-0.5 text-xs text-slate-500">Pick a new open time below. Nothing changes until you choose one.</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setReschedulingBooking(null)}
-            className="shrink-0 text-xs font-medium text-slate-500 transition hover:text-slate-300"
-          >
-            Cancel reschedule
-          </button>
-        </div>
-      )}
-
-      <div className="mt-8">
-        <div className="mb-3 flex items-baseline justify-between gap-3">
-          <h2 className="font-serif text-lg text-slate-100">
-            {selectedDateKey
-              ? `Classes on ${new Date(selectedDateKey).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })}`
-              : "Upcoming classes"}
-          </h2>
-          {selectedDateKey && (
-            <button
-              type="button"
-              onClick={() => setSelectedDateKey(null)}
-              className="shrink-0 text-xs font-medium text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
-            >
-              Show all
-            </button>
           )}
-        </div>
-        {rows.length === 0 ? (
-          <p className="text-sm text-slate-600">No classes scheduled right now — check back soon.</p>
-        ) : displayRows.length === 0 ? (
-          <p className="text-sm text-slate-600">No open slots on that day — someone else just took it. Try another date.</p>
-        ) : (
-          /* One card per week with divided rows, rather than a stack of
-             separate floating cards: seven identical shadowed pills read as
-             seven equally-urgent things. The week heading gives the eye
-             somewhere to land, and the Book control is a quiet outline —
-             repeating a solid accent fill down the page made the accent
-             mean nothing. */
-          <div className="space-y-6">
-            {occurrenceGroups.map((group) => (
-              <section key={group.key}>
-                <h3 className="eyebrow mb-2">{group.label}</h3>
-                <div className="glass-surface divide-y divide-ink/10 overflow-hidden">
-                  {group.rows.map((row) => {
-                    const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
-                    const chosen = creditsFor(row);
-                    // While rescheduling, the credits the old booking is
-                    // still holding (client-side — nothing's actually freed
-                    // until the swap commits) are added back for this check
-                    // only, since the real backend check treats them the
-                    // same way: freed by the same move, not double-spent.
-                    const effectiveCredits = reschedulingBooking ? credits + reschedulingBooking.creditsSpent : credits;
-                    const insufficientCredits = effectiveCredits < chosen;
-                    const isCurrentRescheduleSlot =
-                      reschedulingBooking !== null && row.scheduledAt === reschedulingBooking.scheduledAt;
-                    const disabled = reschedulingBooking
-                      ? row.isBooked || insufficientCredits || reschedulingKey !== null
-                      : row.isBooked || insufficientCredits || bookingKey !== null || bundleSubmitting;
-                    const isSelected = selectedKeys.has(key);
-                    return (
-                      <div key={key} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-6">
-                        {mode === "SOLO" && !reschedulingBooking && (
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleSelected(row)}
-                            disabled={row.isBooked || bundleSubmitting}
-                            aria-label={`Select ${formatOccurrenceDay(row.scheduledAt)} at ${formatOccurrenceTime(row.scheduledAt)} for bundle booking`}
-                            className="h-4 w-4 shrink-0 self-start rounded border-ink/20 bg-transparent text-[rgb(var(--c-s-50))] accent-[rgb(var(--c-s-50))] focus:ring-[rgb(var(--c-s-50)/0.5)] disabled:cursor-not-allowed disabled:opacity-30 sm:self-auto"
-                          />
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-slate-100">{formatOccurrenceDay(row.scheduledAt)}</p>
-                          {mode === "SOLO" ? (
-                            <p className="mt-0.5 text-xs text-slate-500">
-                              {formatOccurrenceTime(row.scheduledAt)}–{formatEndTime(row.scheduledAt, chosen)} ·{" "}
-                              {chosen} credit{chosen === 1 ? "" : "s"}
-                            </p>
-                          ) : (
-                            <p className="mt-0.5 text-xs text-slate-500">
-                              {formatOccurrenceTime(row.scheduledAt)}–{formatEndTime(row.scheduledAt, familyCreditsPerStudent)} ·{" "}
-                              {familyCreditsPerStudent} credits per student
-                            </p>
-                          )}
-                        </div>
-                        <p className="shrink-0 text-xs tabular-nums text-slate-500 sm:w-20 sm:text-right">
-                          {isCurrentRescheduleSlot ? (
-                            <span className="text-[rgb(var(--c-s-50))]">Current time</span>
-                          ) : row.isBooked ? (
-                            <span className="text-red-400">Booked</span>
-                          ) : (
-                            "Available"
-                          )}
-                        </p>
-                        {reschedulingBooking ? (
-                          <button
-                            type="button"
-                            onClick={() => handleReschedule(row)}
-                            disabled={disabled}
-                            className="flex shrink-0 items-center justify-center rounded-lg border border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-xs font-semibold text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
-                          >
-                            {reschedulingKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                            {reschedulingKey === key
-                              ? "Moving…"
-                              : isCurrentRescheduleSlot
-                                ? "Current time"
-                                : insufficientCredits
-                                  ? "Not enough credits"
-                                  : "Move here"}
-                          </button>
-                        ) : mode === "SOLO" ? (
-                          <button
-                            type="button"
-                            onClick={() => handleBook(row)}
-                            disabled={disabled}
-                            className="flex shrink-0 items-center justify-center rounded-lg border border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-xs font-semibold text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
-                          >
-                            {bookingKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                            {bookingKey === key ? "Booking…" : row.isBooked ? "Booked" : insufficientCredits ? "Not enough credits" : "Book"}
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => openFamilyBooking(row)}
-                            disabled={row.isBooked || familySubmitting}
-                            className="shrink-0 rounded-lg border border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-xs font-semibold text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
-                          >
-                            {row.isBooked ? "Booked" : "Set up family"}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
-          </div>
-        )}
-      </div>
 
-      <div className="mt-8">
-        <h2 className="mb-3 font-serif text-lg text-slate-100">Upcoming bookings</h2>
-        {upcoming.length === 0 ? (
-          <p className="text-sm text-slate-600">No upcoming bookings.</p>
-        ) : (
-          <div className="space-y-2">
-            {upcoming.map((b) => (
-              <BookingCard
-                key={b.id}
-                booking={b}
-                cancellationCutoffHours={cancellationCutoffHours}
-                supportContactId={supportContactId}
-                cancelingId={cancelingId}
-                reschedulingBookingId={reschedulingBooking?.id ?? null}
-                onCancel={handleCancel}
-                onStartReschedule={startReschedule}
-              />
-            ))}
+          <div className="mt-8">
+            <div className="mb-3 flex items-baseline justify-between gap-3">
+              <h2 className="text-body text-slate-100 font-semibold">
+                {selectedDateKey
+                  ? `Classes on ${new Date(selectedDateKey).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })}`
+                  : "Upcoming classes"}
+              </h2>
+              {selectedDateKey && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedDateKey(null)}
+                  className="shrink-0 text-small font-medium text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
+                >
+                  Show all
+                </button>
+              )}
+            </div>
+            {rows.length === 0 ? (
+              <p className="text-small text-slate-600">No classes scheduled right now — check back soon.</p>
+            ) : displayRows.length === 0 ? (
+              <p className="text-small text-slate-600">No open slots on that day — someone else just took it. Try another date.</p>
+            ) : (
+              /* One card per week with divided rows, rather than a stack of
+                 separate floating cards: seven identical shadowed pills read as
+                 seven equally-urgent things. The week heading gives the eye
+                 somewhere to land, and the Book control is a quiet outline —
+                 repeating a solid accent fill down the page made the accent
+                 mean nothing. */
+              <div className="space-y-6">
+                {occurrenceGroups.map((group) => (
+                  <section key={group.key}>
+                    <h3 className="eyebrow mb-2">{group.label}</h3>
+                    <div className="glass-surface divide-y divide-ink/10 overflow-hidden">
+                      {group.rows.map((row) => {
+                        const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
+                        const chosen = creditsFor(row);
+                        // While rescheduling, the credits the old booking is
+                        // still holding (client-side — nothing's actually freed
+                        // until the swap commits) are added back for this check
+                        // only, since the real backend check treats them the
+                        // same way: freed by the same move, not double-spent.
+                        const effectiveCredits = reschedulingBooking ? credits + reschedulingBooking.creditsSpent : credits;
+                        const insufficientCredits = effectiveCredits < chosen;
+                        const isCurrentRescheduleSlot =
+                          reschedulingBooking !== null && row.scheduledAt === reschedulingBooking.scheduledAt;
+                        const disabled = reschedulingBooking
+                          ? row.isBooked || insufficientCredits || reschedulingKey !== null
+                          : row.isBooked || insufficientCredits || bookingKey !== null || bundleSubmitting;
+                        const isSelected = selectedKeys.has(key);
+                        return (
+                          <div key={key} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-6">
+                            {mode === "SOLO" && !reschedulingBooking && (
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleSelected(row)}
+                                disabled={row.isBooked || bundleSubmitting}
+                                aria-label={`Select ${formatOccurrenceDay(row.scheduledAt)} at ${formatOccurrenceTime(row.scheduledAt)} for bundle booking`}
+                                className="h-4 w-4 shrink-0 self-start rounded border-ink/20 bg-transparent text-[rgb(var(--c-s-50))] accent-[rgb(var(--c-s-50))] focus:ring-[rgb(var(--c-s-50)/0.5)] disabled:cursor-not-allowed disabled:opacity-30 sm:self-auto"
+                              />
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="text-small font-medium text-slate-100">{formatOccurrenceDay(row.scheduledAt)}</p>
+                              {mode === "SOLO" ? (
+                                <p className="mt-0.5 text-small text-slate-500">
+                                  {formatOccurrenceTime(row.scheduledAt)}–{formatEndTime(row.scheduledAt, chosen)} ·{" "}
+                                  {chosen} credit{chosen === 1 ? "" : "s"}
+                                </p>
+                              ) : (
+                                <p className="mt-0.5 text-small text-slate-500">
+                                  {formatOccurrenceTime(row.scheduledAt)}–{formatEndTime(row.scheduledAt, familyCreditsPerStudent)} ·{" "}
+                                  {familyCreditsPerStudent} credits per student
+                                </p>
+                              )}
+                            </div>
+                            <p className="shrink-0 text-small tabular-nums text-slate-500 sm:w-20 sm:text-right">
+                              {isCurrentRescheduleSlot ? (
+                                <span className="text-[rgb(var(--c-s-50))]">Current time</span>
+                              ) : row.isBooked ? (
+                                <span className="text-red-400">Booked</span>
+                              ) : (
+                                "Available"
+                              )}
+                            </p>
+                            {reschedulingBooking ? (
+                              <button
+                                type="button"
+                                onClick={() => handleReschedule(row)}
+                                disabled={disabled}
+                                className="flex shrink-0 items-center justify-center rounded-lg border border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
+                              >
+                                {reschedulingKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                                {reschedulingKey === key
+                                  ? "Moving…"
+                                  : isCurrentRescheduleSlot
+                                    ? "Current time"
+                                    : insufficientCredits
+                                      ? "Not enough credits"
+                                      : "Move here"}
+                              </button>
+                            ) : mode === "SOLO" ? (
+                              <button
+                                type="button"
+                                onClick={() => handleBook(row)}
+                                disabled={disabled}
+                                className="flex shrink-0 items-center justify-center rounded-lg border border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
+                              >
+                                {bookingKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                                {bookingKey === key ? "Booking…" : row.isBooked ? "Booked" : insufficientCredits ? "Not enough credits" : "Book"}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => openFamilyBooking(row)}
+                                disabled={row.isBooked || familySubmitting}
+                                className="shrink-0 rounded-lg border border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
+                              >
+                                {row.isBooked ? "Booked" : "Set up family"}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
-
-      <div className="mt-8">
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="font-serif text-lg text-slate-100">History</h2>
-          {history.length > 0 && (
-            <span className="text-xs text-slate-600">
-              {history.length} past booking{history.length === 1 ? "" : "s"}
-            </span>
-          )}
         </div>
-        {historyGroups.length === 0 ? (
-          <p className="text-sm text-slate-600">No past bookings yet.</p>
-        ) : (
-          <div className="space-y-2">
-            {historyGroups.map((group, i) => (
-              <MonthGroup
-                key={group.key}
-                group={group}
-                defaultOpen={i === 0}
-                cancellationCutoffHours={cancellationCutoffHours}
-                supportContactId={supportContactId}
-                cancelingId={cancelingId}
-                reschedulingBookingId={reschedulingBooking?.id ?? null}
-                onCancel={handleCancel}
-                onStartReschedule={startReschedule}
-              />
-            ))}
-          </div>
-        )}
       </div>
-    </div>
+    </WideLayout>
   );
 }

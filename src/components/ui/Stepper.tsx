@@ -63,7 +63,7 @@ export function Stepper({
             <Fragment key={step.title}>
               <li className="flex shrink-0 items-center" aria-current={active ? "step" : undefined}>
                 <Marker index={i} done={done} active={active} />
-                <span className={cn("ml-2 whitespace-nowrap text-xs font-medium text-slate-50", !active && "sr-only")}>
+                <span className={cn("ml-2 whitespace-nowrap text-small font-medium text-slate-50", !active && "sr-only")}>
                   {step.title}
                 </span>
               </li>
@@ -102,14 +102,14 @@ export function Stepper({
             <div className={cn("pb-6", last && "pb-0")}>
               <p
                 className={cn(
-                  "text-sm font-medium",
+                  "text-small font-medium",
                   active ? "text-slate-50" : done ? "text-slate-300" : "text-slate-500",
                 )}
               >
                 {step.title}
               </p>
               {step.description && (
-                <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{step.description}</p>
+                <p className="mt-0.5 text-small text-slate-500">{step.description}</p>
               )}
             </div>
           </li>
@@ -130,7 +130,7 @@ function Marker({ index, done, active }: { index: number; done: boolean; active:
   return (
     <span
       className={cn(
-        "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+        "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-small font-semibold",
         active
           ? "bg-[rgb(var(--c-s-50))] text-slate-950"
           : "border-2 border-ink/10 bg-slate-950 text-slate-500",

@@ -171,7 +171,7 @@ export function LessonVideoPlayer({
           onPause={() => setPlaying(false)}
           // Reaching the end of playback no longer auto-completes the
           // lesson — only the explicit "Mark as complete" button in
-          // CoursePlayer does that now. A student rewatching, scrubbing
+          // ScaleWorkspace does that now. A student rewatching, scrubbing
           // past the end, or leaving it playing in the background
           // shouldn't silently advance their progress; finishing the
           // video is a cue to check it off, not the checkoff itself.
@@ -181,8 +181,8 @@ export function LessonVideoPlayer({
 
         {/* Title/subtitle overlay, top-left, fades with the rest of the chrome — cursor-not-allowed guards nothing here since it's decorative text, not a control. */}
         <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/70 to-transparent p-4">
-          <p className="font-serif text-sm text-slate-50">{title}</p>
-          <p className="text-xs text-slate-300">{subtitle}</p>
+          <p className="text-small text-slate-50">{title}</p>
+          <p className="text-small text-slate-300">{subtitle}</p>
         </div>
       </div>
 
@@ -224,7 +224,7 @@ export function LessonVideoPlayer({
             >
               <RotateCw size={16} />
             </button>
-            <span className="ml-1 text-xs text-slate-400">
+            <span className="ml-1 text-small text-slate-400">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
           </div>

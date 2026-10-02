@@ -3,46 +3,56 @@ import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { getRoadmap } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
+import { BADGES } from "@/lib/badges";
 import { getUserClassBookings } from "@/lib/classSchedule";
 import { resolveNextStep, summariseProgress } from "@/lib/next-step";
+import { cn } from "@/lib/utils";
 import { ScaleRoadmap } from "@/components/progression/ScaleRoadmap";
-import { BadgeSummary } from "@/components/gamification/BadgeSummary";
+import { StreakDots } from "@/components/gamification/StreakDots";
 import { TodayGreeting } from "@/components/dashboard/TodayGreeting";
 import { ProgressRing } from "@/components/ui/ProgressRing";
+import { Card, Eyebrow } from "@/components/ui/Card";
+import { BackPlane } from "@/components/ui/Hero";
+import { buttonVariants } from "@/components/ui/button";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 function ArrowIcon() {
   return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      aria-hidden
-    >
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
       <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-/** One figure + its label. Deliberately plain — the numbers do the work. */
+/** One figure and its label. Figures stay small: the Hero is the greeting. */
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div>
-      <p className="font-serif text-2xl tabular-nums text-slate-50">{value}</p>
-      <p className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <p className="text-body font-semibold tabular-nums text-slate-50">{value}</p>
+      <p className="text-small text-slate-400">{label}</p>
     </div>
   );
 }
 
+/**
+ * Home (STEP 2B wireframe, approved 2026-10-02).
+ *
+ * Desktop: a wide main column (greeting, next step, learning tabs) and a
+ * right panel for the week, progress, next class, and badges, so the next
+ * step, the stats, and the first row of scales all fit on the first screen.
+ * Below lg the panel drops in right after the next-step card.
+ *
+ * STEP 2C: the greeting is the one Hero; the student's progress ("3/14")
+ * sits huge and faint behind it on the back plane; Continue is the one
+ * green button.
+ */
 export default async function DashboardPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
 
-  const [roadmap, badgeCount, user, bookings] = await Promise.all([
+  const [roadmap, badgeRows, user, bookings] = await Promise.all([
     getRoadmap(session.user.id),
-    prisma.userBadge.count({ where: { userId: session.user.id } }),
+    prisma.userBadge.findMany({ where: { userId: session.user.id }, select: { code: true } }),
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: { name: true, currentStreak: true, classCredits: true },
@@ -52,6 +62,7 @@ export default async function DashboardPage() {
 
   const progress = summariseProgress(roadmap);
   const nextStep = resolveNextStep(roadmap);
+  const earnedBadgeCodes = badgeRows.map((b) => b.code);
 
   // getUserClassBookings returns newest-first across all statuses; the next
   // class is the earliest still-scheduled one in the future.
@@ -63,116 +74,128 @@ export default async function DashboardPage() {
   const streak = user?.currentStreak ?? 0;
 
   return (
-    <div className="mx-auto max-w-5xl">
-      <TodayGreeting name={user?.name ?? null} />
-      {progress.completedScales > 0 && (
-        <p className="mt-2 text-sm text-slate-500">
-          {progress.completedScales} of {progress.totalScales} scale groups complete.
-        </p>
-      )}
-
-      {/* ---- The one thing to do next ------------------------------------
-          The single `.glass-surface-elevated` on this screen, per the design
-          system: elevation here means "this is the answer to why you opened
-          the page", so nothing else on it may compete. Briefly carried a
-          decorative green corner glow (the same gradient-accent treatment
-          the marketing Hero once had) — removed by direct instruction along
-          with every other glow effect app-wide, so this card is back to
-          plain elevation with no `relative isolate overflow-hidden` left
-          over from staging it. */}
-      <div className="glass-surface-elevated mt-7 p-6 sm:p-8">
-        <p className="eyebrow">Your next step</p>
-        <h2 className="mt-2 font-serif text-2xl text-slate-50 sm:text-3xl">{nextStep.action}</h2>
-        <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-400">{nextStep.detail}</p>
-
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <Link
-            href={nextStep.href}
-            className="cta-sheen cta-fill inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold"
-          >
-            {nextStep.cta}
-            <ArrowIcon />
-          </Link>
-          {nextStep.scale && nextStep.kind !== "buy-curriculum" && (
-            <span className="text-xs text-slate-500">
-              {nextStep.scale.scaleGroup.code} · {nextStep.scale.scaleGroup.title}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* ---- Where you stand ---------------------------------------------
-          One card with divided cells rather than four floating stat cards —
-          four identically-shadowed panels read as four equally urgent things. */}
-      <div className="glass-surface mt-6 flex flex-col gap-6 p-6 sm:flex-row sm:items-center">
-        {/* The ring carries the single "how far in am I" figure; the four
-            stats beside it are the specifics. One number to glance at, four
-            to read. */}
-        <div className="flex shrink-0 justify-center sm:justify-start">
-          <ProgressRing
-            value={progress.itemsDone}
-            max={progress.itemsTotal}
-            size={92}
-            strokeWidth={7}
-            label={`Curriculum progress: ${progress.itemsDone} of ${progress.itemsTotal} checklist items complete`}
-            caption={`${progress.itemsDone}/${progress.itemsTotal} steps`}
-            tone={progress.itemsDone === progress.itemsTotal ? "success" : "accent"}
-          />
+    <WideLayout>
+      <div className="grid gap-x-(--space-section) gap-y-(--space-group) lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-[auto_auto_1fr] xl:grid-cols-[minmax(0,1fr)_22rem]">
+        {/* ---- Back plane + Hero ------------------------------------------ */}
+        <div className="relative pt-10 md:pt-16 lg:col-start-1">
+          {/* Right-aligned so the greeting overlaps only its edge: depth, not a smudge behind the words. */}
+          <BackPlane className="-top-2 text-right md:-top-6">
+            {progress.completedScales}/{progress.totalScales}
+          </BackPlane>
+          <TodayGreeting name={user?.name ?? null} className="relative z-(--z-mid)" />
         </div>
 
-        <div className="grid flex-1 grid-cols-2 gap-y-6 sm:grid-cols-4">
-          <Stat value={`${progress.completedScales}/${progress.totalScales}`} label="Scales done" />
-          <Stat value={`${streak}`} label="Day streak" />
-          <Stat value={`${badgeCount}`} label="Badges" />
-          <Stat value={`${user?.classCredits ?? 0}`} label="Class credits" />
-        </div>
-      </div>
-
-      {/* ---- Next class, only when one actually exists -------------------- */}
-      {nextClass && (
-        <Link
-          href="/lessons"
-          className="glass-surface mt-6 flex items-center justify-between gap-4 p-5 transition hover:border-[rgb(var(--c-s-50)/0.4)]"
-        >
-          <div>
-            <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Next live class</p>
-            <p className="mt-1 font-serif text-lg text-slate-50">
-              {/* Rendered in the server's locale as a stable, unambiguous
-                  format — the exact local time is shown on /lessons, which
-                  already converts client-side. */}
-              {nextClass.scheduledAt.toLocaleString("en-US", {
-                weekday: "long",
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-                timeZone: "America/New_York",
-                timeZoneName: "short",
-              })}
-            </p>
-            {nextClass.schedule.label && (
-              <p className="mt-0.5 text-sm text-slate-500">{nextClass.schedule.label}</p>
+        {/* ---- The one thing to do next ------------------------------------ */}
+        <Card className="relative z-(--z-mid) lg:col-start-1">
+          <Eyebrow>Your next step</Eyebrow>
+          <p className="mt-2 text-body font-semibold text-slate-50">{nextStep.action}</p>
+          <p className="mt-1 max-w-[60ch] text-small text-slate-400">{nextStep.detail}</p>
+          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <Link href={nextStep.href} className={cn(buttonVariants(), "relative z-(--z-front)")}>
+              {nextStep.cta}
+              <ArrowIcon />
+            </Link>
+            {nextStep.scale && nextStep.kind !== "buy-curriculum" && (
+              <span className="text-small text-slate-400">
+                {nextStep.scale.scaleGroup.code} · {nextStep.scale.scaleGroup.title}
+              </span>
             )}
           </div>
-          <span className="shrink-0 text-[rgb(var(--c-s-50))]">
-            <ArrowIcon />
-          </span>
-        </Link>
-      )}
+        </Card>
 
-      <div className="mt-6">
-        <BadgeSummary earnedCount={badgeCount} currentStreak={streak} />
-      </div>
+        {/* ---- Right panel (below the next step on smaller screens) -------- */}
+        <aside
+          aria-label="Your week and progress"
+          className="grid gap-3 sm:grid-cols-2 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:grid-cols-1 lg:content-start"
+        >
+          <Card>
+            <Eyebrow>This week</Eyebrow>
+            <StreakDots currentStreak={streak} />
+            <p className="mt-3 text-small text-slate-400">
+              {streak > 0 ? `${streak} day streak` : "Practice today to start a streak"}
+            </p>
+          </Card>
 
-      <div className="mt-10">
-        <p className="eyebrow">The path</p>
-        <h2 className="mt-1.5 font-serif text-2xl text-slate-50">
-          Your route through the whole system
-        </h2>
-        <div className="mt-6">
-          <ScaleRoadmap roadmap={roadmap} />
+          <Card>
+            <Eyebrow>Progress</Eyebrow>
+            <div className="mt-3 flex items-center gap-5">
+              <ProgressRing
+                value={progress.itemsDone}
+                max={progress.itemsTotal}
+                size={84}
+                strokeWidth={7}
+                label={`Curriculum progress: ${progress.itemsDone} of ${progress.itemsTotal} checklist items complete`}
+                caption={`${progress.itemsDone}/${progress.itemsTotal} steps`}
+              />
+              <div className="grid flex-1 grid-cols-2 gap-x-3 gap-y-3">
+                <Stat value={`${progress.completedScales}/${progress.totalScales}`} label="Scales" />
+                <Stat value={`${earnedBadgeCodes.length}`} label="Badges" />
+                <Stat value={`${streak}`} label="Day streak" />
+                <Stat value={`${user?.classCredits ?? 0}`} label="Credits" />
+              </div>
+            </div>
+          </Card>
+
+          {nextClass ? (
+            <Link
+              href="/lessons"
+              className="group rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Card interactive className="flex items-center justify-between gap-4">
+                <div>
+                  <Eyebrow>Next live class</Eyebrow>
+                  <p className="mt-2 text-small font-semibold text-slate-50">
+                    {/* Server-rendered in one stable time zone; /lessons shows
+                        the student's own local time. */}
+                    {nextClass.scheduledAt.toLocaleString("en-US", {
+                      weekday: "long",
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                      timeZone: "America/New_York",
+                      timeZoneName: "short",
+                    })}
+                  </p>
+                  {nextClass.schedule.label && <p className="text-small text-slate-400">{nextClass.schedule.label}</p>}
+                </div>
+                <span className="shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5">
+                  <ArrowIcon />
+                </span>
+              </Card>
+            </Link>
+          ) : (
+            <Card>
+              <Eyebrow>Live classes</Eyebrow>
+              <p className="mt-2 text-small text-slate-400">No class booked yet.</p>
+              <Link
+                href="/lessons"
+                className="mt-2 inline-flex text-small font-semibold text-slate-50 underline-offset-4 hover:underline"
+              >
+                Book a class
+              </Link>
+            </Card>
+          )}
+
+          <Card>
+            <Eyebrow>Badges</Eyebrow>
+            <p className="mt-2 text-small text-slate-50">
+              {earnedBadgeCodes.length} of {BADGES.length} earned
+            </p>
+            <Link
+              href="/profile"
+              className="mt-1 inline-flex text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline"
+            >
+              See them on your profile
+            </Link>
+          </Card>
+        </aside>
+
+        {/* ---- The path: tabs + scale grid --------------------------------- */}
+        <div className="lg:col-start-1">
+          <ScaleRoadmap roadmap={roadmap} earnedBadgeCodes={earnedBadgeCodes} />
         </div>
       </div>
-    </div>
+    </WideLayout>
   );
 }

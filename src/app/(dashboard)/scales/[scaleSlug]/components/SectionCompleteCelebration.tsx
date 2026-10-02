@@ -1,5 +1,7 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
 
@@ -21,13 +23,13 @@ export function SectionCompleteCelebration({
   onCourseDetails: () => void;
 }) {
   return (
-    <motion.div variants={panelVariants} initial="hidden" animate="visible" className="glass-surface-elevated relative mx-auto max-w-md overflow-hidden p-8 text-center">
+    <motion.div variants={panelVariants} initial="hidden" animate="visible" className="relative mx-auto w-full max-w-md overflow-hidden rounded-card bg-[rgb(var(--plane-mid-bg))] p-8 text-center shadow-plane-mid">
       <SuccessGlowPulse />
       <motion.div
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", bounce: 0.35, duration: 0.5, delay: 0.05 }}
-        className="relative mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-400/10"
+        className="relative mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.08)]"
       >
         <motion.svg
           width="26"
@@ -36,7 +38,7 @@ export function SectionCompleteCelebration({
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          className="text-emerald-400"
+          className="text-slate-50"
           initial={{ pathLength: 0 }}
           animate={{ pathLength: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
@@ -44,23 +46,23 @@ export function SectionCompleteCelebration({
           <path d="m5 13 4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
         </motion.svg>
       </motion.div>
-      <h3 className="relative font-serif text-xl text-slate-50">Congratulations!</h3>
-      <p className="relative mx-auto mt-1.5 max-w-xs text-sm text-slate-400">You&apos;ve finished this section.</p>
+      <h3 className="relative text-body font-semibold text-slate-50">Lesson complete</h3>
+      <p className="relative mx-auto mt-1 max-w-xs text-small text-slate-400">Saved to your progress.</p>
       <div className="relative mt-6 flex gap-2">
         <button
           type="button"
           onClick={onCourseDetails}
-          className="flex-1 rounded-xl border border-ink/10 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+          className={cn(buttonVariants({ variant: "secondary" }), "flex-1")}
         >
-          Course Details
+          Review this lesson
         </button>
         {hasNextSection && (
           <button
             type="button"
             onClick={onNextSection}
-            className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-sm font-semibold"
+            className={cn(buttonVariants(), "flex-1")}
           >
-            Next Section
+            Next lesson
           </button>
         )}
       </div>

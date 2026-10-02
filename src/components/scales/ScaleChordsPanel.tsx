@@ -33,20 +33,19 @@ export function ScaleChordsPanel({ variant, root, player }: ScaleChordsPanelProp
   const { supported, playChordNotes } = player;
 
   return (
-    <div className="glass-surface p-6">
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
-        Scale Chords
-      </p>
-      <h2 className="mt-1 font-serif text-xl text-slate-50">Native chords — {variant.name}</h2>
+    // Lives inside the lesson page's Chords tool panel, which supplies the
+    // heading, so this is just the chord list.
+    <div>
+      <p className="text-small text-slate-400">Native chords of {variant.name}, in {root}.</p>
 
-      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-2">
         {chords.map(({ spec, chord }, i) => {
           const body = (
             <>
               {/* Roman-numeral casing is meaningful here (I vs i signals major vs minor quality) — no uppercase transform. */}
-              <p className="text-xs font-medium tracking-wide text-slate-500">{spec.label}</p>
-              <p className="mt-1 font-serif text-2xl text-[rgb(var(--c-s-50))]">{chord.symbol}</p>
-              <p className="mt-1.5 text-xs text-slate-500">{chord.notes.join(" – ")}</p>
+              <p className="text-small font-semibold text-slate-400">{spec.label}</p>
+              <p className="mt-0.5 text-body font-semibold text-slate-50">{chord.symbol}</p>
+              <p className="text-small text-slate-400">{chord.notes.join(" – ")}</p>
             </>
           );
 
@@ -56,7 +55,7 @@ export function ScaleChordsPanel({ variant, root, player }: ScaleChordsPanelProp
             return (
               <div
                 key={`${spec.label}-${i}`}
-                className="rounded-xl border border-ink/10 bg-slate-900 p-4"
+                className="rounded-control border border-ink/10 p-3"
               >
                 {body}
               </div>
@@ -69,12 +68,11 @@ export function ScaleChordsPanel({ variant, root, player }: ScaleChordsPanelProp
               type="button"
               onClick={() => playChordNotes(chord.notes)}
               aria-label={`Play the chord ${chord.symbol}`}
-              className="group cursor-pointer rounded-xl border border-ink/10 bg-slate-900 p-4 text-left transition duration-200 hover:border-[rgb(var(--c-s-50)/0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50)/0.7)]"
+              className="group flex cursor-pointer items-center justify-between gap-3 rounded-control border border-ink/10 p-3 text-left transition-colors duration-(--dur-fast) hover:border-ink/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {body}
-              <span className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-500 transition-colors group-hover:text-[rgb(var(--c-s-50))]">
+              <span>{body}</span>
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ink/15 text-slate-300 transition-colors group-hover:border-signal group-hover:text-signal" aria-hidden>
                 <ChordPlayIcon />
-                Play chord
               </span>
             </button>
           );

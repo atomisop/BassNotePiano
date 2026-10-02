@@ -183,15 +183,15 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         <button
           type="button"
           onClick={() => setPayment(null)}
-          className="mb-4 text-xs text-slate-500 transition hover:text-slate-300"
+          className="mb-4 text-small text-slate-500 transition hover:text-slate-300"
         >
           ← Change bundle
         </button>
         <div className="mb-4 rounded-xl border border-ink/10 p-4">
-          <p className="text-sm text-slate-100">
+          <p className="text-small text-slate-100">
             {perRecipientCredits} credits each, for {emails.length} accounts ({emails.length * perRecipientCredits} credits total)
           </p>
-          <p className="mt-1 text-xs text-emerald-400">
+          <p className="mt-1 text-small text-emerald-400">
             {FAMILY_BUNDLE_DISCOUNT_RATE * 100}% family bundle discount applied (limited time), on top of the
             term&apos;s own price
           </p>
@@ -213,7 +213,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
   return (
     <div className="space-y-6">
       <div>
-        <p className="mb-2 text-xs font-medium text-slate-400">Weekly cadence, applied to every recipient</p>
+        <p className="mb-2 text-small font-medium text-slate-400">Weekly cadence, applied to every recipient</p>
         <div className="grid grid-cols-2 gap-3">
           {CADENCE_OPTIONS.map((option) => {
             const active = cadence === option.value;
@@ -226,8 +226,8 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                   active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
                 }`}
               >
-                <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
-                <p className="mt-0.5 text-xs text-slate-500">
+                <p className={`text-small font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
+                <p className="mt-0.5 text-small text-slate-500">
                   {calculatePaymentPlanRate(option.value, term).creditsPerInstallment} credits/month
                 </p>
               </button>
@@ -237,7 +237,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium text-slate-400">Term, applied to every recipient</p>
+        <p className="mb-2 text-small font-medium text-slate-400">Term, applied to every recipient</p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {TERM_OPTIONS.map((option) => {
             const active = term === option.value;
@@ -251,8 +251,8 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                   active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
                 }`}
               >
-                <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
-                <p className="mt-0.5 text-xs text-slate-500">
+                <p className={`text-small font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
+                <p className="mt-0.5 text-small text-slate-500">
                   {optionRate.discountRate > 0 ? `−${Math.round(optionRate.discountRate * 100)}%` : "No commitment"}
                 </p>
               </button>
@@ -263,10 +263,10 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
 
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-xs font-medium text-slate-400">
+          <p className="text-small font-medium text-slate-400">
             Recipient accounts ({emails.length}/{MAX_FAMILY_BUNDLE_RECIPIENTS})
           </p>
-          <span className="text-xs text-slate-500">Each needs its own Bass Note Piano account already</span>
+          <span className="text-small text-slate-500">Each needs its own Bass Note Piano account already</span>
         </div>
 
         <div className="space-y-2.5">
@@ -280,7 +280,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                     value={email}
                     onChange={(e) => updateEmail(index, e.target.value)}
                     placeholder={`Recipient ${index + 1} email`}
-                    className="w-full rounded-lg border border-ink/10 bg-slate-950/40 px-3.5 py-2.5 pr-9 text-base text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.5)]"
+                    className="w-full rounded-lg border border-ink/10 bg-slate-950/40 px-3.5 py-2.5 pr-9 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.5)]"
                   />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
                     {status.kind === "checking" && <SpinnerIcon className="text-slate-500" />}
@@ -306,14 +306,14 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           const status = rowStatus(index);
           if (status.kind === "invalid") {
             return (
-              <p key={`err-${index}`} className="mt-1.5 text-xs text-red-400">
+              <p key={`err-${index}`} className="mt-1.5 text-small text-red-400">
                 Recipient {index + 1}: enter a valid email address.
               </p>
             );
           }
           if (status.kind === "duplicate") {
             return (
-              <p key={`err-${index}`} className="mt-1.5 text-xs text-red-400">
+              <p key={`err-${index}`} className="mt-1.5 text-small text-red-400">
                 Recipient {index + 1}: already entered above. Each recipient needs a different account.
               </p>
             );
@@ -321,7 +321,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           if (status.kind === "not-found") {
             const registerHref = `/register?email=${encodeURIComponent(normalized[index])}&callbackUrl=${encodeURIComponent("/billing/lessons")}`;
             return (
-              <p key={`err-${index}`} className="mt-1.5 text-xs text-red-400">
+              <p key={`err-${index}`} className="mt-1.5 text-small text-red-400">
                 Recipient {index + 1}: no account yet at that email.{" "}
                 <Link href={registerHref} target="_blank" className="underline hover:opacity-70">
                   Create their account
@@ -332,7 +332,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           }
           if (status.kind === "found") {
             return (
-              <p key={`err-${index}`} className="mt-1.5 text-xs text-emerald-400">
+              <p key={`err-${index}`} className="mt-1.5 text-small text-emerald-400">
                 Recipient {index + 1}: verified{status.name ? ` (${status.name})` : ""}.
               </p>
             );
@@ -340,36 +340,36 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           return null;
         })}
 
-        {checkError && <p className="mt-2 text-xs text-red-400">{checkError}</p>}
+        {checkError && <p className="mt-2 text-small text-red-400">{checkError}</p>}
 
         <button
           type="button"
           onClick={addRecipient}
           disabled={emails.length >= MAX_FAMILY_BUNDLE_RECIPIENTS}
-          className="mt-3 text-xs font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-40"
+          className="mt-3 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-40"
         >
           + Add another recipient
         </button>
       </div>
 
       <div className="rounded-xl border border-ink/10 p-4 sm:p-5">
-        <div className="flex items-center justify-between text-sm text-slate-400">
+        <div className="flex items-center justify-between text-small text-slate-400">
           <span>
             {perRecipientCredits} credits × {emails.length} accounts ({formatUsd(total.perRecipientCents)} each)
           </span>
           <span>{formatUsd(total.combinedBeforeFamilyDiscountCents)}</span>
         </div>
-        <div className="mt-1 flex items-center justify-between text-sm text-emerald-400">
+        <div className="mt-1 flex items-center justify-between text-small text-emerald-400">
           <span>Family bundle discount ({FAMILY_BUNDLE_DISCOUNT_RATE * 100}%, limited time)</span>
           <span>−{formatUsd(total.familyDiscountCents)}</span>
         </div>
-        <div className="mt-2 flex items-center justify-between border-t border-ink/10 pt-2 text-base font-semibold text-slate-50">
+        <div className="mt-2 flex items-center justify-between border-t border-ink/10 pt-2 text-body font-semibold text-slate-50">
           <span>Total</span>
           <span>{formatUsd(total.totalCents)}</span>
         </div>
       </div>
 
-      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] p-3.5 text-xs text-slate-300">
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] p-3.5 text-small text-slate-300">
         <input
           type="checkbox"
           checked={acknowledged}
@@ -387,19 +387,19 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         </span>
       </label>
 
-      {submitError && <p className="text-sm text-red-400">{submitError}</p>}
+      {submitError && <p className="text-small text-red-400">{submitError}</p>}
 
       <button
         type="button"
         onClick={handleContinue}
         disabled={!canSubmit}
-        className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading && <MorphingSquare size={14} className="mr-2 shrink-0" />}
         {loading ? "Loading…" : `Continue to payment · ${formatUsd(total.totalCents)}`}
       </button>
       {!allRowsVerified && (
-        <p className="text-center text-xs text-slate-500">
+        <p className="text-center text-small text-slate-500">
           Every recipient needs a verified Bass Note Piano account before you can continue.
         </p>
       )}

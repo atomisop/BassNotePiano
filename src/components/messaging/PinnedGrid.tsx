@@ -38,12 +38,12 @@ export function PinnedGrid({
                   active ? "border-amber-400" : "border-ink/10 hover:border-ink/20"
                 }`}
               >
-                <Avatar image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-16 w-16 text-lg" />
+                <Avatar image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-16 w-16 text-body font-semibold" />
               </button>
 
               {showBadge && (
                 <span
-                  className={`absolute -right-2 -top-1 flex max-w-[6rem] items-center justify-center rounded-full border border-ink/10 px-2 py-1 text-[10px] font-medium shadow-lg ${
+                  className={`absolute -right-2 -top-1 flex max-w-[6rem] items-center justify-center rounded-full border border-ink/10 px-2 py-1 text-small font-medium shadow-lg ${
                     c.isTyping ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "bg-surface text-slate-100"
                   }`}
                 >
@@ -64,7 +64,7 @@ export function PinnedGrid({
               </button>
             </div>
 
-            <p className="max-w-[4.5rem] truncate text-center text-[11px] text-slate-400">
+            <p className="max-w-[4.5rem] truncate text-center text-small text-slate-400">
               {c.friendName ?? `@${c.friendUsername}`}
             </p>
           </motion.div>

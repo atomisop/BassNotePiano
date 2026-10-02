@@ -31,8 +31,8 @@ export function ConversationSidebar({
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto md:w-[350px] md:shrink-0 md:border-r md:border-ink/10">
       <div className="border-b border-ink/10 px-4 py-4">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
-        <h1 className="mt-1 font-serif text-xl text-slate-50">Messages</h1>
+        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1 text-slate-50">Messages</h1>
       </div>
       <PinnedGrid pinned={pinned} activeFriendId={activeFriendId} onSelect={onSelect} onTogglePin={onTogglePin} />
       <ConversationList conversations={rest} activeFriendId={activeFriendId} onSelect={onSelect} onTogglePin={onTogglePin} />

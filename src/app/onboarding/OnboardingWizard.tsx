@@ -73,7 +73,7 @@ function OptionButton({
       type="button"
       onClick={onClick}
       disabled={comingSoon}
-      className={`flex w-full items-center justify-between gap-2 rounded-xl border px-4 py-3 text-left text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
+      className={`flex w-full items-center justify-between gap-2 rounded-xl border px-4 py-3 text-left text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
         selected
           ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
           : "border-ink/10 bg-slate-950 text-slate-300 hover:border-ink/15"
@@ -81,7 +81,7 @@ function OptionButton({
     >
       {label}
       {comingSoon && (
-        <span className="shrink-0 rounded-full bg-slate-800 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+        <span className="shrink-0 rounded-full bg-slate-800 px-1.5 py-0.5 text-small font-semibold uppercase tracking-wide text-slate-400">
           Coming soon
         </span>
       )}
@@ -160,7 +160,7 @@ export function OnboardingWizard() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-md glass-surface-elevated p-7"
+      className="w-full glass-surface-elevated p-7"
     >
       {/* Replaces five undifferentiated bars. The horizontal Stepper marks
           completed steps with a check, the current one with a filled marker,
@@ -174,24 +174,24 @@ export function OnboardingWizard() {
         />
       </div>
 
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
         Step {step + 1} of {STEP_TITLES.length}
       </p>
-      <h1 className="mt-1.5 font-serif text-2xl text-slate-50">{STEP_TITLES[step]}</h1>
-      <p className="mt-2 text-sm text-slate-500">A few quick questions to personalize your dashboard.</p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{STEP_TITLES[step]}</h1>
+      <p className="mt-2 text-small text-slate-500">A few quick questions to personalize your dashboard.</p>
 
       <AnimatePresence mode="wait">
         <motion.div key={step} variants={stepVariants} initial="enter" animate="center" exit="exit" className="mt-6 space-y-2">
           {step === 0 && (
             <div className="flex items-center glass-surface-subtle pl-4 focus-within:border-[rgb(var(--c-s-50)/0.6)]">
-              <span className="text-sm text-slate-500">@</span>
+              <span className="text-small text-slate-500">@</span>
               <input
                 type="text"
                 autoFocus
                 value={username}
                 onChange={(e) => setUsernameValue(e.target.value)}
                 placeholder="yourname"
-                className="w-full bg-transparent px-2 py-3 text-base text-slate-100 outline-none"
+                className="w-full bg-transparent px-2 py-3 text-body text-slate-100 outline-none"
               />
             </div>
           )}
@@ -235,7 +235,7 @@ export function OnboardingWizard() {
         </motion.div>
       </AnimatePresence>
 
-      {error && <p className="mt-4 text-xs text-red-400">{error}</p>}
+      {error && <p className="mt-4 text-small text-red-400">{error}</p>}
 
       <div className="mt-6 flex items-center gap-2">
         {step > 0 && (
@@ -243,7 +243,7 @@ export function OnboardingWizard() {
             type="button"
             onClick={handleBack}
             disabled={submitting}
-            className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:border-ink/15 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-xl border border-ink/10 px-4 py-2.5 text-small font-medium text-slate-300 transition hover:border-ink/15 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Back
           </button>
@@ -252,7 +252,7 @@ export function OnboardingWizard() {
           type="button"
           onClick={handleNext}
           disabled={!canAdvance || submitting || checkingUsername}
-          className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {(checkingUsername || submitting) && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
           {checkingUsername ? "Checking…" : submitting ? "Saving…" : step < lastStep ? "Next" : "Finish"}

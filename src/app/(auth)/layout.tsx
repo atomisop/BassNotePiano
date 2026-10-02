@@ -34,7 +34,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     // where a real device measurement showed it was actually needed); the
     // reset-password card's own internal spacing is trimmed the same way,
     // see that page.
-    <div className="relative flex min-h-[100svh] flex-col items-center justify-center px-6 py-4 sm:py-16">
+    <div data-surface="app" className="relative flex min-h-[100svh] flex-col items-center justify-center px-6 py-4 sm:py-16">
       {/* Login and register are the top of their own flow, with nothing
           else on-page to signal a way out: the brand lockup below is a
           real link, but a logo alone doesn't read as "click this to leave"
@@ -43,7 +43,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           once, without disturbing the centered brand moment. */}
       <Link
         href="/"
-        className="absolute left-4 top-4 flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-300 sm:left-6 sm:top-6"
+        className="absolute left-4 top-4 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300 sm:left-6 sm:top-6"
       >
         <ArrowLeftIcon size={16} />
         {/* "to homepage" hidden below `sm` — this link is `absolute`, so it
@@ -67,14 +67,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               This was still the pre-Pianote-pass title-case/split-color
               version. Fully accent-colored at the time; neutral again now
               under the "premium black and white" pass. */}
-          <p className="font-serif text-2xl font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]">
+          <p className="text-body font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]">
             Bass Note Piano
           </p>
           {/* Hidden below `sm` specifically — the one purely decorative line
               here, so it's the first thing to give way on the shortest
               phone screens where the reset-password card's own three
               fields leave the least room to spare. */}
-          <p className="mt-1 hidden text-sm text-slate-400 sm:block">Ethiopian scale theory, practiced.</p>
+          <p className="mt-1 hidden text-small text-slate-400 sm:block">Ethiopian scale theory, practiced.</p>
         </Link>
       </header>
       <main className="relative flex w-full justify-center">{children}</main>

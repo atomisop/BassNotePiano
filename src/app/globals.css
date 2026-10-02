@@ -75,6 +75,53 @@
   --color-popover: rgb(var(--popover));
   --color-popover-foreground: rgb(var(--popover-foreground));
 
+  /* ==========================================================================
+     Redesign design system (STEP 2). The rules these tokens enforce:
+     - Ink and paper (the slate ramp) for everything, plus ONE signal color,
+       green, which means "you can tap this" and nothing else.
+     - Three type tiers only: hero (one per screen), body (real reading text),
+       small (everything else). No in-between sizes.
+     - Three planes of depth: back (big quiet type), middle (the subject),
+       front (the controls, closest to the finger).
+     ========================================================================== */
+
+  /* Signal green. `--signal` / `--signal-ink` are set per data-mode below. */
+  --color-signal: rgb(var(--signal));
+  --color-signal-ink: rgb(var(--signal-ink));
+  --color-danger: rgb(var(--c-rd-400));
+
+  /* The one display face, used only for each screen's Hero element. */
+  --font-hero: var(--font-display), ui-rounded, system-ui, sans-serif;
+
+  --text-hero: clamp(2.25rem, 1.35rem + 3.6vw, 4.5rem);
+  --text-hero--line-height: 1.02;
+  --text-hero--letter-spacing: -0.03em;
+  --text-body: 1rem;
+  --text-body--line-height: 1.6;
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.4;
+
+  /* Soft iOS-style corners: controls, cards, sheets. Pills stay rounded-full. */
+  --radius-control: 0.75rem;
+  --radius-card: 1.25rem;
+  --radius-sheet: 1.75rem;
+
+  /* Depth planes. Values come from per-mode variables below so a light
+     page gets lighter shadows than a dark one. */
+  --shadow-plane-mid: var(--plane-mid-shadow);
+  --shadow-plane-front: var(--plane-front-shadow);
+  --shadow-signal: var(--signal-glow);
+
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Page widths for the four shared page layouts in
+     components/layout/PageLayouts.tsx. Pages never set their own width;
+     they pick a layout, and the layout reads these. */
+  --container-wide: 90rem;
+  --container-settings: 72rem;
+  --container-narrow: 27.5rem;
+  --container-pane: 21.25rem;
+
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
@@ -255,7 +302,7 @@
   /* The recurring kicker above a heading — centralised so every page gets
      the same treatment instead of re-declaring the tracking each time.
      Neutral, not accent-tinted — accent is reserved for true CTAs now. */
-  @apply text-xs font-medium uppercase tracking-[0.18em] text-slate-300;
+  @apply text-small font-semibold uppercase tracking-[0.16em] text-slate-300;
 }
 
 @utility backdrop-scrim-light {
@@ -383,15 +430,16 @@
      (not the Button component) add `.cta-fill` alongside `.cta-sheen` to
      get both material and motion.
 
-     Solid `--primary`, neutral (`--c-s-50`) — repointing it straight at
-     the signal-green accent ramp was tried and reverted by direct
-     instruction: white buttons, with green reserved for badges/selection
-     states/Atom (see globals.css's own `--primary` comment and themes.css's
-     "Accent" comment for the fuller history), is the combination that
-     actually stuck. */
-  background: rgb(var(--primary));
-  border: 1px solid rgb(var(--primary) / 0.5);
-  color: rgb(var(--primary-foreground));
+     Color: signal green everywhere via --cta-bg (set on <body>, see the
+     design-system block at the end of this file), except the public
+     marketing pages, which reset it to the neutral --primary. Green CTAs were tried once and reverted; on
+     2026-10-02 the user approved them again as part of the redesign's
+     "green means tap this" rule, scoped to the app only. */
+  /* --cta-bg / --cta-ink: signal green, or neutral --primary on the
+     marketing pages (see the design-system block at the end). */
+  background: rgb(var(--cta-bg, var(--primary)));
+  border: 1px solid rgb(var(--cta-bg, var(--primary)) / 0.5);
+  color: rgb(var(--cta-ink, var(--primary-foreground)));
   box-shadow:
     inset 0 1px 1px rgba(255, 255, 255, 0.25),
     inset 0 -1px 1px rgba(0, 0, 0, 0.12),
@@ -786,4 +834,154 @@
       border-top-color: rgb(var(--c-s-100));
     }
   }
+}
+
+/* ==========================================================================
+   Redesign design system: per-mode values and the app scope (STEP 2)
+   ========================================================================== */
+@layer base {
+  :root {
+    /* Spacing rhythm. Generous between sections, tight inside cards. */
+    --space-section: 3rem;
+    --space-group: 1.5rem;
+    --space-card: 1.25rem;
+    --space-inline: 0.75rem;
+
+    /* Layering for the three planes plus app chrome. */
+    --z-back: 0;
+    --z-mid: 10;
+    --z-front: 20;
+    --z-chrome: 40;
+    --z-overlay: 60;
+    --z-toast: 70;
+
+    /* Motion: short and purposeful. */
+    --dur-fast: 140ms;
+    --dur-base: 220ms;
+    --dur-slow: 360ms;
+  }
+
+  [data-mode="dark"] {
+    /* Middle-plane card fill: solid (so back-plane type passing behind a
+       card never muddies the text on it), one step up from the ground. */
+    --plane-mid-bg: 34 34 34;
+    --signal: var(--c-a-400);
+    --signal-ink: 10 10 10;
+    --plane-mid-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.05), 0 1px 2px rgb(0 0 0 / 0.35),
+      0 10px 30px -12px rgb(0 0 0 / 0.55);
+    --plane-front-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.22), 0 2px 4px rgb(0 0 0 / 0.35),
+      0 14px 30px -10px rgb(0 0 0 / 0.65);
+    --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.35), 0 10px 28px -8px rgb(var(--c-a-400) / 0.45);
+  }
+
+  [data-mode="light"] {
+    --plane-mid-bg: 255 255 255;
+    --signal: var(--c-a-400);
+    --signal-ink: 255 255 255;
+    --plane-mid-shadow:
+      0 1px 2px rgb(26 21 15 / 0.06), 0 10px 30px -14px rgb(26 21 15 / 0.18);
+    --plane-front-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.3), 0 2px 4px rgb(26 21 15 / 0.1),
+      0 14px 28px -12px rgb(26 21 15 / 0.3);
+    --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.3), 0 10px 24px -10px rgb(var(--c-a-400) / 0.5);
+  }
+
+  /* The redesign rules apply everywhere by default (set on <body> so
+     dialogs, sheets, and toasts that portal into <body> get them too). The
+     public marketing pages, out of scope by decision, opt back out with
+     the data-surface="marketing" their layout already carries.
+     - Primary actions (`.cta-fill`, Button's default) are signal green.
+       This reverses the earlier "white buttons" choice, by the user's own
+       decision on 2026-10-02.
+     - "Success" stops being a second green: the emerald colors are pointed
+       at ink/paper, so green only ever means "tap this". Success is shown
+       with a check icon and plain text instead. These override the
+       --color-* values directly because Tailwind resolves them on :root,
+       where a nested --c-em-* override would never reach them. */
+  body {
+    --cta-bg: var(--signal);
+    --cta-ink: var(--signal-ink);
+    --color-emerald-300: rgb(var(--c-s-100));
+    --color-emerald-400: rgb(var(--c-s-50));
+  }
+
+  [data-surface="marketing"] {
+    --cta-bg: var(--primary);
+    --cta-ink: var(--primary-foreground);
+  }
+
+  /* Inside the app (dashboard, auth, onboarding layouts), the older
+     glass-surface* cards adopt the middle-plane material: a solid fill (so
+     back-plane type never shows through), soft iOS corners, and a soft
+     shadow for depth instead of frosted glass and hairlines. Done by
+     re-pointing the material variables rather than editing ~200 call
+     sites; the marketing pages keep their own glass. */
+  [data-surface="app"] {
+    --surface-bg: rgb(var(--plane-mid-bg));
+    --surface-border: rgb(var(--c-ink) / 0.08);
+    --surface-shadow: var(--plane-mid-shadow);
+    --surface-blur: 0px;
+    --surface-radius: 1.25rem;
+    --elev-bg: rgb(var(--plane-mid-bg));
+    --elev-border: rgb(var(--c-ink) / 0.14);
+    --elev-shadow: var(--plane-front-shadow);
+    --elev-blur: 0px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-surface="app"] *,
+    [data-surface="app"] *::before,
+    [data-surface="app"] *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+}
+
+/* ==========================================================================
+   Piano keys (STEP 5). A real instrument's ivory and ebony, the same in
+   every theme: a piano doesn't change color with dark mode. Scale-note
+   markers are ink on ivory and paper on ebony; only a sounding or pressed
+   key takes the signal green (set by the component).
+   ========================================================================== */
+@layer base {
+  :root {
+    --piano-case: 17 17 17;
+    --piano-ivory: 251 251 249;
+    --piano-ivory-shade: 212 212 207;
+    --piano-ebony: 20 20 20;
+  }
+}
+
+@utility piano-case {
+  background: rgb(var(--piano-case));
+}
+
+@utility piano-white {
+  background: linear-gradient(to bottom, rgb(233 233 230), rgb(var(--piano-ivory)) 18%, rgb(246 246 243));
+  box-shadow: inset 0 -5px 0 rgb(var(--piano-ivory-shade)), inset 0 1px 0 #fff;
+  &:hover {
+    background: linear-gradient(to bottom, rgb(227 227 223), rgb(243 243 239) 18%, rgb(239 239 234));
+  }
+}
+
+@utility piano-black {
+  background: linear-gradient(to bottom, rgb(43 43 43), rgb(var(--piano-ebony)) 70%, rgb(10 10 10));
+  box-shadow: inset 0 -4px 0 #000, inset 1px 0 0 rgb(255 255 255 / 0.08), 0 3px 6px rgb(0 0 0 / 0.5);
+  &:hover {
+    background: linear-gradient(to bottom, rgb(53 53 53), rgb(28 28 28) 70%, rgb(17 17 17));
+  }
+}
+
+@utility piano-marker-on-white {
+  background: rgb(var(--piano-ebony));
+  color: rgb(var(--piano-ivory));
+}
+
+@utility piano-marker-on-black {
+  background: rgb(var(--piano-ivory));
+  color: rgb(var(--piano-ebony));
 }

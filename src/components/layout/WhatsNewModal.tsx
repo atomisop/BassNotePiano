@@ -63,14 +63,14 @@ export function WhatsNewModal({ show, entry }: { show: boolean; entry: Changelog
             exit="exit"
             className="glass-surface-modal relative w-full max-w-sm overflow-hidden p-6"
           >
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">What&apos;s new · v{entry.version}</p>
-            <h2 id="whats-new-title" className="mt-1.5 font-serif text-lg text-slate-50">
+            <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">What&apos;s new · v{entry.version}</p>
+            <h2 id="whats-new-title" className="mt-1.5 text-body text-slate-50 font-semibold">
               {entry.title}
             </h2>
 
             <ul className="mt-4 space-y-2">
               {entry.items.map((item) => (
-                <li key={item} className="flex gap-2.5 text-sm text-slate-300">
+                <li key={item} className="flex gap-2.5 text-small text-slate-300">
                   <CheckIcon className="mt-1 shrink-0 text-[rgb(var(--c-s-50))]" />
                   {item}
                 </li>
@@ -81,14 +81,14 @@ export function WhatsNewModal({ show, entry }: { show: boolean; entry: Changelog
               <Link
                 href="/about?tab=updates"
                 onClick={handleClose}
-                className="text-xs text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
+                className="text-small text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
               >
                 Full update history
               </Link>
               <button
                 type="button"
                 onClick={handleClose}
-                className="cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-xs font-semibold"
+                className="cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-small font-semibold"
               >
                 Got it
               </button>

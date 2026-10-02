@@ -112,7 +112,7 @@ export function BookingCalendar({
   return (
     <div className="glass-surface p-5">
       <div className="flex items-center justify-between">
-        <p className="font-serif text-lg text-slate-100">{monthLabel}</p>
+        <p className="text-body text-slate-100 font-semibold">{monthLabel}</p>
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -141,7 +141,7 @@ export function BookingCalendar({
 
       <div className="mt-4 grid grid-cols-7 gap-y-1.5 text-center">
         {DAY_NAMES.map((d, i) => (
-          <span key={i} className="text-[11px] font-medium uppercase tracking-wide text-slate-600">
+          <span key={i} className="text-small font-medium uppercase tracking-wide text-slate-600">
             {d}
           </span>
         ))}
@@ -162,7 +162,7 @@ export function BookingCalendar({
               disabled={!clickable}
               onClick={() => onSelectDate(isSelected ? null : key)}
               title={info ? `${info.count} class${info.count === 1 ? "" : "es"}` : undefined}
-              className={`relative mx-auto flex h-8 w-8 flex-col items-center justify-center rounded-full text-xs transition ${
+              className={`relative mx-auto flex h-8 w-8 flex-col items-center justify-center rounded-full text-small transition ${
                 isSelected
                   ? "bg-amber-400 font-semibold text-slate-950"
                   : clickable
@@ -187,7 +187,7 @@ export function BookingCalendar({
       </div>
 
       <div className="mt-4 flex items-center justify-between border-t border-ink/10 pt-3">
-        <p className="flex items-center gap-1.5 text-[11px] text-slate-600">
+        <p className="flex items-center gap-1.5 text-small text-slate-600">
           <span className="h-1.5 w-1.5 rounded-full bg-[rgb(var(--c-s-50))]" aria-hidden />
           Available
           <span className="ml-2 h-1.5 w-1.5 rounded-full bg-slate-600" aria-hidden />
@@ -197,7 +197,7 @@ export function BookingCalendar({
           <button
             type="button"
             onClick={() => onSelectDate(null)}
-            className="text-[11px] font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70"
+            className="text-small font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70"
           >
             Show all
           </button>

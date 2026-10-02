@@ -145,7 +145,7 @@ function Pill({
       type="button"
       onClick={onClick}
       disabled={comingSoon}
-      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
+      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
         selected
           ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
           : "border-ink/10 bg-slate-950 text-slate-400 hover:border-ink/15"
@@ -153,7 +153,7 @@ function Pill({
     >
       {label}
       {comingSoon && (
-        <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+        <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-small font-semibold uppercase tracking-wide text-slate-400">
           Coming soon
         </span>
       )}
@@ -164,8 +164,8 @@ function Pill({
 function SectionCard({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
     <div className="glass-surface p-6">
-      <h2 className="font-serif text-lg text-slate-50">{title}</h2>
-      <p className="mt-1 text-sm text-slate-500">{description}</p>
+      <h2 className="text-body text-slate-50 font-semibold">{title}</h2>
+      <p className="mt-1 text-small text-slate-500">{description}</p>
       <div className="mt-4">{children}</div>
     </div>
   );
@@ -225,7 +225,7 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
     <SectionCard title="Music profile" description="Personalizes your dashboard — collected once during onboarding.">
       <div className="space-y-4">
         <div>
-          <p className="mb-1.5 text-xs font-medium text-slate-400">Primary instrument</p>
+          <p className="mb-1.5 text-small font-medium text-slate-400">Primary instrument</p>
           <div className="flex flex-wrap gap-2">
             {INSTRUMENTS.map((opt) => (
               <Pill
@@ -239,7 +239,7 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
           </div>
         </div>
         <div>
-          <p className="mb-1.5 text-xs font-medium text-slate-400">Skill level</p>
+          <p className="mb-1.5 text-small font-medium text-slate-400">Skill level</p>
           <div className="flex flex-wrap gap-2">
             {SKILL_LEVELS.map((opt) => (
               <Pill key={opt.value} label={opt.label} selected={skillLevel === opt.value} onClick={() => setSkillLevel(opt.value)} />
@@ -247,7 +247,7 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
           </div>
         </div>
         <div>
-          <p className="mb-1.5 text-xs font-medium text-slate-400">Genres</p>
+          <p className="mb-1.5 text-small font-medium text-slate-400">Genres</p>
           <div className="flex flex-wrap gap-2">
             {GENRES.map((opt) => (
               <Pill key={opt.value} label={opt.label} selected={genres.includes(opt.value)} onClick={() => toggleGenre(opt.value)} />
@@ -255,7 +255,7 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
           </div>
         </div>
         <div>
-          <p className="mb-1.5 text-xs font-medium text-slate-400">Learning goal</p>
+          <p className="mb-1.5 text-small font-medium text-slate-400">Learning goal</p>
           <div className="flex flex-wrap gap-2">
             {LEARNING_GOALS.map((opt) => (
               <Pill key={opt.value} label={opt.label} selected={goal === opt.value} onClick={() => setGoal(opt.value)} />
@@ -264,14 +264,14 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
         </div>
       </div>
 
-      {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
-      {success && <p className="mt-3 text-xs text-emerald-400">Music profile updated.</p>}
+      {error && <p className="mt-3 text-small text-red-400">{error}</p>}
+      {success && <p className="mt-3 text-small text-emerald-400">Music profile updated.</p>}
 
       <button
         type="button"
         onClick={handleSave}
         disabled={submitting}
-        className="cta-sheen cta-fill mt-4 flex items-center justify-center rounded-lg px-4 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        className="cta-sheen cta-fill mt-4 flex items-center justify-center rounded-lg px-4 py-1.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
         {submitting ? "Saving…" : "Save"}
@@ -342,7 +342,7 @@ function AvatarSection({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={image} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs text-slate-500">None</div>
+            <div className="flex h-full w-full items-center justify-center text-small text-slate-500">None</div>
           )}
         </div>
         <div>
@@ -350,7 +350,7 @@ function AvatarSection({
             type="button"
             disabled={uploading || !storageConfigured}
             onClick={() => fileInputRef.current?.click()}
-            className="cta-sheen flex items-center justify-center rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-ink/20 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen flex items-center justify-center rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:border-ink/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {uploading && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {uploading ? "Uploading…" : "Choose new photo"}
@@ -359,9 +359,9 @@ function AvatarSection({
         </div>
       </div>
 
-      {!storageConfigured && <p className="mt-2 text-xs text-slate-500">Image upload isn&apos;t configured yet.</p>}
-      {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
-      {success && <p className="mt-2 text-xs text-emerald-400">Profile photo updated.</p>}
+      {!storageConfigured && <p className="mt-2 text-small text-slate-500">Image upload isn&apos;t configured yet.</p>}
+      {error && <p className="mt-2 text-small text-red-400">{error}</p>}
+      {success && <p className="mt-2 text-small text-emerald-400">Profile photo updated.</p>}
     </SectionCard>
   );
 }
@@ -396,20 +396,20 @@ function NameSection({ initialName, onDone }: { initialName: string | null; onDo
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={submitting}
-          className="flex-1 glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+          className="flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
         />
         <button
           type="submit"
           disabled={submitting || name.trim() === (initialName ?? "")}
-          className="cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Saving…" : "Save"}
         </button>
       </form>
 
-      {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
-      {success && <p className="mt-2 text-xs text-emerald-400">Name updated.</p>}
+      {error && <p className="mt-2 text-small text-red-400">{error}</p>}
+      {success && <p className="mt-2 text-small text-emerald-400">Name updated.</p>}
     </SectionCard>
   );
 }
@@ -439,26 +439,26 @@ function UsernameSection({ initialUsername }: { initialUsername: string | null }
     <SectionCard title="Username" description="How friends find and add you on the Friends page.">
       <form onSubmit={handleSubmit} className="flex gap-2">
         <div className="flex flex-1 items-center glass-surface-subtle pl-3 focus-within:border-[rgb(var(--c-s-50)/0.6)]">
-          <span className="text-sm text-slate-500">@</span>
+          <span className="text-small text-slate-500">@</span>
           <input
             type="text"
             required
             value={username}
             onChange={(e) => setUsernameValue(e.target.value)}
-            className="w-full bg-transparent px-2 py-2 text-base text-slate-100 outline-none"
+            className="w-full bg-transparent px-2 py-2 text-body text-slate-100 outline-none"
           />
         </div>
         <button
           type="submit"
           disabled={submitting || username.trim() === (initialUsername ?? "")}
-          className="cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Saving…" : "Save"}
         </button>
       </form>
-      {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
-      {success && <p className="mt-2 text-xs text-emerald-400">Username updated.</p>}
+      {error && <p className="mt-2 text-small text-red-400">{error}</p>}
+      {success && <p className="mt-2 text-small text-emerald-400">Username updated.</p>}
     </SectionCard>
   );
 }

@@ -68,21 +68,21 @@ export default async function BillingHistoryPage() {
   const payments = await getUserPaymentHistory(session.user.id);
 
   return (
-    <div className="w-full max-w-lg">
-      <Link href="/account" className="mb-4 flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100">
+    <div>
+      <Link href="/account" className="mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
         <ArrowLeftIcon size={16} />
         Back to settings
       </Link>
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Billing</p>
-      <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Payment history</h1>
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Billing</p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment history</h1>
+      <p className="mt-2 text-small text-slate-500">
         {payments.length === 0
           ? "You haven't submitted any payments yet."
           : `${payments.length} payment${payments.length === 1 ? "" : "s"}.`}
       </p>
 
       {payments.length === 0 ? (
-        <div className="mt-6 glass-surface p-8 text-center text-sm text-slate-500">
+        <div className="mt-6 glass-surface p-8 text-center text-small text-slate-500">
           Nothing here yet — buy the curriculum or a lesson package to see your payments listed here.
         </div>
       ) : (
@@ -93,9 +93,9 @@ export default async function BillingHistoryPage() {
             <div key={payment.id} className="glass-surface p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">{eyebrow}</p>
+                  <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">{eyebrow}</p>
                   <p className="mt-1 text-slate-100">{title}</p>
-                  <p className="mt-1 text-xs text-slate-600">
+                  <p className="mt-1 text-small text-slate-600">
                     {new Date(payment.createdAt).toLocaleDateString(undefined, {
                       year: "numeric",
                       month: "short",
@@ -104,9 +104,9 @@ export default async function BillingHistoryPage() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-serif text-lg text-slate-50">{formatUsd(payment.amountCents)}</p>
+                  <p className="text-body text-slate-50 font-semibold">{formatUsd(payment.amountCents)}</p>
                   <span
-                    className={`mt-1 inline-block rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${STATUS_STYLE[payment.status]}`}
+                    className={`mt-1 inline-block rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[payment.status]}`}
                   >
                     {STATUS_LABEL[payment.status]}
                   </span>
@@ -114,10 +114,10 @@ export default async function BillingHistoryPage() {
               </div>
 
               {payment.referenceCode && (
-                <p className="mt-3 font-mono text-xs text-slate-500">Ref: {payment.referenceCode}</p>
+                <p className="mt-3 font-mono text-small text-slate-500">Ref: {payment.referenceCode}</p>
               )}
               {payment.status === "REJECTED" && payment.rejectionReason && (
-                <p className="mt-2 text-xs text-red-400">Reason: {payment.rejectionReason}</p>
+                <p className="mt-2 text-small text-red-400">Reason: {payment.rejectionReason}</p>
               )}
             </div>
             );

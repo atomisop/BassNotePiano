@@ -106,9 +106,9 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale, onApproveNex
           value={query}
           onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Search by name or email…"
-          className="w-full max-w-sm glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+          className="w-full max-w-sm glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
         />
-        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+        <div className="flex flex-wrap items-center gap-3 text-small text-slate-500">
           <span className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded border border-ink/10" /> Locked
           </span>
@@ -124,20 +124,20 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale, onApproveNex
         </div>
       </div>
 
-      {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+      {error && <p className="mt-3 text-small text-red-400">{error}</p>}
 
       {rows.length === 0 ? (
-        <div className="glass-surface mt-5 p-8 text-center text-sm text-slate-500">No students found.</div>
+        <div className="glass-surface mt-5 p-8 text-center text-small text-slate-500">No students found.</div>
       ) : (
         <div className="glass-surface mt-5 overflow-x-auto p-0">
-          <table className="w-full border-separate border-spacing-0 text-sm">
+          <table className="w-full border-separate border-spacing-0 text-small">
             <thead>
               <tr>
-                <th className="sticky left-0 z-10 bg-[var(--c-bg,theme(colors.slate.950))] p-3 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+                <th className="sticky left-0 z-10 bg-[var(--c-bg,theme(colors.slate.950))] p-3 text-left text-small font-medium uppercase tracking-wide text-slate-500">
                   Student
                 </th>
                 {scaleColumns.map((sg) => (
-                  <th key={sg.slug} title={`${sg.code} — ${sg.title}`} className="p-2 text-center text-xs font-medium text-slate-500">
+                  <th key={sg.slug} title={`${sg.code} — ${sg.title}`} className="p-2 text-center text-small font-medium text-slate-500">
                     S{sg.order + 1}
                   </th>
                 ))}
@@ -147,17 +147,17 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale, onApproveNex
               {rows.map((row) => (
                 <tr key={row.id} className="border-t border-ink/10">
                   <td className="sticky left-0 z-10 bg-[var(--c-bg,theme(colors.slate.950))] p-3">
-                    <p className="text-sm text-slate-100">{row.name ?? "—"}</p>
-                    <p className="text-xs text-slate-500">{row.email}</p>
+                    <p className="text-small text-slate-100">{row.name ?? "—"}</p>
+                    <p className="text-small text-slate-500">{row.email}</p>
                     <div className="mt-1 flex items-center gap-2">
                       <span
                         title={row.accessUntil ? `Access runs until ${formatShortDate(row.accessUntil)}` : undefined}
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${ACCESS_BADGE[row.accessKind].className}`}
+                        className={`rounded-full px-2 py-0.5 text-small font-medium uppercase tracking-wide ${ACCESS_BADGE[row.accessKind].className}`}
                       >
                         {ACCESS_BADGE[row.accessKind].label}
                         {row.accessUntil && row.accessKind !== "PAID" ? ` · ends ${formatShortDate(row.accessUntil)}` : ""}
                       </span>
-                      <Link href={`/admin/users/${row.id}`} className="text-[10px] font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70">
+                      <Link href={`/admin/users/${row.id}`} className="text-small font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70">
                         Full profile →
                       </Link>
                     </div>
@@ -172,7 +172,7 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale, onApproveNex
                         onApprove={(force) => handleApprove(row.id, force)}
                       />
                     )}
-                    <p className="mt-1.5 whitespace-nowrap text-[11px] tabular-nums text-slate-500">
+                    <p className="mt-1.5 whitespace-nowrap text-small tabular-nums text-slate-500">
                       {row.scalesCompleted}/{row.scales.length} scales · {row.currentStreak}-day streak ·{" "}
                       {row.classCredits} credit{row.classCredits === 1 ? "" : "s"} · {relativeDays(row.lastActivityAt)}
                     </p>
@@ -187,7 +187,7 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale, onApproveNex
                           title={cellTooltip(cell)}
                           disabled={busy}
                           onClick={() => handleToggle(row.id, cell)}
-                          className={`h-8 w-9 rounded-lg border text-xs font-medium transition disabled:opacity-40 ${cellClasses(cell)}`}
+                          className={`h-8 w-9 rounded-lg border text-small font-medium transition disabled:opacity-40 ${cellClasses(cell)}`}
                         >
                           {busy ? "…" : cell.status === "COMPLETED" ? "✓" : cell.unlocked ? "•" : "×"}
                         </button>
@@ -206,7 +206,7 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale, onApproveNex
 
 function NextScaleControl({ row, busy, onApprove }: { row: AdminProgressRow; busy: boolean; onApprove: (force: boolean) => void }) {
   const next = row.nextApproval;
-  if (next.state === "ALL_UNLOCKED") return <p className="mt-1.5 text-[11px] text-slate-500">Every scale released.</p>;
+  if (next.state === "ALL_UNLOCKED") return <p className="mt-1.5 text-small text-slate-500">Every scale released.</p>;
 
   const nextCode = row.scales.find((s) => s.slug === next.nextSlug)?.code ?? "next scale";
   const forceButton = (label: string) => (
@@ -214,7 +214,7 @@ function NextScaleControl({ row, busy, onApprove }: { row: AdminProgressRow; bus
       type="button"
       disabled={busy}
       onClick={() => onApprove(true)}
-      className="text-[11px] font-medium text-slate-400 underline transition hover:text-slate-200 disabled:opacity-40"
+      className="text-small font-medium text-slate-400 underline transition hover:text-slate-200 disabled:opacity-40"
     >
       {label}
     </button>
@@ -226,7 +226,7 @@ function NextScaleControl({ row, busy, onApprove }: { row: AdminProgressRow; bus
         type="button"
         disabled={busy}
         onClick={() => onApprove(false)}
-        className="cta-sheen cta-fill mt-1.5 rounded-lg px-3 py-1 text-[11px] font-semibold disabled:opacity-40"
+        className="cta-sheen cta-fill mt-1.5 rounded-lg px-3 py-1 text-small font-semibold disabled:opacity-40"
       >
         {busy ? "Releasing…" : `Approve ${nextCode}`}
       </button>
@@ -234,13 +234,13 @@ function NextScaleControl({ row, busy, onApprove }: { row: AdminProgressRow; bus
   }
   if (next.state === "WAITING_PACE") {
     return (
-      <p className="mt-1.5 text-[11px] text-slate-500">
+      <p className="mt-1.5 text-small text-slate-500">
         {nextCode} ready {formatShortDate(next.availableAt)} (one per week). {forceButton("Release now")}
       </p>
     );
   }
   return (
-    <p className="mt-1.5 text-[11px] text-slate-500">
+    <p className="mt-1.5 text-small text-slate-500">
       Still finishing the last scale. {forceButton(`Release ${nextCode} anyway`)}
     </p>
   );

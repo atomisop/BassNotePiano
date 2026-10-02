@@ -22,6 +22,7 @@ import {
   cancelPaymentPlanBySelfAction,
   type NotificationPreferencesInput,
 } from "./actions";
+import { SettingsLayout } from "@/components/layout/PageLayouts";
 
 interface AccountSettingsProps {
   hasCurriculumAccess: boolean;
@@ -89,8 +90,8 @@ function TabIcon({ path, className = "h-[18px] w-[18px] shrink-0" }: { path: str
 function SectionCard({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
   return (
     <div className="glass-surface p-6">
-      <h2 className="font-serif text-lg text-slate-50">{title}</h2>
-      <p className="mt-1 text-sm text-slate-500">{description}</p>
+      <h2 className="text-body text-slate-50 font-semibold">{title}</h2>
+      <p className="mt-1 text-small text-slate-500">{description}</p>
       <div className="mt-4">{children}</div>
     </div>
   );
@@ -106,7 +107,7 @@ function AboutLink() {
   return (
     <Link
       href="/about"
-      className="flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left text-sm text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200"
+      className="flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left text-small text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200"
     >
       <TabIcon path={TAB_ICONS.about} />
       About
@@ -121,7 +122,7 @@ function SignOutButton({ className = "" }: { className?: string }) {
     <button
       type="button"
       onClick={() => signOut({ callbackUrl: "/" })}
-      className={`flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left text-sm text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200 ${className}`}
+      className={`flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left text-small text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200 ${className}`}
     >
       <TabIcon path={TAB_ICONS.logout} />
       Sign out
@@ -136,7 +137,7 @@ function SignOutButton({ className = "" }: { className?: string }) {
 function CategoryHeading({ category, isFirst }: { category: Category; isFirst: boolean }) {
   return (
     <p
-      className={`px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${isFirst ? "" : "mt-3"} ${
+      className={`px-3 pb-1 text-small font-semibold uppercase tracking-[0.16em] ${isFirst ? "" : "mt-3"} ${
         category === "Danger zone" ? "text-red-400/70" : "text-slate-500"
       }`}
     >
@@ -163,9 +164,9 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
                 key={tab.id}
                 type="button"
                 onClick={() => onSelect(tab.id)}
-                className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-sm transition ${
+                className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-small transition ${
                   activeTab === tab.id
-                    ? "border-amber-400/50 bg-slate-800 text-amber-400"
+                    ? "border-transparent bg-[rgb(var(--signal)/0.14)] text-signal"
                     : "border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
                 }`}
               >
@@ -193,7 +194,7 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
       {groupedTabs().map((group, i) => (
         <div key={group.category} className={i === 0 ? "" : "border-t border-ink/10 pt-1"}>
           <p
-            className={`px-4 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+            className={`px-4 pb-1 pt-3 text-small font-semibold uppercase tracking-[0.16em] ${
               group.category === "Danger zone" ? "text-red-400/70" : "text-slate-500"
             }`}
           >
@@ -208,14 +209,14 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
                 className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-ink/5"
               >
                 <TabIcon path={tab.icon} className="h-5 w-5 shrink-0 text-slate-400" />
-                <span className="flex-1 text-sm text-slate-100">{tab.label}</span>
+                <span className="flex-1 text-small text-slate-100">{tab.label}</span>
                 <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
               </button>
             ))}
             {group.category === "Help" && (
               <Link href="/about" className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-ink/5">
                 <TabIcon path={TAB_ICONS.about} className="h-5 w-5 shrink-0 text-slate-400" />
-                <span className="flex-1 text-sm text-slate-100">About</span>
+                <span className="flex-1 text-small text-slate-100">About</span>
                 <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
               </Link>
             )}
@@ -261,21 +262,21 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
   return (
     <SectionCard title="Privacy & data" description="What's saved about your conversations, and where to go for the rest.">
       <div>
-        <h3 className="text-sm font-medium text-slate-200">History → Atom</h3>
-        <p className="mt-1 text-xs text-slate-500">
+        <h3 className="text-small font-medium text-slate-200">History → Atom</h3>
+        <p className="mt-1 text-small text-slate-500">
           Atom&apos;s chat window always opens fresh, but everything you&apos;ve asked it while signed in is kept here for 30
           days, then deleted on its own: {history.length} message{history.length === 1 ? "" : "s"} right now.
         </p>
         <div className="mt-3 max-h-96 space-y-2 overflow-y-auto rounded-xl border border-ink/10 p-3">
           {history.length === 0 ? (
-            <p className="py-6 text-center text-xs text-slate-600">
+            <p className="py-6 text-center text-small text-slate-600">
               Nothing here yet. Questions you ask Atom while signed in will show up here.
             </p>
           ) : (
             history.map((message, index) => (
               <div
                 key={index}
-                className={`rounded-lg px-3 py-2 text-xs ${
+                className={`rounded-lg px-3 py-2 text-small ${
                   message.role === "user" ? "ml-8 bg-[rgb(var(--c-s-50)/0.12)] text-slate-100" : "mr-8 bg-slate-900 text-slate-300"
                 }`}
               >
@@ -285,7 +286,7 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
             ))
           )}
         </div>
-        <p className="mt-3 text-xs text-slate-500">
+        <p className="mt-3 text-small text-slate-500">
           Want it gone sooner than 30 days? Message us directly through the app. See the{" "}
           <Link href="/privacy" className="underline underline-offset-2 text-[rgb(var(--c-s-50))] hover:opacity-70">
             Privacy policy
@@ -300,8 +301,8 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
 function AppearanceSection() {
   return (
     <section>
-      <h2 className="font-serif text-xl text-slate-50">Themes &amp; appearance</h2>
-      <p className="mt-1.5 text-sm text-slate-500">
+      <h2 className="text-body text-slate-50 font-semibold">Themes &amp; appearance</h2>
+      <p className="mt-1.5 text-small text-slate-500">
         Change how Bass Note Piano looks for you. Nothing here affects what anyone else sees.
       </p>
       <div className="mt-6">
@@ -348,23 +349,28 @@ function AccountSettingsInner({
   }
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <div>
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Settings</p>
-        <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Account</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Want to edit your name, username, or photo? Head to{" "}
-          <Link href="/profile" className="underline underline-offset-2 text-[rgb(var(--c-s-50))] hover:opacity-70">
-            your profile
-          </Link>
-          .
-        </p>
-      </div>
-
-      <div className="mt-6 flex flex-col gap-8 lg:flex-row">
-        <DesktopSettingsNav activeTab={activeTab} onSelect={selectDesktopTab} />
-        <MobileSettingsMenu onSelect={openMobileTab} />
-
+    <>
+      <SettingsLayout
+        header={
+          <div>
+            <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Settings</p>
+            <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Account</h1>
+            <p className="mt-1 text-small text-slate-500">
+              Want to edit your name, username, or photo? Head to{" "}
+              <Link href="/profile" className="underline underline-offset-2 text-[rgb(var(--c-s-50))] hover:opacity-70">
+                your profile
+              </Link>
+              .
+            </p>
+          </div>
+        }
+        menu={
+          <>
+            <DesktopSettingsNav activeTab={activeTab} onSelect={selectDesktopTab} />
+            <MobileSettingsMenu onSelect={openMobileTab} />
+          </>
+        }
+      >
         <div className="hidden min-w-0 flex-1 space-y-6 lg:block">
           <TabContent
             tab={activeTab}
@@ -374,7 +380,7 @@ function AccountSettingsInner({
             activePlan={activePlan}
           />
         </div>
-      </div>
+      </SettingsLayout>
 
       <SlideOverPanel
         open={mobileOpenTab !== null}
@@ -391,7 +397,7 @@ function AccountSettingsInner({
           />
         )}
       </SlideOverPanel>
-    </div>
+    </>
   );
 }
 
@@ -415,15 +421,15 @@ function MembershipSection({
       <SectionCard title="Membership & purchases" description="Your curriculum and payment history.">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink/10 p-4">
           <div>
-            <p className="text-sm text-slate-100">{hasCurriculumAccess ? "Curriculum included" : "No active class plan"}</p>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <p className="text-small text-slate-100">{hasCurriculumAccess ? "Curriculum included" : "No active class plan"}</p>
+            <p className="mt-0.5 text-small text-slate-500">
               {hasCurriculumAccess
                 ? "The curriculum comes with your live classes. Your teacher opens each new scale as you progress."
                 : "The curriculum comes with live classes. Start a plan to unlock it."}
             </p>
           </div>
           {!hasCurriculumAccess && (
-            <Link href="/billing/plans" className="cta-sheen cta-fill rounded-lg px-4 py-2 text-xs font-semibold">
+            <Link href="/billing/plans" className="cta-sheen cta-fill rounded-lg px-4 py-2 text-small font-semibold">
               See class plans
             </Link>
           )}
@@ -431,7 +437,7 @@ function MembershipSection({
 
         <Link
           href="/billing/history"
-          className="mt-3 flex items-center justify-between rounded-xl border border-ink/10 p-4 text-sm text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.3)] hover:text-[rgb(var(--c-s-50))]"
+          className="mt-3 flex items-center justify-between rounded-xl border border-ink/10 p-4 text-small text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.3)] hover:text-[rgb(var(--c-s-50))]"
         >
           Payment history
           <span className="text-slate-500">→</span>
@@ -522,7 +528,7 @@ function PasswordSection() {
               className="w-full disabled:opacity-60"
             />
             {newPassword.length > 0 && (
-              <p className={`mt-1.5 flex items-center gap-1.5 text-xs ${newPassword.length >= MIN_PASSWORD_LENGTH ? "text-emerald-400" : "text-slate-500"}`}>
+              <p className={`mt-1.5 flex items-center gap-1.5 text-small ${newPassword.length >= MIN_PASSWORD_LENGTH ? "text-emerald-400" : "text-slate-500"}`}>
                 <CheckIcon size={11} className={newPassword.length >= MIN_PASSWORD_LENGTH ? "opacity-100" : "opacity-30"} />
                 At least {MIN_PASSWORD_LENGTH} characters
               </p>
@@ -540,20 +546,20 @@ function PasswordSection() {
               className="w-full disabled:opacity-60"
             />
             {confirmPassword.length > 0 && (
-              <p className={`mt-1.5 flex items-center gap-1.5 text-xs ${newPassword === confirmPassword ? "text-emerald-400" : "text-slate-500"}`}>
+              <p className={`mt-1.5 flex items-center gap-1.5 text-small ${newPassword === confirmPassword ? "text-emerald-400" : "text-slate-500"}`}>
                 <CheckIcon size={11} className={newPassword === confirmPassword ? "opacity-100" : "opacity-30"} />
                 {newPassword === confirmPassword ? "Passwords match" : "Passwords don't match yet"}
               </p>
             )}
           </div>
 
-          {error && <p className="text-xs text-red-400">{error}</p>}
-          {success && <p className="text-xs text-emerald-400">Password updated. Other devices have been signed out.</p>}
+          {error && <p className="text-small text-red-400">{error}</p>}
+          {success && <p className="text-small text-emerald-400">Password updated. Other devices have been signed out.</p>}
 
           <button
             type="submit"
             disabled={submitting}
-            className="cta-sheen cta-fill flex w-full items-center justify-center rounded-lg py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen cta-fill flex w-full items-center justify-center rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {submitting ? "Saving…" : "Change password"}
@@ -594,12 +600,12 @@ function SignOutOtherDevicesCard() {
         type="button"
         onClick={handleClick}
         disabled={submitting}
-        className="flex items-center justify-center rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex items-center justify-center rounded-lg border border-ink/10 px-4 py-2 text-small font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
         {submitting ? "Signing out other devices…" : "Sign out of all other devices"}
       </button>
-      {success && !submitting && <p className="mt-3 text-xs text-emerald-400">Done. This device stays signed in.</p>}
+      {success && !submitting && <p className="mt-3 text-small text-emerald-400">Done. This device stays signed in.</p>}
     </SectionCard>
   );
 }
@@ -663,11 +669,11 @@ function DangerZoneSection() {
   return (
     <SectionCard title="Danger zone" description="Permanently delete your account and everything tied to it.">
       <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-4">
-        <p className="text-sm text-slate-200">
+        <p className="text-small text-slate-200">
           This deletes your profile, curriculum progress, class bookings, credits, messages, and everything else tied
           to your account.
         </p>
-        <p className="mt-1.5 text-xs font-medium text-red-300">
+        <p className="mt-1.5 text-small font-medium text-red-300">
           This can&apos;t be undone. Once your data is deleted there is no way to get it back — not even by
           contacting us.
         </p>
@@ -676,7 +682,7 @@ function DangerZoneSection() {
           <button
             type="button"
             onClick={() => setStage("password")}
-            className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-500"
+            className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-small font-semibold text-white transition hover:bg-red-500"
           >
             Delete my account
           </button>
@@ -694,20 +700,20 @@ function DangerZoneSection() {
               disabled={sendingCode}
               className="w-full focus:border-red-400/60 disabled:opacity-60"
             />
-            {error && <p className="text-xs text-red-400">{error}</p>}
+            {error && <p className="text-small text-red-400">{error}</p>}
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={reset}
                 disabled={sendingCode}
-                className="flex-1 rounded-lg border border-ink/10 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={sendingCode || !password}
-                className="flex flex-1 items-center justify-center rounded-lg bg-red-600 py-2 text-xs font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex flex-1 items-center justify-center rounded-lg bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {sendingCode && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {sendingCode ? "Sending code…" : "Send verification code"}
@@ -718,7 +724,7 @@ function DangerZoneSection() {
 
         {stage === "code" && (
           <form onSubmit={handleDelete} className="mt-4 space-y-3">
-            <p className="text-xs text-slate-500">
+            <p className="text-small text-slate-500">
               We emailed a 6-digit code to your account&apos;s email address. It expires in 10 minutes.
             </p>
             <input
@@ -732,9 +738,9 @@ function DangerZoneSection() {
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               disabled={deleting}
-              className="w-full glass-surface-subtle px-3 py-2 text-center text-base tracking-[0.4em] text-slate-100 outline-none transition focus:border-red-400/60 disabled:opacity-60"
+              className="w-full glass-surface-subtle px-3 py-2 text-center text-body tracking-[0.4em] text-slate-100 outline-none transition focus:border-red-400/60 disabled:opacity-60"
             />
-            <label className="flex items-start gap-2 text-xs text-slate-400">
+            <label className="flex items-start gap-2 text-small text-slate-400">
               <input
                 type="checkbox"
                 checked={confirmed}
@@ -744,20 +750,20 @@ function DangerZoneSection() {
               />
               I understand this permanently deletes my account and everything in it, and can&apos;t be undone.
             </label>
-            {error && <p className="text-xs text-red-400">{error}</p>}
+            {error && <p className="text-small text-red-400">{error}</p>}
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={reset}
                 disabled={deleting}
-                className="flex-1 rounded-lg border border-ink/10 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={deleting || !confirmed || code.length !== 6}
-                className="flex flex-1 items-center justify-center rounded-lg bg-red-600 py-2 text-xs font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex flex-1 items-center justify-center rounded-lg bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {deleting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {deleting ? "Deleting…" : "Permanently delete my account"}
@@ -774,14 +780,14 @@ function TutorialsSection() {
   const router = useRouter();
   return (
     <SectionCard title="Tutorials" description="Replay the app walkthrough — the same spotlight tour shown once when you first joined.">
-      <p className="text-sm text-slate-400">
+      <p className="text-small text-slate-400">
         A quick tour of the roadmap, online lessons, friends, messages, notifications, your profile, and settings —
         with a &quot;Skip tour&quot; option on every step if you want out early.
       </p>
       <button
         type="button"
         onClick={() => router.push("/dashboard?tour=1")}
-        className="cta-sheen cta-fill mt-4 rounded-lg px-4 py-2 text-xs font-semibold"
+        className="cta-sheen cta-fill mt-4 rounded-lg px-4 py-2 text-small font-semibold"
       >
         Replay app tour
       </button>
@@ -828,8 +834,8 @@ function NotificationSettingsSection({ initial }: { initial: NotificationPrefere
         {NOTIFICATION_TOGGLES.map((item) => (
           <div key={item.key} className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm text-slate-200">{item.label}</p>
-              <p className="text-xs text-slate-500">{item.description}</p>
+              <p className="text-small text-slate-200">{item.label}</p>
+              <p className="text-small text-slate-500">{item.description}</p>
             </div>
             <Switch
               checked={prefs[item.key]}
@@ -839,7 +845,7 @@ function NotificationSettingsSection({ initial }: { initial: NotificationPrefere
           </div>
         ))}
       </div>
-      {success && !submitting && <p className="mt-3 text-xs text-emerald-400">Saved.</p>}
+      {success && !submitting && <p className="mt-3 text-small text-emerald-400">Saved.</p>}
     </SectionCard>
   );
 }

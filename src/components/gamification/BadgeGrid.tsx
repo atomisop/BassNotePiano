@@ -55,7 +55,7 @@ export function BadgeGrid({ earnedCodes }: BadgeGridProps) {
         const badges = BADGES.filter((b) => b.category === category);
         return (
           <div key={category}>
-            <p className="mb-2.5 text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
+            <p className="mb-2.5 text-small font-semibold uppercase tracking-[0.16em] text-slate-400">
               {CATEGORY_LABELS[category]}
             </p>
             <div className="flex flex-wrap gap-3">
@@ -70,15 +70,15 @@ export function BadgeGrid({ earnedCodes }: BadgeGridProps) {
                       transition={prefersReducedMotion ? { duration: 0 } : earned ? { delay: index * 0.04 } : undefined}
                       className={`flex h-16 w-16 flex-col items-center justify-center rounded-2xl border text-center transition ${
                         earned
-                          ? "border-amber-400/50 bg-amber-400/10 text-amber-400"
+                          ? "border-ink/20 bg-[rgb(var(--c-s-50)/0.1)] text-slate-50"
                           : "border-ink/10 bg-surface text-slate-600 opacity-50"
                       }`}
                     >
                       {earned ? <AwardIcon /> : <LockIcon />}
                     </motion.div>
                     <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-44 -translate-x-1/2 glass-surface-subtle p-2.5 text-center opacity-0 shadow-lg transition group-hover:opacity-100">
-                      <p className="text-xs font-medium text-slate-100">{badge.label}</p>
-                      <p className="mt-0.5 text-[11px] text-slate-500">{badge.description}</p>
+                      <p className="text-small font-semibold text-slate-100">{badge.label}</p>
+                      <p className="mt-0.5 text-small text-slate-400">{badge.description}</p>
                     </div>
                   </div>
                 );

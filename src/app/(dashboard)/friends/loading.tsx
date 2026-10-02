@@ -1,4 +1,5 @@
 import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 /**
  * `FriendsClient` groups its lists into `glass-surface` sections (friends,
@@ -11,7 +12,7 @@ import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
 export default function FriendsLoading() {
   return (
     <SkeletonScreen label="Loading friends">
-      <div className="mx-auto max-w-3xl">
+      <WideLayout>
         <Skeleton className="h-3 w-16" />
         <Skeleton className="mt-3 h-8 w-48" />
 
@@ -32,7 +33,7 @@ export default function FriendsLoading() {
             </div>
           </div>
         ))}
-      </div>
+      </WideLayout>
     </SkeletonScreen>
   );
 }

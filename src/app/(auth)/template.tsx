@@ -1,3 +1,5 @@
+import { NarrowLayout } from "@/components/layout/PageLayouts";
+
 /**
  * Animates the card when moving between login / register / forgot / reset /
  * verify. The shared logo header lives in (auth)/layout.tsx and so stays
@@ -8,7 +10,11 @@ export default function AuthTemplate({ children }: { children: React.ReactNode }
   // `flex justify-center`, which only worked while the card was its direct
   // flex child — this wrapper became the flex child instead, and being
   // w-full it consumed the whole row, leaving justify-center nothing to do
-  // and the max-w-sm card pinned to the left edge. Keeping w-full (the card
+  // and the narrow card pinned to the left edge. Keeping w-full (the card
   // sizes off it) plus its own centring restores it.
-  return <div className="page-enter flex w-full justify-center">{children}</div>;
+  return (
+    <div className="page-enter flex w-full justify-center">
+      <NarrowLayout>{children}</NarrowLayout>
+    </div>
+  );
 }

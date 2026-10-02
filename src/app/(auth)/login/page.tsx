@@ -65,11 +65,11 @@ function LoginForm() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-sm glass-surface-elevated p-7"
+      className="w-full glass-surface-elevated p-7"
     >
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Welcome back</p>
-      <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Log in to continue</h1>
-      <p className="mt-1.5 text-sm text-slate-500">Pick up your roadmap right where you left it.</p>
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Welcome back</p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Log in to continue</h1>
+      <p className="mt-1.5 text-small text-slate-500">Pick up your roadmap right where you left it.</p>
 
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">
         <div>
@@ -96,7 +96,7 @@ function LoginForm() {
             <Label htmlFor="password" className={fieldLabel}>
               Password
             </Label>
-            <Link href="/forgot-password" className="text-xs text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
+            <Link href="/forgot-password" className="text-small text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
               Forgot?
             </Link>
           </div>
@@ -115,7 +115,7 @@ function LoginForm() {
         </div>
 
         {error && (
-          <p role="alert" className="text-xs text-red-400">
+          <p role="alert" className="text-small text-red-400">
             {error}
           </p>
         )}
@@ -125,7 +125,7 @@ function LoginForm() {
         </Button>
       </motion.form>
 
-      <p className="mt-6 text-center text-sm text-slate-500">
+      <p className="mt-6 text-center text-small text-slate-500">
         New here?{" "}
         <Link href="/register" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
           Create an account

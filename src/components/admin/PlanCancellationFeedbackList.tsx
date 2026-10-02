@@ -39,7 +39,7 @@ function formatDate(d: Date): string {
 export function PlanCancellationFeedbackList({ feedback }: { feedback: PlanCancellationFeedback[] }) {
   if (feedback.length === 0) {
     return (
-      <p className="mt-6 rounded-xl border border-ink/10 p-6 text-center text-sm text-slate-500">
+      <p className="mt-6 rounded-xl border border-ink/10 p-6 text-center text-small text-slate-500">
         Nothing here yet. This fills in as students cancel their own plan and leave a reason.
       </p>
     );
@@ -51,23 +51,23 @@ export function PlanCancellationFeedbackList({ feedback }: { feedback: PlanCance
         <div key={plan.id} className="glass-surface p-4 sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <p className="text-sm font-medium text-slate-100">{plan.user.name ?? "Unnamed"}</p>
-              <p className="text-xs text-slate-500">{plan.user.email}</p>
+              <p className="text-small font-medium text-slate-100">{plan.user.name ?? "Unnamed"}</p>
+              <p className="text-small text-slate-500">{plan.user.email}</p>
             </div>
-            <p className="text-xs text-slate-500">{plan.canceledAt ? formatDate(plan.canceledAt) : ""}</p>
+            <p className="text-small text-slate-500">{plan.canceledAt ? formatDate(plan.canceledAt) : ""}</p>
           </div>
 
-          <p className="mt-3 text-xs text-slate-500">
+          <p className="mt-3 text-small text-slate-500">
             {describePaymentPlan(plan.cadence, plan.term)} · {plan.installmentsPaid} of {plan.termMonths} installment
             {plan.termMonths === 1 ? "" : "s"} paid
           </p>
 
           <div className="mt-2 rounded-lg border border-ink/10 bg-slate-900/40 p-3">
-            <p className="text-xs font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">
+            <p className="text-small font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">
               {plan.cancellationReason ? REASON_LABELS[plan.cancellationReason] : "No reason given"}
             </p>
             {plan.cancellationReasonNote && (
-              <p className="mt-1.5 whitespace-pre-wrap text-sm text-slate-300">{plan.cancellationReasonNote}</p>
+              <p className="mt-1.5 whitespace-pre-wrap text-small text-slate-300">{plan.cancellationReasonNote}</p>
             )}
           </div>
         </div>

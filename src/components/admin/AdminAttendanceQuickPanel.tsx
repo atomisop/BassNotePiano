@@ -128,7 +128,7 @@ export function AdminAttendanceQuickPanel() {
       >
         <ClipboardCheck className="h-[18px] w-[18px]" strokeWidth={1.5} />
         {rows.length > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] px-1 text-[9px] font-bold text-slate-950">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] px-1 text-small font-bold text-slate-950">
             {rows.length > 9 ? "9+" : rows.length}
           </span>
         )}
@@ -143,22 +143,22 @@ export function AdminAttendanceQuickPanel() {
             role="dialog"
             aria-label="Quick attendance"
           >
-            <p className="px-1 text-xs font-medium uppercase tracking-wide text-slate-500">Needs attendance</p>
+            <p className="px-1 text-small font-medium uppercase tracking-wide text-slate-500">Needs attendance</p>
 
-            {error && <p className="mt-2 px-1 text-xs text-red-400">{error}</p>}
+            {error && <p className="mt-2 px-1 text-small text-red-400">{error}</p>}
 
             {loading && rows.length === 0 ? (
-              <p className="mt-3 px-1 text-sm text-slate-500">Loading…</p>
+              <p className="mt-3 px-1 text-small text-slate-500">Loading…</p>
             ) : rows.length === 0 ? (
-              <p className="mt-3 px-1 text-sm text-slate-500">Nothing waiting — every past class is marked.</p>
+              <p className="mt-3 px-1 text-small text-slate-500">Nothing waiting — every past class is marked.</p>
             ) : (
               <div className="mt-2 space-y-1.5">
                 {rows.map((r) => {
                   const marking = markingId === r.bookingId;
                   return (
                     <div key={r.bookingId} className="rounded-xl border border-ink/10 p-2.5">
-                      <p className="truncate text-sm text-slate-100">{r.studentName ?? r.studentEmail}</p>
-                      <p className="truncate text-xs text-slate-500">
+                      <p className="truncate text-small text-slate-100">{r.studentName ?? r.studentEmail}</p>
+                      <p className="truncate text-small text-slate-500">
                         {r.scheduleLabel ?? "Class"} · {formatWhen(r.scheduledAt)}
                       </p>
                       <div className="mt-2 flex gap-1.5">
@@ -166,7 +166,7 @@ export function AdminAttendanceQuickPanel() {
                           type="button"
                           disabled={marking}
                           onClick={() => handleMark(r.bookingId, "PRESENT")}
-                          className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-emerald-400/30 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-400/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-emerald-400/30 py-1.5 text-small font-medium text-emerald-300 transition hover:bg-emerald-400/10 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {marking ? <MorphingSquare size={11} /> : <Check className="h-3.5 w-3.5" strokeWidth={2} />}
                           Present
@@ -175,7 +175,7 @@ export function AdminAttendanceQuickPanel() {
                           type="button"
                           disabled={marking}
                           onClick={() => handleMark(r.bookingId, "NO_SHOW")}
-                          className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-red-400/30 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-red-400/30 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {marking ? <MorphingSquare size={11} /> : <XIcon className="h-3.5 w-3.5" strokeWidth={2} />}
                           No-show

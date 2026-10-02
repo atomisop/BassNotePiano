@@ -47,12 +47,12 @@ function MessageRow({ message }: { message: AdminThreadMessage }) {
   const isVisitor = message.sender === "VISITOR";
   return (
     <div className={`flex flex-col ${isVisitor ? "items-end" : "items-start"}`}>
-      <span className="mb-1 px-1 text-[10px] uppercase tracking-wide text-slate-600">
+      <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-600">
         {SENDER_LABEL[message.sender]}
         {message.sender === "SUPPORT" && message.sentByName && ` · ${message.sentByName}`}
       </span>
       <div
-        className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm ${
+        className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-body ${
           isVisitor
             ? "bg-[rgb(var(--c-s-50))] text-slate-950"
             : message.sender === "SUPPORT"
@@ -84,21 +84,21 @@ function ThreadListRow({
       }`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1.5 truncate text-sm font-medium text-slate-100">
+        <span className="flex items-center gap-1.5 truncate text-small font-medium text-slate-100">
           {thread.hasUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[rgb(var(--c-s-50))]" />}
           {thread.contactName || thread.contactEmail}
         </span>
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${STATUS_STYLE[thread.status]}`}>
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[thread.status]}`}>
           {thread.status === "OPEN" ? "Open" : "Resolved"}
         </span>
       </div>
       {thread.lastMessage && (
-        <p className="truncate text-xs text-slate-500">
+        <p className="truncate text-small text-slate-500">
           {thread.lastMessage.sender === "SUPPORT" ? "You: " : thread.lastMessage.sender === "ATOM" ? "Atom: " : ""}
           {thread.lastMessage.body}
         </p>
       )}
-      <span className="text-[10px] text-slate-600">{relativeTime(thread.createdAt)}</span>
+      <span className="text-small text-slate-600">{relativeTime(thread.createdAt)}</span>
     </button>
   );
 }
@@ -254,7 +254,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
   }
 
   if (threads.length === 0) {
-    return <div className="glass-surface p-8 text-center text-sm text-slate-500">{emptyMessage}</div>;
+    return <div className="glass-surface p-8 text-center text-small text-slate-500">{emptyMessage}</div>;
   }
 
   return (
@@ -274,15 +274,15 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
 
       <div className="glass-surface flex min-w-0 flex-1 flex-col overflow-hidden">
         {!activeThread ? (
-          <div className="flex flex-1 items-center justify-center p-8 text-center text-sm text-slate-500">
+          <div className="flex flex-1 items-center justify-center p-8 text-center text-small text-slate-500">
             Select a conversation to view its full history and reply.
           </div>
         ) : (
           <>
             <div className="flex items-center justify-between gap-3 border-b border-ink/10 px-4 py-3">
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-slate-50">{activeThread.contactName || activeThread.contactEmail}</p>
-                <p className="truncate text-xs text-slate-500">
+                <p className="truncate text-small font-semibold text-slate-50">{activeThread.contactName || activeThread.contactEmail}</p>
+                <p className="truncate text-small text-slate-500">
                   {activeThread.contactEmail}
                   {activeThread.user && <> · has an account{activeThread.user.username ? ` (@${activeThread.user.username})` : ""}</>}
                 </p>
@@ -293,19 +293,19 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                     type="button"
                     onClick={handleResolve}
                     disabled={resolving}
-                    className="flex items-center justify-center rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                    className="flex items-center justify-center rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
                   >
                     {resolving && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                     {resolving ? "Resolving…" : "Mark resolved"}
                   </button>
                 )}
                 {threadStatus === "RESOLVED" && (
-                  <span className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-[11px] font-medium text-emerald-300">Resolved</span>
+                  <span className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-small font-medium text-emerald-300">Resolved</span>
                 )}
                 <button
                   type="button"
                   onClick={() => setConfirmingDelete(true)}
-                  className="rounded-lg border border-red-500/30 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/10"
+                  className="rounded-lg border border-red-500/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-500/10"
                 >
                   Delete
                 </button>
@@ -314,7 +314,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
 
             {confirmingDelete && (
               <div className="space-y-2 border-b border-ink/10 bg-red-500/5 px-4 py-3">
-                <p className="text-xs text-slate-400">
+                <p className="text-small text-slate-400">
                   Permanently deletes this conversation and everything the visitor shared through it: their name,
                   email, and every message. This can&apos;t be undone.
                 </p>
@@ -323,7 +323,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                     type="button"
                     onClick={() => setConfirmingDelete(false)}
                     disabled={deleting}
-                    className="flex-1 rounded-lg border border-ink/10 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                    className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
                   >
                     Never mind
                   </button>
@@ -331,7 +331,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                     type="button"
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-xs font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {deleting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                     {deleting ? "Deleting…" : "Delete permanently"}
@@ -347,7 +347,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                 bottom. */}
             <div className="min-w-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
               {messagesLoading ? (
-                <div className="flex h-full items-center justify-center gap-2 text-sm text-slate-500">
+                <div className="flex h-full items-center justify-center gap-2 text-small text-slate-500">
                   <MorphingSquare size={14} />
                   Loading messages…
                 </div>
@@ -369,12 +369,12 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                 placeholder="Reply as Support…"
                 maxLength={2000}
                 disabled={sending}
-                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-base text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.4)]"
+                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.4)]"
               />
               <button
                 type="submit"
                 disabled={sending || !reply.trim()}
-                className="cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                className="cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-xl px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {sending && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {sending ? "Sending…" : "Send"}

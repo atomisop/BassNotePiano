@@ -6,7 +6,7 @@ export function EmptyState() {
           <path d="M4 5h16v11H8l-4 4V5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
         </svg>
       </div>
-      <p className="text-sm text-slate-500">Select a conversation to start chatting.</p>
+      <p className="text-small text-slate-500">Select a conversation to start chatting.</p>
     </div>
   );
 }

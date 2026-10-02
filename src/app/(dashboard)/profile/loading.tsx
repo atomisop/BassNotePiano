@@ -1,14 +1,15 @@
 import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 /**
  * Mirrors the real profile page's actual stacked sections: avatar + name +
  * edit button, a streak-days card, a longest-streak card, then the badge
- * grid (`BadgeGrid`/`BadgeSummary`) grouped by category.
+ * grid (`BadgeGrid`) grouped by category.
  */
 export default function ProfileLoading() {
   return (
     <SkeletonScreen label="Loading profile">
-      <div className="mx-auto max-w-2xl">
+      <WideLayout>
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Skeleton className="h-16 w-16 shrink-0 rounded-full" />
@@ -52,7 +53,7 @@ export default function ProfileLoading() {
             </div>
           ))}
         </div>
-      </div>
+      </WideLayout>
     </SkeletonScreen>
   );
 }

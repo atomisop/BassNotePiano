@@ -88,7 +88,7 @@ function MobileAdminSelect() {
       value={current}
       onChange={(e) => router.push(e.target.value)}
       aria-label="Admin section"
-      className="glass-surface-subtle w-full rounded-xl px-3 py-2.5 text-base font-medium text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] sm:hidden"
+      className="glass-surface-subtle w-full rounded-xl px-3 py-2.5 text-body font-medium text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] sm:hidden"
     >
       {NAV_GROUPS.map((group) =>
         group.leaves.length === 1 ? (
@@ -128,8 +128,8 @@ function DesktopAdminPills() {
             <Link
               key={g.label}
               href={g.leaves[0].href}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-                active ? "bg-amber-400 text-slate-950" : "text-slate-400 hover:text-slate-100"
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-small font-medium transition ${
+                active ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
               }`}
             >
               {g.label}
@@ -145,7 +145,7 @@ function DesktopAdminPills() {
               <Link
                 key={leaf.href}
                 href={leaf.href}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                className={`shrink-0 rounded-full px-3 py-1.5 text-small font-medium transition ${
                   active ? "bg-[rgb(var(--c-s-50)/0.18)] text-[rgb(var(--c-s-50))]" : "text-slate-500 hover:text-slate-200"
                 }`}
               >

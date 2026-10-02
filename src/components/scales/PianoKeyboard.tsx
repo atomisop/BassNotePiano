@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { cn } from "@/lib/utils";
 import { notesToAscendingMidi } from "@/lib/audio-engine";
 
 /**
@@ -99,10 +100,29 @@ export function PianoKeyboard({
 
   const whiteCount = whiteKeys.length;
 
-  function handlePress(midi: number, degreeIndex: number | undefined) {
-    if (disabled) return;
-    onPlayKey(midi, degreeIndex ?? null);
-  }
+  // The key under a finger or mouse right now, for the pressed look.
+  const [pressedMidi, setPressedMidi] = useState<number | null>(null);
+
+  // Sound on pointer-down, not on click: a click only fires after the finger
+  // lifts, which reads as lag on a musical instrument. Keyboard users still
+  // play keys with Enter/Space through onKeyDown.
+  const press = useCallback(
+    (e: PointerEvent<HTMLButtonElement>, midi: number, degreeIndex: number | undefined) => {
+      if (disabled || e.button > 0) return;
+      setPressedMidi(midi);
+      onPlayKey(midi, degreeIndex ?? null);
+    },
+    [disabled, onPlayKey],
+  );
+  const release = useCallback(() => setPressedMidi(null), []);
+  const keyPress = useCallback(
+    (e: KeyboardEvent<HTMLButtonElement>, midi: number, degreeIndex: number | undefined) => {
+      if (disabled || (e.key !== "Enter" && e.key !== " ")) return;
+      e.preventDefault();
+      onPlayKey(midi, degreeIndex ?? null);
+    },
+    [disabled, onPlayKey],
+  );
 
   function labelFor(midi: number, degreeIndex: number | undefined) {
     const pitch = PITCH_NAMES[((midi % 12) + 12) % 12];
@@ -110,110 +130,120 @@ export function PianoKeyboard({
     return `${notes[degreeIndex]}, scale degree ${degrees[degreeIndex]}`;
   }
 
+  function isSounding(degreeIndex: number | undefined) {
+    return degreeIndex !== undefined && (activeIndex === degreeIndex || (activeIndex === notes.length && degreeIndex === 0));
+  }
+
+  const keyHandlers = (midi: number, degreeIndex: number | undefined) => ({
+    onPointerDown: (e: PointerEvent<HTMLButtonElement>) => press(e, midi, degreeIndex),
+    onPointerUp: release,
+    onPointerLeave: release,
+    onPointerCancel: release,
+    onKeyDown: (e: KeyboardEvent<HTMLButtonElement>) => keyPress(e, midi, degreeIndex),
+  });
+
+  /*
+   * STEP 5 look: the keyboard is the lesson page's middle-plane star, drawn
+   * as a real instrument (ivory white keys, glossy black keys, soft depth)
+   * in every theme. Color follows STEP 2C: scale notes are marked in ink and
+   * paper (information), and green appears only on the key that is sounding
+   * or under a finger right now.
+   */
   return (
     <div>
       {/* Horizontal scroll rather than shrinking the keys: below roughly
           320px a two-octave keyboard gives each white key under 20px, which
           is narrower than a fingertip. Scrolling keeps them playable. */}
-      <div className="-mx-1 overflow-x-auto px-1 pb-1">
+      <div className="-mx-1 overflow-x-auto px-1 pb-2">
         <div
-          className="relative mx-auto select-none"
-          style={{ minWidth: `${whiteCount * 34}px`, height: 132 }}
+          className="relative mx-auto touch-manipulation select-none piano-case rounded-b-control rounded-t-sm p-1.5 pt-2 shadow-plane-mid"
+          style={{ minWidth: `${whiteCount * 36}px`, height: 176 }}
           role="group"
-          aria-label="Piano keyboard — scale notes are highlighted"
+          aria-label="Piano keyboard. Scale notes are marked; tap a key to hear it."
         >
-          {/* ---- White keys ---- */}
-          <div className="absolute inset-0 flex">
-            {whiteKeys.map(({ midi, degreeIndex }) => {
-              const inScale = degreeIndex !== undefined;
-              const isActive =
-                inScale &&
-                (activeIndex === degreeIndex ||
-                  (activeIndex === notes.length && degreeIndex === 0));
+          <div className="relative h-full">
+            {/* ---- White keys ---- */}
+            <div className="absolute inset-0 flex gap-[2px]">
+              {whiteKeys.map(({ midi, degreeIndex }) => {
+                const inScale = degreeIndex !== undefined;
+                const lit = isSounding(degreeIndex) || pressedMidi === midi;
+                return (
+                  <button
+                    key={midi}
+                    type="button"
+                    disabled={disabled}
+                    {...keyHandlers(midi, degreeIndex)}
+                    aria-label={labelFor(midi, degreeIndex)}
+                    className={cn(
+                      "relative flex flex-1 cursor-pointer flex-col items-center justify-end rounded-b-[7px] pb-3 outline-none transition-[background,box-shadow,transform] duration-75 ease-out focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-signal disabled:cursor-default motion-reduce:transition-none",
+                      lit
+                        ? "translate-y-[2px] bg-[rgb(var(--signal))] shadow-[inset_0_-2px_0_rgb(0_0_0/0.25),0_0_18px_rgb(var(--signal)/0.45)]"
+                        : "piano-white",
+                    )}
+                  >
+                    {inScale && (
+                      <span
+                        className={cn(
+                          "flex h-7 min-w-7 items-center justify-center rounded-full px-1 text-small font-semibold leading-none",
+                          lit ? "text-[rgb(var(--signal-ink))]" : "piano-marker-on-white",
+                        )}
+                      >
+                        {notes[degreeIndex]}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
 
-              return (
-                <button
-                  key={midi}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => handlePress(midi, degreeIndex)}
-                  aria-label={labelFor(midi, degreeIndex)}
-                  aria-pressed={inScale}
-                  className={`relative flex flex-1 cursor-pointer flex-col items-center justify-end rounded-b-md border border-ink/15 pb-2 transition-colors duration-150 focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50))] disabled:cursor-default ${
-                    isActive
-                      ? "bg-[rgb(var(--c-s-50))]"
-                      : inScale
-                        ? "bg-[rgb(var(--c-s-50)/0.25)] hover:bg-[rgb(var(--c-s-50)/0.4)]"
-                        : "bg-slate-950 hover:bg-[rgb(var(--c-s-50)/0.1)]"
-                  }`}
-                >
-                  {inScale && (
-                    <span
-                      className={`font-serif text-[11px] leading-none ${
-                        isActive ? "text-slate-950" : "text-[rgb(var(--c-s-50))]"
-                      }`}
-                    >
-                      {notes[degreeIndex]}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+            {/* ---- Black keys ----
+                Positioned by white-key index so they sit on the seams, and
+                rendered after the white keys so they stack above them. */}
+            {Array.from({ length: octaveCount }).map((_, o) =>
+              BLACK_KEYS.map(({ offset, afterWhite }) => {
+                const midi = startMidi + o * 12 + offset;
+                const degreeIndex = degreeByMidi.get(midi);
+                const inScale = degreeIndex !== undefined;
+                const lit = isSounding(degreeIndex) || pressedMidi === midi;
+
+                // Centre of the seam between this white key and the next.
+                const whiteIndex = o * 7 + afterWhite;
+                const leftPct = ((whiteIndex + 1) / whiteCount) * 100;
+
+                return (
+                  <button
+                    key={midi}
+                    type="button"
+                    disabled={disabled}
+                    {...keyHandlers(midi, degreeIndex)}
+                    aria-label={labelFor(midi, degreeIndex)}
+                    style={{
+                      left: `${leftPct}%`,
+                      width: `${(100 / whiteCount) * 0.6}%`,
+                      transform: `translateX(-50%) translateY(${lit ? 2 : 0}px)`,
+                    }}
+                    className={cn(
+                      "absolute top-0 z-10 flex h-[60%] cursor-pointer flex-col items-center justify-end rounded-b-[6px] pb-2 outline-none transition-[background,box-shadow,transform] duration-75 ease-out focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-signal disabled:cursor-default motion-reduce:transition-none",
+                      lit
+                        ? "bg-[rgb(var(--signal))] shadow-[0_0_16px_rgb(var(--signal)/0.5)]"
+                        : "piano-black",
+                    )}
+                  >
+                    {inScale && (
+                      <span
+                        className={cn(
+                          "flex h-6 min-w-6 items-center justify-center rounded-full px-0.5 text-small font-semibold leading-none",
+                          lit ? "text-[rgb(var(--signal-ink))]" : "piano-marker-on-black",
+                        )}
+                      >
+                        {notes[degreeIndex]}
+                      </span>
+                    )}
+                  </button>
+                );
+              }),
+            )}
           </div>
-
-          {/* ---- Black keys ----
-              Positioned by white-key index so they sit on the seams. Rendered
-              after the white keys so they stack above them without needing a
-              z-index on every white key. */}
-          {Array.from({ length: octaveCount }).map((_, o) =>
-            BLACK_KEYS.map(({ offset, afterWhite }) => {
-              const midi = startMidi + o * 12 + offset;
-              const degreeIndex = degreeByMidi.get(midi);
-              const inScale = degreeIndex !== undefined;
-              const isActive =
-                inScale &&
-                (activeIndex === degreeIndex ||
-                  (activeIndex === notes.length && degreeIndex === 0));
-
-              // Centre of the seam between this white key and the next.
-              const whiteIndex = o * 7 + afterWhite;
-              const leftPct = ((whiteIndex + 1) / whiteCount) * 100;
-
-              return (
-                <button
-                  key={midi}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => handlePress(midi, degreeIndex)}
-                  aria-label={labelFor(midi, degreeIndex)}
-                  aria-pressed={inScale}
-                  style={{
-                    left: `${leftPct}%`,
-                    width: `${(100 / whiteCount) * 0.62}%`,
-                    transform: "translateX(-50%)",
-                  }}
-                  className={`absolute top-0 z-10 flex h-[62%] cursor-pointer flex-col items-center justify-end rounded-b-md border border-ink/40 pb-1.5 transition-colors duration-150 focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50))] disabled:cursor-default ${
-                    isActive
-                      ? "bg-[rgb(var(--c-s-50))]"
-                      : inScale
-                        ? "bg-[rgb(var(--c-s-50))]"
-                        : "bg-[#2A2521] hover:bg-[#3A342E]"
-                  }`}
-                >
-                  {inScale && (
-                    // Paper on rust, whether lit or not. `[rgb(var(--c-s-50))]` is a dark
-                    // rust (#7F3D14) in this system, so the near-black used
-                    // for an unlit key's chassis lands at about 1.9:1 on it —
-                    // the label was drawn and unreadable. Paper gives 7.6:1 on
-                    // [rgb(var(--c-s-50))] and 5.4:1 on the lit [rgb(var(--c-s-50))].
-                    <span className="font-serif text-[10px] leading-none text-slate-950">
-                      {notes[degreeIndex]}
-                    </span>
-                  )}
-                </button>
-              );
-            }),
-          )}
         </div>
       </div>
     </div>

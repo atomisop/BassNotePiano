@@ -33,9 +33,9 @@ export default async function AdminPaymentPlansPage({ searchParams }: { searchPa
     const feedback = await getPlanCancellationFeedback();
     return (
       <div>
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-        <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Payment Plans</h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment Plans</h1>
+        <p className="mt-2 text-small text-slate-500">
           {feedback.length} cancellation{feedback.length === 1 ? "" : "s"} with a reason left, newest first.
         </p>
 
@@ -44,8 +44,8 @@ export default async function AdminPaymentPlansPage({ searchParams }: { searchPa
             <Link
               key={filter.value}
               href={filter.value === "ACTIVE" ? "/admin/payment-plans" : `/admin/payment-plans?status=${filter.value}`}
-              className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-                activeFilter === filter.value ? "bg-amber-400 text-slate-950" : "text-slate-400 hover:text-slate-100"
+              className={`rounded-full px-3 py-1.5 text-small font-medium transition ${
+                activeFilter === filter.value ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
               }`}
             >
               {filter.label}
@@ -64,12 +64,12 @@ export default async function AdminPaymentPlansPage({ searchParams }: { searchPa
 
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-      <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Payment Plans</h1>
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment Plans</h1>
+      <p className="mt-2 text-small text-slate-500">
         {plans.length} plan{plans.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
       </p>
-      <p className="mt-2 max-w-2xl text-sm text-slate-500">
+      <p className="mt-2 max-w-2xl text-small text-slate-500">
         Each installment is still approved or rejected from the regular{" "}
         <Link href="/admin/payments" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
           Payments queue
@@ -82,8 +82,8 @@ export default async function AdminPaymentPlansPage({ searchParams }: { searchPa
           <Link
             key={filter.value}
             href={filter.value === "ACTIVE" ? "/admin/payment-plans" : `/admin/payment-plans?status=${filter.value}`}
-            className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-              activeFilter === filter.value ? "bg-amber-400 text-slate-950" : "text-slate-400 hover:text-slate-100"
+            className={`rounded-full px-3 py-1.5 text-small font-medium transition ${
+              activeFilter === filter.value ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
             }`}
           >
             {filter.label}

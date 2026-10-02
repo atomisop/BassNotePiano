@@ -25,10 +25,10 @@ export function KeySelector({ value, onChange }: KeySelectorProps) {
           type="button"
           onClick={() => onChange(key)}
           aria-pressed={key === value}
-          className={`h-9 min-w-[2.5rem] cursor-pointer rounded-lg border px-2 text-sm font-medium transition ${
+          className={`h-11 min-w-[2.75rem] cursor-pointer rounded-control border px-2 text-small font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
             key === value
-              ? "border-amber-400 bg-amber-400/10 text-amber-400"
-              : "border-ink/10 text-slate-400 hover:border-ink/15 hover:text-slate-100"
+              ? "border-signal bg-[rgb(var(--signal)/0.14)] text-signal"
+              : "border-ink/10 text-slate-300 hover:border-ink/20 hover:text-slate-50"
           }`}
         >
           {key}

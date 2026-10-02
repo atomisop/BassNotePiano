@@ -495,7 +495,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                       </DockItem>
                     </motion.div>
                     {Boolean(badge) && (
-                      <span className="pointer-events-none absolute right-0 top-0 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-[rgb(var(--c-s-50))] px-1 text-[9px] font-bold text-slate-950">
+                      <span className="pointer-events-none absolute right-0 top-0 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-[rgb(var(--c-s-50))] px-1 text-small font-bold text-slate-950">
                         {badge > 9 ? "9+" : badge}
                       </span>
                     )}

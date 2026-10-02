@@ -178,7 +178,7 @@ function FeedbackButtons({
 }) {
   return (
     <div className="mt-1 flex items-center gap-1 pl-1">
-      <span className="text-[10px] text-slate-600">Was this answer satisfying?</span>
+      <span className="text-small text-slate-600">Was this answer satisfying?</span>
       <button
         type="button"
         onClick={() => onRate("UP")}
@@ -303,8 +303,8 @@ function MessageBubble({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-        className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm ${
-          isMine ? "bg-amber-400 text-slate-950" : "border border-ink/10 bg-slate-950 text-slate-100"
+        className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-body ${
+          isMine ? "bg-slate-50 text-slate-950" : "border border-ink/10 bg-slate-950 text-slate-100"
         }`}
       >
         <p className="whitespace-pre-wrap break-words">{renderMessageContent(message.content, isMine)}</p>
@@ -322,16 +322,16 @@ function ThreadMessageBubble({ message }: { message: ThreadMessage }) {
   const isVisitor = message.sender === "VISITOR";
   return (
     <div className={`flex flex-col ${isVisitor ? "items-end" : "items-start"}`}>
-      <span className="mb-1 px-1 text-[10px] uppercase tracking-wide text-slate-600">{THREAD_SENDER_LABEL[message.sender]}</span>
+      <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-600">{THREAD_SENDER_LABEL[message.sender]}</span>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-        className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm ${
+        className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-body ${
           isVisitor
-            ? "bg-amber-400 text-slate-950"
+            ? "bg-slate-50 text-slate-950"
             : message.sender === "SUPPORT"
-              ? "border border-amber-400/35 bg-amber-400/10 text-slate-100"
+              ? "border border-ink/25 bg-[rgb(var(--c-s-50)/0.08)] text-slate-100"
               : "border border-ink/10 bg-slate-950 text-slate-100"
         }`}
       >
@@ -857,8 +857,8 @@ export function AssistantWidget() {
                     sender said what is still clear from each message's own
                     ATOM/SUPPORT/YOU label (see ThreadMessageBubble) without
                     the header itself switching names on the visitor. */}
-                <p className="text-sm font-semibold text-slate-50">Atom</p>
-                <p className="text-xs text-slate-500">Bass Note Piano&apos;s assistant</p>
+                <p className="text-small font-semibold text-slate-50">Atom</p>
+                <p className="text-small text-slate-500">Bass Note Piano&apos;s assistant</p>
               </div>
               <button
                 type="button"
@@ -874,7 +874,7 @@ export function AssistantWidget() {
 
             <div className="min-w-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
               {!inSupportMode && messages.length === 0 && (
-                <p className="text-sm text-slate-400">
+                <p className="text-small text-slate-400">
                   Hi, I&apos;m Atom. Ask me about pricing, booking a class, policies, or anything else about Bass Note
                   Piano.
                 </p>
@@ -897,20 +897,20 @@ export function AssistantWidget() {
                     <ThreadMessageBubble key={m.id} message={m} />
                   ))}
                   {!hasSupportReply && threadStatus === "OPEN" && (
-                    <p className="rounded-xl border border-ink/10 bg-slate-900/60 p-3 text-center text-xs text-slate-500">
+                    <p className="rounded-xl border border-ink/10 bg-slate-900/60 p-3 text-center text-small text-slate-500">
                       You&apos;re connected — our support team has been notified and will reply here shortly.
                     </p>
                   )}
                   {threadStatus === "RESOLVED" && (
                     <div className="space-y-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-center">
-                      <p className="text-xs text-emerald-300">
+                      <p className="text-small text-emerald-300">
                         This conversation is closed. The history above is kept, but this thread no longer accepts new
                         messages.
                       </p>
                       <button
                         type="button"
                         onClick={resetToAtom}
-                        className="text-xs font-medium text-amber-400 underline-offset-2 hover:underline"
+                        className="text-small font-medium text-amber-400 underline-offset-2 hover:underline"
                       >
                         Start a new question with Atom
                       </button>
@@ -920,17 +920,17 @@ export function AssistantWidget() {
               )}
 
               {loading && <TypingIndicator />}
-              {error && <p className="text-center text-xs text-red-400">{error}</p>}
+              {error && <p className="text-center text-small text-red-400">{error}</p>}
 
               {escalationOffer && (
                 <div className="space-y-2 rounded-xl border border-ink/10 bg-slate-900/60 p-3">
-                  <p className="text-sm text-slate-300">Want me to connect you with our customer service team? A real person can dig into your account directly.</p>
+                  <p className="text-small text-slate-300">Want me to connect you with our customer service team? A real person can dig into your account directly.</p>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={declineHandoff}
                       disabled={escalationSubmitting}
-                      className="flex-1 rounded-lg border border-ink/10 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                      className="flex-1 rounded-lg border border-ink/10 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
                     >
                       No, keep trying
                     </button>
@@ -938,19 +938,19 @@ export function AssistantWidget() {
                       type="button"
                       onClick={confirmHandoff}
                       disabled={escalationSubmitting}
-                      className="flex flex-1 items-center justify-center rounded-lg bg-amber-400 py-1.5 text-xs font-semibold text-slate-950 transition disabled:opacity-60"
+                      className="flex flex-1 items-center justify-center rounded-lg bg-amber-400 py-1.5 text-small font-semibold text-slate-950 transition disabled:opacity-60"
                     >
                       {escalationSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {escalationSubmitting ? "Connecting…" : "Yes, connect me"}
                     </button>
                   </div>
-                  {escalationError && <p className="text-xs text-red-400">{escalationError}</p>}
+                  {escalationError && <p className="text-small text-red-400">{escalationError}</p>}
                 </div>
               )}
 
               {collectingEmail && (
                 <form onSubmit={handleEmailSubmit} className="space-y-2 rounded-xl border border-ink/10 bg-slate-900/60 p-3">
-                  <p className="text-sm text-slate-300">
+                  <p className="text-small text-slate-300">
                     The team will reply right here in this chat — what&apos;s a good email for them to reach you at
                     only if you&apos;re not around when they do?
                   </p>
@@ -962,22 +962,22 @@ export function AssistantWidget() {
                     autoFocus
                     maxLength={320}
                     disabled={escalationSubmitting}
-                    className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-1.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-400/40"
+                    className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-1.5 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-400/40"
                   />
-                  {escalationError && <p className="text-xs text-red-400">{escalationError}</p>}
+                  {escalationError && <p className="text-small text-red-400">{escalationError}</p>}
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={declineHandoff}
                       disabled={escalationSubmitting}
-                      className="flex-1 rounded-lg border border-ink/10 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                      className="flex-1 rounded-lg border border-ink/10 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={escalationSubmitting || !escalationEmail.trim()}
-                      className="flex flex-1 items-center justify-center rounded-lg bg-amber-400 py-1.5 text-xs font-semibold text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex flex-1 items-center justify-center rounded-lg bg-amber-400 py-1.5 text-small font-semibold text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {escalationSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {escalationSubmitting ? "Sending…" : "Notify the team"}
@@ -997,7 +997,7 @@ export function AssistantWidget() {
                     type="button"
                     onClick={() => sendMessage(s)}
                     disabled={loading}
-                    className="rounded-full border border-ink/10 px-2.5 py-1 text-xs text-slate-300 transition hover:border-amber-400/40 hover:text-amber-400 disabled:opacity-50"
+                    className="rounded-full border border-ink/10 px-2.5 py-1 text-small text-slate-300 transition hover:border-amber-400/40 hover:text-amber-400 disabled:opacity-50"
                   >
                     {s}
                   </button>
@@ -1006,7 +1006,7 @@ export function AssistantWidget() {
                   type="button"
                   onClick={offerHandoff}
                   disabled={loading}
-                  className="rounded-full border border-ink/10 px-2.5 py-1 text-xs text-slate-400 transition hover:border-amber-400/40 hover:text-amber-400 disabled:opacity-50"
+                  className="rounded-full border border-ink/10 px-2.5 py-1 text-small text-slate-400 transition hover:border-amber-400/40 hover:text-amber-400 disabled:opacity-50"
                 >
                   Talk to our team
                 </button>
@@ -1022,7 +1022,7 @@ export function AssistantWidget() {
                 placeholder={isResolved ? "This conversation is closed" : inSupportMode ? "Message support…" : "Ask Atom anything…"}
                 maxLength={2000}
                 disabled={loading || isResolved}
-                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-400/40 disabled:opacity-50"
+                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-400/40 disabled:opacity-50"
               />
               <button
                 type="submit"
@@ -1062,7 +1062,7 @@ export function AssistantWidget() {
             // `--elev-border`/`--elev-bg` override anymore, so this greeting
             // bubble reads the same elevated-glass material every other
             // `glass-surface-elevated` on the site does.
-            className="glass-surface-elevated relative max-w-[240px] rounded-2xl text-sm leading-relaxed text-slate-100"
+            className="glass-surface-elevated relative max-w-[240px] rounded-2xl text-body text-slate-100"
           >
             <button type="button" onClick={openPanel} className="block w-full rounded-2xl px-4 py-3 text-left">
               {GREETING_TEXT}

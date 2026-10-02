@@ -1,56 +1,51 @@
 import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 /**
- * Mirrors the real dashboard's block structure — greeting, the elevated
- * next-step card, the stats row, then the roadmap — so the page doesn't
- * visibly re-flow when the data lands.
- *
- * A skeleton that doesn't match the layout it's standing in for is worse than
- * no skeleton: it promises one shape and delivers another, which reads as the
- * page breaking rather than loading.
+ * Mirrors the real Home layout (greeting, next step, tabs and scale grid in
+ * the main column; week, progress, class, and badges in the right panel) so
+ * the page doesn't visibly re-flow when the data lands. A skeleton that
+ * promises one shape and delivers another reads as the page breaking.
  */
 export default function DashboardLoading() {
   return (
     <SkeletonScreen label="Loading your dashboard">
-      <div className="mx-auto max-w-5xl">
-        <Skeleton className="h-9 w-64 sm:h-10" />
-        <Skeleton className="mt-3 h-4 w-80 max-w-full" />
+      <WideLayout>
+        <div className="grid gap-x-(--space-section) gap-y-(--space-group) lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-[auto_auto_1fr] xl:grid-cols-[minmax(0,1fr)_22rem]">
+          <div className="pt-10 md:pt-16 lg:col-start-1">
+            <Skeleton className="h-12 w-3/4 md:h-16" />
+          </div>
 
-        {/* Next step — the elevated card */}
-        <div className="glass-surface-elevated mt-7 p-6 sm:p-8">
-          <Skeleton className="h-3 w-24" />
-          <Skeleton className="mt-3 h-8 w-72 max-w-full" />
-          <Skeleton className="mt-3 h-4 w-full max-w-xl" />
-          <Skeleton className="mt-6 h-10 w-44 rounded-full" />
-        </div>
+          <div className="glass-surface p-6 lg:col-start-1">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="mt-3 h-5 w-64 max-w-full" />
+            <Skeleton className="mt-2 h-4 w-full max-w-md" />
+            <Skeleton className="mt-5 h-11 w-36 rounded-control" />
+          </div>
 
-        {/* Stats */}
-        <div className="glass-surface mt-6 p-6">
-          <div className="grid grid-cols-2 gap-y-6 sm:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i}>
-                <Skeleton className="h-7 w-14" />
-                <Skeleton className="mt-2 h-3 w-20" />
+          <div className="grid gap-3 sm:grid-cols-2 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:grid-cols-1 lg:content-start">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="glass-surface p-6">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="mt-3 h-8 w-full" />
               </div>
             ))}
           </div>
-          <Skeleton className="mt-8 h-1.5 w-full rounded-full" />
-        </div>
 
-        {/* Roadmap rows */}
-        <div className="mt-10">
-          <Skeleton className="h-3 w-20" />
-          <Skeleton className="mt-3 h-7 w-72 max-w-full" />
-          <div className="mx-auto mt-6 max-w-2xl space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex gap-4">
-                <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
-                <Skeleton className="h-32 flex-1 rounded-2xl" />
-              </div>
-            ))}
+          <div className="lg:col-start-1">
+            <Skeleton className="h-11 w-80 max-w-full rounded-full" />
+            <div className="mt-(--space-group) grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="glass-surface h-48 p-5">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="mt-3 h-5 w-40 max-w-full" />
+                  <Skeleton className="mt-6 h-1 w-full" />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      </WideLayout>
     </SkeletonScreen>
   );
 }

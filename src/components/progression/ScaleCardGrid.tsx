@@ -3,6 +3,8 @@
 import { motion } from "framer-motion";
 import type { ScaleAccessState } from "@/lib/access";
 import { ctaLabel } from "@/lib/ctaLabel";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/Badge";
 import { Checklist, LockIcon, STATUS_LABEL } from "@/components/progression/scaleStatusUi";
 
 const gridContainer = {
@@ -17,28 +19,32 @@ const gridItem = {
 
 export interface ScaleCardGridProps {
   roadmap: ScaleAccessState[];
-  currentIndex: number;
+  /** Slug of the one "you're here" scale, or null if it is not in this list. */
+  currentSlug: string | null;
   onCardClick: (scale: ScaleAccessState) => void;
 }
 
 /**
- * The 15-scale grid, upgraded from the old 6-card version: a real responsive
- * multi-column grid rather than the single-column roadmap spine, so a
- * student sees a wide spread of scales at once. Card content (status,
- * title, kinit name, checklist, CTA) matches ScaleListRows exactly — only
- * the layout differs between the two views.
+ * The learning path as a grid of middle-plane cards (STEP 2B). Each whole
+ * card is one tap target. Color follows STEP 2C:
+ * - the "you're here" card is the selected item, so it alone carries the
+ *   signal outline;
+ * - status (completed, not started) is a neutral badge with an icon;
+ * - locked scales are gray, never green.
+ * The section's one green button is "Continue" in the next-step card above,
+ * so card actions here stay quiet text.
  */
-export function ScaleCardGrid({ roadmap, currentIndex, onCardClick }: ScaleCardGridProps) {
+export function ScaleCardGrid({ roadmap, currentSlug, onCardClick }: ScaleCardGridProps) {
   return (
     <motion.ol
       variants={gridContainer}
       initial="hidden"
       animate="visible"
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+      className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
     >
-      {roadmap.map((scale, index) => {
+      {roadmap.map((scale) => {
         const locked = !scale.canAccess;
-        const isCurrent = index === currentIndex;
+        const isCurrent = scale.scaleGroup.slug === currentSlug;
         const isCompleted = scale.status === "COMPLETED";
 
         return (
@@ -47,44 +53,41 @@ export function ScaleCardGrid({ roadmap, currentIndex, onCardClick }: ScaleCardG
               type="button"
               onClick={() => onCardClick(scale)}
               aria-current={isCurrent ? "step" : undefined}
-              className={`group flex h-full w-full cursor-pointer flex-col rounded-2xl border p-5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50)/0.7)] ${
-                isCurrent
-                  ? "border-amber-400/50 bg-surface shadow-card"
-                  : locked
-                    ? "border-ink/10 bg-ink/5 hover:border-[rgb(var(--c-s-50)/0.3)]"
-                    : "border-ink/10 bg-surface hover:border-[rgb(var(--c-s-50)/0.3)]"
-              }`}
+              className={cn(
+                "group flex h-full w-full cursor-pointer flex-col rounded-card border bg-[rgb(var(--plane-mid-bg))] p-(--space-card) text-left shadow-plane-mid transition-[transform,box-shadow,border-color] duration-(--dur-base) ease-(--ease-ios) hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:hover:translate-y-0",
+                isCurrent ? "border-signal/60 shadow-signal" : "border-ink/[0.08] hover:border-ink/15",
+                locked && "bg-transparent shadow-none",
+              )}
             >
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-small font-semibold uppercase tracking-[0.16em] text-slate-400">
                   {scale.scaleGroup.code}
                 </p>
                 {isCurrent ? (
-                  <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-medium text-amber-400">
-                    You&apos;re here
-                  </span>
+                  <Badge>You&apos;re here</Badge>
+                ) : isCompleted ? (
+                  <Badge tone="success">{STATUS_LABEL[scale.status]}</Badge>
+                ) : locked ? (
+                  <Badge tone="locked">{STATUS_LABEL.LOCKED}</Badge>
                 ) : (
-                  <span className={`text-[11px] ${isCompleted ? "text-emerald-400" : "text-slate-500"}`}>
-                    {STATUS_LABEL[scale.status]}
-                  </span>
+                  <span className="text-small text-slate-400">{STATUS_LABEL[scale.status]}</span>
                 )}
               </div>
 
-              <h3 className={`mt-2 font-serif text-slate-50 ${isCurrent ? "text-xl" : "text-lg"}`}>
+              <h3 className={cn("mt-2 text-body font-semibold", locked ? "text-slate-400" : "text-slate-50")}>
                 {scale.scaleGroup.title}
               </h3>
-              {scale.scaleGroup.kinitName && <p className="mt-1 text-sm text-slate-500">{scale.scaleGroup.kinitName}</p>}
+              {scale.scaleGroup.kinitName && <p className="mt-0.5 text-small text-slate-400">{scale.scaleGroup.kinitName}</p>}
 
               {!locked && <Checklist scale={scale} emphasised={isCurrent} />}
 
               <div className="flex-1" />
 
-              <div
-                className={`mt-5 inline-flex w-fit items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-                  isCurrent
-                    ? "cta-fill group-hover:brightness-110"
-                    : "border border-[rgb(var(--c-s-50)/0.4)] text-[rgb(var(--c-s-50))] group-hover:border-[rgb(var(--c-s-50))] group-hover:bg-[rgb(var(--c-s-50)/0.1)]"
-                }`}
+              <span
+                className={cn(
+                  "mt-4 inline-flex w-fit items-center gap-1.5 text-small font-semibold transition-colors",
+                  locked ? "text-slate-500" : "text-slate-200 group-hover:text-slate-50",
+                )}
               >
                 {locked && <LockIcon />}
                 {ctaLabel(scale)}
@@ -102,7 +105,7 @@ export function ScaleCardGrid({ roadmap, currentIndex, onCardClick }: ScaleCardG
                     <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 )}
-              </div>
+              </span>
             </button>
           </motion.li>
         );

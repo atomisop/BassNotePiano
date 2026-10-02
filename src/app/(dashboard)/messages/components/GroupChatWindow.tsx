@@ -118,8 +118,8 @@ export function GroupChatWindow({
       <div className="flex items-center gap-2.5 border-b border-ink/10 p-4">
         <GroupAvatar />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm text-slate-100">{groupTitle(group)}</p>
-          <p className="truncate text-xs text-slate-500">
+          <p className="truncate text-small text-slate-100">{groupTitle(group)}</p>
+          <p className="truncate text-small text-slate-500">
             {group.memberCount} member{group.memberCount === 1 ? "" : "s"}
           </p>
         </div>
@@ -129,7 +129,7 @@ export function GroupChatWindow({
               type="button"
               onClick={() => setConfirmingLeave(false)}
               disabled={leaving}
-              className="rounded-lg border border-ink/10 px-2.5 py-1.5 text-xs text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+              className="rounded-lg border border-ink/10 px-2.5 py-1.5 text-small text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
             >
               Cancel
             </button>
@@ -137,7 +137,7 @@ export function GroupChatWindow({
               type="button"
               onClick={handleLeave}
               disabled={leaving}
-              className="flex items-center justify-center rounded-lg bg-red-500/95 px-2.5 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-red-500 disabled:opacity-50"
+              className="flex items-center justify-center rounded-lg bg-red-500/95 px-2.5 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:opacity-50"
             >
               {leaving && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
               {leaving ? "Leaving…" : "Leave group"}
@@ -147,7 +147,7 @@ export function GroupChatWindow({
           <button
             type="button"
             onClick={() => setConfirmingLeave(true)}
-            className="shrink-0 rounded-lg border border-ink/10 px-2.5 py-1.5 text-xs text-slate-400 transition hover:border-red-400/30 hover:text-red-300"
+            className="shrink-0 rounded-lg border border-ink/10 px-2.5 py-1.5 text-small text-slate-400 transition hover:border-red-400/30 hover:text-red-300"
           >
             Leave
           </button>
@@ -174,7 +174,7 @@ export function GroupChatWindow({
           const isMine = m.senderId === currentUserId;
           return (
             <div key={m.id} className={`flex items-end gap-2 ${isMine ? "justify-end" : "justify-start"}`}>
-              {!isMine && <Avatar image={m.senderImage} label={m.senderName ?? m.senderUsername ?? "?"} className="h-6 w-6 shrink-0 text-[10px]" />}
+              {!isMine && <Avatar image={m.senderImage} label={m.senderName ?? m.senderUsername ?? "?"} className="h-6 w-6 shrink-0 text-small" />}
               <MessageBubble
                 id={`msg-${m.id}`}
                 isMine={isMine}
@@ -205,10 +205,10 @@ export function GroupChatWindow({
       {replyingTo && (
         <div className="flex items-center gap-2 border-t border-ink/10 bg-slate-900/60 px-4 py-2">
           <div className="min-w-0 flex-1 border-l-2 border-[rgb(var(--c-s-50)/0.5)] pl-2">
-            <p className="text-xs font-medium text-slate-300">
+            <p className="text-small font-medium text-slate-300">
               Replying to {labelFor(replyingTo.senderId, currentUserId, replyingTo.senderName, replyingTo.senderUsername)}
             </p>
-            <p className="truncate text-xs text-slate-500">{replyingTo.body}</p>
+            <p className="truncate text-small text-slate-500">{replyingTo.body}</p>
           </div>
           <button
             type="button"
@@ -234,13 +234,13 @@ export function GroupChatWindow({
           // text-base, not text-sm — see the identical comment in
           // ChatWindow.tsx (the 1:1 equivalent of this input); this is the
           // group-chat message box hitting the same iOS auto-zoom bug.
-          className="min-w-0 flex-1 resize-none overflow-y-auto glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+          className="min-w-0 flex-1 resize-none overflow-y-auto glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
           style={{ maxHeight: MAX_COMPOSE_HEIGHT_PX }}
         />
         <button
           type="submit"
           disabled={sending || !draft.trim()}
-          className="cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           Send
         </button>

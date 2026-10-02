@@ -166,8 +166,8 @@ export function PaymentPlanEnrollmentFlow({
     return (
       <div>
         <div className="mb-4 rounded-xl border border-ink/10 p-4">
-          <p className="text-sm text-slate-100">{planLabel}</p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="text-small text-slate-100">{planLabel}</p>
+          <p className="mt-1 text-small text-slate-500">
             {plan.installmentsPaid} of {plan.termMonths} installments paid
           </p>
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
@@ -192,8 +192,8 @@ export function PaymentPlanEnrollmentFlow({
           // comment. This is the normal, expected state for most of every
           // month, not an error.
           <div className="rounded-xl border border-ink/10 p-4 text-center">
-            <p className="text-sm text-slate-100">You&apos;re all paid up for now.</p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="text-small text-slate-100">You&apos;re all paid up for now.</p>
+            <p className="mt-1 text-small text-slate-500">
               {nextInstallmentDueDate
                 ? `Your next installment opens for payment on ${new Date(nextInstallmentDueDate).toLocaleDateString("en-US", {
                     month: "long",
@@ -210,7 +210,7 @@ export function PaymentPlanEnrollmentFlow({
   return (
     <div className="space-y-6">
       <div>
-        <p className="mb-2 text-xs font-medium text-slate-400">Weekly cadence</p>
+        <p className="mb-2 text-small font-medium text-slate-400">Weekly cadence</p>
         <div className="grid grid-cols-2 gap-3">
           {CADENCE_OPTIONS.map((option) => {
             const active = cadence === option.value;
@@ -223,7 +223,7 @@ export function PaymentPlanEnrollmentFlow({
                   active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
                 }`}
               >
-                <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
+                <p className={`text-small font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
               </button>
             );
           })}
@@ -231,7 +231,7 @@ export function PaymentPlanEnrollmentFlow({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium text-slate-400">Term</p>
+        <p className="mb-2 text-small font-medium text-slate-400">Term</p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {TERM_OPTIONS.map((option) => {
             const active = term === option.value;
@@ -248,8 +248,8 @@ export function PaymentPlanEnrollmentFlow({
                   active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
                 }`}
               >
-                <p className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
-                <p className="mt-0.5 text-xs text-slate-500">
+                <p className={`text-small font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
+                <p className="mt-0.5 text-small text-slate-500">
                   {percentOff > 0 ? `−${percentOff}%` : "No commitment"}
                 </p>
               </button>
@@ -259,8 +259,8 @@ export function PaymentPlanEnrollmentFlow({
       </div>
 
       <div>
-        <p className="text-xs font-medium text-slate-400">Your weekly time</p>
-        <p className="mt-0.5 mb-2 text-xs text-slate-500">
+        <p className="text-small font-medium text-slate-400">Your weekly time</p>
+        <p className="mt-0.5 mb-2 text-small text-slate-500">
           Pick one below, it&apos;s yours every week for {termPhrase}, booked for you automatically.
         </p>
         {slotsLoading ? (
@@ -268,14 +268,14 @@ export function PaymentPlanEnrollmentFlow({
             <MorphingSquare size={16} />
           </div>
         ) : slots.length === 0 ? (
-          <p className="rounded-lg border border-ink/10 px-3.5 py-3 text-xs text-slate-500">
+          <p className="rounded-lg border border-ink/10 px-3.5 py-3 text-small text-slate-500">
             No open weekly times for this cadence right now, message us and we&apos;ll help you find one.
           </p>
         ) : (
           <div className="max-h-56 space-y-3 overflow-y-auto pr-1">
             {slotsByDay.map(([dayOfWeek, daySlots]) => (
               <div key={dayOfWeek}>
-                <p className="mb-1 text-xs font-medium text-slate-500">{DAY_LABELS[dayOfWeek]}</p>
+                <p className="mb-1 text-small font-medium text-slate-500">{DAY_LABELS[dayOfWeek]}</p>
                 <div className="space-y-1.5">
                   {daySlots.map((slot) => {
                     const active = selectedSlot?.scheduleId === slot.scheduleId && selectedSlot?.chunkIndex === slot.chunkIndex;
@@ -288,10 +288,10 @@ export function PaymentPlanEnrollmentFlow({
                           active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
                         }`}
                       >
-                        <span className={`text-sm font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>
+                        <span className={`text-small font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>
                           {formatTimeLabel(slot.startTime)}
                         </span>
-                        {slot.label && <span className="text-xs text-slate-500">{slot.label}</span>}
+                        {slot.label && <span className="text-small text-slate-500">{slot.label}</span>}
                       </button>
                     );
                   })}
@@ -303,7 +303,7 @@ export function PaymentPlanEnrollmentFlow({
       </div>
 
       <div className="rounded-xl border border-ink/10 p-4 sm:p-5">
-        <div className="flex items-center justify-between text-sm text-slate-400">
+        <div className="flex items-center justify-between text-small text-slate-400">
           <span>
             {rate.termMonths === 1
               ? `${formatUsd(rate.installmentAmountCents)}, one month`
@@ -311,25 +311,25 @@ export function PaymentPlanEnrollmentFlow({
           </span>
           <span>{formatUsd(rate.totalCommittedCents)}</span>
         </div>
-        <div className="mt-2 flex items-center justify-between border-t border-ink/10 pt-2 text-base font-semibold text-slate-50">
+        <div className="mt-2 flex items-center justify-between border-t border-ink/10 pt-2 text-body font-semibold text-slate-50">
           <span>{rate.termMonths === 1 ? "Due now" : "Due each month"}</span>
           <span>{formatUsd(rate.installmentAmountCents)}</span>
         </div>
-        <div className="mt-1 flex items-center justify-between text-xs text-slate-500">
+        <div className="mt-1 flex items-center justify-between text-small text-slate-500">
           <span>{classMinutes}-min classes</span>
           <span>
             {classesPerMonth} classes/month
             {rate.termMonths > 1 && ` · ${classesPerMonth * rate.termMonths} total over ${rate.termMonths} months`}
           </span>
         </div>
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-small text-slate-500">
           {rate.termMonths === 1
             ? "One Zelle payment for one month, no term, re-enroll any time."
             : "Billed one installment at a time via Zelle, never all at once — we’ll email you an invoice as each one comes due."}
         </p>
       </div>
 
-      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] p-3.5 text-xs text-slate-300">
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] p-3.5 text-small text-slate-300">
         <input
           type="checkbox"
           checked={acknowledged}
@@ -347,13 +347,13 @@ export function PaymentPlanEnrollmentFlow({
         </span>
       </label>
 
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-small text-red-400">{error}</p>}
 
       <button
         type="button"
         onClick={handleEnroll}
         disabled={loading || !acknowledged || !selectedSlot}
-        className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading && <MorphingSquare size={14} className="mr-2 shrink-0" />}
         {loading ? "Starting…" : "Start plan"}

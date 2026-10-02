@@ -69,7 +69,7 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
                 }`}
               >
                 <span className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-slate-100">{opt.label}</span>
+                  <span className="text-small font-medium text-slate-100">{opt.label}</span>
                   {selected && (
                     <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-400 text-slate-950">
                       <CheckIcon />
@@ -81,11 +81,11 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
                     <span className="mt-2 block">
                       <ThemeSwatch swatch={meta.swatch} />
                     </span>
-                    <span className="mt-2 block text-xs leading-relaxed text-slate-500">{meta.description}</span>
+                    <span className="mt-2 block text-small text-slate-500">{meta.description}</span>
                   </>
                 )}
                 {!meta && !compact && (
-                  <span className="mt-2 block text-xs leading-relaxed text-slate-500">
+                  <span className="mt-2 block text-small text-slate-500">
                     Follows your device&apos;s light or dark setting, and switches with it.
                   </span>
                 )}
@@ -96,7 +96,7 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
       </fieldset>
 
       {!compact && (
-        <p className="mt-6 text-xs leading-relaxed text-slate-600">
+        <p className="mt-6 text-small text-slate-600">
           Saved in this browser, so it applies straight away and follows you around the site — but it won&apos;t carry
           over to a different device or browser.
         </p>

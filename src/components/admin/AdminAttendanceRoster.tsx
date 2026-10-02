@@ -73,7 +73,7 @@ function Avatar({ image, name }: { image: string | null; name: string }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={image} alt="" className="h-full w-full object-cover" />
       ) : (
-        <div className="flex h-full w-full items-center justify-center font-serif text-sm text-[rgb(var(--c-s-50))]">
+        <div className="flex h-full w-full items-center justify-center text-small text-[rgb(var(--c-s-50))]">
           {name.charAt(0).toUpperCase()}
         </div>
       )}
@@ -142,7 +142,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
   }
 
   if (occurrences.length === 0) {
-    return <div className="glass-surface p-8 text-center text-sm text-slate-500">No bookings in the last 60 days.</div>;
+    return <div className="glass-surface p-8 text-center text-small text-slate-500">No bookings in the last 60 days.</div>;
   }
 
   return (
@@ -159,11 +159,11 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
           <div key={key} className="glass-surface p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="font-serif text-lg text-slate-50">{occ.label ?? "Class"}</h3>
-                <p className="mt-0.5 text-sm text-slate-500">{formatDateTime(occ.scheduledAt)}</p>
+                <h3 className="text-body text-slate-50 font-semibold">{occ.label ?? "Class"}</h3>
+                <p className="mt-0.5 text-small text-slate-500">{formatDateTime(occ.scheduledAt)}</p>
               </div>
               {activeRoster.length > 0 && (
-                <span className="rounded-full border border-ink/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                <span className="rounded-full border border-ink/10 px-2.5 py-1 text-small font-medium uppercase tracking-wide text-slate-400">
                   {isFamily ? `Family · ${activeRoster.length} students` : "One-on-one"}
                 </span>
               )}
@@ -172,7 +172,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
             <div className="mt-4 space-y-5">
               {groupByFocus(activeRoster).map((group) => (
                 <div key={group.scaleLabel}>
-                  <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[rgb(var(--c-s-50)/0.8)]">
+                  <p className="mb-2 text-small font-medium uppercase tracking-wide text-[rgb(var(--c-s-50)/0.8)]">
                     {group.scaleLabel} · {group.entries.length} student{group.entries.length === 1 ? "" : "s"}
                   </p>
                   <div className="space-y-2">
@@ -186,19 +186,19 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                             <div className="flex items-center gap-3">
                               <Avatar image={entry.studentImage} name={entry.studentName ?? entry.studentEmail} />
                               <div>
-                                <p className="text-sm text-slate-100">{entry.studentName ?? "Student"}</p>
-                                <p className="text-xs text-slate-600">
+                                <p className="text-small text-slate-100">{entry.studentName ?? "Student"}</p>
+                                <p className="text-small text-slate-600">
                                   {entry.studentEmail} · until {formatEndTime(occ.scheduledAt, entry.creditsSpent)} (
                                   {entry.creditsSpent} credit{entry.creditsSpent === 1 ? "" : "s"})
                                 </p>
-                                <p className="mt-0.5 text-xs text-[rgb(var(--c-s-50))]">{entry.focus.action}</p>
+                                <p className="mt-0.5 text-small text-[rgb(var(--c-s-50))]">{entry.focus.action}</p>
                               </div>
                             </div>
 
                             {entry.attendance && editingId !== entry.bookingId ? (
                               <div className="flex items-center gap-2">
                                 <span
-                                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${
+                                  className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
                                     entry.attendance === "PRESENT" ? "bg-emerald-400/15 text-emerald-300" : "bg-red-400/15 text-red-400"
                                   }`}
                                 >
@@ -211,7 +211,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                     setUndoConfirmId(null);
                                     setEditingId(entry.bookingId);
                                   }}
-                                  className="text-xs font-medium text-slate-500 underline underline-offset-2 transition hover:text-slate-300"
+                                  className="text-small font-medium text-slate-500 underline underline-offset-2 transition hover:text-slate-300"
                                 >
                                   Edit
                                 </button>
@@ -220,7 +220,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                               <div className="flex flex-col items-end gap-2">
                                 {undoConfirmId === entry.bookingId ? (
                                   <div className="flex flex-wrap items-center justify-end gap-2 text-right">
-                                    <span className="text-xs text-amber-400/90">
+                                    <span className="text-small text-slate-300">
                                       Refund {entry.creditsSpent} credit{entry.creditsSpent === 1 ? "" : "s"} and put this
                                       class back on the schedule?
                                     </span>
@@ -228,7 +228,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => setUndoConfirmId(null)}
                                       disabled={busyId === entry.bookingId}
-                                      className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                                      className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
                                     >
                                       Never mind
                                     </button>
@@ -236,7 +236,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => handleUndo(entry.bookingId)}
                                       disabled={busyId === entry.bookingId}
-                                      className="flex items-center justify-center rounded-lg bg-amber-400/95 px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                                      className="flex items-center justify-center cta-fill rounded-lg px-3 py-1.5 text-small font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                       {busyId === entry.bookingId && <MorphingSquare size={11} className="mr-1.5 shrink-0" />}
                                       {busyId === entry.bookingId ? "Refunding…" : "Confirm undo & refund"}
@@ -248,7 +248,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => handleMark(entry.bookingId, "PRESENT")}
                                       disabled={busyId === entry.bookingId || entry.attendance === "PRESENT"}
-                                      className="rounded-lg border border-emerald-400/30 px-3 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-400/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                      className="rounded-lg border border-emerald-400/30 px-3 py-1.5 text-small font-medium text-emerald-300 transition hover:bg-emerald-400/10 disabled:cursor-not-allowed disabled:opacity-40"
                                     >
                                       Present
                                     </button>
@@ -256,7 +256,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => handleMark(entry.bookingId, "NO_SHOW")}
                                       disabled={busyId === entry.bookingId || entry.attendance === "NO_SHOW"}
-                                      className="rounded-lg border border-red-400/30 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                      className="rounded-lg border border-red-400/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-40"
                                     >
                                       No-show
                                     </button>
@@ -264,14 +264,14 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => setUndoConfirmId(entry.bookingId)}
                                       disabled={busyId === entry.bookingId}
-                                      className="rounded-lg border border-amber-400/30 px-3 py-1.5 text-xs font-medium text-amber-400/90 transition hover:bg-amber-400/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                      className="rounded-lg border border-ink/15 px-3 py-1.5 text-small font-medium text-slate-200 transition hover:bg-[rgb(var(--c-s-50)/0.06)] disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                       Undo &amp; refund
                                     </button>
                                     <button
                                       type="button"
                                       onClick={() => setEditingId(null)}
-                                      className="text-xs font-medium text-slate-500 underline underline-offset-2 transition hover:text-slate-300"
+                                      className="text-small font-medium text-slate-500 underline underline-offset-2 transition hover:text-slate-300"
                                     >
                                       Done
                                     </button>
@@ -286,7 +286,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => handleMark(entry.bookingId, "PRESENT")}
                                       disabled={busyId === entry.bookingId}
-                                      className="rounded-lg border border-emerald-400/30 px-3 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-400/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                      className="rounded-lg border border-emerald-400/30 px-3 py-1.5 text-small font-medium text-emerald-300 transition hover:bg-emerald-400/10 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                       Present
                                     </button>
@@ -294,14 +294,14 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => handleMark(entry.bookingId, "NO_SHOW")}
                                       disabled={busyId === entry.bookingId}
-                                      className="rounded-lg border border-red-400/30 px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                      className="rounded-lg border border-red-400/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                       No-show
                                     </button>
                                   </>
                                 )}
                                 {!canMarkAttendance && !hasHappened && (
-                                  <span className="rounded-full border border-ink/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                                  <span className="rounded-full border border-ink/10 px-2.5 py-1 text-small font-medium uppercase tracking-wide text-slate-500">
                                     Upcoming
                                   </span>
                                 )}
@@ -314,7 +314,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       setCancelingId(entry.bookingId);
                                     }}
                                     disabled={busyId === entry.bookingId}
-                                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
                                   >
                                     Cancel booking
                                   </button>
@@ -325,7 +325,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
 
                           {isCanceling && (
                             <div className="mt-3 space-y-2 border-t border-ink/10 pt-3">
-                              <p className="text-xs text-slate-500">
+                              <p className="text-small text-slate-500">
                                 This refunds {entry.studentName ?? "the student"}&apos;s credit and notifies them — no
                                 24-hour cutoff applies to a cancellation you make.
                               </p>
@@ -335,7 +335,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
                                 placeholder="Reason (optional, shown to the student)"
-                                className="w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-red-400/60"
+                                className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-red-400/60"
                               />
                               <div className="flex gap-2">
                                 <button
@@ -345,7 +345,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                     setReason("");
                                   }}
                                   disabled={busyId === entry.bookingId}
-                                  className="flex-1 rounded-lg border border-ink/10 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                                  className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
                                 >
                                   Never mind
                                 </button>
@@ -353,7 +353,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                   type="button"
                                   onClick={() => handleCancel(entry.bookingId)}
                                   disabled={busyId === entry.bookingId}
-                                  className="flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-xs font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   {busyId === entry.bookingId && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                                   {busyId === entry.bookingId ? "Canceling…" : "Confirm cancel & refund"}
@@ -372,7 +372,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
         );
       })}
 
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-small text-red-400">{error}</p>}
     </div>
   );
 }

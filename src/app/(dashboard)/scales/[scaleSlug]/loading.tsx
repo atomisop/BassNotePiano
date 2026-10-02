@@ -1,40 +1,30 @@
 import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 /**
- * The course player is the heaviest authenticated route — it resolves the
- * scale's access state, its uploaded lessons and their per-user progress
- * before it can render anything, so it is the page most likely to be caught
- * mid-load. The skeleton mirrors its three stacked regions: the scale header,
- * the lesson list, then the explorer panels.
+ * Mirrors the three-zone lesson page: outline, lesson + instrument, and the
+ * tool rail (the outline and rail only from lg up, like the real page).
  */
 export default function ScaleLoading() {
   return (
-    <SkeletonScreen label="Loading this scale">
-      <div className="mx-auto max-w-4xl">
-        <Skeleton className="h-3 w-20" />
-        <Skeleton className="mt-3 h-9 w-96 max-w-full" />
-        <Skeleton className="mt-3 h-4 w-64" />
-
-        <div className="glass-surface mt-8 p-6">
-          <Skeleton className="h-4 w-32" />
-          <div className="mt-5 space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-14 w-full rounded-xl" />
+    <SkeletonScreen label="Loading lesson">
+      <WideLayout>
+        <div className="grid gap-6 lg:grid-cols-[17rem_minmax(0,1fr)_4rem]">
+          <div className="glass-surface hidden space-y-3 p-5 lg:block">
+            <Skeleton className="h-3 w-20" />
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-9 w-full" />
             ))}
           </div>
-        </div>
-
-        <div className="glass-surface mt-6 p-6">
-          <Skeleton className="h-3 w-40" />
-          <Skeleton className="mt-3 h-6 w-52" />
-          <div className="mt-6 flex flex-wrap gap-3">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-[74px] w-16 rounded-xl" />
-            ))}
+          <div className="min-w-0">
+            <Skeleton className="mt-12 h-3 w-40" />
+            <Skeleton className="mt-3 h-12 w-2/3" />
+            <Skeleton className="mt-6 aspect-video w-full rounded-card" />
+            <Skeleton className="mt-6 h-44 w-full rounded-card" />
           </div>
-          <Skeleton className="mt-8 h-64 w-full rounded-xl" />
+          <div className="glass-surface hidden h-96 lg:block" />
         </div>
-      </div>
+      </WideLayout>
     </SkeletonScreen>
   );
 }

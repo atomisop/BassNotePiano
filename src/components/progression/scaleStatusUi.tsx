@@ -66,11 +66,7 @@ export function Checklist({ scale, emphasised }: { scale: ScaleAccessState; emph
           <span
             key={item.label}
             className={`h-1 flex-1 rounded-full transition-colors ${
-              item.done
-                ? scale.status === "COMPLETED"
-                  ? "bg-emerald-400"
-                  : "bg-[rgb(var(--c-s-50))]"
-                : "bg-slate-800"
+              item.done ? "bg-[rgb(var(--c-s-50))]" : "bg-slate-800"
             }`}
           />
         ))}
@@ -80,15 +76,15 @@ export function Checklist({ scale, emphasised }: { scale: ScaleAccessState; emph
           {items.map((item) => (
             <span
               key={item.label}
-              className={`text-[11px] ${
-                item.done ? "text-slate-300" : emphasised ? "text-slate-500" : "text-slate-600"
+              className={`text-small ${
+                item.done ? "text-slate-200" : emphasised ? "text-slate-400" : "text-slate-500"
               }`}
             >
               {item.label}
             </span>
           ))}
         </div>
-        <span className="text-[11px] tabular-nums text-slate-500">{doneCount}/3</span>
+        <span className="text-small tabular-nums text-slate-500">{doneCount}/3</span>
       </div>
     </div>
   );
