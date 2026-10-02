@@ -1,7 +1,11 @@
 import { Resend } from "resend";
 import type { VerificationPurpose } from "@prisma/client";
 
-const EMAIL_FROM = process.env.EMAIL_FROM ?? "Bass Note Piano <noreply@bassnotepiano.com>";
+// Falls back to the actual verified Resend sending domain (a subdomain, not
+// the root domain; see the deployment notes) so a missing env var fails
+// the same way production is actually configured, rather than to an
+// unverified address Resend would just bounce.
+const EMAIL_FROM = process.env.EMAIL_FROM ?? "Bass Note Piano <noreply@noreply.bassnotepiano.com>";
 // Real inbox (Squarespace-forwarded), not the noreply sender above. Set so
 // hitting "reply" on any app email actually reaches someone, and the
 // footer has a real contact address rather than just a link back into the

@@ -232,6 +232,28 @@ function FeedbackButtons({
 // in ThreadMessageBubble).
 const MARKDOWN_LINK = /\[([^\]]+)\]\(([^)]+)\)/g;
 
+// Atom is only ever instructed (see the system prompt in assistant.ts) to
+// link to real in-app paths like "/pricing", so every legitimate href is a
+// same-origin, root-relative path. Guarding this explicitly rather than
+// trusting that shape blindly: content.matchAll above is scanning text this
+// app doesn't fully control (a model reply can, in principle, be steered by
+// adversarial visitor input, or simply hallucinate), and without this check
+// a href of e.g. "javascript:..." would be handed straight to next/link's
+// underlying <a>, which, unlike React text content, the browser will
+// actually execute on click. A leading "/" alone isn't enough: browsers
+// read "//host", "/\host", and "/<tab>/host" as off-site links, so the href
+// is resolved the same way a browser would and must stay on our own origin.
+const IN_APP_ORIGIN = "https://in-app.invalid";
+
+function isSafeInAppHref(href: string): boolean {
+  if (!href.startsWith("/")) return false;
+  try {
+    return new URL(href, IN_APP_ORIGIN).origin === IN_APP_ORIGIN;
+  } catch {
+    return false;
+  }
+}
+
 function renderMessageContent(content: string, accentLink: boolean) {
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -241,15 +263,22 @@ function renderMessageContent(content: string, accentLink: boolean) {
     const [full, label, href] = match;
     const index = match.index ?? 0;
     if (index > lastIndex) parts.push(<Fragment key={key++}>{content.slice(lastIndex, index)}</Fragment>);
-    parts.push(
-      <Link
-        key={key++}
-        href={href}
-        className={`underline underline-offset-2 ${accentLink ? "text-slate-950" : "text-amber-400 hover:opacity-70"}`}
-      >
-        {label}
-      </Link>,
-    );
+    if (isSafeInAppHref(href)) {
+      parts.push(
+        <Link
+          key={key++}
+          href={href}
+          className={`underline underline-offset-2 ${accentLink ? "text-slate-950" : "text-amber-400 hover:opacity-70"}`}
+        >
+          {label}
+        </Link>,
+      );
+    } else {
+      // Not a real in-app path, so it falls back to plain text instead of a
+      // navigable/clickable href. A well-behaved reply never hits this;
+      // it's the backstop for one that isn't.
+      parts.push(<Fragment key={key++}>{label}</Fragment>);
+    }
     lastIndex = index + full.length;
   }
   if (lastIndex < content.length) parts.push(<Fragment key={key++}>{content.slice(lastIndex)}</Fragment>);
