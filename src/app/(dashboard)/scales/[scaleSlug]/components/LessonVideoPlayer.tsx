@@ -171,7 +171,7 @@ export function LessonVideoPlayer({
           onPause={() => setPlaying(false)}
           // Reaching the end of playback no longer auto-completes the
           // lesson — only the explicit "Mark as complete" button in
-          // CoursePlayer does that now. A student rewatching, scrubbing
+          // ScaleWorkspace does that now. A student rewatching, scrubbing
           // past the end, or leaving it playing in the background
           // shouldn't silently advance their progress; finishing the
           // video is a cue to check it off, not the checkoff itself.

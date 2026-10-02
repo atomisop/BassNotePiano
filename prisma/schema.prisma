@@ -801,6 +801,7 @@ model User {
 
   uploadedLessons Lesson[]
   lessonProgress  LessonProgress[]
+  scaleNotes      ScaleNote[]
 
   verificationCodes VerificationCode[]
   loginEvents       LoginEvent[]
@@ -1122,6 +1123,7 @@ model ScaleGroup {
   quizAttempts  QuizAttempt[]
   zellePayments ZellePayment[]
   lessons       Lesson[]
+  notes         ScaleNote[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1204,6 +1206,25 @@ model ScaleProgress {
 
   @@unique([userId, scaleGroupId])
   @@index([userId, status])
+}
+
+// A student's own private notes for one scale, written from the lesson
+// page's Notes tool. One note per student per scale, autosaved. Visible only
+// to its author (never to admins in the UI) and deleted with the account.
+model ScaleNote {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  scaleGroupId String
+  scaleGroup   ScaleGroup @relation(fields: [scaleGroupId], references: [id], onDelete: Cascade)
+
+  body String @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, scaleGroupId])
 }
 
 model QuizAttempt {

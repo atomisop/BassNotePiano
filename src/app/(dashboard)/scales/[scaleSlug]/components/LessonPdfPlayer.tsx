@@ -38,11 +38,11 @@ const SCALE_STEP = 0.2;
  * block <object>/<embed>/<applet>.
  *
  * Loading/rendering the PDF does NOT mark the lesson complete — only the
- * explicit "Mark as complete" button in CoursePlayer does that. This used
+ * explicit "Mark as complete" button in ScaleWorkspace does that. This used
  * to fire completion itself as soon as the PDF successfully rendered
  * (onLoadSuccess), which meant just opening a PDF — without reading a word
  * of it — silently checked it off. Rendering is now purely presentational;
- * CoursePlayer owns the completion decision entirely.
+ * ScaleWorkspace owns the completion decision entirely.
  */
 export function LessonPdfPlayer({ src, title }: { src: string; title: string }) {
   const containerRef = useRef<HTMLDivElement>(null);

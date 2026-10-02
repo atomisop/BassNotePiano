@@ -7,7 +7,7 @@
 - [x] STEP 1 Audit (see docs/redesign/step-1-audit.md)
 - [x] STEP 1B Narrow-column fix
 - [x] STEP 2 Design system (preview at /admin/design-system)
-- [ ] STEP 2B Layout and wireframes
+- [x] STEP 2B Layout and wireframes
 - [ ] STEP 2C Depth, signal color, and type contrast
 - [ ] STEP 3 Component sources
 - [ ] STEP 4 Redesign screens
@@ -24,6 +24,7 @@
 - 2026-10-02 STEP 2B wireframes approved. Navigation: the floating dock is the only navigation at every size (no bottom tab bar, no top-bar menu row).
 - 2026-10-02 Build Notes and Metronome now. Notes are saved to the student's account (new database table approved).
 - 2026-10-02 Lesson page: outline and lesson side by side on one screen (same lessons and completion rules). Home tabs In progress / Completed / Badges filter existing data.
+- 2026-10-02 User authorized completing ALL remaining steps without stopping for approval between steps (user AFK). Commit per step on ui-redesign. The user also authorized merging to main when everything is done (PR, green CI, security review first).
 
 ## Notes for next session
 
@@ -34,4 +35,4 @@
 - STEP 2 done 2026-10-02. Tokens are in globals.css @theme (text-hero/body/small, rounded-control/card/sheet, shadow-plane-mid/front/signal, signal color, --space-*, --z-*, --dur-*). New components in src/components/ui: Card + Eyebrow, Hero + BackPlane, Tabs, Badge, Avatar, Dialog (bottom sheet on phones). Button, Input, Toaster, Skeleton, EmptyState restyled. cn() in src/lib/utils.ts knows the token names.
 - Green buttons and neutral "success" apply everywhere via <body>; the public site opts out through its existing data-surface="marketing". The cookie banner's Accept button uses the neutral `paper` variant on purpose (consent must not be nudged).
 - Not done yet, by design: individual pages still use their old sizes and decorative greens (that sweep is STEP 2C / STEP 4), and the navigation shell choice (top bar vs sidebar) is STEP 2B.
-- STEP 2B wireframes drawn 2026-10-02 in docs/redesign/wireframes.html. Waiting on approval plus 4 decisions (navigation, Notes/Metronome, lesson page merge, Home tabs) before building.
+- STEP 2B done 2026-10-02: Home (main column + right panel + tabs) and the lesson page (ScaleWorkspace: outline, lesson + instrument, tool rail with Key/Chart/Chords/Files/Notes/Metronome). Notes use the new ScaleNote table (migration 20261002000000_add_scale_notes, verified zero drift on a fresh database).
