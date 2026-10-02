@@ -74,13 +74,13 @@ function ScheduleForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-3">
-        <label className="text-xs text-slate-500">
+        <label className="text-small text-slate-500">
           Day
           <select
             value={dayOfWeek}
             onChange={(e) => setDayOfWeek(Number(e.target.value))}
             disabled={submitting}
-            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
           >
             {DAY_LABELS.map((d, i) => (
               <option key={i} value={i}>
@@ -89,7 +89,7 @@ function ScheduleForm({
             ))}
           </select>
         </label>
-        <label className="text-xs text-slate-500">
+        <label className="text-small text-slate-500">
           Starts
           <input
             type="time"
@@ -97,10 +97,10 @@ function ScheduleForm({
             onChange={(e) => setStartTime(e.target.value)}
             required
             disabled={submitting}
-            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
           />
         </label>
-        <label className="text-xs text-slate-500">
+        <label className="text-small text-slate-500">
           Ends
           <input
             type="time"
@@ -108,11 +108,11 @@ function ScheduleForm({
             onChange={(e) => setEndTime(e.target.value)}
             required
             disabled={submitting}
-            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+            className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
           />
         </label>
       </div>
-      <label className="block text-xs text-slate-500">
+      <label className="block text-small text-slate-500">
         Label (optional)
         <input
           type="text"
@@ -120,17 +120,17 @@ function ScheduleForm({
           onChange={(e) => setLabel(e.target.value)}
           placeholder="e.g. Monday class"
           disabled={submitting}
-          className="mt-1 w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+          className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
         />
       </label>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-small text-red-400">{error}</p>}
       <div className="flex gap-2">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
             disabled={submitting}
-            className="flex-1 rounded-lg border border-ink/10 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+            className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
           >
             Cancel
           </button>
@@ -138,7 +138,7 @@ function ScheduleForm({
         <button
           type="submit"
           disabled={submitting}
-          className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Saving…" : "Save"}
@@ -195,14 +195,14 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
   return (
     <div className="space-y-4">
       {byDay.length === 0 && (
-        <p className="glass-surface p-6 text-center text-sm text-slate-500">No weekly slots yet — add the first one below.</p>
+        <p className="glass-surface p-6 text-center text-small text-slate-500">No weekly slots yet — add the first one below.</p>
       )}
 
       {grouped
         .filter((g) => g.rows.length > 0)
         .map((group) => (
           <div key={group.day} className="glass-surface p-5">
-            <h3 className="font-serif text-lg text-slate-50">{group.label}</h3>
+            <h3 className="text-body text-slate-50 font-semibold">{group.label}</h3>
             <div className="mt-3 space-y-2">
               {group.rows.map((row) =>
                 editingId === row.id ? (
@@ -231,11 +231,11 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                     }`}
                   >
                     <div>
-                      <p className="text-sm text-slate-100">
+                      <p className="text-small text-slate-100">
                         {formatTimeLabel(row.startTime)}–{formatTimeLabel(endTimeFromDuration(row.startTime, row.durationMin))}
                         {row.label && ` · ${row.label}`}
                       </p>
-                      <p className="mt-0.5 text-xs text-slate-500">
+                      <p className="mt-0.5 text-small text-slate-500">
                         {row.durationMin} min window · up to {row.creditCost} credit{row.creditCost === 1 ? "" : "s"} ·{" "}
                         {row.active ? "Bookable" : "Off — not shown to students"}
                       </p>
@@ -247,7 +247,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                           setEditingId(row.id);
                           setFormError(null);
                         }}
-                        className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+                        className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
                       >
                         Edit
                       </button>
@@ -255,7 +255,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                         type="button"
                         onClick={() => handleToggleActive(row)}
                         disabled={busyId === row.id}
-                        className={`flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                        className={`flex items-center justify-center rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
                           row.active
                             ? "border-red-400/20 text-red-400 hover:border-red-400/40 hover:text-red-300"
                             : "border-emerald-400/30 text-emerald-300 hover:bg-emerald-400/10"
@@ -273,7 +273,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
 
       {adding ? (
         <div className="glass-surface p-5">
-          <h3 className="mb-3 font-serif text-lg text-slate-50">New weekly slot</h3>
+          <h3 className="mb-3 text-body text-slate-50 font-semibold">New weekly slot</h3>
           <ScheduleForm
             initial={{ dayOfWeek: 1, startTime: "11:00", endTime: "13:00", label: null }}
             submitting={submitting}
@@ -289,7 +289,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="w-full rounded-xl border border-dashed border-ink/15 py-3 text-sm font-medium text-slate-400 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+          className="w-full rounded-xl border border-dashed border-ink/15 py-3 text-small font-medium text-slate-400 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
         >
           + Add a weekly slot
         </button>

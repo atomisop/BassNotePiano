@@ -19,17 +19,17 @@ export function ConversationListItem({
   return (
     <div className={`group flex items-center gap-1 rounded-lg transition ${active ? "bg-amber-400/10" : "hover:bg-ink/5"}`}>
       <button type="button" onClick={onSelect} className="flex min-w-0 flex-1 items-center gap-2.5 p-2.5 text-left">
-        <Avatar image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-9 w-9 text-xs" />
+        <Avatar image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-9 w-9 text-small" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <p className="truncate text-sm text-slate-100">{c.friendName ?? `@${c.friendUsername}`}</p>
+            <p className="truncate text-small text-slate-100">{c.friendName ?? `@${c.friendUsername}`}</p>
             {c.unreadCount > 0 && (
-              <span className="flex h-4 min-w-[1rem] shrink-0 items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-slate-950">
+              <span className="flex h-4 min-w-[1rem] shrink-0 items-center justify-center rounded-full bg-slate-50 px-1 text-small font-bold text-slate-950">
                 {c.unreadCount > 9 ? "9+" : c.unreadCount}
               </span>
             )}
           </div>
-          <p className="truncate text-xs">
+          <p className="truncate text-small">
             {c.isTyping ? <span className="text-[rgb(var(--c-s-50))]">typing…</span> : <span className="text-slate-500">{c.lastMessageBody}</span>}
           </p>
         </div>

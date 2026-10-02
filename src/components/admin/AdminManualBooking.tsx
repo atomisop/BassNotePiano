@@ -126,9 +126,9 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
 
   return (
     <div className="glass-surface p-5 sm:p-6">
-      <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">Book a student</p>
+      <p className="text-small font-medium uppercase tracking-[0.14em] text-slate-400">Book a student</p>
 
-      {success && <p className="mt-3 text-xs text-emerald-400">{success}</p>}
+      {success && <p className="mt-3 text-small text-emerald-400">{success}</p>}
 
       {!student ? (
         <>
@@ -138,7 +138,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by name or email, or just browse below"
-              className="glass-surface-subtle w-full rounded-lg px-3.5 py-2 pr-9 text-sm text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.5)]"
+              className="glass-surface-subtle w-full rounded-lg px-3.5 py-2 pr-9 text-small text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.5)]"
             />
             {searching && (
               <MorphingSquare size={14} className="absolute right-3 top-1/2 -translate-y-1/2 shrink-0" />
@@ -146,14 +146,14 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
           </div>
 
           {searched && !searching && results.length === 0 && (
-            <p className="mt-3 text-xs text-slate-500">
+            <p className="mt-3 text-small text-slate-500">
               {query.trim() ? `No accounts match "${query}".` : "No accounts yet."}
             </p>
           )}
 
           {results.length > 0 && (
             <div className="mt-3 space-y-2">
-              <p className="text-[11px] uppercase tracking-wide text-slate-600">
+              <p className="text-small uppercase tracking-wide text-slate-600">
                 {query.trim() ? "Matches" : "Recently active"}
               </p>
               {results.map((s) => (
@@ -161,15 +161,15 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
                   key={s.id}
                   type="button"
                   onClick={() => pickStudent(s)}
-                  className="flex w-full items-center justify-between rounded-lg border border-ink/10 px-3.5 py-2.5 text-left text-sm transition hover:border-[rgb(var(--c-s-50)/0.4)]"
+                  className="flex w-full items-center justify-between rounded-lg border border-ink/10 px-3.5 py-2.5 text-left text-small transition hover:border-[rgb(var(--c-s-50)/0.4)]"
                 >
                   <div>
                     <p className="text-slate-100">{s.name ?? "Unnamed"}</p>
-                    <p className="text-xs text-slate-500">{s.email}</p>
+                    <p className="text-small text-slate-500">{s.email}</p>
                   </div>
-                  <div className="text-right text-xs text-slate-500">
+                  <div className="text-right text-small text-slate-500">
                     <p>{s.classCredits} credit{s.classCredits === 1 ? "" : "s"}</p>
-                    {!s.hasCurriculumAccess && <p className="text-amber-400/80">No curriculum access</p>}
+                    {!s.hasCurriculumAccess && <p className="text-slate-300">No curriculum access</p>}
                   </div>
                 </button>
               ))}
@@ -180,25 +180,25 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
         <div className="mt-4">
           <div className="flex items-center justify-between rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3.5 py-2.5">
             <div>
-              <p className="text-sm text-slate-100">{student.name ?? student.email}</p>
-              <p className="text-xs text-slate-500">
+              <p className="text-small text-slate-100">{student.name ?? student.email}</p>
+              <p className="text-small text-slate-500">
                 {student.email} · {student.classCredits} credit{student.classCredits === 1 ? "" : "s"} available
               </p>
             </div>
-            <button type="button" onClick={reset} className="text-xs text-slate-500 underline hover:text-slate-300">
+            <button type="button" onClick={reset} className="text-small text-slate-500 underline hover:text-slate-300">
               Change
             </button>
           </div>
 
           {!student.hasCurriculumAccess && (
-            <p className="mt-3 text-xs text-amber-400/80">
+            <p className="mt-3 text-small text-slate-300">
               This account has no curriculum access yet — booking will still fail server-side without it.
             </p>
           )}
 
-          <p className="mb-2 mt-4 text-xs font-medium text-slate-400">Open times</p>
+          <p className="mb-2 mt-4 text-small font-medium text-slate-400">Open times</p>
           {openOccurrences.length === 0 ? (
-            <p className="text-sm text-slate-500">Nothing open right now.</p>
+            <p className="text-small text-slate-500">Nothing open right now.</p>
           ) : (
             <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
               {openOccurrences.map((slot) => {
@@ -208,12 +208,12 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
                     key={occurrenceKey(slot)}
                     type="button"
                     onClick={() => pickSlot(slot)}
-                    className={`flex w-full items-center justify-between rounded-lg border px-3.5 py-2.5 text-left text-sm transition ${
+                    className={`flex w-full items-center justify-between rounded-lg border px-3.5 py-2.5 text-left text-small transition ${
                       active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
                     }`}
                   >
                     <span className={active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}>{formatDateTime(slot.scheduledAt)}</span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-small text-slate-500">
                       {slot.label ?? "Class"} · up to {slot.creditCost} credit{slot.creditCost === 1 ? "" : "s"}
                     </span>
                   </button>
@@ -224,14 +224,14 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
 
           {selectedSlot && selectedSlot.creditCost > 1 && (
             <div className="mt-4">
-              <p className="mb-2 text-xs font-medium text-slate-400">Length</p>
+              <p className="mb-2 text-small font-medium text-slate-400">Length</p>
               <div className="flex gap-2">
                 {Array.from({ length: selectedSlot.creditCost }, (_, i) => i + 1).map((n) => (
                   <button
                     key={n}
                     type="button"
                     onClick={() => setCreditsToBook(n)}
-                    className={`rounded-lg border px-3.5 py-2 text-xs font-medium transition ${
+                    className={`rounded-lg border px-3.5 py-2 text-small font-medium transition ${
                       creditsToBook === n
                         ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
                         : "border-ink/10 text-slate-300 hover:border-ink/15"
@@ -244,13 +244,13 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
             </div>
           )}
 
-          {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+          {error && <p className="mt-3 text-small text-red-400">{error}</p>}
 
           <button
             type="button"
             onClick={handleBook}
             disabled={!selectedSlot || booking}
-            className="cta-sheen cta-fill mt-4 flex w-full items-center justify-center rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-6"
+            className="cta-sheen cta-fill mt-4 flex w-full items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-6"
           >
             {booking && <MorphingSquare size={14} className="mr-2 shrink-0" />}
             {booking ? "Booking…" : "Book this class"}

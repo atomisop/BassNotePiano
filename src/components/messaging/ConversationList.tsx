@@ -16,7 +16,7 @@ export function ConversationList({
   onTogglePin: (friendId: string) => void;
 }) {
   if (conversations.length === 0) {
-    return <p className="p-4 text-center text-xs text-slate-600">No other conversations.</p>;
+    return <p className="p-4 text-center text-small text-slate-600">No other conversations.</p>;
   }
 
   return (

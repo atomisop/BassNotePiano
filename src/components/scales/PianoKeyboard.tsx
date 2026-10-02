@@ -149,7 +149,7 @@ export function PianoKeyboard({
                 >
                   {inScale && (
                     <span
-                      className={`font-serif text-[11px] leading-none ${
+                      className={`text-small leading-none ${
                         isActive ? "text-slate-950" : "text-[rgb(var(--c-s-50))]"
                       }`}
                     >
@@ -206,7 +206,7 @@ export function PianoKeyboard({
                     // for an unlit key's chassis lands at about 1.9:1 on it —
                     // the label was drawn and unreadable. Paper gives 7.6:1 on
                     // [rgb(var(--c-s-50))] and 5.4:1 on the lit [rgb(var(--c-s-50))].
-                    <span className="font-serif text-[10px] leading-none text-slate-950">
+                    <span className="text-small leading-none text-slate-950">
                       {notes[degreeIndex]}
                     </span>
                   )}

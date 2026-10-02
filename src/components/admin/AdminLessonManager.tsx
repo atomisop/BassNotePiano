@@ -193,12 +193,12 @@ export function AdminLessonManager({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-slate-400">{scaleGroupLabel}</p>
+        <p className="text-small text-slate-400">{scaleGroupLabel}</p>
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
           disabled={!storageConfigured}
-          className="cta-sheen cta-fill rounded-xl px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+          className="cta-sheen cta-fill rounded-xl px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
         >
           {showForm ? "Cancel" : "Upload a lesson"}
         </button>
@@ -207,27 +207,27 @@ export function AdminLessonManager({
       {showForm && (
         <form onSubmit={handleUpload} className="glass-surface space-y-3.5 p-5">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-400">Title</label>
+            <label className="mb-1 block text-small font-medium text-slate-400">Title</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Reading the Bati formula"
               disabled={uploading}
-              className="w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+              className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-400">Description (optional)</label>
+            <label className="mb-1 block text-small font-medium text-slate-400">Description (optional)</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               disabled={uploading}
-              className="w-full resize-none glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+              className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
             />
           </div>
           <div>
-            <p className="mb-1 block text-xs font-medium text-slate-400">Video or PDF file</p>
+            <p className="mb-1 block text-small font-medium text-slate-400">Video or PDF file</p>
             {/* The dropzone owns both the picker and the progress bar, so the
                 separate `{uploading && …}` block below it is gone — one place
                 shows what file is queued and how far along it is. */}
@@ -241,12 +241,12 @@ export function AdminLessonManager({
             />
           </div>
 
-          {error && <p className="text-xs text-red-400">{error}</p>}
+          {error && <p className="text-small text-red-400">{error}</p>}
 
           <button
             type="submit"
             disabled={uploading}
-            className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
             {uploading && <MorphingSquare size={14} className="mr-2 shrink-0" />}
             {uploading ? "Uploading…" : "Upload"}
@@ -265,18 +265,18 @@ export function AdminLessonManager({
             <div key={lesson.id} className="glass-surface p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)] text-xs font-semibold text-[rgb(var(--c-s-50))]">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)] text-small font-semibold text-[rgb(var(--c-s-50))]">
                     {index + 1}
                   </span>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                      <span className="rounded-full bg-slate-800 px-2 py-0.5 text-small font-medium uppercase tracking-wide text-slate-400">
                         {lesson.type}
                       </span>
-                      <h3 className="font-serif text-base text-slate-50">{lesson.title}</h3>
+                      <h3 className="text-body text-slate-50">{lesson.title}</h3>
                     </div>
-                    {lesson.description && <p className="mt-1 text-sm text-slate-500">{lesson.description}</p>}
-                    <p className="mt-1 text-xs text-slate-600">
+                    {lesson.description && <p className="mt-1 text-small text-slate-500">{lesson.description}</p>}
+                    <p className="mt-1 text-small text-slate-600">
                       {lesson.fileName} · {formatBytes(lesson.fileSizeBytes)}
                       {lesson.type === "VIDEO" && ` · ${formatDuration(lesson.durationSeconds)}`}
                     </p>
@@ -316,7 +316,7 @@ export function AdminLessonManager({
                       type="button"
                       onClick={() => setDeletingId(null)}
                       disabled={busy}
-                      className="flex-1 rounded-lg border border-ink/10 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                      className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
                     >
                       Cancel
                     </button>
@@ -324,7 +324,7 @@ export function AdminLessonManager({
                       type="button"
                       onClick={() => handleDelete(lesson.id)}
                       disabled={busy}
-                      className="flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-sm font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {busy && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                       {busy ? "Deleting…" : "Confirm delete"}
@@ -334,7 +334,7 @@ export function AdminLessonManager({
                   <button
                     type="button"
                     onClick={() => setDeletingId(lesson.id)}
-                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-400 transition hover:border-red-400/30 hover:text-red-300"
+                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-400 transition hover:border-red-400/30 hover:text-red-300"
                   >
                     Delete
                   </button>

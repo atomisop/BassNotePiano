@@ -110,7 +110,7 @@ export function SlideOverPanel({
                   <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
-              <h1 id={titleId} className="truncate font-serif text-lg text-slate-50">{title}</h1>
+              <h1 id={titleId} className="font-hero text-hero font-bold text-balance truncate text-slate-50">{title}</h1>
             </div>
             {/* overscroll-contain: this panel is portaled straight to
                 document.body and sits above literally everything else

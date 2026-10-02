@@ -58,8 +58,8 @@ export function AnnouncementBanner({ announcement }: { announcement: ActiveAnnou
             </svg>
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-slate-100">{announcement.title}</p>
-            <p className="mt-0.5 text-sm text-slate-400">{announcement.body}</p>
+            <p className="text-small font-medium text-slate-100">{announcement.title}</p>
+            <p className="mt-0.5 text-small text-slate-400">{announcement.body}</p>
           </div>
           <button
             type="button"

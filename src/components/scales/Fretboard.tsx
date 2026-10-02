@@ -116,7 +116,7 @@ export function Fretboard({
           printed tab uses. */}
       <div className="flex shrink-0 flex-col gap-[3px] pr-2">
         {openStringName.map((name, i) => (
-          <div key={i} className="flex h-8 w-5 items-center justify-center font-serif text-[11px] text-slate-500">
+          <div key={i} className="flex h-8 w-5 items-center justify-center text-small text-slate-500">
             {name}
           </div>
         ))}
@@ -146,7 +146,7 @@ export function Fretboard({
                       aria-label={labelFor(degreeIndex, openStringName[stringIndex], fret)}
                       aria-pressed={inScale}
                       style={{ width: fret === 0 ? OPEN_CELL_WIDTH : CELL_WIDTH }}
-                      className={`flex h-8 shrink-0 cursor-pointer items-center justify-center border border-ink/10 text-[10px] font-serif transition-colors duration-150 focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50))] disabled:cursor-default ${
+                      className={`flex h-8 shrink-0 cursor-pointer items-center justify-center border border-ink/10 text-small transition-colors duration-150 focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50))] disabled:cursor-default ${
                         fret === 0 ? "border-r-2 border-r-ink/40" : ""
                       } ${
                         isActive
@@ -182,7 +182,7 @@ export function Fretboard({
                 {/* text-slate-500, not -600 — see the accessibility pass's
                     SiteFooter comment: -600 fails AA (4.5:1) for real text
                     on this ground, -500 clears it. */}
-                <span className="text-[10px] text-slate-500">{fret}</span>
+                <span className="text-small text-slate-500">{fret}</span>
               </div>
             ))}
           </div>

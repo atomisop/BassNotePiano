@@ -64,7 +64,7 @@ export function MessageBubble({
 
   return (
     <div id={id} className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}>
-      {senderLabel && <p className="mb-0.5 max-w-[220px] truncate px-1 text-[11px] text-slate-500">{senderLabel}</p>}
+      {senderLabel && <p className="mb-0.5 max-w-[220px] truncate px-1 text-small text-slate-500">{senderLabel}</p>}
       <div className="group/bubble relative flex max-w-[85%] items-center gap-1.5" style={{ touchAction: "pan-y" }}>
         {/* Reply icon, revealed behind the bubble as it's dragged right, not
             a fixed button: it tracks the same offset so it reads as
@@ -86,7 +86,7 @@ export function MessageBubble({
           animate={{ x: swipe.dragX }}
           transition={swipe.dragX === 0 ? { type: "spring", bounce: 0.2, duration: 0.35 } : { duration: 0 }}
           style={{ touchAction: "pan-y" }}
-          className={`min-w-0 rounded-2xl px-3.5 py-2 text-sm ${
+          className={`min-w-0 rounded-2xl px-3.5 py-2 text-body ${
             isMine ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "border border-ink/10 bg-slate-950 text-slate-100"
           }`}
         >
@@ -94,7 +94,7 @@ export function MessageBubble({
             <button
               type="button"
               onClick={() => onJumpToReply?.(reply.id)}
-              className={`mb-1.5 block w-full rounded-lg border-l-2 px-2 py-1 text-left text-xs ${
+              className={`mb-1.5 block w-full rounded-lg border-l-2 px-2 py-1 text-left text-small ${
                 isMine ? "border-slate-950/30 bg-slate-950/10" : "border-[rgb(var(--c-s-50)/0.4)] bg-white/5"
               }`}
             >
@@ -103,7 +103,7 @@ export function MessageBubble({
             </button>
           )}
           <p className="whitespace-pre-wrap break-words">{body}</p>
-          <p className={`mt-1 text-[10px] ${isMine ? "text-slate-950/60" : "text-slate-600"}`}>{timeLabel}</p>
+          <p className={`mt-1 text-small ${isMine ? "text-slate-950/60" : "text-slate-600"}`}>{timeLabel}</p>
         </motion.div>
 
         {/* Always-present, not hover-only: hover has no equivalent on
@@ -128,7 +128,7 @@ export function MessageBubble({
                 onReact(emoji);
                 setPickerOpen(false);
               }}
-              className={`rounded-full px-1.5 py-0.5 text-base leading-none transition hover:bg-white/10 ${
+              className={`rounded-full px-1.5 py-0.5 text-body leading-none transition hover:bg-white/10 ${
                 myReaction === emoji ? "bg-[rgb(var(--c-s-50)/0.15)]" : ""
               }`}
             >
@@ -145,7 +145,7 @@ export function MessageBubble({
               key={emoji}
               type="button"
               onClick={() => onReact(emoji)}
-              className={`rounded-full border px-1.5 py-0.5 text-xs leading-none transition ${
+              className={`rounded-full border px-1.5 py-0.5 text-small leading-none transition ${
                 myReaction === emoji
                   ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]"
                   : "border-ink/10 text-slate-400 hover:border-ink/15"

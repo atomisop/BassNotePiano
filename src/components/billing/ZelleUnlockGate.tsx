@@ -38,7 +38,7 @@ export function ZelleUnlockGate({
   if (status === "PENDING_REVIEW") {
     return (
       <div className="rounded-2xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] p-6 text-center">
-        <p className="text-sm text-[rgb(var(--c-s-50)/0.8)]">
+        <p className="text-small text-[rgb(var(--c-s-50)/0.8)]">
           Your payment confirmation is in — we&apos;re verifying it now. You&apos;ll get access to{" "}
           <span className="text-[rgb(var(--c-s-50))]">{scaleTitle}</span> as soon as it clears review.
         </p>
@@ -49,7 +49,7 @@ export function ZelleUnlockGate({
   return (
     <>
       {status === "REJECTED" && (
-        <div className="mb-4 rounded-xl border border-red-400/20 bg-red-400/5 p-4 text-sm text-red-300">
+        <div className="mb-4 rounded-xl border border-red-400/20 bg-red-400/5 p-4 text-small text-red-300">
           Your last submission couldn&apos;t be verified{rejectionReason ? `: ${rejectionReason}` : "."} Double-check
           the reference code and try again.
         </div>
@@ -58,7 +58,7 @@ export function ZelleUnlockGate({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="cta-sheen cta-fill w-full rounded-xl py-2.5 text-sm font-semibold"
+        className="cta-sheen cta-fill w-full rounded-xl py-2.5 text-small font-semibold"
       >
         {status === "REJECTED" ? "Resubmit payment" : "Pay with Zelle"}
       </button>

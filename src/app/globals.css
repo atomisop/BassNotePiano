@@ -302,7 +302,7 @@
   /* The recurring kicker above a heading — centralised so every page gets
      the same treatment instead of re-declaring the tracking each time.
      Neutral, not accent-tinted — accent is reserved for true CTAs now. */
-  @apply text-xs font-medium uppercase tracking-[0.18em] text-slate-300;
+  @apply text-small font-semibold uppercase tracking-[0.16em] text-slate-300;
 }
 
 @utility backdrop-scrim-light {

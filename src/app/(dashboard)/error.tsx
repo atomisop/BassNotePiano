@@ -39,8 +39,8 @@ export default function DashboardError({
   return (
     <NarrowLayout className="flex flex-col items-start py-16">
       <p className="eyebrow">Something broke</p>
-      <h1 className="mt-2 font-serif text-3xl text-slate-50">This page didn&apos;t load.</h1>
-      <p className="mt-3 text-sm leading-relaxed text-slate-400">
+      <h1 className="font-hero text-hero font-bold text-balance mt-2 text-slate-50">This page didn&apos;t load.</h1>
+      <p className="mt-3 text-body text-slate-400">
         The problem is on our side, not yours — nothing you were working on has been lost. Try
         again, and if it keeps happening let us know.
       </p>
@@ -49,20 +49,20 @@ export default function DashboardError({
         <button
           type="button"
           onClick={reset}
-          className="cta-sheen cta-fill cursor-pointer rounded-full px-5 py-2.5 text-sm font-semibold"
+          className="cta-sheen cta-fill cursor-pointer rounded-full px-5 py-2.5 text-small font-semibold"
         >
           Try again
         </button>
         <Link
           href="/dashboard"
-          className="rounded-full border border-[rgb(var(--c-s-50)/0.4)] px-5 py-2.5 text-sm font-medium text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)]"
+          className="rounded-full border border-[rgb(var(--c-s-50)/0.4)] px-5 py-2.5 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)]"
         >
           Back to dashboard
         </Link>
       </div>
 
       {error.digest && (
-        <p className="mt-8 font-mono text-xs text-slate-500">
+        <p className="mt-8 font-mono text-small text-slate-500">
           Reference: {error.digest}
         </p>
       )}

@@ -226,9 +226,9 @@ function MessagesInner({
   if (conversations.length === 0 && groups.length === 0) {
     return (
       <WideLayout>
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
-        <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Messages</h1>
-        <p className="mt-4 text-sm text-slate-500">
+        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Messages</h1>
+        <p className="mt-4 text-small text-slate-500">
           You don&apos;t have any friends to message yet. Add some on the{" "}
           <a href="/friends" className="underline underline-offset-2 text-[rgb(var(--c-s-50))] hover:opacity-70">
             Friends

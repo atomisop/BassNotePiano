@@ -34,9 +34,9 @@ export default function ForgotPasswordPage() {
       animate="visible"
       className="w-full glass-surface-elevated p-7"
     >
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Reset password</p>
-      <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Forgot your password?</h1>
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Reset password</p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Forgot your password?</h1>
+      <p className="mt-2 text-small text-slate-500">
         Enter your account email and we&apos;ll send a 6-digit code to reset it.
       </p>
 
@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-500">
+      <p className="mt-6 text-center text-small text-slate-500">
         Remembered it?{" "}
         <Link href="/login" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
           Back to login

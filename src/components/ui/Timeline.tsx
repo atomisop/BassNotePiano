@@ -34,20 +34,20 @@ export function Timeline({
         return (
           <li key={entry.title} className="flex gap-5">
             <div className="flex flex-col items-center">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50))]/[0.07] font-mono text-xs tracking-[0.08em] text-[rgb(var(--c-s-50))]">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50))]/[0.07] font-mono text-small tracking-[0.08em] text-[rgb(var(--c-s-50))]">
                 {entry.icon ?? entry.marker ?? String(i + 1).padStart(2, "0")}
               </span>
               {!last && <span aria-hidden className="w-px flex-1 bg-ink/10" />}
             </div>
 
             <div className={cn("pb-10", last && "pb-0")}>
-              <h3 className="font-serif text-xl text-slate-50 sm:text-2xl">{entry.title}</h3>
+              <h3 className="text-body text-slate-50 font-semibold">{entry.title}</h3>
               {/* A <div>, not a <p> — description is typed ReactNode now,
                   and a rich entry (KinitJourney passes a <div> for its
                   scroll-tracking ref) can legally contain block children
                   like a nested <div>; a <p> cannot without triggering a
                   hydration mismatch, which this deliberately avoids. */}
-              <div className="mt-2 max-w-prose text-sm leading-relaxed text-slate-300">
+              <div className="mt-2 max-w-prose text-body text-slate-300">
                 {entry.description}
               </div>
             </div>

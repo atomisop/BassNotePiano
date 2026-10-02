@@ -85,7 +85,7 @@ export function DataTable<TData, TValue>({
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder={searchPlaceholder}
-            className="w-full max-w-xs glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.6)]"
+            className="w-full max-w-xs glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.6)]"
           />
         </div>
       )}
@@ -158,7 +158,7 @@ export function DataTable<TData, TValue>({
 
           {pageCount > 1 && (
             <div className="mt-4 flex items-center justify-between gap-3">
-              <p className="text-xs text-slate-500">
+              <p className="text-small text-slate-500">
                 Page {table.getState().pagination.pageIndex + 1} of {pageCount}
               </p>
               <div className="flex gap-2">
@@ -194,7 +194,7 @@ function PageButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="cursor-pointer rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] disabled:cursor-default disabled:opacity-40 disabled:hover:border-ink/10 disabled:hover:text-slate-300"
+      className="cursor-pointer rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] disabled:cursor-default disabled:opacity-40 disabled:hover:border-ink/10 disabled:hover:text-slate-300"
     >
       {children}
     </button>

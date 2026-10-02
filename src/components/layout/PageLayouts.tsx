@@ -23,8 +23,20 @@ export function WideLayout({ children, className = "" }: LayoutProps) {
   return <div className={`mx-auto w-full max-w-wide ${className}`}>{children}</div>;
 }
 
+/**
+ * In a 440px column the full Hero size (up to 72px) would wrap a short
+ * title onto three lines, so the hero tier is scaled down here. Same tier,
+ * just sized to its column.
+ */
 export function NarrowLayout({ children, className = "" }: LayoutProps) {
-  return <div className={`mx-auto w-full max-w-narrow ${className}`}>{children}</div>;
+  return (
+    <div
+      className={`mx-auto w-full max-w-narrow ${className}`}
+      style={{ ["--text-hero" as string]: "clamp(2rem, 1.6rem + 1.4vw, 2.75rem)" }}
+    >
+      {children}
+    </div>
+  );
 }
 
 /**

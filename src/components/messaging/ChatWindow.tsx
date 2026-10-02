@@ -140,13 +140,13 @@ export function ChatWindow({
       <div className="flex items-center gap-2.5 border-b border-ink/10 p-4">
         <Avatar image={conversation.friendImage} label={conversation.friendName ?? conversation.friendUsername ?? "?"} />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm text-slate-100">{conversation.friendName ?? "Unnamed"}</p>
+          <p className="truncate text-small text-slate-100">{conversation.friendName ?? "Unnamed"}</p>
           {conversation.isTyping ? (
-            <p className="flex items-center gap-1.5 text-xs text-[rgb(var(--c-s-50))]">
+            <p className="flex items-center gap-1.5 text-small text-[rgb(var(--c-s-50))]">
               typing <TypingIndicator />
             </p>
           ) : (
-            conversation.friendUsername && <p className="truncate text-xs text-slate-500">@{conversation.friendUsername}</p>
+            conversation.friendUsername && <p className="truncate text-small text-slate-500">@{conversation.friendUsername}</p>
           )}
         </div>
         <button
@@ -199,10 +199,10 @@ export function ChatWindow({
       {replyingTo && (
         <div className="flex items-center gap-2 border-t border-ink/10 bg-slate-900/60 px-4 py-2">
           <div className="min-w-0 flex-1 border-l-2 border-[rgb(var(--c-s-50)/0.5)] pl-2">
-            <p className="text-xs font-medium text-slate-300">
+            <p className="text-small font-medium text-slate-300">
               Replying to {replyingTo.senderId === conversation.friendId ? conversation.friendName ?? conversation.friendUsername ?? "Unnamed" : "yourself"}
             </p>
-            <p className="truncate text-xs text-slate-500">{replyingTo.body}</p>
+            <p className="truncate text-small text-slate-500">{replyingTo.body}</p>
           </div>
           <button
             type="button"
@@ -230,13 +230,13 @@ export function ChatWindow({
           // after — reported live as "the message box zooms in and I can't
           // even see who I'm writing to." Same fix applied to every real
           // text-entry control across the signed-in app, not just this one.
-          className="min-w-0 flex-1 resize-none overflow-y-auto glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+          className="min-w-0 flex-1 resize-none overflow-y-auto glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
           style={{ maxHeight: MAX_COMPOSE_HEIGHT_PX }}
         />
         <button
           type="submit"
           disabled={sending || !draft.trim()}
-          className="cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           Send
         </button>

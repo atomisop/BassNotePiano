@@ -129,7 +129,7 @@ export function PaymentQueue({
 
   if (payments.length === 0) {
     return (
-      <div className="glass-surface p-8 text-center text-sm text-slate-500">
+      <div className="glass-surface p-8 text-center text-small text-slate-500">
         {emptyMessage}
       </div>
     );
@@ -143,41 +143,41 @@ export function PaymentQueue({
         <div key={payment.id} className="glass-surface p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">{eyebrow}</p>
-              <h3 className="mt-1 font-serif text-lg text-slate-50">{title}</h3>
-              <p className="mt-1 text-sm text-slate-500">{payment.user.name ?? payment.user.email}</p>
+              <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">{eyebrow}</p>
+              <h3 className="mt-1 text-body text-slate-50 font-semibold">{title}</h3>
+              <p className="mt-1 text-small text-slate-500">{payment.user.name ?? payment.user.email}</p>
               {payment.purpose === "FAMILY_BUNDLE" && payment.familyBundleRecipients.length > 0 && (
-                <p className="mt-1 text-xs text-slate-600">
+                <p className="mt-1 text-small text-slate-600">
                   Credits go to: {payment.familyBundleRecipients.map((r) => r.user.name ?? r.user.email).join(", ")}
                 </p>
               )}
             </div>
             <div className="text-right">
-              <p className="font-serif text-xl text-[rgb(var(--c-s-50))]">{formatUsd(payment.amountCents)}</p>
+              <p className="text-body text-[rgb(var(--c-s-50))] font-semibold">{formatUsd(payment.amountCents)}</p>
               <span
-                className={`mt-1 inline-block rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide ${STATUS_STYLE[payment.status]}`}
+                className={`mt-1 inline-block rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[payment.status]}`}
               >
                 {STATUS_LABEL[payment.status]}
               </span>
             </div>
           </div>
 
-          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-small">
             <div>
-              <dt className="text-xs text-slate-600">Sender name</dt>
+              <dt className="text-small text-slate-600">Sender name</dt>
               <dd className="text-slate-300">{payment.senderName ?? "—"}</dd>
             </div>
             <div>
-              <dt className="text-xs text-slate-600">Submitted</dt>
+              <dt className="text-small text-slate-600">Submitted</dt>
               <dd className="text-slate-300">
                 {payment.submittedAt ? new Date(payment.submittedAt).toLocaleString() : "—"}
               </dd>
             </div>
           </dl>
 
-          {payment.note && <p className="mt-3 text-sm text-slate-500">Note: {payment.note}</p>}
+          {payment.note && <p className="mt-3 text-small text-slate-500">Note: {payment.note}</p>}
           {payment.status === "REJECTED" && payment.rejectionReason && (
-            <p className="mt-2 text-sm text-red-400">Rejected: {payment.rejectionReason}</p>
+            <p className="mt-2 text-small text-red-400">Rejected: {payment.rejectionReason}</p>
           )}
 
           {payment.status !== "PENDING_REVIEW" ? null : rejectingId === payment.id ? (
@@ -188,7 +188,7 @@ export function PaymentQueue({
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Why couldn't this be verified?"
                 rows={2}
-                className="w-full resize-none glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-red-400/60"
+                className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-red-400/60"
               />
               <div className="flex gap-2">
                 <button
@@ -198,7 +198,7 @@ export function PaymentQueue({
                     setReason("");
                   }}
                   disabled={busyId === payment.id}
-                  className="flex-1 rounded-lg border border-ink/10 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                  className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -206,7 +206,7 @@ export function PaymentQueue({
                   type="button"
                   onClick={() => handleReject(payment.id)}
                   disabled={busyId === payment.id || !reason.trim()}
-                  className="flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-sm font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                   {busyId === payment.id ? "Rejecting…" : "Confirm reject"}
@@ -218,7 +218,7 @@ export function PaymentQueue({
             // there's nothing to explain for an approval, only something to
             // double-check before it fires.
             <div className="mt-4 space-y-2">
-              <p className="text-sm text-slate-400">
+              <p className="text-small text-slate-400">
                 Approve {formatUsd(payment.amountCents)} for {payment.user.name ?? payment.user.email}?
               </p>
               <div className="flex gap-2">
@@ -226,7 +226,7 @@ export function PaymentQueue({
                   type="button"
                   onClick={() => setApprovingId(null)}
                   disabled={busyId === payment.id}
-                  className="flex-1 rounded-lg border border-ink/10 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                  className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -234,7 +234,7 @@ export function PaymentQueue({
                   type="button"
                   onClick={() => handleApprove(payment.id)}
                   disabled={busyId === payment.id}
-                  className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                  className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                   {busyId === payment.id ? "Approving…" : "Confirm approve"}
@@ -247,7 +247,7 @@ export function PaymentQueue({
                 type="button"
                 onClick={() => setRejectingId(payment.id)}
                 disabled={busyId === payment.id}
-                className="flex-1 rounded-lg border border-ink/10 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
               >
                 Reject
               </button>
@@ -255,7 +255,7 @@ export function PaymentQueue({
                 type="button"
                 onClick={() => setApprovingId(payment.id)}
                 disabled={busyId === payment.id}
-                className="cta-sheen cta-fill flex-1 rounded-lg py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                className="cta-sheen cta-fill flex-1 rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Approve
               </button>

@@ -77,7 +77,7 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
           // eslint-disable-next-line @next/next/no-img-element -- data URI, next/image can't optimize it
           <img src={image} alt="" className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-full w-full items-center justify-center font-serif text-sm text-[rgb(var(--c-s-50))]">
+          <div className="flex h-full w-full items-center justify-center text-small text-[rgb(var(--c-s-50))]">
             {initial}
           </div>
         )}
@@ -101,14 +101,14 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={image} alt="" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center font-serif text-sm text-[rgb(var(--c-s-50))]">
+                <div className="flex h-full w-full items-center justify-center text-small text-[rgb(var(--c-s-50))]">
                   {initial}
                 </div>
               )}
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-slate-100">{displayName}</p>
-              {email && <p className="truncate text-xs text-slate-500">{email}</p>}
+              <p className="truncate text-small font-medium text-slate-100">{displayName}</p>
+              {email && <p className="truncate text-small text-slate-500">{email}</p>}
             </div>
           </div>
 
@@ -117,14 +117,14 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
           <Link
             href="/profile"
             onClick={() => setOpen(false)}
-            className="block rounded-lg px-2.5 py-2 text-sm text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
+            className="block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
           >
             Profile
           </Link>
           <Link
             href="/account"
             onClick={() => setOpen(false)}
-            className="block rounded-lg px-2.5 py-2 text-sm text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
+            className="block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
           >
             Settings
           </Link>
@@ -134,7 +134,7 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
           <button
             type="button"
             onClick={() => signOut({ callbackUrl: "/" })}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200"
+            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-small text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
               <path d={LOGOUT_ICON_PATH} strokeLinecap="round" strokeLinejoin="round" />

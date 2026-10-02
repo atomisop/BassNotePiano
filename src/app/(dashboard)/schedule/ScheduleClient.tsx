@@ -160,22 +160,22 @@ export function ScheduleClient({
   return (
     <WideLayout className="space-y-6">
       <div>
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
-        <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Your schedule</h1>
-        <p className="mt-2 text-sm text-slate-400">
+        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Your schedule</h1>
+        <p className="mt-2 text-small text-slate-400">
           Where your week stands, your upcoming classes, and other open times if you want an extra one.
         </p>
       </div>
 
       {/* This week */}
       <div className="glass-surface rounded-2xl p-5 sm:p-6">
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">This week</p>
+        <p className="text-small font-medium uppercase tracking-[0.14em] text-slate-400">This week</p>
         {hasClassThisWeek ? (
-          <p className="mt-2 text-sm text-slate-300">
+          <p className="mt-2 text-small text-slate-300">
             <span className="text-[rgb(var(--c-s-50))]">✓ Booked</span>, see it under &ldquo;Your classes&rdquo; below.
           </p>
         ) : weeklyTime ? (
-          <p className="mt-2 text-sm text-slate-300">
+          <p className="mt-2 text-small text-slate-300">
             Your weekly time is <span className="text-slate-100">{DAY_LABELS[weeklyTime.dayOfWeek]}s at {formatTimeLabel(weeklyTime.startTime)}</span>.
             This week&apos;s class is set to appear here automatically. If it hasn&apos;t by the day before,{" "}
             {supportContactId ? (
@@ -188,7 +188,7 @@ export function ScheduleClient({
             and we&apos;ll sort it out.
           </p>
         ) : (
-          <p className="mt-2 text-sm text-slate-300">
+          <p className="mt-2 text-small text-slate-300">
             We haven&apos;t set your weekly time yet.{" "}
             {supportContactId ? (
               <Link href={`/messages?with=${supportContactId}`} className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
@@ -204,20 +204,20 @@ export function ScheduleClient({
 
       {/* Your classes */}
       <div className="glass-surface rounded-2xl p-5 sm:p-6">
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">Your classes</p>
+        <p className="text-small font-medium uppercase tracking-[0.14em] text-slate-400">Your classes</p>
         {upcomingBookings.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">Nothing booked yet. Pick a time below to add your first extra session.</p>
+          <p className="mt-3 text-small text-slate-500">Nothing booked yet. Pick a time below to add your first extra session.</p>
         ) : (
           <div className="mt-3 space-y-2.5">
             {upcomingBookings.map((booking) => (
               <div key={booking.id} className="flex items-center justify-between rounded-lg border border-ink/10 px-3.5 py-2.5">
                 <div>
-                  <p className="text-sm font-medium text-slate-100">{formatDateTime(booking.scheduledAt)}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-small font-medium text-slate-100">{formatDateTime(booking.scheduledAt)}</p>
+                  <p className="text-small text-slate-500">
                     {booking.label ?? "Weekly class"} · ends {formatEndTime(booking.scheduledAt, booking.creditsSpent)}
                   </p>
                 </div>
-                <span className="text-xs text-slate-500">{booking.creditsSpent * 30} min</span>
+                <span className="text-small text-slate-500">{booking.creditsSpent * 30} min</span>
               </div>
             ))}
           </div>
@@ -231,7 +231,7 @@ export function ScheduleClient({
             way solo self-reschedule is (a real open slot, no conflicts) via
             changeReservedSlot. */}
         {changeSuccess && (
-          <p className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/5 px-3.5 py-2.5 text-xs text-emerald-400">
+          <p className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/5 px-3.5 py-2.5 text-small text-emerald-400">
             Your weekly time changed — this week&apos;s class (and the weeks after it) now reflect the new day/time above.
           </p>
         )}
@@ -239,20 +239,20 @@ export function ScheduleClient({
         {changingTime ? (
           <div className="mt-4 rounded-lg border border-ink/10 p-3.5">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-medium text-slate-300">Pick a new weekly time</p>
+              <p className="text-small font-medium text-slate-300">Pick a new weekly time</p>
               <button
                 type="button"
                 onClick={() => setChangingTime(false)}
-                className="text-xs font-medium text-slate-500 transition hover:text-slate-300"
+                className="text-small font-medium text-slate-500 transition hover:text-slate-300"
               >
                 Cancel
               </button>
             </div>
-            {changeError && <p className="mt-2 text-xs text-red-400">{changeError}</p>}
+            {changeError && <p className="mt-2 text-small text-red-400">{changeError}</p>}
             {loadingSlots ? (
-              <p className="mt-3 text-sm text-slate-500">Loading open times…</p>
+              <p className="mt-3 text-small text-slate-500">Loading open times…</p>
             ) : !reservableSlots || reservableSlots.length === 0 ? (
-              <p className="mt-3 text-sm text-slate-500">
+              <p className="mt-3 text-small text-slate-500">
                 Nothing open right now for your cadence.{" "}
                 {supportContactId ? (
                   <Link href={`/messages?with=${supportContactId}`} className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
@@ -274,7 +274,7 @@ export function ScheduleClient({
                       type="button"
                       onClick={() => handleChangeTime(slot)}
                       disabled={changingSlotKey !== null}
-                      className="flex w-full items-center gap-2.5 rounded-lg border border-ink/10 px-3.5 py-2.5 text-left text-sm text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:bg-[rgb(var(--c-s-50)/0.06)] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex w-full items-center gap-2.5 rounded-lg border border-ink/10 px-3.5 py-2.5 text-left text-small text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:bg-[rgb(var(--c-s-50)/0.06)] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {pending ? (
                         <MorphingSquare size={15} className="shrink-0" />
@@ -284,7 +284,7 @@ export function ScheduleClient({
                       <span>
                         {DAY_LABELS[slot.dayOfWeek]}s at {formatTimeLabel(slot.startTime)}
                       </span>
-                      <span className="ml-auto text-xs font-medium text-[rgb(var(--c-s-50))]">{pending ? "Moving…" : "Choose"}</span>
+                      <span className="ml-auto text-small font-medium text-[rgb(var(--c-s-50))]">{pending ? "Moving…" : "Choose"}</span>
                     </button>
                   );
                 })}
@@ -295,7 +295,7 @@ export function ScheduleClient({
           <button
             type="button"
             onClick={openChangeTime}
-            className="mt-4 w-full rounded-lg border border-ink/10 bg-slate-900/40 px-3.5 py-2.5 text-left text-xs text-slate-400 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+            className="mt-4 w-full rounded-lg border border-ink/10 bg-slate-900/40 px-3.5 py-2.5 text-left text-small text-slate-400 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
           >
             Need a different weekly day or time? Change it yourself →
           </button>
@@ -304,15 +304,15 @@ export function ScheduleClient({
 
       {/* Extra session */}
       <div className="glass-surface rounded-2xl p-5 sm:p-6">
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">Want more this week?</p>
-        <p className="mt-1.5 text-sm text-slate-300">
+        <p className="text-small font-medium uppercase tracking-[0.14em] text-slate-400">Want more this week?</p>
+        <p className="mt-1.5 text-small text-slate-300">
           Pick an open time below and pay a flat {formatUsd(extraSessionPriceCents)}, that&apos;s the whole purchase. Once
           it&apos;s verified, this exact class is booked for you automatically.
         </p>
 
         {extraPayment ? (
           <div className="mt-4">
-            <p className="mb-3 text-sm text-slate-300">{formatDateTime(extraPayment.slot.scheduledAt)}</p>
+            <p className="mb-3 text-small text-slate-300">{formatDateTime(extraPayment.slot.scheduledAt)}</p>
             <ZelleUnlockGate
               status={extraPayment.status}
               rejectionReason={extraPayment.rejectionReason}
@@ -326,9 +326,9 @@ export function ScheduleClient({
           </div>
         ) : (
           <>
-            {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+            {error && <p className="mt-3 text-small text-red-400">{error}</p>}
             {openSlots.length === 0 ? (
-              <p className="mt-3 text-sm text-slate-500">Nothing open right now. Check back soon or message support.</p>
+              <p className="mt-3 text-small text-slate-500">Nothing open right now. Check back soon or message support.</p>
             ) : (
               <div className="mt-3 space-y-2">
                 {openSlots.map((slot) => {
@@ -339,7 +339,7 @@ export function ScheduleClient({
                       type="button"
                       onClick={() => handleBuySlot(slot)}
                       disabled={pendingSlotKey !== null}
-                      className="flex w-full items-center gap-2.5 rounded-lg border border-ink/10 px-3.5 py-2.5 text-left text-sm text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:bg-[rgb(var(--c-s-50)/0.06)] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex w-full items-center gap-2.5 rounded-lg border border-ink/10 px-3.5 py-2.5 text-left text-small text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:bg-[rgb(var(--c-s-50)/0.06)] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {pending ? (
                         <MorphingSquare size={15} className="shrink-0" />
@@ -347,7 +347,7 @@ export function ScheduleClient({
                         <Calendar className="h-[15px] w-[15px] shrink-0 text-slate-500" strokeWidth={1.5} />
                       )}
                       <span>{formatDateTime(slot.scheduledAt)}</span>
-                      <span className="ml-auto text-xs font-medium text-[rgb(var(--c-s-50))]">
+                      <span className="ml-auto text-small font-medium text-[rgb(var(--c-s-50))]">
                         {pending ? "Starting…" : formatUsd(extraSessionPriceCents)}
                       </span>
                     </button>

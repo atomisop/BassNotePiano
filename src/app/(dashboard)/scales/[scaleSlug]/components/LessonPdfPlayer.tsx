@@ -72,8 +72,8 @@ export function LessonPdfPlayer({ src, title }: { src: string; title: string }) 
   if (loadError) {
     return (
       <div className="flex h-[75vh] w-full flex-col items-center justify-center gap-3 rounded-2xl bg-slate-900 p-8 text-center">
-        <p className="text-sm text-slate-400">Your browser can&apos;t preview this PDF inline.</p>
-        <a href={src} target="_blank" rel="noreferrer" className="cta-sheen cta-fill rounded-xl px-4 py-2 text-sm font-semibold">
+        <p className="text-small text-slate-400">Your browser can&apos;t preview this PDF inline.</p>
+        <a href={src} target="_blank" rel="noreferrer" className="cta-sheen cta-fill rounded-xl px-4 py-2 text-small font-semibold">
           Open the PDF
         </a>
       </div>
@@ -87,7 +87,7 @@ export function LessonPdfPlayer({ src, title }: { src: string; title: string }) 
           file={src}
           onLoadSuccess={handleLoadSuccess}
           onLoadError={() => setLoadError(true)}
-          loading={<div className="flex h-[60vh] w-full items-center justify-center text-sm text-slate-500">Loading PDF…</div>}
+          loading={<div className="flex h-[60vh] w-full items-center justify-center text-small text-slate-500">Loading PDF…</div>}
         >
           {containerWidth > 0 && (
             <Page
@@ -95,7 +95,7 @@ export function LessonPdfPlayer({ src, title }: { src: string; title: string }) 
               width={containerWidth * scale}
               renderTextLayer
               renderAnnotationLayer
-              loading={<div className="flex h-[60vh] w-full items-center justify-center text-sm text-slate-500">Loading page…</div>}
+              loading={<div className="flex h-[60vh] w-full items-center justify-center text-small text-slate-500">Loading page…</div>}
             />
           )}
         </Document>
@@ -123,7 +123,7 @@ export function LessonPdfPlayer({ src, title }: { src: string; title: string }) 
           >
             <ChevronRight size={16} />
           </button>
-          <span className="ml-1 text-xs text-slate-400">
+          <span className="ml-1 text-small text-slate-400">
             {title} · Page {pageNumber} of {numPages ?? "…"}
           </span>
         </div>
@@ -138,7 +138,7 @@ export function LessonPdfPlayer({ src, title }: { src: string; title: string }) 
           >
             <ZoomOut size={16} />
           </button>
-          <span className="w-10 text-center text-xs tabular-nums text-slate-400">{Math.round(scale * 100)}%</span>
+          <span className="w-10 text-center text-small tabular-nums text-slate-400">{Math.round(scale * 100)}%</span>
           <button
             type="button"
             onClick={() => setScale((s) => Math.min(MAX_SCALE, +(s + SCALE_STEP).toFixed(2)))}

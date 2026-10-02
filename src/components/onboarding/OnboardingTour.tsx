@@ -291,7 +291,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
         }
       >
         <div className="flex items-start justify-between gap-3">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
             {visibleIndex} of {visibleTotal}
           </p>
           <button type="button" onClick={handleSkip} aria-label="Skip tour" className="shrink-0 text-slate-500 transition hover:text-slate-200">
@@ -300,11 +300,11 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
             </svg>
           </button>
         </div>
-        <h2 className="mt-1.5 font-serif text-lg text-slate-50">{step.title}</h2>
-        <p className="mt-2 text-sm text-slate-400">{step.body}</p>
+        <h2 className="mt-1.5 text-body text-slate-50 font-semibold">{step.title}</h2>
+        <p className="mt-2 text-small text-slate-400">{step.body}</p>
 
         <div className="mt-5 flex items-center justify-between gap-3">
-          <button type="button" onClick={handleSkip} className="text-xs text-slate-500 transition hover:text-slate-300">
+          <button type="button" onClick={handleSkip} className="text-small text-slate-500 transition hover:text-slate-300">
             Skip tour
           </button>
           <div className="flex items-center gap-2">
@@ -312,7 +312,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
               <button
                 type="button"
                 onClick={goBack}
-                className="rounded-lg border border-ink/10 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-ink/5"
+                className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:bg-ink/5"
               >
                 Back
               </button>
@@ -320,7 +320,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
             <button
               type="button"
               onClick={goNext}
-              className="cta-sheen cta-fill rounded-lg px-4 py-1.5 text-xs font-semibold"
+              className="cta-sheen cta-fill rounded-lg px-4 py-1.5 text-small font-semibold"
             >
               {isLast ? "Finish" : "Next"}
             </button>

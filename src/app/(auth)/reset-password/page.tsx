@@ -85,7 +85,7 @@ function ResetPasswordForm() {
         animate="visible"
         className="w-full glass-surface-elevated p-6 text-center sm:p-7"
       >
-        <p className="text-sm text-slate-400">
+        <p className="text-small text-slate-400">
           Missing email.{" "}
           <Link href="/forgot-password" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
             Start over
@@ -113,13 +113,13 @@ function ResetPasswordForm() {
           mind about which account to sign into. The only way out used to
           be the logo up in the layout header, which leaves the whole
           reset flow for the marketing homepage rather than back to login. */}
-      <Link href="/login" className="mb-3 flex items-center gap-1.5 text-sm text-slate-500 transition hover:text-slate-300 sm:mb-4">
+      <Link href="/login" className="mb-3 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300 sm:mb-4">
         <ArrowLeftIcon size={16} />
         Back to login
       </Link>
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Reset password</p>
-      <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Choose a new password</h1>
-      <p className="mt-1.5 text-sm text-slate-500 sm:mt-2">
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Reset password</p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Choose a new password</h1>
+      <p className="mt-1.5 text-small text-slate-500 sm:mt-2">
         We sent a 6-digit code to <span className="text-slate-300">{email}</span>.
       </p>
 
@@ -145,7 +145,7 @@ function ResetPasswordForm() {
               setError(null);
             }}
             className={cn(
-              "h-12 text-center font-mono text-lg tracking-[0.5em]",
+              "h-12 text-center font-mono text-body tracking-[0.5em] font-semibold",
               error && fieldInvalid,
             )}
             placeholder="······"
@@ -170,7 +170,7 @@ function ResetPasswordForm() {
             className={cn(error && fieldInvalid)}
           />
           {newPassword.length > 0 && (
-            <p className={`mt-1.5 flex items-center gap-1.5 text-xs ${newPassword.length >= MIN_PASSWORD_LENGTH ? "text-emerald-400" : "text-slate-500"}`}>
+            <p className={`mt-1.5 flex items-center gap-1.5 text-small ${newPassword.length >= MIN_PASSWORD_LENGTH ? "text-emerald-400" : "text-slate-500"}`}>
               <CheckIcon size={11} className={newPassword.length >= MIN_PASSWORD_LENGTH ? "opacity-100" : "opacity-30"} />
               At least {MIN_PASSWORD_LENGTH} characters
             </p>
@@ -195,7 +195,7 @@ function ResetPasswordForm() {
             className={cn(error && fieldInvalid)}
           />
           {confirmPassword.length > 0 && (
-            <p className={`mt-1.5 flex items-center gap-1.5 text-xs ${newPassword === confirmPassword ? "text-emerald-400" : "text-slate-500"}`}>
+            <p className={`mt-1.5 flex items-center gap-1.5 text-small ${newPassword === confirmPassword ? "text-emerald-400" : "text-slate-500"}`}>
               <CheckIcon size={11} className={newPassword === confirmPassword ? "opacity-100" : "opacity-30"} />
               {newPassword === confirmPassword ? "Passwords match" : "Passwords don't match yet"}
             </p>
@@ -203,12 +203,12 @@ function ResetPasswordForm() {
         </div>
 
         {error && (
-          <p role="alert" className="text-xs text-red-400">
+          <p role="alert" className="text-small text-red-400">
             {error}
           </p>
         )}
         {resent && (
-          <p role="status" className="text-xs text-emerald-400">
+          <p role="status" className="text-small text-emerald-400">
             New code sent.
           </p>
         )}
@@ -221,7 +221,7 @@ function ResetPasswordForm() {
       <button
         type="button"
         onClick={handleResend}
-        className="mt-2 w-full text-center text-sm text-slate-500 transition hover:text-[rgb(var(--c-s-50))] sm:mt-4"
+        className="mt-2 w-full text-center text-small text-slate-500 transition hover:text-[rgb(var(--c-s-50))] sm:mt-4"
       >
         Didn&apos;t get a code? Resend
       </button>

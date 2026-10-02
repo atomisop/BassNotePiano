@@ -44,7 +44,7 @@ export default async function ProfilePage() {
           never reads as a dead end reachable only via the dock icons. */}
       <Link
         href="/dashboard"
-        className="mb-4 flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100"
+        className="mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100"
       >
         <ArrowLeftIcon size={16} />
         Back to roadmap
@@ -55,15 +55,15 @@ export default async function ProfilePage() {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={user.image} alt="" className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center font-serif text-2xl text-[rgb(var(--c-s-50))]">
+            <div className="flex h-full w-full items-center justify-center text-body text-[rgb(var(--c-s-50))] font-semibold">
               {(user.name ?? user.username ?? "?").charAt(0).toUpperCase()}
             </div>
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Profile</p>
-          <h1 className="mt-1 font-serif text-2xl text-slate-50">{user.name ?? "Student"}</h1>
-          {user.username && <p className="text-sm text-slate-500">@{user.username}</p>}
+          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Profile</p>
+          <h1 className="font-hero text-hero font-bold text-balance mt-1 text-slate-50">{user.name ?? "Student"}</h1>
+          {user.username && <p className="text-small text-slate-500">@{user.username}</p>}
         </div>
         <ProfileEditButton
           initialName={user.name}
@@ -81,14 +81,14 @@ export default async function ProfilePage() {
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="glass-surface p-5">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
             {user.currentStreak > 0 ? `${user.currentStreak} day streak` : "Streak"}
           </p>
           <StreakDots currentStreak={user.currentStreak} />
         </div>
         <div className="glass-surface p-5">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Longest streak</p>
-          <p className="mt-2 font-serif text-2xl text-slate-50">
+          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Longest streak</p>
+          <p className="mt-2 text-body text-slate-50 font-semibold">
             {user.longestStreak} day{user.longestStreak === 1 ? "" : "s"}
           </p>
         </div>
@@ -96,12 +96,12 @@ export default async function ProfilePage() {
 
       <div className="mt-8">
         <div className="flex items-baseline justify-between">
-          <h2 className="font-serif text-lg text-slate-50">Badges</h2>
-          <p className="text-xs text-slate-500">
+          <h2 className="text-body text-slate-50 font-semibold">Badges</h2>
+          <p className="text-small text-slate-500">
             {earnedCodes.length} of {BADGES.length} earned
           </p>
         </div>
-        <p className="mt-1 text-sm text-slate-500">Earned and locked achievements — hover a badge to see how to unlock it.</p>
+        <p className="mt-1 text-small text-slate-500">Earned and locked achievements — hover a badge to see how to unlock it.</p>
         <div className="mt-4 glass-surface p-6">
           <BadgeGrid earnedCodes={new Set(earnedCodes)} />
         </div>

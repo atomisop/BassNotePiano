@@ -44,13 +44,13 @@ export default async function BillingPlansPage({
 
   return (
     <div>
-      <Link href="/lessons" className="mb-4 flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100">
+      <Link href="/lessons" className="mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
         <ArrowLeftIcon size={16} />
         Back to classes
       </Link>
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
-      <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Payment plan</h1>
-      <p className="mt-3 text-sm leading-relaxed text-slate-400">
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment plan</h1>
+      <p className="mt-3 text-body text-slate-400">
         Pick a weekly cadence and pay month to month, or commit to 3 or 6 months for a lower rate — one Zelle
         installment at a time, never all at once, never auto-charged. We&apos;ll email an invoice as each installment
         comes due.
@@ -91,12 +91,12 @@ export default async function BillingPlansPage({
 
       {pastPlans.length > 0 && (
         <div className="mt-10 border-t border-ink/10 pt-6">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Plan history</p>
+          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Plan history</p>
           <div className="mt-4 space-y-3">
             {pastPlans.map((plan) => (
               <div key={plan.id} className="glass-surface p-4">
-                <p className="text-sm text-slate-100">{describePaymentPlan(plan.cadence, plan.term)}</p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="text-small text-slate-100">{describePaymentPlan(plan.cadence, plan.term)}</p>
+                <p className="mt-1 text-small text-slate-500">
                   {plan.installmentsPaid} of {plan.termMonths} installments paid ·{" "}
                   {plan.status === "COMPLETED" ? "Completed" : "Canceled"}
                 </p>

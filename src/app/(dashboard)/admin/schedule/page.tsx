@@ -38,8 +38,8 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
         <Link
           key={view.value}
           href={view.value === "WINDOWS" ? "/admin/schedule" : `/admin/schedule?view=${view.value}`}
-          className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
-            activeView === view.value ? "bg-amber-400 text-slate-950" : "text-slate-400 hover:text-slate-100"
+          className={`rounded-full px-3 py-1.5 text-small font-medium transition ${
+            activeView === view.value ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
           }`}
         >
           {view.label}
@@ -54,8 +54,8 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
 
     return (
       <div>
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-        <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Weekly schedule</h1>
+        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Weekly schedule</h1>
 
         {viewSwitcher}
 
@@ -82,8 +82,8 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
 
     return (
       <div>
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-        <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Weekly schedule</h1>
+        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Weekly schedule</h1>
 
         {viewSwitcher}
 
@@ -110,9 +110,9 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
 
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-      <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Weekly schedule</h1>
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Weekly schedule</h1>
+      <p className="mt-2 text-small text-slate-500">
         The recurring windows students book classes into. Turning one off stops it from showing up as bookable —
         existing bookings and their history are never affected.
       </p>

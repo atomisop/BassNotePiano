@@ -232,9 +232,9 @@ function NotificationEntry({ notification, onClick }: { notification: Notificati
     <>
       <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.read ? "bg-transparent" : "bg-[rgb(var(--c-a-400))]"}`} />
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-medium text-slate-100">{notification.title}</span>
-        {notification.body && <span className="mt-0.5 block text-sm text-slate-500">{notification.body}</span>}
-        <span className="mt-1.5 block text-xs text-slate-600">{relativeTime(notification.createdAt)}</span>
+        <span className="block text-small font-medium text-slate-100">{notification.title}</span>
+        {notification.body && <span className="mt-0.5 block text-small text-slate-500">{notification.body}</span>}
+        <span className="mt-1.5 block text-small text-slate-600">{relativeTime(notification.createdAt)}</span>
       </span>
     </>
   );
@@ -306,12 +306,12 @@ function NotificationGroup({
           </span>
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2">
-              <span className="text-sm font-medium text-slate-100">{categoryLabel}</span>
-              <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">{items.length}</span>
+              <span className="text-small font-medium text-slate-100">{categoryLabel}</span>
+              <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-small font-semibold text-slate-400">{items.length}</span>
               {hasUnread && <span className="h-2 w-2 shrink-0 rounded-full bg-[rgb(var(--c-a-400))]" aria-hidden />}
             </span>
-            <span className="mt-0.5 block truncate text-sm text-slate-500">{latest.title}</span>
-            <span className="mt-1.5 block text-xs text-slate-600">{relativeTime(latest.createdAt)}</span>
+            <span className="mt-0.5 block truncate text-small text-slate-500">{latest.title}</span>
+            <span className="mt-1.5 block text-small text-slate-600">{relativeTime(latest.createdAt)}</span>
           </span>
           <ChevronRight
             className={`mt-1 h-4 w-4 shrink-0 text-slate-600 transition-transform ${expanded ? "rotate-90" : ""}`}
@@ -454,7 +454,7 @@ export function NotificationBell() {
       >
         <Bell size={18} strokeWidth={1.5} />
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-slate-950">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-slate-50 px-1 text-small font-bold text-slate-950">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -496,14 +496,14 @@ export function NotificationBell() {
                     <ArrowLeft size={18} strokeWidth={1.75} />
                   </button>
                   <div>
-                    <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Inbox</p>
-                    <h1 className="font-serif text-lg text-slate-50">Notifications</h1>
+                    <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Inbox</p>
+                    <h1 className="font-hero text-hero font-bold text-balance text-slate-50">Notifications</h1>
                   </div>
                   {unreadCount > 0 && (
                     <button
                       type="button"
                       onClick={handleMarkAllRead}
-                      className="ml-auto inline-flex items-center gap-1.5 text-xs text-[rgb(var(--c-s-50))] transition hover:opacity-70"
+                      className="ml-auto inline-flex items-center gap-1.5 text-small text-[rgb(var(--c-s-50))] transition hover:opacity-70"
                     >
                       <CheckCheck size={14} strokeWidth={2} />
                       Mark all read
@@ -524,11 +524,11 @@ export function NotificationBell() {
                       <span className="flex h-14 w-14 items-center justify-center rounded-full border border-ink/10 text-slate-600">
                         <Bell size={24} strokeWidth={1.5} />
                       </span>
-                      <p className="text-sm font-medium text-slate-400">You&apos;re all caught up — no notifications yet.</p>
+                      <p className="text-small font-medium text-slate-400">You&apos;re all caught up — no notifications yet.</p>
                       <Link
                         href="/account?tab=notifications"
                         onClick={() => setOpen(false)}
-                        className="text-xs text-[rgb(var(--c-s-50))] transition hover:opacity-70"
+                        className="text-small text-[rgb(var(--c-s-50))] transition hover:opacity-70"
                       >
                         Notification settings
                       </Link>
@@ -542,7 +542,7 @@ export function NotificationBell() {
                     <div className="space-y-5">
                       {groupNotifications(notifications).map((section) => (
                         <div key={section.label}>
-                          <p className="mb-2 px-1 text-[11px] font-medium uppercase tracking-[0.2em] text-slate-600">{section.label}</p>
+                          <p className="mb-2 px-1 text-small font-medium uppercase tracking-[0.2em] text-slate-600">{section.label}</p>
                           <div className="space-y-2">
                             {section.clusters.map((cluster) =>
                               cluster.items.length === 1 ? (

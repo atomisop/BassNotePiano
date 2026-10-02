@@ -188,10 +188,10 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
               </svg>
             </button>
             <div>
-              <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+              <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
                 Scale-Spelling Quiz
               </p>
-              <h2 id="quiz-modal-title" className="mt-1 font-serif text-lg text-slate-50">
+              <h2 id="quiz-modal-title" className="mt-1 text-body text-slate-50 font-semibold">
                 {scaleTitle}
               </h2>
             </div>
@@ -215,10 +215,10 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                         />
                       ))}
                     </div>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-small text-slate-500">
                       Question {currentIndex + 1} of {questions.length}
                     </p>
-                    <p className="mt-2 text-base text-slate-100">{current.prompt}</p>
+                    <p className="mt-2 text-body text-slate-100">{current.prompt}</p>
 
                     <div className="mt-4 space-y-2">
                       {current.choices.map((choice, i) => {
@@ -228,7 +228,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                             key={choice}
                             type="button"
                             onClick={() => selectChoice(i)}
-                            className={`w-full rounded-xl border px-4 py-2.5 text-left text-sm font-medium transition ${
+                            className={`w-full rounded-xl border px-4 py-2.5 text-left text-small font-medium transition ${
                               selected
                                 ? "border-[rgb(var(--c-s-50))] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
                                 : "border-ink/10 text-slate-300 hover:border-ink/15 hover:bg-slate-800/60"
@@ -240,7 +240,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                       })}
                     </div>
 
-                    {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+                    {error && <p className="mt-3 text-small text-red-400">{error}</p>}
 
                     <div className="mt-6 flex gap-2">
                       {currentIndex > 0 && (
@@ -248,7 +248,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                           type="button"
                           onClick={() => setCurrentIndex((i) => i - 1)}
                           disabled={step === "submitting"}
-                          className="flex-1 rounded-xl border border-ink/10 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                          className="flex-1 rounded-xl border border-ink/10 py-2.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
                         >
                           {/* "Previous", not "Back": the header above now has
                               its own Back button that exits the quiz
@@ -262,7 +262,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                           type="button"
                           onClick={handleSubmit}
                           disabled={!hasSelected || step === "submitting"}
-                          className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                          className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {step === "submitting" && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                           {step === "submitting" ? "Grading…" : "Submit quiz"}
@@ -272,7 +272,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                           type="button"
                           onClick={() => setCurrentIndex((i) => i + 1)}
                           disabled={!hasSelected}
-                          className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                          className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           Next
                         </button>
@@ -312,15 +312,15 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                         </svg>
                       )}
                     </motion.div>
-                    <h3 className="font-serif text-base text-slate-50">
+                    <h3 className="text-body text-slate-50">
                       {result.passed ? "Quiz passed" : "Not quite yet"}
                     </h3>
-                    <p className="mx-auto mt-1.5 max-w-xs text-sm text-slate-400">
+                    <p className="mx-auto mt-1.5 max-w-xs text-small text-slate-400">
                       <CountUpNumber value={result.score} /> of {result.total} correct
                       {result.passed ? " — this scale is complete once your other checklist items are done." : ". Review the formula and try again."}
                     </p>
                     <div
-                      className={`mx-auto mt-3 w-fit rounded-full px-3 py-1 text-xs font-medium ${
+                      className={`mx-auto mt-3 w-fit rounded-full px-3 py-1 text-small font-medium ${
                         result.passed ? "bg-emerald-400/10 text-emerald-300" : "bg-slate-800 text-slate-400"
                       }`}
                     >
@@ -331,7 +331,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                         <button
                           type="button"
                           onClick={handleRetake}
-                          className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-sm font-semibold"
+                          className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-small font-semibold"
                         >
                           Retake quiz
                         </button>
@@ -339,7 +339,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                       <button
                         type="button"
                         onClick={handleClose}
-                        className="flex-1 rounded-xl border border-ink/10 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+                        className="flex-1 rounded-xl border border-ink/10 py-2.5 text-small font-medium text-slate-300 transition hover:bg-slate-800"
                       >
                         Done
                       </button>

@@ -17,7 +17,7 @@ export function GroupList({
   return (
     <div className="border-t border-ink/10 p-2">
       <div className="flex items-center justify-between px-2.5 py-1.5">
-        <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-600">Groups</p>
+        <p className="text-small font-medium uppercase tracking-[0.15em] text-slate-600">Groups</p>
         <button
           type="button"
           onClick={onNewGroup}
@@ -31,7 +31,7 @@ export function GroupList({
       </div>
 
       {groups.length === 0 ? (
-        <p className="px-2.5 py-2 text-xs text-slate-600">No group chats yet.</p>
+        <p className="px-2.5 py-2 text-small text-slate-600">No group chats yet.</p>
       ) : (
         <div className="space-y-0.5">
           {groups.map((g) => (

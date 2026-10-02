@@ -90,8 +90,8 @@ function RegisterForm() {
           />
         </svg>
       </div>
-      <h1 className="text-center font-serif text-2xl text-slate-50">Create your account</h1>
-      <p className="mt-1.5 text-center text-sm text-slate-500">Sign up to get started.</p>
+      <h1 className="font-hero text-hero font-bold text-balance text-center text-slate-50">Create your account</h1>
+      <p className="mt-1.5 text-center text-small text-slate-500">Sign up to get started.</p>
 
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">
         <div>
@@ -141,7 +141,7 @@ function RegisterForm() {
               one real requirement this form has, so it's shown as it's
               being met instead of only as a reason the submit just failed. */}
           {password.length > 0 && (
-            <p className={`mt-1.5 flex items-center gap-1.5 text-xs ${password.length >= MIN_PASSWORD_LENGTH ? "text-emerald-400" : "text-slate-500"}`}>
+            <p className={`mt-1.5 flex items-center gap-1.5 text-small ${password.length >= MIN_PASSWORD_LENGTH ? "text-emerald-400" : "text-slate-500"}`}>
               <CheckIcon size={11} className={password.length >= MIN_PASSWORD_LENGTH ? "opacity-100" : "opacity-30"} />
               At least {MIN_PASSWORD_LENGTH} characters
             </p>
@@ -165,14 +165,14 @@ function RegisterForm() {
             className={cn(error && fieldInvalid)}
           />
           {confirmPassword.length > 0 && (
-            <p className={`mt-1.5 flex items-center gap-1.5 text-xs ${password === confirmPassword ? "text-emerald-400" : "text-slate-500"}`}>
+            <p className={`mt-1.5 flex items-center gap-1.5 text-small ${password === confirmPassword ? "text-emerald-400" : "text-slate-500"}`}>
               <CheckIcon size={11} className={password === confirmPassword ? "opacity-100" : "opacity-30"} />
               {password === confirmPassword ? "Passwords match" : "Passwords don't match yet"}
             </p>
           )}
         </div>
 
-        <label className="flex cursor-pointer items-start gap-2.5 text-xs text-slate-400">
+        <label className="flex cursor-pointer items-start gap-2.5 text-small text-slate-400">
           <input
             type="checkbox"
             checked={agreedToTerms}
@@ -196,7 +196,7 @@ function RegisterForm() {
         </label>
 
         {error && (
-          <p role="alert" className="text-xs text-red-400">
+          <p role="alert" className="text-small text-red-400">
             {error}
           </p>
         )}
@@ -206,7 +206,7 @@ function RegisterForm() {
         </Button>
       </motion.form>
 
-      <p className="mt-6 text-center text-sm text-slate-500">
+      <p className="mt-6 text-center text-small text-slate-500">
         Already have an account?{" "}
         <Link href="/login" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
           Log in

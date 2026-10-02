@@ -137,20 +137,20 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
     <div className="space-y-6">
       <div>
         {activePlan ? (
-          <p className="text-xs font-medium text-slate-400">
+          <p className="text-small font-medium text-slate-400">
             Your plan: {CADENCE_LABELS[activePlan.cadence]} · {activePlan.installmentsPaid} of {activePlan.termMonths}{" "}
             installments paid
           </p>
         ) : (
           <>
-            <p className="text-xs font-medium text-slate-400">No active plan right now.</p>
+            <p className="text-small font-medium text-slate-400">No active plan right now.</p>
             <div className="mt-2 flex w-fit gap-1.5 rounded-full border border-ink/10 p-1">
               {CADENCE_OPTIONS.map((option) => (
                 <button
                   key={option.value}
                   type="button"
                   onClick={() => setCadence(option.value)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                  className={`rounded-full px-3 py-1 text-small font-medium transition ${
                     cadence === option.value ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
@@ -173,8 +173,8 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                 key={option.value}
                 className={`glass-surface rounded-xl p-4 ${isCurrent ? "border border-[rgb(var(--c-s-50)/0.5)]" : "border border-transparent"}`}
               >
-                <p className="text-xs font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">{option.label}</p>
-                <p className="mt-2 font-serif text-2xl text-slate-50">{formatUsd(rate.installmentAmountCents)}</p>
+                <p className="text-small font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">{option.label}</p>
+                <p className="mt-2 text-body text-slate-50 font-semibold">{formatUsd(rate.installmentAmountCents)}</p>
                 {/* Classes/month, not a raw credit count, by direct
                     instruction: same reasoning as PaymentPlanEnrollmentFlow's
                     own classesPerMonth, both cadences work out to 4 classes
@@ -188,9 +188,9 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   const perMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
                   return (
                     <>
-                      <p className="text-[11px] text-slate-500">per month · {perMonth} classes</p>
+                      <p className="text-small text-slate-500">per month · {perMonth} classes</p>
                       {option.value !== "MONTHLY" && (
-                        <p className="text-[11px] text-slate-500">
+                        <p className="text-small text-slate-500">
                           {perMonth * rate.termMonths} total over {rate.termMonths} months
                         </p>
                       )}
@@ -203,7 +203,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                     type="button"
                     disabled={isCurrent || pendingTerm !== null}
                     onClick={() => handleChangeTerm(option.value)}
-                    className={`mt-3 flex w-full items-center justify-center rounded-lg py-2 text-xs font-semibold transition disabled:cursor-not-allowed ${
+                    className={`mt-3 flex w-full items-center justify-center rounded-lg py-2 text-small font-semibold transition disabled:cursor-not-allowed ${
                       isCurrent
                         ? "bg-slate-800 text-slate-400"
                         : "border border-ink/10 text-slate-200 hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] disabled:opacity-50"
@@ -215,7 +215,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                 ) : (
                   <Link
                     href={`/billing/plans?cadence=${cadence}&term=${option.value}`}
-                    className="mt-3 flex w-full items-center justify-center rounded-lg border border-ink/10 py-2 text-xs font-semibold text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+                    className="mt-3 flex w-full items-center justify-center rounded-lg border border-ink/10 py-2 text-small font-semibold text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
                   >
                     Start plan
                   </Link>
@@ -225,20 +225,20 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
           })}
         </div>
 
-        {termError && <p className="mt-3 text-xs text-red-400">{termError}</p>}
+        {termError && <p className="mt-3 text-small text-red-400">{termError}</p>}
       </div>
 
       {/* Family bundle: independent of a solo plan's own state, shown either way, same reasoning /pricing shows it alongside the term grid rather than gating it on anything. */}
       <div className="glass-surface flex flex-col items-start gap-3 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">Family bundle</p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="text-small font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">Family bundle</p>
+          <p className="mt-1 text-small text-slate-400">
             Buying for 2 or more kids gets an extra {FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total.
           </p>
         </div>
         <Link
           href="/billing/lessons"
-          className="shrink-0 rounded-lg border border-ink/10 px-4 py-2 text-xs font-semibold text-slate-100 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+          className="shrink-0 rounded-lg border border-ink/10 px-4 py-2 text-small font-semibold text-slate-100 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
         >
           Bundle &amp; save
         </Link>
@@ -247,15 +247,15 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
       {activePlan && (
         <div className="border-t border-ink/10 pt-4">
           {cancelStage === "idle" && (
-            <button type="button" onClick={startCancelFlow} className="text-xs text-red-400 underline hover:text-red-300">
+            <button type="button" onClick={startCancelFlow} className="text-small text-red-400 underline hover:text-red-300">
               Cancel subscription
             </button>
           )}
 
           {cancelStage === "downgrade-offer" && (
-            <div className="rounded-xl border border-amber-400/30 bg-amber-400/5 p-4">
-              <p className="text-sm text-slate-100">Before you cancel, want to switch to 3-Month instead?</p>
-              <p className="mt-1 text-xs text-slate-500">
+            <div className="rounded-xl border border-ink/15 bg-[rgb(var(--c-s-50)/0.04)] p-4">
+              <p className="text-small text-slate-100">Before you cancel, want to switch to 3-Month instead?</p>
+              <p className="mt-1 text-small text-slate-500">
                 Same weekly time, lower commitment than what you&apos;re on now, still a real discount off the
                 monthly rate.
               </p>
@@ -264,7 +264,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   type="button"
                   onClick={() => handleChangeTerm("TERM_3")}
                   disabled={pendingTerm !== null}
-                  className="cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-60"
+                  className="cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:opacity-60"
                 >
                   {pendingTerm === "TERM_3" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                   Switch to 3-Month
@@ -272,7 +272,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                 <button
                   type="button"
                   onClick={() => setCancelStage("reason")}
-                  className="rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800"
+                  className="rounded-lg border border-ink/10 px-4 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800"
                 >
                   No, cancel anyway
                 </button>
@@ -282,13 +282,13 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
 
           {(cancelStage === "reason" || cancelStage === "canceling") && (
             <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-4">
-              <p className="text-sm text-slate-100">Tell us why you&apos;re canceling.</p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="text-small text-slate-100">Tell us why you&apos;re canceling.</p>
+              <p className="mt-1 text-small text-slate-500">
                 This ends your plan and frees your reserved weekly time right away. It can&apos;t be undone from here.
               </p>
               <div className="mt-3 space-y-1.5">
                 {CANCELLATION_REASONS.map((r) => (
-                  <label key={r.value} className="flex cursor-pointer items-center gap-2 text-sm text-slate-300">
+                  <label key={r.value} className="flex cursor-pointer items-center gap-2 text-small text-slate-300">
                     <input
                       type="radio"
                       name="cancellation-reason"
@@ -308,16 +308,16 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   placeholder="Tell us a bit more"
                   rows={3}
                   disabled={cancelStage === "canceling"}
-                  className="mt-3 w-full rounded-lg border border-ink/10 bg-slate-950 p-3 text-sm text-slate-100 outline-none transition focus:border-red-400/60 disabled:opacity-60"
+                  className="mt-3 w-full rounded-lg border border-ink/10 bg-slate-950 p-3 text-small text-slate-100 outline-none transition focus:border-red-400/60 disabled:opacity-60"
                 />
               )}
-              {cancelError && <p className="mt-2 text-xs text-red-400">{cancelError}</p>}
+              {cancelError && <p className="mt-2 text-small text-red-400">{cancelError}</p>}
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={handleConfirmCancel}
                   disabled={!reason || cancelStage === "canceling"}
-                  className="flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {cancelStage === "canceling" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                   {cancelStage === "canceling" ? "Canceling…" : "Cancel my subscription"}
@@ -326,7 +326,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   type="button"
                   onClick={resetCancelFlow}
                   disabled={cancelStage === "canceling"}
-                  className="rounded-lg border border-ink/10 px-4 py-2 text-xs font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                  className="rounded-lg border border-ink/10 px-4 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
                 >
                   Never mind
                 </button>

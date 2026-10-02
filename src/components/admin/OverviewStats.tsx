@@ -36,8 +36,8 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
             variants={item}
             className={`p-5 ${card.highlight ? "glass-surface-elevated" : "glass-surface"}`}
           >
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">{card.label}</p>
-            <p className={`mt-2 font-serif text-3xl ${card.highlight ? "text-[rgb(var(--c-s-50))]" : "text-slate-50"}`}>
+            <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-500">{card.label}</p>
+            <p className={`mt-2 text-body font-semibold ${card.highlight ? "text-[rgb(var(--c-s-50))]" : "text-slate-50"}`}>
               {card.value}
             </p>
           </motion.div>
@@ -47,27 +47,27 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
       <motion.div variants={item} className="flex flex-wrap gap-3">
         <Link
           href="/admin/payments"
-          className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+          className="rounded-xl border border-ink/10 px-4 py-2.5 text-small font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
         >
           Review pending payments{stats.pendingPayments > 0 ? ` (${stats.pendingPayments})` : ""} →
         </Link>
         <Link
           href="/admin/schedule?view=ATTENDANCE"
-          className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+          className="rounded-xl border border-ink/10 px-4 py-2.5 text-small font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
         >
           Lesson bookings →
         </Link>
         <Link
           href="/admin/users"
-          className="rounded-xl border border-ink/10 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+          className="rounded-xl border border-ink/10 px-4 py-2.5 text-small font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
         >
           Manage users →
         </Link>
       </motion.div>
 
       <motion.div variants={item}>
-        <h2 className="mb-1 font-serif text-xl text-slate-100">Module health</h2>
-        <p className="mb-4 text-sm text-slate-500">Unlocks and completions across the whole user base.</p>
+        <h2 className="mb-1 text-body text-slate-100 font-semibold">Module health</h2>
+        <p className="mb-4 text-small text-slate-500">Unlocks and completions across the whole user base.</p>
         <div className="overflow-hidden glass-surface">
           {moduleHealth.map((row, i) => {
             const rate = row.unlockedCount === 0 ? 0 : Math.round((row.completedCount / row.unlockedCount) * 100);
@@ -79,21 +79,21 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
                 }`}
               >
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-[rgb(var(--c-s-50)/0.8)]">{row.code}</p>
+                  <p className="text-small uppercase tracking-wide text-[rgb(var(--c-s-50)/0.8)]">{row.code}</p>
                   <p className="text-slate-200">{row.title}</p>
                 </div>
-                <div className="flex shrink-0 items-center gap-6 text-sm">
+                <div className="flex shrink-0 items-center gap-6 text-small">
                   <div className="text-right">
                     <p className="text-slate-300">{row.unlockedCount}</p>
-                    <p className="text-[11px] text-slate-600">unlocked</p>
+                    <p className="text-small text-slate-600">unlocked</p>
                   </div>
                   <div className="text-right">
                     <p className="text-slate-300">{row.completedCount}</p>
-                    <p className="text-[11px] text-slate-600">completed</p>
+                    <p className="text-small text-slate-600">completed</p>
                   </div>
                   <div className="w-14 text-right">
                     <p className="text-[rgb(var(--c-s-50))]">{rate}%</p>
-                    <p className="text-[11px] text-slate-600">completion</p>
+                    <p className="text-small text-slate-600">completion</p>
                   </div>
                 </div>
               </div>

@@ -63,23 +63,23 @@ export function NewGroupPanel({
       <div className="flex h-full flex-col">
         <div className="space-y-4 p-4">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-400">Group name (optional)</label>
+            <label className="mb-1.5 block text-small font-medium text-slate-400">Group name (optional)</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Tizita crew"
-              className="w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+              className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
             />
           </div>
-          <p className="text-xs font-medium text-slate-400">Add friends</p>
+          <p className="text-small font-medium text-slate-400">Add friends</p>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4">
           {friends === null ? (
-            <p className="text-xs text-slate-600">Loading friends…</p>
+            <p className="text-small text-slate-600">Loading friends…</p>
           ) : friends.length === 0 ? (
-            <p className="text-xs text-slate-600">
+            <p className="text-small text-slate-600">
               You don&apos;t have any friends yet — add some on the Friends page first.
             </p>
           ) : (
@@ -96,10 +96,10 @@ export function NewGroupPanel({
                       checked ? "bg-amber-400/10" : "hover:bg-ink/5"
                     } disabled:opacity-40`}
                   >
-                    <Avatar image={f.image} label={f.name ?? f.username ?? "?"} className="h-8 w-8 text-xs" />
+                    <Avatar image={f.image} label={f.name ?? f.username ?? "?"} className="h-8 w-8 text-small" />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm text-slate-100">{f.name ?? `@${f.username}`}</p>
-                      {f.username && <p className="truncate text-xs text-slate-500">@{f.username}</p>}
+                      <p className="truncate text-small text-slate-100">{f.name ?? `@${f.username}`}</p>
+                      {f.username && <p className="truncate text-small text-slate-500">@{f.username}</p>}
                     </div>
                     <div
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
@@ -120,12 +120,12 @@ export function NewGroupPanel({
         </div>
 
         <div className="border-t border-ink/10 p-4">
-          {error && <p className="mb-2 text-xs text-red-400">{error}</p>}
+          {error && <p className="mb-2 text-small text-red-400">{error}</p>}
           <button
             type="button"
             onClick={handleCreate}
             disabled={submitting || selected.size === 0}
-            className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
             {submitting ? "Creating…" : `Create group${selected.size > 0 ? ` (${selected.size})` : ""}`}

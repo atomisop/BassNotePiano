@@ -8,9 +8,9 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
 
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-      <h1 className="mt-1.5 font-serif text-3xl text-slate-50">User management</h1>
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">User management</h1>
+      <p className="mt-2 text-small text-slate-500">
         {users.length} user{users.length === 1 ? "" : "s"}
         {query ? ` matching "${query}"` : ""}.
       </p>
