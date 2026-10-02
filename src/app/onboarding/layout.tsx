@@ -3,7 +3,7 @@ import { NarrowLayout } from "@/components/layout/PageLayouts";
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative flex min-h-screen flex-col">
+    <div data-surface="app" className="relative flex min-h-screen flex-col">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(ellipse_at_top,_rgba(160,78,30,0.07),_transparent_60%)]"

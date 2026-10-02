@@ -102,12 +102,14 @@ export function CookieConsentBanner() {
             visitors touch, often on the smallest screens. */}
         <div className="mt-4 flex flex-wrap gap-2">
           {customizing ? (
-            <Button size="sm" className="min-h-11" onClick={() => decide(analyticsChoice)}>
+            <Button size="sm" variant="paper" className="min-h-11" onClick={() => decide(analyticsChoice)}>
               Save preferences
             </Button>
           ) : (
             <>
-              <Button size="sm" className="min-h-11" onClick={() => decide(true)}>
+              {/* Neutral `paper`, not the green primary: a consent choice must
+                  not be nudged toward "accept". */}
+              <Button size="sm" variant="paper" className="min-h-11" onClick={() => decide(true)}>
                 Accept all
               </Button>
               <Button size="sm" variant="outline" className="min-h-11" onClick={() => decide(false)}>

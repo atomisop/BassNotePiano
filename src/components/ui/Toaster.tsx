@@ -26,16 +26,18 @@ export function Toaster() {
       closeButton
       toastOptions={{
         classNames: {
-          toast: "glass-surface !bg-surface text-slate-100 !border-ink/10",
-          title: "font-medium text-slate-50",
-          description: "!text-slate-400",
+          toast: "!rounded-card !bg-surface !shadow-plane-front text-slate-100 !border-ink/10 !text-small",
+          title: "!text-small font-semibold text-slate-50",
+          description: "!text-small !text-slate-400",
           // Solid --primary, neutral — see globals.css's own `--primary`
           // comment: green was tried for real CTAs too and reverted by
           // direct instruction.
-          actionButton: "!bg-[rgb(var(--primary))] !text-slate-950 !font-semibold !border !border-[rgb(var(--primary)/0.5)]",
+          actionButton: "!rounded-control !bg-[rgb(var(--cta-bg,var(--primary)))] !text-[rgb(var(--cta-ink,var(--primary-foreground)))] !font-semibold",
           cancelButton: "!bg-slate-900 !text-slate-300",
           closeButton: "!bg-surface !border-ink/10 !text-slate-400",
-          success: "!text-emerald-300",
+          // Success is paper text plus sonner's own check icon, never green
+          // (green means "tap this" only).
+          success: "!text-slate-50",
           error: "!text-red-400",
         },
       }}

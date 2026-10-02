@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 
 /**
  * #4 — Empty state.
@@ -30,22 +31,22 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center rounded-2xl border border-dashed border-ink/15 px-6 py-14 text-center",
+        "flex flex-col items-center justify-center rounded-card border border-dashed border-ink/15 px-6 py-14 text-center",
         className,
       )}
     >
       {icon && (
-        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.08)] text-slate-200 shadow-plane-mid">
           {icon}
         </div>
       )}
-      <h3 className="font-serif text-lg text-slate-50">{title}</h3>
-      <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-500">{description}</p>
+      <h3 className="text-body font-semibold text-slate-50">{title}</h3>
+      <p className="mt-1.5 max-w-[42ch] text-small text-slate-400">{description}</p>
 
       {actionLabel && actionHref && (
         <Link
           href={actionHref}
-          className="mt-6 inline-flex items-center gap-1.5 rounded-lg border border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-sm font-medium text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)]"
+          className={cn(buttonVariants(), "mt-6")}
         >
           {actionLabel}
         </Link>
@@ -54,7 +55,7 @@ export function EmptyState({
         <button
           type="button"
           onClick={onAction}
-          className="mt-6 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-sm font-medium text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)]"
+          className={cn(buttonVariants(), "mt-6")}
         >
           {actionLabel}
         </button>

@@ -41,7 +41,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isAdmin = session.user.role === "ADMIN";
 
   return (
-    <div className="relative flex h-[100svh] overflow-hidden bg-slate-950">
+    <div data-surface="app" className="relative flex h-[100svh] overflow-hidden bg-slate-950">
       {/* No photographic backdrop behind the app shell, deliberately. The
           previous system wallpapered every authenticated page with a piano
           photo; on paper that reads as a smudge under the text rather than

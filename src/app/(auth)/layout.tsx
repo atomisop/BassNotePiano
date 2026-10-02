@@ -34,7 +34,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     // where a real device measurement showed it was actually needed); the
     // reset-password card's own internal spacing is trimmed the same way,
     // see that page.
-    <div className="relative flex min-h-[100svh] flex-col items-center justify-center px-6 py-4 sm:py-16">
+    <div data-surface="app" className="relative flex min-h-[100svh] flex-col items-center justify-center px-6 py-4 sm:py-16">
       {/* Login and register are the top of their own flow, with nothing
           else on-page to signal a way out: the brand lockup below is a
           real link, but a logo alone doesn't read as "click this to leave"
