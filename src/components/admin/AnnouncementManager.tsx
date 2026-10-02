@@ -26,6 +26,7 @@ function EmailToggle({ checked, onChange }: { checked: boolean; onChange: (next:
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label="Also send this announcement by email"
       onClick={() => onChange(!checked)}
       className={`relative h-6 w-11 shrink-0 rounded-full transition ${
         checked ? "bg-[rgb(var(--c-a-400))]" : "bg-slate-700"

@@ -138,7 +138,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by name or email, or just browse below"
-              className="glass-surface-subtle w-full rounded-lg px-3.5 py-2 pr-9 text-small text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.5)]"
+              className="glass-surface-subtle w-full rounded-lg px-3.5 py-2 pr-9 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.5)]"
             />
             {searching && (
               <MorphingSquare size={14} className="absolute right-3 top-1/2 -translate-y-1/2 shrink-0" />

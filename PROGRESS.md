@@ -12,7 +12,7 @@
 - [x] STEP 3 Component sources (docs/redesign/component-sources.md)
 - [x] STEP 4 Redesign screens
 - [x] STEP 5 Piano keyboard visuals
-- [ ] STEP 6 Quality pass
+- [x] STEP 6 Quality pass
 
 ## Decisions I approved
 
@@ -40,3 +40,4 @@
 - STEP 3 done 2026-10-02: Tabs got an MIT sliding thumb adapted from Halaska UI (21st.dev). Every other component is built on deps already in the repo (Radix, shadcn, lucide). Admin bulk actions NOT built: they would be new behavior on payments/accounts, left for the owner to decide.
 - STEP 4 done 2026-10-02: app-wide card material (glass-surface vars re-pointed to the middle plane inside [data-surface=app]); Book a class split into booking + side panel (credits, bookings, history); Payment plan split like Family bundle; admin Students/Payments/Payment Plans got client-side search (AdminListSearch); chat bubbles ink/paper. Home and the lesson page were done in 2B; titles/sizes/greens in 2C. Onboarding already has one Hero per step; the first-run tour targets all still exist.
 - STEP 5 done 2026-10-02: PianoKeyboard redrawn as a real instrument (ivory/ebony via piano-* utilities in globals.css, same in every theme), scale notes marked ink/paper, green only on the sounding or pressed key, sound on pointer-down (Enter/Space for keyboard users). Fretboard sounding note is green too. No scale/chord/note logic changed.
+- STEP 6 done 2026-10-02: shared ErrorScreen now used by app, auth, and onboarding error boundaries; loading skeletons match the new Home, lesson, and Book a class layouts; six text inputs bumped to 16px (iOS zoom rule, they were 14px on main too); unnamed admin switch labelled; a11y scan of 22 pages clean; width check 125 page/width combos with no overflow; security review (separate reviewer) found no exploitable issues in the Notes action, page, Files panel, migration, or admin search.

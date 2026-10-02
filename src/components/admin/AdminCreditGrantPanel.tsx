@@ -206,7 +206,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   onChange={(e) => setAmount(e.target.value)}
                   disabled={confirming}
                   placeholder="e.g. 4 or -2"
-                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-small text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
                 />
               </div>
               <div>

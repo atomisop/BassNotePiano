@@ -16,25 +16,28 @@ const WIDTHS = [390,768,1024,1440,1920];
   const browser = await chromium.launch({ executablePath: `${process.env.HOME}/Library/Caches/ms-playwright/${exe}/chrome-mac-x64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing` }).catch(() => chromium.launch());
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
-  await page.goto(BASE + "/login");
+  await page.goto(BASE + "/login", { timeout: 180000, waitUntil: "networkidle" }); await page.waitForTimeout(1500);
   await page.fill('input[type=email]', env.VERIFY_ADMIN_EMAIL);
   await page.fill('input[type=password]', env.VERIFY_ADMIN_PASSWORD);
   await page.click('button[type=submit]');
-  await page.waitForURL(/dashboard/, { timeout: 60000 });
+  await page.waitForURL(u => u.pathname === "/dashboard", { timeout: 120000 });
   // pre-warm compiles
   for (const p of PAGES) { await page.goto(BASE + p, { timeout: 120000 }).catch(() => {}); }
   const rows = [];
   for (const w of WIDTHS) {
     await page.setViewportSize({ width: w, height: 900 });
     for (const p of PAGES) {
-      await page.goto(BASE + p, { waitUntil: "networkidle", timeout: 60000 }).catch(() => {});
+      await page.goto(BASE + p, { waitUntil: "load", timeout: 60000 }).catch(() => {});
       await page.waitForTimeout(700);
-      const r = await page.evaluate(() => {
+      await page.waitForLoadState("networkidle", { timeout: 8000 }).catch(() => {});
+      const measure = () => page.evaluate(() => {
         const w = innerWidth, m = document.querySelector("main"); let c = 0; const off = [];
         const root = m || document.body;
         root.querySelectorAll("*").forEach(e => { const r = e.getBoundingClientRect(); if (r.width > c && r.height > 40) c = r.width; if (r.right > w + 1 && r.width > 0 && off.length < 2 && getComputedStyle(e).position !== "fixed") off.push((String(e.className || e.tagName)).slice(0, 70)); });
         return { url: location.pathname, pageOver: document.documentElement.scrollWidth > w + 1, mainOver: m ? m.scrollWidth > m.clientWidth + 1 : null, content: Math.round(c), off };
       });
+      // A redirect can land mid-measure; wait and try once more.
+      const r = await measure().catch(async () => { await page.waitForTimeout(2000); return measure(); });
       rows.push({ p, w, ...r });
       if (SHOTS.includes(`${p}@${w}`)) await page.screenshot({ path: `${OUT}/${p.replace(/\//g, "_")}@${w}.png` });
     }

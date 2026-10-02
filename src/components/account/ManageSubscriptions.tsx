@@ -308,7 +308,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   placeholder="Tell us a bit more"
                   rows={3}
                   disabled={cancelStage === "canceling"}
-                  className="mt-3 w-full rounded-lg border border-ink/10 bg-slate-950 p-3 text-small text-slate-100 outline-none transition focus:border-red-400/60 disabled:opacity-60"
+                  className="mt-3 w-full rounded-lg border border-ink/10 bg-slate-950 p-3 text-body text-slate-100 outline-none transition focus:border-red-400/60 disabled:opacity-60"
                 />
               )}
               {cancelError && <p className="mt-2 text-small text-red-400">{cancelError}</p>}

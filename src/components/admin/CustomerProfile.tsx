@@ -351,7 +351,7 @@ export function CustomerProfile({
                   onChange={(e) => setCreditAmount(e.target.value)}
                   placeholder="e.g. 4 or -2"
                   disabled={creditConfirming}
-                  className="mt-1 w-28 glass-surface-subtle px-3 py-2 text-small text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+                  className="mt-1 w-28 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
                 />
               </div>
               <div className="flex-1">

@@ -933,7 +933,7 @@ export function AssistantWidget() {
                     autoFocus
                     maxLength={320}
                     disabled={escalationSubmitting}
-                    className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-1.5 text-small text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-400/40"
+                    className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-1.5 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-400/40"
                   />
                   {escalationError && <p className="text-small text-red-400">{escalationError}</p>}
                   <div className="flex gap-2">
@@ -993,7 +993,7 @@ export function AssistantWidget() {
                 placeholder={isResolved ? "This conversation is closed" : inSupportMode ? "Message support…" : "Ask Atom anything…"}
                 maxLength={2000}
                 disabled={loading || isResolved}
-                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-small text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-400/40 disabled:opacity-50"
+                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-400/40 disabled:opacity-50"
               />
               <button
                 type="submit"
