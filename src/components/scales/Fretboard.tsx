@@ -150,7 +150,7 @@ export function Fretboard({
                         fret === 0 ? "border-r-2 border-r-ink/40" : ""
                       } ${
                         isActive
-                          ? "bg-[rgb(var(--c-s-50))] text-slate-950"
+                          ? "bg-[rgb(var(--signal))] text-[rgb(var(--signal-ink))] shadow-[0_0_12px_rgb(var(--signal)/0.45)]"
                           : inScale
                             ? "bg-[rgb(var(--c-s-50)/0.25)] text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.4)]"
                             : "bg-slate-950 hover:bg-[rgb(var(--c-s-50)/0.1)]"

@@ -11,7 +11,7 @@
 - [x] STEP 2C Depth, signal color, and type contrast
 - [x] STEP 3 Component sources (docs/redesign/component-sources.md)
 - [x] STEP 4 Redesign screens
-- [ ] STEP 5 Piano keyboard visuals
+- [x] STEP 5 Piano keyboard visuals
 - [ ] STEP 6 Quality pass
 
 ## Decisions I approved
@@ -39,3 +39,4 @@
 - STEP 2C done 2026-10-02: every signed-in page title is the Hero (Baloo 2); all other text is text-body (reading) or text-small; no text below 13px in scope. Decorative greens removed (unread counts, booking status, info boxes, Atom bubbles); selected/tappable states use the signal tint. Old emerald success classes render as paper via the <body> override (not renamed). Removed dead Sidebar/MobileTabBar/MoreSheet/TiltGlow/navigation-menu.
 - STEP 3 done 2026-10-02: Tabs got an MIT sliding thumb adapted from Halaska UI (21st.dev). Every other component is built on deps already in the repo (Radix, shadcn, lucide). Admin bulk actions NOT built: they would be new behavior on payments/accounts, left for the owner to decide.
 - STEP 4 done 2026-10-02: app-wide card material (glass-surface vars re-pointed to the middle plane inside [data-surface=app]); Book a class split into booking + side panel (credits, bookings, history); Payment plan split like Family bundle; admin Students/Payments/Payment Plans got client-side search (AdminListSearch); chat bubbles ink/paper. Home and the lesson page were done in 2B; titles/sizes/greens in 2C. Onboarding already has one Hero per step; the first-run tour targets all still exist.
+- STEP 5 done 2026-10-02: PianoKeyboard redrawn as a real instrument (ivory/ebony via piano-* utilities in globals.css, same in every theme), scale notes marked ink/paper, green only on the sounding or pressed key, sound on pointer-down (Enter/Space for keyboard users). Fretboard sounding note is green too. No scale/chord/note logic changed.
