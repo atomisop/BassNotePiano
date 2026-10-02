@@ -1,5 +1,7 @@
 "use client";
 
+import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PendingZellePayment } from "@/lib/payments";
@@ -92,6 +94,8 @@ export function PaymentQueue({
   onReject,
   emptyMessage = "Nothing to review right now.",
 }: PaymentQueueProps) {
+  const [query, setQuery] = useState("");
+  const shown = payments.filter((item) => matchesQuery(item, query));
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -137,7 +141,9 @@ export function PaymentQueue({
 
   return (
     <div className="space-y-3">
-      {payments.map((payment) => {
+      <AdminListSearch value={query} onChange={setQuery} placeholder="Search name, email, reference code" shown={shown.length} total={payments.length} />
+      {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
+      {shown.map((payment) => {
         const { eyebrow, title } = describePayment(payment);
         return (
         <div key={payment.id} className="glass-surface p-5">

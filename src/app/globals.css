@@ -912,6 +912,24 @@
     --cta-ink: var(--primary-foreground);
   }
 
+  /* Inside the app (dashboard, auth, onboarding layouts), the older
+     glass-surface* cards adopt the middle-plane material: a solid fill (so
+     back-plane type never shows through), soft iOS corners, and a soft
+     shadow for depth instead of frosted glass and hairlines. Done by
+     re-pointing the material variables rather than editing ~200 call
+     sites; the marketing pages keep their own glass. */
+  [data-surface="app"] {
+    --surface-bg: rgb(var(--plane-mid-bg));
+    --surface-border: rgb(var(--c-ink) / 0.08);
+    --surface-shadow: var(--plane-mid-shadow);
+    --surface-blur: 0px;
+    --surface-radius: 1.25rem;
+    --elev-bg: rgb(var(--plane-mid-bg));
+    --elev-border: rgb(var(--c-ink) / 0.14);
+    --elev-shadow: var(--plane-front-shadow);
+    --elev-blur: 0px;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     [data-surface="app"] *,
     [data-surface="app"] *::before,

@@ -1,5 +1,7 @@
 "use client";
 
+import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminPaymentPlan } from "@/lib/paymentPlans";
@@ -45,6 +47,8 @@ function formatTimeLabel(hhmm: string): string {
  * unchanged — this list is read-mostly by design.
  */
 export function PaymentPlanList({ plans, onCancel, emptyMessage = "No plans to show." }: PaymentPlanListProps) {
+  const [query, setQuery] = useState("");
+  const shown = plans.filter((item) => matchesQuery(item, query));
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
@@ -69,7 +73,9 @@ export function PaymentPlanList({ plans, onCancel, emptyMessage = "No plans to s
 
   return (
     <div className="space-y-3">
-      {plans.map((plan) => (
+      <AdminListSearch value={query} onChange={setQuery} placeholder="Search student, plan, status" shown={shown.length} total={plans.length} />
+      {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
+      {shown.map((plan) => (
         <div key={plan.id} className="glass-surface p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>

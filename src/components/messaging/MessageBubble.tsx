@@ -87,7 +87,7 @@ export function MessageBubble({
           transition={swipe.dragX === 0 ? { type: "spring", bounce: 0.2, duration: 0.35 } : { duration: 0 }}
           style={{ touchAction: "pan-y" }}
           className={`min-w-0 rounded-2xl px-3.5 py-2 text-body ${
-            isMine ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "border border-ink/10 bg-slate-950 text-slate-100"
+            isMine ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "bg-[rgb(var(--c-s-50)/0.08)] text-slate-100"
           }`}
         >
           {reply && (

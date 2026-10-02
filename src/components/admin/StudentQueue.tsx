@@ -1,5 +1,7 @@
 "use client";
 
+import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminClassRegistration } from "@/lib/classRegistration";
@@ -41,6 +43,8 @@ function Avatar({ image, name }: { image: string | null | undefined; name: strin
 }
 
 export function StudentQueue({ registrations, onApprove, onReject, emptyMessage = "No registrations yet." }: StudentQueueProps) {
+  const [query, setQuery] = useState("");
+  const shown = registrations.filter((item) => matchesQuery(item, query));
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -80,7 +84,9 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
 
   return (
     <div className="space-y-3">
-      {registrations.map((reg) => (
+      <AdminListSearch value={query} onChange={setQuery} placeholder="Search name, email, instrument" shown={shown.length} total={registrations.length} />
+      {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
+      {shown.map((reg) => (
         <div key={reg.id} className="glass-surface p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-start gap-3">
