@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Redesign Wireframes</title>
+<style>
+  :root {
+    --ink: #1a1a1a; --card: #262626; --line: #3a3a3a; --muted: #8a8a8a; --paper: #f2f2f2;
+    --signal: #05e901; --back: rgba(255,255,255,0.06);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ink); color: var(--paper); font: 14px/1.5 -apple-system, system-ui, sans-serif; }
+  .page { max-width: 1240px; margin: 0 auto; padding: 32px 16px 80px; }
+  h1 { font-size: 28px; margin: 0 0 4px; }
+  h2 { font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin: 48px 0 12px; }
+  p.lead { color: var(--muted); margin: 0 0 8px; max-width: 70ch; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin: 16px 0 0; font-size: 13px; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+  .sw.back { background: var(--back); border: 1px dashed #555; }
+  .sw.mid { background: var(--card); border: 1px solid #555; }
+  .sw.front { background: var(--signal); }
+  .pair { display: grid; grid-template-columns: 1fr; gap: 20px; }
+  @media (min-width: 900px) { .pair { grid-template-columns: 1fr 1.6fr; } }
+  .label { font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .frame { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #141414; }
+  .bar { height: 28px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; padding: 0 10px; font-size: 11px; color: var(--muted); }
+  .bar .nav { display: flex; gap: 10px; margin-left: 12px; }
+  .bar .nav b { color: var(--signal); font-weight: 600; }
+  .bar .r { margin-left: auto; }
+  .body { padding: 12px; position: relative; }
+  .box { background: var(--card); border: 1px solid #333; border-radius: 10px; padding: 8px 10px; font-size: 11px; color: #bbb; position: relative; }
+  .box + .box { margin-top: 8px; }
+  .tiny { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+  .btn { display: inline-block; background: var(--signal); color: #0a0a0a; border-radius: 6px; padding: 2px 8px; font-weight: 700; font-size: 10px; margin-top: 4px; }
+  .btn.white { background: #eee; }
+  .ghost { display: inline-block; border: 1px solid #555; border-radius: 6px; padding: 1px 7px; font-size: 10px; color: #ccc; }
+  .hero { font-size: 26px; font-weight: 800; color: #fff; line-height: 1.05; letter-spacing: -.02em; }
+  .backword { position: absolute; left: 6px; top: -4px; font-size: 64px; font-weight: 900; color: var(--back); letter-spacing: -.04em; white-space: nowrap; pointer-events: none; overflow: hidden; right: 0; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .scale { height: 46px; }
+  .scale.on { border-color: var(--signal); }
+  .scale.off { opacity: .45; }
+  .two { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+  .three { display: grid; grid-template-columns: 150px 1fr 40px; gap: 8px; min-height: 360px; }
+  .rail { display: flex; flex-direction: column; gap: 6px; align-items: center; padding-top: 4px; }
+  .rail i { width: 28px; height: 28px; border-radius: 8px; border: 1px solid #444; display: grid; place-items: center; font-style: normal; font-size: 9px; color: #aaa; }
+  .rail i.new { border-style: dashed; }
+  .video { height: 120px; display: grid; place-items: center; color: var(--muted); }
+  .piano { height: 64px; display: grid; grid-template-columns: repeat(14, 1fr); gap: 2px; padding: 6px; }
+  .piano span { background: #e8e8e8; border-radius: 0 0 3px 3px; }
+  .piano span.hit { background: var(--signal); }
+  .row { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #bbb; padding: 3px 0; }
+  .ck { width: 10px; height: 10px; border-radius: 50%; border: 1px solid #666; display: inline-block; }
+  .ck.done { background: #ddd; border-color: #ddd; }
+  .tabs { display: inline-flex; gap: 4px; border: 1px solid #333; border-radius: 99px; padding: 2px; margin: 8px 0; }
+  .tabs span { font-size: 10px; padding: 1px 8px; border-radius: 99px; color: var(--muted); }
+  .tabs span.on { color: var(--signal); background: rgba(5,233,1,.12); }
+  .note { border-left: 3px solid #555; padding: 4px 0 4px 12px; color: var(--muted); margin: 10px 0 0; font-size: 13px; }
+  .note b { color: var(--paper); }
+  .phones { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+  .phone { width: 200px; }
+  .phone .frame { border-radius: 22px; }
+  .tab-bar { display: flex; justify-content: space-around; border-top: 1px solid var(--line); padding: 6px 0; font-size: 9px; color: var(--muted); }
+  .tab-bar b { color: var(--signal); font-weight: 600; }
+  .tablet { width: 340px; }
+  ul.plan { margin: 8px 0 0; padding-left: 18px; color: #ccc; }
+  ul.plan li { margin: 4px 0; }
+  .callout { background: #202020; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Redesign wireframes: Home and Lesson page</h1>
+  <p class="lead">STEP 2B. Simple boxes, not final visuals. Each "after" shows the three planes and the one Hero element from STEP 2C. Nothing here is built yet.</p>
+  <div class="legend">
+    <span><i class="sw back"></i> Back plane: huge, faint words behind content</span>
+    <span><i class="sw mid"></i> Middle plane: the subject (cards, lesson, piano)</span>
+    <span><i class="sw front"></i> Front plane: tappable controls (the only green)</span>
+  </div>
+
+  <h2>Navigation: recommendation</h2>
+  <div class="callout">
+    <b>Top bar on computers, bottom tab bar on phones and tablets.</b>
+    <ul class="plan">
+      <li>Computer (1024px and wider): logo, then Home · Online Lessons · Friends · Messages · Settings in one row, then bell and your avatar (Profile) on the right. The floating dock goes away on computers.</li>
+      <li>Phone and tablet: the same five sections in a native-style bottom tab bar (like today's dock, but full width and pinned).</li>
+      <li>Why not a left sidebar: the lesson page already gets its own left column (the outline). A sidebar plus an outline would squeeze the lesson and piano, which should be as large as possible.</li>
+      <li>The onboarding tour's pointers move with the menu items, so the tour keeps working.</li>
+    </ul>
+  </div>
+
+  <h2>Home: before and after (computer, 1440px)</h2>
+  <div class="pair">
+    <div>
+      <div class="label">Before (today)</div>
+      <div class="frame">
+        <div class="bar">logo <span class="r">bell · avatar</span></div>
+        <div class="body">
+          <div style="font-size:15px;color:#fff;font-weight:700;margin-bottom:6px">Good afternoon, Sean.</div>
+          <div class="box"><span class="tiny">Your next step</span><br>Work through the module<br><span class="btn white">Continue</span></div>
+          <div class="box">0% ring · 0/14 scales · streak · badges · credits (full-width row)</div>
+          <div class="box">Badges 0 of 11 · streak dots (green dot) · View all</div>
+          <div class="box"><span class="tiny">The path</span><br>scale cards start here, below the fold</div>
+          <div style="text-align:center;margin-top:8px;font-size:10px;color:var(--muted)">floating dock</div>
+        </div>
+      </div>
+      <p class="note">Everything stacks in one column. The stats and badges take two full-width rows, so the scales are pushed below the first screen.</p>
+    </div>
+    <div>
+      <div class="label">After</div>
+      <div class="frame">
+        <div class="bar">logo <span class="nav"><b>Home</b><span>Online Lessons</span><span>Friends</span><span>Messages</span><span>Settings</span></span><span class="r">bell · avatar</span></div>
+        <div class="body">
+          <div class="two">
+            <div style="position:relative">
+              <div class="backword">0/14</div>
+              <div class="hero" style="position:relative;margin-top:22px">Good afternoon, Sean.</div>
+              <div class="box" style="margin-top:10px"><span class="tiny">Your next step</span><br>Scale 1 · The Major Scale and the Seven Modes · 2 of 3 steps<br><span class="btn">Continue</span></div>
+              <div class="tabs"><span class="on">In progress</span><span>Completed</span><span>Badges</span></div>
+              <div class="grid3">
+                <div class="box scale on">Scale 1<br><span class="tiny">you're here</span></div>
+                <div class="box scale off">Scale 2 · locked</div>
+                <div class="box scale off">Scale 3 · locked</div>
+              </div>
+            </div>
+            <div>
+              <div class="box"><span class="tiny">This week</span><br>streak calendar (gray dots, today ringed)<br>1-day streak</div>
+              <div class="box"><span class="tiny">Progress</span><br>0/14 scales · 0/42 steps<br>0 badges · 18 class credits</div>
+              <div class="box"><span class="tiny">Next live class</span><br>Thu 6:00 PM · Discord<br><span class="ghost">Details</span></div>
+              <div class="box"><span class="tiny">Badges</span><br>1 of 11 earned · <span class="ghost">View all</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="note"><b>Hero:</b> the greeting. <b>Back plane:</b> your progress ("0/14", later "6/14") huge and faint behind the greeting. <b>Middle:</b> the next-step card and scale cards. <b>Front:</b> Continue (the one green button), the tabs, and the scale card you can open. Locked scales are gray. The stats move into the right panel, so the next step, the stats and the first row of scales all fit on the first screen.</p>
+    </div>
+  </div>
+
+  <h2>Lesson page: before and after (computer, 1440px)</h2>
+  <div class="pair">
+    <div>
+      <div class="label">Before (today)</div>
+      <div class="frame">
+        <div class="bar">logo <span class="r">bell · avatar</span></div>
+        <div class="body">
+          <div class="box"><span class="tiny">Scale 1</span><br>The Major Scale and the Seven Modes<br><span class="btn white">Start</span> <span class="ghost">Mark practice completed</span></div>
+          <div class="box">Lesson row · Lesson row · Final Assessment</div>
+          <div class="box">Key picker C G D A ...</div>
+          <div class="box">Transposition dashboard · Hear this scale</div>
+          <div class="box">Piano / fretboard (further down)</div>
+          <div class="box">Chords</div>
+        </div>
+      </div>
+      <p class="note">Lesson list, key picker, scale chart, piano and chords are all stacked. You scroll a long way, and the video and piano are never on screen together.</p>
+    </div>
+    <div>
+      <div class="label">After</div>
+      <div class="frame">
+        <div class="bar">logo <span class="nav"><b>Home</b><span>Online Lessons</span><span>Friends</span><span>Messages</span><span>Settings</span></span><span class="r">bell · avatar</span></div>
+        <div class="body">
+          <div class="three">
+            <div class="box" style="margin:0">
+              <span class="tiny">Outline · hide ‹</span>
+              <div class="row"><i class="ck done"></i> 1. Intro video</div>
+              <div class="row"><i class="ck"></i> <b style="color:#fff">2. The seven modes</b></div>
+              <div class="row"><i class="ck"></i> 3. Practice</div>
+              <div class="row"><i class="ck"></i> Final assessment</div>
+              <div class="tiny" style="margin-top:8px">1 of 4 done</div>
+            </div>
+            <div style="position:relative">
+              <div class="backword">Major</div>
+              <div class="tiny" style="position:relative;margin-top:16px">Scale 1 · step 2 of 4</div>
+              <div class="hero" style="position:relative">The seven modes</div>
+              <div class="box video" style="margin-top:8px">lesson video or PDF (as large as possible)</div>
+              <div class="box" style="padding:0"><div class="piano"><span></span><span class="hit"></span><span></span><span class="hit"></span><span></span><span></span><span class="hit"></span><span></span><span></span><span class="hit"></span><span></span><span></span><span></span><span></span></div></div>
+              <div style="margin-top:6px"><span class="ghost">‹ Previous</span> <span class="btn">Mark complete &amp; next ›</span></div>
+            </div>
+            <div class="rail">
+              <i>Key</i><i>Chart</i><i>Chords</i><i>Files</i><i class="new">Notes</i><i class="new">Metro</i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="note"><b>Hero:</b> the current step's name. <b>Back plane:</b> the scale's name, huge and faint. <b>Middle:</b> the lesson (video or PDF) with the piano right under it, both on screen together. <b>Front:</b> the one green "Mark complete &amp; next", the outline items you can jump to, and the tool rail. Only notes being played light up green on the piano. Tools slide open as a panel from the right, and the lesson shrinks smoothly to make room. The outline can be hidden to give the lesson more space.</p>
+    </div>
+  </div>
+
+  <h2>Tablet (768px) and phone (390px)</h2>
+  <div class="phones">
+    <div class="tablet">
+      <div class="label">Home, tablet</div>
+      <div class="frame">
+        <div class="body">
+          <div class="hero" style="font-size:20px">Good afternoon, Sean.</div>
+          <div class="box" style="margin-top:8px">Your next step · <span class="btn">Continue</span></div>
+          <div class="grid3" style="margin-top:8px"><div class="box scale on">S1</div><div class="box scale off">S2</div><div class="box scale off">S3</div></div>
+          <div class="box" style="margin-top:8px">Right panel moves here: week · progress · next class · badges</div>
+        </div>
+        <div class="tab-bar"><b>Home</b><span>Lessons</span><span>Friends</span><span>Messages</span><span>Settings</span></div>
+      </div>
+    </div>
+    <div class="phone">
+      <div class="label">Home, phone</div>
+      <div class="frame">
+        <div class="body">
+          <div class="hero" style="font-size:18px">Good afternoon, Sean.</div>
+          <div class="box" style="margin-top:8px">Next step<br><span class="btn">Continue</span></div>
+          <div class="box">This week · progress</div>
+          <div class="box scale on">Scale 1</div>
+          <div class="box scale off">Scale 2 · locked</div>
+        </div>
+        <div class="tab-bar"><b>Home</b><span>Lessons</span><span>Friends</span><span>Chat</span><span>More</span></div>
+      </div>
+      <p class="note" style="font-size:12px">Back-plane number is smaller and fainter on phones so text stays readable.</p>
+    </div>
+    <div class="phone">
+      <div class="label">Lesson, phone</div>
+      <div class="frame">
+        <div class="body">
+          <div class="tiny">Scale 1 · step 2 of 4 · <u>Outline</u></div>
+          <div class="hero" style="font-size:18px">The seven modes</div>
+          <div class="box video" style="height:80px;margin-top:6px">video</div>
+          <div class="box" style="padding:0"><div class="piano" style="height:44px"><span></span><span class="hit"></span><span></span><span></span><span class="hit"></span><span></span><span></span></div></div>
+          <div class="rail" style="flex-direction:row;justify-content:space-between;margin-top:6px"><i>Key</i><i>Chart</i><i>Chords</i><i>Files</i></div>
+          <span class="btn" style="margin-top:8px">Mark complete &amp; next</span>
+        </div>
+        <div class="tab-bar"><b>Home</b><span>Lessons</span><span>Friends</span><span>Chat</span><span>More</span></div>
+      </div>
+      <p class="note" style="font-size:12px">Outline opens as a bottom sheet. Tools become a row of icons under the lesson.</p>
+    </div>
+  </div>
+
+  <h2>Decisions I need from you</h2>
+  <div class="callout">
+    <ul class="plan">
+      <li><b>Navigation:</b> top bar on computers plus bottom tab bar on phones and tablets (recommended), or keep today's floating dock everywhere.</li>
+      <li><b>Notes and Metronome</b> (dashed icons) do not exist in the app today. Adding them is new behavior, not just a new look. The other tools (Key, Scale chart, Chords, Files) already exist and only move. Build Notes and Metronome now, later, or never?</li>
+      <li><b>Lesson page merge:</b> today the lesson list and the lesson itself are two separate views (you open a lesson, then go "back to sections"). The new design shows the outline and the lesson side by side. Same lessons, same completion rules, just one screen. OK?</li>
+      <li><b>Home tabs:</b> "In progress / Completed / Badges" filter the same scale list and badge grid you have today. No new data.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

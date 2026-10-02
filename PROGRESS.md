@@ -31,4 +31,4 @@
 - STEP 2 done 2026-10-02. Tokens are in globals.css @theme (text-hero/body/small, rounded-control/card/sheet, shadow-plane-mid/front/signal, signal color, --space-*, --z-*, --dur-*). New components in src/components/ui: Card + Eyebrow, Hero + BackPlane, Tabs, Badge, Avatar, Dialog (bottom sheet on phones). Button, Input, Toaster, Skeleton, EmptyState restyled. cn() in src/lib/utils.ts knows the token names.
 - Green buttons and neutral "success" apply everywhere via <body>; the public site opts out through its existing data-surface="marketing". The cookie banner's Accept button uses the neutral `paper` variant on purpose (consent must not be nudged).
 - Not done yet, by design: individual pages still use their old sizes and decorative greens (that sweep is STEP 2C / STEP 4), and the navigation shell choice (top bar vs sidebar) is STEP 2B.
-
+- STEP 2B wireframes drawn 2026-10-02 in docs/redesign/wireframes.html. Waiting on approval plus 4 decisions (navigation, Notes/Metronome, lesson page merge, Home tabs) before building.
