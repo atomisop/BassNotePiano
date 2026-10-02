@@ -4,7 +4,7 @@ import { WideLayout } from "@/components/layout/PageLayouts";
 /**
  * Mirrors the real profile page's actual stacked sections: avatar + name +
  * edit button, a streak-days card, a longest-streak card, then the badge
- * grid (`BadgeGrid`/`BadgeSummary`) grouped by category.
+ * grid (`BadgeGrid`) grouped by category.
  */
 export default function ProfileLoading() {
   return (

@@ -21,6 +21,9 @@
 - 2026-10-02 Success messages stop using green: white text plus a check icon instead.
 - 2026-10-02 Public pages (homepage, pricing, classes, shop, terms, privacy) are out of scope. Leave them alone.
 - 2026-10-02 STEP 1B page layouts approved. Profile stays its own page (opened from the avatar, top right) with the Wide layout.
+- 2026-10-02 STEP 2B wireframes approved. Navigation: the floating dock is the only navigation at every size (no bottom tab bar, no top-bar menu row).
+- 2026-10-02 Build Notes and Metronome now. Notes are saved to the student's account (new database table approved).
+- 2026-10-02 Lesson page: outline and lesson side by side on one screen (same lessons and completion rules). Home tabs In progress / Completed / Badges filter existing data.
 
 ## Notes for next session
 

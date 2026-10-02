@@ -16,7 +16,8 @@ const listItem = {
 
 export interface ScaleListRowsProps {
   roadmap: ScaleAccessState[];
-  currentIndex: number;
+  /** Slug of the one "you're here" scale, or null if it is not in this list. */
+  currentSlug: string | null;
   onRowClick: (scale: ScaleAccessState) => void;
 }
 
@@ -27,17 +28,17 @@ export interface ScaleListRowsProps {
  * grid, not a re-skin of it, so a student can scan all 15 without heavy
  * scrolling.
  */
-export function ScaleListRows({ roadmap, currentIndex, onRowClick }: ScaleListRowsProps) {
+export function ScaleListRows({ roadmap, currentSlug, onRowClick }: ScaleListRowsProps) {
   return (
     <motion.ol
       variants={listContainer}
       initial="hidden"
       animate="visible"
-      className="divide-y divide-ink/10 overflow-hidden rounded-2xl border border-ink/10 bg-surface"
+      className="divide-y divide-ink/[0.08] overflow-hidden rounded-card border border-ink/[0.08] bg-[rgb(var(--plane-mid-bg))] shadow-plane-mid"
     >
-      {roadmap.map((scale, index) => {
+      {roadmap.map((scale) => {
         const locked = !scale.canAccess;
-        const isCurrent = index === currentIndex;
+        const isCurrent = scale.scaleGroup.slug === currentSlug;
         const isCompleted = scale.status === "COMPLETED";
         const doneCount = [scale.moduleRead, scale.practiceCompleted, scale.quizPassed].filter(Boolean).length;
 
@@ -48,20 +49,20 @@ export function ScaleListRows({ roadmap, currentIndex, onRowClick }: ScaleListRo
               onClick={() => onRowClick(scale)}
               aria-current={isCurrent ? "step" : undefined}
               className={`flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--c-s-50)/0.7)] ${
-                isCurrent ? "bg-amber-400/[0.06]" : "hover:bg-ink/5"
+                isCurrent ? "bg-[rgb(var(--signal)/0.06)] shadow-[inset_3px_0_0_rgb(var(--signal))]" : "hover:bg-ink/5"
               }`}
             >
-              <span className="w-14 shrink-0 text-xs font-medium uppercase tracking-[0.15em] text-[rgb(var(--c-s-50)/0.8)]">
+              <span className="w-14 shrink-0 text-small font-semibold uppercase tracking-[0.15em] text-slate-400">
                 {scale.scaleGroup.code.replace("Scale ", "#")}
               </span>
 
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline gap-2">
-                  <span className="truncate font-serif text-sm text-slate-50 sm:text-base">
+                  <span className={`truncate text-body font-semibold ${locked ? "text-slate-400" : "text-slate-50"}`}>
                     {scale.scaleGroup.title}
                   </span>
                   {scale.scaleGroup.kinitName && (
-                    <span className="hidden shrink-0 text-xs text-slate-500 sm:inline">{scale.scaleGroup.kinitName}</span>
+                    <span className="hidden shrink-0 text-small text-slate-400 sm:inline">{scale.scaleGroup.kinitName}</span>
                   )}
                 </span>
               </span>
@@ -72,7 +73,7 @@ export function ScaleListRows({ roadmap, currentIndex, onRowClick }: ScaleListRo
                     <span
                       key={i}
                       className={`h-1.5 w-4 rounded-full ${
-                        i < doneCount ? (isCompleted ? "bg-emerald-400" : "bg-[rgb(var(--c-s-50))]") : "bg-slate-800"
+                        i < doneCount ? "bg-[rgb(var(--c-s-50))]" : "bg-slate-800"
                       }`}
                     />
                   ))}
@@ -80,14 +81,8 @@ export function ScaleListRows({ roadmap, currentIndex, onRowClick }: ScaleListRo
               )}
 
               <span
-                className={`flex shrink-0 items-center gap-1 text-xs font-medium ${
-                  isCurrent
-                    ? "text-amber-400"
-                    : isCompleted
-                      ? "text-emerald-400"
-                      : locked
-                        ? "text-slate-600"
-                        : "text-slate-500"
+                className={`flex shrink-0 items-center gap-1 text-small font-medium ${
+                  isCurrent || isCompleted ? "text-slate-50" : locked ? "text-slate-500" : "text-slate-400"
                 }`}
               >
                 {locked && <LockIcon />}
