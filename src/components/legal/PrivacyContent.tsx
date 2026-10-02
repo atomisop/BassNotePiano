@@ -39,7 +39,7 @@ export function PrivacyContent() {
         <p>
           What you give us directly: your name, email, and password when you register; your
           profile photo, instrument, skill level, and goals if you fill those in; messages you
-          send to friends or groups inside the app; private notes you write on a scale's lesson
+          send to friends or groups inside the app; private notes you write on a scale&apos;s lesson
           page (visible only to you, deleted with your account); and, when you pay by Zelle, the sender name
           and reference code you type in so we can match your transfer. If you use the class
           registration form before creating an account, that&apos;s your name, email, phone number,
