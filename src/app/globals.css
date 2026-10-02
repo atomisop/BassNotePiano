@@ -75,6 +75,14 @@
   --color-popover: rgb(var(--popover));
   --color-popover-foreground: rgb(var(--popover-foreground));
 
+  /* Page widths for the four shared page layouts in
+     components/layout/PageLayouts.tsx. Pages never set their own width;
+     they pick a layout, and the layout reads these. */
+  --container-wide: 90rem;
+  --container-settings: 72rem;
+  --container-narrow: 27.5rem;
+  --container-pane: 21.25rem;
+
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);

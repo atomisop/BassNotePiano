@@ -17,7 +17,7 @@ export default async function BillingLessonsPage() {
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
 
   return (
-    <div className="w-full max-w-5xl lg:grid lg:grid-cols-12 lg:gap-12">
+    <div className="lg:grid lg:grid-cols-12 lg:gap-12">
       <Link
         href="/lessons"
         className="mb-4 flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100 lg:col-span-12"

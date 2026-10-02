@@ -65,7 +65,7 @@ function VerifyEmailForm() {
         variants={cardVariants}
         initial="hidden"
         animate="visible"
-        className="w-full max-w-sm glass-surface-elevated p-7 text-center"
+        className="w-full glass-surface-elevated p-7 text-center"
       >
         <p className="text-sm text-slate-400">
           Missing email.{" "}
@@ -83,7 +83,7 @@ function VerifyEmailForm() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-sm glass-surface-elevated p-7"
+      className="w-full glass-surface-elevated p-7"
     >
       {/* Matches the "missing email" branch's own escape hatch below:
           register, not login, since there's no verified account to log

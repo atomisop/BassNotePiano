@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import * as Sentry from "@sentry/nextjs";
+import { NarrowLayout } from "@/components/layout/PageLayouts";
 
 /**
  * Error boundary for every authenticated route.
@@ -36,7 +37,7 @@ export default function DashboardError({
   }, [error]);
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col items-start py-16">
+    <NarrowLayout className="flex flex-col items-start py-16">
       <p className="eyebrow">Something broke</p>
       <h1 className="mt-2 font-serif text-3xl text-slate-50">This page didn&apos;t load.</h1>
       <p className="mt-3 text-sm leading-relaxed text-slate-400">
@@ -65,6 +66,6 @@ export default function DashboardError({
           Reference: {error.digest}
         </p>
       )}
-    </div>
+    </NarrowLayout>
   );
 }

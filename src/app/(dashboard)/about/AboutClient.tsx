@@ -8,6 +8,7 @@ import { TermsContent, TERMS_LAST_UPDATED } from "@/components/legal/TermsConten
 import { PrivacyContent, PRIVACY_LAST_UPDATED } from "@/components/legal/PrivacyContent";
 import { CHANGELOG, CURRENT_VERSION } from "@/lib/changelog";
 import { CheckIcon, ArrowLeftIcon } from "@/components/ui/icons";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 const TAB_ICONS = {
   about: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 7.5h.01",
@@ -180,7 +181,7 @@ function AboutClientInner() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <WideLayout>
       {/* Only ever linked from Settings, see AccountSettings.tsx. */}
       <Link href="/account" className="mb-4 flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100">
         <ArrowLeftIcon size={16} />
@@ -206,7 +207,7 @@ function AboutClientInner() {
       >
         {mobileOpenTab && <TabContent tab={mobileOpenTab} />}
       </SlideOverPanel>
-    </div>
+    </WideLayout>
   );
 }
 

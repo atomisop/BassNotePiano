@@ -1,4 +1,5 @@
 import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 /**
  * Mirrors the real dashboard's block structure — greeting, the elevated
@@ -12,7 +13,7 @@ import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
 export default function DashboardLoading() {
   return (
     <SkeletonScreen label="Loading your dashboard">
-      <div className="mx-auto max-w-5xl">
+      <WideLayout>
         <Skeleton className="h-9 w-64 sm:h-10" />
         <Skeleton className="mt-3 h-4 w-80 max-w-full" />
 
@@ -50,7 +51,7 @@ export default function DashboardLoading() {
             ))}
           </div>
         </div>
-      </div>
+      </WideLayout>
     </SkeletonScreen>
   );
 }

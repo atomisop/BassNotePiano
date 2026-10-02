@@ -8,6 +8,7 @@ import { StreakDots } from "@/components/gamification/StreakDots";
 import { BADGES } from "@/lib/badges";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { ProfileEditButton } from "./ProfileEditButton";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 export default async function ProfilePage() {
   const session = await getServerAuthSession();
@@ -35,7 +36,7 @@ export default async function ProfilePage() {
   const earnedCodes = badgeRows.map((b) => b.code);
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <WideLayout>
       {/* Profile isn't a dock destination. It's opened from the account
           menu in the top bar, from any of several other pages, or from a
           friend's own profile link, so there's no single page it "belongs"
@@ -105,6 +106,6 @@ export default async function ProfilePage() {
           <BadgeGrid earnedCodes={new Set(earnedCodes)} />
         </div>
       </div>
-    </div>
+    </WideLayout>
   );
 }

@@ -43,7 +43,7 @@ export default async function BillingPlansPage({
   const pastPlans = allPlans.filter((plan) => plan.status !== "ACTIVE");
 
   return (
-    <div className="w-full max-w-lg">
+    <div>
       <Link href="/lessons" className="mb-4 flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100">
         <ArrowLeftIcon size={16} />
         Back to classes

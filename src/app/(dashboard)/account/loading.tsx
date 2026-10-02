@@ -7,7 +7,7 @@ import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
 export default function AccountLoading() {
   return (
     <SkeletonScreen label="Loading account">
-      <div className="mx-auto flex max-w-4xl gap-8">
+      <div className="mx-auto flex w-full max-w-settings gap-8">
         <div className="hidden w-56 shrink-0 flex-col gap-1 lg:flex">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-10 w-full rounded-xl" />

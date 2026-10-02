@@ -14,6 +14,7 @@ import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { CheckIcon, XIcon } from "@/components/ui/icons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 interface OccurrenceRow {
   scheduleId: string;
@@ -653,7 +654,7 @@ export function ClassBookingClient({
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <WideLayout>
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Live Lessons</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Book a class</h1>
       <p className="mt-2 text-sm text-slate-500">
@@ -1003,6 +1004,6 @@ export function ClassBookingClient({
           </div>
         )}
       </div>
-    </div>
+    </WideLayout>
   );
 }

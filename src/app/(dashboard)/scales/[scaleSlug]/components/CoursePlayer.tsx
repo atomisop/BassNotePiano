@@ -14,6 +14,7 @@ import { toast } from "@/components/ui/Toaster";
 import { LessonVideoPlayer } from "./LessonVideoPlayer";
 import { SectionRow } from "./SectionRow";
 import { SectionCompleteCelebration } from "./SectionCompleteCelebration";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 // react-pdf/pdfjs-dist adds well over 100kB to this route's first-load JS
 // (confirmed: 14.7kB -> 124kB with a static import) for a viewer nobody on
@@ -175,7 +176,7 @@ export function CoursePlayer({
     const canGoPrevious = previousIndex >= 0;
 
     return (
-      <div className="mx-auto max-w-3xl">
+      <WideLayout>
         <button
           type="button"
           onClick={() => setView({ mode: "list" })}
@@ -273,7 +274,7 @@ export function CoursePlayer({
             </button>
           )}
         </div>
-      </div>
+      </WideLayout>
     );
   }
 
@@ -294,7 +295,7 @@ export function CoursePlayer({
 
   // ============ List view (default) ============
   return (
-    <div className="mx-auto max-w-3xl">
+    <WideLayout>
       {/* The lesson view below has its own "Back to sections" link, but
           that only ever returns here: this top-level list had no way back
           to the roadmap it was opened from at all. */}
@@ -439,6 +440,6 @@ export function CoursePlayer({
         onSubmit={handleQuizSubmit}
         passThreshold={quizPassThreshold}
       />
-    </div>
+    </WideLayout>
   );
 }

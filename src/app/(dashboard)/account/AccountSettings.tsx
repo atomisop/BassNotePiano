@@ -22,6 +22,7 @@ import {
   cancelPaymentPlanBySelfAction,
   type NotificationPreferencesInput,
 } from "./actions";
+import { SettingsLayout } from "@/components/layout/PageLayouts";
 
 interface AccountSettingsProps {
   hasCurriculumAccess: boolean;
@@ -348,23 +349,28 @@ function AccountSettingsInner({
   }
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <div>
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Settings</p>
-        <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Account</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Want to edit your name, username, or photo? Head to{" "}
-          <Link href="/profile" className="underline underline-offset-2 text-[rgb(var(--c-s-50))] hover:opacity-70">
-            your profile
-          </Link>
-          .
-        </p>
-      </div>
-
-      <div className="mt-6 flex flex-col gap-8 lg:flex-row">
-        <DesktopSettingsNav activeTab={activeTab} onSelect={selectDesktopTab} />
-        <MobileSettingsMenu onSelect={openMobileTab} />
-
+    <>
+      <SettingsLayout
+        header={
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Settings</p>
+            <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Account</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Want to edit your name, username, or photo? Head to{" "}
+              <Link href="/profile" className="underline underline-offset-2 text-[rgb(var(--c-s-50))] hover:opacity-70">
+                your profile
+              </Link>
+              .
+            </p>
+          </div>
+        }
+        menu={
+          <>
+            <DesktopSettingsNav activeTab={activeTab} onSelect={selectDesktopTab} />
+            <MobileSettingsMenu onSelect={openMobileTab} />
+          </>
+        }
+      >
         <div className="hidden min-w-0 flex-1 space-y-6 lg:block">
           <TabContent
             tab={activeTab}
@@ -374,7 +380,7 @@ function AccountSettingsInner({
             activePlan={activePlan}
           />
         </div>
-      </div>
+      </SettingsLayout>
 
       <SlideOverPanel
         open={mobileOpenTab !== null}
@@ -391,7 +397,7 @@ function AccountSettingsInner({
           />
         )}
       </SlideOverPanel>
-    </div>
+    </>
   );
 }
 

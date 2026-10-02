@@ -77,7 +77,7 @@ function RegisterForm() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-sm glass-surface-elevated p-7"
+      className="w-full glass-surface-elevated p-7"
     >
       <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-ink/10 bg-ink/5 text-slate-300">
         <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">

@@ -29,6 +29,7 @@ import {
   type MessageRow,
   type GroupMessageRow,
 } from "./actions";
+import { TwoPaneLayout, WideLayout } from "@/components/layout/PageLayouts";
 
 const CONVERSATION_LIST_POLL_MS = 15_000;
 const ACTIVE_CONVERSATION_POLL_MS = 2_500;
@@ -224,7 +225,7 @@ function MessagesInner({
 
   if (conversations.length === 0 && groups.length === 0) {
     return (
-      <div className="mx-auto max-w-xl">
+      <WideLayout>
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
         <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Messages</h1>
         <p className="mt-4 text-sm text-slate-500">
@@ -234,7 +235,7 @@ function MessagesInner({
           </a>{" "}
           page first.
         </p>
-      </div>
+      </WideLayout>
     );
   }
 
@@ -252,50 +253,53 @@ function MessagesInner({
     // keyboard included, so the header and input (both fixed-size flex
     // children, see ChatWindow's own h-full flex-col) stay pinned in place
     // and only the message list in between actually shrinks.
-    <div className="glass-surface flex h-[calc(100dvh-9rem)] overflow-hidden">
-      <div className={`${hasActivePane ? "hidden md:flex" : "flex"} md:w-[350px] md:shrink-0`}>
-        <ConversationSidebar
-          conversations={conversations}
-          groups={groups}
-          activeFriendId={activeFriendId}
-          activeGroupId={activeGroupId}
-          onSelect={handleSelect}
-          onTogglePin={handleTogglePin}
-          onSelectGroup={handleSelectGroup}
-          onNewGroup={() => setNewGroupOpen(true)}
-        />
-      </div>
-
-      <div className={`${hasActivePane ? "flex" : "hidden md:flex"} min-w-0 flex-1`}>
-        {active ? (
-          <ChatWindow
-            key={active.friendId}
-            conversation={active}
-            messages={messages}
-            currentUserId={session?.user?.id ?? ""}
-            onSend={handleSend}
-            onMinimize={handleMinimize}
-            onTyping={(friendId) => void setTypingAction(friendId)}
-            onReact={handleReact}
+    <>
+      <TwoPaneLayout
+        className="glass-surface h-[calc(100dvh-9rem)] overflow-hidden"
+        showDetail={hasActivePane}
+        list={
+          <ConversationSidebar
+            conversations={conversations}
+            groups={groups}
+            activeFriendId={activeFriendId}
+            activeGroupId={activeGroupId}
+            onSelect={handleSelect}
+            onTogglePin={handleTogglePin}
+            onSelectGroup={handleSelectGroup}
+            onNewGroup={() => setNewGroupOpen(true)}
           />
-        ) : activeGroup ? (
-          <GroupChatWindow
-            key={activeGroup.id}
-            group={activeGroup}
-            currentUserId={session?.user?.id ?? ""}
-            messages={groupMessages}
-            onSend={handleSendGroup}
-            onMinimize={handleMinimize}
-            onLeave={handleLeaveGroup}
-            onReact={handleReactGroup}
-          />
-        ) : (
-          <EmptyState />
-        )}
-      </div>
+        }
+        detail={
+          active ? (
+            <ChatWindow
+              key={active.friendId}
+              conversation={active}
+              messages={messages}
+              currentUserId={session?.user?.id ?? ""}
+              onSend={handleSend}
+              onMinimize={handleMinimize}
+              onTyping={(friendId) => void setTypingAction(friendId)}
+              onReact={handleReact}
+            />
+          ) : activeGroup ? (
+            <GroupChatWindow
+              key={activeGroup.id}
+              group={activeGroup}
+              currentUserId={session?.user?.id ?? ""}
+              messages={groupMessages}
+              onSend={handleSendGroup}
+              onMinimize={handleMinimize}
+              onLeave={handleLeaveGroup}
+              onReact={handleReactGroup}
+            />
+          ) : (
+            <EmptyState />
+          )
+        }
+      />
 
       <NewGroupPanel open={newGroupOpen} onClose={() => setNewGroupOpen(false)} onCreate={handleCreateGroup} />
-    </div>
+    </>
   );
 }
 

@@ -32,7 +32,7 @@ export default function ForgotPasswordPage() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-sm glass-surface-elevated p-7"
+      className="w-full glass-surface-elevated p-7"
     >
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Reset password</p>
       <h1 className="mt-1.5 font-serif text-2xl text-slate-50">Forgot your password?</h1>

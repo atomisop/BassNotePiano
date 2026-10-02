@@ -1,4 +1,5 @@
 import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 /**
  * Mirrors AboutClient: a sticky left-hand tab nav (About / Update notes /
@@ -7,7 +8,7 @@ import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
 export default function AboutLoading() {
   return (
     <SkeletonScreen label="Loading">
-      <div className="mx-auto flex max-w-4xl gap-8">
+      <WideLayout className="flex gap-8">
         <div className="hidden w-56 shrink-0 flex-col gap-1 lg:flex">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-10 w-full rounded-xl" />
@@ -23,7 +24,7 @@ export default function AboutLoading() {
             </div>
           </div>
         </div>
-      </div>
+      </WideLayout>
     </SkeletonScreen>
   );
 }

@@ -11,6 +11,7 @@ import { generateScaleQuiz, stripAnswers } from "@/lib/quiz";
 import { ScaleExplorer } from "@/components/scales/ScaleExplorer";
 import { CoursePlayer } from "./components/CoursePlayer";
 import { markLessonCompleteAction, markPracticeCompletedAction, submitQuizAction } from "./actions";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 export default async function ScalePage({ params }: { params: { scaleSlug: string } }) {
   const session = await getServerAuthSession();
@@ -70,13 +71,13 @@ export default async function ScalePage({ params }: { params: { scaleSlug: strin
         onMarkPracticeCompleted={markPracticeCompletedAction.bind(null, scaleGroup.slug)}
       />
 
-      <div className="mx-auto max-w-5xl">
+      <WideLayout>
         {variants.length > 0 ? (
           <ScaleExplorer variants={variants} instrument={user?.primaryInstrument ?? null} />
         ) : (
           <p className="text-sm text-slate-500">Interactive content for this scale is coming soon.</p>
         )}
-      </div>
+      </WideLayout>
     </div>
   );
 }

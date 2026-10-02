@@ -5,7 +5,7 @@ import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
  * every sub-route under it that doesn't ship a more specific one
  * (announcements, bookings, credits, lessons, messages, payments, roster,
  * students, users) — none of them currently do. `AdminLayout` renders this
- * inside its own `<div className="mx-auto max-w-5xl"><AdminNav />…</div>`,
+ * inside its own `<WideLayout><AdminNav />…</WideLayout>`,
  * so the nav itself never disappears mid-navigation — only the content
  * below it swaps to this skeleton, matching how the real nav behaves today.
  *

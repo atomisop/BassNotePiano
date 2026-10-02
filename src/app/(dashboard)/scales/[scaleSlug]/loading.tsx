@@ -1,4 +1,5 @@
 import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 /**
  * The course player is the heaviest authenticated route — it resolves the
@@ -10,7 +11,7 @@ import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
 export default function ScaleLoading() {
   return (
     <SkeletonScreen label="Loading this scale">
-      <div className="mx-auto max-w-4xl">
+      <WideLayout>
         <Skeleton className="h-3 w-20" />
         <Skeleton className="mt-3 h-9 w-96 max-w-full" />
         <Skeleton className="mt-3 h-4 w-64" />
@@ -34,7 +35,7 @@ export default function ScaleLoading() {
           </div>
           <Skeleton className="mt-8 h-64 w-full rounded-xl" />
         </div>
-      </div>
+      </WideLayout>
     </SkeletonScreen>
   );
 }

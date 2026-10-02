@@ -1,4 +1,5 @@
 import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 /**
  * The fallback for every authenticated route that doesn't ship its own
@@ -13,7 +14,7 @@ import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
 export default function DashboardSectionLoading() {
   return (
     <SkeletonScreen>
-      <div className="mx-auto max-w-5xl">
+      <WideLayout>
         <Skeleton className="h-3 w-20" />
         <Skeleton className="mt-3 h-8 w-72 max-w-full" />
         <Skeleton className="mt-3 h-4 w-96 max-w-full" />
@@ -35,7 +36,7 @@ export default function DashboardSectionLoading() {
             ))}
           </div>
         </div>
-      </div>
+      </WideLayout>
     </SkeletonScreen>
   );
 }

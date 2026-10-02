@@ -9,6 +9,7 @@ import { ScaleRoadmap } from "@/components/progression/ScaleRoadmap";
 import { BadgeSummary } from "@/components/gamification/BadgeSummary";
 import { TodayGreeting } from "@/components/dashboard/TodayGreeting";
 import { ProgressRing } from "@/components/ui/ProgressRing";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 function ArrowIcon() {
   return (
@@ -63,7 +64,7 @@ export default async function DashboardPage() {
   const streak = user?.currentStreak ?? 0;
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <WideLayout>
       <TodayGreeting name={user?.name ?? null} />
       {progress.completedScales > 0 && (
         <p className="mt-2 text-sm text-slate-500">
@@ -173,6 +174,6 @@ export default async function DashboardPage() {
           <ScaleRoadmap roadmap={roadmap} />
         </div>
       </div>
-    </div>
+    </WideLayout>
   );
 }

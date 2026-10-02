@@ -160,7 +160,7 @@ export function OnboardingWizard() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-md glass-surface-elevated p-7"
+      className="w-full glass-surface-elevated p-7"
     >
       {/* Replaces five undifferentiated bars. The horizontal Stepper marks
           completed steps with a check, the current one with a filled marker,

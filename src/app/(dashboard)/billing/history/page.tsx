@@ -68,7 +68,7 @@ export default async function BillingHistoryPage() {
   const payments = await getUserPaymentHistory(session.user.id);
 
   return (
-    <div className="w-full max-w-lg">
+    <div>
       <Link href="/account" className="mb-4 flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100">
         <ArrowLeftIcon size={16} />
         Back to settings

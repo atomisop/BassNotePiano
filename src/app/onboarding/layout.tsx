@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { NarrowLayout } from "@/components/layout/PageLayouts";
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -17,7 +18,9 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
           Bass Note Piano
         </span>
       </header>
-      <main className="relative flex flex-1 items-center justify-center px-6 pb-16">{children}</main>
+      <main className="relative flex flex-1 items-center justify-center px-6 pb-16">
+        <NarrowLayout>{children}</NarrowLayout>
+      </main>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 /**
  * Matches ClassBookingClient's real shape (eyebrow + h1 + subtitle, then the
@@ -11,7 +12,7 @@ import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
 export default function LessonsLoading() {
   return (
     <SkeletonScreen>
-      <div className="mx-auto max-w-3xl">
+      <WideLayout>
         <Skeleton className="h-3 w-24" />
         <Skeleton className="mt-3 h-7 w-40" />
         <Skeleton className="mt-2 h-4 w-80 max-w-full" />
@@ -40,7 +41,7 @@ export default function LessonsLoading() {
             </div>
           </div>
         ))}
-      </div>
+      </WideLayout>
     </SkeletonScreen>
   );
 }

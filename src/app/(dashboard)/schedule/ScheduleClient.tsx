@@ -11,6 +11,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { createExtraSessionPaymentAction, submitExtraSessionPaymentAction } from "./actions";
 import { getReservableSlotsForChangeAction, changeReservedSlotAction } from "../lessons/actions";
 import type { ReservableSlot } from "@/lib/classSchedule";
+import { WideLayout } from "@/components/layout/PageLayouts";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -157,7 +158,7 @@ export function ScheduleClient({
   }
 
   return (
-    <div className="w-full max-w-3xl space-y-6">
+    <WideLayout className="space-y-6">
       <div>
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
         <h1 className="mt-1.5 font-serif text-3xl text-slate-50">Your schedule</h1>
@@ -357,6 +358,6 @@ export function ScheduleClient({
           </>
         )}
       </div>
-    </div>
+    </WideLayout>
   );
 }

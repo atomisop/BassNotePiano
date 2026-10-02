@@ -83,7 +83,7 @@ function ResetPasswordForm() {
         variants={cardVariants}
         initial="hidden"
         animate="visible"
-        className="w-full max-w-sm glass-surface-elevated p-6 text-center sm:p-7"
+        className="w-full glass-surface-elevated p-6 text-center sm:p-7"
       >
         <p className="text-sm text-slate-400">
           Missing email.{" "}
@@ -107,7 +107,7 @@ function ResetPasswordForm() {
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      className="w-full max-w-sm glass-surface-elevated p-5 sm:p-7"
+      className="w-full glass-surface-elevated p-5 sm:p-7"
     >
       {/* Codes get mistyped, or someone starts this flow and changes their
           mind about which account to sign into. The only way out used to
