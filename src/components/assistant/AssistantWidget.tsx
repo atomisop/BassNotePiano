@@ -5,10 +5,12 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
-import Loader from "@/components/ui/loader-15";
+import GenerateAIButton, { AI_HALO, AiBorder } from "@/components/ui/button-33";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { readConsent, CONSENT_DECIDED_EVENT } from "@/lib/cookieConsent";
 import { FULLSCREEN_NAV_EVENT } from "@/lib/overlayNav";
+import { ATOM_TRIGGER_EVENT, OPEN_ATOM_EVENT, isAtomTriggerPresent } from "@/lib/atomTrigger";
 
 /**
  * Atom — the "ask me anything" assistant, floating on every page (mounted
@@ -148,16 +150,7 @@ function readAnonymousGreetingDismissCount(): number {
 }
 
 function AtomButton({ onClick, label }: { onClick: () => void; label: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      className="relative flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full transition hover:scale-105 active:scale-95"
-    >
-      <Loader size={60} />
-    </button>
-  );
+  return <GenerateAIButton label="Ask AI" ariaLabel={label} onClick={onClick} />;
 }
 
 // Deliberately tiny and low-contrast — a CSAT prompt that competed
@@ -268,7 +261,7 @@ function renderMessageContent(content: string, accentLink: boolean) {
         <Link
           key={key++}
           href={href}
-          className={`underline underline-offset-2 ${accentLink ? "text-slate-950" : "text-amber-400 hover:opacity-70"}`}
+          className={`underline underline-offset-2 ${accentLink ? "text-primary" : "text-blue-500 hover:opacity-70"}`}
         >
           {label}
         </Link>,
@@ -298,16 +291,16 @@ function MessageBubble({
 }) {
   const isMine = message.role === "user";
   return (
-    <div className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}>
+    <div data-atom-msg={isMine ? "user" : "assistant"} className={`scroll-mt-4 flex flex-col ${isMine ? "items-end" : "items-start"}`}>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-        className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-body ${
-          isMine ? "bg-slate-50 text-slate-950" : "border border-ink/10 bg-slate-950 text-slate-100"
-        }`}
+        className={`relative max-w-[80%] overflow-hidden rounded-2xl px-3.5 py-2 text-body text-primary ${isMine ? "" : "shadow-raised-low"}`}
+        style={isMine ? { boxShadow: `var(--neu-raised-low), ${AI_HALO}` } : undefined}
       >
-        <p className="whitespace-pre-wrap break-words">{renderMessageContent(message.content, isMine)}</p>
+        <AiBorder rounded="rounded-2xl" spin={false} glow={isMine} spinClass="size-[600px]" surface="bg-neu-base" />
+        <p className="relative z-10 whitespace-pre-wrap break-words">{renderMessageContent(message.content, isMine)}</p>
       </motion.div>
       {!isMine && <FeedbackButtons rating={feedback} busy={feedbackBusy} onRate={onRate} />}
     </div>
@@ -327,15 +320,17 @@ function ThreadMessageBubble({ message }: { message: ThreadMessage }) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-        className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-body ${
-          isVisitor
-            ? "bg-slate-50 text-slate-950"
-            : message.sender === "SUPPORT"
-              ? "border border-ink/25 bg-[rgb(var(--c-s-50)/0.08)] text-slate-100"
-              : "border border-ink/10 bg-slate-950 text-slate-100"
-        }`}
+        className={`relative max-w-[80%] overflow-hidden rounded-2xl px-3.5 py-2 text-body text-primary ${isVisitor ? "" : "shadow-raised-low"}`}
+        style={isVisitor ? { boxShadow: `var(--neu-raised-low), ${AI_HALO}` } : undefined}
       >
-        <p className="whitespace-pre-wrap break-words">{renderMessageContent(message.body, isVisitor)}</p>
+        <AiBorder
+          rounded="rounded-2xl"
+          spin={message.sender === "SUPPORT"}
+          glow={isVisitor}
+          spinClass="size-[600px]"
+          surface="bg-neu-base"
+        />
+        <p className="relative z-10 whitespace-pre-wrap break-words">{renderMessageContent(message.body, isVisitor)}</p>
       </motion.div>
     </div>
   );
@@ -344,11 +339,12 @@ function ThreadMessageBubble({ message }: { message: ThreadMessage }) {
 function TypingIndicator() {
   return (
     <div className="flex justify-start">
-      <div className="flex items-center gap-1 rounded-2xl border border-ink/10 bg-slate-950 px-4 py-3">
+      <div className="relative flex items-center gap-1 overflow-hidden rounded-full px-4 py-3 shadow-raised-low">
+        <AiBorder surface="bg-neu-base" />
         {[0, 1, 2].map((i) => (
           <motion.span
             key={i}
-            className="h-1.5 w-1.5 rounded-full bg-slate-500"
+            className="relative z-10 h-1.5 w-1.5 rounded-full bg-primary"
             animate={{ opacity: [0.3, 1, 0.3] }}
             transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.15 }}
           />
@@ -363,6 +359,9 @@ export function AssistantWidget() {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [showGreeting, setShowGreeting] = useState(false);
+  // Model-predicted follow-ups for the chips; empty until the first answer
+  // lands (the built-in SUGGESTIONS cover the empty chat).
+  const [generatedSuggestions, setGeneratedSuggestions] = useState<string[]>([]);
   // Whether the greeting bubble has been explicitly dismissed enough times
   // (see dismissGreeting) that it should never be offered again. Checked
   // once mounted, server-side for a signed-in account or from this
@@ -407,6 +406,27 @@ export function AssistantWidget() {
     window.addEventListener(FULLSCREEN_NAV_EVENT, onFullscreenNav);
     return () => window.removeEventListener(FULLSCREEN_NAV_EVENT, onFullscreenNav);
   }, []);
+
+  // The dashboard TopBar's "Ask AI" button (see lib/atomTrigger.ts) replaces
+  // the floating launcher and greeting bubble while it is mounted, and opens
+  // this panel on click.
+  const [hasTopBarTrigger, setHasTopBarTrigger] = useState(false);
+  useEffect(() => {
+    setHasTopBarTrigger(isAtomTriggerPresent());
+    function onTrigger(e: Event) {
+      setHasTopBarTrigger(Boolean((e as CustomEvent<boolean>).detail));
+    }
+    function onOpen() {
+      openPanelRef.current();
+    }
+    window.addEventListener(ATOM_TRIGGER_EVENT, onTrigger);
+    window.addEventListener(OPEN_ATOM_EVENT, onOpen);
+    return () => {
+      window.removeEventListener(ATOM_TRIGGER_EVENT, onTrigger);
+      window.removeEventListener(OPEN_ATOM_EVENT, onOpen);
+    };
+  }, []);
+  const openPanelRef = useRef<() => void>(() => {});
 
   // Portals need a real document — same SSR-safety pattern as NotificationBell.
   useEffect(() => {
@@ -602,6 +622,8 @@ export function AssistantWidget() {
     setTimeout(() => inputRef.current?.focus(), 250);
   }
 
+  openPanelRef.current = openPanel;
+
   useEffect(() => {
     if (!open) return;
     function handleKey(e: KeyboardEvent) {
@@ -627,9 +649,36 @@ export function AssistantWidget() {
     };
   }, [open]);
 
+  // Once Atom has answered, bring the TOP of that answer into view so it can be
+  // read from the start (the suggestion chips sit below it in the same scroll
+  // list). Every other change (typing dots, handoff forms, support thread)
+  // still follows the bottom.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, threadMessages, loading, escalationOffer, collectingEmail]);
+    const list = messagesEndRef.current?.parentElement;
+    const answers = list?.querySelectorAll<HTMLElement>('[data-atom-msg="assistant"]');
+    const lastAnswer = answers && answers.length > 0 ? answers[answers.length - 1] : null;
+    const answeredJustNow = !loading && !activeEscalationId && messages[messages.length - 1]?.role === "assistant";
+    if (answeredJustNow && lastAnswer) lastAnswer.scrollIntoView({ behavior: "smooth", block: "start" });
+    else messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, threadMessages, loading, escalationOffer, collectingEmail, activeEscalationId]);
+
+  // Asks the model what the visitor will probably want next. Best-effort: on
+  // any failure the chips just fall back to the built-in list.
+  async function refreshSuggestions(history: Message[]) {
+    try {
+      const res = await fetch("/api/assistant/suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history }),
+      });
+      const data = await res.json().catch(() => null);
+      if (Array.isArray(data?.suggestions) && data.suggestions.length > 0) {
+        setGeneratedSuggestions(data.suggestions.filter((q: unknown): q is string => typeof q === "string"));
+      }
+    } catch {
+      // Non-blocking.
+    }
+  }
 
   async function sendAtomMessage(trimmed: string) {
     const nextHistory: Message[] = [...messages, { role: "user", content: trimmed }];
@@ -654,6 +703,7 @@ export function AssistantWidget() {
       // how the reply itself reads — this check is on what the visitor
       // typed, not on anything the model said.
       if (HUMAN_REQUEST_RE.test(trimmed)) offerHandoff();
+      void refreshSuggestions([...nextHistory, { role: "assistant", content: data.reply as string }]);
     } catch {
       setError("Couldn't reach Atom — check your connection and try again.");
     } finally {
@@ -822,6 +872,13 @@ export function AssistantWidget() {
   // make sense before a handoff exists — once a person is (or was)
   // actually connected, there's nothing left to triage.
   const showSuggestions = !inSupportMode && !loading && !escalationOffer && !collectingEmail;
+  // Never offer a question the visitor already asked (tapped or typed): it is
+  // already answered above.
+  const normalizeQuestion = (q: string) => q.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+  const askedQuestions = new Set(messages.filter((m) => m.role === "user").map((m) => normalizeQuestion(m.content)));
+  const visibleSuggestions = (generatedSuggestions.length > 0 ? generatedSuggestions : SUGGESTIONS).filter(
+    (q) => !askedQuestions.has(normalizeQuestion(q)),
+  );
   const hasSupportReply = threadMessages.some((m) => m.sender === "SUPPORT");
 
   return createPortal(
@@ -844,34 +901,38 @@ export function AssistantWidget() {
             // other `glass-surface-elevated` on the site does, so it looks
             // like the rest of the app (near-black Ink, or warm Paper),
             // rather than its own thing.
-            className="glass-surface-elevated flex h-[min(70vh,560px)] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl"
+            className="relative h-[min(70vh,560px)] w-[min(92vw,380px)] overflow-hidden rounded-3xl text-primary"
+            style={{ boxShadow: `var(--neu-raised-high), ${AI_HALO}` }}
             role="dialog"
             aria-label="Chat with Atom"
+            // Lenis (marketing smooth scroll) hijacks wheel events window-wide;
+            // this tells it to leave scrolling inside the panel alone.
+            data-lenis-prevent
           >
+            <AiBorder rounded="rounded-3xl" glow surface="bg-neu-base" />
+            <div className="relative z-10 flex h-full min-w-0 flex-col">
             {/* Used to carry a mobile-only teal→blue wash here, echoing the
                 icon's old color mix — the icon is signal green now (the
                 house accent, not a distinct identity), and green filling
                 the whole header would compete with the message bubbles
                 below that also use it, so the header stays plain neutral
                 at every width instead. */}
-            <div className="flex items-center gap-3 border-b border-ink/10 px-4 py-3">
-              <div className="h-8 w-8 shrink-0">
-                <Loader size={32} />
-              </div>
+            <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+              <Sparkles className="size-6 shrink-0 text-primary" fill="currentColor" />
               <div className="min-w-0 flex-1">
                 {/* Always "Atom" — per direct instruction, the widget keeps its
                     one identity even once a human joins the thread. Which
                     sender said what is still clear from each message's own
                     ATOM/SUPPORT/YOU label (see ThreadMessageBubble) without
                     the header itself switching names on the visitor. */}
-                <p className="text-small font-semibold text-slate-50">Atom</p>
+                <p className="text-small font-semibold text-primary">Atom</p>
                 <p className="text-small text-slate-500">Bass Note Piano&apos;s assistant</p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close chat"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-ink/5 hover:text-slate-200"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-primary transition hover:bg-border/40"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
                   <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
@@ -879,7 +940,7 @@ export function AssistantWidget() {
               </button>
             </div>
 
-            <div className="min-w-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
+            <div data-lenis-prevent className="min-w-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
               {!inSupportMode && messages.length === 0 && (
                 <p className="text-small text-slate-400">
                   Hi, I&apos;m Atom. Ask me about pricing, booking a class, policies, or anything else about Bass Note
@@ -904,12 +965,12 @@ export function AssistantWidget() {
                     <ThreadMessageBubble key={m.id} message={m} />
                   ))}
                   {!hasSupportReply && threadStatus === "OPEN" && (
-                    <p className="rounded-xl border border-ink/10 bg-slate-900/60 p-3 text-center text-small text-slate-500">
+                    <p className="rounded-2xl bg-neu-base p-3 shadow-raised-low text-center text-small text-slate-500">
                       You&apos;re connected — our support team has been notified and will reply here shortly.
                     </p>
                   )}
                   {threadStatus === "RESOLVED" && (
-                    <div className="space-y-2 rounded-xl border border-slate-50/20 bg-slate-50/10 p-3 text-center">
+                    <div className="space-y-2 rounded-2xl bg-neu-base p-3 shadow-raised-low text-center">
                       <p className="text-small text-slate-100">
                         This conversation is closed. The history above is kept, but this thread no longer accepts new
                         messages.
@@ -917,7 +978,7 @@ export function AssistantWidget() {
                       <button
                         type="button"
                         onClick={resetToAtom}
-                        className="text-small font-medium text-amber-400 underline-offset-2 hover:underline"
+                        className="text-small font-medium text-blue-500 underline-offset-2 hover:underline"
                       >
                         Start a new question with Atom
                       </button>
@@ -930,33 +991,23 @@ export function AssistantWidget() {
               {error && <p className="text-center text-small text-red-400">{error}</p>}
 
               {escalationOffer && (
-                <div className="space-y-2 rounded-xl border border-ink/10 bg-slate-900/60 p-3">
+                <div className="space-y-2 rounded-2xl bg-neu-base p-3 shadow-raised-low">
                   <p className="text-small text-slate-300">Want me to connect you with our customer service team? A real person can dig into your account directly.</p>
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={declineHandoff}
-                      disabled={escalationSubmitting}
-                      className="flex-1 rounded-lg border border-ink/10 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
-                    >
+                    <GenerateAIButton icon={false} onClick={declineHandoff} disabled={escalationSubmitting} surface="bg-neu-base" className="h-9 flex-1 px-3 text-small shadow-raised-low">
                       No, keep trying
-                    </button>
-                    <button
-                      type="button"
-                      onClick={confirmHandoff}
-                      disabled={escalationSubmitting}
-                      className="flex flex-1 items-center justify-center rounded-lg bg-amber-400 py-1.5 text-small font-semibold text-slate-950 transition disabled:opacity-60"
-                    >
-                      {escalationSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                    </GenerateAIButton>
+                    <GenerateAIButton onClick={confirmHandoff} disabled={escalationSubmitting} surface="bg-neu-base" className="h-9 flex-1 px-3 text-small shadow-raised-low">
+                      {escalationSubmitting && <MorphingSquare size={12} className="shrink-0" />}
                       {escalationSubmitting ? "Connecting…" : "Yes, connect me"}
-                    </button>
+                    </GenerateAIButton>
                   </div>
                   {escalationError && <p className="text-small text-red-400">{escalationError}</p>}
                 </div>
               )}
 
               {collectingEmail && (
-                <form onSubmit={handleEmailSubmit} className="space-y-2 rounded-xl border border-ink/10 bg-slate-900/60 p-3">
+                <form onSubmit={handleEmailSubmit} className="space-y-2 rounded-2xl bg-neu-base p-3 shadow-raised-low">
                   <p className="text-small text-slate-300">
                     The team will reply right here in this chat — what&apos;s a good email for them to reach you at
                     only if you&apos;re not around when they do?
@@ -969,89 +1020,92 @@ export function AssistantWidget() {
                     autoFocus
                     maxLength={320}
                     disabled={escalationSubmitting}
-                    className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-1.5 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-400/40"
+                    className="w-full rounded-full bg-neu-base px-4 py-1.5 text-body text-primary shadow-pressed-low outline-none transition placeholder:text-slate-500"
                   />
                   {escalationError && <p className="text-small text-red-400">{escalationError}</p>}
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={declineHandoff}
-                      disabled={escalationSubmitting}
-                      className="flex-1 rounded-lg border border-ink/10 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
-                    >
+                    <GenerateAIButton icon={false} onClick={declineHandoff} disabled={escalationSubmitting} surface="bg-neu-base" className="h-9 flex-1 px-3 text-small shadow-raised-low">
                       Cancel
-                    </button>
-                    <button
+                    </GenerateAIButton>
+                    <GenerateAIButton
                       type="submit"
                       disabled={escalationSubmitting || !escalationEmail.trim()}
-                      className="flex flex-1 items-center justify-center rounded-lg bg-amber-400 py-1.5 text-small font-semibold text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-60"
+                      surface="bg-neu-base" className="h-9 flex-1 px-3 text-small shadow-raised-low"
                     >
-                      {escalationSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                      {escalationSubmitting && <MorphingSquare size={12} className="shrink-0" />}
                       {escalationSubmitting ? "Sending…" : "Notify the team"}
-                    </button>
+                    </GenerateAIButton>
                   </div>
                 </form>
               )}
 
+            {showSuggestions && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {visibleSuggestions.map((s) => (
+                  <GenerateAIButton
+                    key={s}
+                    icon={false}
+                    glow
+                    surface="bg-neu-base"
+                    onClick={() => sendMessage(s)}
+                    disabled={loading}
+                    className="h-8 px-3 text-small"
+                  >
+                    {s}
+                  </GenerateAIButton>
+                ))}
+                <GenerateAIButton
+                  icon={false}
+                  glow
+                  surface="bg-neu-base"
+                  onClick={offerHandoff}
+                  disabled={loading}
+                  className="h-8 px-3 text-small"
+                >
+                  Talk to our team
+                </GenerateAIButton>
+              </div>
+            )}
               <div ref={messagesEndRef} />
             </div>
 
-            {showSuggestions && (
-              <div className="flex flex-wrap gap-1.5 border-t border-ink/10 px-4 py-2.5">
-                {SUGGESTIONS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => sendMessage(s)}
-                    disabled={loading}
-                    className="rounded-full border border-ink/10 px-2.5 py-1 text-small text-slate-300 transition hover:border-amber-400/40 hover:text-amber-400 disabled:opacity-50"
-                  >
-                    {s}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={offerHandoff}
-                  disabled={loading}
-                  className="rounded-full border border-ink/10 px-2.5 py-1 text-small text-slate-400 transition hover:border-amber-400/40 hover:text-amber-400 disabled:opacity-50"
-                >
-                  Talk to our team
-                </button>
+            <form onSubmit={handleSubmit} className="flex min-w-0 items-center gap-2 border-t border-border p-3">
+              <div
+                className="relative min-w-0 flex-1 overflow-hidden rounded-full"
+                style={{ boxShadow: `var(--neu-pressed-low), ${AI_HALO}` }}
+              >
+                <AiBorder glow surface="bg-neu-base" />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={isResolved ? "This conversation is closed" : inSupportMode ? "Message support…" : "Ask Atom anything…"}
+                  maxLength={2000}
+                  disabled={loading || isResolved}
+                  className="relative z-10 w-full min-w-0 bg-transparent px-4 py-2 text-body text-primary outline-none placeholder:text-slate-500 disabled:opacity-50"
+                />
               </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="flex min-w-0 gap-2 border-t border-ink/10 p-3">
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={isResolved ? "This conversation is closed" : inSupportMode ? "Message support…" : "Ask Atom anything…"}
-                maxLength={2000}
-                disabled={loading || isResolved}
-                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-400/40 disabled:opacity-50"
-              />
-              <button
+              <GenerateAIButton
                 type="submit"
                 disabled={loading || isResolved || !input.trim()}
-                aria-label={loading ? "Sending…" : "Send"}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-400 text-slate-950 transition disabled:opacity-40"
+                ariaLabel={loading ? "Sending…" : "Send"}
+                icon={false}
+                glow={input.trim().length > 0}
+                plain={input.trim().length === 0}
+                surface="bg-neu-base"
+                className="size-10 shrink-0 px-0 shadow-raised-low"
               >
-                {loading ? (
-                  <MorphingSquare size={16} />
-                ) : (
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                    <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </button>
+                {loading ? <MorphingSquare size={16} /> : <ArrowRight className="size-4" />}
+              </GenerateAIButton>
             </form>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {showGreeting && !open && (
+        {showGreeting && !open && !hasTopBarTrigger && (
           // A <button> (the bubble, opens the panel) used to have another
           // interactive element (the dismiss control) nested inside it —
           // invalid HTML regardless of whether that inner control is a real
@@ -1069,16 +1123,17 @@ export function AssistantWidget() {
             // `--elev-border`/`--elev-bg` override anymore, so this greeting
             // bubble reads the same elevated-glass material every other
             // `glass-surface-elevated` on the site does.
-            className="glass-surface-elevated relative max-w-[240px] rounded-2xl text-body text-slate-100"
+            className="relative max-w-[240px] rounded-2xl text-body text-primary shadow-raised-mid"
           >
-            <button type="button" onClick={openPanel} className="block w-full rounded-2xl px-4 py-3 text-left">
+            <AiBorder rounded="rounded-2xl" surface="bg-neu-base" />
+            <button type="button" onClick={openPanel} className="relative z-10 block w-full rounded-2xl px-4 py-3 text-left">
               {GREETING_TEXT}
             </button>
             <button
               type="button"
               aria-label="Dismiss"
               onClick={dismissGreeting}
-              className="absolute -right-2 -top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-ink/10 bg-slate-950 text-slate-400 transition hover:text-slate-200"
+              className="absolute -right-2 -top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-neu-base text-primary shadow-raised-low transition hover:opacity-70"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
                 <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -1088,7 +1143,7 @@ export function AssistantWidget() {
         )}
       </AnimatePresence>
 
-      {!open && <AtomButton onClick={openPanel} label="Chat with Atom, your personal assistant" />}
+      {!open && !hasTopBarTrigger && <AtomButton onClick={openPanel} label="Chat with Atom, your personal assistant" />}
     </div>,
     document.body,
   );
