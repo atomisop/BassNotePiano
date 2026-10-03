@@ -85,7 +85,7 @@
        front (the controls, closest to the finger).
      ========================================================================== */
 
-  /* Signal green. `--signal` / `--signal-ink` are set per data-mode below. */
+  /* Signal orange (the logo color). `--signal` / `--signal-ink` are set per data-mode below. */
   --color-signal: rgb(var(--signal));
   --color-signal-ink: rgb(var(--signal-ink));
   --color-danger: rgb(var(--c-rd-400));
@@ -902,7 +902,7 @@
     --neu-lo: rgb(0 0 0 / 0.55);
     --neu-edge: rgb(255 255 255 / 0.1);
     --signal: var(--c-a-400);
-    --signal-ink: 10 10 10;
+    --signal-ink: 26 20 14;
     --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.35), 0 10px 28px -8px rgb(var(--c-a-400) / 0.45);
   }
 
@@ -913,7 +913,7 @@
     --neu-lo: rgb(140 140 158 / 0.5);
     --neu-edge: rgb(0 0 0 / 0.1);
     --signal: var(--c-a-400);
-    --signal-ink: 255 255 255;
+    --signal-ink: 26 20 14;
     --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.3), 0 10px 24px -10px rgb(var(--c-a-400) / 0.5);
   }
 

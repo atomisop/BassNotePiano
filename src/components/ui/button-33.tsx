@@ -6,7 +6,7 @@ import { Sparkles } from "lucide-react";
 // gradient border is split out as `AiBorder` so Atom's panel, bubbles and inputs
 // can wear the exact same border; the button itself is unchanged apart from
 // making its label, click handler and a few button props configurable.
-export const AI_HALO = "0 0 14px 1px rgb(59 130 246 / 0.35), 0 0 22px 2px rgb(251 146 60 / 0.25)";
+export const AI_HALO = "0 0 14px 1px rgb(251 138 92 / 0.40), 0 0 22px 2px rgb(253 186 116 / 0.25)";
 
 export function AiBorder({
   rounded = "rounded-full",
@@ -29,10 +29,10 @@ export function AiBorder({
   return (
     <div className={`pointer-events-none absolute inset-0 z-0 overflow-hidden bg-border ${rounded}`}>
       {glow && (
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,var(--color-blue-500),var(--color-orange-400),var(--color-blue-500))] opacity-80" />
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,var(--color-orange-600),var(--color-amber-300),var(--color-orange-600))] opacity-80" />
       )}
       <div hidden={glow || plain}
-        className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[conic-gradient(from_0deg,transparent_0%,transparent_35%,var(--color-blue-500)_50%,transparent_65%,transparent_85%,var(--color-orange-400)_100%)] ${spin ? "animate-spin" : ""} ${spinClass}`}
+        className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[conic-gradient(from_0deg,transparent_0%,transparent_35%,var(--color-orange-600)_50%,transparent_65%,transparent_85%,var(--color-amber-300)_100%)] ${spin ? "animate-spin" : ""} ${spinClass}`}
         style={spin ? { animationDuration: "2.5s" } : undefined}
       />
       <div className={`absolute inset-0.5 ${surface} ${rounded}`} />

@@ -144,10 +144,10 @@ export default function Loader({ size = 200, className }: { size?: number; class
           filter: url(#${filterId});
         }
         .stopp1 {
-          stop-color: #04c401;
+          stop-color: #e86f42;
         }
         .stopp2 {
-          stop-color: #05e901;
+          stop-color: #fb8a5c;
         }
         .halvan {
           animation: loader15-snurra 10s infinite linear;

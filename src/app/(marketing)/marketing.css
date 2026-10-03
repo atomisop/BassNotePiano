@@ -56,11 +56,11 @@
      again on this page too: `.btn-primary` still reads `--primary`
      (neutral, untouched), but selection states, badges, and the hero's
      own accent below all read this ramp now. */
-  --c-a-100: 214 250 195;
-  --c-a-200: 172 247 148;
-  --c-a-300: 100 240 70;
-  --c-a-400: 5 233 1;       /* 10.5:1 */
-  --c-a-500: 4 196 1;       /* 7.4:1 */
+  --c-a-100: 255 236 226;
+  --c-a-200: 254 213 192;
+  --c-a-300: 253 178 138;
+  --c-a-400: 251 138 92;    /* the logo orange */
+  --c-a-500: 232 111 66;
 
   /* ---- The scrim rule -------------------------------------------------
      Ratios above are against the bare ground. The homepage's real backdrop
