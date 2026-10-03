@@ -294,6 +294,17 @@
   letter-spacing: var(--type-display-1-ls);
 }
 
+/* Phone-only: the hero line has a rotating word ("definitive", "authentic",
+   "smartest") that is wider than the others, so at the full display size the
+   headline wrapped to four lines and pushed the buttons off the bottom of the
+   screen. A smaller size keeps it to two or three lines at every word. */
+@media (max-width: 640px) {
+  [data-surface="marketing"] .display-1.hero-title {
+    font-size: clamp(1.7rem, 7.2vw, 2.3rem);
+    line-height: 1.02;
+  }
+}
+
 [data-surface="marketing"] .display-2 {
   font-size: var(--type-display-2);
   line-height: var(--type-display-2-lh);

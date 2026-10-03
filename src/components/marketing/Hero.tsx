@@ -261,7 +261,7 @@ export function Hero() {
       </div>
 
       <div className="mx-auto w-full max-w-4xl px-6">
-        <h1 className="display-1 max-w-[18ch] text-balance">
+        <h1 className="display-1 hero-title max-w-[18ch] text-balance">
           <span aria-hidden="true">
             The <RotatingHeroWord /> way to learn Ethiopian music.
           </span>
