@@ -138,7 +138,7 @@ function CategoryHeading({ category, isFirst }: { category: Category; isFirst: b
   return (
     <p
       className={`px-3 pb-1 text-small font-semibold uppercase tracking-[0.16em] ${isFirst ? "" : "mt-3"} ${
-        category === "Danger zone" ? "text-red-400/70" : "text-slate-500"
+        category === "Danger zone" ? "text-[rgb(var(--c-rd-300))]" : "text-slate-500"
       }`}
     >
       {category}
@@ -195,7 +195,7 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
         <div key={group.category} className={i === 0 ? "" : "border-t border-ink/10 pt-1"}>
           <p
             className={`px-4 pb-1 pt-3 text-small font-semibold uppercase tracking-[0.16em] ${
-              group.category === "Danger zone" ? "text-red-400/70" : "text-slate-500"
+              group.category === "Danger zone" ? "text-[rgb(var(--c-rd-300))]" : "text-slate-500"
             }`}
           >
             {group.category}
