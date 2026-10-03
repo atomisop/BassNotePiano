@@ -130,7 +130,7 @@ export function GroupChatWindow({
               type="button"
               onClick={() => setConfirmingLeave(false)}
               disabled={leaving}
-              className="rounded-lg border border-ink/10 px-2.5 py-1.5 text-small text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+              className="rounded-lg px-2.5 py-1.5 text-small text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
               Cancel
             </button>
@@ -148,7 +148,7 @@ export function GroupChatWindow({
           <button
             type="button"
             onClick={() => setConfirmingLeave(true)}
-            className="shrink-0 rounded-lg border border-ink/10 px-2.5 py-1.5 text-small text-slate-400 transition hover:border-red-400/30 hover:text-red-300"
+            className="shrink-0 rounded-lg px-2.5 py-1.5 text-small text-slate-400 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
           >
             Leave
           </button>
@@ -157,7 +157,7 @@ export function GroupChatWindow({
           type="button"
           onClick={onMinimize}
           aria-label="Minimize chat"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-ink/10 text-slate-400 transition hover:border-ink/15 hover:bg-ink/5 hover:text-slate-200"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
             <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
@@ -204,7 +204,7 @@ export function GroupChatWindow({
       </div>
 
       {replyingTo && (
-        <div className="flex items-center gap-2 border-t border-ink/10 bg-slate-900/60 px-4 py-2">
+        <div className="flex items-center gap-2 border-t border-ink/10 bg-neu-base shadow-pressed-low px-4 py-2">
           <div className="min-w-0 flex-1 border-l-2 border-[rgb(var(--c-s-50)/0.5)] pl-2">
             <p className="text-small font-medium text-slate-300">
               Replying to {labelFor(replyingTo.senderId, currentUserId, replyingTo.senderName, replyingTo.senderUsername)}

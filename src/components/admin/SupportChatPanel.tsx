@@ -57,7 +57,7 @@ function MessageRow({ message }: { message: AdminThreadMessage }) {
             ? "bg-[rgb(var(--c-s-50))] text-slate-950"
             : message.sender === "SUPPORT"
               ? "border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.08)] text-slate-100"
-              : "border border-ink/10 bg-slate-950 text-slate-300"
+              : "text-slate-300 bg-neu-base shadow-raised-low"
         }`}
       >
         <p className="whitespace-pre-wrap break-words">{message.body}</p>
@@ -293,7 +293,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                     type="button"
                     onClick={handleResolve}
                     disabled={resolving}
-                    className="flex items-center justify-center rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                    className="flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     {resolving && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                     {resolving ? "Resolving…" : "Mark resolved"}
@@ -323,7 +323,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                     type="button"
                     onClick={() => setConfirmingDelete(false)}
                     disabled={deleting}
-                    className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                    className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     Never mind
                   </button>
@@ -369,7 +369,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                 placeholder="Reply as Support…"
                 maxLength={2000}
                 disabled={sending}
-                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.4)]"
+                className="min-w-0 flex-1 rounded-xl px-3 py-2 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring bg-neu-base shadow-pressed-low"
               />
               <button
                 type="submit"

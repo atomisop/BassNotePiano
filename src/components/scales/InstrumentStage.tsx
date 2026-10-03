@@ -253,7 +253,7 @@ export function ScaleChart({ variant, root, player }: { variant: ScaleVariant; r
                 "flex w-14 cursor-pointer flex-col items-center rounded-control border py-2 transition duration-(--dur-fast) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default",
                 isActive
                   ? "border-signal bg-[rgb(var(--signal)/0.14)] motion-safe:scale-105"
-                  : "border-ink/15 bg-[rgb(var(--c-s-50)/0.04)] hover:border-ink/30",
+                  : "border-transparent bg-[rgb(var(--c-s-50)/0.04)] shadow-raised-low",
               )}
             >
               <span className={cn("text-body font-semibold", isActive ? "text-signal" : "text-slate-50")}>{note}</span>
@@ -268,7 +268,7 @@ export function ScaleChart({ variant, root, player }: { variant: ScaleVariant; r
           away and nothing would say which row you're on. border-separate,
           not border-collapse: Chromium fails to paint sticky cells inside a
           collapsed-border table. */}
-      <div className="mt-5 overflow-x-auto rounded-control border border-ink/10">
+      <div className="mt-5 overflow-x-auto rounded-control bg-neu-base shadow-raised-low">
         <table className="w-full min-w-[420px] border-separate border-spacing-0 text-small">
           <caption className="sr-only">
             {variant.name} spelled in all twelve keys. Current key: {root}.

@@ -35,7 +35,7 @@ import { FilesPanel, MetronomePanel, NotesPanel } from "./LessonTools";
 const LessonPdfPlayer = dynamic(() => import("./LessonPdfPlayer").then((m) => m.LessonPdfPlayer), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[60vh] w-full items-center justify-center rounded-control bg-slate-900 text-small text-slate-400">
+    <div className="flex h-[60vh] w-full items-center justify-center rounded-control bg-neu-base shadow-pressed-low text-small text-slate-400">
       Loading PDF viewer…
     </div>
   ),
@@ -321,7 +321,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
       )}
 
       {freeTrial && (
-        <div className="mt-4 rounded-control border border-ink/10 p-3 text-small text-slate-300">
+        <div className="mt-4 rounded-control p-3 text-small text-slate-300 bg-neu-base shadow-raised-low">
           <p>
             <span className="font-semibold text-slate-50">Free trial</span> until{" "}
             {new Date(freeTrial.endsAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}. The first lessons
@@ -633,7 +633,7 @@ function OutlineItem({
       <span
         className={cn(
           "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
-          status === "done" ? "bg-slate-50 text-slate-950" : status === "locked" ? "text-slate-500" : "border border-slate-500 text-transparent",
+          status === "done" ? "bg-slate-50 text-slate-950" : status === "locked" ? "text-slate-500" : "text-transparent bg-neu-base shadow-raised-low",
         )}
         aria-hidden
       >

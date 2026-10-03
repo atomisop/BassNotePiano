@@ -148,7 +148,7 @@ export function MessageBubble({
               className={`rounded-full border px-1.5 py-0.5 text-small leading-none transition ${
                 myReaction === emoji
                   ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]"
-                  : "border-ink/10 text-slate-400 hover:border-ink/15"
+                  : "border-transparent text-slate-400 bg-neu-base shadow-raised-low"
               }`}
             >
               {emoji}

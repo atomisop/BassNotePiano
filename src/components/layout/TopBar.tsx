@@ -72,7 +72,7 @@ export function TopBar({ isAdmin }: { isAdmin: boolean }) {
           <Link
             href="/admin"
             aria-label="Admin"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-ink/10 bg-surface text-slate-400 transition hover:border-ink/15 hover:bg-ink/5 hover:text-slate-200"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
           >
             <Shield className="h-[18px] w-[18px]" strokeWidth={1.5} />
           </Link>

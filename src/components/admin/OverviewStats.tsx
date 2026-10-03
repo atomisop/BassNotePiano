@@ -47,19 +47,19 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
       <motion.div variants={item} className="flex flex-wrap gap-3">
         <Link
           href="/admin/payments"
-          className="rounded-xl border border-ink/10 px-4 py-2.5 text-small font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+          className="rounded-xl px-4 py-2.5 text-small font-medium text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
         >
           Review pending payments{stats.pendingPayments > 0 ? ` (${stats.pendingPayments})` : ""} →
         </Link>
         <Link
           href="/admin/schedule?view=ATTENDANCE"
-          className="rounded-xl border border-ink/10 px-4 py-2.5 text-small font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+          className="rounded-xl px-4 py-2.5 text-small font-medium text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
         >
           Lesson bookings →
         </Link>
         <Link
           href="/admin/users"
-          className="rounded-xl border border-ink/10 px-4 py-2.5 text-small font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+          className="rounded-xl px-4 py-2.5 text-small font-medium text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
         >
           Manage users →
         </Link>

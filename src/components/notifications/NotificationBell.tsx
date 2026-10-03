@@ -225,7 +225,7 @@ function NotificationEntry({ notification, onClick }: { notification: Notificati
   // accented: it was built on the wrong token.
   const itemClassName = `flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition ${
     notification.read
-      ? "border-ink/10 bg-slate-900 hover:bg-ink/5"
+      ? "border-transparent bg-neu-base shadow-raised-low"
       : "border-l-[3px] border-y border-r border-y-[rgb(var(--c-s-50)/0.3)] border-r-[rgb(var(--c-s-50)/0.3)] border-l-[rgb(var(--c-s-50))] bg-[rgb(var(--c-s-50)/0.14)] hover:bg-[rgb(var(--c-s-50)/0.2)]"
   }`;
   const inner = (
@@ -282,9 +282,9 @@ function NotificationGroup({
       <div className="relative">
         {!expanded && (
           <>
-            <div className="absolute inset-x-2 -top-1.5 h-full rounded-xl border border-ink/10 bg-slate-900/70" aria-hidden />
+            <div className="absolute inset-x-2 -top-1.5 h-full rounded-xl bg-neu-base shadow-raised-low" aria-hidden />
             {items.length > 2 && (
-              <div className="absolute inset-x-4 -top-3 h-full rounded-xl border border-ink/10 bg-slate-900/50" aria-hidden />
+              <div className="absolute inset-x-4 -top-3 h-full rounded-xl bg-neu-base shadow-raised-low" aria-hidden />
             )}
           </>
         )}
@@ -295,7 +295,7 @@ function NotificationGroup({
           className={`relative flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition ${
             hasUnread
               ? "border-l-[3px] border-y border-r border-y-[rgb(var(--c-s-50)/0.3)] border-r-[rgb(var(--c-s-50)/0.3)] border-l-[rgb(var(--c-s-50))] bg-[rgb(var(--c-s-50)/0.14)] hover:bg-[rgb(var(--c-s-50)/0.2)]"
-              : "border-ink/10 bg-slate-900 hover:bg-ink/5"
+              : "border-transparent bg-neu-base shadow-raised-low"
           }`}
         >
           <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]">
@@ -307,7 +307,7 @@ function NotificationGroup({
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2">
               <span className="text-small font-medium text-slate-100">{categoryLabel}</span>
-              <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-small font-semibold text-slate-400">{items.length}</span>
+              <span className="rounded-full bg-neu-base shadow-pressed-low px-1.5 py-0.5 text-small font-semibold text-slate-400">{items.length}</span>
               {hasUnread && <span className="h-2 w-2 shrink-0 rounded-full bg-[rgb(var(--c-s-50))]" aria-hidden />}
             </span>
             <span className="mt-0.5 block truncate text-small text-slate-500">{latest.title}</span>
@@ -450,7 +450,7 @@ export function NotificationBell() {
         onClick={() => setOpen(true)}
         aria-label="Notifications"
         data-tour="notification-bell"
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-ink/10 bg-surface text-slate-400 transition hover:border-ink/15 hover:bg-ink/5 hover:text-slate-200"
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
       >
         <Bell size={18} strokeWidth={1.5} />
         {unreadCount > 0 && (
@@ -491,7 +491,7 @@ export function NotificationBell() {
                     type="button"
                     onClick={() => setOpen(false)}
                     aria-label="Back"
-                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-ink/10 text-slate-300 transition hover:border-ink/15 hover:bg-ink/5"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     <ArrowLeft size={18} strokeWidth={1.75} />
                   </button>
@@ -521,7 +521,7 @@ export function NotificationBell() {
                 <div className="mx-auto w-full max-w-xl flex-1 overflow-y-auto overscroll-contain px-6 py-6">
                   {notifications.length === 0 ? (
                     <div className="flex flex-col items-center gap-3 pt-20 text-center">
-                      <span className="flex h-14 w-14 items-center justify-center rounded-full border border-ink/10 text-slate-600">
+                      <span className="flex h-14 w-14 items-center justify-center rounded-full text-slate-600 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low">
                         <Bell size={24} strokeWidth={1.5} />
                       </span>
                       <p className="text-small font-medium text-slate-400">You&apos;re all caught up — no notifications yet.</p>

@@ -73,7 +73,7 @@ export function ScaleListRows({ roadmap, currentSlug, onRowClick }: ScaleListRow
                     <span
                       key={i}
                       className={`h-1.5 w-4 rounded-full ${
-                        i < doneCount ? "bg-[rgb(var(--c-s-50))]" : "bg-slate-800"
+                        i < doneCount ? "bg-[rgb(var(--c-s-50))]" : "bg-neu-base shadow-pressed-low"
                       }`}
                     />
                   ))}

@@ -144,7 +144,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
         ) : (
           <>
             <p className="text-small font-medium text-slate-400">No active plan right now.</p>
-            <div className="mt-2 flex w-fit gap-1.5 rounded-full border border-ink/10 p-1">
+            <div className="mt-2 flex w-fit gap-1.5 rounded-full p-1 bg-neu-base shadow-pressed-low">
               {CADENCE_OPTIONS.map((option) => (
                 <button
                   key={option.value}
@@ -205,8 +205,8 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                     onClick={() => handleChangeTerm(option.value)}
                     className={`mt-3 flex w-full items-center justify-center rounded-lg py-2 text-small font-semibold transition disabled:cursor-not-allowed ${
                       isCurrent
-                        ? "bg-slate-800 text-slate-400"
-                        : "border border-ink/10 text-slate-200 hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] disabled:opacity-50"
+                        ? "bg-neu-base shadow-pressed-low text-slate-400"
+                        : "text-slate-200 hover:text-[rgb(var(--c-s-50))] disabled:opacity-50 bg-neu-base shadow-raised-low"
                     }`}
                   >
                     {pending && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
@@ -215,7 +215,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                 ) : (
                   <Link
                     href={`/billing/plans?cadence=${cadence}&term=${option.value}`}
-                    className="mt-3 flex w-full items-center justify-center rounded-lg border border-ink/10 py-2 text-small font-semibold text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+                    className="mt-3 flex w-full items-center justify-center rounded-lg py-2 text-small font-semibold text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     Start plan
                   </Link>
@@ -238,7 +238,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
         </div>
         <Link
           href="/billing/lessons"
-          className="shrink-0 rounded-lg border border-ink/10 px-4 py-2 text-small font-semibold text-slate-100 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+          className="shrink-0 rounded-lg px-4 py-2 text-small font-semibold text-slate-100 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
         >
           Bundle &amp; save
         </Link>
@@ -253,7 +253,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
           )}
 
           {cancelStage === "downgrade-offer" && (
-            <div className="rounded-xl border border-ink/15 bg-[rgb(var(--c-s-50)/0.04)] p-4">
+            <div className="rounded-xl p-4 bg-neu-base shadow-raised-low">
               <p className="text-small text-slate-100">Before you cancel, want to switch to 3-Month instead?</p>
               <p className="mt-1 text-small text-slate-500">
                 Same weekly time, lower commitment than what you&apos;re on now, still a real discount off the
@@ -272,7 +272,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                 <button
                   type="button"
                   onClick={() => setCancelStage("reason")}
-                  className="rounded-lg border border-ink/10 px-4 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800"
+                  className="rounded-lg px-4 py-2 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   No, cancel anyway
                 </button>
@@ -308,7 +308,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   placeholder="Tell us a bit more"
                   rows={3}
                   disabled={cancelStage === "canceling"}
-                  className="mt-3 w-full rounded-lg border border-ink/10 bg-slate-950 p-3 text-body text-slate-100 outline-none transition focus:border-red-400/60 disabled:opacity-60"
+                  className="mt-3 w-full rounded-lg p-3 text-body text-slate-100 outline-none transition focus:border-red-400/60 disabled:opacity-60 bg-neu-base shadow-raised-low"
                 />
               )}
               {cancelError && <p className="mt-2 text-small text-red-400">{cancelError}</p>}
@@ -326,7 +326,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   type="button"
                   onClick={resetCancelFlow}
                   disabled={cancelStage === "canceling"}
-                  className="rounded-lg border border-ink/10 px-4 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                  className="rounded-lg px-4 py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Never mind
                 </button>

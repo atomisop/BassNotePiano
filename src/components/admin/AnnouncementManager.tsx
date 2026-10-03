@@ -100,7 +100,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
         />
       </div>
 
-      <div className="mt-4 flex items-center justify-between rounded-lg border border-ink/10 px-3 py-2.5">
+      <div className="mt-4 flex items-center justify-between rounded-lg px-3 py-2.5 bg-neu-base shadow-raised-low">
         <div>
           <p className="text-small font-medium text-slate-200">Send email</p>
           <p className="text-small text-slate-500">Also emails every signed-up account, not just the in-app banner.</p>
@@ -117,7 +117,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
       {error && <p className="mt-2 text-small text-red-400">{error}</p>}
 
       {confirmingEmail ? (
-        <div className="mt-4 space-y-2 rounded-lg border border-ink/15 bg-[rgb(var(--c-s-50)/0.04)] p-3">
+        <div className="mt-4 space-y-2 rounded-lg p-3 bg-neu-base shadow-raised-low">
           <p className="text-small text-slate-50">
             This will email all {totalUsers} account{totalUsers === 1 ? "" : "s"}. Send it?
           </p>
@@ -126,7 +126,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
               type="button"
               onClick={() => setConfirmingEmail(false)}
               disabled={submitting}
-              className="flex-1 rounded-lg border border-ink/10 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+              className="flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
               Cancel
             </button>
@@ -179,7 +179,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
   }
 
   return (
-    <div className="rounded-xl border border-ink/10 p-4">
+    <div className="rounded-xl p-4 bg-neu-base shadow-raised-low">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -207,7 +207,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
               type="button"
               onClick={() => setDeleting(false)}
               disabled={busy}
-              className="flex-1 rounded-lg border border-ink/10 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+              className="flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
               Cancel
             </button>
@@ -228,7 +228,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
             type="button"
             onClick={handleToggleActive}
             disabled={busy}
-            className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:border-ink/20 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
           >
             {announcement.active ? "Deactivate" : "Reactivate"}
           </button>

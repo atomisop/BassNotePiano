@@ -71,7 +71,7 @@ export function LessonPdfPlayer({ src, title }: { src: string; title: string }) 
 
   if (loadError) {
     return (
-      <div className="flex h-[75vh] w-full flex-col items-center justify-center gap-3 rounded-2xl bg-slate-900 p-8 text-center">
+      <div className="flex h-[75vh] w-full flex-col items-center justify-center gap-3 rounded-2xl bg-neu-base shadow-pressed-low p-8 text-center">
         <p className="text-small text-slate-400">Your browser can&apos;t preview this PDF inline.</p>
         <a href={src} target="_blank" rel="noreferrer" className="cta-sheen cta-fill rounded-xl px-4 py-2 text-small font-semibold">
           Open the PDF

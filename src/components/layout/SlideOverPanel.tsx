@@ -104,7 +104,7 @@ export function SlideOverPanel({
                 type="button"
                 onClick={onClose}
                 aria-label="Back"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-ink/10 text-slate-300 transition hover:border-ink/15 hover:bg-ink/5"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
                   <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />

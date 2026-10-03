@@ -181,7 +181,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
               onClick={handleClose}
               disabled={step === "submitting"}
               aria-label="Back"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-ink/10 text-slate-300 transition hover:border-ink/15 hover:bg-ink/5 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
                 <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
@@ -210,7 +210,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                               ? "bg-[rgb(var(--c-s-50))]"
                               : i === currentIndex
                                 ? "bg-[rgb(var(--c-s-50)/0.4)]"
-                                : "bg-slate-800"
+                                : "bg-neu-base shadow-pressed-low"
                           }`}
                         />
                       ))}
@@ -231,7 +231,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                             className={`w-full rounded-xl border px-4 py-2.5 text-left text-small font-medium transition ${
                               selected
                                 ? "border-[rgb(var(--c-s-50))] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
-                                : "border-ink/10 text-slate-300 hover:border-ink/15 hover:bg-slate-800/60"
+                                : "border-transparent text-slate-300 bg-neu-base shadow-raised-low"
                             }`}
                           >
                             {choice}
@@ -248,7 +248,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                           type="button"
                           onClick={() => setCurrentIndex((i) => i - 1)}
                           disabled={step === "submitting"}
-                          className="flex-1 rounded-xl border border-ink/10 py-2.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                          className="flex-1 rounded-xl py-2.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                         >
                           {/* "Previous", not "Back": the header above now has
                               its own Back button that exits the quiz
@@ -288,7 +288,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ type: "spring", bounce: 0.35, duration: 0.5, delay: 0.05 }}
                       className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${
-                        result.passed ? "bg-slate-50/10" : "bg-slate-800"
+                        result.passed ? "bg-slate-50/10" : "bg-neu-base shadow-pressed-low"
                       }`}
                     >
                       {result.passed ? (
@@ -321,7 +321,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                     </p>
                     <div
                       className={`mx-auto mt-3 w-fit rounded-full px-3 py-1 text-small font-medium ${
-                        result.passed ? "bg-slate-50/10 text-slate-100" : "bg-slate-800 text-slate-400"
+                        result.passed ? "bg-slate-50/10 text-slate-100" : "bg-neu-base shadow-pressed-low text-slate-400"
                       }`}
                     >
                       Your score: {result.score}/{result.total} · {Math.round(passThreshold * 100)}% required
@@ -339,7 +339,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                       <button
                         type="button"
                         onClick={handleClose}
-                        className="flex-1 rounded-xl border border-ink/10 py-2.5 text-small font-medium text-slate-300 transition hover:bg-slate-800"
+                        className="flex-1 rounded-xl py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                       >
                         Done
                       </button>
