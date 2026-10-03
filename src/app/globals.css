@@ -1033,10 +1033,3 @@
   background: rgb(245 245 245);
   color: rgb(26 26 26);
 }
-
-/* Engraved back-plane type: the same base color as the page, cut INTO it
-   (shade on the top-left edge, light on the bottom-right). Decorative. */
-@utility engraved {
-  color: rgb(var(--neu-base));
-  text-shadow: 1px 1px 2px var(--neu-hi), -1px -1px 2px var(--neu-lo);
-}

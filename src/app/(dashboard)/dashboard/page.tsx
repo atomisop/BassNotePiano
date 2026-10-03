@@ -12,7 +12,6 @@ import { StreakDots } from "@/components/gamification/StreakDots";
 import { TodayGreeting } from "@/components/dashboard/TodayGreeting";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Card, Eyebrow } from "@/components/ui/Card";
-import { BackPlane } from "@/components/ui/Hero";
 import { buttonVariants } from "@/components/ui/button";
 import { WideLayout } from "@/components/layout/PageLayouts";
 
@@ -76,12 +75,8 @@ export default async function DashboardPage() {
   return (
     <WideLayout>
       <div className="grid gap-x-(--space-section) gap-y-(--space-group) lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-[auto_auto_1fr] xl:grid-cols-[minmax(0,1fr)_22rem]">
-        {/* ---- Back plane + Hero ------------------------------------------ */}
-        <div className="relative pt-10 md:pt-16 lg:col-start-1">
-          {/* Right-aligned so the greeting overlaps only its edge: depth, not a smudge behind the words. */}
-          <BackPlane className="-top-2 text-right md:-top-6">
-            {progress.completedScales}/{progress.totalScales}
-          </BackPlane>
+        {/* ---- Hero -------------------------------------------------------- */}
+        <div className="relative pt-4 md:pt-6 lg:col-start-1">
           <TodayGreeting name={user?.name ?? null} className="relative z-(--z-mid)" />
         </div>
 

@@ -5,7 +5,7 @@ import { BellIcon, PlusIcon } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, Eyebrow } from "@/components/ui/Card";
-import { Hero, BackPlane } from "@/components/ui/Hero";
+import { Hero } from "@/components/ui/Hero";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { Tabs } from "@/components/ui/Tabs";
@@ -43,9 +43,8 @@ export function DesignSystemPreview() {
     <div className="space-y-(--space-section) pb-16">
       {/* The three planes, together: back-plane type, the subject card
           overlapping it, and the controls on top. */}
-      <Section label="Three planes of depth">
-        <div className="relative overflow-hidden pt-16 md:pt-24">
-          <BackPlane>Tizita</BackPlane>
+      <Section label="Two planes of depth">
+        <div className="relative overflow-hidden pt-4">
           <Card className="relative z-(--z-mid) max-w-2xl">
             <Eyebrow>Scale 4</Eyebrow>
             <Hero as="h2" className="mt-2">Tizita Major</Hero>
