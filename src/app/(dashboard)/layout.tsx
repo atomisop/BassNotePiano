@@ -41,31 +41,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const isAdmin = session.user.role === "ADMIN";
 
   return (
-    <div data-surface="app" className="relative flex h-[100svh] overflow-hidden bg-neu-base">
+    <div data-surface="app" className="fixed inset-0 flex overflow-hidden bg-neu-base">
       {/* No photographic backdrop behind the app shell, deliberately. The
           previous system wallpapered every authenticated page with a piano
           photo; on paper that reads as a smudge under the text rather than
           atmosphere, and it forced a heavy scrim that muddied every surface
           sitting on it. Photography now appears only where it is the subject
           (the marketing pages), never as a bed for UI. */}
-      {/* h-[100svh] (small viewport height — the size the browser chrome
-          ever *shrinks* the viewport to), not h-dvh and not h-screen.
-          h-screen/100vh was tried first and rejected: on a real phone,
-          `100vh` is measured against the tallest the browser chrome ever
-          gets, not what's actually visible once Safari's toolbar is
-          showing, and that gap clipped the bottom dock below the real
-          viewport. `dvh` (dynamic viewport height) was the fix for that —
-          but "dynamic" means it's re-measured continuously, including
-          mid-scroll while Safari's toolbar animates itself away, so the
-          whole shell (TopBar, AppDock) visibly resized/shifted during a
-          scroll gesture instead of staying put — reported live as "the top
-          bar and bottom dock move in a weird way when scrolling." `svh`
-          pins the shell to the smallest the viewport is ever going to be
-          (toolbar fully expanded), so it never changes size once painted:
-          the one trade-off is a sliver of empty space below the dock for
-          the instant the toolbar auto-hides, which is a fixed, harmless gap
-          rather than a moving one — far better than the shell itself
-          reflowing under your thumb. */}
+      {/* fixed inset-0, not a viewport-unit height: the shell is pinned to the
+          visible viewport edges, so it can never be taller or shorter than
+          what is on screen. Viewport units were the root cause of the strip
+          under the dock: 100vh/100svh/100dvh each disagree with the visible
+          area at some point while a phone browser's toolbar animates, and
+          body (min-h-screen) then let the document scroll the shell out of
+          frame. globals.css now also locks the document itself for any page
+          containing [data-surface="app"], so nothing can pan sideways or
+          vertically except <main>. */}
       {/* pt-16: TopBar is `position: fixed` now (see its own comment for
           why — it used to disappear behind whatever "on-screen stuff" the
           visitor was navigating back from, by direct instruction it's now
@@ -83,7 +74,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             chaining up to the body once it hits the top/bottom — without
             it, an iOS overscroll bounce here could visibly tug at the fixed
             shell around it, the same "things move weird" complaint. */}
-        <main className="flex-1 overflow-y-auto overscroll-contain px-4 py-6 pb-28 md:px-8 md:py-10">{children}</main>
+        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-6 pb-28 md:px-8 md:py-10">{children}</main>
       </div>
       <AppDock unreadMessageCount={unreadMessageCount} />
       <CommandMenu isAdmin={isAdmin} />
