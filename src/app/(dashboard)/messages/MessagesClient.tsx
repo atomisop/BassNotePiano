@@ -253,9 +253,14 @@ function MessagesInner({
     // keyboard included, so the header and input (both fixed-size flex
     // children, see ChatWindow's own h-full flex-col) stay pinned in place
     // and only the message list in between actually shrinks.
+    //
+    // The 12.5rem (13.5rem from md:) is the shell's real chrome: 4rem TopBar,
+    // the <main> top padding, and its pb-28 that clears the floating dock.
+    // It was 9rem, which only fit because chat auto-scroll used to shove the
+    // whole shell upward to compensate; that is fixed, so the pane must fit.
     <>
       <TwoPaneLayout
-        className="glass-surface h-[calc(100dvh-9rem)] overflow-hidden"
+        className="glass-surface h-[calc(100dvh-12.5rem)] overflow-hidden md:h-[calc(100dvh-13.5rem)]"
         showDetail={hasActivePane}
         list={
           <ConversationSidebar
