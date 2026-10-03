@@ -8,6 +8,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { XIcon } from "@/components/ui/icons";
 import { GroupAvatar } from "./GroupAvatar";
 import type { GroupMessageRow } from "../actions";
+import { scrollWithin } from "@/lib/scrollWithin";
 
 function relativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -63,7 +64,7 @@ export function GroupChatWindow({
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollWithin(messagesEndRef.current, "end");
   }, [messages.length]);
 
   // Same reasoning as ChatWindow's own identical effect: a reply-in-progress
@@ -104,7 +105,7 @@ export function GroupChatWindow({
   }
 
   function handleJumpToReply(messageId: string) {
-    document.getElementById(`msg-${messageId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    scrollWithin(document.getElementById(`msg-${messageId}`), "center");
   }
 
   async function handleLeave() {
