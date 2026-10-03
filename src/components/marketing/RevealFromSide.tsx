@@ -54,7 +54,7 @@ export function RevealFromSide({
       <motion.div
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
-        viewport={{ once: !repeat, margin: "0px 0px 10% 0px" }}
+        viewport={{ once: !repeat, margin: "0px 0px 20% 0px" }}
         transition={{ duration: 0.28 }}
         className={className}
       >
@@ -67,7 +67,7 @@ export function RevealFromSide({
     <motion.div
       initial={{ opacity: 0, ...offset, filter: "blur(7px)" }}
       whileInView={{ opacity: 1, x: 0, y: 0, filter: "blur(0px)" }}
-      viewport={{ once: !repeat, margin: "0px 0px 10% 0px" }}
+      viewport={{ once: !repeat, margin: "0px 0px 20% 0px" }}
       transition={{ duration: 0.85, delay, ease: EXPO_OUT }}
       className={className}
     >

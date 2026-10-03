@@ -16,7 +16,7 @@ import type { ReactNode } from "react";
  * uses glass-surface directly, on just that one element, not the whole
  * section.
  *
- * Triggers as soon as ANY part of the block is within 12% of the viewport's
+ * Triggers as soon as ANY part of the block is within 20% of the viewport's
  * bottom edge (`amount: "some"` plus a positive bottom margin), not once 30% of
  * it is visible: a tall section block needs well over half a screen of scroll
  * to reach 30%, which read as content that only appeared after you were
@@ -47,7 +47,7 @@ export function ScrollReveal({ children, className = "" }: { children: ReactNode
       className={className}
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: "some", margin: "0px 0px 12% 0px" }}
+      viewport={{ once: true, amount: "some", margin: "0px 0px 20% 0px" }}
       transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
