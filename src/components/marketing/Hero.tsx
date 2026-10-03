@@ -96,13 +96,10 @@ const HERO_VIDEO_URL = "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/mark
 const HERO_ROTATING_WORDS = ["best", "only", "right", "definitive", "authentic", "smartest"];
 const HERO_WORD_INTERVAL_MS = 2000;
 
-// Longest word above, in characters, plus a little slack. The headline
-// uses `text-balance` across a `max-w-[18ch]` box, so swapping in a
-// longer/shorter word here would otherwise nudge that balance calculation
-// and re-wrap the *entire* h1 onto different lines every 2s. Reserving a
-// constant slot keeps the sentence's line breaks fixed no matter which
-// word is currently showing.
-const HERO_ROTATING_WORD_SLOT = "11ch";
+// No reserved width slot: the word takes its own width, so "way" sits right
+// beside it instead of floating far to the right of a short word like "best".
+// The line break after "way" is explicit (see the h1 below), which is what
+// keeps the sentence's two lines fixed while the word changes length.
 
 /**
  * Styled after 21st.dev's own "text rotate" genre of component, by direct
@@ -169,7 +166,7 @@ function RotatingHeroWord() {
   const letterTransition = prefersReducedMotion ? { duration: 0 } : { type: "spring", damping: 32, stiffness: 500 };
 
   return (
-    <span className="relative inline-block" style={{ minWidth: HERO_ROTATING_WORD_SLOT }}>
+    <span className="relative inline-block">
       <AnimatePresence mode="popLayout">
         <motion.span
           key={word}
@@ -263,7 +260,9 @@ export function Hero() {
       <div className="mx-auto w-full max-w-4xl px-6">
         <h1 className="display-1 hero-title max-w-[18ch] text-balance">
           <span aria-hidden="true">
-            The <RotatingHeroWord /> way to learn Ethiopian music.
+            The <RotatingHeroWord /> way
+            <br />
+            to learn Ethiopian music.
           </span>
           <span className="sr-only">The best way to learn Ethiopian music.</span>
         </h1>
