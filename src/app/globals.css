@@ -431,6 +431,20 @@
   filter: blur(40px);
 }
 
+/*
+ * Minimum touch target (Fitts's law, and iOS's 44pt guidance). Applied to
+ * small buttons and links so a thumb can hit them; on a mouse (fine pointer)
+ * the control keeps its compact look, so desktop is unchanged. Use it on any
+ * control that is shorter than 44px, and give links `inline-flex items-center`
+ * so min-height applies to them.
+ */
+@utility tap {
+  @media (pointer: coarse) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
 @utility cta-fill {
   /* ---- Motion --------------------------------------------------------- */
 

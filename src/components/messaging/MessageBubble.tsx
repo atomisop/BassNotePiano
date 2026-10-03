@@ -94,7 +94,7 @@ export function MessageBubble({
             <button
               type="button"
               onClick={() => onJumpToReply?.(reply.id)}
-              className={`mb-1.5 block w-full rounded-lg border-l-2 px-2 py-1 text-left text-small ${
+              className={`tap mb-1.5 block w-full rounded-lg border-l-2 px-2 py-1 text-left text-small ${
                 "border-[rgb(var(--c-s-50)/0.4)] bg-ink/5"
               }`}
             >

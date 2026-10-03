@@ -149,7 +149,7 @@ function Pill({
       type="button"
       onClick={onClick}
       disabled={comingSoon}
-      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
+      className={`tap flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
         selected
           ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
           : "border-transparent text-slate-400 bg-neu-base shadow-raised-low"
@@ -275,7 +275,7 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
         type="button"
         onClick={handleSave}
         disabled={submitting}
-        className="cta-sheen cta-fill mt-4 flex items-center justify-center rounded-lg px-4 py-1.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        className="tap cta-sheen cta-fill mt-4 flex items-center justify-center rounded-lg px-4 py-1.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
         {submitting ? "Saving…" : "Save"}
@@ -354,7 +354,7 @@ function AvatarSection({
             type="button"
             disabled={uploading || !storageConfigured}
             onClick={() => fileInputRef.current?.click()}
-            className="cta-sheen flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+            className="tap cta-sheen flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
           >
             {uploading && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {uploading ? "Uploading…" : "Choose new photo"}
@@ -405,7 +405,7 @@ function NameSection({ initialName, onDone }: { initialName: string | null; onDo
         <button
           type="submit"
           disabled={submitting || name.trim() === (initialName ?? "")}
-          className="cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="tap cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Saving…" : "Save"}
@@ -455,7 +455,7 @@ function UsernameSection({ initialUsername }: { initialUsername: string | null }
         <button
           type="submit"
           disabled={submitting || username.trim() === (initialUsername ?? "")}
-          className="cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="tap cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Saving…" : "Save"}

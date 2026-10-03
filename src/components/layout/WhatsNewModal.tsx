@@ -81,14 +81,14 @@ export function WhatsNewModal({ show, entry }: { show: boolean; entry: Changelog
               <Link
                 href="/about?tab=updates"
                 onClick={handleClose}
-                className="text-small text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
+                className="tap inline-flex items-center text-small text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
               >
                 Full update history
               </Link>
               <button
                 type="button"
                 onClick={handleClose}
-                className="cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-small font-semibold"
+                className="tap cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-small font-semibold"
               >
                 Got it
               </button>

@@ -38,7 +38,7 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
         <Link
           key={view.value}
           href={view.value === "WINDOWS" ? "/admin/schedule" : `/admin/schedule?view=${view.value}`}
-          className={`rounded-full px-3 py-1.5 text-small font-medium transition ${
+          className={`tap inline-flex items-center rounded-full px-3 py-1.5 text-small font-medium transition ${
             activeView === view.value ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
           }`}
         >

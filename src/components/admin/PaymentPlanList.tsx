@@ -143,7 +143,7 @@ export function PaymentPlanList({ plans, onCancel, emptyMessage = "No plans to s
                       setNote("");
                     }}
                     disabled={busyId === plan.id}
-                    className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     Back
                   </button>
@@ -151,7 +151,7 @@ export function PaymentPlanList({ plans, onCancel, emptyMessage = "No plans to s
                     type="button"
                     onClick={() => handleCancel(plan.id)}
                     disabled={busyId === plan.id || !note.trim()}
-                    className="flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {busyId === plan.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                     {busyId === plan.id ? "Canceling…" : "Confirm cancel"}
@@ -163,7 +163,7 @@ export function PaymentPlanList({ plans, onCancel, emptyMessage = "No plans to s
                 <button
                   type="button"
                   onClick={() => setCancelingId(plan.id)}
-                  className="w-full rounded-lg py-2 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap w-full rounded-lg py-2 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Cancel plan
                 </button>

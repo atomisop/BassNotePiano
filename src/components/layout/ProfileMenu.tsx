@@ -71,7 +71,7 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
         aria-expanded={open}
         data-tour="nav-profile"
         onClick={() => setOpen((v) => !v)}
-        className={`h-8 w-8 shrink-0 overflow-hidden rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)] transition hover:border-[rgb(var(--c-s-50)/0.6)] ${triggerClassName ?? ""}`}
+        className={`tap h-8 w-8 shrink-0 overflow-hidden rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)] transition hover:border-[rgb(var(--c-s-50)/0.6)] ${triggerClassName ?? ""}`}
       >
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element -- data URI, next/image can't optimize it
@@ -117,14 +117,14 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
           <Link
             href="/profile"
             onClick={() => setOpen(false)}
-            className="block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
+            className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
           >
             Profile
           </Link>
           <Link
             href="/account"
             onClick={() => setOpen(false)}
-            className="block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
+            className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
           >
             Settings
           </Link>
@@ -134,7 +134,7 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
           <button
             type="button"
             onClick={() => signOut({ callbackUrl: "/" })}
-            className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-small text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200"
+            className="tap flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-small text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
               <path d={LOGOUT_ICON_PATH} strokeLinecap="round" strokeLinejoin="round" />

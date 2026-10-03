@@ -44,7 +44,7 @@ export default async function ProfilePage() {
           never reads as a dead end reachable only via the dock icons. */}
       <Link
         href="/dashboard"
-        className="mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100"
+        className="tap mb-4 flex w-fit items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100"
       >
         <ArrowLeftIcon size={16} />
         Back to roadmap

@@ -181,7 +181,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
               onClick={handleClose}
               disabled={step === "submitting"}
               aria-label="Back"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+              className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px]">
                 <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />

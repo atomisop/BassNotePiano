@@ -293,7 +293,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                   onClick={() => removeRecipient(index)}
                   disabled={emails.length <= MIN_FAMILY_BUNDLE_RECIPIENTS}
                   aria-label={`Remove recipient ${index + 1}`}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-ink/10 disabled:hover:text-slate-400 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-ink/10 disabled:hover:text-slate-400 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   <XIcon size={13} />
                 </button>

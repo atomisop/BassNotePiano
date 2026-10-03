@@ -200,8 +200,8 @@ export function MarketingNav() {
                   aria-current={isActive ? "page" : undefined}
                   className={
                     isActive
-                      ? "flex h-9 items-center !rounded-full bg-[rgb(var(--c-s-50))] px-4 text-small font-medium text-slate-950 transition-colors duration-200"
-                      : "glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-small font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
+                      ? "tap flex h-9 items-center !rounded-full bg-[rgb(var(--c-s-50))] px-4 text-small font-medium text-slate-950 transition-colors duration-200"
+                      : "tap glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-small font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
                   }
                 >
                   {link.label}
@@ -211,7 +211,7 @@ export function MarketingNav() {
             {secondary && (
               <Link
                 href={secondary.href}
-                className="glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-small font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
+                className="tap glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-small font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
               >
                 {secondary.label}
               </Link>
@@ -225,7 +225,7 @@ export function MarketingNav() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Join our Discord"
-              className="glass-surface-subtle flex h-9 w-9 items-center justify-center !rounded-full text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
+              className="tap glass-surface-subtle flex h-9 w-9 items-center justify-center !rounded-full text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
             >
               <DiscordIcon size={16} className="text-[#5865F2]" />
             </a>

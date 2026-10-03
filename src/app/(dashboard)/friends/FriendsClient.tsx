@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { Ban } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { useAction } from "@/hooks/useAction";
@@ -143,7 +144,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
         <SectionCard title="Set a username first" description="Needed so other students can find and add you.">
           <Link
             href="/profile"
-            className="cta-sheen cta-fill inline-block rounded-lg px-4 py-2 text-small font-semibold"
+            className="tap cta-sheen cta-fill inline-block rounded-lg px-4 py-2 text-small font-semibold"
           >
             Go to your profile
           </Link>
@@ -172,19 +173,19 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
             ) : (
               <div className="space-y-2">
                 {friends.map((friend) => (
-                  <div key={friend.id} className="flex items-center justify-between gap-3 rounded-lg p-2.5 bg-neu-base shadow-raised-low">
-                    <div className="flex items-center gap-3">
+                  <div key={friend.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg p-2.5 bg-neu-base shadow-raised-low">
+                    <div className="flex min-w-0 items-center gap-3">
                       <Avatar profile={friend} />
                       <ProfileLine profile={friend} />
                     </div>
                     {blockingId === friend.id ? (
-                      <span className="flex shrink-0 items-center gap-2 rounded-lg border border-red-900 bg-red-400/5 px-3 py-1.5 text-small text-red-300">
+                      <span className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-red-900 bg-red-400/5 px-3 py-1.5 text-small text-red-300">
                         Block {friend.name ?? friend.username ?? "them"}?
                         <button
                           type="button"
                           onClick={() => handleBlock(friend.id)}
                           disabled={action.pending}
-                          className={`flex items-center font-semibold underline underline-offset-2 ${busy}`}
+                          className={`tap inline-flex items-center px-2 font-semibold underline underline-offset-2 ${busy}`}
                         >
                           {action.isPending(`block:${friend.id}`) && spin}
                           Confirm
@@ -193,7 +194,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                           type="button"
                           onClick={() => setBlockingId(null)}
                           disabled={action.pending}
-                          className={`text-slate-400 underline underline-offset-2 ${busy}`}
+                          className={`tap inline-flex items-center px-2 text-slate-400 underline underline-offset-2 ${busy}`}
                         >
                           Never mind
                         </button>
@@ -202,16 +203,18 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                       <div className="flex shrink-0 gap-2">
                         <Link
                           href={`/messages?with=${friend.id}`}
-                          className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                          className="tap inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                         >
                           Message
                         </Link>
                         <button
                           type="button"
                           onClick={() => setBlockingId(friend.id)}
-                          className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-500 transition hover:text-red-400 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                          aria-label={`Block ${friend.name ?? friend.username ?? "this person"}`}
+                          title="Block"
+                          className="tap flex h-9 w-9 items-center justify-center rounded-lg text-red-400 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                         >
-                          Block
+                          <Ban size={18} strokeWidth={1.75} aria-hidden />
                         </button>
                       </div>
                     )}
@@ -226,7 +229,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
               <div className="space-y-2">
                 {blocked.map((entry) => (
                   <div key={entry.id} className="flex items-center justify-between gap-3 rounded-lg p-2.5 bg-neu-base shadow-raised-low">
-                    <div className="flex items-center gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
                       <Avatar profile={entry.user} />
                       <ProfileLine profile={entry.user} />
                     </div>
@@ -234,7 +237,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                       type="button"
                       onClick={() => handleUnblock(entry.user.id)}
                       disabled={action.pending}
-                      className={`flex shrink-0 items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
+                      className={`tap flex shrink-0 items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
                     >
                       {action.isPending(`unblock:${entry.user.id}`) && spin}
                       Unblock
@@ -260,7 +263,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
               <button
                 type="submit"
                 disabled={action.pending || query.trim().length < 2}
-                className="cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                className="tap cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {searching && spin}
                 {searching ? "Searching…" : "Search"}
@@ -273,7 +276,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
               <div className="mt-4 space-y-2">
                 {results.map((profile) => (
                   <div key={profile.id} className="flex items-center justify-between gap-3 rounded-lg p-2.5 bg-neu-base shadow-raised-low">
-                    <div className="flex items-center gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
                       <Avatar profile={profile} />
                       <ProfileLine profile={profile} />
                     </div>
@@ -281,7 +284,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                       type="button"
                       onClick={() => handleAddFriend(profile)}
                       disabled={sentTo.has(profile.id) || action.pending}
-                      className="flex shrink-0 items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className="tap flex shrink-0 items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       {action.isPending(`add:${profile.id}`) && spin}
                       {sentTo.has(profile.id) ? "Sent" : "Add friend"}
@@ -297,7 +300,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
               <div className="space-y-2">
                 {receivedRequests.map((req) => (
                   <div key={req.id} className="flex items-center justify-between gap-3 rounded-lg p-2.5 bg-neu-base shadow-raised-low">
-                    <div className="flex items-center gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
                       <Avatar profile={req.sender} />
                       <ProfileLine profile={req.sender} />
                     </div>
@@ -306,7 +309,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                         type="button"
                         onClick={() => handleRespond(req.id, true)}
                         disabled={action.pending}
-                        className={`cta-sheen cta-fill flex items-center rounded-lg px-3 py-1.5 text-small font-semibold ${busy}`}
+                        className={`tap cta-sheen cta-fill flex items-center rounded-lg px-3 py-1.5 text-small font-semibold ${busy}`}
                       >
                         {action.isPending(`accept:${req.id}`) && spin}
                         Accept
@@ -315,7 +318,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                         type="button"
                         onClick={() => handleRespond(req.id, false)}
                         disabled={action.pending}
-                        className={`flex items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-400 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
+                        className={`tap flex items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-400 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
                       >
                         {action.isPending(`reject:${req.id}`) && spin}
                         Reject
@@ -332,7 +335,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
               <div className="space-y-2">
                 {sentRequests.map((req) => (
                   <div key={req.id} className="flex items-center justify-between gap-3 rounded-lg p-2.5 bg-neu-base shadow-raised-low">
-                    <div className="flex items-center gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
                       <Avatar profile={req.receiver} />
                       <ProfileLine profile={req.receiver} />
                     </div>

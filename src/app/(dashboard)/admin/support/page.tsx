@@ -30,7 +30,7 @@ export default async function AdminSupportPage({ searchParams }: { searchParams:
           <Link
             key={filter.value}
             href={filter.value === "OPEN" ? "/admin/support" : `/admin/support?status=${filter.value}`}
-            className={`rounded-full px-3 py-1.5 text-small font-medium transition ${
+            className={`tap inline-flex items-center rounded-full px-3 py-1.5 text-small font-medium transition ${
               activeFilter === filter.value ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
             }`}
           >

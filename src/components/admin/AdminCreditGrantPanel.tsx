@@ -242,7 +242,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                       type="button"
                       onClick={editAfterConfirm}
                       disabled={submitting}
-                      className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Edit
                     </button>
@@ -250,7 +250,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                       type="button"
                       onClick={handleConfirm}
                       disabled={submitting}
-                      className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                      className="tap cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {submitting ? "Applying…" : "Confirm"}
@@ -260,7 +260,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
               ) : (
                 <button
                   type="submit"
-                  className="cta-sheen cta-fill w-full rounded-lg px-3 py-2 text-small font-medium disabled:opacity-40"
+                  className="tap cta-sheen cta-fill w-full rounded-lg px-3 py-2 text-small font-medium disabled:opacity-40"
                 >
                   Review adjustment
                 </button>

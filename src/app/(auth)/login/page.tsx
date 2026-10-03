@@ -96,7 +96,7 @@ function LoginForm() {
             <Label htmlFor="password" className={fieldLabel}>
               Password
             </Label>
-            <Link href="/forgot-password" className="text-small text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
+            <Link href="/forgot-password" className="tap inline-flex items-center text-small text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
               Forgot?
             </Link>
           </div>

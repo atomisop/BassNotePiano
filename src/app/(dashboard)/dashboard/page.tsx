@@ -85,7 +85,7 @@ async function NextClassCard({ userId }: { userId: string }) {
               <p className="mt-2 text-small text-slate-400">No class booked yet.</p>
               <Link
                 href="/lessons"
-                className="mt-2 inline-flex text-small font-semibold text-slate-50 underline-offset-4 hover:underline"
+                className="tap mt-2 inline-flex items-center text-small font-semibold text-slate-50 underline-offset-4 hover:underline"
               >
                 Book a class
               </Link>
@@ -202,7 +202,7 @@ export default async function DashboardPage() {
             </p>
             <Link
               href="/profile"
-              className="mt-1 inline-flex text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline"
+              className="tap mt-1 inline-flex items-center text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline"
             >
               See them on your profile
             </Link>

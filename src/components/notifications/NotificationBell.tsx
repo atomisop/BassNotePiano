@@ -460,7 +460,7 @@ export function NotificationBell() {
         onClick={() => setOpen(true)}
         aria-label="Notifications"
         data-tour="notification-bell"
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+        className="tap relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
       >
         <Bell size={18} strokeWidth={1.5} />
         {unreadCount > 0 && (
@@ -501,7 +501,7 @@ export function NotificationBell() {
                     type="button"
                     onClick={() => setOpen(false)}
                     aria-label="Back"
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap flex h-9 w-9 items-center justify-center rounded-lg text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     <ArrowLeft size={18} strokeWidth={1.75} />
                   </button>

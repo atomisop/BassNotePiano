@@ -124,7 +124,7 @@ export function AdminAttendanceQuickPanel() {
         onClick={() => setOpen((o) => !o)}
         aria-label="Quick attendance"
         title="Quick attendance"
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+        className="tap relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
       >
         <ClipboardCheck className="h-[18px] w-[18px]" strokeWidth={1.5} />
         {rows.length > 0 && (
@@ -166,7 +166,7 @@ export function AdminAttendanceQuickPanel() {
                           type="button"
                           disabled={marking}
                           onClick={() => handleMark(r.bookingId, "PRESENT")}
-                          className="flex flex-1 items-center justify-center gap-1 rounded-lg py-1.5 text-small font-medium text-slate-100 transition hover:bg-slate-50/10 disabled:cursor-not-allowed disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                          className="tap flex flex-1 items-center justify-center gap-1 rounded-lg py-1.5 text-small font-medium text-slate-100 transition hover:bg-slate-50/10 disabled:cursor-not-allowed disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                         >
                           {marking ? <MorphingSquare size={11} /> : <Check className="h-3.5 w-3.5" strokeWidth={2} />}
                           Present
@@ -175,7 +175,7 @@ export function AdminAttendanceQuickPanel() {
                           type="button"
                           disabled={marking}
                           onClick={() => handleMark(r.bookingId, "NO_SHOW")}
-                          className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-red-400/30 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="tap flex flex-1 items-center justify-center gap-1 rounded-lg border border-red-400/30 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {marking ? <MorphingSquare size={11} /> : <XIcon className="h-3.5 w-3.5" strokeWidth={2} />}
                           No-show

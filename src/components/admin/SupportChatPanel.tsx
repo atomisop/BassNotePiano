@@ -291,7 +291,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                     type="button"
                     onClick={handleResolve}
                     disabled={resolving}
-                    className="flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     {resolving && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                     {resolving ? "Resolving…" : "Mark resolved"}
@@ -303,7 +303,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                 <button
                   type="button"
                   onClick={() => setConfirmingDelete(true)}
-                  className="rounded-lg border border-red-500/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-500/10"
+                  className="tap rounded-lg border border-red-500/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-500/10"
                 >
                   Delete
                 </button>
@@ -321,7 +321,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                     type="button"
                     onClick={() => setConfirmingDelete(false)}
                     disabled={deleting}
-                    className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     Never mind
                   </button>
@@ -329,7 +329,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                     type="button"
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {deleting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                     {deleting ? "Deleting…" : "Delete permanently"}
@@ -390,7 +390,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
               <button
                 type="submit"
                 disabled={sending || !reply.trim()}
-                className="cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-xl px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                className="tap cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-xl px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {sending && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {sending ? "Sending…" : "Send"}

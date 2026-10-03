@@ -126,7 +126,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
               type="button"
               onClick={() => setConfirmingEmail(false)}
               disabled={submitting}
-              className="flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+              className="tap flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
               Cancel
             </button>
@@ -134,7 +134,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
               type="button"
               onClick={() => void publish()}
               disabled={submitting}
-              className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-1.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+              className="tap cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-1.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
               {submitting ? "Sending…" : `Confirm: email ${totalUsers}`}
@@ -146,7 +146,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
           type="button"
           onClick={handlePublishClick}
           disabled={submitting || !title.trim() || !body.trim()}
-          className="cta-sheen cta-fill mt-4 flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="tap cta-sheen cta-fill mt-4 flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Publishing…" : "Publish to everyone"}
@@ -207,7 +207,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
               type="button"
               onClick={() => setDeleting(false)}
               disabled={busy}
-              className="flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+              className="tap flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
               Cancel
             </button>
@@ -215,7 +215,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
               type="button"
               onClick={handleDelete}
               disabled={busy}
-              className="flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {busy && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
               {busy ? "Deleting…" : "Confirm delete"}
@@ -228,7 +228,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
             type="button"
             onClick={handleToggleActive}
             disabled={busy}
-            className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+            className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
           >
             {announcement.active ? "Deactivate" : "Reactivate"}
           </button>
@@ -236,7 +236,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
             type="button"
             onClick={() => setDeleting(true)}
             disabled={busy}
-            className="rounded-lg border border-red-400/20 px-3 py-1.5 text-small font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="tap rounded-lg border border-red-400/20 px-3 py-1.5 text-small font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Delete
           </button>

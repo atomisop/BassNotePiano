@@ -43,7 +43,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           once, without disturbing the centered brand moment. */}
       <Link
         href="/"
-        className="absolute left-4 top-4 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300 sm:left-6 sm:top-6"
+        className="tap absolute left-4 top-4 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300 sm:left-6 sm:top-6"
       >
         <ArrowLeftIcon size={16} />
         {/* "to homepage" hidden below `sm` — this link is `absolute`, so it

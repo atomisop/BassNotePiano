@@ -130,13 +130,13 @@ export function UserManagementTable({
           {selected.size > 0 && bulkPending === null && (
             <>
               <span className="text-small text-slate-400">{selected.size} selected</span>
-              <button type="button" onClick={() => setBulkPending(true)} className="cta-fill rounded-control px-3 py-1.5 text-small font-semibold">
+              <button type="button" onClick={() => setBulkPending(true)} className="tap cta-fill rounded-control px-3 py-1.5 text-small font-semibold">
                 Grant access
               </button>
-              <button type="button" onClick={() => setBulkPending(false)} className="rounded-control bg-neu-base px-3 py-1.5 text-small font-medium text-slate-200 shadow-raised-low active:shadow-pressed-low">
+              <button type="button" onClick={() => setBulkPending(false)} className="tap rounded-control bg-neu-base px-3 py-1.5 text-small font-medium text-slate-200 shadow-raised-low active:shadow-pressed-low">
                 Revoke access
               </button>
-              <button type="button" onClick={exportCsv} className="rounded-control bg-neu-base px-3 py-1.5 text-small font-medium text-slate-200 shadow-raised-low active:shadow-pressed-low">
+              <button type="button" onClick={exportCsv} className="tap rounded-control bg-neu-base px-3 py-1.5 text-small font-medium text-slate-200 shadow-raised-low active:shadow-pressed-low">
                 Export CSV
               </button>
             </>
@@ -147,10 +147,10 @@ export function UserManagementTable({
                 {bulkPending ? "Grant" : "Revoke"} complimentary curriculum access for {selected.size} {selected.size === 1 ? "person" : "people"}?
                 {!bulkPending && " They lose access to paid lessons immediately unless they have an active plan."}
               </p>
-              <button type="button" disabled={bulkBusy} onClick={() => setBulkPending(null)} className="rounded-control bg-neu-base px-3 py-1.5 text-small font-medium text-slate-300 shadow-raised-low disabled:opacity-50">
+              <button type="button" disabled={bulkBusy} onClick={() => setBulkPending(null)} className="tap rounded-control bg-neu-base px-3 py-1.5 text-small font-medium text-slate-300 shadow-raised-low disabled:opacity-50">
                 Cancel
               </button>
-              <button type="button" disabled={bulkBusy} onClick={() => applyBulk(bulkPending)} className="cta-fill rounded-control px-3 py-1.5 text-small font-semibold disabled:opacity-50">
+              <button type="button" disabled={bulkBusy} onClick={() => applyBulk(bulkPending)} className="tap cta-fill rounded-control px-3 py-1.5 text-small font-semibold disabled:opacity-50">
                 {bulkBusy ? "Applying…" : `Confirm (${selected.size})`}
               </button>
             </div>
@@ -218,7 +218,7 @@ export function UserManagementTable({
                       title={`${scaleGroup.code} — ${scaleGroup.title} (${state}). Click to ${su.unlocked ? "lock" : "unlock"}.`}
                       disabled={busy}
                       onClick={() => withBusy(user.id, () => onToggleScale(user.id, su.slug, !su.unlocked))}
-                      className={`h-8 min-w-[2.25rem] rounded-lg border px-2 text-small font-medium transition disabled:opacity-40 ${
+                      className={`tap h-8 min-w-[2.25rem] rounded-lg border px-2 text-small font-medium transition disabled:opacity-40 ${
                         su.completed
                           ? "border-slate-50/30 bg-slate-50/10 text-slate-100 hover:bg-slate-50/20"
                           : su.unlocked
@@ -251,7 +251,7 @@ export function UserManagementTable({
                       type="button"
                       onClick={() => setPendingAction(null)}
                       disabled={busy}
-                      className="flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className="tap flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Cancel
                     </button>
@@ -263,7 +263,7 @@ export function UserManagementTable({
                         else withBusy(user.id, () => onClearAssistantHistory(user.id));
                       }}
                       disabled={busy}
-                      className={`flex flex-1 items-center justify-center rounded-lg py-1.5 text-small font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                      className={`tap flex flex-1 items-center justify-center rounded-lg py-1.5 text-small font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
                         pendingAction.kind === "history"
                           ? "bg-red-500/95 text-slate-950 hover:bg-red-500"
                           : "cta-sheen cta-fill"
@@ -280,7 +280,7 @@ export function UserManagementTable({
                     type="button"
                     disabled={busy}
                     onClick={() => setPendingAction({ userId: user.id, kind: "role" })}
-                    className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     {user.role === "ADMIN" ? "Remove admin" : "Make admin"}
                   </button>
@@ -288,7 +288,7 @@ export function UserManagementTable({
                     type="button"
                     disabled={busy}
                     onClick={() => setPendingAction({ userId: user.id, kind: "curriculum" })}
-                    className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     {user.hasCurriculumAccess ? "Revoke curriculum" : "Grant curriculum"}
                   </button>
@@ -297,7 +297,7 @@ export function UserManagementTable({
                       type="button"
                       disabled={busy}
                       onClick={() => setPendingAction({ userId: user.id, kind: "history" })}
-                      className="rounded-lg border border-red-400/20 px-3 py-1.5 text-small font-medium text-red-400/80 transition hover:bg-red-400/10 disabled:opacity-40"
+                      className="tap rounded-lg border border-red-400/20 px-3 py-1.5 text-small font-medium text-red-400/80 transition hover:bg-red-400/10 disabled:opacity-40"
                     >
                       Clear Atom history ({user.assistantMessageCount})
                     </button>

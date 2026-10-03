@@ -73,7 +73,7 @@ export function LessonPdfPlayer({ src, title }: { src: string; title: string }) 
     return (
       <div className="flex h-[75vh] w-full flex-col items-center justify-center gap-3 rounded-2xl bg-neu-base shadow-pressed-low p-8 text-center">
         <p className="text-small text-slate-400">Your browser can&apos;t preview this PDF inline.</p>
-        <a href={src} target="_blank" rel="noreferrer" className="cta-sheen cta-fill rounded-xl px-4 py-2 text-small font-semibold">
+        <a href={src} target="_blank" rel="noreferrer" className="tap inline-flex items-center cta-sheen cta-fill rounded-xl px-4 py-2 text-small font-semibold">
           Open the PDF
         </a>
       </div>
@@ -110,7 +110,7 @@ export function LessonPdfPlayer({ src, title }: { src: string; title: string }) 
             onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
             disabled={pageNumber <= 1}
             aria-label="Previous page"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+            className="tap flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ChevronLeft size={16} />
           </button>
@@ -119,7 +119,7 @@ export function LessonPdfPlayer({ src, title }: { src: string; title: string }) 
             onClick={() => setPageNumber((p) => Math.min(numPages ?? p, p + 1))}
             disabled={!numPages || pageNumber >= numPages}
             aria-label="Next page"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+            className="tap flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ChevronRight size={16} />
           </button>
@@ -134,7 +134,7 @@ export function LessonPdfPlayer({ src, title }: { src: string; title: string }) 
             onClick={() => setScale((s) => Math.max(MIN_SCALE, +(s - SCALE_STEP).toFixed(2)))}
             disabled={scale <= MIN_SCALE}
             aria-label="Zoom out"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+            className="tap flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ZoomOut size={16} />
           </button>
@@ -144,7 +144,7 @@ export function LessonPdfPlayer({ src, title }: { src: string; title: string }) 
             onClick={() => setScale((s) => Math.min(MAX_SCALE, +(s + SCALE_STEP).toFixed(2)))}
             disabled={scale >= MAX_SCALE}
             aria-label="Zoom in"
-            className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+            className="tap flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ZoomIn size={16} />
           </button>
