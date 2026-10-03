@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { SITE_NAME } from "@/lib/site";
 
 // A file-based OG image: Next serves this at /opengraph-image and wires the
@@ -16,7 +18,7 @@ export const contentType = "image/png";
 // for true CTAs only ("premium black and white" direction; see themes.css's
 // own "Accent" comment for the full history of what that one accent has
 // been over time).
-const INK = "#1A1A1A";
+const INK = "#101012";
 const PAPER = "#F5F5F5";
 const MUTED = "#999999";
 
@@ -55,18 +57,21 @@ async function loadGoogleFont(
   }
 }
 
+const logoDataUri = `data:image/png;base64,${readFileSync(path.join(process.cwd(), "src", "assets", "og-mark.png")).toString("base64")}`;
+
 export default async function OpengraphImage() {
   const headline = "Ethiopian Scales, Rhythm & Chords";
   const supporting =
-    "Spelled correctly in all twelve keys, with the native chords mapped for each one.TizitaBatiAnchihoyeAmbassel" +
-    SITE_NAME;
+    "Spelled correctly in all twelve keys, with the native chords mapped for each one.TizitaBatiAnchihoyeAmbasselbassnotepiano.com" +
+    SITE_NAME +
+    SITE_NAME.toUpperCase();
 
   // The product now uses one family, Sora, for everything — no separate
   // display/body pairing to keep straight here, so both loads request the
   // same font at the two weights the card actually uses.
   const [soraBody, soraDisplay] = await Promise.all([
     loadGoogleFont("Sora", 400, supporting),
-    loadGoogleFont("Sora", 700, headline),
+    loadGoogleFont("Sora", 700, headline + SITE_NAME.toUpperCase()),
   ]);
 
   return new ImageResponse(
@@ -76,91 +81,140 @@ export default async function OpengraphImage() {
           width: "100%",
           height: "100%",
           display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
+          position: "relative",
           background: INK,
-          padding: "72px 80px",
-          // A soft white bloom from the lower left, so the flat ink field
-          // reads as a lit surface rather than a solid colour swatch —
-          // neutral, not accent-tinted, same reasoning as above.
-          //
-          // `circle at …` rather than an explicit two-length size: Satori (the
-          // renderer behind ImageResponse) implements only a subset of the CSS
-          // gradient grammar, and `radial-gradient(1000px 620px at …)` fails
-          // its parser with "Missing comma before color stops" — which surfaces
-          // as a prerender error that fails the whole build, not a silent
-          // style fallback.
-          backgroundImage: `radial-gradient(circle at 8% 108%, rgba(245,245,245,0.16) 0%, rgba(245,245,245,0) 62%)`,
+          overflow: "hidden",
         }}
       >
-        {/* Wordmark rail */}
-        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <div style={{ width: 40, height: 3, background: PAPER }} />
-          <div
-            style={{
-              fontSize: 23,
-              letterSpacing: "0.24em",
-              textTransform: "uppercase",
-              color: PAPER,
-              fontWeight: 600,
-            }}
-          >
-            {SITE_NAME}
-          </div>
+        {/* Warm glows pulled from the logo itself: brass-gold high on the
+            right, deep olive low, so the card reads as the mark's own
+            light rather than a generic dark slide. Plain circle gradients
+            only (Satori's gradient grammar is a subset, see the build note
+            this file used to carry). */}
+        <div
+          style={{
+            position: "absolute",
+            right: -120,
+            top: -200,
+            width: 820,
+            height: 820,
+            borderRadius: 999,
+            backgroundImage: "radial-gradient(circle, rgba(214,178,98,0.40) 0%, rgba(214,178,98,0) 68%)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            right: -60,
+            bottom: -300,
+            width: 880,
+            height: 880,
+            borderRadius: 999,
+            backgroundImage: "radial-gradient(circle, rgba(112,90,32,0.55) 0%, rgba(150,120,50,0.20) 45%, rgba(112,90,32,0) 70%)",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            left: -240,
+            bottom: -320,
+            width: 700,
+            height: 700,
+            borderRadius: 999,
+            backgroundImage: "radial-gradient(circle, rgba(245,245,245,0.10) 0%, rgba(245,245,245,0) 65%)",
+          }}
+        />
+
+        {/* The badge, large, on the right. */}
+        <div
+          style={{
+            position: "absolute",
+            right: 56,
+            top: 108,
+            width: 414,
+            height: 414,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
+          <img src={logoDataUri} width={414} height={414} style={{ width: 414, height: 414 }} />
         </div>
 
-        {/* The headline carries the card. Everything else is support. */}
-        <div style={{ display: "flex", flexDirection: "column" }}>
+        {/* Text column */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            width: 700,
+            height: "100%",
+            padding: "68px 0 64px 80px",
+          }}
+        >
           <div
             style={{
               display: "flex",
               fontFamily: soraDisplay ? "Sora" : undefined,
-              // Both registered Sora weights share one family name now
-              // (see the `fonts` array below) — without this, Satori has
-              // nothing to disambiguate 400 from 700 by and would default
-              // to normal weight here.
-              fontWeight: 700,
-              fontSize: 92,
-              lineHeight: 1.04,
-              letterSpacing: "-0.03em",
+              fontSize: 21,
+              letterSpacing: "0.28em",
+              textTransform: "uppercase",
               color: PAPER,
-              maxWidth: 960,
+              fontWeight: 700,
             }}
           >
-            {headline}
+            {SITE_NAME}
           </div>
-          <div
-            style={{
-              display: "flex",
-              marginTop: 30,
-              fontSize: 29,
-              lineHeight: 1.45,
-              color: MUTED,
-              maxWidth: 810,
-            }}
-          >
-            Spelled correctly in all twelve keys, with the native chords mapped for each one.
-          </div>
-        </div>
 
-        {/* The four kiñits, set as a specimen line — the actual differentiator,
-            and the part a reader recognises at a glance. */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          {["Tizita", "Bati", "Anchihoye", "Ambassel"].map((name) => (
+          <div style={{ display: "flex", flexDirection: "column" }}>
             <div
-              key={name}
               style={{
                 display: "flex",
-                padding: "11px 24px",
-                borderRadius: 999,
-                border: `1px solid rgba(245,245,245,0.20)`,
+                fontFamily: soraDisplay ? "Sora" : undefined,
+                fontWeight: 700,
+                fontSize: 72,
+                lineHeight: 1.05,
+                letterSpacing: "-0.03em",
                 color: PAPER,
-                fontSize: 25,
               }}
             >
-              {name}
+              {headline}
             </div>
-          ))}
+            <div
+              style={{
+                display: "flex",
+                marginTop: 26,
+                fontSize: 27,
+                lineHeight: 1.45,
+                color: MUTED,
+                maxWidth: 600,
+              }}
+            >
+              Spelled correctly in all twelve keys, with the native chords mapped for each one.
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingRight: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {["Tizita", "Bati", "Anchihoye", "Ambassel"].map((name) => (
+                <div
+                  key={name}
+                  style={{
+                    display: "flex",
+                    padding: "9px 20px",
+                    borderRadius: 999,
+                    border: "1px solid rgba(245,245,245,0.22)",
+                    background: "rgba(245,245,245,0.06)",
+                    color: PAPER,
+                    fontSize: 22,
+                  }}
+                >
+                  {name}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     ),

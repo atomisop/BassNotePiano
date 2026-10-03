@@ -36,7 +36,7 @@ export function BrandMark({ hideTextOnPhone = false }: { hideTextOnPhone?: boole
       onMouseLeave={() => setHovered(false)}
       className="flex items-center gap-2.5"
     >
-      <Image src="/logo-mark.png" alt="" width={28} height={28} className="h-7 w-7 shrink-0 rounded-[6px]" priority />
+      <Image src="/logo-mark.png" alt="" width={28} height={28} className="h-7 w-7 shrink-0" priority />
 
       {/* Below md: unchanged, always-visible text — no hover to drive a
           reveal on a touch device. Same wordmark treatment as MarketingNav's

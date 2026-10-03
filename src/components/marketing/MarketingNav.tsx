@@ -165,7 +165,7 @@ export function MarketingNav() {
               alt=""
               width={28}
               height={28}
-              className="h-7 w-7 rounded-[6px]"
+              className="h-7 w-7"
             />
             {/* The wordmark is set in the display face (font-serif resolves
                 to --font-display, Baloo 2 as of this pass) so the brand and
