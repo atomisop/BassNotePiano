@@ -176,9 +176,11 @@ export function MarketingNav() {
                 wordmark treatment (studied directly), not the small label
                 this replaces. Colored in the accent at the time; neutral
                 again now under the "premium black and white" pass. */}
-            <span className="font-serif text-body font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]">
+            <span className="hidden font-serif text-body font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))] md:inline">
               Bass Note Piano
             </span>
+            {/* Phones show the logo alone (the link keeps its aria-label); the
+                wordmark returns at md and up, i.e. iPad and desktop. */}
           </Link>
 
           {/* Classes/Pricing/Log in — real glass too, one tier down from the
