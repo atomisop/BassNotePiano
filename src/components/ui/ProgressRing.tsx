@@ -61,7 +61,7 @@ export function ProgressRing({
             r={radius}
             fill="none"
             strokeWidth={strokeWidth}
-            className="text-slate-800"
+            className="text-ink/15"
             stroke="currentColor"
           />
           <circle

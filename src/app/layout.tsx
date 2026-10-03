@@ -154,7 +154,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             anything deferred is already too late. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
-      <body className="min-h-screen bg-slate-950 font-sans text-slate-100 antialiased">
+      <body className="min-h-screen bg-neu-base font-sans text-slate-100 antialiased">
         {/* No flat ambient wash here by design — each area (marketing sections,
             auth shell, app shell) sets its own ground. See
             design-system/bass-note-piano/MASTER.md. */}

@@ -1,5 +1,6 @@
 "use client";
 
+import { ProgressBar } from "@/components/ui/ProgressBar";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
@@ -155,19 +156,7 @@ export function FileDropzone({
 
           {uploading && (
             <div className="mt-3">
-              <div
-                className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800"
-                role="progressbar"
-                aria-valuenow={Math.round(progress!)}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label={`Uploading ${file.name}`}
-              >
-                <div
-                  className="h-full rounded-full bg-[rgb(var(--c-s-50))] transition-all duration-200"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+              <ProgressBar value={progress!} label={`Uploading ${file.name}`} />
               <p className="mt-1.5 text-small tabular-nums text-slate-500">
                 {Math.round(progress!)}% uploaded
               </p>

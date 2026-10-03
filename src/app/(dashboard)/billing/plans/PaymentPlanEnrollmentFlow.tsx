@@ -5,6 +5,7 @@ import type { PaymentPlanCadence, PaymentPlanTerm, ZellePaymentStatus } from "@p
 import { calculatePaymentPlanRate, describePaymentPlan, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
+import { ProgressBar } from "@/components/ui/ProgressBar";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { enrollInPaymentPlanAction, getReservableSlotsAction, submitPlanInstallmentPaymentAction } from "./actions";
 
@@ -170,9 +171,7 @@ export function PaymentPlanEnrollmentFlow({
           <p className="mt-1 text-small text-slate-500">
             {plan.installmentsPaid} of {plan.termMonths} installments paid
           </p>
-          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
-            <div className="h-full rounded-full bg-[rgb(var(--c-s-50))]" style={{ width: `${progressPercent}%` }} />
-          </div>
+          <ProgressBar className="mt-2" value={progressPercent} label="Installments paid" />
         </div>
         {installment ? (
           <ZelleUnlockGate

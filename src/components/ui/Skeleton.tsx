@@ -17,7 +17,7 @@ export function Skeleton({ className }: { className?: string }) {
   return (
     <div
       aria-hidden
-      className={cn("rounded-control bg-slate-800 motion-safe:animate-pulse", className)}
+      className={cn("rounded-control bg-neu-base shadow-pressed-low motion-safe:animate-pulse", className)}
     />
   );
 }

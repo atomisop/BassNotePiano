@@ -23,18 +23,18 @@ const ICONS: Record<Tone, ReactNode> = {
 };
 
 const TONES: Record<Tone, string> = {
-  neutral: "border-ink/10 bg-[rgb(var(--c-s-50)/0.05)] text-slate-200",
-  success: "border-ink/15 bg-[rgb(var(--c-s-50)/0.08)] text-slate-50",
-  warning: "border-ink/20 bg-[rgb(var(--c-s-50)/0.06)] text-slate-50",
-  danger: "border-[rgb(var(--c-rd-400)/0.4)] bg-[rgb(var(--c-rd-400)/0.1)] text-[rgb(var(--c-rd-300))]",
-  locked: "border-ink/10 bg-transparent text-slate-500",
+  neutral: "text-slate-200",
+  success: "text-slate-50",
+  warning: "text-slate-50",
+  danger: "text-[rgb(var(--c-rd-300))]",
+  locked: "text-slate-400",
 };
 
 export function Badge({ tone = "neutral", children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-small font-medium",
+        "inline-flex items-center gap-1 rounded-full bg-neu-base px-2.5 py-0.5 text-small font-medium shadow-pressed-low",
         TONES[tone],
         className,
       )}
