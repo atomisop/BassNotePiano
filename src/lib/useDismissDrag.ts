@@ -57,7 +57,10 @@ export function useDismissDrag({ axis, onDismiss, size, threshold = 0.4 }: Dismi
       if (scrollable && scrollable.scrollTop > 0) return;
 
       offset.stop();
-      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      // No pointer capture yet. Capturing on press retargets the matching
+      // pointerup (and so the click) to this container, which silently ate
+      // every tap on the Back button and any other control inside the sheet.
+      // Capture is taken only once the press has turned into a real drag.
       drag.current = {
         id: e.pointerId,
         start: coord(e),
@@ -79,6 +82,13 @@ export function useDismissDrag({ axis, onDismiss, size, threshold = 0.4 }: Dismi
       if (d.samples.length > 12) d.samples.shift();
 
       if (!d.moved && Math.abs(delta) < 8) return;
+      if (!d.moved) {
+        try {
+          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        } catch {
+          // The pointer may already be gone; the drag still tracks via move events.
+        }
+      }
       d.moved = true;
 
       let next = d.startOffset + delta;
