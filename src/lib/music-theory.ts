@@ -98,9 +98,13 @@ function applyAccidental(letter: string, accidental: number): string {
   if (accidental === 0) return letter;
   if (accidental === 1) return `${letter}#`;
   if (accidental === -1) return `${letter}b`;
-  // Double sharps/flats only ever surface on a handful of remote transposed
-  // degrees. The book simplifies these to the plain enharmonic spelling
-  // (e.g. Fbb -> Eb) rather than printing a double accidental.
+  // Double sharps/flats surface on a few remote transposed degrees (the 7th
+  // of G# harmonic minor is F##). The lesson PDFs print them as written
+  // (F##, C##), so the spelling engine does too. Anything past a double
+  // accidental has no standard written form here, so it falls back to the
+  // plain enharmonic name.
+  if (accidental === 2) return `${letter}##`;
+  if (accidental === -2) return `${letter}bb`;
   const pitchClass = (((NATURAL_LETTER_SEMITONES[letter] + accidental) % 12) + 12) % 12;
   return accidental > 0 ? SIMPLE_SHARP_NAMES[pitchClass] : SIMPLE_FLAT_NAMES[pitchClass];
 }
@@ -140,8 +144,18 @@ export interface SpelledScale {
 /** Spells every degree of a "-"-separated formula (e.g. "1-b3-4-5-b7") from a root. */
 export function spellScale(root: string, formula: string): SpelledScale {
   const degrees = formula.split("-").map((d) => d.trim());
-  return { root, degrees, notes: degrees.map((degree) => spellDegree(root, degree)) };
+  // The chromatic scale is named by its intervals (minor 2nd, tritone...) but
+  // its notes are written with the PDF's convention: sharps going up. Only the
+  // note names change, never which keys sound.
+  const noteDegrees = formula === CHROMATIC_FORMULA ? CHROMATIC_ASCENDING_DEGREES : degrees;
+  return { root, degrees, notes: noteDegrees.map((degree) => spellDegree(root, degree)) };
 }
+
+/** The chromatic scale's interval formula, as shown to students. */
+export const CHROMATIC_FORMULA = "1-b2-2-b3-3-4-b5-5-b6-6-b7-7";
+/** Ascending chromatic notes use sharps; descending uses flats (lesson PDF). */
+const CHROMATIC_ASCENDING_DEGREES = ["1", "#1", "2", "#2", "3", "4", "#4", "5", "#5", "6", "#6", "7"];
+export const CHROMATIC_DESCENDING_DEGREES = ["1", "7", "b7", "6", "b6", "5", "b5", "4", "3", "b3", "2", "b2"];
 
 /** Spells a formula across all 12 curriculum keys — powers the Transposition Dashboard. */
 export function getScaleInAllKeys(formula: string): Record<RootKey, string[]> {
@@ -192,10 +206,20 @@ export function buildChordOnDegree(
   scaleRoot: string,
   degreeToken: string,
   quality: ChordQualityKey,
+  scaleNotes?: string[],
 ): NativeChord {
   const rootNote = spellDegree(scaleRoot, degreeToken);
   const { symbol, formula } = CHORD_QUALITIES[quality];
-  const notes = spellScale(rootNote, formula).notes;
+  // `scaleNotes`: reuse the scale's own spelling for any chord tone that is
+  // also a scale tone (Anchihoye's C#+ is C-sharp, F, A, not C#, E#, G##).
+  // Tones outside the scale keep their letter-based spelling.
+  const bySound = new Map((scaleNotes ?? []).map((n) => [pitchClassOf(n), n]));
+  // A tone borrowed from outside the scale never gets Fb, Cb, E# or B# here;
+  // the PDF writes the plain E, B, F or C instead (Db diminished is Db-E-G).
+  const PLAIN: Record<string, string> = { Fb: "E", Cb: "B", "E#": "F", "B#": "C" };
+  const notes = spellScale(rootNote, formula).notes.map((n) =>
+    bySound.get(pitchClassOf(n)) ?? (scaleNotes ? (PLAIN[n] ?? n) : n),
+  );
   return { degree: degreeToken, quality, rootNote, symbol: `${rootNote}${symbol}`, notes };
 }
 
