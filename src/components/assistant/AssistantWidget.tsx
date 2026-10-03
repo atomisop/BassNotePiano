@@ -359,6 +359,9 @@ export function AssistantWidget() {
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [showGreeting, setShowGreeting] = useState(false);
+  // Model-predicted follow-ups for the chips; empty until the first answer
+  // lands (the built-in SUGGESTIONS cover the empty chat).
+  const [generatedSuggestions, setGeneratedSuggestions] = useState<string[]>([]);
   // Whether the greeting bubble has been explicitly dismissed enough times
   // (see dismissGreeting) that it should never be offered again. Checked
   // once mounted, server-side for a signed-in account or from this
@@ -659,6 +662,24 @@ export function AssistantWidget() {
     else messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, threadMessages, loading, escalationOffer, collectingEmail, activeEscalationId]);
 
+  // Asks the model what the visitor will probably want next. Best-effort: on
+  // any failure the chips just fall back to the built-in list.
+  async function refreshSuggestions(history: Message[]) {
+    try {
+      const res = await fetch("/api/assistant/suggestions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history }),
+      });
+      const data = await res.json().catch(() => null);
+      if (Array.isArray(data?.suggestions) && data.suggestions.length > 0) {
+        setGeneratedSuggestions(data.suggestions.filter((q: unknown): q is string => typeof q === "string"));
+      }
+    } catch {
+      // Non-blocking.
+    }
+  }
+
   async function sendAtomMessage(trimmed: string) {
     const nextHistory: Message[] = [...messages, { role: "user", content: trimmed }];
     setMessages(nextHistory);
@@ -682,6 +703,7 @@ export function AssistantWidget() {
       // how the reply itself reads — this check is on what the visitor
       // typed, not on anything the model said.
       if (HUMAN_REQUEST_RE.test(trimmed)) offerHandoff();
+      void refreshSuggestions([...nextHistory, { role: "assistant", content: data.reply as string }]);
     } catch {
       setError("Couldn't reach Atom — check your connection and try again.");
     } finally {
@@ -850,6 +872,13 @@ export function AssistantWidget() {
   // make sense before a handoff exists — once a person is (or was)
   // actually connected, there's nothing left to triage.
   const showSuggestions = !inSupportMode && !loading && !escalationOffer && !collectingEmail;
+  // Never offer a question the visitor already asked (tapped or typed): it is
+  // already answered above.
+  const normalizeQuestion = (q: string) => q.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+  const askedQuestions = new Set(messages.filter((m) => m.role === "user").map((m) => normalizeQuestion(m.content)));
+  const visibleSuggestions = (generatedSuggestions.length > 0 ? generatedSuggestions : SUGGESTIONS).filter(
+    (q) => !askedQuestions.has(normalizeQuestion(q)),
+  );
   const hasSupportReply = threadMessages.some((m) => m.sender === "SUPPORT");
 
   return createPortal(
@@ -1009,7 +1038,7 @@ export function AssistantWidget() {
 
             {showSuggestions && (
               <div className="flex flex-wrap gap-2 pt-1">
-                {SUGGESTIONS.map((s) => (
+                {visibleSuggestions.map((s) => (
                   <GenerateAIButton
                     key={s}
                     icon={false}
