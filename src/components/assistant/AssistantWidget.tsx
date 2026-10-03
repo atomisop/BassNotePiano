@@ -9,6 +9,7 @@ import Loader from "@/components/ui/loader-15";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { readConsent, CONSENT_DECIDED_EVENT } from "@/lib/cookieConsent";
 import { FULLSCREEN_NAV_EVENT } from "@/lib/overlayNav";
+import { ATOM_TRIGGER_EVENT, OPEN_ATOM_EVENT, isAtomTriggerPresent } from "@/lib/atomTrigger";
 
 /**
  * Atom — the "ask me anything" assistant, floating on every page (mounted
@@ -408,6 +409,27 @@ export function AssistantWidget() {
     return () => window.removeEventListener(FULLSCREEN_NAV_EVENT, onFullscreenNav);
   }, []);
 
+  // The dashboard TopBar's "Ask AI" button (see lib/atomTrigger.ts) replaces
+  // the floating launcher and greeting bubble while it is mounted, and opens
+  // this panel on click.
+  const [hasTopBarTrigger, setHasTopBarTrigger] = useState(false);
+  useEffect(() => {
+    setHasTopBarTrigger(isAtomTriggerPresent());
+    function onTrigger(e: Event) {
+      setHasTopBarTrigger(Boolean((e as CustomEvent<boolean>).detail));
+    }
+    function onOpen() {
+      openPanelRef.current();
+    }
+    window.addEventListener(ATOM_TRIGGER_EVENT, onTrigger);
+    window.addEventListener(OPEN_ATOM_EVENT, onOpen);
+    return () => {
+      window.removeEventListener(ATOM_TRIGGER_EVENT, onTrigger);
+      window.removeEventListener(OPEN_ATOM_EVENT, onOpen);
+    };
+  }, []);
+  const openPanelRef = useRef<() => void>(() => {});
+
   // Portals need a real document — same SSR-safety pattern as NotificationBell.
   useEffect(() => {
     setMounted(true);
@@ -601,6 +623,8 @@ export function AssistantWidget() {
     setOpen(true);
     setTimeout(() => inputRef.current?.focus(), 250);
   }
+
+  openPanelRef.current = openPanel;
 
   useEffect(() => {
     if (!open) return;
@@ -1051,7 +1075,7 @@ export function AssistantWidget() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {showGreeting && !open && (
+        {showGreeting && !open && !hasTopBarTrigger && (
           // A <button> (the bubble, opens the panel) used to have another
           // interactive element (the dismiss control) nested inside it —
           // invalid HTML regardless of whether that inner control is a real
@@ -1088,7 +1112,7 @@ export function AssistantWidget() {
         )}
       </AnimatePresence>
 
-      {!open && <AtomButton onClick={openPanel} label="Chat with Atom, your personal assistant" />}
+      {!open && !hasTopBarTrigger && <AtomButton onClick={openPanel} label="Chat with Atom, your personal assistant" />}
     </div>,
     document.body,
   );
