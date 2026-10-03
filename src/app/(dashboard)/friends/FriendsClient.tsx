@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { useAction } from "@/hooks/useAction";
 import {
   searchUsersAction,
   sendFriendRequestAction,
@@ -76,7 +77,10 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PublicProfile[]>([]);
-  const [searching, setSearching] = useState(false);
+  const action = useAction();
+  const searching = action.isPending("search");
+  const busy = "disabled:cursor-not-allowed disabled:opacity-60";
+  const spin = <MorphingSquare size={12} className="mr-1.5 shrink-0" />;
   const [requestError, setRequestError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<Set<string>>(new Set());
   // Block used to fire on a single click. Unlike Reject (turning down a
@@ -87,39 +91,46 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
 
   async function handleSearch(e: FormEvent) {
     e.preventDefault();
-    setSearching(true);
     setRequestError(null);
-    const found = await searchUsersAction(query);
-    setResults(found);
-    setSearching(false);
+    const found = await action.run(() => searchUsersAction(query), "search");
+    if (found) setResults(found);
   }
 
   async function handleAddFriend(profile: PublicProfile) {
     if (!profile.username) return;
     setRequestError(null);
-    const result = await sendFriendRequestAction(profile.username);
-    if (!result.ok) {
-      setRequestError(result.error);
-      return;
-    }
-    setSentTo((prev) => new Set(prev).add(profile.id));
-    router.refresh();
+    const username = profile.username;
+    await action.run(async () => {
+      const result = await sendFriendRequestAction(username);
+      if (!result.ok) {
+        setRequestError(result.error);
+        return;
+      }
+      setSentTo((prev) => new Set(prev).add(profile.id));
+      router.refresh();
+    }, `add:${profile.id}`);
   }
 
   async function handleRespond(requestId: string, accept: boolean) {
-    await respondToFriendRequestAction(requestId, accept);
-    router.refresh();
+    await action.run(async () => {
+      await respondToFriendRequestAction(requestId, accept);
+      router.refresh();
+    }, `${accept ? "accept" : "reject"}:${requestId}`);
   }
 
   async function handleBlock(userId: string) {
-    await blockUserAction(userId);
-    setBlockingId(null);
-    router.refresh();
+    await action.run(async () => {
+      await blockUserAction(userId);
+      setBlockingId(null);
+      router.refresh();
+    }, `block:${userId}`);
   }
 
   async function handleUnblock(userId: string) {
-    await unblockUserAction(userId);
-    router.refresh();
+    await action.run(async () => {
+      await unblockUserAction(userId);
+      router.refresh();
+    }, `unblock:${userId}`);
   }
 
   if (!username) {
@@ -169,10 +180,21 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                     {blockingId === friend.id ? (
                       <span className="flex shrink-0 items-center gap-2 rounded-lg border border-red-900 bg-red-400/5 px-3 py-1.5 text-small text-red-300">
                         Block {friend.name ?? friend.username ?? "them"}?
-                        <button type="button" onClick={() => handleBlock(friend.id)} className="font-semibold underline underline-offset-2">
+                        <button
+                          type="button"
+                          onClick={() => handleBlock(friend.id)}
+                          disabled={action.pending}
+                          className={`flex items-center font-semibold underline underline-offset-2 ${busy}`}
+                        >
+                          {action.isPending(`block:${friend.id}`) && spin}
                           Confirm
                         </button>
-                        <button type="button" onClick={() => setBlockingId(null)} className="text-slate-400 underline underline-offset-2">
+                        <button
+                          type="button"
+                          onClick={() => setBlockingId(null)}
+                          disabled={action.pending}
+                          className={`text-slate-400 underline underline-offset-2 ${busy}`}
+                        >
                           Never mind
                         </button>
                       </span>
@@ -211,8 +233,10 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                     <button
                       type="button"
                       onClick={() => handleUnblock(entry.user.id)}
-                      className="shrink-0 rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      disabled={action.pending}
+                      className={`flex shrink-0 items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
                     >
+                      {action.isPending(`unblock:${entry.user.id}`) && spin}
                       Unblock
                     </button>
                   </div>
@@ -235,15 +259,15 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
               />
               <button
                 type="submit"
-                disabled={searching || query.trim().length < 2}
+                disabled={action.pending || query.trim().length < 2}
                 className="cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {searching && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                {searching && spin}
                 {searching ? "Searching…" : "Search"}
               </button>
             </form>
 
-            {requestError && <p className="mt-2 text-small text-red-400">{requestError}</p>}
+            {(requestError ?? action.error) && <p className="mt-2 text-small text-red-400">{requestError ?? action.error}</p>}
 
             {results.length > 0 && (
               <div className="mt-4 space-y-2">
@@ -256,9 +280,10 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                     <button
                       type="button"
                       onClick={() => handleAddFriend(profile)}
-                      disabled={sentTo.has(profile.id)}
-                      className="shrink-0 rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      disabled={sentTo.has(profile.id) || action.pending}
+                      className="flex shrink-0 items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
+                      {action.isPending(`add:${profile.id}`) && spin}
                       {sentTo.has(profile.id) ? "Sent" : "Add friend"}
                     </button>
                   </div>
@@ -280,15 +305,19 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                       <button
                         type="button"
                         onClick={() => handleRespond(req.id, true)}
-                        className="cta-sheen cta-fill rounded-lg px-3 py-1.5 text-small font-semibold"
+                        disabled={action.pending}
+                        className={`cta-sheen cta-fill flex items-center rounded-lg px-3 py-1.5 text-small font-semibold ${busy}`}
                       >
+                        {action.isPending(`accept:${req.id}`) && spin}
                         Accept
                       </button>
                       <button
                         type="button"
                         onClick={() => handleRespond(req.id, false)}
-                        className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-400 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                        disabled={action.pending}
+                        className={`flex items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-400 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
                       >
+                        {action.isPending(`reject:${req.id}`) && spin}
                         Reject
                       </button>
                     </div>

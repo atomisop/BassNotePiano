@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import type { ConversationSummary } from "@/lib/messages";
@@ -30,6 +30,8 @@ import {
   type GroupMessageRow,
 } from "./actions";
 import { TwoPaneLayout, WideLayout } from "@/components/layout/PageLayouts";
+import { RegionError } from "@/components/ui/RegionError";
+import { usePoll } from "@/hooks/usePoll";
 
 const CONVERSATION_LIST_POLL_MS = 15_000;
 const ACTIVE_CONVERSATION_POLL_MS = 2_500;
@@ -67,84 +69,84 @@ function MessagesInner({
   const activeConversationId = active?.friendId ?? null;
   const activeGroupPollId = activeGroup?.id ?? null;
 
-  useEffect(() => {
-    const interval = setInterval(async () => {
-      setConversations(await getConversationsAction());
-      setGroups(await getGroupsAction());
-    }, CONVERSATION_LIST_POLL_MS);
-    return () => clearInterval(interval);
-  }, []);
+  const listPoll = usePoll(async (signal) => {
+    const nextConversations = await getConversationsAction();
+    const nextGroups = await getGroupsAction();
+    if (signal.aborted) return;
+    setConversations(nextConversations);
+    setGroups(nextGroups);
+  }, CONVERSATION_LIST_POLL_MS);
+
+  // null = haven't loaded this conversation yet, so don't chime on first load.
+  const previousConversationLastId = useRef<string | null>(null);
+  const previousGroupLastId = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!activeConversationId) {
-      setMessages([]);
-      return;
-    }
-
-    // TS narrowing from the guard above doesn't cross into `load`, a
-    // separately-declared nested function — recapture as a definitely-string
-    // local so the action calls below don't need a `!` on every use.
-    const friendId = activeConversationId;
-    let cancelled = false;
-    let previousLastMessageId: string | null = null; // null = haven't loaded yet, don't chime on first load
-
-    async function load() {
-      const rows = await getConversationMessagesAction(friendId);
-      if (cancelled) return;
-
-      const newest = rows[rows.length - 1];
-      if (previousLastMessageId !== null && newest && newest.id !== previousLastMessageId && newest.senderId === friendId) {
-        playNotificationSound();
-      }
-      previousLastMessageId = newest?.id ?? previousLastMessageId;
-
-      setMessages(rows);
-      await markConversationReadAction(friendId);
-      setConversations(await getConversationsAction());
-    }
-    load();
-
-    const interval = setInterval(load, ACTIVE_CONVERSATION_POLL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
+    previousConversationLastId.current = null;
+    if (!activeConversationId) setMessages([]);
   }, [activeConversationId]);
 
   useEffect(() => {
-    if (!activeGroupPollId) {
-      setGroupMessages([]);
-      return;
-    }
+    previousGroupLastId.current = null;
+    if (!activeGroupPollId) setGroupMessages([]);
+  }, [activeGroupPollId]);
 
-    // Same reasoning as the conversation effect above: recaptured so `load`
-    // gets a definitely-string local instead of the nullable outer one.
-    const groupId = activeGroupPollId;
-    let cancelled = false;
-    let previousLastMessageId: string | null = null;
-
-    async function load() {
-      const rows = await getGroupMessagesAction(groupId);
-      if (cancelled) return;
+  const conversationPoll = usePoll(
+    async (signal) => {
+      // Captured per tick: the next tick may belong to a different chat, and
+      // `signal` is aborted the moment the selection changes.
+      const friendId = activeConversationId;
+      if (!friendId) return;
+      const rows = await getConversationMessagesAction(friendId);
+      if (signal.aborted) return;
 
       const newest = rows[rows.length - 1];
-      if (previousLastMessageId !== null && newest && newest.id !== previousLastMessageId && newest.senderId !== session?.user?.id) {
+      const previous = previousConversationLastId.current;
+      if (previous !== null && newest && newest.id !== previous && newest.senderId === friendId) {
         playNotificationSound();
       }
-      previousLastMessageId = newest?.id ?? previousLastMessageId;
+      previousConversationLastId.current = newest?.id ?? previous;
+
+      setMessages(rows);
+      await markConversationReadAction(friendId);
+      const nextConversations = await getConversationsAction();
+      if (signal.aborted) return;
+      setConversations(nextConversations);
+    },
+    ACTIVE_CONVERSATION_POLL_MS,
+    { enabled: Boolean(activeConversationId), resetKey: activeConversationId },
+  );
+
+  const groupPoll = usePoll(
+    async (signal) => {
+      const groupId = activeGroupPollId;
+      if (!groupId) return;
+      const rows = await getGroupMessagesAction(groupId);
+      if (signal.aborted) return;
+
+      const newest = rows[rows.length - 1];
+      const previous = previousGroupLastId.current;
+      if (previous !== null && newest && newest.id !== previous && newest.senderId !== session?.user?.id) {
+        playNotificationSound();
+      }
+      previousGroupLastId.current = newest?.id ?? previous;
 
       setGroupMessages(rows);
       await markGroupReadAction(groupId);
-      setGroups(await getGroupsAction());
-    }
-    load();
+      const nextGroups = await getGroupsAction();
+      if (signal.aborted) return;
+      setGroups(nextGroups);
+    },
+    ACTIVE_CONVERSATION_POLL_MS,
+    { enabled: Boolean(activeGroupPollId), resetKey: activeGroupPollId },
+  );
 
-    const interval = setInterval(load, ACTIVE_CONVERSATION_POLL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [activeGroupPollId, session?.user?.id]);
+  const pollFailed = listPoll.failed || conversationPoll.failed || groupPoll.failed;
+  function retryPolls() {
+    listPoll.retry();
+    conversationPoll.retry();
+    groupPoll.retry();
+  }
 
   function handleSelect(friendId: string) {
     router.push(`/messages?with=${friendId}`);
@@ -302,6 +304,19 @@ function MessagesInner({
           )
         }
       />
+
+      {/* Floats over the dock gap instead of sitting in the flow, so the
+          chat pane (a fixed-height box) never jumps when it appears. */}
+      {pollFailed && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-28 z-30 flex justify-center px-4">
+          <RegionError
+            className="pointer-events-auto w-full max-w-md shadow-raised-mid"
+            title="Messages stopped updating."
+            detail="Check your connection. New messages will appear once it's back."
+            onRetry={retryPolls}
+          />
+        </div>
+      )}
 
       <NewGroupPanel open={newGroupOpen} onClose={() => setNewGroupOpen(false)} onCreate={handleCreateGroup} />
     </>

@@ -78,11 +78,32 @@ function uploadWithProgress(url: string, file: File, contentType: string, onProg
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", url, true);
     xhr.setRequestHeader("Content-Type", contentType);
+    // Lesson videos can be large and slow, so a total timeout would kill a
+    // healthy upload. Instead, give up only when nothing has moved for a
+    // while (a stalled connection), and say so.
+    const STALL_MS = 45_000;
+    let stallTimer: ReturnType<typeof setTimeout>;
+    const armStall = () => {
+      clearTimeout(stallTimer);
+      stallTimer = setTimeout(() => {
+        xhr.abort();
+        reject(new Error("The upload stalled. Check your connection and try again."));
+      }, STALL_MS);
+    };
     xhr.upload.onprogress = (e) => {
+      armStall();
       if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
     };
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload failed (${xhr.status}).`)));
-    xhr.onerror = () => reject(new Error("Upload failed — check your connection and try again."));
+    xhr.onload = () => {
+      clearTimeout(stallTimer);
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new Error(`Upload failed (${xhr.status}).`));
+    };
+    xhr.onerror = () => {
+      clearTimeout(stallTimer);
+      reject(new Error("Upload failed. Check your connection and try again."));
+    };
+    armStall();
     xhr.send(file);
   });
 }
