@@ -174,6 +174,25 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
+  // Opening a chat focuses its input, and iOS Safari answers by scrolling the
+  // whole document to keep the input above the keyboard. The shell is a fixed
+  // 100svh and never scrolls itself, so that document offset sticks after the
+  // keyboard closes (or after navigating away) and exposes the page ground as
+  // a strip under the dock. Snap the document back whenever the route changes
+  // or an input loses focus.
+  useEffect(() => {
+    const reset = () => {
+      if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0);
+    };
+    reset();
+    window.addEventListener("focusout", reset);
+    window.visualViewport?.addEventListener("resize", reset);
+    return () => {
+      window.removeEventListener("focusout", reset);
+      window.visualViewport?.removeEventListener("resize", reset);
+    };
+  }, [pathname]);
+
   // Auto-hide is a desktop-with-a-real-mouse thing only, by direct
   // instruction. iPad and phone keep the dock solid, and this is computed
   // from input capability (`hover`+`pointer:fine`) plus the explicit
