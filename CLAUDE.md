@@ -205,6 +205,15 @@ Don't reintroduce a separate ad-hoc "kill this session" mechanism; bump
   pattern in `/account`) — red button, explicit irreversibility copy,
   password + emailed code re-verified server-side on the final step
   regardless of what the client claims already happened.
+- Touch targets: any button or link shorter than 44px gets the `tap` utility
+  (`globals.css`), which enforces a 44px minimum on touch devices only, so
+  desktop is unchanged. Links need `inline-flex items-center` for it to apply.
+  Sits next to the 16px-input rule: both exist because the app is used mostly
+  on phones. Check new screens at 390px.
+- Phone card stacks: a group of cards that would otherwise be a long scroll on
+  phones goes in `CardDeck` (`components/ui/CardDeck.tsx`), as on Home. Render
+  each card via a function called once per place it appears: reusing one
+  element that contains a streamed `<Suspense>` in two spots breaks hydration.
 - No em dashes in copy or code comments written for this project (a
   standing, explicit brand rule from `PRODUCT.md` — this repo's own
   history includes a dedicated cleanup commit for stray ones).
