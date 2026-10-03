@@ -128,7 +128,7 @@ export function AdminAttendanceQuickPanel() {
       >
         <ClipboardCheck className="h-[18px] w-[18px]" strokeWidth={1.5} />
         {rows.length > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] px-1 text-small font-bold text-slate-950">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[rgb(var(--c-s-50))] px-1 text-small font-bold text-slate-950">
             {rows.length > 9 ? "9+" : rows.length}
           </span>
         )}
@@ -166,7 +166,7 @@ export function AdminAttendanceQuickPanel() {
                           type="button"
                           disabled={marking}
                           onClick={() => handleMark(r.bookingId, "PRESENT")}
-                          className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-emerald-400/30 py-1.5 text-small font-medium text-emerald-300 transition hover:bg-emerald-400/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-slate-50/30 py-1.5 text-small font-medium text-slate-100 transition hover:bg-slate-50/10 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {marking ? <MorphingSquare size={11} /> : <Check className="h-3.5 w-3.5" strokeWidth={2} />}
                           Present

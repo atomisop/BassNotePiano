@@ -15,9 +15,9 @@ export interface ProgressMatrixProps {
 
 const ACCESS_BADGE: Record<AdminProgressRow["accessKind"], { label: string; className: string }> = {
   ADMIN: { label: "Admin", className: "bg-slate-800 text-slate-400" },
-  PAID: { label: "Live student", className: "bg-emerald-400/15 text-emerald-300" },
-  COMPED: { label: "Comped", className: "bg-emerald-400/15 text-emerald-300" },
-  TRIAL: { label: "Free trial", className: "bg-[rgb(var(--c-a-400)/0.15)] text-[rgb(var(--c-a-400))]" },
+  PAID: { label: "Live student", className: "bg-slate-50/15 text-slate-100" },
+  COMPED: { label: "Comped", className: "bg-slate-50/15 text-slate-100" },
+  TRIAL: { label: "Free trial", className: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" },
   NONE: { label: "No plan", className: "bg-slate-800 text-slate-400" },
 };
 
@@ -26,8 +26,8 @@ function formatShortDate(ms: number): string {
 }
 
 function cellClasses(cell: AdminProgressScaleCell): string {
-  if (cell.status === "COMPLETED") return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20";
-  if (cell.status === "IN_PROGRESS") return "border-[rgb(var(--c-a-400)/0.4)] bg-[rgb(var(--c-a-400)/0.12)] text-[rgb(var(--c-a-400))] hover:bg-[rgb(var(--c-a-400)/0.2)]";
+  if (cell.status === "COMPLETED") return "border-slate-50/30 bg-slate-50/10 text-slate-100 hover:bg-slate-50/20";
+  if (cell.status === "IN_PROGRESS") return "border-[rgb(var(--c-s-50)/0.4)] bg-[rgb(var(--c-s-50)/0.12)] text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.2)]";
   if (cell.unlocked) return "border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.08)] text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.15)]";
   return "border-ink/10 text-slate-600 hover:border-ink/20";
 }
@@ -116,10 +116,10 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale, onApproveNex
             <span className="h-3 w-3 rounded border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.08)]" /> Unlocked
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded border border-[rgb(var(--c-a-400)/0.4)] bg-[rgb(var(--c-a-400)/0.12)]" /> In progress
+            <span className="h-3 w-3 rounded border border-[rgb(var(--c-s-50)/0.4)] bg-[rgb(var(--c-s-50)/0.12)]" /> In progress
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded border border-emerald-400/30 bg-emerald-400/10" /> Completed
+            <span className="h-3 w-3 rounded border border-slate-50/30 bg-slate-50/10" /> Completed
           </span>
         </div>
       </div>

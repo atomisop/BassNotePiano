@@ -13,7 +13,7 @@ import { Toaster as SonnerToaster, toast } from "sonner";
  * classes every other panel uses (`.glass-surface`, `slate-*`, `amber-*`).
  *
  * `richColors` is deliberately off for the same reason — it would inject
- * Sonner's own green/red rather than the ramp's emerald-400/red-400.
+ * Sonner's own green/red rather than the ramp's slate-50/red-400.
  */
 export function Toaster() {
   return (

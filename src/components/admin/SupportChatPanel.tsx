@@ -19,7 +19,7 @@ const ACTIVE_THREAD_POLL_MS = 2_500;
 
 const STATUS_STYLE: Record<string, string> = {
   OPEN: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]",
-  RESOLVED: "bg-emerald-400/15 text-emerald-300",
+  RESOLVED: "bg-slate-50/15 text-slate-100",
 };
 
 function relativeTime(iso: Date | string): string {
@@ -300,7 +300,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                   </button>
                 )}
                 {threadStatus === "RESOLVED" && (
-                  <span className="rounded-full bg-emerald-400/15 px-2.5 py-1 text-small font-medium text-emerald-300">Resolved</span>
+                  <span className="rounded-full bg-slate-50/15 px-2.5 py-1 text-small font-medium text-slate-100">Resolved</span>
                 )}
                 <button
                   type="button"

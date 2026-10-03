@@ -26,7 +26,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_STYLE: Record<string, string> = {
   ACTIVE: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]",
-  COMPLETED: "bg-emerald-400/15 text-emerald-300",
+  COMPLETED: "bg-slate-50/15 text-slate-100",
   CANCELED: "bg-slate-800 text-slate-500",
 };
 

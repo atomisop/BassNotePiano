@@ -141,7 +141,7 @@ function RegisterForm() {
               one real requirement this form has, so it's shown as it's
               being met instead of only as a reason the submit just failed. */}
           {password.length > 0 && (
-            <p className={`mt-1.5 flex items-center gap-1.5 text-small ${password.length >= MIN_PASSWORD_LENGTH ? "text-emerald-400" : "text-slate-500"}`}>
+            <p className={`mt-1.5 flex items-center gap-1.5 text-small ${password.length >= MIN_PASSWORD_LENGTH ? "text-slate-50" : "text-slate-500"}`}>
               <CheckIcon size={11} className={password.length >= MIN_PASSWORD_LENGTH ? "opacity-100" : "opacity-30"} />
               At least {MIN_PASSWORD_LENGTH} characters
             </p>
@@ -165,7 +165,7 @@ function RegisterForm() {
             className={cn(error && fieldInvalid)}
           />
           {confirmPassword.length > 0 && (
-            <p className={`mt-1.5 flex items-center gap-1.5 text-small ${password === confirmPassword ? "text-emerald-400" : "text-slate-500"}`}>
+            <p className={`mt-1.5 flex items-center gap-1.5 text-small ${password === confirmPassword ? "text-slate-50" : "text-slate-500"}`}>
               <CheckIcon size={11} className={password === confirmPassword ? "opacity-100" : "opacity-30"} />
               {password === confirmPassword ? "Passwords match" : "Passwords don't match yet"}
             </p>

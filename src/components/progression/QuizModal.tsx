@@ -288,7 +288,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ type: "spring", bounce: 0.35, duration: 0.5, delay: 0.05 }}
                       className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${
-                        result.passed ? "bg-emerald-400/10" : "bg-slate-800"
+                        result.passed ? "bg-slate-50/10" : "bg-slate-800"
                       }`}
                     >
                       {result.passed ? (
@@ -299,7 +299,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                           fill="none"
                           stroke="currentColor"
                           strokeWidth="2"
-                          className="text-emerald-400"
+                          className="text-slate-50"
                           initial={{ pathLength: 0 }}
                           animate={{ pathLength: 1 }}
                           transition={{ duration: 0.5, delay: 0.2 }}
@@ -321,7 +321,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                     </p>
                     <div
                       className={`mx-auto mt-3 w-fit rounded-full px-3 py-1 text-small font-medium ${
-                        result.passed ? "bg-emerald-400/10 text-emerald-300" : "bg-slate-800 text-slate-400"
+                        result.passed ? "bg-slate-50/10 text-slate-100" : "bg-slate-800 text-slate-400"
                       }`}
                     >
                       Your score: {result.score}/{result.total} · {Math.round(passThreshold * 100)}% required

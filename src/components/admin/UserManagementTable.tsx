@@ -102,7 +102,7 @@ export function UserManagementTable({
                   </span>
                   <span
                     className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
-                      user.hasCurriculumAccess ? "bg-emerald-400/15 text-emerald-300" : "bg-slate-800 text-slate-400"
+                      user.hasCurriculumAccess ? "bg-slate-50/15 text-slate-100" : "bg-slate-800 text-slate-400"
                     }`}
                   >
                     {user.hasCurriculumAccess ? "Curriculum" : "No curriculum"}
@@ -123,7 +123,7 @@ export function UserManagementTable({
                       onClick={() => withBusy(user.id, () => onToggleScale(user.id, su.slug, !su.unlocked))}
                       className={`h-8 min-w-[2.25rem] rounded-lg border px-2 text-small font-medium transition disabled:opacity-40 ${
                         su.completed
-                          ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20"
+                          ? "border-slate-50/30 bg-slate-50/10 text-slate-100 hover:bg-slate-50/20"
                           : su.unlocked
                             ? "border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.2)]"
                             : "border-ink/10 text-slate-500 hover:border-ink/15"

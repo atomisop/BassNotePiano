@@ -199,7 +199,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                               <div className="flex items-center gap-2">
                                 <span
                                   className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
-                                    entry.attendance === "PRESENT" ? "bg-emerald-400/15 text-emerald-300" : "bg-red-400/15 text-red-400"
+                                    entry.attendance === "PRESENT" ? "bg-slate-50/15 text-slate-100" : "bg-red-400/15 text-red-400"
                                   }`}
                                 >
                                   {entry.attendance === "PRESENT" ? "Present" : "No-show"}
@@ -248,7 +248,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => handleMark(entry.bookingId, "PRESENT")}
                                       disabled={busyId === entry.bookingId || entry.attendance === "PRESENT"}
-                                      className="rounded-lg border border-emerald-400/30 px-3 py-1.5 text-small font-medium text-emerald-300 transition hover:bg-emerald-400/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                      className="rounded-lg border border-slate-50/30 px-3 py-1.5 text-small font-medium text-slate-100 transition hover:bg-slate-50/10 disabled:cursor-not-allowed disabled:opacity-40"
                                     >
                                       Present
                                     </button>
@@ -286,7 +286,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => handleMark(entry.bookingId, "PRESENT")}
                                       disabled={busyId === entry.bookingId}
-                                      className="rounded-lg border border-emerald-400/30 px-3 py-1.5 text-small font-medium text-emerald-300 transition hover:bg-emerald-400/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                      className="rounded-lg border border-slate-50/30 px-3 py-1.5 text-small font-medium text-slate-100 transition hover:bg-slate-50/10 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                       Present
                                     </button>

@@ -909,8 +909,8 @@ export function AssistantWidget() {
                     </p>
                   )}
                   {threadStatus === "RESOLVED" && (
-                    <div className="space-y-2 rounded-xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-center">
-                      <p className="text-small text-emerald-300">
+                    <div className="space-y-2 rounded-xl border border-slate-50/20 bg-slate-50/10 p-3 text-center">
+                      <p className="text-small text-slate-100">
                         This conversation is closed. The history above is kept, but this thread no longer accepts new
                         messages.
                       </p>

@@ -528,7 +528,7 @@ function PasswordSection() {
               className="w-full disabled:opacity-60"
             />
             {newPassword.length > 0 && (
-              <p className={`mt-1.5 flex items-center gap-1.5 text-small ${newPassword.length >= MIN_PASSWORD_LENGTH ? "text-emerald-400" : "text-slate-500"}`}>
+              <p className={`mt-1.5 flex items-center gap-1.5 text-small ${newPassword.length >= MIN_PASSWORD_LENGTH ? "text-slate-50" : "text-slate-500"}`}>
                 <CheckIcon size={11} className={newPassword.length >= MIN_PASSWORD_LENGTH ? "opacity-100" : "opacity-30"} />
                 At least {MIN_PASSWORD_LENGTH} characters
               </p>
@@ -546,7 +546,7 @@ function PasswordSection() {
               className="w-full disabled:opacity-60"
             />
             {confirmPassword.length > 0 && (
-              <p className={`mt-1.5 flex items-center gap-1.5 text-small ${newPassword === confirmPassword ? "text-emerald-400" : "text-slate-500"}`}>
+              <p className={`mt-1.5 flex items-center gap-1.5 text-small ${newPassword === confirmPassword ? "text-slate-50" : "text-slate-500"}`}>
                 <CheckIcon size={11} className={newPassword === confirmPassword ? "opacity-100" : "opacity-30"} />
                 {newPassword === confirmPassword ? "Passwords match" : "Passwords don't match yet"}
               </p>
@@ -554,7 +554,7 @@ function PasswordSection() {
           </div>
 
           {error && <p className="text-small text-red-400">{error}</p>}
-          {success && <p className="text-small text-emerald-400">Password updated. Other devices have been signed out.</p>}
+          {success && <p className="text-small text-slate-50">Password updated. Other devices have been signed out.</p>}
 
           <button
             type="submit"
@@ -605,7 +605,7 @@ function SignOutOtherDevicesCard() {
         {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
         {submitting ? "Signing out other devices…" : "Sign out of all other devices"}
       </button>
-      {success && !submitting && <p className="mt-3 text-small text-emerald-400">Done. This device stays signed in.</p>}
+      {success && !submitting && <p className="mt-3 text-small text-slate-50">Done. This device stays signed in.</p>}
     </SectionCard>
   );
 }
@@ -845,7 +845,7 @@ function NotificationSettingsSection({ initial }: { initial: NotificationPrefere
           </div>
         ))}
       </div>
-      {success && !submitting && <p className="mt-3 text-small text-emerald-400">Saved.</p>}
+      {success && !submitting && <p className="mt-3 text-small text-slate-50">Saved.</p>}
     </SectionCard>
   );
 }

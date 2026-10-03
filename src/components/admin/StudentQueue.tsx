@@ -23,7 +23,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_STYLE: Record<string, string> = {
   PENDING: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]",
-  APPROVED: "bg-emerald-400/15 text-emerald-300",
+  APPROVED: "bg-slate-50/15 text-slate-100",
   REJECTED: "bg-red-400/15 text-red-300",
 };
 

@@ -153,11 +153,11 @@ function BookingCard({
                 : "")}
         </p>
         {b.status === "COMPLETED" && b.attendance && (
-          <p className={`mt-0.5 text-small ${b.attendance === "PRESENT" ? "text-emerald-400" : "text-red-400"}`}>
+          <p className={`mt-0.5 text-small ${b.attendance === "PRESENT" ? "text-slate-50" : "text-red-400"}`}>
             {b.attendance === "PRESENT" ? "Attended" : "Marked no-show — still charged, per our terms"}
           </p>
         )}
-        {b.status === "CANCELED" && <p className="mt-0.5 text-small text-emerald-400">Canceled — no credits were charged</p>}
+        {b.status === "CANCELED" && <p className="mt-0.5 text-small text-slate-50">Canceled — no credits were charged</p>}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {cancelEligible && (
@@ -293,7 +293,7 @@ function AttendeeEmailRow({
         {value.trim() === "" ? null : status?.checking ? (
           <span className="text-slate-500">Checking…</span>
         ) : status?.verified ? (
-          <span className="flex items-center gap-1 text-emerald-400">
+          <span className="flex items-center gap-1 text-slate-50">
             <CheckIcon size={11} />
             {status.name ?? "Verified"}
           </span>
@@ -773,7 +773,7 @@ export function ClassBookingClient({
           </p>
 
           {error && <p className="mt-4 text-small text-red-400">{error}</p>}
-          {success && <p className="mt-4 text-small text-emerald-400">{success}</p>}
+          {success && <p className="mt-4 text-small text-slate-50">{success}</p>}
 
           {rows.length > 0 && (
             <div className="mt-8">

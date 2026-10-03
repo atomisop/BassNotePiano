@@ -191,7 +191,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           <p className="text-small text-slate-100">
             {perRecipientCredits} credits each, for {emails.length} accounts ({emails.length * perRecipientCredits} credits total)
           </p>
-          <p className="mt-1 text-small text-emerald-400">
+          <p className="mt-1 text-small text-slate-50">
             {FAMILY_BUNDLE_DISCOUNT_RATE * 100}% family bundle discount applied (limited time), on top of the
             term&apos;s own price
           </p>
@@ -284,7 +284,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                   />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
                     {status.kind === "checking" && <SpinnerIcon className="text-slate-500" />}
-                    {status.kind === "found" && <CheckIcon className="text-emerald-400" />}
+                    {status.kind === "found" && <CheckIcon className="text-slate-50" />}
                     {status.kind === "not-found" && <XIcon className="text-red-400" />}
                   </span>
                 </div>
@@ -332,7 +332,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           }
           if (status.kind === "found") {
             return (
-              <p key={`err-${index}`} className="mt-1.5 text-small text-emerald-400">
+              <p key={`err-${index}`} className="mt-1.5 text-small text-slate-50">
                 Recipient {index + 1}: verified{status.name ? ` (${status.name})` : ""}.
               </p>
             );
@@ -359,7 +359,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           </span>
           <span>{formatUsd(total.combinedBeforeFamilyDiscountCents)}</span>
         </div>
-        <div className="mt-1 flex items-center justify-between text-small text-emerald-400">
+        <div className="mt-1 flex items-center justify-between text-small text-slate-50">
           <span>Family bundle discount ({FAMILY_BUNDLE_DISCOUNT_RATE * 100}%, limited time)</span>
           <span>−{formatUsd(total.familyDiscountCents)}</span>
         </div>

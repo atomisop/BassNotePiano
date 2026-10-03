@@ -55,7 +55,7 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick }: ScaleCardGr
               aria-current={isCurrent ? "step" : undefined}
               className={cn(
                 "group flex h-full w-full cursor-pointer flex-col rounded-card border bg-[rgb(var(--plane-mid-bg))] p-(--space-card) text-left shadow-plane-mid transition-[transform,box-shadow,border-color] duration-(--dur-base) ease-(--ease-ios) hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:hover:translate-y-0",
-                isCurrent ? "border-signal/60 shadow-signal" : "border-ink/[0.08] hover:border-ink/15",
+                isCurrent ? "shadow-pressed-mid ring-1 ring-signal" : "border-ink/[0.08] hover:border-ink/15",
                 locked && "bg-transparent shadow-none",
               )}
             >

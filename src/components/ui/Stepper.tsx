@@ -70,7 +70,7 @@ export function Stepper({
               {!last && (
                 <li
                   aria-hidden
-                  className={cn("mx-3 h-px flex-1", done ? "bg-emerald-400/40" : "bg-ink/10")}
+                  className={cn("mx-3 h-px flex-1", done ? "bg-slate-50/40" : "bg-ink/10")}
                 />
               )}
             </Fragment>
@@ -94,7 +94,7 @@ export function Stepper({
                 <span
                   className={cn(
                     "w-px flex-1 border-l-2",
-                    done ? "border-solid border-emerald-400/40" : "border-dotted border-ink/10",
+                    done ? "border-solid border-slate-50/40" : "border-dotted border-ink/10",
                   )}
                 />
               )}
@@ -122,7 +122,7 @@ export function Stepper({
 function Marker({ index, done, active }: { index: number; done: boolean; active: boolean }) {
   if (done) {
     return (
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-400 text-slate-950">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-950">
         <CheckIcon size={13} />
       </span>
     );
