@@ -10,10 +10,13 @@ export function AiBorder({
   rounded = "rounded-full",
   spin = true,
   spinClass = "size-40",
+  surface = "bg-background",
 }: {
   rounded?: string;
   spin?: boolean;
   spinClass?: string;
+  /** Fill inside the border. Atom passes the neumorphic base so its parts sit on the same surface as the app. */
+  surface?: string;
 }) {
   return (
     <div className={`pointer-events-none absolute inset-0 z-0 overflow-hidden bg-border ${rounded}`}>
@@ -21,7 +24,7 @@ export function AiBorder({
         className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[conic-gradient(from_0deg,transparent_0%,transparent_35%,var(--color-blue-500)_50%,transparent_65%,transparent_85%,var(--color-orange-400)_100%)] ${spin ? "animate-spin" : ""} ${spinClass}`}
         style={spin ? { animationDuration: "2.5s" } : undefined}
       />
-      <div className={`absolute inset-0.5 bg-background ${rounded}`} />
+      <div className={`absolute inset-0.5 ${surface} ${rounded}`} />
     </div>
   );
 }
@@ -34,6 +37,8 @@ const GenerateAIButton = ({
   disabled,
   ariaLabel,
   icon = true,
+  spin = true,
+  surface,
   className = "",
 }: {
   label?: string;
@@ -43,6 +48,9 @@ const GenerateAIButton = ({
   disabled?: boolean;
   ariaLabel?: string;
   icon?: boolean;
+  /** false = the gradient glow stays but holds still. */
+  spin?: boolean;
+  surface?: string;
   className?: string;
 }) => {
   return (
@@ -55,7 +63,7 @@ const GenerateAIButton = ({
       className={`relative h-10 gap-2 overflow-hidden rounded-full border-transparent px-6 text-primary cursor-pointer ${className}`}
     >
       {/* Continuously animated gradient border */}
-      <AiBorder />
+      <AiBorder spin={spin} surface={surface} />
 
       <span className="relative z-10 flex items-center justify-center gap-2">
         {icon && <Sparkles className="size-4" fill="currentColor" />}

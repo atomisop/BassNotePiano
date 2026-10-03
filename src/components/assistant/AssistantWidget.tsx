@@ -296,9 +296,9 @@ function MessageBubble({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-        className="relative max-w-[80%] overflow-hidden rounded-2xl px-3.5 py-2 text-body text-primary"
+        className={`relative max-w-[80%] overflow-hidden rounded-2xl px-3.5 py-2 text-body text-primary ${isMine ? "shadow-pressed-low" : "shadow-raised-low"}`}
       >
-        <AiBorder rounded="rounded-2xl" spin={false} spinClass="size-[600px]" />
+        <AiBorder rounded="rounded-2xl" spin={false} spinClass="size-[600px]" surface="bg-neu-base" />
         <p className="relative z-10 whitespace-pre-wrap break-words">{renderMessageContent(message.content, isMine)}</p>
       </motion.div>
       {!isMine && <FeedbackButtons rating={feedback} busy={feedbackBusy} onRate={onRate} />}
@@ -319,9 +319,9 @@ function ThreadMessageBubble({ message }: { message: ThreadMessage }) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-        className="relative max-w-[80%] overflow-hidden rounded-2xl px-3.5 py-2 text-body text-primary"
+        className={`relative max-w-[80%] overflow-hidden rounded-2xl px-3.5 py-2 text-body text-primary ${isVisitor ? "shadow-pressed-low" : "shadow-raised-low"}`}
       >
-        <AiBorder rounded="rounded-2xl" spin={message.sender === "SUPPORT"} spinClass="size-[600px]" />
+        <AiBorder rounded="rounded-2xl" spin={message.sender === "SUPPORT"} spinClass="size-[600px]" surface="bg-neu-base" />
         <p className="relative z-10 whitespace-pre-wrap break-words">{renderMessageContent(message.body, isVisitor)}</p>
       </motion.div>
     </div>
@@ -331,8 +331,8 @@ function ThreadMessageBubble({ message }: { message: ThreadMessage }) {
 function TypingIndicator() {
   return (
     <div className="flex justify-start">
-      <div className="relative flex items-center gap-1 overflow-hidden rounded-full px-4 py-3">
-        <AiBorder />
+      <div className="relative flex items-center gap-1 overflow-hidden rounded-full px-4 py-3 shadow-raised-low">
+        <AiBorder surface="bg-neu-base" />
         {[0, 1, 2].map((i) => (
           <motion.span
             key={i}
@@ -855,11 +855,11 @@ export function AssistantWidget() {
             // other `glass-surface-elevated` on the site does, so it looks
             // like the rest of the app (near-black Ink, or warm Paper),
             // rather than its own thing.
-            className="relative h-[min(70vh,560px)] w-[min(92vw,380px)] overflow-hidden rounded-3xl text-primary"
+            className="relative h-[min(70vh,560px)] w-[min(92vw,380px)] overflow-hidden rounded-3xl text-primary shadow-raised-high"
             role="dialog"
             aria-label="Chat with Atom"
           >
-            <AiBorder rounded="rounded-3xl" spinClass="size-[900px]" />
+            <AiBorder rounded="rounded-3xl" spinClass="size-[900px]" surface="bg-neu-base" />
             <div className="relative z-10 flex h-full min-w-0 flex-col">
             {/* Used to carry a mobile-only teal→blue wash here, echoing the
                 icon's old color mix — the icon is signal green now (the
@@ -915,12 +915,12 @@ export function AssistantWidget() {
                     <ThreadMessageBubble key={m.id} message={m} />
                   ))}
                   {!hasSupportReply && threadStatus === "OPEN" && (
-                    <p className="rounded-2xl border border-border bg-background p-3 text-center text-small text-slate-500">
+                    <p className="rounded-2xl bg-neu-base p-3 shadow-raised-low text-center text-small text-slate-500">
                       You&apos;re connected — our support team has been notified and will reply here shortly.
                     </p>
                   )}
                   {threadStatus === "RESOLVED" && (
-                    <div className="space-y-2 rounded-2xl border border-border bg-background p-3 text-center">
+                    <div className="space-y-2 rounded-2xl bg-neu-base p-3 shadow-raised-low text-center">
                       <p className="text-small text-slate-100">
                         This conversation is closed. The history above is kept, but this thread no longer accepts new
                         messages.
@@ -941,13 +941,13 @@ export function AssistantWidget() {
               {error && <p className="text-center text-small text-red-400">{error}</p>}
 
               {escalationOffer && (
-                <div className="space-y-2 rounded-2xl border border-border bg-background p-3">
+                <div className="space-y-2 rounded-2xl bg-neu-base p-3 shadow-raised-low">
                   <p className="text-small text-slate-300">Want me to connect you with our customer service team? A real person can dig into your account directly.</p>
                   <div className="flex gap-2">
-                    <GenerateAIButton icon={false} onClick={declineHandoff} disabled={escalationSubmitting} className="h-9 flex-1 px-3 text-small">
+                    <GenerateAIButton icon={false} onClick={declineHandoff} disabled={escalationSubmitting} surface="bg-neu-base" className="h-9 flex-1 px-3 text-small shadow-raised-low">
                       No, keep trying
                     </GenerateAIButton>
-                    <GenerateAIButton onClick={confirmHandoff} disabled={escalationSubmitting} className="h-9 flex-1 px-3 text-small">
+                    <GenerateAIButton onClick={confirmHandoff} disabled={escalationSubmitting} surface="bg-neu-base" className="h-9 flex-1 px-3 text-small shadow-raised-low">
                       {escalationSubmitting && <MorphingSquare size={12} className="shrink-0" />}
                       {escalationSubmitting ? "Connecting…" : "Yes, connect me"}
                     </GenerateAIButton>
@@ -957,7 +957,7 @@ export function AssistantWidget() {
               )}
 
               {collectingEmail && (
-                <form onSubmit={handleEmailSubmit} className="space-y-2 rounded-2xl border border-border bg-background p-3">
+                <form onSubmit={handleEmailSubmit} className="space-y-2 rounded-2xl bg-neu-base p-3 shadow-raised-low">
                   <p className="text-small text-slate-300">
                     The team will reply right here in this chat — what&apos;s a good email for them to reach you at
                     only if you&apos;re not around when they do?
@@ -970,17 +970,17 @@ export function AssistantWidget() {
                     autoFocus
                     maxLength={320}
                     disabled={escalationSubmitting}
-                    className="w-full rounded-full border border-border bg-background px-4 py-1.5 text-body text-primary outline-none transition placeholder:text-slate-500 focus:border-blue-500"
+                    className="w-full rounded-full bg-neu-base px-4 py-1.5 text-body text-primary shadow-pressed-low outline-none transition placeholder:text-slate-500"
                   />
                   {escalationError && <p className="text-small text-red-400">{escalationError}</p>}
                   <div className="flex gap-2">
-                    <GenerateAIButton icon={false} onClick={declineHandoff} disabled={escalationSubmitting} className="h-9 flex-1 px-3 text-small">
+                    <GenerateAIButton icon={false} onClick={declineHandoff} disabled={escalationSubmitting} surface="bg-neu-base" className="h-9 flex-1 px-3 text-small shadow-raised-low">
                       Cancel
                     </GenerateAIButton>
                     <GenerateAIButton
                       type="submit"
                       disabled={escalationSubmitting || !escalationEmail.trim()}
-                      className="h-9 flex-1 px-3 text-small"
+                      surface="bg-neu-base" className="h-9 flex-1 px-3 text-small shadow-raised-low"
                     >
                       {escalationSubmitting && <MorphingSquare size={12} className="shrink-0" />}
                       {escalationSubmitting ? "Sending…" : "Notify the team"}
@@ -998,22 +998,31 @@ export function AssistantWidget() {
                   <GenerateAIButton
                     key={s}
                     icon={false}
+                    spin={false}
+                    surface="bg-neu-base"
                     onClick={() => sendMessage(s)}
                     disabled={loading}
-                    className="h-8 px-3 text-small"
+                    className="h-8 px-3 text-small shadow-raised-low"
                   >
                     {s}
                   </GenerateAIButton>
                 ))}
-                <GenerateAIButton icon={false} onClick={offerHandoff} disabled={loading} className="h-8 px-3 text-small">
+                <GenerateAIButton
+                  icon={false}
+                  spin={false}
+                  surface="bg-neu-base"
+                  onClick={offerHandoff}
+                  disabled={loading}
+                  className="h-8 px-3 text-small shadow-raised-low"
+                >
                   Talk to our team
                 </GenerateAIButton>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="flex min-w-0 items-center gap-2 border-t border-border p-3">
-              <div className="relative min-w-0 flex-1 overflow-hidden rounded-full">
-                <AiBorder spinClass="size-[400px]" />
+              <div className="relative min-w-0 flex-1 overflow-hidden rounded-full shadow-pressed-low">
+                <AiBorder spinClass="size-[400px]" surface="bg-neu-base" />
                 <input
                   ref={inputRef}
                   type="text"
@@ -1030,7 +1039,8 @@ export function AssistantWidget() {
                 disabled={loading || isResolved || !input.trim()}
                 ariaLabel={loading ? "Sending…" : "Send"}
                 icon={false}
-                className="size-10 shrink-0 px-0"
+                surface="bg-neu-base"
+                className="size-10 shrink-0 px-0 shadow-raised-low"
               >
                 {loading ? <MorphingSquare size={16} /> : <ArrowRight className="size-4" />}
               </GenerateAIButton>
@@ -1059,9 +1069,9 @@ export function AssistantWidget() {
             // `--elev-border`/`--elev-bg` override anymore, so this greeting
             // bubble reads the same elevated-glass material every other
             // `glass-surface-elevated` on the site does.
-            className="relative max-w-[240px] rounded-2xl text-body text-primary"
+            className="relative max-w-[240px] rounded-2xl text-body text-primary shadow-raised-mid"
           >
-            <AiBorder rounded="rounded-2xl" />
+            <AiBorder rounded="rounded-2xl" surface="bg-neu-base" />
             <button type="button" onClick={openPanel} className="relative z-10 block w-full rounded-2xl px-4 py-3 text-left">
               {GREETING_TEXT}
             </button>
@@ -1069,7 +1079,7 @@ export function AssistantWidget() {
               type="button"
               aria-label="Dismiss"
               onClick={dismissGreeting}
-              className="absolute -right-2 -top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-primary transition hover:opacity-70"
+              className="absolute -right-2 -top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-neu-base text-primary shadow-raised-low transition hover:opacity-70"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
                 <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
