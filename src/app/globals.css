@@ -112,6 +112,10 @@
      pressable; pressed = held/filled/selected. Three depths, tokens only:
      never write a one-off shadow on a component. */
   --color-neu-base: rgb(var(--neu-base));
+  /* One step lighter than the base: the floating dock sits on this so it
+     never blends into the page. */
+  --color-neu-lift: rgb(var(--neu-lift));
+  --shadow-float: var(--neu-float);
   --shadow-raised-low: var(--neu-raised-low);
   --shadow-raised-mid: var(--neu-raised-mid);
   --shadow-raised-high: var(--neu-raised-high);
@@ -878,6 +882,7 @@
      gray, darker than paper white, for the same reason. */
   [data-mode="dark"] {
     --neu-base: 43 43 45;
+    --neu-lift: 62 62 66;
     --neu-hi: rgb(255 255 255 / 0.065);
     --neu-lo: rgb(0 0 0 / 0.55);
     --neu-edge: rgb(255 255 255 / 0.1);
@@ -888,6 +893,7 @@
 
   [data-mode="light"] {
     --neu-base: 229 229 233;
+    --neu-lift: 244 244 248;
     --neu-hi: rgb(255 255 255 / 0.95);
     --neu-lo: rgb(140 140 158 / 0.5);
     --neu-edge: rgb(0 0 0 / 0.1);
@@ -902,6 +908,9 @@
     --neu-raised-low: -3px -3px 7px var(--neu-hi), 3px 3px 7px var(--neu-lo);
     --neu-raised-mid: -6px -6px 14px var(--neu-hi), 6px 6px 14px var(--neu-lo);
     --neu-raised-high: -10px -10px 22px var(--neu-hi), 10px 10px 22px var(--neu-lo);
+    /* Floating depth for the dock: the high raised shape plus a long ambient
+       shadow underneath, so it reads as hovering above the page. */
+    --neu-float: var(--neu-raised-high), inset 0 1px 0 var(--neu-edge), 0 22px 36px -14px var(--neu-lo);
     --neu-pressed-low: inset -2px -2px 5px var(--neu-hi), inset 2px 2px 5px var(--neu-lo);
     --neu-pressed-mid: inset -4px -4px 9px var(--neu-hi), inset 4px 4px 9px var(--neu-lo);
     --neu-pressed-high: inset -6px -6px 14px var(--neu-hi), inset 6px 6px 14px var(--neu-lo);

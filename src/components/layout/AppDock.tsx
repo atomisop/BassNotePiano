@@ -367,7 +367,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                 here removes the conflict outright instead of relying on a
                 tiebreak this file never actually chose. */}
             <Dock
-              className="items-center !rounded-full !bg-neu-base !bg-none !border-transparent !backdrop-blur-none !shadow-raised-high"
+              className="items-center !rounded-full !bg-neu-lift !bg-none !border-transparent !backdrop-blur-none !shadow-float"
               magnification={40}
               distance={140}
               panelHeight={60}
