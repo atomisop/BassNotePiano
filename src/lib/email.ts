@@ -103,8 +103,8 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
           <td style="padding:28px 32px 0;">
             <table role="presentation">
               <tr>
-                <td style="vertical-align:middle;padding-right:9px;">
-                  <span style="display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;background:rgba(245,245,245,0.1);border:1px solid rgba(245,245,245,0.3);color:#f5f5f5;font-size:14px;">♪</span>
+                <td style="vertical-align:middle;padding-right:10px;">
+                  <img src="${getAppUrl("/logo-mark.png")}" width="30" height="30" alt="" style="display:block;width:30px;height:30px;border:0;" />
                 </td>
                 <td style="vertical-align:middle;">
                   <span style="font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:#f5f5f5;font-weight:bold;">Bass Note Piano</span>
