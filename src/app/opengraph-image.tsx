@@ -86,8 +86,8 @@ export default async function OpengraphImage() {
           overflow: "hidden",
         }}
       >
-        {/* Watercolor glows pulled from the logo itself: teal high on the
-            right, coral and amber low, so the card reads as the mark's own
+        {/* Warm glows pulled from the logo itself: brass-gold high on the
+            right, deep olive low, so the card reads as the mark's own
             light rather than a generic dark slide. Plain circle gradients
             only (Satori's gradient grammar is a subset, see the build note
             this file used to carry). */}
@@ -99,7 +99,7 @@ export default async function OpengraphImage() {
             width: 820,
             height: 820,
             borderRadius: 999,
-            backgroundImage: "radial-gradient(circle, rgba(20,150,175,0.55) 0%, rgba(20,150,175,0) 68%)",
+            backgroundImage: "radial-gradient(circle, rgba(214,178,98,0.40) 0%, rgba(214,178,98,0) 68%)",
           }}
         />
         <div
@@ -110,7 +110,7 @@ export default async function OpengraphImage() {
             width: 880,
             height: 880,
             borderRadius: 999,
-            backgroundImage: "radial-gradient(circle, rgba(244,130,110,0.5) 0%, rgba(244,170,100,0.18) 45%, rgba(244,130,110,0) 70%)",
+            backgroundImage: "radial-gradient(circle, rgba(112,90,32,0.55) 0%, rgba(150,120,50,0.20) 45%, rgba(112,90,32,0) 70%)",
           }}
         />
         <div
@@ -125,7 +125,7 @@ export default async function OpengraphImage() {
           }}
         />
 
-        {/* The mark, large, on the right. */}
+        {/* The badge, large, on the right. */}
         <div
           style={{
             position: "absolute",
