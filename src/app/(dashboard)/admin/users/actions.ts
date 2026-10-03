@@ -37,6 +37,21 @@ export async function setCurriculumAccessAction(targetUserId: string, hasAccess:
   revalidatePath("/admin");
 }
 
+// Bulk version of the complimentary-access override. It only flips the same
+// flag setCurriculumAccessAction does, one user at a time, behind the same
+// admin check. Nothing here touches payments or accounts. Capped so one
+// click can never fan out to the whole table by accident.
+export async function bulkSetCurriculumAccessAction(targetUserIds: string[], hasAccess: boolean) {
+  await requireAdmin();
+  const ids = Array.from(new Set(targetUserIds)).slice(0, 100);
+  for (const id of ids) {
+    await setCurriculumAccess(id, hasAccess);
+  }
+  revalidatePath("/admin/users");
+  revalidatePath("/admin");
+  return ids.length;
+}
+
 export async function toggleScaleUnlockAction(targetUserId: string, scaleSlug: string, unlock: boolean) {
   await requireAdmin();
   if (unlock) {

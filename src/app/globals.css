@@ -932,10 +932,7 @@
     --color-emerald-400: rgb(var(--c-s-50));
   }
 
-  [data-surface="marketing"] {
-    --cta-bg: var(--primary);
-    --cta-ink: var(--primary-foreground);
-  }
+  /* Marketing now follows the same rules as the app: green primary. */
 
   /* Inside the app (dashboard, auth, onboarding layouts), the older
      glass-surface* cards adopt the middle-plane material: a solid fill (so
@@ -943,7 +940,8 @@
      shadow for depth instead of frosted glass and hairlines. Done by
      re-pointing the material variables rather than editing ~200 call
      sites; the marketing pages keep their own glass. */
-  [data-surface="app"] {
+  [data-surface="app"],
+  [data-surface="marketing"] {
     --surface-bg: rgb(var(--plane-mid-bg));
     --surface-border: transparent;
     --surface-shadow: var(--plane-mid-shadow);
@@ -986,31 +984,50 @@
 }
 
 @utility piano-case {
-  background: rgb(var(--piano-case));
+  /* The well the keys sit in: pressed into the base surface. */
+  background: rgb(var(--neu-base));
+  box-shadow: var(--neu-pressed-mid);
 }
 
 @utility piano-white {
-  background: linear-gradient(to bottom, rgb(233 233 230), rgb(var(--piano-ivory)) 18%, rgb(246 246 243));
-  box-shadow: inset 0 -5px 0 rgb(var(--piano-ivory-shade)), inset 0 1px 0 #fff;
+  /* Neumorphic key: the same base as the page, raised by two shadows. A
+     played key is pressed in and goes signal green (set by the component). */
+  background: rgb(var(--neu-base));
+  box-shadow: var(--neu-raised-low);
   &:hover {
-    background: linear-gradient(to bottom, rgb(227 227 223), rgb(243 243 239) 18%, rgb(239 239 234));
+    background: color-mix(in srgb, rgb(var(--neu-base)), rgb(var(--c-s-50)) 6%);
+  }
+  &:active {
+    box-shadow: var(--neu-pressed-low);
   }
 }
 
 @utility piano-black {
-  background: linear-gradient(to bottom, rgb(43 43 43), rgb(var(--piano-ebony)) 70%, rgb(10 10 10));
-  box-shadow: inset 0 -4px 0 #000, inset 1px 0 0 rgb(255 255 255 / 0.08), 0 3px 6px rgb(0 0 0 / 0.5);
+  /* Black keys read as a deeper step of the same material, so every key
+     still has clear edges. */
+  background: color-mix(in srgb, rgb(var(--neu-base)), #000 42%);
+  box-shadow: var(--neu-raised-low);
   &:hover {
-    background: linear-gradient(to bottom, rgb(53 53 53), rgb(28 28 28) 70%, rgb(17 17 17));
+    background: color-mix(in srgb, rgb(var(--neu-base)), #000 32%);
+  }
+  &:active {
+    box-shadow: var(--neu-pressed-low);
   }
 }
 
 @utility piano-marker-on-white {
-  background: rgb(var(--piano-ebony));
-  color: rgb(var(--piano-ivory));
+  background: rgb(var(--c-s-50));
+  color: rgb(var(--neu-base));
 }
 
 @utility piano-marker-on-black {
-  background: rgb(var(--piano-ivory));
-  color: rgb(var(--piano-ebony));
+  background: rgb(245 245 245);
+  color: rgb(26 26 26);
+}
+
+/* Engraved back-plane type: the same base color as the page, cut INTO it
+   (shade on the top-left edge, light on the bottom-right). Decorative. */
+@utility engraved {
+  color: rgb(var(--neu-base));
+  text-shadow: 2px 2px 3px var(--neu-hi), -2px -2px 4px var(--neu-lo);
 }

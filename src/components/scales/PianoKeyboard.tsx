@@ -156,7 +156,7 @@ export function PianoKeyboard({
           is narrower than a fingertip. Scrolling keeps them playable. */}
       <div className="-mx-1 overflow-x-auto px-1 pb-2">
         <div
-          className="relative mx-auto touch-manipulation select-none piano-case rounded-b-control rounded-t-sm p-1.5 pt-2 shadow-plane-mid"
+          className="relative mx-auto touch-manipulation select-none piano-case rounded-b-control rounded-t-sm p-1.5 pt-2"
           style={{ minWidth: `${whiteCount * 36}px`, height: 176 }}
           role="group"
           aria-label="Piano keyboard. Scale notes are marked; tap a key to hear it."
@@ -177,7 +177,7 @@ export function PianoKeyboard({
                     className={cn(
                       "relative flex flex-1 cursor-pointer flex-col items-center justify-end rounded-b-[7px] pb-3 outline-none transition-[background,box-shadow,transform] duration-75 ease-out focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-signal disabled:cursor-default motion-reduce:transition-none",
                       lit
-                        ? "translate-y-[2px] bg-[rgb(var(--signal))] shadow-[inset_0_-2px_0_rgb(0_0_0/0.25),0_0_18px_rgb(var(--signal)/0.45)]"
+                        ? "bg-[rgb(var(--signal))] shadow-pressed-low"
                         : "piano-white",
                     )}
                   >
@@ -220,12 +220,12 @@ export function PianoKeyboard({
                     style={{
                       left: `${leftPct}%`,
                       width: `${(100 / whiteCount) * 0.6}%`,
-                      transform: `translateX(-50%) translateY(${lit ? 2 : 0}px)`,
+                      transform: `translateX(-50%) translateY(0)`,
                     }}
                     className={cn(
                       "absolute top-0 z-10 flex h-[60%] cursor-pointer flex-col items-center justify-end rounded-b-[6px] pb-2 outline-none transition-[background,box-shadow,transform] duration-75 ease-out focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-signal disabled:cursor-default motion-reduce:transition-none",
                       lit
-                        ? "bg-[rgb(var(--signal))] shadow-[0_0_16px_rgb(var(--signal)/0.5)]"
+                        ? "bg-[rgb(var(--signal))] shadow-pressed-low"
                         : "piano-black",
                     )}
                   >
