@@ -30,8 +30,18 @@ import { pitchClassOf } from "@/lib/music-theory";
 const FRET_COUNT = 12;
 const SINGLE_DOT_FRETS = new Set([3, 5, 7, 9]);
 const DOUBLE_DOT_FRET = 12;
-const CELL_WIDTH = 40;
-const OPEN_CELL_WIDTH = 32;
+// Real fret spacing: each fret is 2^(-1/12) the width of the one before, so
+// the board narrows toward the body like an actual neck. The first fret is
+// the widest, which is also the easiest to press.
+const FIRST_FRET_WIDTH = 100;
+const FRET_WIDTHS = Array.from({ length: FRET_COUNT }, (_, i) => FIRST_FRET_WIDTH * Math.pow(2, -i / 12));
+const OPEN_WIDTH = 44; // the open-string area, left of the nut
+const NUT_WIDTH = 6;
+const NECK_WIDTH = OPEN_WIDTH + NUT_WIDTH + FRET_WIDTHS.reduce((sum, w) => sum + w, 0);
+// Plain strings are thin steel; guitar's three low strings and every bass
+// string are wound, so they are thicker and bronze.
+const GUITAR_STRING_PX = [1.2, 1.6, 2.1, 2.8, 3.5, 4.2];
+const BASS_STRING_PX = [3, 3.8, 4.6, 5.4];
 
 export interface StringInstrumentTuning {
   /** Open-string MIDI numbers, highest-pitched string first — the row order every printed tab uses. */
@@ -104,86 +114,132 @@ export function Fretboard({
     return `${position}: ${notes[degreeIndex]}, scale degree ${degrees[degreeIndex]}`;
   }
 
+  const stringCount = openStringMidi.length;
+  const rowHeight = stringCount > 4 ? 32 : 42;
+  const stringPx = stringCount > 4 ? GUITAR_STRING_PX : BASS_STRING_PX;
+  const firstWound = stringCount > 4 ? 3 : 0;
+  const neckHeight = rowHeight * stringCount;
+
+  // Left edge of each fret's cell (fret 1..12), measured from the nut.
+  const fretLeft: number[] = [];
+  FRET_WIDTHS.reduce((x, w) => {
+    fretLeft.push(x);
+    return x + w;
+  }, OPEN_WIDTH + NUT_WIDTH);
+
   return (
     <div
       className="flex"
       role="group"
       aria-label={`${instrumentLabel} fretboard — scale notes are highlighted`}
     >
-      {/* Fixed string-name column, outside the scroll area so it stays
-          readable while the fretboard itself scrolls horizontally. Order is
-          high string to low, top to bottom — the same convention every
+      {/* String names stay outside the scroll area so they remain readable
+          while the neck scrolls. High string at the top, the same order a
           printed tab uses. */}
-      <div className="flex shrink-0 flex-col gap-[3px] pr-2">
+      <div className="flex shrink-0 flex-col pr-2">
         {openStringName.map((name, i) => (
-          <div key={i} className="flex h-8 w-5 items-center justify-center text-small text-slate-500">
+          <div key={i} className="flex w-5 items-center justify-center text-small text-slate-400" style={{ height: rowHeight }}>
             {name}
           </div>
         ))}
-        <div className="mt-1.5 h-[22px]" aria-hidden />
+        <div className="mt-2 h-[22px]" aria-hidden />
       </div>
 
-      <div className="-mx-1 flex-1 overflow-x-auto px-1 pb-1">
-        <div className="select-none" style={{ minWidth: `${OPEN_CELL_WIDTH + FRET_COUNT * CELL_WIDTH}px` }}>
-          <div className="flex flex-col gap-[3px]">
-            {openStringMidi.map((openMidi, stringIndex) => (
-              <div key={stringIndex} className="flex">
-                {Array.from({ length: FRET_COUNT + 1 }).map((_, fret) => {
-                  const midi = openMidi + fret;
-                  const pitchClass = ((midi % 12) + 12) % 12;
-                  const degreeIndex = degreeByPitchClass.get(pitchClass);
-                  const inScale = degreeIndex !== undefined;
-                  const isActive =
-                    inScale &&
-                    (activeIndex === degreeIndex || (activeIndex === notes.length && degreeIndex === 0));
+      <div className="-mx-1 flex-1 overflow-x-auto px-1 pb-2">
+        <div className="select-none" style={{ minWidth: NECK_WIDTH }}>
+          <div className="relative overflow-hidden rounded-r-md fretboard-neck" style={{ width: NECK_WIDTH, height: neckHeight }}>
+            {/* Open-string area (the headstock side of the nut) and the nut. */}
+            <div aria-hidden className="absolute inset-y-0 left-0 fretboard-headstock" style={{ width: OPEN_WIDTH }} />
+            <div aria-hidden className="absolute inset-y-0 fretboard-nut" style={{ left: OPEN_WIDTH, width: NUT_WIDTH }} />
 
-                  return (
-                    <button
-                      key={fret}
-                      type="button"
-                      disabled={disabled}
-                      onClick={() => handlePress(midi, degreeIndex)}
-                      aria-label={labelFor(degreeIndex, openStringName[stringIndex], fret)}
-                      aria-pressed={inScale}
-                      style={{ width: fret === 0 ? OPEN_CELL_WIDTH : CELL_WIDTH }}
-                      className={`flex h-8 shrink-0 cursor-pointer items-center justify-center border border-ink/10 text-small transition-colors duration-150 focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50))] disabled:cursor-default ${
-                        fret === 0 ? "border-r-2 border-r-ink/40" : ""
-                      } ${
-                        isActive
-                          ? "bg-[rgb(var(--signal))] text-[rgb(var(--signal-ink))] shadow-pressed-low"
-                          : inScale
-                            ? "bg-[rgb(var(--c-s-50)/0.25)] text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.4)]"
-                            : "bg-slate-950 hover:bg-[rgb(var(--c-s-50)/0.1)]"
-                      }`}
-                    >
-                      {inScale && notes[degreeIndex]}
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Fret wires between the cells. */}
+            {fretLeft.slice(1).map((left, i) => (
+              <div key={i} aria-hidden className="absolute inset-y-0 w-[3px] fretboard-fret" style={{ left: left - 1.5 }} />
             ))}
+            <div aria-hidden className="absolute inset-y-0 w-[3px] fretboard-fret" style={{ left: NECK_WIDTH - 3 }} />
+
+            {/* Pearl inlays on the board, centered between the strings. */}
+            {fretLeft.map((left, i) => {
+              const fret = i + 1;
+              if (!SINGLE_DOT_FRETS.has(fret) && fret !== DOUBLE_DOT_FRET) return null;
+              const centerX = left + FRET_WIDTHS[i] / 2;
+              const ys = fret === DOUBLE_DOT_FRET ? [neckHeight / 3, (neckHeight * 2) / 3] : [neckHeight / 2];
+              return ys.map((y, k) => (
+                <span
+                  key={`${fret}-${k}`}
+                  aria-hidden
+                  className="absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full fretboard-inlay"
+                  style={{ left: centerX, top: y }}
+                />
+              ));
+            })}
+
+            {/* The strings, drawn across the whole neck. */}
+            {openStringMidi.map((_, stringIndex) => (
+              <div
+                key={stringIndex}
+                aria-hidden
+                className={`pointer-events-none absolute left-0 right-0 ${stringIndex >= firstWound ? "fretboard-string-wound" : "fretboard-string"}`}
+                style={{
+                  top: stringIndex * rowHeight + rowHeight / 2 - stringPx[stringIndex] / 2,
+                  height: stringPx[stringIndex],
+                }}
+              />
+            ))}
+
+            {/* The playable positions: one button per string and fret, with
+                the note shown as a fingertip on the string. */}
+            <div className="absolute inset-0 flex flex-col">
+              {openStringMidi.map((openMidi, stringIndex) => (
+                <div key={stringIndex} className="flex" style={{ height: rowHeight }}>
+                  {Array.from({ length: FRET_COUNT + 1 }).map((_, fret) => {
+                    const midi = openMidi + fret;
+                    const pitchClass = ((midi % 12) + 12) % 12;
+                    const degreeIndex = degreeByPitchClass.get(pitchClass);
+                    const inScale = degreeIndex !== undefined;
+                    const isActive =
+                      inScale &&
+                      (activeIndex === degreeIndex || (activeIndex === notes.length && degreeIndex === 0));
+                    const width = fret === 0 ? OPEN_WIDTH + NUT_WIDTH : FRET_WIDTHS[fret - 1];
+
+                    return (
+                      <button
+                        key={fret}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => handlePress(midi, degreeIndex)}
+                        aria-label={labelFor(degreeIndex, openStringName[stringIndex], fret)}
+                        aria-pressed={inScale}
+                        style={{ width }}
+                        className="group relative flex shrink-0 cursor-pointer items-center justify-center focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--signal))] disabled:cursor-default"
+                      >
+                        {inScale ? (
+                          <span
+                            className={`flex h-6 w-6 items-center justify-center rounded-full text-small font-semibold leading-none transition-transform duration-100 group-active:scale-90 ${
+                              isActive
+                                ? "bg-[rgb(var(--signal))] text-[rgb(var(--signal-ink))] shadow-[0_0_12px_rgb(var(--signal)/0.6)]"
+                                : "fretboard-finger"
+                            }`}
+                          >
+                            {notes[degreeIndex]}
+                          </span>
+                        ) : (
+                          <span aria-hidden className="h-4 w-4 rounded-full bg-white/0 transition-colors group-hover:bg-white/15" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Fret markers + numbers, purely decorative/orientation — the
-              inlay dots every real fretboard has at 3/5/7/9/12. */}
-          <div className="mt-1.5 flex" aria-hidden>
-            {Array.from({ length: FRET_COUNT + 1 }).map((_, fret) => (
-              <div
-                key={fret}
-                className="flex shrink-0 flex-col items-center gap-1"
-                style={{ width: fret === 0 ? OPEN_CELL_WIDTH : CELL_WIDTH }}
-              >
-                {fret > 0 && (SINGLE_DOT_FRETS.has(fret) || fret === DOUBLE_DOT_FRET) && (
-                  <span className="flex gap-0.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />
-                    {fret === DOUBLE_DOT_FRET && <span className="h-1.5 w-1.5 rounded-full bg-slate-700" />}
-                  </span>
-                )}
-                {/* text-slate-500, not -600 — see the accessibility pass's
-                    SiteFooter comment: -600 fails AA (4.5:1) for real text
-                    on this ground, -500 clears it. */}
-                <span className="text-small text-slate-500">{fret}</span>
-              </div>
+          {/* Fret numbers, aligned under each fret. */}
+          <div className="relative mt-2 h-[22px]" aria-hidden style={{ width: NECK_WIDTH }}>
+            {fretLeft.map((left, i) => (
+              <span key={i} className="absolute -translate-x-1/2 text-small text-slate-500" style={{ left: left + FRET_WIDTHS[i] / 2 }}>
+                {i + 1}
+              </span>
             ))}
           </div>
         </div>
