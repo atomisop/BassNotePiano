@@ -296,9 +296,10 @@ function MessageBubble({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-        className={`relative max-w-[80%] overflow-hidden rounded-2xl px-3.5 py-2 text-body text-primary ${isMine ? "shadow-pressed-low" : "shadow-raised-low"}`}
+        className={`relative max-w-[80%] overflow-hidden rounded-2xl px-3.5 py-2 text-body text-primary ${isMine ? "" : "shadow-raised-low"}`}
+        style={isMine ? { boxShadow: `var(--neu-raised-low), ${AI_HALO}` } : undefined}
       >
-        <AiBorder rounded="rounded-2xl" spin={false} spinClass="size-[600px]" surface="bg-neu-base" />
+        <AiBorder rounded="rounded-2xl" spin={false} glow={isMine} spinClass="size-[600px]" surface="bg-neu-base" />
         <p className="relative z-10 whitespace-pre-wrap break-words">{renderMessageContent(message.content, isMine)}</p>
       </motion.div>
       {!isMine && <FeedbackButtons rating={feedback} busy={feedbackBusy} onRate={onRate} />}
@@ -319,9 +320,16 @@ function ThreadMessageBubble({ message }: { message: ThreadMessage }) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-        className={`relative max-w-[80%] overflow-hidden rounded-2xl px-3.5 py-2 text-body text-primary ${isVisitor ? "shadow-pressed-low" : "shadow-raised-low"}`}
+        className={`relative max-w-[80%] overflow-hidden rounded-2xl px-3.5 py-2 text-body text-primary ${isVisitor ? "" : "shadow-raised-low"}`}
+        style={isVisitor ? { boxShadow: `var(--neu-raised-low), ${AI_HALO}` } : undefined}
       >
-        <AiBorder rounded="rounded-2xl" spin={message.sender === "SUPPORT"} spinClass="size-[600px]" surface="bg-neu-base" />
+        <AiBorder
+          rounded="rounded-2xl"
+          spin={message.sender === "SUPPORT"}
+          glow={isVisitor}
+          spinClass="size-[600px]"
+          surface="bg-neu-base"
+        />
         <p className="relative z-10 whitespace-pre-wrap break-words">{renderMessageContent(message.body, isVisitor)}</p>
       </motion.div>
     </div>
