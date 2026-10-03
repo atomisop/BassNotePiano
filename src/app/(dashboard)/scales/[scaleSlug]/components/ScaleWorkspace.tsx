@@ -69,6 +69,8 @@ export interface ScaleWorkspaceProps {
    */
   freeTrial: { endsAt: string; lockedLessonTitles: string[] } | null;
   variant: ScaleVariant | null;
+  /** Per-lesson variants (by lesson title) that override `variant` while that lesson is open. */
+  lessonVariants: Record<string, ScaleVariant>;
   instrument: PrimaryInstrument | null;
   initialNote: string;
   onMarkLessonComplete: (lessonId: string) => Promise<void>;
@@ -131,7 +133,8 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
     quizPassThreshold,
     practiceCompleted,
     freeTrial,
-    variant,
+    variant: groupVariant,
+    lessonVariants,
     instrument,
     initialNote,
     onMarkLessonComplete,
@@ -156,6 +159,10 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
     if (assessmentUnlocked && !quizPassed) return { kind: "assessment" };
     return hasLessons ? { kind: "lesson", index: 0 } : { kind: "none" };
   });
+  // The instrument follows the lesson that is open: Dorian's lesson shows
+  // Dorian's formula, not the group's first (major) scale.
+  const variant =
+    (selection.kind === "lesson" ? lessonVariants[lessons[selection.index]?.title ?? ""] : undefined) ?? groupVariant;
   const [celebrating, setCelebrating] = useState<number | null>(null);
   const [outlineOpen, setOutlineOpen] = useState(true);
   const [outlineSheet, setOutlineSheet] = useState(false);

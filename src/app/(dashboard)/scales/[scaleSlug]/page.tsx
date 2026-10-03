@@ -5,7 +5,7 @@ import { canAccessScale, QUIZ_PASS_THRESHOLD } from "@/lib/access";
 import { getLessonsWithProgress } from "@/lib/courseContent";
 import { getCurriculumEntitlement } from "@/lib/entitlement";
 import { TRIAL_LESSON_COUNT } from "@/lib/entitlementRules";
-import { SCALE_CONTENT } from "@/lib/scale-content";
+import { LESSON_VARIANTS, SCALE_CONTENT } from "@/lib/scale-content";
 import { generateScaleQuiz, stripAnswers } from "@/lib/quiz";
 import { ScaleWorkspace } from "./components/ScaleWorkspace";
 import { markLessonCompleteAction, markPracticeCompletedAction, saveScaleNoteAction, submitQuizAction } from "./actions";
@@ -64,6 +64,7 @@ export default async function ScalePage({ params }: { params: { scaleSlug: strin
       practiceCompleted={access.practiceCompleted}
       freeTrial={freeTrial}
       variant={variants[0] ?? null}
+      lessonVariants={LESSON_VARIANTS[scaleGroup.slug] ?? {}}
       instrument={user?.primaryInstrument ?? null}
       initialNote={note?.body ?? ""}
       onMarkLessonComplete={markLessonCompleteAction.bind(null, scaleGroup.slug)}
