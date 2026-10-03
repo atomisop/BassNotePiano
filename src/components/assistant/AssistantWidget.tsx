@@ -5,7 +5,8 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
-import Loader from "@/components/ui/loader-15";
+import GenerateAIButton, { AiBorder } from "@/components/ui/button-33";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { readConsent, CONSENT_DECIDED_EVENT } from "@/lib/cookieConsent";
 import { FULLSCREEN_NAV_EVENT } from "@/lib/overlayNav";
@@ -149,16 +150,7 @@ function readAnonymousGreetingDismissCount(): number {
 }
 
 function AtomButton({ onClick, label }: { onClick: () => void; label: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      className="relative flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-full transition hover:scale-105 active:scale-95"
-    >
-      <Loader size={60} />
-    </button>
-  );
+  return <GenerateAIButton label="Ask AI" ariaLabel={label} onClick={onClick} />;
 }
 
 // Deliberately tiny and low-contrast — a CSAT prompt that competed
@@ -269,7 +261,7 @@ function renderMessageContent(content: string, accentLink: boolean) {
         <Link
           key={key++}
           href={href}
-          className={`underline underline-offset-2 ${accentLink ? "text-slate-950" : "text-amber-400 hover:opacity-70"}`}
+          className={`underline underline-offset-2 ${accentLink ? "text-primary" : "text-blue-500 hover:opacity-70"}`}
         >
           {label}
         </Link>,
@@ -304,11 +296,10 @@ function MessageBubble({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-        className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-body ${
-          isMine ? "bg-slate-50 text-slate-950" : "border border-ink/10 bg-slate-950 text-slate-100"
-        }`}
+        className="relative max-w-[80%] overflow-hidden rounded-2xl px-3.5 py-2 text-body text-primary"
       >
-        <p className="whitespace-pre-wrap break-words">{renderMessageContent(message.content, isMine)}</p>
+        <AiBorder rounded="rounded-2xl" spin={false} spinClass="size-[600px]" />
+        <p className="relative z-10 whitespace-pre-wrap break-words">{renderMessageContent(message.content, isMine)}</p>
       </motion.div>
       {!isMine && <FeedbackButtons rating={feedback} busy={feedbackBusy} onRate={onRate} />}
     </div>
@@ -328,15 +319,10 @@ function ThreadMessageBubble({ message }: { message: ThreadMessage }) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-        className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-body ${
-          isVisitor
-            ? "bg-slate-50 text-slate-950"
-            : message.sender === "SUPPORT"
-              ? "border border-ink/25 bg-[rgb(var(--c-s-50)/0.08)] text-slate-100"
-              : "border border-ink/10 bg-slate-950 text-slate-100"
-        }`}
+        className="relative max-w-[80%] overflow-hidden rounded-2xl px-3.5 py-2 text-body text-primary"
       >
-        <p className="whitespace-pre-wrap break-words">{renderMessageContent(message.body, isVisitor)}</p>
+        <AiBorder rounded="rounded-2xl" spin={message.sender === "SUPPORT"} spinClass="size-[600px]" />
+        <p className="relative z-10 whitespace-pre-wrap break-words">{renderMessageContent(message.body, isVisitor)}</p>
       </motion.div>
     </div>
   );
@@ -345,11 +331,12 @@ function ThreadMessageBubble({ message }: { message: ThreadMessage }) {
 function TypingIndicator() {
   return (
     <div className="flex justify-start">
-      <div className="flex items-center gap-1 rounded-2xl border border-ink/10 bg-slate-950 px-4 py-3">
+      <div className="relative flex items-center gap-1 overflow-hidden rounded-full px-4 py-3">
+        <AiBorder />
         {[0, 1, 2].map((i) => (
           <motion.span
             key={i}
-            className="h-1.5 w-1.5 rounded-full bg-slate-500"
+            className="relative z-10 h-1.5 w-1.5 rounded-full bg-primary"
             animate={{ opacity: [0.3, 1, 0.3] }}
             transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.15 }}
           />
@@ -868,34 +855,34 @@ export function AssistantWidget() {
             // other `glass-surface-elevated` on the site does, so it looks
             // like the rest of the app (near-black Ink, or warm Paper),
             // rather than its own thing.
-            className="glass-surface-elevated flex h-[min(70vh,560px)] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl"
+            className="relative h-[min(70vh,560px)] w-[min(92vw,380px)] overflow-hidden rounded-3xl text-primary"
             role="dialog"
             aria-label="Chat with Atom"
           >
+            <AiBorder rounded="rounded-3xl" spinClass="size-[900px]" />
+            <div className="relative z-10 flex h-full min-w-0 flex-col">
             {/* Used to carry a mobile-only teal→blue wash here, echoing the
                 icon's old color mix — the icon is signal green now (the
                 house accent, not a distinct identity), and green filling
                 the whole header would compete with the message bubbles
                 below that also use it, so the header stays plain neutral
                 at every width instead. */}
-            <div className="flex items-center gap-3 border-b border-ink/10 px-4 py-3">
-              <div className="h-8 w-8 shrink-0">
-                <Loader size={32} />
-              </div>
+            <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+              <Sparkles className="size-6 shrink-0 text-primary" fill="currentColor" />
               <div className="min-w-0 flex-1">
                 {/* Always "Atom" — per direct instruction, the widget keeps its
                     one identity even once a human joins the thread. Which
                     sender said what is still clear from each message's own
                     ATOM/SUPPORT/YOU label (see ThreadMessageBubble) without
                     the header itself switching names on the visitor. */}
-                <p className="text-small font-semibold text-slate-50">Atom</p>
+                <p className="text-small font-semibold text-primary">Atom</p>
                 <p className="text-small text-slate-500">Bass Note Piano&apos;s assistant</p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close chat"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-ink/5 hover:text-slate-200"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-primary transition hover:bg-border/40"
               >
                 <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
                   <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
@@ -928,12 +915,12 @@ export function AssistantWidget() {
                     <ThreadMessageBubble key={m.id} message={m} />
                   ))}
                   {!hasSupportReply && threadStatus === "OPEN" && (
-                    <p className="rounded-xl border border-ink/10 bg-slate-900/60 p-3 text-center text-small text-slate-500">
+                    <p className="rounded-2xl border border-border bg-background p-3 text-center text-small text-slate-500">
                       You&apos;re connected — our support team has been notified and will reply here shortly.
                     </p>
                   )}
                   {threadStatus === "RESOLVED" && (
-                    <div className="space-y-2 rounded-xl border border-slate-50/20 bg-slate-50/10 p-3 text-center">
+                    <div className="space-y-2 rounded-2xl border border-border bg-background p-3 text-center">
                       <p className="text-small text-slate-100">
                         This conversation is closed. The history above is kept, but this thread no longer accepts new
                         messages.
@@ -941,7 +928,7 @@ export function AssistantWidget() {
                       <button
                         type="button"
                         onClick={resetToAtom}
-                        className="text-small font-medium text-amber-400 underline-offset-2 hover:underline"
+                        className="text-small font-medium text-blue-500 underline-offset-2 hover:underline"
                       >
                         Start a new question with Atom
                       </button>
@@ -954,33 +941,23 @@ export function AssistantWidget() {
               {error && <p className="text-center text-small text-red-400">{error}</p>}
 
               {escalationOffer && (
-                <div className="space-y-2 rounded-xl border border-ink/10 bg-slate-900/60 p-3">
+                <div className="space-y-2 rounded-2xl border border-border bg-background p-3">
                   <p className="text-small text-slate-300">Want me to connect you with our customer service team? A real person can dig into your account directly.</p>
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={declineHandoff}
-                      disabled={escalationSubmitting}
-                      className="flex-1 rounded-lg border border-ink/10 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
-                    >
+                    <GenerateAIButton icon={false} onClick={declineHandoff} disabled={escalationSubmitting} className="h-9 flex-1 px-3 text-small">
                       No, keep trying
-                    </button>
-                    <button
-                      type="button"
-                      onClick={confirmHandoff}
-                      disabled={escalationSubmitting}
-                      className="flex flex-1 items-center justify-center rounded-lg bg-amber-400 py-1.5 text-small font-semibold text-slate-950 transition disabled:opacity-60"
-                    >
-                      {escalationSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                    </GenerateAIButton>
+                    <GenerateAIButton onClick={confirmHandoff} disabled={escalationSubmitting} className="h-9 flex-1 px-3 text-small">
+                      {escalationSubmitting && <MorphingSquare size={12} className="shrink-0" />}
                       {escalationSubmitting ? "Connecting…" : "Yes, connect me"}
-                    </button>
+                    </GenerateAIButton>
                   </div>
                   {escalationError && <p className="text-small text-red-400">{escalationError}</p>}
                 </div>
               )}
 
               {collectingEmail && (
-                <form onSubmit={handleEmailSubmit} className="space-y-2 rounded-xl border border-ink/10 bg-slate-900/60 p-3">
+                <form onSubmit={handleEmailSubmit} className="space-y-2 rounded-2xl border border-border bg-background p-3">
                   <p className="text-small text-slate-300">
                     The team will reply right here in this chat — what&apos;s a good email for them to reach you at
                     only if you&apos;re not around when they do?
@@ -993,26 +970,21 @@ export function AssistantWidget() {
                     autoFocus
                     maxLength={320}
                     disabled={escalationSubmitting}
-                    className="w-full rounded-lg border border-ink/10 bg-slate-950 px-3 py-1.5 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-400/40"
+                    className="w-full rounded-full border border-border bg-background px-4 py-1.5 text-body text-primary outline-none transition placeholder:text-slate-500 focus:border-blue-500"
                   />
                   {escalationError && <p className="text-small text-red-400">{escalationError}</p>}
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={declineHandoff}
-                      disabled={escalationSubmitting}
-                      className="flex-1 rounded-lg border border-ink/10 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
-                    >
+                    <GenerateAIButton icon={false} onClick={declineHandoff} disabled={escalationSubmitting} className="h-9 flex-1 px-3 text-small">
                       Cancel
-                    </button>
-                    <button
+                    </GenerateAIButton>
+                    <GenerateAIButton
                       type="submit"
                       disabled={escalationSubmitting || !escalationEmail.trim()}
-                      className="flex flex-1 items-center justify-center rounded-lg bg-amber-400 py-1.5 text-small font-semibold text-slate-950 transition disabled:cursor-not-allowed disabled:opacity-60"
+                      className="h-9 flex-1 px-3 text-small"
                     >
-                      {escalationSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                      {escalationSubmitting && <MorphingSquare size={12} className="shrink-0" />}
                       {escalationSubmitting ? "Sending…" : "Notify the team"}
-                    </button>
+                    </GenerateAIButton>
                   </div>
                 </form>
               )}
@@ -1021,55 +993,49 @@ export function AssistantWidget() {
             </div>
 
             {showSuggestions && (
-              <div className="flex flex-wrap gap-1.5 border-t border-ink/10 px-4 py-2.5">
+              <div className="flex flex-wrap gap-1.5 border-t border-border px-4 py-2.5">
                 {SUGGESTIONS.map((s) => (
-                  <button
+                  <GenerateAIButton
                     key={s}
-                    type="button"
+                    icon={false}
                     onClick={() => sendMessage(s)}
                     disabled={loading}
-                    className="rounded-full border border-ink/10 px-2.5 py-1 text-small text-slate-300 transition hover:border-amber-400/40 hover:text-amber-400 disabled:opacity-50"
+                    className="h-8 px-3 text-small"
                   >
                     {s}
-                  </button>
+                  </GenerateAIButton>
                 ))}
-                <button
-                  type="button"
-                  onClick={offerHandoff}
-                  disabled={loading}
-                  className="rounded-full border border-ink/10 px-2.5 py-1 text-small text-slate-400 transition hover:border-amber-400/40 hover:text-amber-400 disabled:opacity-50"
-                >
+                <GenerateAIButton icon={false} onClick={offerHandoff} disabled={loading} className="h-8 px-3 text-small">
                   Talk to our team
-                </button>
+                </GenerateAIButton>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="flex min-w-0 gap-2 border-t border-ink/10 p-3">
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={isResolved ? "This conversation is closed" : inSupportMode ? "Message support…" : "Ask Atom anything…"}
-                maxLength={2000}
-                disabled={loading || isResolved}
-                className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-slate-950 px-3 py-2 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-amber-400/40 disabled:opacity-50"
-              />
-              <button
+            <form onSubmit={handleSubmit} className="flex min-w-0 items-center gap-2 border-t border-border p-3">
+              <div className="relative min-w-0 flex-1 overflow-hidden rounded-full">
+                <AiBorder spinClass="size-[400px]" />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={isResolved ? "This conversation is closed" : inSupportMode ? "Message support…" : "Ask Atom anything…"}
+                  maxLength={2000}
+                  disabled={loading || isResolved}
+                  className="relative z-10 w-full min-w-0 bg-transparent px-4 py-2 text-body text-primary outline-none placeholder:text-slate-500 disabled:opacity-50"
+                />
+              </div>
+              <GenerateAIButton
                 type="submit"
                 disabled={loading || isResolved || !input.trim()}
-                aria-label={loading ? "Sending…" : "Send"}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-400 text-slate-950 transition disabled:opacity-40"
+                ariaLabel={loading ? "Sending…" : "Send"}
+                icon={false}
+                className="size-10 shrink-0 px-0"
               >
-                {loading ? (
-                  <MorphingSquare size={16} />
-                ) : (
-                  <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-                    <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </button>
+                {loading ? <MorphingSquare size={16} /> : <ArrowRight className="size-4" />}
+              </GenerateAIButton>
             </form>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1093,16 +1059,17 @@ export function AssistantWidget() {
             // `--elev-border`/`--elev-bg` override anymore, so this greeting
             // bubble reads the same elevated-glass material every other
             // `glass-surface-elevated` on the site does.
-            className="glass-surface-elevated relative max-w-[240px] rounded-2xl text-body text-slate-100"
+            className="relative max-w-[240px] rounded-2xl text-body text-primary"
           >
-            <button type="button" onClick={openPanel} className="block w-full rounded-2xl px-4 py-3 text-left">
+            <AiBorder rounded="rounded-2xl" />
+            <button type="button" onClick={openPanel} className="relative z-10 block w-full rounded-2xl px-4 py-3 text-left">
               {GREETING_TEXT}
             </button>
             <button
               type="button"
               aria-label="Dismiss"
               onClick={dismissGreeting}
-              className="absolute -right-2 -top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-ink/10 bg-slate-950 text-slate-400 transition hover:text-slate-200"
+              className="absolute -right-2 -top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-border bg-background text-primary transition hover:opacity-70"
             >
               <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
                 <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
