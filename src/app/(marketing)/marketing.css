@@ -294,14 +294,15 @@
   letter-spacing: var(--type-display-1-ls);
 }
 
-/* Phone-only: the hero line has a rotating word ("definitive", "authentic",
-   "smartest") that is wider than the others, so at the full display size the
-   headline wrapped to four lines and pushed the buttons off the bottom of the
-   screen. A smaller size keeps it to two or three lines at every word. */
-@media (max-width: 640px) {
+/* The hero headline only. --type-display-1 (up to 8.5rem) is right for the
+   final CTA but far too big for the hero line on a desktop screen: with the
+   rotating word ("definitive", "authentic", "smartest") it wrapped to four
+   lines of ~136px type and pushed the buttons down behind the fold. Smaller
+   cap for this one headline; phones keep their existing size. */
+@media (min-width: 641px) {
   [data-surface="marketing"] .display-1.hero-title {
-    font-size: clamp(1.7rem, 7.2vw, 2.3rem);
-    line-height: 1.02;
+    font-size: clamp(2.75rem, 4.6vw, 4.5rem);
+    line-height: 0.98;
   }
 }
 
