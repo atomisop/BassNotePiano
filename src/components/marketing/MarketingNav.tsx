@@ -163,9 +163,9 @@ export function MarketingNav() {
             <Image
               src="/logo-mark.png"
               alt=""
-              width={28}
-              height={28}
-              className="h-7 w-7"
+              width={40}
+              height={40}
+              className="h-10 w-10"
             />
             {/* The wordmark is set in the display face (font-serif resolves
                 to --font-display, Baloo 2 as of this pass) so the brand and
