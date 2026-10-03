@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import type { OverviewStats as OverviewStatsData, ModuleHealthRow } from "@/lib/admin";
+import type { ReactNode } from "react";
+import type { OverviewStats as OverviewStatsData } from "@/lib/admin";
 
 export interface OverviewStatsProps {
   stats: OverviewStatsData;
-  moduleHealth: ModuleHealthRow[];
+  children?: ReactNode;
 }
 
 function formatUsd(cents: number) {
@@ -19,7 +20,7 @@ const item = {
   visible: { opacity: 1, y: 0, transition: { type: "spring", bounce: 0, duration: 0.4 } },
 };
 
-export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
+export function OverviewStats({ stats, children }: OverviewStatsProps) {
   const cards = [
     { label: "Total users", value: stats.totalUsers.toLocaleString() },
     { label: "Curriculum access", value: stats.curriculumUsers.toLocaleString() },
@@ -65,42 +66,10 @@ export function OverviewStats({ stats, moduleHealth }: OverviewStatsProps) {
         </Link>
       </motion.div>
 
-      <motion.div variants={item}>
-        <h2 className="mb-1 text-body text-slate-100 font-semibold">Module health</h2>
-        <p className="mb-4 text-small text-slate-500">Unlocks and completions across the whole user base.</p>
-        <div className="overflow-hidden glass-surface">
-          {moduleHealth.map((row, i) => {
-            const rate = row.unlockedCount === 0 ? 0 : Math.round((row.completedCount / row.unlockedCount) * 100);
-            return (
-              <div
-                key={row.slug}
-                className={`flex flex-wrap items-center justify-between gap-4 px-6 py-4 ${
-                  i > 0 ? "border-t border-ink/5" : ""
-                }`}
-              >
-                <div>
-                  <p className="text-small uppercase tracking-wide text-[rgb(var(--c-s-50)/0.8)]">{row.code}</p>
-                  <p className="text-slate-200">{row.title}</p>
-                </div>
-                <div className="flex shrink-0 items-center gap-6 text-small">
-                  <div className="text-right">
-                    <p className="text-slate-300">{row.unlockedCount}</p>
-                    <p className="text-small text-slate-600">unlocked</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-slate-300">{row.completedCount}</p>
-                    <p className="text-small text-slate-600">completed</p>
-                  </div>
-                  <div className="w-14 text-right">
-                    <p className="text-[rgb(var(--c-s-50))]">{rate}%</p>
-                    <p className="text-small text-slate-600">completion</p>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </motion.div>
+      {/* Module health is slow to compute (two counts per scale), so the page
+          streams it in through this slot instead of making the whole
+          overview wait for it. */}
+      <motion.div variants={item}>{children}</motion.div>
     </motion.div>
   );
 }
