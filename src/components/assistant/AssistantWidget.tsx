@@ -6,7 +6,8 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
 import GenerateAIButton, { AI_HALO, AiBorder } from "@/components/ui/button-33";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { MessageBubble as IdeaBubble } from "@/components/ui/message-bubble";
+import { ArrowRight, Lightbulb, Sparkles } from "lucide-react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { readConsent, CONSENT_DECIDED_EVENT } from "@/lib/cookieConsent";
 import { FULLSCREEN_NAV_EVENT } from "@/lib/overlayNav";
@@ -427,6 +428,27 @@ export function AssistantWidget() {
     };
   }, []);
   const openPanelRef = useRef<() => void>(() => {});
+
+  // Where the top-bar Ask AI button sits, so the greeting bubble can hang right
+  // under it like a thought. Re-measured on resize and whenever the bubble is
+  // about to show (the nav can reflow between breakpoints).
+  const [triggerAnchor, setTriggerAnchor] = useState<{ top: number; right: number; width: number } | null>(null);
+  useEffect(() => {
+    if (!hasTopBarTrigger) {
+      setTriggerAnchor(null);
+      return;
+    }
+    function measure() {
+      const el = document.querySelector<HTMLElement>("[data-atom-trigger]");
+      if (!el) return setTriggerAnchor(null);
+      const r = el.getBoundingClientRect();
+      if (r.width === 0) return setTriggerAnchor(null);
+      setTriggerAnchor({ top: r.bottom, right: window.innerWidth - r.right, width: r.width });
+    }
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [hasTopBarTrigger, showGreeting]);
 
   // Portals need a real document — same SSR-safety pattern as NotificationBell.
   useEffect(() => {
@@ -1100,6 +1122,67 @@ export function AssistantWidget() {
               </GenerateAIButton>
             </form>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* The "I have an idea" greeting: a thought bubble hanging under the top-bar
+          Ask AI button, with the little trail of circles a thought bubble has
+          rising toward it. Same Atom look as everything else (glowing border,
+          neumorphic fill). The three-dismissals-and-it-never-returns rule is the
+          existing one, in dismissGreeting/greetingSuppressed. */}
+      <AnimatePresence>
+        {showGreeting && !open && hasTopBarTrigger && triggerAnchor && (
+          <motion.div
+            key="idea-bubble"
+            initial={{ opacity: 0, y: -8, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.92 }}
+            transition={{ type: "spring", bounce: 0.25, duration: 0.45 }}
+            style={{
+              position: "fixed",
+              top: triggerAnchor.top + 26,
+              right: Math.max(12, Math.min(triggerAnchor.right, 40)),
+              width: "min(268px, calc(100vw - 24px))",
+              transformOrigin: "top right",
+            }}
+            className="z-[46]"
+          >
+            {/* Thought trail: small, then bigger, rising to the button. */}
+            <span
+              aria-hidden
+              className="absolute rounded-full bg-neu-base ring-[1.5px] ring-amber-400/70 shadow-raised-low"
+              style={{ width: 8, height: 8, top: -24, right: triggerAnchor.right + triggerAnchor.width / 2 - Math.max(12, Math.min(triggerAnchor.right, 40)) - 4 }}
+            />
+            <span
+              aria-hidden
+              className="absolute rounded-full bg-neu-base ring-[1.5px] ring-amber-400/70 shadow-raised-low"
+              style={{ width: 13, height: 13, top: -16, right: triggerAnchor.right + triggerAnchor.width / 2 - Math.max(12, Math.min(triggerAnchor.right, 40)) - 6.5 }}
+            />
+            <motion.div
+              animate={{ y: [0, -3, 0] }}
+              transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+              className="relative rounded-[24px] ring-[1.5px] ring-amber-400/70"
+              style={{ boxShadow: `var(--neu-raised-mid), ${AI_HALO}` }}
+            >
+              {/* The bubble itself is the 21st.dev Message Bubble (components/ui/message-bubble.tsx). */}
+              <IdeaBubble variant="incoming" state="visible" maxWidth="100%" bodyStyle={{ display: "block", padding: "14px 40px 14px 14px", borderRadius: 24 }}>
+                <button type="button" onClick={openPanel} className="flex w-full items-start gap-3 text-left">
+                  <Lightbulb className="mt-0.5 size-5 shrink-0 text-amber-400" fill="currentColor" aria-hidden />
+                  <span>{GREETING_TEXT}</span>
+                </button>
+              </IdeaBubble>
+              <button
+                type="button"
+                aria-label="Dismiss"
+                onClick={dismissGreeting}
+                className="absolute right-2.5 top-2.5 z-20 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-neu-base text-primary shadow-raised-low transition hover:opacity-70"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
+                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
