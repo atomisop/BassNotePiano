@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
@@ -14,6 +15,7 @@ import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Card, Eyebrow } from "@/components/ui/Card";
 import { buttonVariants } from "@/components/ui/button";
 import { WideLayout } from "@/components/layout/PageLayouts";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 function ArrowIcon() {
   return (
@@ -34,6 +36,72 @@ function Stat({ value, label }: { value: string; label: string }) {
 }
 
 /**
+ * The next-class card streams in on its own: it needs a separate bookings
+ * query that nothing else on the page depends on, so the rest of the home
+ * screen no longer waits for it. The skeleton matches the card's footprint so
+ * the cards below don't shift when it resolves.
+ */
+async function NextClassCard({ userId }: { userId: string }) {
+  const bookings = await getUserClassBookings(userId);
+
+  // getUserClassBookings returns newest-first across all statuses; the next
+  // class is the earliest still-scheduled one in the future.
+  const now = Date.now();
+  const nextClass = bookings
+    .filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > now)
+    .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())[0];
+
+  return nextClass ? (
+            <Link
+              href="/lessons"
+              className="group rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Card interactive className="flex items-center justify-between gap-4">
+                <div>
+                  <Eyebrow>Next live class</Eyebrow>
+                  <p className="mt-2 text-small font-semibold text-slate-50">
+                    {/* Server-rendered in one stable time zone; /lessons shows
+                        the student's own local time. */}
+                    {nextClass.scheduledAt.toLocaleString("en-US", {
+                      weekday: "long",
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                      timeZone: "America/New_York",
+                      timeZoneName: "short",
+                    })}
+                  </p>
+                  {nextClass.schedule.label && <p className="text-small text-slate-400">{nextClass.schedule.label}</p>}
+                </div>
+                <span className="shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5">
+                  <ArrowIcon />
+                </span>
+              </Card>
+            </Link>
+          ) : (
+            <Card>
+              <Eyebrow>Live classes</Eyebrow>
+              <p className="mt-2 text-small text-slate-400">No class booked yet.</p>
+              <Link
+                href="/lessons"
+                className="mt-2 inline-flex text-small font-semibold text-slate-50 underline-offset-4 hover:underline"
+              >
+                Book a class
+              </Link>
+            </Card>
+          );
+}
+
+function NextClassSkeleton() {
+  return (
+    <div aria-hidden>
+      <Skeleton className="h-[7.5rem] w-full rounded-card" />
+    </div>
+  );
+}
+
+/**
  * Home (STEP 2B wireframe, approved 2026-10-02).
  *
  * Desktop: a wide main column (greeting, next step, learning tabs) and a
@@ -49,26 +117,18 @@ export default async function DashboardPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
 
-  const [roadmap, badgeRows, user, bookings] = await Promise.all([
+  const [roadmap, badgeRows, user] = await Promise.all([
     getRoadmap(session.user.id),
     prisma.userBadge.findMany({ where: { userId: session.user.id }, select: { code: true } }),
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: { name: true, currentStreak: true, classCredits: true },
     }),
-    getUserClassBookings(session.user.id),
   ]);
 
   const progress = summariseProgress(roadmap);
   const nextStep = resolveNextStep(roadmap);
   const earnedBadgeCodes = badgeRows.map((b) => b.code);
-
-  // getUserClassBookings returns newest-first across all statuses; the next
-  // class is the earliest still-scheduled one in the future.
-  const now = Date.now();
-  const nextClass = bookings
-    .filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > now)
-    .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())[0];
 
   const streak = user?.currentStreak ?? 0;
 
@@ -131,46 +191,9 @@ export default async function DashboardPage() {
             </div>
           </Card>
 
-          {nextClass ? (
-            <Link
-              href="/lessons"
-              className="group rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <Card interactive className="flex items-center justify-between gap-4">
-                <div>
-                  <Eyebrow>Next live class</Eyebrow>
-                  <p className="mt-2 text-small font-semibold text-slate-50">
-                    {/* Server-rendered in one stable time zone; /lessons shows
-                        the student's own local time. */}
-                    {nextClass.scheduledAt.toLocaleString("en-US", {
-                      weekday: "long",
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                      timeZone: "America/New_York",
-                      timeZoneName: "short",
-                    })}
-                  </p>
-                  {nextClass.schedule.label && <p className="text-small text-slate-400">{nextClass.schedule.label}</p>}
-                </div>
-                <span className="shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5">
-                  <ArrowIcon />
-                </span>
-              </Card>
-            </Link>
-          ) : (
-            <Card>
-              <Eyebrow>Live classes</Eyebrow>
-              <p className="mt-2 text-small text-slate-400">No class booked yet.</p>
-              <Link
-                href="/lessons"
-                className="mt-2 inline-flex text-small font-semibold text-slate-50 underline-offset-4 hover:underline"
-              >
-                Book a class
-              </Link>
-            </Card>
-          )}
+          <Suspense fallback={<NextClassSkeleton />}>
+            <NextClassCard userId={session.user.id} />
+          </Suspense>
 
           <Card>
             <Eyebrow>Badges</Eyebrow>

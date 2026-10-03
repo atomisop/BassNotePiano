@@ -432,7 +432,13 @@ export function NotificationBell() {
   async function handleMarkAllRead() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     setUnreadCount(0);
-    await markAllNotificationsReadAction();
+    // Optimistic: if the call fails, resync from the server so the badge
+    // doesn't claim everything is read when it isn't.
+    try {
+      await markAllNotificationsReadAction();
+    } catch {
+      await refresh();
+    }
   }
 
   async function handleNotificationClick(notification: NotificationRow) {
@@ -440,7 +446,11 @@ export function NotificationBell() {
     if (notification.read) return;
     setNotifications((prev) => prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n)));
     setUnreadCount((prev) => Math.max(0, prev - 1));
-    await markNotificationReadAction(notification.id);
+    try {
+      await markNotificationReadAction(notification.id);
+    } catch {
+      await refresh();
+    }
   }
 
   return (

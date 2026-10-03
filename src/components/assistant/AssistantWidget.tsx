@@ -9,6 +9,8 @@ import GenerateAIButton, { AI_HALO, AiBorder } from "@/components/ui/button-33";
 import { MessageBubble as IdeaBubble } from "@/components/ui/message-bubble";
 import { ArrowRight, Lightbulb, Sparkles } from "lucide-react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { RegionError } from "@/components/ui/RegionError";
+import { usePoll } from "@/hooks/usePoll";
 import { readConsent, CONSENT_DECIDED_EVENT } from "@/lib/cookieConsent";
 import { FULLSCREEN_NAV_EVENT } from "@/lib/overlayNav";
 import { ATOM_TRIGGER_EVENT, OPEN_ATOM_EVENT, isAtomTriggerPresent } from "@/lib/atomTrigger";
@@ -510,29 +512,22 @@ export function AssistantWidget() {
 
   // Polls the live thread while it's open on screen — no point spending
   // requests on a panel the visitor isn't looking at.
-  useEffect(() => {
-    if (!activeEscalationId || !open) return;
-    let cancelled = false;
-
-    async function poll() {
-      try {
-        const res = await fetch(`/api/assistant/support/${activeEscalationId}`);
-        if (!res.ok || cancelled) return;
-        const data = await res.json();
-        if (cancelled) return;
-        setThreadMessages(data.messages);
-        setThreadStatus(data.status);
-      } catch {
-        // Best-effort — the next poll tick will retry.
-      }
-    }
-    poll();
-    const interval = setInterval(poll, SUPPORT_POLL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [activeEscalationId, open]);
+  const threadPoll = usePoll(
+    async (signal) => {
+      const res = await fetch(`/api/assistant/support/${activeEscalationId}`, { signal });
+      // A 4xx (thread gone, not yours) is an answer, not an outage: stay
+      // quiet and let the existing closed-thread handling deal with it. Only
+      // a server error or a dropped connection counts as a failed tick.
+      if (res.status >= 500) throw new Error("support poll failed");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (signal.aborted) return;
+      setThreadMessages(data.messages);
+      setThreadStatus(data.status);
+    },
+    SUPPORT_POLL_MS,
+    { enabled: Boolean(activeEscalationId && open), resetKey: activeEscalationId },
+  );
 
   // Whether the greeting has been explicitly canceled enough times to stop
   // offering it at all. A signed-in account persists this server-side (so
@@ -990,6 +985,13 @@ export function AssistantWidget() {
                     <p className="rounded-2xl bg-neu-base p-3 shadow-raised-low text-center text-small text-slate-500">
                       You&apos;re connected — our support team has been notified and will reply here shortly.
                     </p>
+                  )}
+                  {threadPoll.failed && (
+                    <RegionError
+                      title="Can't reach support right now."
+                      detail="Your messages are safe. We'll keep trying."
+                      onRetry={threadPoll.retry}
+                    />
                   )}
                   {threadStatus === "RESOLVED" && (
                     <div className="space-y-2 rounded-2xl bg-neu-base p-3 shadow-raised-low text-center">

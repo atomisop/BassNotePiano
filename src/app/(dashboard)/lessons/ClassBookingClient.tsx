@@ -16,6 +16,8 @@ import { CheckIcon, XIcon } from "@/components/ui/icons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { WideLayout } from "@/components/layout/PageLayouts";
 
+const NETWORK_ERROR = "That didn't go through. Check your connection and try again.";
+
 interface OccurrenceRow {
   scheduleId: string;
   label: string | null;
@@ -430,8 +432,15 @@ export function ClassBookingClient({
     setError(null);
     setSuccess(null);
     setBookingKey(key);
-    const result = await bookClassAction(row.scheduleId, row.occurrenceDateMs, row.chunkIndex, chosen);
-    setBookingKey(null);
+    let result: Awaited<ReturnType<typeof bookClassAction>>;
+    try {
+      result = await bookClassAction(row.scheduleId, row.occurrenceDateMs, row.chunkIndex, chosen);
+    } catch {
+      setError(NETWORK_ERROR);
+      return;
+    } finally {
+      setBookingKey(null);
+    }
 
     if (!result.ok) {
       setError(result.error);
@@ -478,8 +487,15 @@ export function ClassBookingClient({
       chunkIndex: r.chunkIndex,
       creditsToBook: creditsFor(r),
     }));
-    const result = await bookClassBundleAction(selections);
-    setBundleSubmitting(false);
+    let result: Awaited<ReturnType<typeof bookClassBundleAction>>;
+    try {
+      result = await bookClassBundleAction(selections);
+    } catch {
+      setError(NETWORK_ERROR);
+      return;
+    } finally {
+      setBundleSubmitting(false);
+    }
     setSelectedKeys(new Set());
 
     if (!result.ok) {
@@ -527,8 +543,15 @@ export function ClassBookingClient({
     setError(null);
     setSuccess(null);
     setCancelingId(booking.id);
-    const result = await cancelClassBookingAction(booking.id);
-    setCancelingId(null);
+    let result: Awaited<ReturnType<typeof cancelClassBookingAction>>;
+    try {
+      result = await cancelClassBookingAction(booking.id);
+    } catch {
+      setError(NETWORK_ERROR);
+      return;
+    } finally {
+      setCancelingId(null);
+    }
 
     if (!result.ok) {
       setError(result.error);
@@ -561,8 +584,15 @@ export function ClassBookingClient({
     setError(null);
     setSuccess(null);
     setReschedulingKey(key);
-    const result = await rescheduleClassBookingAction(oldBooking.id, row.scheduleId, row.occurrenceDateMs, row.chunkIndex, chosen);
-    setReschedulingKey(null);
+    let result: Awaited<ReturnType<typeof rescheduleClassBookingAction>>;
+    try {
+      result = await rescheduleClassBookingAction(oldBooking.id, row.scheduleId, row.occurrenceDateMs, row.chunkIndex, chosen);
+    } catch {
+      setError(NETWORK_ERROR);
+      return;
+    } finally {
+      setReschedulingKey(null);
+    }
 
     if (!result.ok) {
       setError(result.error);
@@ -622,7 +652,15 @@ export function ClassBookingClient({
 
   async function checkFamilyEmail(email: string) {
     setFamilyChecks((prev) => ({ ...prev, [email]: { checking: true, found: false, verified: false, name: null } }));
-    const results = await checkFamilyClassAttendeesAction([email]);
+    let results: Awaited<ReturnType<typeof checkFamilyClassAttendeesAction>>;
+    try {
+      results = await checkFamilyClassAttendeesAction([email]);
+    } catch {
+      // Clear the "checking" state so the field isn't stuck; the person can
+      // retype or blur to check again.
+      setFamilyChecks((prev) => ({ ...prev, [email]: { checking: false, found: false, verified: false, name: null } }));
+      return;
+    }
     const result = results[0];
     if (!result) return;
     setFamilyChecks((prev) => ({ ...prev, [email]: { checking: false, found: result.found, verified: result.verified, name: result.name } }));
@@ -638,8 +676,15 @@ export function ClassBookingClient({
     setError(null);
     setSuccess(null);
     setFamilySubmitting(true);
-    const result = await bookFamilyClassAction(familyRow.scheduleId, familyRow.occurrenceDateMs, familyRow.chunkIndex, familyEmailsTrimmed);
-    setFamilySubmitting(false);
+    let result: Awaited<ReturnType<typeof bookFamilyClassAction>>;
+    try {
+      result = await bookFamilyClassAction(familyRow.scheduleId, familyRow.occurrenceDateMs, familyRow.chunkIndex, familyEmailsTrimmed);
+    } catch {
+      setError(NETWORK_ERROR);
+      return;
+    } finally {
+      setFamilySubmitting(false);
+    }
 
     if (!result.ok) {
       setError(result.error);

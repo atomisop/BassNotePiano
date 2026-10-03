@@ -13,6 +13,8 @@ import {
   type AdminThreadMessage,
 } from "@/app/(dashboard)/admin/support/actions";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { RegionError } from "@/components/ui/RegionError";
+import { usePoll } from "@/hooks/usePoll";
 
 const THREAD_LIST_POLL_MS = 15_000;
 const ACTIVE_THREAD_POLL_MS = 2_500;
@@ -148,62 +150,47 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
     setThreads(initialThreads);
   }, [initialThreads]);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function refresh() {
+  const listPoll = usePoll(
+    async (signal) => {
       const result = await getSupportThreadsAction(statusFilter);
-      if (!cancelled) setThreads(result);
-    }
-    refresh();
-    const interval = setInterval(refresh, THREAD_LIST_POLL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [statusFilter]);
+      if (signal.aborted) return;
+      setThreads(result);
+    },
+    THREAD_LIST_POLL_MS,
+    { immediate: true, resetKey: statusFilter },
+  );
 
   useEffect(() => {
     setConfirmingDelete(false);
   }, [activeId]);
 
+  // Switching threads used to leave the previously-selected thread's
+  // messages on screen until the new ones arrived: reads as "the message
+  // history takes a while to load" when really it's just showing the
+  // wrong thread's history for a beat. Clear it immediately and show a
+  // loading state instead; the poll after that reuses the same tick, but
+  // only the first success for a given thread clears the loading flag, so a
+  // refresh doesn't flicker a spinner.
   useEffect(() => {
-    if (!activeId) {
-      setMessages([]);
-      setThreadStatus(null);
-      setMessagesLoading(false);
-      return;
-    }
-    let cancelled = false;
-    let initialLoad = true;
-
-    // Switching threads used to leave the previously-selected thread's
-    // messages on screen until the new ones arrived: reads as "the message
-    // history takes a while to load" when really it's just showing the
-    // wrong thread's history for a beat. Clear it immediately and show a
-    // loading state instead; the 2.5s poll after that reuses this same
-    // `load`, but only the very first call for a given thread flips the
-    // loading flag, so a poll refresh doesn't flicker a spinner.
     setMessages([]);
-    setMessagesLoading(true);
-
-    async function load() {
-      const result = await getSupportThreadAction(activeId!);
-      if (cancelled || !result) return;
-      setMessages(result.messages);
-      setThreadStatus(result.status);
-      if (initialLoad) {
-        setMessagesLoading(false);
-        initialLoad = false;
-      }
-    }
-    load();
-
-    const interval = setInterval(load, ACTIVE_THREAD_POLL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
+    setThreadStatus(null);
+    setMessagesLoading(Boolean(activeId));
   }, [activeId]);
+
+  const threadPoll = usePoll(
+    async (signal) => {
+      if (!activeId) return;
+      const result = await getSupportThreadAction(activeId);
+      if (signal.aborted) return;
+      if (result) {
+        setMessages(result.messages);
+        setThreadStatus(result.status);
+      }
+      setMessagesLoading(false);
+    },
+    ACTIVE_THREAD_POLL_MS,
+    { enabled: Boolean(activeId), resetKey: activeId },
+  );
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -254,7 +241,18 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
   }
 
   if (threads.length === 0) {
-    return <div className="glass-surface p-8 text-center text-small text-slate-500">{emptyMessage}</div>;
+    return (
+      <div className="space-y-3">
+        {listPoll.failed && (
+          <RegionError
+            title="Can't check for new conversations."
+            detail="Check your connection. We'll keep trying, or you can try now."
+            onRetry={listPoll.retry}
+          />
+        )}
+        <div className="glass-surface p-8 text-center text-small text-slate-500">{emptyMessage}</div>
+      </div>
+    );
   }
 
   return (
@@ -346,7 +344,15 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                 slide over it for an instant on the way back up from the
                 bottom. */}
             <div className="min-w-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
-              {messagesLoading ? (
+              {messagesLoading && threadPoll.failed ? (
+                <div className="flex h-full items-center justify-center">
+                  <RegionError
+                    title="Couldn't load this conversation."
+                    detail="Check your connection and try again."
+                    onRetry={threadPoll.retry}
+                  />
+                </div>
+              ) : messagesLoading ? (
                 <div className="flex h-full items-center justify-center gap-2 text-small text-slate-500">
                   <MorphingSquare size={14} />
                   Loading messages…
@@ -356,6 +362,16 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                   {messages.map((m) => (
                     <MessageRow key={m.id} message={m} />
                   ))}
+                  {(threadPoll.failed || listPoll.failed) && (
+                    <RegionError
+                      title="Live updates paused."
+                      detail="Check your connection. We'll keep trying."
+                      onRetry={() => {
+                        threadPoll.retry();
+                        listPoll.retry();
+                      }}
+                    />
+                  )}
                   <div ref={messagesEndRef} />
                 </>
               )}

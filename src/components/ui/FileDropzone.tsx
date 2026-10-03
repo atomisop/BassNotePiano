@@ -75,6 +75,24 @@ export function FileDropzone({
 
   const uploading = typeof progress === "number";
 
+  // Time left, from how fast the percent has actually been moving. Nothing is
+  // shown until there is a little data (>=3% and >=1s) so the first estimate
+  // isn't wild.
+  const startedAt = React.useRef<number | null>(null);
+  const [etaSeconds, setEtaSeconds] = React.useState<number | undefined>(undefined);
+  React.useEffect(() => {
+    if (typeof progress !== "number") {
+      startedAt.current = null;
+      setEtaSeconds(undefined);
+      return;
+    }
+    if (startedAt.current === null) startedAt.current = Date.now();
+    const elapsed = (Date.now() - startedAt.current) / 1000;
+    if (progress >= 3 && elapsed >= 1 && progress < 100) {
+      setEtaSeconds((elapsed * (100 - progress)) / progress);
+    }
+  }, [progress]);
+
   return (
     <div className={className}>
       <label
@@ -156,10 +174,7 @@ export function FileDropzone({
 
           {uploading && (
             <div className="mt-3">
-              <ProgressBar value={progress!} label={`Uploading ${file.name}`} />
-              <p className="mt-1.5 text-small tabular-nums text-slate-500">
-                {Math.round(progress!)}% uploaded
-              </p>
+              <ProgressBar readout value={progress!} etaSeconds={etaSeconds} label={`Uploading ${file.name}`} />
             </div>
           )}
         </div>

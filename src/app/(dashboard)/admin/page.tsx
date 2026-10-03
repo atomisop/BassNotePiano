@@ -1,6 +1,8 @@
-import { getOverviewStats, getModuleHealth, getOverviewTrends } from "@/lib/admin";
+import { Suspense } from "react";
+import { getOverviewStats, getOverviewTrends } from "@/lib/admin";
 import { OverviewStats } from "@/components/admin/OverviewStats";
 import { MetricCard } from "@/components/ui/MetricCard";
+import { ModuleHealthSection, ModuleHealthSkeleton } from "@/components/admin/ModuleHealthSection";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", {
@@ -10,11 +12,7 @@ function formatUsd(cents: number) {
 }
 
 export default async function AdminOverviewPage() {
-  const [stats, moduleHealth, trends] = await Promise.all([
-    getOverviewStats(),
-    getModuleHealth(),
-    getOverviewTrends(6),
-  ]);
+  const [stats, trends] = await Promise.all([getOverviewStats(), getOverviewTrends(6)]);
 
   return (
     <div>
@@ -43,7 +41,11 @@ export default async function AdminOverviewPage() {
       </div>
 
       <div className="mt-8">
-        <OverviewStats stats={stats} moduleHealth={moduleHealth} />
+        <OverviewStats stats={stats}>
+          <Suspense fallback={<ModuleHealthSkeleton />}>
+            <ModuleHealthSection />
+          </Suspense>
+        </OverviewStats>
       </div>
     </div>
   );

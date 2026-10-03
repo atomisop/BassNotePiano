@@ -90,7 +90,11 @@ function uploadToR2(uploadUrl: string, blob: Blob, contentType: string): Promise
     xhr.open("PUT", uploadUrl, true);
     xhr.setRequestHeader("Content-Type", contentType);
     xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Upload failed (${xhr.status}).`)));
-    xhr.onerror = () => reject(new Error("Upload failed — check your connection and try again."));
+    xhr.onerror = () => reject(new Error("Upload failed. Check your connection and try again."));
+    // A resized avatar is small; if it hasn't finished in a minute the
+    // connection is the problem, and "Uploading…" must not spin forever.
+    xhr.timeout = 60_000;
+    xhr.ontimeout = () => reject(new Error("The upload timed out. Check your connection and try again."));
     xhr.send(blob);
   });
 }
