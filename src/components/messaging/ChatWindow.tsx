@@ -154,7 +154,7 @@ export function ChatWindow({
           type="button"
           onClick={onMinimize}
           aria-label="Minimize chat"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-ink/10 text-slate-400 transition hover:border-ink/15 hover:bg-ink/5 hover:text-slate-200"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
             <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
@@ -198,7 +198,7 @@ export function ChatWindow({
       </div>
 
       {replyingTo && (
-        <div className="flex items-center gap-2 border-t border-ink/10 bg-slate-900/60 px-4 py-2">
+        <div className="flex items-center gap-2 border-t border-ink/10 bg-neu-base shadow-pressed-low px-4 py-2">
           <div className="min-w-0 flex-1 border-l-2 border-[rgb(var(--c-s-50)/0.5)] pl-2">
             <p className="text-small font-medium text-slate-300">
               Replying to {replyingTo.senderId === conversation.friendId ? conversation.friendName ?? conversation.friendUsername ?? "Unnamed" : "yourself"}

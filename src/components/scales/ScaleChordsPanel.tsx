@@ -55,7 +55,7 @@ export function ScaleChordsPanel({ variant, root, player }: ScaleChordsPanelProp
             return (
               <div
                 key={`${spec.label}-${i}`}
-                className="rounded-control border border-ink/10 p-3"
+                className="rounded-control p-3 bg-neu-base shadow-raised-low"
               >
                 {body}
               </div>
@@ -68,10 +68,10 @@ export function ScaleChordsPanel({ variant, root, player }: ScaleChordsPanelProp
               type="button"
               onClick={() => playChordNotes(chord.notes)}
               aria-label={`Play the chord ${chord.symbol}`}
-              className="group flex cursor-pointer items-center justify-between gap-3 rounded-control border border-ink/10 p-3 text-left transition-colors duration-(--dur-fast) hover:border-ink/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="group flex cursor-pointer items-center justify-between gap-3 rounded-control p-3 text-left transition-colors duration-(--dur-fast) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-neu-base shadow-raised-low"
             >
               <span>{body}</span>
-              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ink/15 text-slate-300 transition-colors group-hover:border-signal group-hover:text-signal" aria-hidden>
+              <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-300 transition-colors group-hover:border-signal group-hover:text-signal bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low" aria-hidden>
                 <ChordPlayIcon />
               </span>
             </button>

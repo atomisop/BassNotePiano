@@ -16,7 +16,7 @@ function ThemeSwatch({ swatch }: { swatch: [string, string, string] }) {
   const [ground, surface, text] = swatch;
   return (
     <div
-      className="flex h-12 w-full items-center gap-1.5 rounded-md border border-ink/10 px-2"
+      className="flex h-12 w-full items-center gap-1.5 rounded-md px-2 bg-neu-base shadow-raised-low"
       style={{ background: ground }}
       aria-hidden
     >
@@ -65,7 +65,7 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
                 className={`w-full rounded-lg border p-2.5 text-left transition ${
                   selected
                     ? "border-amber-400 bg-amber-400/10"
-                    : "border-ink/10 hover:border-[rgb(var(--c-s-50)/0.4)] hover:bg-ink/5"
+                    : "border-transparent hover:border-[rgb(var(--c-s-50)/0.4)] bg-neu-base shadow-raised-low"
                 }`}
               >
                 <span className="flex items-center justify-between gap-2">

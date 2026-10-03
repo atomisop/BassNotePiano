@@ -171,14 +171,14 @@ export function CustomerProfile({
               <div className="flex flex-wrap gap-2">
                 <span
                   className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
-                    user.role === "ADMIN" ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "bg-slate-800 text-slate-400"
+                    user.role === "ADMIN" ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "bg-neu-base shadow-pressed-low text-slate-400"
                   }`}
                 >
                   {user.role}
                 </span>
                 <span
                   className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
-                    user.hasCurriculumAccess ? "bg-slate-50/15 text-slate-100" : "bg-slate-800 text-slate-400"
+                    user.hasCurriculumAccess ? "bg-slate-50/15 text-slate-100" : "bg-neu-base shadow-pressed-low text-slate-400"
                   }`}
                 >
                   {user.hasCurriculumAccess ? "Comped" : "Not comped"}
@@ -210,7 +210,7 @@ export function CustomerProfile({
                   type="button"
                   disabled={busy}
                   onClick={() => setPendingAction("curriculum")}
-                  className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                  className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   {user.hasCurriculumAccess ? "Remove complimentary access" : "Grant complimentary access"}
                 </button>
@@ -239,7 +239,7 @@ export function CustomerProfile({
                   type="button"
                   disabled={busy}
                   onClick={() => setPendingAction("role")}
-                  className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                  className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   {user.role === "ADMIN" ? "Remove admin role" : "Make admin"}
                 </button>
@@ -266,7 +266,7 @@ export function CustomerProfile({
                   type="button"
                   disabled={busy}
                   onClick={() => setPendingAction("history")}
-                  className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                  className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Clear Atom history
                 </button>
@@ -304,7 +304,7 @@ export function CustomerProfile({
           <SectionCard title="Curriculum">
             <div className="space-y-2">
               {profile.roadmap.map((scale) => (
-                <div key={scale.scaleGroup.id} className="flex items-center justify-between gap-3 rounded-xl border border-ink/10 p-3">
+                <div key={scale.scaleGroup.id} className="flex items-center justify-between gap-3 rounded-xl p-3 bg-neu-base shadow-raised-low">
                   <div className="min-w-0">
                     <p className="text-small text-slate-100">
                       {scale.scaleGroup.code} · {scale.scaleGroup.kinitName ?? scale.scaleGroup.title}
@@ -326,7 +326,7 @@ export function CustomerProfile({
                     className={`shrink-0 rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:opacity-40 ${
                       scale.status === "LOCKED"
                         ? "border-[rgb(var(--c-s-50)/0.3)] text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)]"
-                        : "border-ink/10 text-slate-400 hover:bg-slate-800"
+                        : "border-transparent text-slate-400 bg-neu-base shadow-raised-low"
                     }`}
                   >
                     {scale.status === "LOCKED" ? "Unlock" : "Lock"}
@@ -406,7 +406,7 @@ export function CustomerProfile({
               <div className="mt-2 space-y-2">
                 {upcomingBookings.length === 0 && <Empty>No upcoming bookings.</Empty>}
                 {upcomingBookings.map((b) => (
-                  <div key={b.id} className="rounded-xl border border-ink/10 p-3">
+                  <div key={b.id} className="rounded-xl p-3 bg-neu-base shadow-raised-low">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-small text-slate-100">{b.schedule.label ?? "Class"}</p>
@@ -431,7 +431,7 @@ export function CustomerProfile({
                                 setCancelingBookingId(null);
                                 setCancelReason("");
                               }}
-                              className="flex-1 rounded-lg border border-ink/10 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800"
+                              className="flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                             >
                               Never mind
                             </button>
@@ -449,7 +449,7 @@ export function CustomerProfile({
                         <button
                           type="button"
                           onClick={() => setCancelingBookingId(b.id)}
-                          className="shrink-0 rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:border-red-400/40 hover:text-red-300"
+                          className="shrink-0 rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                         >
                           Cancel booking
                         </button>
@@ -494,7 +494,7 @@ export function CustomerProfile({
             {profile.payments.length === 0 && <Empty>No payments submitted.</Empty>}
             <div className="space-y-2">
               {profile.payments.map((p) => (
-                <div key={p.id} className="flex items-center justify-between gap-3 rounded-xl border border-ink/10 p-3 text-small">
+                <div key={p.id} className="flex items-center justify-between gap-3 rounded-xl p-3 text-small bg-neu-base shadow-raised-low">
                   <div>
                     <p className="text-slate-100">
                       {formatUsd(p.amountCents)} · {p.purpose.replace(/_/g, " ").toLowerCase()}
@@ -510,7 +510,7 @@ export function CustomerProfile({
                         ? "bg-slate-50/15 text-slate-100"
                         : p.status === "REJECTED"
                           ? "bg-red-400/15 text-red-400"
-                          : "bg-slate-800 text-slate-400"
+                          : "bg-neu-base shadow-pressed-low text-slate-400"
                     }`}
                   >
                     {p.status.replace(/_/g, " ").toLowerCase()}
@@ -530,7 +530,7 @@ export function CustomerProfile({
                 <Link
                   key={t.id}
                   href={`/admin/support?status=ALL&thread=${t.id}`}
-                  className="block rounded-xl border border-ink/10 p-3 transition hover:border-ink/20 hover:bg-ink/5"
+                  className="block rounded-xl p-3 transition bg-neu-base shadow-raised-low"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-small text-slate-500">{formatDate(t.createdAt)}</span>

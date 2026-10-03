@@ -121,7 +121,7 @@ function DesktopAdminPills() {
 
   return (
     <nav className="hidden flex-col gap-2 sm:flex">
-      <div className="flex flex-wrap gap-1.5 rounded-2xl border border-ink/10 p-1.5">
+      <div className="flex flex-wrap gap-1.5 rounded-2xl p-1.5 bg-neu-base shadow-raised-low">
         {NAV_GROUPS.map((g) => {
           const active = g.label === group.label;
           return (
@@ -138,7 +138,7 @@ function DesktopAdminPills() {
         })}
       </div>
       {group.leaves.length > 1 && (
-        <div className="flex flex-wrap gap-1.5 rounded-2xl border border-ink/10 bg-ink/5 p-1.5">
+        <div className="flex flex-wrap gap-1.5 rounded-2xl p-1.5 bg-neu-base shadow-raised-low">
           {group.leaves.map((leaf) => {
             const active = isLeafActive(leaf.href, pathname);
             return (

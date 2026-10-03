@@ -1,6 +1,6 @@
 export function Avatar({ image, label, className = "h-9 w-9" }: { image: string | null; label: string; className?: string }) {
   return (
-    <div className={`shrink-0 overflow-hidden rounded-full border border-ink/10 bg-slate-800 ${className}`}>
+    <div className={`shrink-0 overflow-hidden rounded-full bg-neu-base shadow-raised-low ${className}`}>
       {image ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={image} alt="" className="h-full w-full object-cover" />

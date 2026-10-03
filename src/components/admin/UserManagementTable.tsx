@@ -192,14 +192,14 @@ export function UserManagementTable({
                 <div className="flex items-center gap-2">
                   <span
                     className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
-                      user.role === "ADMIN" ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "bg-slate-800 text-slate-400"
+                      user.role === "ADMIN" ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "bg-neu-base shadow-pressed-low text-slate-400"
                     }`}
                   >
                     {user.role}
                   </span>
                   <span
                     className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
-                      user.hasCurriculumAccess ? "bg-slate-50/15 text-slate-100" : "bg-slate-800 text-slate-400"
+                      user.hasCurriculumAccess ? "bg-slate-50/15 text-slate-100" : "bg-neu-base shadow-pressed-low text-slate-400"
                     }`}
                   >
                     {user.hasCurriculumAccess ? "Curriculum" : "No curriculum"}
@@ -223,7 +223,7 @@ export function UserManagementTable({
                           ? "border-slate-50/30 bg-slate-50/10 text-slate-100 hover:bg-slate-50/20"
                           : su.unlocked
                             ? "border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.2)]"
-                            : "border-ink/10 text-slate-500 hover:border-ink/15"
+                            : "border-transparent text-slate-500 bg-neu-base shadow-raised-low"
                       }`}
                     >
                       S{scaleGroup.order}
@@ -251,7 +251,7 @@ export function UserManagementTable({
                       type="button"
                       onClick={() => setPendingAction(null)}
                       disabled={busy}
-                      className="flex-1 rounded-lg border border-ink/10 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                      className="flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Cancel
                     </button>
@@ -280,7 +280,7 @@ export function UserManagementTable({
                     type="button"
                     disabled={busy}
                     onClick={() => setPendingAction({ userId: user.id, kind: "role" })}
-                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                    className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     {user.role === "ADMIN" ? "Remove admin" : "Make admin"}
                   </button>
@@ -288,7 +288,7 @@ export function UserManagementTable({
                     type="button"
                     disabled={busy}
                     onClick={() => setPendingAction({ userId: user.id, kind: "curriculum" })}
-                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                    className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     {user.hasCurriculumAccess ? "Revoke curriculum" : "Grant curriculum"}
                   </button>

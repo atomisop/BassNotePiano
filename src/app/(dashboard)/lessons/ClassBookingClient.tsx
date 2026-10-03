@@ -48,9 +48,9 @@ const STATUS_LABEL: Record<BookingRow["status"], string> = {
 };
 
 const STATUS_STYLE: Record<BookingRow["status"], string> = {
-  SCHEDULED: "border border-ink/15 text-slate-50",
+  SCHEDULED: "text-slate-50 bg-neu-base shadow-raised-low",
   COMPLETED: "bg-[rgb(var(--c-s-50)/0.08)] text-slate-200",
-  CANCELED: "bg-slate-800 text-slate-500",
+  CANCELED: "bg-neu-base shadow-pressed-low text-slate-500",
 };
 
 /** Weekday + date only — the time is shown separately as its own column. */
@@ -168,7 +168,7 @@ function BookingCard({
             className={`flex items-center justify-center rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
               isBeingRescheduled
                 ? "border-[rgb(var(--c-s-50)/0.4)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
-                : "border-ink/10 text-slate-300 hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+                : "border-transparent text-slate-300 hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low"
             }`}
           >
             {isBeingRescheduled ? "Picking new time…" : "Reschedule"}
@@ -188,7 +188,7 @@ function BookingCard({
         {pastSelfServeWindow && supportContactId && (
           <Link
             href={`/messages?with=${supportContactId}`}
-            className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+            className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
           >
             Message support
           </Link>
@@ -676,7 +676,7 @@ export function ClassBookingClient({
             </div>
             <Link
               href="/billing/lessons"
-              className="rounded-lg border border-ink/10 px-4 py-2 text-small font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+              className="rounded-lg px-4 py-2 text-small font-medium text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
               Buy credits
             </Link>
@@ -737,7 +737,7 @@ export function ClassBookingClient({
 
         <div className="min-w-0 lg:col-start-1 lg:row-start-1">
           {/* Mode picker — same segmented-pill pattern used elsewhere in the app. Group is listed but disabled, matching the "coming soon" treatment already used for other not-yet-available options. */}
-          <div className="flex w-fit flex-wrap gap-1.5 rounded-full border border-ink/10 p-1">
+          <div className="flex w-fit flex-wrap gap-1.5 rounded-full p-1 bg-neu-base shadow-pressed-low">
             <button
               type="button"
               onClick={() => setMode("SOLO")}
@@ -763,7 +763,7 @@ export function ClassBookingClient({
               className="flex cursor-not-allowed items-center gap-1.5 rounded-full px-4 py-1.5 text-small font-medium text-slate-600"
             >
               Group
-              <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-small uppercase tracking-wide">Soon</span>
+              <span className="rounded-full bg-neu-base shadow-pressed-low px-1.5 py-0.5 text-small uppercase tracking-wide">Soon</span>
             </span>
           </div>
           <p className="mt-2 text-small text-slate-500">
@@ -972,7 +972,7 @@ export function ClassBookingClient({
                                 type="button"
                                 onClick={() => handleReschedule(row)}
                                 disabled={disabled}
-                                className="flex shrink-0 items-center justify-center rounded-lg border border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
+                                className="flex shrink-0 items-center justify-center rounded-lg border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                               >
                                 {reschedulingKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                                 {reschedulingKey === key
@@ -988,7 +988,7 @@ export function ClassBookingClient({
                                 type="button"
                                 onClick={() => handleBook(row)}
                                 disabled={disabled}
-                                className="flex shrink-0 items-center justify-center rounded-lg border border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
+                                className="flex shrink-0 items-center justify-center rounded-lg border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                               >
                                 {bookingKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                                 {bookingKey === key ? "Booking…" : row.isBooked ? "Booked" : insufficientCredits ? "Not enough credits" : "Book"}
@@ -998,7 +998,7 @@ export function ClassBookingClient({
                                 type="button"
                                 onClick={() => openFamilyBooking(row)}
                                 disabled={row.isBooked || familySubmitting}
-                                className="shrink-0 rounded-lg border border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:border-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:border-ink/10 disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36"
+                                className="shrink-0 rounded-lg border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                               >
                                 {row.isBooked ? "Booked" : "Set up family"}
                               </button>

@@ -148,12 +148,12 @@ function Pill({
       className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
         selected
           ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
-          : "border-ink/10 bg-slate-950 text-slate-400 hover:border-ink/15"
+          : "border-transparent text-slate-400 bg-neu-base shadow-raised-low"
       }`}
     >
       {label}
       {comingSoon && (
-        <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-small font-semibold uppercase tracking-wide text-slate-400">
+        <span className="rounded-full bg-neu-base shadow-pressed-low px-1.5 py-0.5 text-small font-semibold uppercase tracking-wide text-slate-400">
           Coming soon
         </span>
       )}
@@ -337,7 +337,7 @@ function AvatarSection({
   return (
     <SectionCard title="Profile photo" description="Shown across your dashboard and the admin panel.">
       <div className="flex items-center gap-4">
-        <div className="h-16 w-16 overflow-hidden rounded-full border border-ink/10 bg-slate-800">
+        <div className="h-16 w-16 overflow-hidden rounded-full bg-neu-base shadow-raised-low">
           {image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={image} alt="" className="h-full w-full object-cover" />
@@ -350,7 +350,7 @@ function AvatarSection({
             type="button"
             disabled={uploading || !storageConfigured}
             onClick={() => fileInputRef.current?.click()}
-            className="cta-sheen flex items-center justify-center rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:border-ink/20 disabled:cursor-not-allowed disabled:opacity-60"
+            className="cta-sheen flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
           >
             {uploading && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {uploading ? "Uploading…" : "Choose new photo"}

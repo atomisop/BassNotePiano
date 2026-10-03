@@ -170,7 +170,7 @@ export function ZellePaymentModal({
                       unlock {scaleTitle}, then confirm below.
                     </p>
 
-                    <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-ink/10 bg-slate-900 px-4 py-3">
+                    <div className="mt-4 flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-neu-base shadow-raised-low">
                       <div className="min-w-0">
                         <p className="text-small uppercase tracking-wide text-slate-500">Zelle handle</p>
                         <p className="truncate font-mono text-small text-slate-100">{zelleHandle}</p>
@@ -239,7 +239,7 @@ export function ZellePaymentModal({
                           type="button"
                           onClick={() => setStep("instructions")}
                           disabled={submitting}
-                          className="flex-1 rounded-xl border border-ink/10 py-2.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-40"
+                          className="flex-1 rounded-xl py-2.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                         >
                           Back
                         </button>
@@ -289,7 +289,7 @@ export function ZellePaymentModal({
                     <button
                       type="button"
                       onClick={handleClose}
-                      className="mt-6 w-full rounded-xl border border-ink/10 py-2.5 text-small font-medium text-slate-300 transition hover:bg-slate-800"
+                      className="mt-6 w-full rounded-xl py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Done
                     </button>

@@ -161,7 +161,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
                   key={s.id}
                   type="button"
                   onClick={() => pickStudent(s)}
-                  className="flex w-full items-center justify-between rounded-lg border border-ink/10 px-3.5 py-2.5 text-left text-small transition hover:border-[rgb(var(--c-s-50)/0.4)]"
+                  className="flex w-full items-center justify-between rounded-lg px-3.5 py-2.5 text-left text-small transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   <div>
                     <p className="text-slate-100">{s.name ?? "Unnamed"}</p>
@@ -209,7 +209,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
                     type="button"
                     onClick={() => pickSlot(slot)}
                     className={`flex w-full items-center justify-between rounded-lg border px-3.5 py-2.5 text-left text-small transition ${
-                      active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
+                      active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-transparent bg-neu-base shadow-raised-low"
                     }`}
                   >
                     <span className={active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}>{formatDateTime(slot.scheduledAt)}</span>
@@ -234,7 +234,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
                     className={`rounded-lg border px-3.5 py-2 text-small font-medium transition ${
                       creditsToBook === n
                         ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
-                        : "border-ink/10 text-slate-300 hover:border-ink/15"
+                        : "border-transparent text-slate-300 bg-neu-base shadow-raised-low"
                     }`}
                   >
                     {n * 30} min ({n} credit{n === 1 ? "" : "s"})

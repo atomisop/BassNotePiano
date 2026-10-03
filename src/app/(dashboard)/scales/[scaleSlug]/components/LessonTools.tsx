@@ -150,7 +150,7 @@ export function NotesPanel({
         onBlur={() => void flush()}
         placeholder="Fingerings, tricky spots, what your teacher said…"
         rows={12}
-        className="mt-3 min-h-64 w-full flex-1 resize-y rounded-control border border-ink/10 bg-[rgb(var(--c-s-50)/0.04)] p-3 text-body text-slate-50 placeholder:text-slate-500 focus-visible:border-signal focus-visible:outline-none"
+        className="mt-3 min-h-64 w-full flex-1 resize-y rounded-control p-3 text-body text-slate-50 placeholder:text-slate-500 focus-visible:border-signal focus-visible:outline-none bg-neu-base shadow-raised-low"
       />
       <div className="mt-2 flex items-center justify-between gap-3 text-small" aria-live="polite">
         <span className={state.kind === "error" ? "text-[rgb(var(--c-rd-300))]" : "text-slate-400"}>
@@ -191,7 +191,7 @@ export function FilesPanel({ lessons }: { lessons: CourseLessonWithProgress[] })
               href={lesson.fileUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex min-h-11 items-center gap-3 rounded-control border border-ink/10 px-3 py-2 transition-colors hover:border-ink/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex min-h-11 items-center gap-3 rounded-control px-3 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
               <Icon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
               <span className="min-w-0 flex-1 truncate text-small font-semibold text-slate-50">{lesson.title}</span>

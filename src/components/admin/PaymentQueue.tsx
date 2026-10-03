@@ -81,11 +81,11 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_STYLE: Record<string, string> = {
-  AWAITING_TRANSFER: "bg-slate-800 text-slate-400",
+  AWAITING_TRANSFER: "bg-neu-base shadow-pressed-low text-slate-400",
   PENDING_REVIEW: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]",
   VERIFIED: "bg-slate-50/15 text-slate-100",
   REJECTED: "bg-red-400/15 text-red-300",
-  EXPIRED: "bg-slate-800 text-slate-500",
+  EXPIRED: "bg-neu-base shadow-pressed-low text-slate-500",
 };
 
 export function PaymentQueue({
@@ -204,7 +204,7 @@ export function PaymentQueue({
                     setReason("");
                   }}
                   disabled={busyId === payment.id}
-                  className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                  className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Cancel
                 </button>
@@ -232,7 +232,7 @@ export function PaymentQueue({
                   type="button"
                   onClick={() => setApprovingId(null)}
                   disabled={busyId === payment.id}
-                  className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                  className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Cancel
                 </button>
@@ -253,7 +253,7 @@ export function PaymentQueue({
                 type="button"
                 onClick={() => setRejectingId(payment.id)}
                 disabled={busyId === payment.id}
-                className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Reject
               </button>

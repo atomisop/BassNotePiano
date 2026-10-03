@@ -270,7 +270,7 @@ export function AdminLessonManager({
                   </span>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="rounded-full bg-slate-800 px-2 py-0.5 text-small font-medium uppercase tracking-wide text-slate-400">
+                      <span className="rounded-full bg-neu-base shadow-pressed-low px-2 py-0.5 text-small font-medium uppercase tracking-wide text-slate-400">
                         {lesson.type}
                       </span>
                       <h3 className="text-body text-slate-50">{lesson.title}</h3>
@@ -289,7 +289,7 @@ export function AdminLessonManager({
                     onClick={() => handleMove(index, -1)}
                     disabled={busy || index === 0}
                     aria-label="Move up"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-ink/10 text-slate-400 transition hover:border-ink/15 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 19V5M5 12l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" />
@@ -300,7 +300,7 @@ export function AdminLessonManager({
                     onClick={() => handleMove(index, 1)}
                     disabled={busy || index === lessons.length - 1}
                     aria-label="Move down"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-ink/10 text-slate-400 transition hover:border-ink/15 hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 5v14M5 12l7 7 7-7" strokeLinecap="round" strokeLinejoin="round" />
@@ -316,7 +316,7 @@ export function AdminLessonManager({
                       type="button"
                       onClick={() => setDeletingId(null)}
                       disabled={busy}
-                      className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                      className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Cancel
                     </button>
@@ -334,7 +334,7 @@ export function AdminLessonManager({
                   <button
                     type="button"
                     onClick={() => setDeletingId(lesson.id)}
-                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-400 transition hover:border-red-400/30 hover:text-red-300"
+                    className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-400 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     Delete
                   </button>

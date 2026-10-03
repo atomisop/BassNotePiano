@@ -68,7 +68,7 @@ export interface AdminAttendanceRosterProps {
 
 function Avatar({ image, name }: { image: string | null; name: string }) {
   return (
-    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-ink/10 bg-slate-800">
+    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-neu-base shadow-raised-low">
       {image ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={image} alt="" className="h-full w-full object-cover" />
@@ -163,7 +163,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                 <p className="mt-0.5 text-small text-slate-500">{formatDateTime(occ.scheduledAt)}</p>
               </div>
               {activeRoster.length > 0 && (
-                <span className="rounded-full border border-ink/10 px-2.5 py-1 text-small font-medium uppercase tracking-wide text-slate-400">
+                <span className="rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide text-slate-400 bg-neu-base shadow-raised-low">
                   {isFamily ? `Family · ${activeRoster.length} students` : "One-on-one"}
                 </span>
               )}
@@ -181,7 +181,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                       const canCancel = entry.status === "SCHEDULED";
                       const canMarkAttendance = entry.status === "SCHEDULED" && hasHappened;
                       return (
-                        <div key={entry.bookingId} className="rounded-xl border border-ink/10 p-3">
+                        <div key={entry.bookingId} className="rounded-xl p-3 bg-neu-base shadow-raised-low">
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-3">
                               <Avatar image={entry.studentImage} name={entry.studentName ?? entry.studentEmail} />
@@ -228,7 +228,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => setUndoConfirmId(null)}
                                       disabled={busyId === entry.bookingId}
-                                      className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                                      className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                                     >
                                       Never mind
                                     </button>
@@ -248,7 +248,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => handleMark(entry.bookingId, "PRESENT")}
                                       disabled={busyId === entry.bookingId || entry.attendance === "PRESENT"}
-                                      className="rounded-lg border border-slate-50/30 px-3 py-1.5 text-small font-medium text-slate-100 transition hover:bg-slate-50/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                      className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-100 transition hover:bg-slate-50/10 disabled:cursor-not-allowed disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                                     >
                                       Present
                                     </button>
@@ -264,7 +264,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => setUndoConfirmId(entry.bookingId)}
                                       disabled={busyId === entry.bookingId}
-                                      className="rounded-lg border border-ink/15 px-3 py-1.5 text-small font-medium text-slate-200 transition hover:bg-[rgb(var(--c-s-50)/0.06)] disabled:cursor-not-allowed disabled:opacity-50"
+                                      className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-200 transition hover:bg-[rgb(var(--c-s-50)/0.06)] disabled:cursor-not-allowed disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                                     >
                                       Undo &amp; refund
                                     </button>
@@ -286,7 +286,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => handleMark(entry.bookingId, "PRESENT")}
                                       disabled={busyId === entry.bookingId}
-                                      className="rounded-lg border border-slate-50/30 px-3 py-1.5 text-small font-medium text-slate-100 transition hover:bg-slate-50/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                      className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-100 transition hover:bg-slate-50/10 disabled:cursor-not-allowed disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                                     >
                                       Present
                                     </button>
@@ -301,7 +301,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                   </>
                                 )}
                                 {!canMarkAttendance && !hasHappened && (
-                                  <span className="rounded-full border border-ink/10 px-2.5 py-1 text-small font-medium uppercase tracking-wide text-slate-500">
+                                  <span className="rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide text-slate-500 bg-neu-base shadow-raised-low">
                                     Upcoming
                                   </span>
                                 )}
@@ -314,7 +314,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       setCancelingId(entry.bookingId);
                                     }}
                                     disabled={busyId === entry.bookingId}
-                                    className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                                   >
                                     Cancel booking
                                   </button>
@@ -345,7 +345,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                     setReason("");
                                   }}
                                   disabled={busyId === entry.bookingId}
-                                  className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                                  className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                                 >
                                   Never mind
                                 </button>

@@ -39,7 +39,7 @@ export default async function AdminPaymentPlansPage({ searchParams }: { searchPa
           {feedback.length} cancellation{feedback.length === 1 ? "" : "s"} with a reason left, newest first.
         </p>
 
-        <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full border border-ink/10 p-1">
+        <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full p-1 bg-neu-base shadow-pressed-low">
           {FILTERS.map((filter) => (
             <Link
               key={filter.value}
@@ -77,7 +77,7 @@ export default async function AdminPaymentPlansPage({ searchParams }: { searchPa
         — this list is for tracking who&apos;s on a plan and canceling one if needed.
       </p>
 
-      <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full border border-ink/10 p-1">
+      <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full p-1 bg-neu-base shadow-pressed-low">
         {FILTERS.map((filter) => (
           <Link
             key={filter.value}
