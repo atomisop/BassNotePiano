@@ -1,7 +1,6 @@
 import { ImageResponse } from "next/og";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { SITE_NAME } from "@/lib/site";
+import { OG_MARK_DATA_URI } from "@/assets/ogMark";
 
 // A file-based OG image: Next serves this at /opengraph-image and wires the
 // correct absolute URL + dimensions into both the og: and twitter: tags, so
@@ -57,9 +56,9 @@ async function loadGoogleFont(
   }
 }
 
-const logoDataUri = `data:image/png;base64,${readFileSync(path.join(process.cwd(), "src", "assets", "og-mark.png")).toString("base64")}`;
 
 export default async function OpengraphImage() {
+  const logoDataUri = OG_MARK_DATA_URI;
   const headline = "Ethiopian Scales, Rhythm & Chords";
   const supporting =
     "Spelled correctly in all twelve keys, with the native chords mapped for each one.TizitaBatiAnchihoyeAmbasselbassnotepiano.com" +
