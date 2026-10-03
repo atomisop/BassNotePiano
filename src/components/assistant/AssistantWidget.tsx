@@ -905,6 +905,9 @@ export function AssistantWidget() {
             style={{ boxShadow: `var(--neu-raised-high), ${AI_HALO}` }}
             role="dialog"
             aria-label="Chat with Atom"
+            // Lenis (marketing smooth scroll) hijacks wheel events window-wide;
+            // this tells it to leave scrolling inside the panel alone.
+            data-lenis-prevent
           >
             <AiBorder rounded="rounded-3xl" glow surface="bg-neu-base" />
             <div className="relative z-10 flex h-full min-w-0 flex-col">
@@ -937,7 +940,7 @@ export function AssistantWidget() {
               </button>
             </div>
 
-            <div className="min-w-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
+            <div data-lenis-prevent className="min-w-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
               {!inSupportMode && messages.length === 0 && (
                 <p className="text-small text-slate-400">
                   Hi, I&apos;m Atom. Ask me about pricing, booking a class, policies, or anything else about Bass Note
