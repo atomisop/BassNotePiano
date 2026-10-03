@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
-import GenerateAIButton, { AiBorder } from "@/components/ui/button-33";
+import GenerateAIButton, { AI_HALO, AiBorder } from "@/components/ui/button-33";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { readConsent, CONSENT_DECIDED_EVENT } from "@/lib/cookieConsent";
@@ -855,11 +855,12 @@ export function AssistantWidget() {
             // other `glass-surface-elevated` on the site does, so it looks
             // like the rest of the app (near-black Ink, or warm Paper),
             // rather than its own thing.
-            className="relative h-[min(70vh,560px)] w-[min(92vw,380px)] overflow-hidden rounded-3xl text-primary shadow-raised-high"
+            className="relative h-[min(70vh,560px)] w-[min(92vw,380px)] overflow-hidden rounded-3xl text-primary"
+            style={{ boxShadow: `var(--neu-raised-high), ${AI_HALO}` }}
             role="dialog"
             aria-label="Chat with Atom"
           >
-            <AiBorder rounded="rounded-3xl" spinClass="size-[900px]" surface="bg-neu-base" />
+            <AiBorder rounded="rounded-3xl" glow surface="bg-neu-base" />
             <div className="relative z-10 flex h-full min-w-0 flex-col">
             {/* Used to carry a mobile-only teal→blue wash here, echoing the
                 icon's old color mix — the icon is signal green now (the
@@ -1021,8 +1022,11 @@ export function AssistantWidget() {
             )}
 
             <form onSubmit={handleSubmit} className="flex min-w-0 items-center gap-2 border-t border-border p-3">
-              <div className="relative min-w-0 flex-1 overflow-hidden rounded-full shadow-pressed-low">
-                <AiBorder spinClass="size-[400px]" surface="bg-neu-base" />
+              <div
+                className="relative min-w-0 flex-1 overflow-hidden rounded-full"
+                style={{ boxShadow: `var(--neu-pressed-low), ${AI_HALO}` }}
+              >
+                <AiBorder glow surface="bg-neu-base" />
                 <input
                   ref={inputRef}
                   type="text"
@@ -1039,6 +1043,8 @@ export function AssistantWidget() {
                 disabled={loading || isResolved || !input.trim()}
                 ariaLabel={loading ? "Sending…" : "Send"}
                 icon={false}
+                glow={input.trim().length > 0}
+                plain={input.trim().length === 0}
                 surface="bg-neu-base"
                 className="size-10 shrink-0 px-0 shadow-raised-low"
               >
