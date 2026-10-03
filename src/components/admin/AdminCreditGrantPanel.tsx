@@ -225,7 +225,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
               </div>
 
               {error && <p className="text-small text-red-400">{error}</p>}
-              {success && <p className="text-small text-emerald-400">{success}</p>}
+              {success && <p className="text-small text-slate-50">{success}</p>}
 
               {confirming ? (
                 // Same "show exactly what's about to happen, then a second
@@ -275,7 +275,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 {history.map((row) => (
                   <div key={row.id} className="rounded-lg border border-ink/10 px-3 py-2 text-small">
                     <div className="flex items-center justify-between gap-2">
-                      <span className={row.amount > 0 ? "font-medium text-emerald-300" : "font-medium text-red-300"}>
+                      <span className={row.amount > 0 ? "font-medium text-slate-100" : "font-medium text-red-300"}>
                         {formatSigned(row.amount)} credits
                       </span>
                       <span className="text-slate-500">{new Date(row.createdAt).toLocaleString()}</span>
@@ -305,7 +305,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   <p className="mt-0.5 text-small text-slate-500">{new Date(row.createdAtMs).toLocaleString()}</p>
                 </div>
                 <span className={`shrink-0 rounded-full px-2.5 py-1 text-small font-medium ${
-                  row.amount > 0 ? "bg-emerald-400/15 text-emerald-300" : "bg-red-400/15 text-red-300"
+                  row.amount > 0 ? "bg-slate-50/15 text-slate-100" : "bg-red-400/15 text-red-300"
                 }`}>
                   {formatSigned(row.amount)}
                 </span>

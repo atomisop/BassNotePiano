@@ -34,7 +34,7 @@ export function MetricCard({
   variant?: "area" | "bar";
   tone?: "accent" | "success";
 }) {
-  const colorClass = tone === "success" ? "text-emerald-400" : "text-[rgb(var(--c-s-50))]";
+  const colorClass = tone === "success" ? "text-slate-50" : "text-[rgb(var(--c-s-50))]";
   const hasSeries = data.length > 1;
 
   return (
@@ -96,7 +96,7 @@ function SparkTooltip({
   if (!active || !payload?.length) return null;
   const point = payload[0].payload;
   return (
-    <div className="rounded-md border border-ink/10 bg-surface px-2 py-1 text-small text-slate-200 shadow-card">
+    <div className="rounded-md border border-ink/10 bg-surface px-2 py-1 text-small text-slate-200 shadow-raised-mid">
       <span className="text-slate-500">{point.label ?? label}: </span>
       <span className="tabular-nums">{point.value}</span>
     </div>

@@ -53,7 +53,7 @@
     radial-gradient(circle at 15% 20%, rgba(160, 78, 30, 0.025), transparent 45%),
     radial-gradient(circle at 85% 75%, rgba(26, 21, 15, 0.02), transparent 40%);
 
-  --c-surface-solid: 255 255 255;
+  --c-surface-solid: 229 229 233;
   --surface-bg: rgba(255, 255, 255, 0.55);
   --surface-border: rgba(26, 21, 15, 0.12);
   --surface-shadow: 0 1px 2px rgba(26, 21, 15, 0.04), 0 4px 12px -4px rgba(26, 21, 15, 0.06);
@@ -126,7 +126,7 @@
   /* --c-surface-solid at 46 46 46 matches the spec's own `--nav-button`
      (0 0% 18%) — a distinct, slightly-lighter opaque chrome fill, not the
      bare ground. */
-  --c-surface-solid: 46 46 46;
+  --c-surface-solid: 43 43 45;
   --surface-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
   --surface-border: rgba(255, 255, 255, 0.1);
   --surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px -4px rgba(0, 0, 0, 0.5);

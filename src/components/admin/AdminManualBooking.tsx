@@ -128,7 +128,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
     <div className="glass-surface p-5 sm:p-6">
       <p className="text-small font-medium uppercase tracking-[0.14em] text-slate-400">Book a student</p>
 
-      {success && <p className="mt-3 text-small text-emerald-400">{success}</p>}
+      {success && <p className="mt-3 text-small text-slate-50">{success}</p>}
 
       {!student ? (
         <>

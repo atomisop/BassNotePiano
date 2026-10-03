@@ -218,7 +218,7 @@ function NotificationEntry({ notification, onClick }: { notification: Notificati
   // the two were identical before, which is exactly why every row read as
   // one uniform gray field with nothing to tell "card" from "page." Unread
   // rows layer a real accent tint plus a colored left edge on top of that
-  // dark card. Uses --c-a-400 (the app's one real accent, "signal-green"
+  // dark card. Uses --c-s-50 (the app's one real accent, "signal-green"
   // per themes.css), not --c-s-50 — that's this theme's near-white TEXT
   // ramp (see themes.css's own comment on it), not a color at all, which
   // is exactly why the original unread dot read as white instead of
@@ -226,11 +226,11 @@ function NotificationEntry({ notification, onClick }: { notification: Notificati
   const itemClassName = `flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition ${
     notification.read
       ? "border-ink/10 bg-slate-900 hover:bg-ink/5"
-      : "border-l-[3px] border-y border-r border-y-[rgb(var(--c-a-400)/0.3)] border-r-[rgb(var(--c-a-400)/0.3)] border-l-[rgb(var(--c-a-400))] bg-[rgb(var(--c-a-400)/0.14)] hover:bg-[rgb(var(--c-a-400)/0.2)]"
+      : "border-l-[3px] border-y border-r border-y-[rgb(var(--c-s-50)/0.3)] border-r-[rgb(var(--c-s-50)/0.3)] border-l-[rgb(var(--c-s-50))] bg-[rgb(var(--c-s-50)/0.14)] hover:bg-[rgb(var(--c-s-50)/0.2)]"
   }`;
   const inner = (
     <>
-      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.read ? "bg-transparent" : "bg-[rgb(var(--c-a-400))]"}`} />
+      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.read ? "bg-transparent" : "bg-[rgb(var(--c-s-50))]"}`} />
       <span className="min-w-0 flex-1">
         <span className="block text-small font-medium text-slate-100">{notification.title}</span>
         {notification.body && <span className="mt-0.5 block text-small text-slate-500">{notification.body}</span>}
@@ -294,11 +294,11 @@ function NotificationGroup({
           aria-expanded={expanded}
           className={`relative flex w-full items-start gap-3 rounded-xl border px-4 py-3.5 text-left transition ${
             hasUnread
-              ? "border-l-[3px] border-y border-r border-y-[rgb(var(--c-a-400)/0.3)] border-r-[rgb(var(--c-a-400)/0.3)] border-l-[rgb(var(--c-a-400))] bg-[rgb(var(--c-a-400)/0.14)] hover:bg-[rgb(var(--c-a-400)/0.2)]"
+              ? "border-l-[3px] border-y border-r border-y-[rgb(var(--c-s-50)/0.3)] border-r-[rgb(var(--c-s-50)/0.3)] border-l-[rgb(var(--c-s-50))] bg-[rgb(var(--c-s-50)/0.14)] hover:bg-[rgb(var(--c-s-50)/0.2)]"
               : "border-ink/10 bg-slate-900 hover:bg-ink/5"
           }`}
         >
-          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-a-400)/0.15)] text-[rgb(var(--c-a-400))]">
+          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]">
             {(() => {
               const Icon = CATEGORY_ICONS[categoryKey];
               return <Icon className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />;
@@ -308,7 +308,7 @@ function NotificationGroup({
             <span className="flex items-center gap-2">
               <span className="text-small font-medium text-slate-100">{categoryLabel}</span>
               <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-small font-semibold text-slate-400">{items.length}</span>
-              {hasUnread && <span className="h-2 w-2 shrink-0 rounded-full bg-[rgb(var(--c-a-400))]" aria-hidden />}
+              {hasUnread && <span className="h-2 w-2 shrink-0 rounded-full bg-[rgb(var(--c-s-50))]" aria-hidden />}
             </span>
             <span className="mt-0.5 block truncate text-small text-slate-500">{latest.title}</span>
             <span className="mt-1.5 block text-small text-slate-600">{relativeTime(latest.createdAt)}</span>

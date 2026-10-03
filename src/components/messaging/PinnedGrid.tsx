@@ -43,7 +43,7 @@ export function PinnedGrid({
 
               {showBadge && (
                 <span
-                  className={`absolute -right-2 -top-1 flex max-w-[6rem] items-center justify-center rounded-full border border-ink/10 px-2 py-1 text-small font-medium shadow-lg ${
+                  className={`absolute -right-2 -top-1 flex max-w-[6rem] items-center justify-center rounded-full border border-ink/10 px-2 py-1 text-small font-medium shadow-raised-mid ${
                     c.isTyping ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "bg-surface text-slate-100"
                   }`}
                 >

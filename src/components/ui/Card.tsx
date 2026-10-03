@@ -21,12 +21,12 @@ export function Card({ interactive, selected, muted, padded = true, className, .
   return (
     <div
       className={cn(
-        "relative rounded-card border border-ink/[0.08] bg-[rgb(var(--plane-mid-bg))] shadow-plane-mid",
+        "relative rounded-card bg-neu-base shadow-raised-mid",
         padded && "p-(--space-card) md:p-6",
         interactive &&
-          "transition-[transform,box-shadow,border-color] duration-(--dur-base) ease-(--ease-ios) hover:-translate-y-0.5 hover:border-ink/15 motion-reduce:hover:translate-y-0",
-        selected && "border-signal/60 shadow-signal",
-        muted && "opacity-60 shadow-none",
+          "transition-[box-shadow] duration-(--dur-base) ease-(--ease-ios) hover:shadow-raised-high active:shadow-pressed-mid",
+        selected && "shadow-pressed-mid ring-1 ring-signal",
+        muted && "opacity-60 shadow-pressed-low",
         className,
       )}
       {...props}

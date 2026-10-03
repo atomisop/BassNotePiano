@@ -265,7 +265,7 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
       </div>
 
       {error && <p className="mt-3 text-small text-red-400">{error}</p>}
-      {success && <p className="mt-3 text-small text-emerald-400">Music profile updated.</p>}
+      {success && <p className="mt-3 text-small text-slate-50">Music profile updated.</p>}
 
       <button
         type="button"
@@ -361,7 +361,7 @@ function AvatarSection({
 
       {!storageConfigured && <p className="mt-2 text-small text-slate-500">Image upload isn&apos;t configured yet.</p>}
       {error && <p className="mt-2 text-small text-red-400">{error}</p>}
-      {success && <p className="mt-2 text-small text-emerald-400">Profile photo updated.</p>}
+      {success && <p className="mt-2 text-small text-slate-50">Profile photo updated.</p>}
     </SectionCard>
   );
 }
@@ -409,7 +409,7 @@ function NameSection({ initialName, onDone }: { initialName: string | null; onDo
       </form>
 
       {error && <p className="mt-2 text-small text-red-400">{error}</p>}
-      {success && <p className="mt-2 text-small text-emerald-400">Name updated.</p>}
+      {success && <p className="mt-2 text-small text-slate-50">Name updated.</p>}
     </SectionCard>
   );
 }
@@ -458,7 +458,7 @@ function UsernameSection({ initialUsername }: { initialUsername: string | null }
         </button>
       </form>
       {error && <p className="mt-2 text-small text-red-400">{error}</p>}
-      {success && <p className="mt-2 text-small text-emerald-400">Username updated.</p>}
+      {success && <p className="mt-2 text-small text-slate-50">Username updated.</p>}
     </SectionCard>
   );
 }

@@ -45,11 +45,11 @@ export function SiteFooter() {
                 again now under the "premium black and white" pass. */}
             <Link href="/" className="flex items-center gap-2">
               <Image src="/logo-mark.png" alt="" width={24} height={24} className="h-6 w-6 rounded-[6px]" />
-              <span className="font-serif text-sm font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]">
+              <span className="font-serif text-small font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]">
                 Bass Note Piano
               </span>
             </Link>
-            <p className="mt-4 max-w-xs text-sm text-slate-500">
+            <p className="mt-4 max-w-xs text-small text-slate-500">
               A digital companion to the Ethiopian Scales, Rhythm &amp; Chords curriculum book: 15 scales,
               spelled correctly in every key, plus live one-on-one and family lessons on Discord.
             </p>
@@ -57,7 +57,7 @@ export function SiteFooter() {
               href={DISCORD_INVITE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 text-sm text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
+              className="mt-4 inline-flex items-center gap-2 text-small text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
             >
               <DiscordIcon size={18} className="text-[#5865F2]" />
               Join our Discord
@@ -70,8 +70,8 @@ export function SiteFooter() {
                 level on every one of them. h2 is correct on those and still
                 correct on the homepage, where the last content heading is
                 also an h2. Visual size is set by the classes, not the tag. */}
-            <h2 className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Explore</h2>
-            <ul className="mt-4 flex flex-col gap-3 text-sm">
+            <h2 className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Explore</h2>
+            <ul className="mt-4 flex flex-col gap-3 text-small">
               {EXPLORE_LINKS.map((link) => (
                 <li key={link.href}>
                   <Link href={link.href} className="text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
@@ -83,8 +83,8 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <h2 className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Account</h2>
-            <ul className="mt-4 flex flex-col gap-3 text-sm">
+            <h2 className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Account</h2>
+            <ul className="mt-4 flex flex-col gap-3 text-small">
               {isLoggedIn ? (
                 <li>
                   <Link href="/dashboard" className="text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
@@ -120,7 +120,7 @@ export function SiteFooter() {
             "non-text, always" at 4.4:1 — real body text needs the 4.5:1
             slate-500 sits at instead. Caught by an axe-core pass; this line
             was the one real text-contrast failure on the marketing site. */}
-        <div className="border-t border-ink/5 py-6 text-center text-xs text-slate-500">
+        <div className="border-t border-ink/5 py-6 text-center text-small text-slate-500">
           © {new Date().getFullYear()} Bass Note Piano.
         </div>
       </div>

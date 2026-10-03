@@ -80,7 +80,7 @@ export function PaymentPlanTierGrid() {
           options={CADENCE_OPTIONS}
         />
         {isFamily && (
-          <p className="text-xs text-slate-400">
+          <p className="text-small text-slate-400">
             Extra {Math.round(FAMILY_BUNDLE_DISCOUNT_RATE * 100)}% off every plan below, per student.
           </p>
         )}
@@ -117,34 +117,32 @@ export function PaymentPlanTierGrid() {
 
           return (
             <motion.div key={option.value} variants={cardItem} className={`relative flex flex-col ${featured ? "z-10 lg:scale-[1.02]" : ""}`}>
-              {featured && <AnimatedBorder />}
-
               <div
                 className={`relative flex flex-1 flex-col gap-7 rounded-2xl p-7 sm:p-8 ${
-                  featured ? "bg-surface" : "glass-surface border border-transparent transition hover:border-[rgb(var(--c-s-50)/0.3)]"
+                  featured ? "bg-neu-base shadow-raised-high" : "glass-surface transition hover:shadow-raised-high"
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <p className="font-serif text-2xl text-slate-50">{option.label}</p>
+                  <p className="font-serif text-body text-slate-50">{option.label}</p>
                   {featured ? (
-                    <span className="rounded-full bg-[rgb(var(--c-s-50))] px-3 py-1 text-xs font-semibold text-slate-950">Best value</span>
+                    <span className="rounded-full bg-[rgb(var(--c-s-50))] px-3 py-1 text-small font-semibold text-slate-950">Best value</span>
                   ) : isMonthly && !isFamily ? (
-                    <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-400">No commitment</span>
+                    <span className="rounded-full bg-slate-800 px-3 py-1 text-small font-medium text-slate-400">No commitment</span>
                   ) : null}
                 </div>
 
                 <div>
-                  <p className="h-5 text-sm tabular-nums text-slate-500">
+                  <p className="h-5 text-small tabular-nums text-slate-500">
                     {percentOff > 0 && <span className="line-through">{formatUsd(monthlyBaseline)}/mo</span>}
                     {percentOff > 0 && (
-                      <span className="ml-2 rounded-full bg-amber-400 px-2 py-0.5 align-middle text-[10px] font-bold text-slate-950">
+                      <span className="ml-2 rounded-full bg-slate-50 px-2 py-0.5 align-middle text-small font-bold text-slate-950">
                         −{percentOff}%
                       </span>
                     )}
                   </p>
                   <p className="mt-1 flex items-baseline gap-1.5">
-                    <span className="font-serif text-5xl tabular-nums text-slate-50">{formatUsd(perStudentCents)}</span>
-                    <span className="text-sm text-slate-400">{isFamily ? "/student/mo" : "/month"}</span>
+                    <span className="font-serif text-hero tabular-nums text-slate-50">{formatUsd(perStudentCents)}</span>
+                    <span className="text-small text-slate-400">{isFamily ? "/student/mo" : "/month"}</span>
                   </p>
                 </div>
 
@@ -152,7 +150,7 @@ export function PaymentPlanTierGrid() {
 
                 <ul className="flex flex-1 flex-col gap-3.5">
                   {features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-3 text-sm text-slate-300">
+                    <li key={feature} className="flex items-start gap-3 text-small text-slate-300">
                       <CheckIcon size={16} className="mt-0.5 shrink-0 text-[rgb(var(--c-s-50))]" />
                       {feature}
                     </li>
@@ -161,10 +159,10 @@ export function PaymentPlanTierGrid() {
 
                 <Link
                   href={isFamily ? "/billing/lessons" : `/billing/plans?cadence=${cadence}&term=${option.value}`}
-                  className={`flex h-12 items-center justify-center rounded-xl text-sm font-semibold transition ${
+                  className={`flex h-12 items-center justify-center rounded-xl text-small font-semibold transition ${
                     featured
                       ? "cta-sheen cta-fill"
-                      : "border border-ink/10 text-slate-100 hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+                      : "bg-neu-base text-slate-100 shadow-raised-low active:shadow-pressed-low hover:text-[rgb(var(--c-s-50))]"
                   }`}
                 >
                   {isFamily ? "Bundle & save" : "Start plan"}
@@ -174,21 +172,6 @@ export function PaymentPlanTierGrid() {
           );
         })}
       </motion.div>
-    </div>
-  );
-}
-
-/** A slowly rotating conic-gradient ring behind the featured card. Stands still for people who ask for reduced motion. */
-function AnimatedBorder() {
-  return (
-    <div aria-hidden className="absolute -inset-[2px] overflow-hidden rounded-2xl">
-      <div
-        className="absolute -inset-full animate-spin blur-[2px] [animation-duration:6s] motion-reduce:animate-none"
-        style={{
-          background:
-            "conic-gradient(from 0deg, rgb(var(--c-s-50)), rgb(251 191 36), rgb(var(--c-s-50) / 0.15), rgb(var(--c-s-50)))",
-        }}
-      />
     </div>
   );
 }
@@ -205,16 +188,16 @@ function Segmented({
   options: { value: string; label: string }[];
 }) {
   return (
-    <div role="group" aria-label={label} className="flex w-fit gap-1.5 rounded-full border border-ink/10 p-1">
+    <div role="group" aria-label={label} className="flex w-fit gap-1.5 rounded-full bg-neu-base p-1 shadow-pressed-low">
       {options.map((option) => (
         <button
           key={option.value}
           type="button"
           aria-pressed={value === option.value}
           onClick={() => onChange(option.value)}
-          className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+          className={`rounded-full px-4 py-1.5 text-small font-medium transition ${
             value === option.value
-              ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]"
+              ? "bg-neu-base text-signal shadow-raised-low"
               : "text-slate-400 hover:text-slate-200"
           }`}
         >

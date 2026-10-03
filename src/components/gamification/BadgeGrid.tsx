@@ -76,7 +76,7 @@ export function BadgeGrid({ earnedCodes }: BadgeGridProps) {
                     >
                       {earned ? <AwardIcon /> : <LockIcon />}
                     </motion.div>
-                    <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-44 -translate-x-1/2 glass-surface-subtle p-2.5 text-center opacity-0 shadow-lg transition group-hover:opacity-100">
+                    <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-44 -translate-x-1/2 glass-surface-subtle p-2.5 text-center opacity-0 shadow-raised-mid transition group-hover:opacity-100">
                       <p className="text-small font-semibold text-slate-100">{badge.label}</p>
                       <p className="mt-0.5 text-small text-slate-400">{badge.description}</p>
                     </div>

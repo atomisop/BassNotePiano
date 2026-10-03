@@ -76,14 +76,14 @@ export function Tabs<const T extends string>({
       role="tablist"
       aria-label={label}
       className={cn(
-        "relative inline-flex max-w-full gap-1 overflow-x-auto rounded-full border border-ink/[0.08] bg-[rgb(var(--c-s-50)/0.04)] p-1",
+        "relative inline-flex max-w-full gap-1 overflow-x-auto rounded-full bg-neu-base p-1 shadow-pressed-low",
         className,
       )}
     >
       {thumb && (
         <span
           aria-hidden
-          className="pointer-events-none absolute top-1 bottom-1 rounded-full bg-[rgb(var(--signal)/0.14)] shadow-plane-front transition-[left,width] duration-(--dur-base) ease-(--ease-ios) motion-reduce:transition-none"
+          className="pointer-events-none absolute top-1 bottom-1 rounded-full bg-neu-base shadow-raised-low transition-[left,width] duration-(--dur-base) ease-(--ease-ios) motion-reduce:transition-none"
           style={{ left: thumb.left, width: thumb.width }}
         />
       )}

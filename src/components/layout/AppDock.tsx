@@ -125,11 +125,6 @@ const NAV_ITEMS = [
  */
 export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDockProps) {
   const pathname = usePathname();
-  // -1 on a page that isn't any dock destination itself (a scale's own
-  // lesson page, say) — the per-item spotlight below treats that as "no
-  // tab active" rather than letting the distance math single out whichever
-  // tab happens to be closest to index -1 for no real reason.
-  const activeIndex = NAV_ITEMS.findIndex((item) => pathname === item.href);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const reducedMotion = useReducedMotion();
 
@@ -372,8 +367,8 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                 here removes the conflict outright instead of relying on a
                 tiebreak this file never actually chose. */}
             <Dock
-              className="items-center !rounded-full !bg-black !bg-none !border-white/10 !backdrop-blur-none !shadow-[0_14px_32px_-10px_rgba(0,0,0,0.65),0_0_40px_-4px_rgba(255,255,255,0.12)]"
-              magnification={72}
+              className="items-center !rounded-full !bg-neu-base !bg-none !border-transparent !backdrop-blur-none !shadow-raised-high"
+              magnification={40}
               distance={140}
               panelHeight={60}
             >
@@ -417,14 +412,6 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                 const active = pathname === item.href;
                 const badge = item.href === "/messages" ? unreadMessageCount : 0;
                 const Icon = NAV_ICON[item.icon];
-                // -1 (no tab active — e.g. a scale's own lesson page, which
-                // has no fixed dock destination of its own) deliberately
-                // leaves every glow off rather than the falloff math
-                // treating index 0 as "closest to -1" and lighting it up
-                // for no real reason.
-                const spotlightOpacity =
-                  activeIndex === -1 ? 0 : active ? 1 : Math.max(0, 1 - Math.abs(activeIndex - index) * 0.6);
-
                 return (
                   // Badge lives on this wrapper, not inside `DockItem` — that
                   // component clones its direct children unconditionally (see
@@ -448,11 +435,6 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                         box. Opacity-only transition (not position), since
                         every tab's glow lives in the same spot at all times
                         — only how bright it is ever changes. */}
-                    <div
-                      aria-hidden
-                      className="pointer-events-none absolute left-1/2 top-0 h-14 w-12 -translate-x-1/2 -translate-y-full rounded-full bg-gradient-to-b from-white/40 to-transparent blur-lg transition-opacity duration-300"
-                      style={{ opacity: spotlightOpacity, transitionDelay: active ? "100ms" : "0ms" }}
-                    />
                     {/* The line: only the active tab gets one, and the
                         shared `layoutId` is what makes Framer Motion slide
                         the single element from one tab's position to the
@@ -465,7 +447,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                       <motion.div
                         layoutId="dock-active-line"
                         transition={{ type: "spring", bounce: 0.15, duration: 0.55 }}
-                        className="pointer-events-none absolute left-1/2 top-0 h-[2px] w-8 -translate-x-1/2 -translate-y-2 rounded-full bg-white"
+                        className="pointer-events-none absolute left-1/2 top-0 h-[2px] w-8 -translate-x-1/2 -translate-y-2 rounded-full bg-signal"
                       />
                     )}
                     <motion.div whileTap={{ scale: 0.9 }} className="relative">
@@ -480,15 +462,15 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                           the active tab's icon glows brighter still. */}
                       <DockItem
                         aria-label={item.label}
-                        className={`rounded-full transition-colors duration-200 ${active ? "" : "hover:bg-white/8"}`}
+                        className={`rounded-full transition-colors duration-200 ${active ? "" : "hover:shadow-pressed-low"}`}
                       >
                         <DockIcon>
                           <Icon
                             strokeWidth={active ? 2.5 : 2}
                             className={`h-full w-full transition-[color,filter] duration-200 ${
                               active
-                                ? "text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]"
-                                : "text-white/60 drop-shadow-[0_0_4px_rgba(255,255,255,0.3)]"
+                                ? "text-signal"
+                                : "text-slate-400 hover:text-slate-50"
                             }`}
                           />
                         </DockIcon>

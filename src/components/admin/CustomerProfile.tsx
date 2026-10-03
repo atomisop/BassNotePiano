@@ -178,7 +178,7 @@ export function CustomerProfile({
                 </span>
                 <span
                   className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
-                    user.hasCurriculumAccess ? "bg-emerald-400/15 text-emerald-300" : "bg-slate-800 text-slate-400"
+                    user.hasCurriculumAccess ? "bg-slate-50/15 text-slate-100" : "bg-slate-800 text-slate-400"
                   }`}
                 >
                   {user.hasCurriculumAccess ? "Comped" : "Not comped"}
@@ -399,7 +399,7 @@ export function CustomerProfile({
                 </button>
               </div>
             )}
-            {creditSuccess && <p className="mt-2 text-small text-emerald-400">{creditSuccess}</p>}
+            {creditSuccess && <p className="mt-2 text-small text-slate-50">{creditSuccess}</p>}
 
             <div className="mt-5 border-t border-ink/10 pt-4">
               <p className="text-small font-medium uppercase tracking-wide text-slate-500">Upcoming bookings</p>
@@ -474,7 +474,7 @@ export function CustomerProfile({
                           b.status === "CANCELED"
                             ? "text-red-400"
                             : b.attendance === "PRESENT"
-                              ? "text-emerald-400"
+                              ? "text-slate-50"
                               : b.attendance === "NO_SHOW"
                                 ? "text-red-400"
                                 : "text-slate-500"
@@ -507,7 +507,7 @@ export function CustomerProfile({
                   <span
                     className={`shrink-0 rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
                       p.status === "VERIFIED"
-                        ? "bg-emerald-400/15 text-emerald-300"
+                        ? "bg-slate-50/15 text-slate-100"
                         : p.status === "REJECTED"
                           ? "bg-red-400/15 text-red-400"
                           : "bg-slate-800 text-slate-400"
@@ -536,7 +536,7 @@ export function CustomerProfile({
                     <span className="text-small text-slate-500">{formatDate(t.createdAt)}</span>
                     <span
                       className={`rounded-full px-2 py-0.5 text-small font-medium uppercase tracking-wide ${
-                        t.status === "OPEN" ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "bg-emerald-400/15 text-emerald-300"
+                        t.status === "OPEN" ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "bg-slate-50/15 text-slate-100"
                       }`}
                     >
                       {t.status === "OPEN" ? "Open" : "Resolved"}

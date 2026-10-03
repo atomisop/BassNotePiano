@@ -41,7 +41,7 @@ export function ProgressRing({
   const circumference = 2 * Math.PI * radius;
   const filled = circumference * fraction;
 
-  const arcClass = tone === "success" ? "text-emerald-400" : "text-[rgb(var(--c-s-50))]";
+  const arcClass = tone === "success" ? "text-slate-50" : "text-[rgb(var(--c-s-50))]";
 
   return (
     <div className="inline-flex flex-col items-center">
@@ -61,7 +61,7 @@ export function ProgressRing({
             r={radius}
             fill="none"
             strokeWidth={strokeWidth}
-            className="text-slate-800"
+            className="text-ink/15"
             stroke="currentColor"
           />
           <circle

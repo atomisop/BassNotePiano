@@ -37,16 +37,16 @@ function ProductCard({ product }: { product: ShopProduct }) {
         />
       </div>
       <div className="flex flex-1 flex-col gap-2 p-5">
-        <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-[rgb(var(--c-s-50))]">{product.brand}</p>
-        <h3 className="text-balance font-serif text-lg leading-snug text-slate-50">{product.name}</h3>
-        <p className="text-sm text-slate-400">{product.blurb}</p>
+        <p className="text-small font-medium uppercase tracking-[0.15em] text-[rgb(var(--c-s-50))]">{product.brand}</p>
+        <h3 className="text-balance font-serif text-body leading-snug text-slate-50">{product.name}</h3>
+        <p className="text-small text-slate-400">{product.blurb}</p>
         <div className="mt-auto flex items-center justify-between gap-3 pt-4">
-          <span className="text-base font-semibold text-slate-50">{formatUsd(product.priceCents)}</span>
+          <span className="text-body font-semibold text-slate-50">{formatUsd(product.priceCents)}</span>
           <a
             href={product.amazonUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-secondary !h-10 !px-4 !text-[13px]"
+            className="btn btn-secondary !h-10 !px-4 !text-small"
           >
             View on Amazon <ExternalArrow />
           </a>
@@ -60,7 +60,7 @@ function ProductSection({ title, products }: { title: string; products: ShopProd
   if (products.length === 0) return null;
   return (
     <div className="mt-14 first:mt-0">
-      <h2 className="font-serif text-2xl text-slate-50">{title}</h2>
+      <h2 className="font-serif text-body text-slate-50">{title}</h2>
       <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {products.map((product) => (
           <ProductCard key={product.slug} product={product} />
@@ -80,10 +80,10 @@ export default function ShopPage() {
 
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section className="relative mx-auto max-w-3xl px-6 pb-4 pt-28 text-center">
-          <h1 className="text-balance font-serif text-4xl leading-tight tracking-[-0.02em] text-slate-50 sm:text-5xl">
+          <h1 className="text-balance font-serif text-hero leading-tight tracking-[-0.02em] text-slate-50 sm:text-hero">
             Gear that works for beginners
           </h1>
-          <p className="mx-auto mt-4 max-w-xl text-base text-slate-200">
+          <p className="mx-auto mt-4 max-w-xl text-body text-slate-200">
             Don&apos;t have a keyboard or guitar yet? Here&apos;s what we&apos;d point a beginner toward. Plain links
             to Amazon: we&apos;re not affiliated with Amazon and don&apos;t earn anything from these, and there&apos;s
             nothing to buy here on our end.

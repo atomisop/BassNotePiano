@@ -95,7 +95,7 @@ export function SocialProof() {
             href={DISCORD_INVITE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70"
+            className="mt-8 inline-flex items-center gap-2 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70"
           >
             <DiscordIcon size={16} className="text-[#5865F2]" />
             See the community for yourself

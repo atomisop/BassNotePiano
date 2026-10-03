@@ -35,7 +35,7 @@ export function BackPlane({ children, className }: { children: ReactNode; classN
       aria-hidden
       className={cn(
         "pointer-events-none absolute inset-x-0 -top-4 z-(--z-back) select-none overflow-hidden whitespace-nowrap font-hero font-bold leading-none tracking-[-0.04em]",
-        "text-[clamp(4rem,14vw,13rem)] text-[rgb(var(--c-s-50)/0.035)] md:text-[rgb(var(--c-s-50)/0.05)]",
+        "engraved text-[clamp(4rem,14vw,13rem)] max-md:opacity-60",
         className,
       )}
     >

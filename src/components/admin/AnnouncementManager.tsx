@@ -186,7 +186,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
             <p className="truncate text-small font-medium text-slate-100">{announcement.title}</p>
             <span
               className={`shrink-0 rounded-full px-2 py-0.5 text-small font-medium ${
-                announcement.active ? "bg-emerald-400/15 text-emerald-300" : "bg-slate-700/50 text-slate-400"
+                announcement.active ? "bg-slate-50/15 text-slate-100" : "bg-slate-700/50 text-slate-400"
               }`}
             >
               {announcement.active ? "Active" : "Inactive"}

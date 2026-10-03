@@ -17,12 +17,13 @@ import { MorphingSquare } from "@/components/ui/morphing-square"
  * neutral solid button for places that must not push one choice (the cookie
  * banner). Everything else is ink and paper, never green.
  */
+// Neumorphic press: raised at rest, the same shape pushes IN (pressed
+// shadow) while held. No movement, so nothing shifts under the finger.
 const lift =
-  "transition-[filter,transform,box-shadow,background-color,color] duration-(--dur-fast) ease-(--ease-ios) hover:-translate-y-0.5 active:translate-y-px motion-reduce:hover:translate-y-0"
+  "transition-[filter,box-shadow,background-color,color] duration-(--dur-fast) ease-(--ease-ios) active:shadow-pressed-low"
 
 const primary = cn(
-  "relative border border-[rgb(var(--cta-bg,var(--primary))/0.5)] bg-[rgb(var(--cta-bg,var(--primary)))] text-[rgb(var(--cta-ink,var(--primary-foreground)))] font-semibold shadow-plane-front hover:brightness-110 active:brightness-95",
-  "hover:shadow-signal",
+  "relative bg-[rgb(var(--cta-bg,var(--primary)))] text-[rgb(var(--cta-ink,var(--primary-foreground)))] font-semibold shadow-raised-mid hover:brightness-110 active:brightness-95",
   lift,
 )
 
@@ -34,23 +35,23 @@ const buttonVariants = cva(
         default: primary,
         primary,
         paper: cn(
-          "relative border border-[rgb(var(--primary)/0.5)] bg-[rgb(var(--primary))] text-primary-foreground font-semibold shadow-plane-front hover:brightness-110 active:brightness-95",
+          "relative bg-[rgb(var(--primary))] text-primary-foreground font-semibold shadow-raised-mid hover:brightness-110 active:brightness-95",
           lift,
         ),
         // Quiet, raised paper/ink button for every secondary action.
         secondary: cn(
-          "border border-ink/10 bg-[rgb(var(--c-s-50)/0.06)] text-slate-50 shadow-plane-mid hover:bg-[rgb(var(--c-s-50)/0.1)]",
+          "bg-neu-base text-slate-50 shadow-raised-low hover:text-white",
           lift,
         ),
-        outline: cn("border border-ink/15 bg-transparent text-slate-100 hover:bg-[rgb(var(--c-s-50)/0.06)]", lift),
-        ghost: cn("text-slate-300 hover:bg-[rgb(var(--c-s-50)/0.06)] hover:text-slate-50", lift),
+        outline: cn("border border-(--neu-edge) bg-neu-base text-slate-100 shadow-raised-low", lift),
+        ghost: cn("text-slate-300 hover:text-slate-50 hover:shadow-raised-low", lift),
         destructive: cn(
-          "border border-[rgb(var(--c-rd-400)/0.5)] bg-[rgb(var(--c-rd-400)/0.12)] text-[rgb(var(--c-rd-300))] hover:bg-[rgb(var(--c-rd-400)/0.2)]",
+          "bg-neu-base text-[rgb(var(--c-rd-300))] shadow-raised-low",
           lift,
         ),
         // Inline text link: tappable, so it carries the signal color.
         link: "text-signal underline-offset-4 hover:underline",
-        glass: cn("glass-surface-elevated text-[rgb(var(--c-s-50))] hover:brightness-110", lift),
+        glass: cn("bg-neu-base text-[rgb(var(--c-s-50))] shadow-raised-mid hover:brightness-110", lift),
       },
       size: {
         default: "h-11 px-5",

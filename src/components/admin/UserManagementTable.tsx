@@ -13,6 +13,7 @@ export interface UserManagementTableProps {
   initialQuery: string;
   onSetRole: (userId: string, role: Role) => Promise<void>;
   onSetCurriculumAccess: (userId: string, hasAccess: boolean) => Promise<void>;
+  onBulkSetCurriculumAccess: (userIds: string[], hasAccess: boolean) => Promise<number>;
   onToggleScale: (userId: string, scaleSlug: string, unlock: boolean) => Promise<void>;
   onClearAssistantHistory: (userId: string) => Promise<void>;
 }
@@ -22,6 +23,7 @@ export function UserManagementTable({
   initialQuery,
   onSetRole,
   onSetCurriculumAccess,
+  onBulkSetCurriculumAccess,
   onToggleScale,
   onClearAssistantHistory,
 }: UserManagementTableProps) {
@@ -36,6 +38,52 @@ export function UserManagementTable({
   // out of place next to the custom in-place confirms used elsewhere. All
   // three now go through the same review step, one at a time per row.
   const [pendingAction, setPendingAction] = useState<{ userId: string; kind: "role" | "curriculum" | "history" } | null>(null);
+
+  // Bulk selection. A bulk change always goes through a confirm step that
+  // names how many people it affects.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkPending, setBulkPending] = useState<boolean | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const allSelected = users.length > 0 && users.every((u) => selected.has(u.id));
+
+  function toggleSelected(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function applyBulk(hasAccess: boolean) {
+    setBulkBusy(true);
+    setError(null);
+    try {
+      await onBulkSetCurriculumAccess(Array.from(selected), hasAccess);
+      setSelected(new Set());
+      setBulkPending(null);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  function exportCsv() {
+    const rows = users.filter((u) => selected.has(u.id));
+    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const csv = [
+      "name,email,role,complimentary_access",
+      ...rows.map((u) => [esc(u.name ?? ""), esc(u.email), u.role, u.hasCurriculumAccess ? "yes" : "no"].join(",")),
+    ].join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "students.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   function handleSearchChange(value: string) {
     setQuery(value);
@@ -68,11 +116,53 @@ export function UserManagementTable({
         className="w-full max-w-sm glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
       />
 
+      {users.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <label className="inline-flex cursor-pointer items-center gap-2 text-small text-slate-300">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={() => setSelected(allSelected ? new Set() : new Set(users.map((u) => u.id)))}
+              className="h-4 w-4 cursor-pointer accent-[rgb(var(--c-s-50))]"
+            />
+            Select all
+          </label>
+          {selected.size > 0 && bulkPending === null && (
+            <>
+              <span className="text-small text-slate-400">{selected.size} selected</span>
+              <button type="button" onClick={() => setBulkPending(true)} className="cta-fill rounded-control px-3 py-1.5 text-small font-semibold">
+                Grant access
+              </button>
+              <button type="button" onClick={() => setBulkPending(false)} className="rounded-control bg-neu-base px-3 py-1.5 text-small font-medium text-slate-200 shadow-raised-low active:shadow-pressed-low">
+                Revoke access
+              </button>
+              <button type="button" onClick={exportCsv} className="rounded-control bg-neu-base px-3 py-1.5 text-small font-medium text-slate-200 shadow-raised-low active:shadow-pressed-low">
+                Export CSV
+              </button>
+            </>
+          )}
+          {bulkPending !== null && (
+            <div className="flex flex-wrap items-center gap-3 rounded-control bg-neu-base px-3 py-2 shadow-pressed-low" role="alertdialog" aria-label="Confirm bulk change">
+              <p className="text-small text-slate-200">
+                {bulkPending ? "Grant" : "Revoke"} complimentary curriculum access for {selected.size} {selected.size === 1 ? "person" : "people"}?
+                {!bulkPending && " They lose access to paid lessons immediately unless they have an active plan."}
+              </p>
+              <button type="button" disabled={bulkBusy} onClick={() => setBulkPending(null)} className="rounded-control bg-neu-base px-3 py-1.5 text-small font-medium text-slate-300 shadow-raised-low disabled:opacity-50">
+                Cancel
+              </button>
+              <button type="button" disabled={bulkBusy} onClick={() => applyBulk(bulkPending)} className="cta-fill rounded-control px-3 py-1.5 text-small font-semibold disabled:opacity-50">
+                {bulkBusy ? "Applying…" : `Confirm (${selected.size})`}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {error && <p className="mt-3 text-small text-red-400">{error}</p>}
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-5 rounded-card bg-neu-base p-2 shadow-pressed-mid">
         {users.length === 0 && (
-          <div className="glass-surface p-8 text-center text-small text-slate-500">
+          <div className="p-8 text-center text-small text-slate-500">
             No users found.
           </div>
         )}
@@ -80,9 +170,16 @@ export function UserManagementTable({
         {users.map((user) => {
           const busy = busyId === user.id;
           return (
-            <div key={user.id} className="glass-surface p-5">
+            <div key={user.id} className="border-b border-ink/10 p-5 last:border-b-0">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
+                <input
+                  type="checkbox"
+                  aria-label={`Select ${user.name ?? user.email}`}
+                  checked={selected.has(user.id)}
+                  onChange={() => toggleSelected(user.id)}
+                  className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[rgb(var(--c-s-50))]"
+                />
+                <div className="min-w-0 flex-1">
                   <p className="text-slate-100">{user.name ?? "—"}</p>
                   <p className="text-small text-slate-500">{user.email}</p>
                   <Link
@@ -102,7 +199,7 @@ export function UserManagementTable({
                   </span>
                   <span
                     className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
-                      user.hasCurriculumAccess ? "bg-emerald-400/15 text-emerald-300" : "bg-slate-800 text-slate-400"
+                      user.hasCurriculumAccess ? "bg-slate-50/15 text-slate-100" : "bg-slate-800 text-slate-400"
                     }`}
                   >
                     {user.hasCurriculumAccess ? "Curriculum" : "No curriculum"}
@@ -123,7 +220,7 @@ export function UserManagementTable({
                       onClick={() => withBusy(user.id, () => onToggleScale(user.id, su.slug, !su.unlocked))}
                       className={`h-8 min-w-[2.25rem] rounded-lg border px-2 text-small font-medium transition disabled:opacity-40 ${
                         su.completed
-                          ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/20"
+                          ? "border-slate-50/30 bg-slate-50/10 text-slate-100 hover:bg-slate-50/20"
                           : su.unlocked
                             ? "border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.2)]"
                             : "border-ink/10 text-slate-500 hover:border-ink/15"

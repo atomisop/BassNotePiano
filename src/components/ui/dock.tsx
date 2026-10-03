@@ -85,8 +85,10 @@ function Dock({
   const isHovered = useMotionValue(0);
 
   const maxHeight = useMemo(() => {
+    // No magnification (<= resting 40px width): the bar never grows.
+    if (magnification <= 40) return panelHeight;
     return Math.max(DOCK_HEIGHT, magnification + magnification / 2 + 4);
-  }, [magnification]);
+  }, [magnification, panelHeight]);
 
   const heightRow = useTransform(isHovered, [0, 1], [panelHeight, maxHeight]);
   const height = useSpring(heightRow, spring);

@@ -132,7 +132,7 @@ function VerifyEmailForm() {
           </p>
         )}
         {resent && (
-          <p role="status" className="text-small text-emerald-400">
+          <p role="status" className="text-small text-slate-50">
             New code sent.
           </p>
         )}

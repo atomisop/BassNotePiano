@@ -46,7 +46,7 @@
   --c-s-700: 66 66 66;      /* hairlines, rules */
   --c-s-800: 51 51 51;      /* raised surface */
   --c-s-900: 41 41 41;      /* recessed surface */
-  --c-s-950: 26 26 26;      /* the ground */
+  --c-s-950: 43 43 45;      /* the ground = the neumorphic base */
 
   /* ---- Accent ramp: signal green, back again -----------------------------
      Same values as `[data-mode="dark"]` in themes.css — see that file's
@@ -157,27 +157,27 @@
   --type-display-1-lh: 0.92;
   --type-display-1-ls: -0.035em;
 
-  --type-display-2: clamp(2.5rem, 5.5vw, 5rem); /* sticky scene lines */
+  --type-display-2: clamp(2rem, 1.2rem + 2.6vw, 3.25rem); /* sticky scene lines */
   --type-display-2-lh: 0.98;
   --type-display-2-ls: -0.03em;
 
-  --type-display-3: clamp(1.875rem, 3.6vw, 3.25rem); /* scene headlines */
+  --type-display-3: clamp(1.75rem, 1.1rem + 2vw, 2.75rem); /* scene headlines */
   --type-display-3-lh: 1.04;
   --type-display-3-ls: -0.025em;
 
-  --type-lead: clamp(1.0625rem, 1.35vw, 1.375rem); /* hero sub, scene intros */
+  --type-lead: 1rem; /* hero sub, scene intros */
   --type-lead-lh: 1.55;
 
   --type-body: 1rem;
   --type-body-lh: 1.65;
 
-  --type-body-sm: 0.9375rem;
+  --type-body-sm: 0.8125rem;
   --type-body-sm-lh: 1.6;
 
-  --type-label: 0.6875rem; /* 11px — mono, uppercase */
+  --type-label: 0.8125rem; /* 13px — mono, uppercase */
   --type-label-ls: 0.18em;
 
-  --type-micro: 0.625rem; /* 10px — mono, non-essential only */
+  --type-micro: 0.8125rem; /* 13px — mono, non-essential only */
   --type-micro-ls: 0.2em;
 
   /* ==========================================================================
@@ -415,7 +415,7 @@
   padding-inline: 1.75rem;
   border-radius: 999px;
   font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: -0.005em;
   white-space: nowrap;
@@ -465,45 +465,34 @@
    instruction, in favor of white buttons with green reserved for
    badges/selection states/Atom. */
 [data-surface="marketing"] .btn-primary {
-  background: rgb(var(--primary));
-  border: 1px solid rgb(var(--primary) / 0.5);
-  color: rgb(var(--primary-foreground));
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.25),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.12),
-    0 6px 16px -6px rgba(0, 0, 0, 0.4);
+  background: rgb(var(--signal));
+  border: 0;
+  color: rgb(var(--signal-ink));
+  box-shadow: var(--neu-raised-mid);
 }
 
 [data-surface="marketing"] .btn-primary:hover {
   filter: brightness(1.1);
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.25),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.12),
-    0 10px 24px -8px rgba(0, 0, 0, 0.5);
 }
 
 [data-surface="marketing"] .btn-primary:active {
   filter: brightness(0.95);
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.25),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.12),
-    0 2px 8px -4px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--neu-pressed-low);
 }
 
 [data-surface="marketing"] .btn-secondary {
-  background-color: transparent;
-  border: 1px solid rgb(var(--c-s-50) / 0.18);
+  background-color: rgb(var(--neu-base));
+  border: 0;
   color: rgb(var(--c-s-100));
+  box-shadow: var(--neu-raised-low);
 }
 
 [data-surface="marketing"] .btn-secondary:hover {
-  border-color: rgb(var(--c-s-50) / 0.36);
   color: rgb(var(--c-s-50));
-  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.5);
 }
 
 [data-surface="marketing"] .btn-secondary:active {
-  box-shadow: 0 2px 6px -4px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--neu-pressed-low);
 }
 
 /* Text-only tier, for the "no thanks" path out of a scene. Deliberately

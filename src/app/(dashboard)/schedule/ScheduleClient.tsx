@@ -231,7 +231,7 @@ export function ScheduleClient({
             way solo self-reschedule is (a real open slot, no conflicts) via
             changeReservedSlot. */}
         {changeSuccess && (
-          <p className="mt-4 rounded-lg border border-emerald-400/20 bg-emerald-400/5 px-3.5 py-2.5 text-small text-emerald-400">
+          <p className="mt-4 rounded-lg border border-slate-50/20 bg-slate-50/5 px-3.5 py-2.5 text-small text-slate-50">
             Your weekly time changed — this week&apos;s class (and the weeks after it) now reflect the new day/time above.
           </p>
         )}

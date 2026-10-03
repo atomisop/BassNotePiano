@@ -170,7 +170,7 @@ function ResetPasswordForm() {
             className={cn(error && fieldInvalid)}
           />
           {newPassword.length > 0 && (
-            <p className={`mt-1.5 flex items-center gap-1.5 text-small ${newPassword.length >= MIN_PASSWORD_LENGTH ? "text-emerald-400" : "text-slate-500"}`}>
+            <p className={`mt-1.5 flex items-center gap-1.5 text-small ${newPassword.length >= MIN_PASSWORD_LENGTH ? "text-slate-50" : "text-slate-500"}`}>
               <CheckIcon size={11} className={newPassword.length >= MIN_PASSWORD_LENGTH ? "opacity-100" : "opacity-30"} />
               At least {MIN_PASSWORD_LENGTH} characters
             </p>
@@ -195,7 +195,7 @@ function ResetPasswordForm() {
             className={cn(error && fieldInvalid)}
           />
           {confirmPassword.length > 0 && (
-            <p className={`mt-1.5 flex items-center gap-1.5 text-small ${newPassword === confirmPassword ? "text-emerald-400" : "text-slate-500"}`}>
+            <p className={`mt-1.5 flex items-center gap-1.5 text-small ${newPassword === confirmPassword ? "text-slate-50" : "text-slate-500"}`}>
               <CheckIcon size={11} className={newPassword === confirmPassword ? "opacity-100" : "opacity-30"} />
               {newPassword === confirmPassword ? "Passwords match" : "Passwords don't match yet"}
             </p>
@@ -208,7 +208,7 @@ function ResetPasswordForm() {
           </p>
         )}
         {resent && (
-          <p role="status" className="text-small text-emerald-400">
+          <p role="status" className="text-small text-slate-50">
             New code sent.
           </p>
         )}

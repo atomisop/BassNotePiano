@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Neumorphic wireframes</title>
+<style>
+:root{
+  --base:#2b2b2d; --hi:rgba(255,255,255,.07); --lo:rgba(0,0,0,.55);
+  --ink:#f2f2f2; --ink2:#b4b4b8; --signal:#3ddc84; --signal-ink:#07140c;
+  --raised:-6px -6px 14px var(--hi),6px 6px 14px var(--lo);
+  --raised-lo:-3px -3px 7px var(--hi),3px 3px 7px var(--lo);
+  --pressed:inset -4px -4px 9px var(--hi),inset 4px 4px 9px var(--lo);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--base);color:var(--ink);font:14px/1.4 -apple-system,Inter,sans-serif;padding:24px}
+h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);margin:40px 0 12px}
+p.note{color:var(--ink2);font-size:13px;max-width:900px;margin:0 0 14px}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin:10px 0 24px;font-size:13px}
+.legend span{display:flex;align-items:center;gap:8px}
+.sw{width:26px;height:26px;border-radius:8px;background:var(--base)}
+.R{box-shadow:var(--raised)}.P{box-shadow:var(--pressed)}.RL{box-shadow:var(--raised-lo)}
+.G{background:var(--signal);color:var(--signal-ink);font-weight:700}
+.frame{max-width:1440px;margin:0 auto 24px;border-radius:24px;padding:22px;background:var(--base);box-shadow:var(--pressed)}
+.small{font-size:13px;color:var(--ink2);letter-spacing:.06em;text-transform:uppercase}
+.hero{font-size:clamp(40px,7vw,96px);font-weight:800;line-height:1;margin:0}
+.back{position:absolute;left:18px;top:-6px;font-size:clamp(70px,13vw,190px);font-weight:900;color:var(--base);
+  text-shadow:-2px -2px 3px var(--hi),2px 2px 3px var(--lo);user-select:none;line-height:1;pointer-events:none}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;margin-left:6px;color:var(--ink2)}
+.card{border-radius:20px;padding:16px;background:var(--base)}
+.btn{display:inline-block;border-radius:14px;padding:10px 18px;font-weight:600;background:var(--base)}
+.grid{display:grid;gap:22px}
+.home{grid-template-columns:2fr 1fr}
+.cards{grid-template-columns:repeat(3,1fr)}
+.bar{height:10px;border-radius:99px;background:var(--base);box-shadow:var(--pressed);overflow:hidden;margin:10px 0}
+.bar i{display:block;height:100%;background:var(--signal)}
+.lesson{grid-template-columns:230px 1fr 64px;min-height:520px}
+.keys{display:flex;gap:6px;height:130px;margin-top:14px}
+.keys b{flex:1;border-radius:0 0 10px 10px;background:var(--base);box-shadow:var(--raised-lo)}
+.keys b.on{box-shadow:var(--pressed);background:var(--signal)}
+.rail{display:flex;flex-direction:column;gap:14px;align-items:center}
+.rail div{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:11px}
+.row{padding:9px 6px;border-bottom:1px solid rgba(255,255,255,.07);font-size:13px}
+.before{filter:grayscale(.2);opacity:.9}
+.before .card{background:#222;box-shadow:0 10px 30px -12px #000;border:1px solid rgba(255,255,255,.06)}
+@media(max-width:900px){.home,.lesson{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}}
+</style></head><body>
+
+<h1 class="small" style="margin:0">BassNotePiano · neumorphic wireframes · for approval</h1>
+<div class="legend">
+  <span><i class="sw R"></i>Raised: pressable (buttons, openable cards, tabs, toggles, keys at rest)</span>
+  <span><i class="sw P"></i>Pressed: held / filled / selected (inputs, progress tracks, wells, selected tab, pressed keys)</span>
+  <span><i class="sw G"></i>Green: "tap this" only (one primary per section)</span>
+  <span><b>HERO</b> = the one huge thing</span>
+  <span>Light source: top-left everywhere</span>
+</div>
+
+<h2>1. Home, desktop (1440)</h2>
+<p class="note">BEFORE: solid cards with a single drop shadow and hairline borders, ground and card are different colors. AFTER: everything is one base color; depth comes only from the two shadows.</p>
+
+<div class="frame before"><div class="small" style="margin-bottom:10px">Before (today)</div>
+  <div class="grid home"><div class="card">Greeting / Your next step / Continue</div><div class="card">Streak, stats, class credits</div></div></div>
+
+<div class="frame">
+  <div class="small" style="margin-bottom:10px">After</div>
+  <div class="grid home">
+    <div>
+      <div style="position:relative;padding-top:28px;margin-bottom:18px">
+        <div class="back">12</div>
+        <p class="hero" style="position:relative">Good evening, Sam<span class="tag">HERO · the greeting</span></p>
+        <div class="small" style="position:relative;margin-top:8px">back plane = engraved step count "12", behind the hero</div>
+      </div>
+      <div class="card R" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px">
+        <div><div class="small">Your next step · middle plane</div><div style="font-size:16px;margin-top:4px">Scale 3 · Lesson 4: Tizita minor, left hand</div>
+          <div class="bar"><i style="width:58%"></i></div></div>
+        <span class="btn G R">Continue ▸ <span class="tag" style="color:var(--signal-ink)">front plane</span></span>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:18px">
+        <span class="btn P" style="color:var(--signal)">In progress</span>
+        <span class="btn RL">Completed</span><span class="btn RL">Badges</span>
+        <span class="tag">selected tab = pressed + green label; others raised + label</span>
+      </div>
+      <div class="grid cards">
+        <div class="card R"><div class="small">Scale 1</div><div style="margin:6px 0">Tizita major</div><div class="bar"><i style="width:100%"></i></div><span class="btn RL" style="color:var(--signal)">Review</span></div>
+        <div class="card R"><div class="small">Scale 2</div><div style="margin:6px 0">Bati</div><div class="bar"><i style="width:40%"></i></div><span class="btn RL" style="color:var(--signal)">Continue</span></div>
+        <div class="card P" style="opacity:.75"><div class="small">Scale 3 · locked</div><div style="margin:6px 0">Ambassel</div><div class="bar"><i style="width:0"></i></div><span class="small">🔒 gray, flat, pressed in</span></div>
+      </div>
+    </div>
+    <div class="card P" style="display:flex;flex-direction:column;gap:14px">
+      <div class="small">This week · pressed well holding content</div>
+      <div class="card RL"><div class="small">Streak</div><div style="font-size:15px">5 days ▪▪▪▪▪▫▫</div></div>
+      <div class="card RL"><div class="small">Stats</div><div>Scales 2 · Steps 12 · Credits 3</div></div>
+      <div class="card RL"><div class="small">Badges earned</div><div>◆ ◆ ◇</div></div>
+      <div class="card RL"><div class="small">Next class</div><div>Thu 6:00 PM · Discord</div></div>
+      <div class="small">Raised cards inside a pressed well: one level of nesting only, never raised-in-raised.</div>
+    </div>
+  </div>
+</div>
+
+<h2>2. Lesson page, desktop (1440)</h2>
+<div class="frame">
+  <div style="position:relative;padding-top:24px;margin-bottom:14px">
+    <div class="back">TIZITA</div>
+    <p class="hero" style="position:relative;font-size:clamp(34px,5vw,64px)">Tizita minor<span class="tag">HERO · scale name</span></p>
+  </div>
+  <div class="grid lesson">
+    <div class="card P">
+      <div class="small">Outline (collapsible)</div>
+      <div class="row">✓ 1 Intro</div><div class="row">✓ 2 Right hand</div><div class="row" style="color:var(--signal)">▸ 3 Left hand</div><div class="row" style="opacity:.6">🔒 4 Practice</div>
+      <div class="small" style="margin-top:10px">pressed well · current row green · locked = gray</div>
+    </div>
+    <div>
+      <div class="card R" style="min-height:230px"><div class="small">Lesson · middle plane (overlaps the engraved name above)</div>
+        <p style="font-size:16px;max-width:60ch">Place your left thumb on the root and walk up the scale slowly. Listen for the open fourth. (body tier: real reading text only)</p>
+        <span class="btn G R">Mark step done</span></div>
+      <div class="card P" style="margin-top:20px"><div class="small">Piano · keys raised at rest, pressed + green when played</div>
+        <div class="keys"><b></b><b></b><b class="on"></b><b></b><b></b><b class="on"></b><b></b><b></b></div></div>
+    </div>
+    <div class="rail">
+      <div class="R" style="color:var(--signal)">Notes</div><div class="R" style="color:var(--signal)">Chart</div><div class="R" style="color:var(--signal)">PDF</div><div class="R" style="color:var(--signal)">Beat</div>
+      <div class="small" style="writing-mode:vertical-rl">tool rail</div>
+    </div>
+  </div>
+</div>
+
+<h2>3. Data screens (admin tables, chat history): the Rule 2 exception</h2>
+<div class="frame">
+  <p class="note">A table or list sits in ONE pressed container. Rows stay flat with hairline dividers, never one raised card per row. Toolbar buttons above are raised; the selected-rows bar appears only when something is ticked.</p>
+  <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap"><span class="btn P" style="min-width:220px;color:var(--ink2)">⌕ Search students</span><span class="btn RL">Filter ▾</span><span class="btn G R">Bulk actions (2) ▾</span></div>
+  <div class="card P"><div class="row">☑ Sam Tesfaye · Monthly · paid</div><div class="row">☑ Lily Bekele · Trial · day 2</div><div class="row">☐ Daniel Haile · Comped</div></div>
+  <p class="note" style="margin-top:12px">Bulk actions need a confirm dialog that names the number of people. Proposed first set: send announcement, grant or remove complimentary access, export CSV. Nothing touching payments is bulk.</p>
+</div>
+
+<h2>4. What will exist after phase 1</h2>
+<p class="note">Tokens: <code>--base</code>, <code>--hi</code>, <code>--lo</code>, raised and pressed at low, medium and high depth, in dark and light. Dark base is charcoal (about #2b2b2d), not black, so the highlight shadow can show. Light base is soft gray. Shadows are variables only; no one-off shadows on components.</p>
+</body></html>

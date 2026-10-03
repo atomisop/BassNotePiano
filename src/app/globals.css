@@ -93,7 +93,7 @@
   /* The one display face, used only for each screen's Hero element. */
   --font-hero: var(--font-display), ui-rounded, system-ui, sans-serif;
 
-  --text-hero: clamp(2.25rem, 1.35rem + 3.6vw, 4.5rem);
+  --text-hero: clamp(1.75rem, 1.2rem + 1.7vw, 2.75rem);
   --text-hero--line-height: 1.02;
   --text-hero--letter-spacing: -0.03em;
   --text-body: 1rem;
@@ -108,6 +108,17 @@
 
   /* Depth planes. Values come from per-mode variables below so a light
      page gets lighter shadows than a dark one. */
+  /* Neumorphism (one base surface, one light source at top-left). Raised =
+     pressable; pressed = held/filled/selected. Three depths, tokens only:
+     never write a one-off shadow on a component. */
+  --color-neu-base: rgb(var(--neu-base));
+  --shadow-raised-low: var(--neu-raised-low);
+  --shadow-raised-mid: var(--neu-raised-mid);
+  --shadow-raised-high: var(--neu-raised-high);
+  --shadow-pressed-low: var(--neu-pressed-low);
+  --shadow-pressed-mid: var(--neu-pressed-mid);
+  --shadow-pressed-high: var(--neu-pressed-high);
+
   --shadow-plane-mid: var(--plane-mid-shadow);
   --shadow-plane-front: var(--plane-front-shadow);
   --shadow-signal: var(--signal-glow);
@@ -228,6 +239,7 @@
   background: var(--subtle-bg);
   border: 1px solid var(--subtle-border);
   border-radius: var(--surface-radius);
+  box-shadow: var(--subtle-shadow, none);
   -webkit-backdrop-filter: blur(var(--subtle-blur));
   backdrop-filter: blur(var(--subtle-blur));
 }
@@ -861,31 +873,44 @@
     --dur-slow: 360ms;
   }
 
+  /* Neumorphic base + the two shadow colors, per mode. Dark is charcoal
+     (not black) so the light-side shadow has room to show. Light is a soft
+     gray, darker than paper white, for the same reason. */
   [data-mode="dark"] {
-    /* Middle-plane card fill: solid (so back-plane type passing behind a
-       card never muddies the text on it), one step up from the ground. */
-    --plane-mid-bg: 34 34 34;
+    --neu-base: 43 43 45;
+    --neu-hi: rgb(255 255 255 / 0.065);
+    --neu-lo: rgb(0 0 0 / 0.55);
+    --neu-edge: rgb(255 255 255 / 0.1);
     --signal: var(--c-a-400);
     --signal-ink: 10 10 10;
-    --plane-mid-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.05), 0 1px 2px rgb(0 0 0 / 0.35),
-      0 10px 30px -12px rgb(0 0 0 / 0.55);
-    --plane-front-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.22), 0 2px 4px rgb(0 0 0 / 0.35),
-      0 14px 30px -10px rgb(0 0 0 / 0.65);
     --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.35), 0 10px 28px -8px rgb(var(--c-a-400) / 0.45);
   }
 
   [data-mode="light"] {
-    --plane-mid-bg: 255 255 255;
+    --neu-base: 229 229 233;
+    --neu-hi: rgb(255 255 255 / 0.95);
+    --neu-lo: rgb(140 140 158 / 0.5);
+    --neu-edge: rgb(0 0 0 / 0.1);
     --signal: var(--c-a-400);
     --signal-ink: 255 255 255;
-    --plane-mid-shadow:
-      0 1px 2px rgb(26 21 15 / 0.06), 0 10px 30px -14px rgb(26 21 15 / 0.18);
-    --plane-front-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.3), 0 2px 4px rgb(26 21 15 / 0.1),
-      0 14px 28px -12px rgb(26 21 15 / 0.3);
     --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.3), 0 10px 24px -10px rgb(var(--c-a-400) / 0.5);
+  }
+
+  /* Shapes are two shadows: light from the top-left, shade to the
+     bottom-right. Offsets are the depth. */
+  :root {
+    --neu-raised-low: -3px -3px 7px var(--neu-hi), 3px 3px 7px var(--neu-lo);
+    --neu-raised-mid: -6px -6px 14px var(--neu-hi), 6px 6px 14px var(--neu-lo);
+    --neu-raised-high: -10px -10px 22px var(--neu-hi), 10px 10px 22px var(--neu-lo);
+    --neu-pressed-low: inset -2px -2px 5px var(--neu-hi), inset 2px 2px 5px var(--neu-lo);
+    --neu-pressed-mid: inset -4px -4px 9px var(--neu-hi), inset 4px 4px 9px var(--neu-lo);
+    --neu-pressed-high: inset -6px -6px 14px var(--neu-hi), inset 6px 6px 14px var(--neu-lo);
+
+    /* Existing plane tokens now read from the neumorphic ones, so every
+       card and button that used them follows without editing call sites. */
+    --plane-mid-bg: var(--neu-base);
+    --plane-mid-shadow: var(--neu-raised-mid);
+    --plane-front-shadow: var(--neu-raised-high);
   }
 
   /* The redesign rules apply everywhere by default (set on <body> so
@@ -907,10 +932,7 @@
     --color-emerald-400: rgb(var(--c-s-50));
   }
 
-  [data-surface="marketing"] {
-    --cta-bg: var(--primary);
-    --cta-ink: var(--primary-foreground);
-  }
+  /* Marketing now follows the same rules as the app: green primary. */
 
   /* Inside the app (dashboard, auth, onboarding layouts), the older
      glass-surface* cards adopt the middle-plane material: a solid fill (so
@@ -918,14 +940,19 @@
      shadow for depth instead of frosted glass and hairlines. Done by
      re-pointing the material variables rather than editing ~200 call
      sites; the marketing pages keep their own glass. */
-  [data-surface="app"] {
+  [data-surface="app"],
+  [data-surface="marketing"] {
     --surface-bg: rgb(var(--plane-mid-bg));
-    --surface-border: rgb(var(--c-ink) / 0.08);
+    --surface-border: transparent;
     --surface-shadow: var(--plane-mid-shadow);
     --surface-blur: 0px;
     --surface-radius: 1.25rem;
+    /* Level-1 "wells" (inputs, chips, minor inline surfaces) are pressed in. */
+    --subtle-bg: rgb(var(--neu-base));
+    --subtle-border: var(--neu-edge);
+    --subtle-shadow: var(--neu-pressed-low);
     --elev-bg: rgb(var(--plane-mid-bg));
-    --elev-border: rgb(var(--c-ink) / 0.14);
+    --elev-border: transparent;
     --elev-shadow: var(--plane-front-shadow);
     --elev-blur: 0px;
   }
@@ -957,31 +984,50 @@
 }
 
 @utility piano-case {
-  background: rgb(var(--piano-case));
+  /* The well the keys sit in: pressed into the base surface. */
+  background: rgb(var(--neu-base));
+  box-shadow: var(--neu-pressed-mid);
 }
 
 @utility piano-white {
-  background: linear-gradient(to bottom, rgb(233 233 230), rgb(var(--piano-ivory)) 18%, rgb(246 246 243));
-  box-shadow: inset 0 -5px 0 rgb(var(--piano-ivory-shade)), inset 0 1px 0 #fff;
+  /* Neumorphic key: the same base as the page, raised by two shadows. A
+     played key is pressed in and goes signal green (set by the component). */
+  background: rgb(var(--neu-base));
+  box-shadow: var(--neu-raised-low), inset 0 0 0 1px var(--neu-edge);
   &:hover {
-    background: linear-gradient(to bottom, rgb(227 227 223), rgb(243 243 239) 18%, rgb(239 239 234));
+    background: color-mix(in srgb, rgb(var(--neu-base)), rgb(var(--c-s-50)) 6%);
+  }
+  &:active {
+    box-shadow: var(--neu-pressed-low);
   }
 }
 
 @utility piano-black {
-  background: linear-gradient(to bottom, rgb(43 43 43), rgb(var(--piano-ebony)) 70%, rgb(10 10 10));
-  box-shadow: inset 0 -4px 0 #000, inset 1px 0 0 rgb(255 255 255 / 0.08), 0 3px 6px rgb(0 0 0 / 0.5);
+  /* Black keys read as a deeper step of the same material, so every key
+     still has clear edges. */
+  background: color-mix(in srgb, rgb(var(--neu-base)), #000 42%);
+  box-shadow: var(--neu-raised-low), inset 0 0 0 1px var(--neu-edge);
   &:hover {
-    background: linear-gradient(to bottom, rgb(53 53 53), rgb(28 28 28) 70%, rgb(17 17 17));
+    background: color-mix(in srgb, rgb(var(--neu-base)), #000 32%);
+  }
+  &:active {
+    box-shadow: var(--neu-pressed-low);
   }
 }
 
 @utility piano-marker-on-white {
-  background: rgb(var(--piano-ebony));
-  color: rgb(var(--piano-ivory));
+  background: rgb(var(--c-s-50));
+  color: rgb(var(--neu-base));
 }
 
 @utility piano-marker-on-black {
-  background: rgb(var(--piano-ivory));
-  color: rgb(var(--piano-ebony));
+  background: rgb(245 245 245);
+  color: rgb(26 26 26);
+}
+
+/* Engraved back-plane type: the same base color as the page, cut INTO it
+   (shade on the top-left edge, light on the bottom-right). Decorative. */
+@utility engraved {
+  color: rgb(var(--neu-base));
+  text-shadow: 1px 1px 2px var(--neu-hi), -1px -1px 2px var(--neu-lo);
 }

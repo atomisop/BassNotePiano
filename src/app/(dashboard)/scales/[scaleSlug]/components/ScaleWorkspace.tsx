@@ -251,7 +251,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
       <div className="mt-3" role="progressbar" aria-valuenow={stepsDone} aria-valuemin={0} aria-valuemax={stepTotal} aria-label="Steps completed in this scale">
         <div className="flex gap-1" aria-hidden>
           {Array.from({ length: stepTotal }, (_, i) => (
-            <span key={i} className={cn("h-1 flex-1 rounded-full", i < stepsDone ? "bg-slate-50" : "bg-slate-800")} />
+            <span key={i} className={cn("h-1.5 flex-1 rounded-full", i < stepsDone ? "bg-slate-50" : "bg-neu-base shadow-pressed-low")} />
           ))}
         </div>
         <p className="mt-2 text-small text-slate-400">

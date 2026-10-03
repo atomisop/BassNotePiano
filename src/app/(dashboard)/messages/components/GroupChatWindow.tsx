@@ -231,7 +231,7 @@ export function GroupChatWindow({
           maxLength={2000}
           rows={1}
           enterKeyHint="send"
-          // text-base, not text-sm — see the identical comment in
+          // text-body, not text-small — see the identical comment in
           // ChatWindow.tsx (the 1:1 equivalent of this input); this is the
           // group-chat message box hitting the same iOS auto-zoom bug.
           className="min-w-0 flex-1 resize-none overflow-y-auto glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
