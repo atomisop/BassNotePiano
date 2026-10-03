@@ -38,6 +38,15 @@ const nextConfig = {
     // pattern being absent (no local .env set up yet) rather than crashing
     // next dev/build over a CSP header.
     const r2Origin = process.env.R2_PUBLIC_URL ? new URL(process.env.R2_PUBLIC_URL).origin : "";
+    // Browser uploads (admin lessons, avatars) PUT straight to a presigned
+    // URL on R2's S3 API host, a different origin from the public r2.dev
+    // address above. Without it in connect-src the browser blocks the upload
+    // before it is sent, and the admin sees "Upload failed, check your
+    // connection". Exactly this bucket's host, not a wildcard.
+    const r2UploadOrigin =
+      process.env.R2_ACCOUNT_ID && process.env.R2_BUCKET_NAME
+        ? `https://${process.env.R2_BUCKET_NAME}.${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
+        : "";
 
     // next dev's webpack pipeline wraps every module in eval() (its default
     // eval-source-map devtool, purely for fast rebuilds/better stack traces
@@ -106,7 +115,7 @@ const nextConfig = {
       // so it needs its own entry here. Confirmed missing live: a real CSP
       // violation blocked an actual R2-hosted lesson PDF from loading
       // before this line was added.
-      `connect-src 'self' https://app.glitchtip.com${r2Origin ? ` ${r2Origin}` : ""}`,
+      `connect-src 'self' https://app.glitchtip.com${r2Origin ? ` ${r2Origin}` : ""}${r2UploadOrigin ? ` ${r2UploadOrigin}` : ""}`,
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
