@@ -77,11 +77,11 @@ const FEEDBACK_KEY = "bnp-atom-feedback";
 const ESCALATION_ID_KEY = "bnp-atom-escalation-id";
 const GREETING_DELAY_MS = 1800;
 
-// Anonymous-visitor mirror of the server-side ATOM_GREETING_DISMISS_LIMIT
-// (src/lib/assistant.ts). An anonymous visitor has no account for that
-// count to live on, so this browser's own localStorage stands in for it.
-// localStorage, not sessionStorage: this one needs to survive closing the
-// tab, unlike GREETING_SEEN_KEY above, which is deliberately per-tab.
+// Local fallback copy of the dismissal count (the real count lives on the
+// server: a one-year device cookie plus the account, see
+// /api/assistant/greeting). Mirrors ATOM_GREETING_DISMISS_LIMIT in
+// src/lib/assistant.ts. localStorage, not sessionStorage: it needs to
+// survive closing the tab, unlike GREETING_SEEN_KEY above.
 const ANONYMOUS_GREETING_DISMISS_KEY = "bnp-atom-greeting-dismiss-count";
 const ANONYMOUS_GREETING_DISMISS_LIMIT = 3;
 const SUPPORT_POLL_MS = 4000;
@@ -500,18 +500,24 @@ export function AssistantWidget() {
   // brief window where that's still unsettled just reads the (harmless,
   // usually-false) localStorage branch until it re-runs against the real
   // session, well before GREETING_DELAY_MS could ever show the bubble.
+  //
+  // The server answers for both cases now (a one-year device cookie plus the
+  // account when signed in; see /api/assistant/greeting), so the count no
+  // longer resets when Safari clears page storage or when someone signs in.
+  // The old localStorage counter still counts, so nobody who already
+  // dismissed it three times sees it come back after this change.
   useEffect(() => {
     if (!mounted) return;
-    if (session?.user?.id) {
-      fetch("/api/assistant/greeting")
-        .then((res) => res.json())
-        .then((data) => setGreetingSuppressed(Boolean(data?.suppressed)))
-        .catch(() => {
-          // Best-effort: worst case the greeting shows once more than it should.
-        });
-    } else {
-      setGreetingSuppressed(readAnonymousGreetingDismissCount() >= ANONYMOUS_GREETING_DISMISS_LIMIT);
+    if (readAnonymousGreetingDismissCount() >= ANONYMOUS_GREETING_DISMISS_LIMIT) {
+      setGreetingSuppressed(true);
+      return;
     }
+    fetch("/api/assistant/greeting")
+      .then((res) => res.json())
+      .then((data) => setGreetingSuppressed(Boolean(data?.suppressed)))
+      .catch(() => {
+        // Best-effort: worst case the greeting shows once more than it should.
+      });
   }, [mounted, session?.user?.id]);
 
   // Greeting bubble: once per browser session, only if the conversation is
@@ -571,22 +577,23 @@ export function AssistantWidget() {
    */
   function dismissGreeting() {
     hideGreetingForSession();
-    if (session?.user?.id) {
-      fetch("/api/assistant/greeting", { method: "POST" })
-        .then((res) => res.json())
-        .then((data) => setGreetingSuppressed(Boolean(data?.suppressed)))
-        .catch(() => {
-          // Best-effort: worst case this dismissal just doesn't count.
-        });
-      return;
-    }
+    // Counted on the server for everyone (device cookie, plus the account
+    // when signed in). localStorage keeps a local copy as a fallback.
     try {
       const next = readAnonymousGreetingDismissCount() + 1;
       window.localStorage.setItem(ANONYMOUS_GREETING_DISMISS_KEY, String(next));
       if (next >= ANONYMOUS_GREETING_DISMISS_LIMIT) setGreetingSuppressed(true);
     } catch {
-      // Non-fatal: worst case the greeting keeps reappearing on this browser.
+      // Non-fatal: the server count below still applies.
     }
+    fetch("/api/assistant/greeting", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.suppressed) setGreetingSuppressed(true);
+      })
+      .catch(() => {
+        // Best-effort: worst case this dismissal just doesn't count server-side.
+      });
   }
 
   function openPanel() {

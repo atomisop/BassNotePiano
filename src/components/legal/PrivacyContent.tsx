@@ -101,10 +101,13 @@ export function PrivacyContent() {
 
       <PrivacySection title="Cookies">
         <p>
-          One cookie is strictly necessary and always on: the sign-in session that keeps you
-          logged in. Nothing else is set without asking first: the cookie banner offers an
-          analytics category for future use, but as of this writing no analytics tool is wired
-          up in the app at all, so that choice does nothing yet.
+          The sign-in session cookie that keeps you logged in is strictly necessary and always
+          on. Two small preference cookies remember choices you made, for up to a year, so you
+          aren&apos;t asked again on the same device: your answer to the cookie banner, and how
+          many times you&apos;ve closed Atom&apos;s greeting (it stops appearing after three). They
+          hold only those choices, nothing about who you are. Nothing else is set without asking
+          first: the cookie banner offers an analytics category for future use, but as of this
+          writing no analytics tool is wired up in the app at all, so that choice does nothing yet.
         </p>
       </PrivacySection>
 
