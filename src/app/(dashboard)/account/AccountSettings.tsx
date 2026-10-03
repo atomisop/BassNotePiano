@@ -429,7 +429,7 @@ function MembershipSection({
             </p>
           </div>
           {!hasCurriculumAccess && (
-            <Link href="/billing/plans" className="cta-sheen cta-fill rounded-lg px-4 py-2 text-small font-semibold">
+            <Link href="/billing/plans" className="tap inline-flex items-center cta-sheen cta-fill rounded-lg px-4 py-2 text-small font-semibold">
               See class plans
             </Link>
           )}
@@ -559,7 +559,7 @@ function PasswordSection() {
           <button
             type="submit"
             disabled={submitting}
-            className="cta-sheen cta-fill flex w-full items-center justify-center rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            className="tap cta-sheen cta-fill flex w-full items-center justify-center rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {submitting ? "Saving…" : "Change password"}
@@ -600,7 +600,7 @@ function SignOutOtherDevicesCard() {
         type="button"
         onClick={handleClick}
         disabled={submitting}
-        className="flex items-center justify-center rounded-lg px-4 py-2 text-small font-medium text-slate-200 transition hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+        className="tap flex items-center justify-center rounded-lg px-4 py-2 text-small font-medium text-slate-200 transition hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
       >
         {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
         {submitting ? "Signing out other devices…" : "Sign out of all other devices"}
@@ -682,7 +682,7 @@ function DangerZoneSection() {
           <button
             type="button"
             onClick={() => setStage("password")}
-            className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-small font-semibold text-white transition hover:bg-red-500"
+            className="tap mt-4 rounded-lg bg-red-600 px-4 py-2 text-small font-semibold text-white transition hover:bg-red-500"
           >
             Delete my account
           </button>
@@ -706,14 +706,14 @@ function DangerZoneSection() {
                 type="button"
                 onClick={reset}
                 disabled={sendingCode}
-                className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={sendingCode || !password}
-                className="flex flex-1 items-center justify-center rounded-lg bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="tap flex flex-1 items-center justify-center rounded-lg bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {sendingCode && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {sendingCode ? "Sending code…" : "Send verification code"}
@@ -756,14 +756,14 @@ function DangerZoneSection() {
                 type="button"
                 onClick={reset}
                 disabled={deleting}
-                className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={deleting || !confirmed || code.length !== 6}
-                className="flex flex-1 items-center justify-center rounded-lg bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="tap flex flex-1 items-center justify-center rounded-lg bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {deleting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {deleting ? "Deleting…" : "Permanently delete my account"}
@@ -787,7 +787,7 @@ function TutorialsSection() {
       <button
         type="button"
         onClick={() => router.push("/dashboard?tour=1")}
-        className="cta-sheen cta-fill mt-4 rounded-lg px-4 py-2 text-small font-semibold"
+        className="tap cta-sheen cta-fill mt-4 rounded-lg px-4 py-2 text-small font-semibold"
       >
         Replay app tour
       </button>

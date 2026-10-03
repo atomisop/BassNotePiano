@@ -103,7 +103,7 @@ export function Tabs<const T extends string>({
             onClick={() => onChange(item.id)}
             onKeyDown={(e) => onKeyDown(e, i)}
             className={cn(
-              "relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-small font-semibold transition-colors duration-(--dur-fast) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "tap relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-small font-semibold transition-colors duration-(--dur-fast) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               active ? "text-signal" : "text-slate-400 hover:text-slate-100",
             )}
           >

@@ -194,7 +194,7 @@ function PageButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="cursor-pointer rounded-control bg-neu-base px-3 py-1.5 text-small font-medium text-slate-300 shadow-raised-low transition hover:text-[rgb(var(--c-s-50))] active:shadow-pressed-low disabled:cursor-default disabled:opacity-40 disabled:shadow-pressed-low"
+      className="tap cursor-pointer rounded-control bg-neu-base px-3 py-1.5 text-small font-medium text-slate-300 shadow-raised-low transition hover:text-[rgb(var(--c-s-50))] active:shadow-pressed-low disabled:cursor-default disabled:opacity-40 disabled:shadow-pressed-low"
     >
       {children}
     </button>

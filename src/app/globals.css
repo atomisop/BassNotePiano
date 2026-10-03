@@ -431,6 +431,70 @@
   filter: blur(40px);
 }
 
+/*
+ * CardDeck (components/ui/CardDeck.tsx). All cards share one grid cell, so the
+ * deck is as tall as the tallest card and never shifts what is below it. Depth
+ * is driven by `data-depth` so the first server-rendered paint is already a
+ * stack. Scaling from the bottom edge makes the cards behind peek out below
+ * the front one rather than shrink up under it.
+ */
+.deck {
+  display: grid;
+  padding-bottom: 1.25rem;
+}
+.deck-item {
+  grid-area: 1 / 1;
+  transform-origin: 50% 100%;
+  transition:
+    transform var(--dur-base) var(--ease-ios),
+    opacity var(--dur-base) var(--ease-ios);
+}
+.deck-item > * {
+  height: 100%;
+}
+.deck-item[data-depth="0"] {
+  z-index: 3;
+}
+.deck-item[data-depth="1"] {
+  z-index: 2;
+  transform: translateY(0.6rem) scale(0.94);
+  opacity: 0.85;
+}
+.deck-item[data-depth="2"] {
+  z-index: 1;
+  transform: translateY(1.2rem) scale(0.88);
+  opacity: 0.6;
+}
+.deck-item[data-depth="3"] {
+  z-index: 0;
+  transform: translateY(1.2rem) scale(0.88);
+  opacity: 0;
+  pointer-events: none;
+}
+/* The shell of a card behind the front one stays visible; its contents do not. */
+.deck-item:not([data-depth="0"]) > * > * {
+  visibility: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .deck-item {
+    transition: none;
+  }
+}
+
+/*
+ * Minimum touch target (Fitts's law, and iOS's 44pt guidance). Applied to
+ * small buttons and links so a thumb can hit them; on a mouse (fine pointer)
+ * the control keeps its compact look, so desktop is unchanged. Use it on any
+ * control that is shorter than 44px, and give links `inline-flex items-center`
+ * so min-height applies to them.
+ */
+@utility tap {
+  @media (pointer: coarse) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
 @utility cta-fill {
   /* ---- Motion --------------------------------------------------------- */
 

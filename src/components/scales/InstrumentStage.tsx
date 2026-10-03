@@ -115,7 +115,7 @@ function InstrumentSwitcher({
             onClick={() => onChange(option.value)}
             aria-pressed={isActive}
             className={cn(
-              "flex h-9 cursor-pointer items-center gap-1.5 rounded-full px-3 text-small font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "tap flex h-9 cursor-pointer items-center gap-1.5 rounded-full px-3 text-small font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               isActive ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100",
             )}
           >
@@ -250,7 +250,7 @@ export function ScaleChart({ variant, root, player }: { variant: ScaleVariant; r
               onClick={() => playDegree(spelled.notes, i)}
               aria-label={`Play ${note}, scale degree ${spelled.degrees[i]}`}
               className={cn(
-                "flex w-14 cursor-pointer flex-col items-center rounded-control border py-2 transition duration-(--dur-fast) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default",
+                "tap flex w-14 cursor-pointer flex-col items-center rounded-control border py-2 transition duration-(--dur-fast) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default",
                 isActive
                   ? "border-signal bg-[rgb(var(--signal)/0.14)] motion-safe:scale-105"
                   : "border-transparent bg-[rgb(var(--c-s-50)/0.04)] shadow-raised-low",

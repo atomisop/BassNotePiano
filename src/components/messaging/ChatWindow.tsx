@@ -154,7 +154,7 @@ export function ChatWindow({
           type="button"
           onClick={onMinimize}
           aria-label="Minimize chat"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+          className="tap flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
             <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
@@ -237,7 +237,7 @@ export function ChatWindow({
         <button
           type="submit"
           disabled={sending || !draft.trim()}
-          className="cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="tap cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           Send
         </button>

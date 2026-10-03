@@ -15,7 +15,7 @@ export function AskAiButton() {
   // sit right under the button.
   return (
     <span data-atom-trigger className="inline-flex">
-      <GenerateAIButton label="Ask AI" onClick={openAi} className="h-9 px-4" />
+      <GenerateAIButton label="Ask AI" onClick={openAi} className="tap h-9 px-4" />
     </span>
   );
 }

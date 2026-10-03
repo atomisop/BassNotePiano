@@ -88,7 +88,7 @@ function VerifyEmailForm() {
       {/* Matches the "missing email" branch's own escape hatch below:
           register, not login, since there's no verified account to log
           into yet at this step. */}
-      <Link href="/register" className="mb-4 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300">
+      <Link href="/register" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300">
         <ArrowLeftIcon size={16} />
         Back
       </Link>

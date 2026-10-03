@@ -204,7 +204,7 @@ export function LessonVideoPlayer({
               type="button"
               onClick={togglePlay}
               aria-label={playing ? "Pause" : "Play"}
-              className="cta-sheen cta-fill flex h-8 w-8 items-center justify-center rounded-full"
+              className="tap cta-sheen cta-fill flex h-8 w-8 items-center justify-center rounded-full"
             >
               {playing ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
             </button>
@@ -212,7 +212,7 @@ export function LessonVideoPlayer({
               type="button"
               onClick={() => seek(-15)}
               aria-label="Back 15 seconds"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
+              className="tap flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
             >
               <RotateCcw size={16} />
             </button>
@@ -220,7 +220,7 @@ export function LessonVideoPlayer({
               type="button"
               onClick={() => seek(15)}
               aria-label="Forward 15 seconds"
-              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
+              className="tap flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
             >
               <RotateCw size={16} />
             </button>
@@ -235,7 +235,7 @@ export function LessonVideoPlayer({
                 type="button"
                 onClick={toggleMute}
                 aria-label={muted ? "Unmute" : "Mute"}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
+                className="tap flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
               >
                 {muted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
               </button>
@@ -254,7 +254,7 @@ export function LessonVideoPlayer({
               type="button"
               onClick={toggleFullscreen}
               aria-label={fullscreen ? "Exit fullscreen" : "Fullscreen"}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
+              className="tap flex h-8 w-8 items-center justify-center rounded-full text-slate-300 transition hover:bg-ink/5 hover:text-slate-100"
             >
               {fullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
             </button>

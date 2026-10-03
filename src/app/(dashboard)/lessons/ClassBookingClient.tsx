@@ -167,7 +167,7 @@ function BookingCard({
             type="button"
             onClick={() => onStartReschedule(b)}
             disabled={cancelingId === b.id}
-            className={`flex items-center justify-center rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+            className={`tap flex items-center justify-center rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
               isBeingRescheduled
                 ? "border-[rgb(var(--c-s-50)/0.4)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
                 : "border-transparent text-slate-300 hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low"
@@ -181,7 +181,7 @@ function BookingCard({
             type="button"
             onClick={() => onCancel(b)}
             disabled={cancelingId === b.id}
-            className="flex items-center justify-center rounded-lg border border-red-400/20 px-3 py-1.5 text-small font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="tap flex items-center justify-center rounded-lg border border-red-400/20 px-3 py-1.5 text-small font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {cancelingId === b.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {cancelingId === b.id ? "Canceling…" : "Cancel"}
@@ -190,7 +190,7 @@ function BookingCard({
         {pastSelfServeWindow && supportContactId && (
           <Link
             href={`/messages?with=${supportContactId}`}
-            className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+            className="tap inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
           >
             Message support
           </Link>
@@ -721,7 +721,7 @@ export function ClassBookingClient({
             </div>
             <Link
               href="/billing/lessons"
-              className="rounded-lg px-4 py-2 text-small font-medium text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+              className="tap inline-flex items-center rounded-lg px-4 py-2 text-small font-medium text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
               Buy credits
             </Link>
@@ -787,7 +787,7 @@ export function ClassBookingClient({
               type="button"
               onClick={() => setMode("SOLO")}
               aria-pressed={mode === "SOLO"}
-              className={`rounded-full px-4 py-1.5 text-small font-medium transition ${
+              className={`tap rounded-full px-4 py-1.5 text-small font-medium transition ${
                 mode === "SOLO" ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
               }`}
             >
@@ -797,7 +797,7 @@ export function ClassBookingClient({
               type="button"
               onClick={() => setMode("FAMILY")}
               aria-pressed={mode === "FAMILY"}
-              className={`rounded-full px-4 py-1.5 text-small font-medium transition ${
+              className={`tap rounded-full px-4 py-1.5 text-small font-medium transition ${
                 mode === "FAMILY" ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
               }`}
             >
@@ -850,7 +850,7 @@ export function ClassBookingClient({
                   type="button"
                   onClick={handleBookBundle}
                   disabled={bundleSubmitting || selectedExceedsBalance}
-                  className="cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                  className="tap cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {bundleSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                   {bundleSubmitting ? "Booking…" : `Book ${selectedRows.length} class${selectedRows.length === 1 ? "" : "es"}`}
@@ -900,7 +900,7 @@ export function ClassBookingClient({
                     type="button"
                     onClick={handleBookFamily}
                     disabled={!familyAllVerified || familySubmitting}
-                    className="cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                    className="tap cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {familySubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                     {familySubmitting ? "Booking…" : `Book for ${familyEmailsTrimmed.length || familyMinAttendees} students`}
@@ -1017,7 +1017,7 @@ export function ClassBookingClient({
                                 type="button"
                                 onClick={() => handleReschedule(row)}
                                 disabled={disabled}
-                                className="flex shrink-0 items-center justify-center rounded-lg border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                                className="tap flex shrink-0 items-center justify-center rounded-lg border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                               >
                                 {reschedulingKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                                 {reschedulingKey === key
@@ -1033,7 +1033,7 @@ export function ClassBookingClient({
                                 type="button"
                                 onClick={() => handleBook(row)}
                                 disabled={disabled}
-                                className="flex shrink-0 items-center justify-center rounded-lg border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                                className="tap flex shrink-0 items-center justify-center rounded-lg border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                               >
                                 {bookingKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                                 {bookingKey === key ? "Booking…" : row.isBooked ? "Booked" : insufficientCredits ? "Not enough credits" : "Book"}
@@ -1043,7 +1043,7 @@ export function ClassBookingClient({
                                 type="button"
                                 onClick={() => openFamilyBooking(row)}
                                 disabled={row.isBooked || familySubmitting}
-                                className="shrink-0 rounded-lg border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                                className="tap shrink-0 rounded-lg border-[rgb(var(--c-s-50)/0.4)] px-4 py-2 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:bg-[rgb(var(--c-s-50)/0.1)] disabled:cursor-not-allowed disabled:text-slate-600 disabled:hover:bg-transparent sm:w-36 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                               >
                                 {row.isBooked ? "Booked" : "Set up family"}
                               </button>

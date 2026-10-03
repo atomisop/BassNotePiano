@@ -130,7 +130,7 @@ function ScheduleForm({
             type="button"
             onClick={onCancel}
             disabled={submitting}
-            className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+            className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
           >
             Cancel
           </button>
@@ -138,7 +138,7 @@ function ScheduleForm({
         <button
           type="submit"
           disabled={submitting}
-          className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="tap cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Saving…" : "Save"}
@@ -247,7 +247,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                           setEditingId(row.id);
                           setFormError(null);
                         }}
-                        className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                        className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                       >
                         Edit
                       </button>
@@ -255,7 +255,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                         type="button"
                         onClick={() => handleToggleActive(row)}
                         disabled={busyId === row.id}
-                        className={`flex items-center justify-center rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                        className={`tap flex items-center justify-center rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
                           row.active
                             ? "border-red-400/20 text-red-400 hover:border-red-400/40 hover:text-red-300"
                             : "border-slate-50/30 text-slate-100 hover:bg-slate-50/10"

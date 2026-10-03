@@ -248,7 +248,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
             type="button"
             onClick={() => setOutlineOpen(false)}
             aria-label="Hide outline"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-[rgb(var(--c-s-50)/0.06)] hover:text-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="tap inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-[rgb(var(--c-s-50)/0.06)] hover:text-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <PanelLeftClose className="h-4 w-4" />
           </button>
@@ -553,7 +553,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
                     type="button"
                     onClick={() => setTool(null)}
                     aria-label={`Close ${toolTitle}`}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-[rgb(var(--c-s-50)/0.06)] hover:text-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="tap inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-[rgb(var(--c-s-50)/0.06)] hover:text-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <X className="h-4 w-4" />
                   </button>

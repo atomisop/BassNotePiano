@@ -219,7 +219,7 @@ export function AdminLessonManager({
           type="button"
           onClick={() => setShowForm((v) => !v)}
           disabled={!storageConfigured}
-          className="cta-sheen cta-fill rounded-xl px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+          className="tap cta-sheen cta-fill rounded-xl px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
         >
           {showForm ? "Cancel" : "Upload a lesson"}
         </button>
@@ -310,7 +310,7 @@ export function AdminLessonManager({
                     onClick={() => handleMove(index, -1)}
                     disabled={busy || index === 0}
                     aria-label="Move up"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 19V5M5 12l7-7 7 7" strokeLinecap="round" strokeLinejoin="round" />
@@ -321,7 +321,7 @@ export function AdminLessonManager({
                     onClick={() => handleMove(index, 1)}
                     disabled={busy || index === lessons.length - 1}
                     aria-label="Move down"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 5v14M5 12l7 7 7-7" strokeLinecap="round" strokeLinejoin="round" />
@@ -337,7 +337,7 @@ export function AdminLessonManager({
                       type="button"
                       onClick={() => setDeletingId(null)}
                       disabled={busy}
-                      className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Cancel
                     </button>
@@ -345,7 +345,7 @@ export function AdminLessonManager({
                       type="button"
                       onClick={() => handleDelete(lesson.id)}
                       disabled={busy}
-                      className="flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {busy && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                       {busy ? "Deleting…" : "Confirm delete"}
@@ -355,7 +355,7 @@ export function AdminLessonManager({
                   <button
                     type="button"
                     onClick={() => setDeletingId(lesson.id)}
-                    className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-400 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-400 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     Delete
                   </button>

@@ -128,7 +128,7 @@ function DesktopAdminPills() {
             <Link
               key={g.label}
               href={g.leaves[0].href}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-small font-medium transition ${
+              className={`tap inline-flex items-center shrink-0 rounded-full px-3.5 py-1.5 text-small font-medium transition ${
                 active ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
               }`}
             >
@@ -145,7 +145,7 @@ function DesktopAdminPills() {
               <Link
                 key={leaf.href}
                 href={leaf.href}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-small font-medium transition ${
+                className={`tap inline-flex items-center shrink-0 rounded-full px-3 py-1.5 text-small font-medium transition ${
                   active ? "bg-[rgb(var(--c-s-50)/0.18)] text-[rgb(var(--c-s-50))]" : "text-slate-500 hover:text-slate-200"
                 }`}
               >

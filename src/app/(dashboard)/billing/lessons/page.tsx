@@ -20,7 +20,7 @@ export default async function BillingLessonsPage() {
     <div className="lg:grid lg:grid-cols-12 lg:gap-12">
       <Link
         href="/lessons"
-        className="mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100 lg:col-span-12"
+        className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100 lg:col-span-12"
       >
         <ArrowLeftIcon size={16} />
         Back to classes

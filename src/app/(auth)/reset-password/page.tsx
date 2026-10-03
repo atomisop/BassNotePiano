@@ -113,7 +113,7 @@ function ResetPasswordForm() {
           mind about which account to sign into. The only way out used to
           be the logo up in the layout header, which leaves the whole
           reset flow for the marketing homepage rather than back to login. */}
-      <Link href="/login" className="mb-3 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300 sm:mb-4">
+      <Link href="/login" className="tap w-fit mb-3 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300 sm:mb-4">
         <ArrowLeftIcon size={16} />
         Back to login
       </Link>

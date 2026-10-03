@@ -210,7 +210,7 @@ export function CustomerProfile({
                   type="button"
                   disabled={busy}
                   onClick={() => setPendingAction("curriculum")}
-                  className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   {user.hasCurriculumAccess ? "Remove complimentary access" : "Grant complimentary access"}
                 </button>
@@ -239,7 +239,7 @@ export function CustomerProfile({
                   type="button"
                   disabled={busy}
                   onClick={() => setPendingAction("role")}
-                  className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   {user.role === "ADMIN" ? "Remove admin role" : "Make admin"}
                 </button>
@@ -266,7 +266,7 @@ export function CustomerProfile({
                   type="button"
                   disabled={busy}
                   onClick={() => setPendingAction("history")}
-                  className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Clear Atom history
                 </button>
@@ -277,7 +277,7 @@ export function CustomerProfile({
                   type="button"
                   disabled={busy}
                   onClick={() => setConfirmingSignOut(true)}
-                  className="rounded-lg border border-red-400/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-400/10 disabled:opacity-40"
+                  className="tap rounded-lg border border-red-400/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-400/10 disabled:opacity-40"
                 >
                   Sign out everywhere
                 </button>
@@ -323,7 +323,7 @@ export function CustomerProfile({
                     type="button"
                     disabled={busy}
                     onClick={() => withBusy(() => onToggleScale(user.id, scale.scaleGroup.slug, scale.status === "LOCKED"))}
-                    className={`shrink-0 rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:opacity-40 ${
+                    className={`tap shrink-0 rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:opacity-40 ${
                       scale.status === "LOCKED"
                         ? "border-[rgb(var(--c-s-50)/0.3)] text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)]"
                         : "border-transparent text-slate-400 bg-neu-base shadow-raised-low"
@@ -372,7 +372,7 @@ export function CustomerProfile({
                 <button
                   type="submit"
                   disabled={busy}
-                  className="cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-small font-medium disabled:opacity-40"
+                  className="tap cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-small font-medium disabled:opacity-40"
                 >
                   Review
                 </button>
@@ -431,7 +431,7 @@ export function CustomerProfile({
                                 setCancelingBookingId(null);
                                 setCancelReason("");
                               }}
-                              className="flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                              className="tap flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                             >
                               Never mind
                             </button>
@@ -439,7 +439,7 @@ export function CustomerProfile({
                               type="button"
                               disabled={busy}
                               onClick={() => handleCancelBooking(b.id)}
-                              className="flex-1 rounded-lg bg-red-500/95 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:opacity-50"
+                              className="tap flex-1 rounded-lg bg-red-500/95 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:opacity-50"
                             >
                               Confirm cancel & refund
                             </button>
@@ -449,7 +449,7 @@ export function CustomerProfile({
                         <button
                           type="button"
                           onClick={() => setCancelingBookingId(b.id)}
-                          className="shrink-0 rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                          className="tap shrink-0 rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                         >
                           Cancel booking
                         </button>

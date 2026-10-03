@@ -178,7 +178,7 @@ export function ZellePaymentModal({
                       <button
                         type="button"
                         onClick={handleCopyHandle}
-                        className="shrink-0 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] px-3 py-1.5 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:bg-[rgb(var(--c-s-50)/0.1)]"
+                        className="tap shrink-0 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] px-3 py-1.5 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:bg-[rgb(var(--c-s-50)/0.1)]"
                       >
                         {copied ? "Copied" : "Copy"}
                       </button>

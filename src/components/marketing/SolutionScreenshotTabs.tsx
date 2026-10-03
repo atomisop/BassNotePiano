@@ -85,7 +85,7 @@ export function SolutionScreenshotTabs({ screens, defaultKey }: { screens: Solut
               data-screen={screen.key}
               aria-selected={selected}
               onClick={() => select(screen.key)}
-              className={`shrink-0 snap-center rounded-full px-4 py-1.5 text-small font-medium transition ${
+              className={`tap shrink-0 snap-center rounded-full px-4 py-1.5 text-small font-medium transition ${
                 selected
                   ? "bg-neu-base text-amber-400 shadow-pressed-low"
                   : "bg-neu-base text-slate-300 shadow-raised-low hover:text-slate-50 hover:shadow-raised-mid"

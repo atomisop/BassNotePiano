@@ -442,7 +442,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                     href={item.href}
                     aria-label={item.label}
                     data-tour={"dataTour" in item ? item.dataTour : undefined}
-                    className="relative flex items-center justify-center px-1"
+                    className="tap relative flex items-center justify-center px-1"
                   >
                     {/* The glow: a blurred white gradient, positioned above
                         the icon (`-translate-y-full` moves it fully clear of

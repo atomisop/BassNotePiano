@@ -130,7 +130,7 @@ export function GroupChatWindow({
               type="button"
               onClick={() => setConfirmingLeave(false)}
               disabled={leaving}
-              className="rounded-lg px-2.5 py-1.5 text-small text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+              className="tap rounded-lg px-2.5 py-1.5 text-small text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
               Cancel
             </button>
@@ -138,7 +138,7 @@ export function GroupChatWindow({
               type="button"
               onClick={handleLeave}
               disabled={leaving}
-              className="flex items-center justify-center rounded-lg bg-red-500/95 px-2.5 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:opacity-50"
+              className="tap flex items-center justify-center rounded-lg bg-red-500/95 px-2.5 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:opacity-50"
             >
               {leaving && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
               {leaving ? "Leaving…" : "Leave group"}
@@ -148,7 +148,7 @@ export function GroupChatWindow({
           <button
             type="button"
             onClick={() => setConfirmingLeave(true)}
-            className="shrink-0 rounded-lg px-2.5 py-1.5 text-small text-slate-400 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+            className="tap shrink-0 rounded-lg px-2.5 py-1.5 text-small text-slate-400 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
           >
             Leave
           </button>
@@ -157,7 +157,7 @@ export function GroupChatWindow({
           type="button"
           onClick={onMinimize}
           aria-label="Minimize chat"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+          className="tap flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
             <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
@@ -241,7 +241,7 @@ export function GroupChatWindow({
         <button
           type="submit"
           disabled={sending || !draft.trim()}
-          className="cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className="tap cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           Send
         </button>

@@ -157,7 +157,7 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale, onApproveNex
                         {ACCESS_BADGE[row.accessKind].label}
                         {row.accessUntil && row.accessKind !== "PAID" ? ` · ends ${formatShortDate(row.accessUntil)}` : ""}
                       </span>
-                      <Link href={`/admin/users/${row.id}`} className="text-small font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70">
+                      <Link href={`/admin/users/${row.id}`} className="tap inline-flex items-center text-small font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70">
                         Full profile →
                       </Link>
                     </div>
@@ -187,7 +187,7 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale, onApproveNex
                           title={cellTooltip(cell)}
                           disabled={busy}
                           onClick={() => handleToggle(row.id, cell)}
-                          className={`h-8 w-9 rounded-lg border text-small font-medium transition disabled:opacity-40 ${cellClasses(cell)}`}
+                          className={`tap h-8 w-9 rounded-lg border text-small font-medium transition disabled:opacity-40 ${cellClasses(cell)}`}
                         >
                           {busy ? "…" : cell.status === "COMPLETED" ? "✓" : cell.unlocked ? "•" : "×"}
                         </button>
@@ -226,7 +226,7 @@ function NextScaleControl({ row, busy, onApprove }: { row: AdminProgressRow; bus
         type="button"
         disabled={busy}
         onClick={() => onApprove(false)}
-        className="cta-sheen cta-fill mt-1.5 rounded-lg px-3 py-1 text-small font-semibold disabled:opacity-40"
+        className="tap cta-sheen cta-fill mt-1.5 rounded-lg px-3 py-1 text-small font-semibold disabled:opacity-40"
       >
         {busy ? "Releasing…" : `Approve ${nextCode}`}
       </button>

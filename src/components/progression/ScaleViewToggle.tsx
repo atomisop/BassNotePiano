@@ -26,7 +26,7 @@ export function ScaleViewToggle({ value, onChange }: { value: ScaleView; onChang
           onClick={() => onChange(optionValue)}
           aria-pressed={value === optionValue}
           title={label}
-          className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+          className={`tap flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
             value === optionValue ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
           }`}
         >

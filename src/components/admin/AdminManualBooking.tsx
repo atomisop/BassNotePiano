@@ -231,7 +231,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
                     key={n}
                     type="button"
                     onClick={() => setCreditsToBook(n)}
-                    className={`rounded-lg border px-3.5 py-2 text-small font-medium transition ${
+                    className={`tap rounded-lg border px-3.5 py-2 text-small font-medium transition ${
                       creditsToBook === n
                         ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
                         : "border-transparent text-slate-300 bg-neu-base shadow-raised-low"

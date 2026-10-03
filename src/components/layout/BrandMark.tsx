@@ -34,7 +34,7 @@ export function BrandMark() {
       aria-label="Bass Note Piano, home"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="flex items-center gap-2.5"
+      className="tap flex items-center gap-2.5"
     >
       <Image src="/logo-mark.png" alt="" width={40} height={40} className="h-10 w-10 shrink-0" priority />
 

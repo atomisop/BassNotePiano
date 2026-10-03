@@ -13,7 +13,7 @@ export default async function AdminCustomerPage({ params }: { params: { userId: 
 
   return (
     <div>
-      <Link href="/admin/users" className="text-small font-medium text-slate-500 transition hover:text-slate-300">
+      <Link href="/admin/users" className="tap inline-flex items-center text-small font-medium text-slate-500 transition hover:text-slate-300">
         ← All users
       </Link>
       <p className="mt-3 text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>

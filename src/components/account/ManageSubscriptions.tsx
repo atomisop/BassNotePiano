@@ -150,7 +150,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   key={option.value}
                   type="button"
                   onClick={() => setCadence(option.value)}
-                  className={`rounded-full px-3 py-1 text-small font-medium transition ${
+                  className={`tap rounded-full px-3 py-1 text-small font-medium transition ${
                     cadence === option.value ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
@@ -203,7 +203,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                     type="button"
                     disabled={isCurrent || pendingTerm !== null}
                     onClick={() => handleChangeTerm(option.value)}
-                    className={`mt-3 flex w-full items-center justify-center rounded-lg py-2 text-small font-semibold transition disabled:cursor-not-allowed ${
+                    className={`tap mt-3 flex w-full items-center justify-center rounded-lg py-2 text-small font-semibold transition disabled:cursor-not-allowed ${
                       isCurrent
                         ? "bg-neu-base shadow-pressed-low text-slate-400"
                         : "text-slate-200 hover:text-[rgb(var(--c-s-50))] disabled:opacity-50 bg-neu-base shadow-raised-low"
@@ -215,7 +215,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                 ) : (
                   <Link
                     href={`/billing/plans?cadence=${cadence}&term=${option.value}`}
-                    className="mt-3 flex w-full items-center justify-center rounded-lg py-2 text-small font-semibold text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap mt-3 flex w-full items-center justify-center rounded-lg py-2 text-small font-semibold text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     Start plan
                   </Link>
@@ -238,7 +238,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
         </div>
         <Link
           href="/billing/lessons"
-          className="shrink-0 rounded-lg px-4 py-2 text-small font-semibold text-slate-100 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+          className="tap inline-flex items-center shrink-0 rounded-lg px-4 py-2 text-small font-semibold text-slate-100 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
         >
           Bundle &amp; save
         </Link>
@@ -264,7 +264,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   type="button"
                   onClick={() => handleChangeTerm("TERM_3")}
                   disabled={pendingTerm !== null}
-                  className="cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:opacity-60"
+                  className="tap cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:opacity-60"
                 >
                   {pendingTerm === "TERM_3" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                   Switch to 3-Month
@@ -272,7 +272,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                 <button
                   type="button"
                   onClick={() => setCancelStage("reason")}
-                  className="rounded-lg px-4 py-2 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap rounded-lg px-4 py-2 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   No, cancel anyway
                 </button>
@@ -317,7 +317,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   type="button"
                   onClick={handleConfirmCancel}
                   disabled={!reason || cancelStage === "canceling"}
-                  className="flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="tap flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {cancelStage === "canceling" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                   {cancelStage === "canceling" ? "Canceling…" : "Cancel my subscription"}
@@ -326,7 +326,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   type="button"
                   onClick={resetCancelFlow}
                   disabled={cancelStage === "canceling"}
-                  className="rounded-lg px-4 py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap rounded-lg px-4 py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Never mind
                 </button>
