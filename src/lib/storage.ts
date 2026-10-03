@@ -48,6 +48,14 @@ function getClient(): S3Client {
         accessKeyId: process.env.R2_ACCESS_KEY_ID!,
         secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
       },
+      // Recent AWS SDK versions add a CRC32 checksum to every request and to
+      // presigned URLs by default. Cloudflare R2 does not accept that field
+      // on a browser PUT: it answers with an error that carries no CORS
+      // headers, which the browser can only report as a network failure
+      // ("Upload failed, check your connection"). Only compute checksums
+      // when an operation actually requires one.
+      requestChecksumCalculation: "WHEN_REQUIRED",
+      responseChecksumValidation: "WHEN_REQUIRED",
     });
   }
   return client;
