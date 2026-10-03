@@ -24,7 +24,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
  * chrome since this sits directly on the transparent header, not inside a
  * colored button that needs its own width to animate.
  */
-export function BrandMark({ hideTextOnPhone = false }: { hideTextOnPhone?: boolean }) {
+export function BrandMark() {
   const [hovered, setHovered] = useState(false);
   const reducedMotion = useReducedMotion();
 
@@ -38,19 +38,10 @@ export function BrandMark({ hideTextOnPhone = false }: { hideTextOnPhone?: boole
     >
       <Image src="/logo-mark.png" alt="" width={28} height={28} className="h-7 w-7 shrink-0" priority />
 
-      {/* Below md: unchanged, always-visible text — no hover to drive a
-          reveal on a touch device. Same wordmark treatment as MarketingNav's
-          own (bold, lowercase) now, not the pre-Pianote-pass
-          uppercase/split-color version this used to be. Fully accent-colored
-          at the time; neutral again now under the "premium black and white"
-          pass. */}
-      <span
-        className={`whitespace-nowrap text-small font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))] md:hidden ${
-          hideTextOnPhone ? "max-[460px]:hidden" : ""
-        }`}
-      >
-        Bass Note Piano
-      </span>
+      {/* Below md (phones): logo only. The link keeps its aria-label, so it
+          still reads as "Bass Note Piano, home" to a screen reader. The
+          wordmark returns at md and up (iPad, desktop) as the hover reveal
+          below. */}
 
       {/* md and up: collapsed by default, slides out from the icon on
           hover. */}

@@ -58,7 +58,7 @@ export function TopBar({ isAdmin }: { isAdmin: boolean }) {
   // to reserve the 64px this now paints over instead of occupying in flow.
   return (
     <header className="chrome fixed inset-x-0 top-0 z-[45] flex h-16 items-center justify-between border-b border-ink/10 px-4 md:px-8">
-      <BrandMark hideTextOnPhone={isAdmin} />
+      <BrandMark />
       <div className="flex items-center gap-2 md:gap-3">
         {/* Leftmost of the right-hand cluster: Ask AI, admin, attendance, bell, profile. */}
         <AskAiButton />
