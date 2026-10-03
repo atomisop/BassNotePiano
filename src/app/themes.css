@@ -115,12 +115,11 @@
   --c-ink: 255 255 255;
   --c-scrim: 10 10 10;
 
-  /* First fleck now echoes the signal-green accent (byte-exact --c-a-400,
-     rgb(5 233 1)) rather than the orange left over from the amber era —
-     this exact green/white pairing is what the original Midnight Glass
-     theme's own page-texture used, back when green was last live. */
+  /* First fleck echoes the signal accent, the logo orange (--c-a-400,
+     rgb(251 138 92)). The accent ramp changed from green to the logo's
+     orange when the final logo landed; green is retired app-wide. */
   --page-texture:
-    radial-gradient(circle at 15% 20%, rgba(5, 233, 1, 0.035), transparent 45%),
+    radial-gradient(circle at 15% 20%, rgba(251, 138, 92, 0.04), transparent 45%),
     radial-gradient(circle at 85% 75%, rgba(255, 255, 255, 0.02), transparent 40%);
 
   /* --c-surface-solid at 46 46 46 matches the spec's own `--nav-button`
@@ -158,48 +157,30 @@
 /* ==========================================================================
    Accent
    --------------------------------------------------------------------------
-   Back to signal green — the ORIGINAL single-hue accent this whole ramp
-   started as (see themes.ts's own comment for why there's only ever one
-   accent slot at all, not a matrix of theme x color choices). It's since
-   gone pink→orange, then a full Instagram-brand purple→pink→orange
-   gradient, then briefly neutralized to nothing ("premium black and
-   white"), then a brief Electric Indigo/Deep Violet detour, then a fully
-   monochrome "Vercel" pass with a cool-grey ground and no accent at all —
-   each swap by direct instruction, none of them this file's own idea.
-   Restored to green byte-exact from its own original commit (229ad8d,
-   "Simplify theming to light/dark only, one accent") rather than
-   re-derived, by direct instruction — "black, white, and the light green I
-   used." Three tones now: the ground/ink ramp above (true neutral again,
-   not the cool-grey tried in between), white, and this one green.
+   The logo orange. Final brand color, taken byte-exact from the logo disc
+   (rgb 251 138 92); green is retired app-wide. One accent slot, same as
+   always (see themes.ts for why there is never a matrix of theme x color).
 
-   Still keyed on data-mode, not data-theme: the accent has to clear 4.5:1
-   against the ground it sits on, and that requirement is the same for
-   every dark theme and every light one. Two blocks, one per mode.
-
-   hsl(119 99% 46%) = rgb(5 233 1), used byte-exact in dark mode rather
-   than softened for a dark ground the way most other accents this ramp
-   has carried needed to be — it already comes with its own real neon
-   quality, and at 10.5:1 against Ink's near-black ground it has enormous
-   headroom to spare. Light mode gets a deep forest-green version of the
-   same hue instead, since the vivid source itself only clears ~1.6:1 on a
-   light ground — nowhere near AA. 400 is the workhorse in both: bright
-   enough to double as a fill (paired with dark `text-slate-950`, the same
-   pairing every other fill-role step in this app already uses — green is
-   far too light for white text to read on) and as text straight on the
-   ground; 500 is one step deeper, for borders/pressed states. */
+   Still keyed on data-mode, not data-theme: the accent has to read against
+   the ground it sits on, and that need is the same for every dark theme and
+   every light one. Two blocks, one per mode. Dark uses the logo orange as-is
+   for 400 (the workhorse: fills, with near-black `signal-ink` text, and text
+   on the ground). Light uses a deeper orange for 400 so it still reads on a
+   pale ground; 500 is one step brighter, for borders and pressed states.
+   Both modes pair fills with the same near-black ink, never white. */
 [data-mode="light"] {
-  --c-a-100: 4 46 2;
-  --c-a-200: 3 66 2;
-  --c-a-300: 3 92 2;
-  --c-a-400: 2 122 3; /* 5.5:1 */
-  --c-a-500: 2 145 4;
+  --c-a-100: 82 30 8;
+  --c-a-200: 120 46 14;
+  --c-a-300: 158 64 22;
+  --c-a-400: 214 92 44; /* deeper than the logo orange so it reads on a light ground */
+  --c-a-500: 233 110 58;
 }
 
 [data-mode="dark"] {
-  --c-a-100: 214 250 195;
-  --c-a-200: 172 247 148;
-  --c-a-300: 100 240 70;
-  --c-a-400: 5 233 1; /* 10.5:1 */
-  --c-a-500: 4 196 1; /* 7.4:1 */
+  --c-a-100: 255 236 226;
+  --c-a-200: 254 213 192;
+  --c-a-300: 253 178 138;
+  --c-a-400: 251 138 92; /* the logo orange, byte-exact */
+  --c-a-500: 232 111 66;
 }
 

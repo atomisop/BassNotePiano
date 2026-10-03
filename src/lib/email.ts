@@ -77,7 +77,7 @@ async function sendEmail({ to, subject, html, text }: SendEmailParams): Promise<
 // keeping a rejection from reading as "this went well" (same
 // --c-rd-300/400 red the app itself uses for errors).
 const SHELL_ACCENT = {
-  default: { bar: "#f5f5f5", dot: "#f5f5f5" },
+  default: { bar: "linear-gradient(90deg,#e86f42,#fb8a5c,#fdb28a)", dot: "#fb8a5c" },
   notice: { bar: "linear-gradient(90deg,#ef4444,#fca5a5,#ef4444)", dot: "#ef4444" },
 } as const;
 
@@ -223,7 +223,7 @@ function ctaButtonHtml(cta: { label: string; url: string }): string {
   // gradient anymore.
   return `
     <div style="text-align:center;margin-top:4px;">
-      <a href="${cta.url}" style="display:inline-block;padding:13px 30px;border-radius:10px;background:#f5f5f5;color:#0d0d0d;font-size:14px;font-weight:bold;text-decoration:none;">
+      <a href="${cta.url}" style="display:inline-block;padding:13px 30px;border-radius:10px;background:#fb8a5c;color:#1a140e;font-size:14px;font-weight:bold;text-decoration:none;">
         ${escapeHtml(cta.label)}
       </a>
     </div>

@@ -261,7 +261,7 @@ function renderMessageContent(content: string, accentLink: boolean) {
         <Link
           key={key++}
           href={href}
-          className={`underline underline-offset-2 ${accentLink ? "text-primary" : "text-blue-500 hover:opacity-70"}`}
+          className={`underline underline-offset-2 ${accentLink ? "text-primary" : "text-amber-400 hover:opacity-70"}`}
         >
           {label}
         </Link>,
@@ -978,7 +978,7 @@ export function AssistantWidget() {
                       <button
                         type="button"
                         onClick={resetToAtom}
-                        className="text-small font-medium text-blue-500 underline-offset-2 hover:underline"
+                        className="text-small font-medium text-amber-400 underline-offset-2 hover:underline"
                       >
                         Start a new question with Atom
                       </button>
