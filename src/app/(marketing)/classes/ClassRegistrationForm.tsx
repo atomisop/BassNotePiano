@@ -47,7 +47,7 @@ function Pill({
       onClick={onClick}
       disabled={comingSoon}
       aria-pressed={selected}
-      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50)/0.7)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
+      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-small font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--c-s-50)/0.7)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
         selected
           ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
           : "border-ink/10 bg-slate-950 text-slate-400 hover:border-ink/15"
@@ -55,7 +55,7 @@ function Pill({
     >
       {label}
       {comingSoon && (
-        <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+        <span className="rounded-full bg-slate-800 px-1.5 py-0.5 text-small font-semibold uppercase tracking-wide text-slate-400">
           Coming soon
         </span>
       )}
@@ -70,7 +70,7 @@ function fieldClass() {
   // as "non-text, always"). -500 (6.5:1) is the same token SiteFooter's
   // real body text already uses after the accessibility pass found the
   // same mistake there.
-  return "w-full glass-surface-subtle px-3 py-2.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.6)]";
+  return "w-full glass-surface-subtle px-3 py-2.5 text-small text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.6)]";
 }
 
 export function ClassRegistrationForm() {
@@ -107,12 +107,12 @@ export function ClassRegistrationForm() {
   if (success) {
     return (
       <div className="glass-surface-elevated p-8 text-center">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Request received</p>
-        <h3 className="mt-2 font-serif text-xl text-slate-50">Thanks, {fullName.split(" ")[0]}.</h3>
+        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Request received</p>
+        <h3 className="mt-2 font-serif text-body text-slate-50">Thanks, {fullName.split(" ")[0]}.</h3>
         {/* No coming-soon branch here anymore: the instrument pill for
             Drums/Vocal is disabled now, so `instrument` can never actually
             hold one of those values by the time this renders. */}
-        <p className="mt-2 text-sm text-slate-400">
+        <p className="mt-2 text-small text-slate-400">
           We&apos;ve got your registration for {INSTRUMENTS.find((i) => i.value === instrument)?.label.toLowerCase()} lessons.
           We&apos;ll reach out at {email} or {phone} shortly.
         </p>
@@ -131,7 +131,7 @@ export function ClassRegistrationForm() {
           a phone where the targets are small. */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="reg-full-name" className="mb-1.5 block text-xs font-medium text-slate-400">
+          <label htmlFor="reg-full-name" className="mb-1.5 block text-small font-medium text-slate-400">
             Full name
           </label>
           <input
@@ -147,7 +147,7 @@ export function ClassRegistrationForm() {
           />
         </div>
         <div>
-          <label htmlFor="reg-email" className="mb-1.5 block text-xs font-medium text-slate-400">
+          <label htmlFor="reg-email" className="mb-1.5 block text-small font-medium text-slate-400">
             Email
           </label>
           <input
@@ -165,7 +165,7 @@ export function ClassRegistrationForm() {
       </div>
 
       <div>
-        <label htmlFor="reg-phone" className="mb-1.5 block text-xs font-medium text-slate-400">
+        <label htmlFor="reg-phone" className="mb-1.5 block text-small font-medium text-slate-400">
           Phone number
         </label>
         <input
@@ -187,7 +187,7 @@ export function ClassRegistrationForm() {
           screen reader that these pills belong together and what the set is
           asking, instead of reading six unrelated buttons in a row. */}
       <div role="group" aria-labelledby="reg-instrument-label">
-        <p id="reg-instrument-label" className="mb-1.5 text-xs font-medium text-slate-400">
+        <p id="reg-instrument-label" className="mb-1.5 text-small font-medium text-slate-400">
           Instrument you want to learn
         </p>
         <div className="flex flex-wrap gap-2">
@@ -204,7 +204,7 @@ export function ClassRegistrationForm() {
       </div>
 
       <div role="group" aria-labelledby="reg-skill-label">
-        <p id="reg-skill-label" className="mb-1.5 text-xs font-medium text-slate-400">
+        <p id="reg-skill-label" className="mb-1.5 text-small font-medium text-slate-400">
           Current skill level
         </p>
         <div className="flex flex-wrap gap-2">
@@ -215,7 +215,7 @@ export function ClassRegistrationForm() {
       </div>
 
       <div>
-        <label htmlFor="reg-notes" className="mb-1.5 block text-xs font-medium text-slate-400">
+        <label htmlFor="reg-notes" className="mb-1.5 block text-small font-medium text-slate-400">
           Anything else we should know? (optional)
         </label>
         <textarea
@@ -229,12 +229,12 @@ export function ClassRegistrationForm() {
         />
       </div>
 
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-small text-red-400">{error}</p>}
 
       <button
         type="submit"
         disabled={submitting}
-        className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-3 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting && <MorphingSquare size={14} className="mr-2 shrink-0" />}
         {submitting ? "Submitting…" : "Request to register"}
@@ -246,7 +246,7 @@ export function ClassRegistrationForm() {
           click-through, since a name/email/phone lead-capture form is still
           collecting real personal data from a visitor with nothing else on
           this page pointing them at how it's handled. */}
-      <p className="text-center text-xs text-slate-500">
+      <p className="text-center text-small text-slate-500">
         By submitting, you agree to our{" "}
         <Link href="/privacy" target="_blank" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
           Privacy policy

@@ -80,7 +80,7 @@ export function PaymentPlanTierGrid() {
           options={CADENCE_OPTIONS}
         />
         {isFamily && (
-          <p className="text-xs text-slate-400">
+          <p className="text-small text-slate-400">
             Extra {Math.round(FAMILY_BUNDLE_DISCOUNT_RATE * 100)}% off every plan below, per student.
           </p>
         )}
@@ -125,26 +125,26 @@ export function PaymentPlanTierGrid() {
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <p className="font-serif text-2xl text-slate-50">{option.label}</p>
+                  <p className="font-serif text-body text-slate-50">{option.label}</p>
                   {featured ? (
-                    <span className="rounded-full bg-[rgb(var(--c-s-50))] px-3 py-1 text-xs font-semibold text-slate-950">Best value</span>
+                    <span className="rounded-full bg-[rgb(var(--c-s-50))] px-3 py-1 text-small font-semibold text-slate-950">Best value</span>
                   ) : isMonthly && !isFamily ? (
-                    <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-400">No commitment</span>
+                    <span className="rounded-full bg-slate-800 px-3 py-1 text-small font-medium text-slate-400">No commitment</span>
                   ) : null}
                 </div>
 
                 <div>
-                  <p className="h-5 text-sm tabular-nums text-slate-500">
+                  <p className="h-5 text-small tabular-nums text-slate-500">
                     {percentOff > 0 && <span className="line-through">{formatUsd(monthlyBaseline)}/mo</span>}
                     {percentOff > 0 && (
-                      <span className="ml-2 rounded-full bg-amber-400 px-2 py-0.5 align-middle text-[10px] font-bold text-slate-950">
+                      <span className="ml-2 rounded-full bg-amber-400 px-2 py-0.5 align-middle text-small font-bold text-slate-950">
                         −{percentOff}%
                       </span>
                     )}
                   </p>
                   <p className="mt-1 flex items-baseline gap-1.5">
-                    <span className="font-serif text-5xl tabular-nums text-slate-50">{formatUsd(perStudentCents)}</span>
-                    <span className="text-sm text-slate-400">{isFamily ? "/student/mo" : "/month"}</span>
+                    <span className="font-serif text-hero tabular-nums text-slate-50">{formatUsd(perStudentCents)}</span>
+                    <span className="text-small text-slate-400">{isFamily ? "/student/mo" : "/month"}</span>
                   </p>
                 </div>
 
@@ -152,7 +152,7 @@ export function PaymentPlanTierGrid() {
 
                 <ul className="flex flex-1 flex-col gap-3.5">
                   {features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-3 text-sm text-slate-300">
+                    <li key={feature} className="flex items-start gap-3 text-small text-slate-300">
                       <CheckIcon size={16} className="mt-0.5 shrink-0 text-[rgb(var(--c-s-50))]" />
                       {feature}
                     </li>
@@ -161,7 +161,7 @@ export function PaymentPlanTierGrid() {
 
                 <Link
                   href={isFamily ? "/billing/lessons" : `/billing/plans?cadence=${cadence}&term=${option.value}`}
-                  className={`flex h-12 items-center justify-center rounded-xl text-sm font-semibold transition ${
+                  className={`flex h-12 items-center justify-center rounded-xl text-small font-semibold transition ${
                     featured
                       ? "cta-sheen cta-fill"
                       : "border border-ink/10 text-slate-100 hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
@@ -212,7 +212,7 @@ function Segmented({
           type="button"
           aria-pressed={value === option.value}
           onClick={() => onChange(option.value)}
-          className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+          className={`rounded-full px-4 py-1.5 text-small font-medium transition ${
             value === option.value
               ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]"
               : "text-slate-400 hover:text-slate-200"

@@ -73,7 +73,7 @@ function activeGroup(pathname: string): AdminNavGroup {
 
 /**
  * Below sm: a single native <select>, same reasoning (and same iOS-zoom
- * text-base fix) as the flat version this replaces — a phone has no room
+ * text-body fix) as the flat version this replaces — a phone has no room
  * for a real two-level control, so every leaf page is still one flat list,
  * just visually grouped via <optgroup> so the same four buckets are still
  * legible instead of eleven undifferentiated rows.

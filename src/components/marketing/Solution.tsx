@@ -94,10 +94,10 @@ export function Solution() {
           <Accordion type="single" collapsible className="mt-8" defaultValue="feature-0">
             {FEATURES.map((feature, i) => (
               <AccordionItem key={feature.title} value={`feature-${i}`} className="border-ink/10">
-                <AccordionTrigger className="text-left font-serif text-base text-slate-50 no-underline hover:no-underline sm:text-lg">
+                <AccordionTrigger className="text-left font-serif text-body text-slate-50 no-underline hover:no-underline sm:text-body">
                   {feature.title}
                 </AccordionTrigger>
-                <AccordionContent className="text-sm leading-relaxed text-slate-400">{feature.body}</AccordionContent>
+                <AccordionContent className="text-small leading-relaxed text-slate-400">{feature.body}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>

@@ -73,8 +73,8 @@ export function InstrumentPicker() {
                   className="group flex items-center justify-between gap-6 py-7 transition hover:opacity-80"
                 >
                   <div className="flex items-baseline gap-6 sm:gap-10">
-                    <h3 className="font-serif text-2xl text-slate-50 sm:text-3xl">{instrument.name}</h3>
-                    <p className="max-w-[38ch] text-sm leading-relaxed text-slate-400">{instrument.note}</p>
+                    <h3 className="font-serif text-body text-slate-50 sm:text-body">{instrument.name}</h3>
+                    <p className="max-w-[38ch] text-small leading-relaxed text-slate-400">{instrument.note}</p>
                   </div>
                   <svg
                     width="18"

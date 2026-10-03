@@ -51,7 +51,7 @@ export function SolutionScreenshotTabs({ screens, defaultKey }: { screens: Solut
                 type="button"
                 onClick={() => setActive(screen.key)}
                 aria-pressed={screen.key === active}
-                className={`rounded-full px-4 py-1.5 text-xs font-medium transition ${
+                className={`rounded-full px-4 py-1.5 text-small font-medium transition ${
                   screen.key === active ? "bg-amber-400 text-slate-950" : "text-slate-300 hover:text-slate-50"
                 }`}
               >
@@ -61,7 +61,7 @@ export function SolutionScreenshotTabs({ screens, defaultKey }: { screens: Solut
           </div>
         </div>
       </div>
-      <p className="mt-4 text-center text-sm text-slate-500 lg:text-left">
+      <p className="mt-4 text-center text-small text-slate-500 lg:text-left">
         Real screens from inside Bass Note Piano, {activeScreen.label.toLowerCase()} shown.
       </p>
     </div>

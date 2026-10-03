@@ -175,7 +175,7 @@ export function MarketingNav() {
                 wordmark treatment (studied directly), not the small label
                 this replaces. Colored in the accent at the time; neutral
                 again now under the "premium black and white" pass. */}
-            <span className="font-serif text-lg font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]">
+            <span className="font-serif text-body font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]">
               Bass Note Piano
             </span>
           </Link>
@@ -197,8 +197,8 @@ export function MarketingNav() {
                   aria-current={isActive ? "page" : undefined}
                   className={
                     isActive
-                      ? "flex h-9 items-center !rounded-full bg-[rgb(var(--c-s-50))] px-4 text-[13px] font-medium text-slate-950 transition-colors duration-200"
-                      : "glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-[13px] font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
+                      ? "flex h-9 items-center !rounded-full bg-[rgb(var(--c-s-50))] px-4 text-small font-medium text-slate-950 transition-colors duration-200"
+                      : "glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-small font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
                   }
                 >
                   {link.label}
@@ -208,7 +208,7 @@ export function MarketingNav() {
             {secondary && (
               <Link
                 href={secondary.href}
-                className="glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-[13px] font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
+                className="glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-small font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
               >
                 {secondary.label}
               </Link>
@@ -246,7 +246,7 @@ export function MarketingNav() {
                 FinalCTA/etc. CTAs elsewhere keep their existing solid look. */}
             <Link
               href={primary.href}
-              className="btn glass-surface-elevated !h-10 !px-5 !text-[13px] text-[rgb(var(--c-s-50))]"
+              className="btn glass-surface-elevated !h-10 !px-5 !text-small text-[rgb(var(--c-s-50))]"
             >
               {primary.label}
             </Link>
@@ -290,7 +290,7 @@ export function MarketingNav() {
             className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-[rgb(var(--c-s-950)/0.97)] backdrop-blur-2xl md:hidden"
           >
             <div className="flex h-20 items-center justify-between px-6">
-              <span className="font-serif text-lg font-bold lowercase text-[rgb(var(--c-s-50))]">
+              <span className="font-serif text-body font-bold lowercase text-[rgb(var(--c-s-50))]">
                 Bass Note Piano
               </span>
               <button

@@ -64,7 +64,7 @@ export function DiscordNotificationCard() {
           href={DISCORD_INVITE_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="truncate text-sm font-medium text-slate-50 hover:text-[rgb(var(--c-s-50))]"
+          className="truncate text-small font-medium text-slate-50 hover:text-[rgb(var(--c-s-50))]"
         >
           Join our Discord →
         </a>

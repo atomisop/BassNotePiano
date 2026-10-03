@@ -10,10 +10,10 @@
  */
 
 /**
- * Labels sit smaller and quieter than shadcn's default `text-sm`, matching
+ * Labels sit smaller and quieter than shadcn's default `text-small`, matching
  * the eyebrow-and-caption scale the rest of the app uses above a field.
  */
-export const fieldLabel = "mb-1 block text-xs font-medium text-slate-400";
+export const fieldLabel = "mb-1 block text-small font-medium text-slate-400";
 
 /**
  * The invalid state. `Input` already carries `border-input` and

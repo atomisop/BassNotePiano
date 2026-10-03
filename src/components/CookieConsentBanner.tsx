@@ -60,8 +60,8 @@ export function CookieConsentBanner() {
         transition={{ duration: reduced ? 0.15 : 0.4, ease: [0.16, 1, 0.3, 1] }}
         className="glass-surface fixed inset-x-4 bottom-4 z-[70] mx-auto max-w-md p-5 sm:inset-x-auto sm:right-4 sm:left-auto"
       >
-        <p className="text-sm font-medium text-[rgb(var(--c-s-50))]">This site uses cookies</p>
-        <p className="mt-1.5 text-sm leading-relaxed text-[rgb(var(--c-s-300))]">
+        <p className="text-small font-medium text-[rgb(var(--c-s-50))]">This site uses cookies</p>
+        <p className="mt-1.5 text-small leading-relaxed text-[rgb(var(--c-s-300))]">
           A necessary cookie keeps you signed in — that one&apos;s never optional. Everything else
           is your choice.
         </p>
@@ -70,18 +70,18 @@ export function CookieConsentBanner() {
           <div className="mt-4 space-y-2.5 border-t border-[rgb(var(--c-s-50)/0.08)] pt-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm text-[rgb(var(--c-s-100))]">Necessary</p>
-                <p className="text-xs text-[rgb(var(--c-s-400))]">Keeps you signed in. Always on.</p>
+                <p className="text-small text-[rgb(var(--c-s-100))]">Necessary</p>
+                <p className="text-small text-[rgb(var(--c-s-400))]">Keeps you signed in. Always on.</p>
               </div>
-              <span className="chip-neutral rounded-full px-3 py-1 text-xs text-[rgb(var(--c-s-400))]">
+              <span className="chip-neutral rounded-full px-3 py-1 text-small text-[rgb(var(--c-s-400))]">
                 Always on
               </span>
             </div>
 
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm text-[rgb(var(--c-s-100))]">Analytics</p>
-                <p className="text-xs text-[rgb(var(--c-s-400))]">
+                <p className="text-small text-[rgb(var(--c-s-100))]">Analytics</p>
+                <p className="text-small text-[rgb(var(--c-s-400))]">
                   Not in use yet. Your choice is saved either way.
                 </p>
               </div>

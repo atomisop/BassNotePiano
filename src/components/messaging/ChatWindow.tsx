@@ -45,7 +45,7 @@ function relativeTime(iso: string): string {
 const TYPING_PING_THROTTLE_MS = 1_500;
 
 // A compose box taller than this scrolls internally instead of growing
-// further, about six lines at text-base, generous for a real message
+// further, about six lines at text-body, generous for a real message
 // without ever pushing the thread itself off-screen.
 const MAX_COMPOSE_HEIGHT_PX = 140;
 
@@ -225,7 +225,7 @@ export function ChatWindow({
           maxLength={2000}
           rows={1}
           enterKeyHint="send"
-          // text-base (16px), not text-sm: below 16px, iOS Safari auto-zooms
+          // text-body (16px), not text-small: below 16px, iOS Safari auto-zooms
           // the whole page in on focus and doesn't reliably zoom back out
           // after — reported live as "the message box zooms in and I can't
           // even see who I'm writing to." Same fix applied to every real

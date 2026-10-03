@@ -90,15 +90,15 @@ export function FAQ() {
         <Accordion type="single" collapsible className="mt-10">
           {FAQS.map((item, i) => (
             <AccordionItem key={item.q} value={`item-${i}`} className="border-[rgb(var(--c-s-50)/0.1)]">
-              <AccordionTrigger className="text-left font-serif text-lg text-slate-50 no-underline hover:no-underline">
+              <AccordionTrigger className="text-left font-serif text-body text-slate-50 no-underline hover:no-underline">
                 {item.q}
               </AccordionTrigger>
-              <AccordionContent className="text-sm leading-relaxed text-slate-400">{item.a}</AccordionContent>
+              <AccordionContent className="text-small leading-relaxed text-slate-400">{item.a}</AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>
 
-        <p className="mt-8 text-center text-sm text-slate-500">
+        <p className="mt-8 text-center text-small text-slate-500">
           More on pricing and bundles on the{" "}
           <Link href="/pricing" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
             full pricing page
