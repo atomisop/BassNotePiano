@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { SITE_NAME } from "@/lib/site";
+import { OG_MARK_DATA_URI } from "@/assets/ogMark";
 
 // A file-based OG image: Next serves this at /opengraph-image and wires the
 // correct absolute URL + dimensions into both the og: and twitter: tags, so
@@ -55,24 +56,9 @@ async function loadGoogleFont(
   }
 }
 
-/**
- * Loaded through `new URL(..., import.meta.url)` so the bundler traces the file
- * into the deployed function (a plain fs read of src/ works locally but the
- * file is not shipped, which 500'd the card in production). Never throws: if
- * the badge can't load the card still renders, just without it.
- */
-async function loadLogoDataUri(): Promise<string | null> {
-  try {
-    const res = await fetch(new URL("../assets/og-mark.png", import.meta.url));
-    if (!res.ok) return null;
-    return `data:image/png;base64,${Buffer.from(await res.arrayBuffer()).toString("base64")}`;
-  } catch {
-    return null;
-  }
-}
 
 export default async function OpengraphImage() {
-  const logoDataUri = await loadLogoDataUri();
+  const logoDataUri = OG_MARK_DATA_URI;
   const headline = "Ethiopian Scales, Rhythm & Chords";
   const supporting =
     "Spelled correctly in all twelve keys, with the native chords mapped for each one.TizitaBatiAnchihoyeAmbasselbassnotepiano.com" +
@@ -151,10 +137,8 @@ export default async function OpengraphImage() {
             justifyContent: "center",
           }}
         >
-          {logoDataUri && (
-            // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
-            <img src={logoDataUri} width={414} height={414} style={{ width: 414, height: 414 }} />
-          )}
+          {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
+          <img src={logoDataUri} width={414} height={414} style={{ width: 414, height: 414 }} />
         </div>
 
         {/* Text column */}
