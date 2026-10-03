@@ -166,7 +166,7 @@ export function PaymentPlanEnrollmentFlow({
 
     return (
       <div>
-        <div className="mb-4 rounded-xl border border-ink/10 p-4">
+        <div className="mb-4 rounded-xl p-4 bg-neu-base shadow-raised-low">
           <p className="text-small text-slate-100">{planLabel}</p>
           <p className="mt-1 text-small text-slate-500">
             {plan.installmentsPaid} of {plan.termMonths} installments paid
@@ -190,7 +190,7 @@ export function PaymentPlanEnrollmentFlow({
           // whenever you want," see getOrCreateOpenInstallmentPayment's own
           // comment. This is the normal, expected state for most of every
           // month, not an error.
-          <div className="rounded-xl border border-ink/10 p-4 text-center">
+          <div className="rounded-xl p-4 text-center bg-neu-base shadow-raised-low">
             <p className="text-small text-slate-100">You&apos;re all paid up for now.</p>
             <p className="mt-1 text-small text-slate-500">
               {nextInstallmentDueDate
@@ -219,7 +219,7 @@ export function PaymentPlanEnrollmentFlow({
                 type="button"
                 onClick={() => setCadence(option.value)}
                 className={`rounded-lg border px-3.5 py-3 text-left transition ${
-                  active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
+                  active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-transparent bg-neu-base shadow-raised-low"
                 }`}
               >
                 <p className={`text-small font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
@@ -244,7 +244,7 @@ export function PaymentPlanEnrollmentFlow({
                 type="button"
                 onClick={() => setTerm(option.value)}
                 className={`rounded-lg border px-3 py-3 text-center transition ${
-                  active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
+                  active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-transparent bg-neu-base shadow-raised-low"
                 }`}
               >
                 <p className={`text-small font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
@@ -263,11 +263,11 @@ export function PaymentPlanEnrollmentFlow({
           Pick one below, it&apos;s yours every week for {termPhrase}, booked for you automatically.
         </p>
         {slotsLoading ? (
-          <div className="flex items-center justify-center rounded-lg border border-ink/10 py-6">
+          <div className="flex items-center justify-center rounded-lg py-6 bg-neu-base shadow-raised-low">
             <MorphingSquare size={16} />
           </div>
         ) : slots.length === 0 ? (
-          <p className="rounded-lg border border-ink/10 px-3.5 py-3 text-small text-slate-500">
+          <p className="rounded-lg px-3.5 py-3 text-small text-slate-500 bg-neu-base shadow-raised-low">
             No open weekly times for this cadence right now, message us and we&apos;ll help you find one.
           </p>
         ) : (
@@ -284,7 +284,7 @@ export function PaymentPlanEnrollmentFlow({
                         type="button"
                         onClick={() => setSelectedSlot(slot)}
                         className={`flex w-full items-center justify-between rounded-lg border px-3.5 py-2.5 text-left transition ${
-                          active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
+                          active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-transparent bg-neu-base shadow-raised-low"
                         }`}
                       >
                         <span className={`text-small font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>
@@ -301,7 +301,7 @@ export function PaymentPlanEnrollmentFlow({
         )}
       </div>
 
-      <div className="rounded-xl border border-ink/10 p-4 sm:p-5">
+      <div className="rounded-xl p-4 sm:p-5 bg-neu-base shadow-raised-low">
         <div className="flex items-center justify-between text-small text-slate-400">
           <span>
             {rate.termMonths === 1

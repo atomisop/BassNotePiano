@@ -124,7 +124,7 @@ export function AdminAttendanceQuickPanel() {
         onClick={() => setOpen((o) => !o)}
         aria-label="Quick attendance"
         title="Quick attendance"
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-ink/10 bg-surface text-slate-400 transition hover:border-ink/15 hover:bg-ink/5 hover:text-slate-200"
+        className="relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
       >
         <ClipboardCheck className="h-[18px] w-[18px]" strokeWidth={1.5} />
         {rows.length > 0 && (
@@ -156,7 +156,7 @@ export function AdminAttendanceQuickPanel() {
                 {rows.map((r) => {
                   const marking = markingId === r.bookingId;
                   return (
-                    <div key={r.bookingId} className="rounded-xl border border-ink/10 p-2.5">
+                    <div key={r.bookingId} className="rounded-xl p-2.5 bg-neu-base shadow-raised-low">
                       <p className="truncate text-small text-slate-100">{r.studentName ?? r.studentEmail}</p>
                       <p className="truncate text-small text-slate-500">
                         {r.scheduleLabel ?? "Class"} · {formatWhen(r.scheduledAt)}
@@ -166,7 +166,7 @@ export function AdminAttendanceQuickPanel() {
                           type="button"
                           disabled={marking}
                           onClick={() => handleMark(r.bookingId, "PRESENT")}
-                          className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-slate-50/30 py-1.5 text-small font-medium text-slate-100 transition hover:bg-slate-50/10 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex flex-1 items-center justify-center gap-1 rounded-lg py-1.5 text-small font-medium text-slate-100 transition hover:bg-slate-50/10 disabled:cursor-not-allowed disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                         >
                           {marking ? <MorphingSquare size={11} /> : <Check className="h-3.5 w-3.5" strokeWidth={2} />}
                           Present

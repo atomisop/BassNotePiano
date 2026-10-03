@@ -312,7 +312,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
               <button
                 type="button"
                 onClick={goBack}
-                className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:bg-ink/5"
+                className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Back
               </button>

@@ -163,7 +163,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 type="button"
                 onClick={() => selectUser(user)}
                 className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${
-                  active ? "border-[rgb(var(--c-s-50)/0.5)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15 hover:bg-ink/5"
+                  active ? "border-[rgb(var(--c-s-50)/0.5)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-transparent bg-neu-base shadow-raised-low"
                 }`}
               >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-small font-medium text-[rgb(var(--c-s-50))]">
@@ -178,7 +178,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   <p className="truncate text-small text-slate-100">{user.name ?? "—"}</p>
                   <p className="truncate text-small text-slate-500">{user.email}</p>
                 </div>
-                <span className="shrink-0 rounded-full bg-slate-800 px-2.5 py-1 text-small font-medium text-slate-300">
+                <span className="shrink-0 rounded-full bg-neu-base shadow-pressed-low px-2.5 py-1 text-small font-medium text-slate-300">
                   {user.classCredits} cr
                 </span>
               </button>
@@ -242,7 +242,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                       type="button"
                       onClick={editAfterConfirm}
                       disabled={submitting}
-                      className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                      className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Edit
                     </button>
@@ -273,7 +273,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 {historyLoading && <p className="text-small text-slate-500">Loading…</p>}
                 {!historyLoading && history.length === 0 && <p className="text-small text-slate-500">No adjustments yet.</p>}
                 {history.map((row) => (
-                  <div key={row.id} className="rounded-lg border border-ink/10 px-3 py-2 text-small">
+                  <div key={row.id} className="rounded-lg px-3 py-2 text-small bg-neu-base shadow-raised-low">
                     <div className="flex items-center justify-between gap-2">
                       <span className={row.amount > 0 ? "font-medium text-slate-100" : "font-medium text-red-300"}>
                         {formatSigned(row.amount)} credits

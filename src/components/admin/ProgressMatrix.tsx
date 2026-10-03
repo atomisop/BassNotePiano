@@ -14,11 +14,11 @@ export interface ProgressMatrixProps {
 }
 
 const ACCESS_BADGE: Record<AdminProgressRow["accessKind"], { label: string; className: string }> = {
-  ADMIN: { label: "Admin", className: "bg-slate-800 text-slate-400" },
+  ADMIN: { label: "Admin", className: "bg-neu-base shadow-pressed-low text-slate-400" },
   PAID: { label: "Live student", className: "bg-slate-50/15 text-slate-100" },
   COMPED: { label: "Comped", className: "bg-slate-50/15 text-slate-100" },
   TRIAL: { label: "Free trial", className: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" },
-  NONE: { label: "No plan", className: "bg-slate-800 text-slate-400" },
+  NONE: { label: "No plan", className: "bg-neu-base shadow-pressed-low text-slate-400" },
 };
 
 function formatShortDate(ms: number): string {
@@ -29,7 +29,7 @@ function cellClasses(cell: AdminProgressScaleCell): string {
   if (cell.status === "COMPLETED") return "border-slate-50/30 bg-slate-50/10 text-slate-100 hover:bg-slate-50/20";
   if (cell.status === "IN_PROGRESS") return "border-[rgb(var(--c-s-50)/0.4)] bg-[rgb(var(--c-s-50)/0.12)] text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.2)]";
   if (cell.unlocked) return "border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.08)] text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.15)]";
-  return "border-ink/10 text-slate-600 hover:border-ink/20";
+  return "border-transparent text-slate-600 bg-neu-base shadow-raised-low";
 }
 
 function cellTooltip(cell: AdminProgressScaleCell): string {
@@ -110,7 +110,7 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale, onApproveNex
         />
         <div className="flex flex-wrap items-center gap-3 text-small text-slate-500">
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded border border-ink/10" /> Locked
+            <span className="h-3 w-3 rounded bg-neu-base shadow-raised-low" /> Locked
           </span>
           <span className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.08)]" /> Unlocked
@@ -119,7 +119,7 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale, onApproveNex
             <span className="h-3 w-3 rounded border border-[rgb(var(--c-s-50)/0.4)] bg-[rgb(var(--c-s-50)/0.12)]" /> In progress
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded border border-slate-50/30 bg-slate-50/10" /> Completed
+            <span className="h-3 w-3 rounded bg-slate-50/10 bg-neu-base shadow-raised-low" /> Completed
           </span>
         </div>
       </div>

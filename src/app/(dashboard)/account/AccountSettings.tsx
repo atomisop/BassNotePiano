@@ -267,7 +267,7 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
           Atom&apos;s chat window always opens fresh, but everything you&apos;ve asked it while signed in is kept here for 30
           days, then deleted on its own: {history.length} message{history.length === 1 ? "" : "s"} right now.
         </p>
-        <div className="mt-3 max-h-96 space-y-2 overflow-y-auto rounded-xl border border-ink/10 p-3">
+        <div className="mt-3 max-h-96 space-y-2 overflow-y-auto rounded-xl p-3 bg-neu-base shadow-raised-low">
           {history.length === 0 ? (
             <p className="py-6 text-center text-small text-slate-600">
               Nothing here yet. Questions you ask Atom while signed in will show up here.
@@ -277,7 +277,7 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
               <div
                 key={index}
                 className={`rounded-lg px-3 py-2 text-small ${
-                  message.role === "user" ? "ml-8 bg-[rgb(var(--c-s-50)/0.12)] text-slate-100" : "mr-8 bg-slate-900 text-slate-300"
+                  message.role === "user" ? "ml-8 bg-neu-base shadow-pressed-low text-slate-100" : "mr-8 bg-neu-base shadow-raised-low text-slate-300"
                 }`}
               >
                 <p className="mb-0.5 font-medium text-slate-500">{message.role === "user" ? "You" : "Atom"}</p>
@@ -419,7 +419,7 @@ function MembershipSection({
   return (
     <div className="space-y-6">
       <SectionCard title="Membership & purchases" description="Your curriculum and payment history.">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-ink/10 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl p-4 bg-neu-base shadow-raised-low">
           <div>
             <p className="text-small text-slate-100">{hasCurriculumAccess ? "Curriculum included" : "No active class plan"}</p>
             <p className="mt-0.5 text-small text-slate-500">
@@ -437,7 +437,7 @@ function MembershipSection({
 
         <Link
           href="/billing/history"
-          className="mt-3 flex items-center justify-between rounded-xl border border-ink/10 p-4 text-small text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.3)] hover:text-[rgb(var(--c-s-50))]"
+          className="mt-3 flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low"
         >
           Payment history
           <span className="text-slate-500">→</span>
@@ -600,7 +600,7 @@ function SignOutOtherDevicesCard() {
         type="button"
         onClick={handleClick}
         disabled={submitting}
-        className="flex items-center justify-center rounded-lg border border-ink/10 px-4 py-2 text-small font-medium text-slate-200 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex items-center justify-center rounded-lg px-4 py-2 text-small font-medium text-slate-200 transition hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
       >
         {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
         {submitting ? "Signing out other devices…" : "Sign out of all other devices"}
@@ -706,7 +706,7 @@ function DangerZoneSection() {
                 type="button"
                 onClick={reset}
                 disabled={sendingCode}
-                className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Cancel
               </button>
@@ -756,7 +756,7 @@ function DangerZoneSection() {
                 type="button"
                 onClick={reset}
                 disabled={deleting}
-                className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Cancel
               </button>

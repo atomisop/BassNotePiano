@@ -27,7 +27,7 @@ const STATUS_LABEL: Record<string, string> = {
 const STATUS_STYLE: Record<string, string> = {
   ACTIVE: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]",
   COMPLETED: "bg-slate-50/15 text-slate-100",
-  CANCELED: "bg-slate-800 text-slate-500",
+  CANCELED: "bg-neu-base shadow-pressed-low text-slate-500",
 };
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -143,7 +143,7 @@ export function PaymentPlanList({ plans, onCancel, emptyMessage = "No plans to s
                       setNote("");
                     }}
                     disabled={busyId === plan.id}
-                    className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                    className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     Back
                   </button>
@@ -163,7 +163,7 @@ export function PaymentPlanList({ plans, onCancel, emptyMessage = "No plans to s
                 <button
                   type="button"
                   onClick={() => setCancelingId(plan.id)}
-                  className="w-full rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800"
+                  className="w-full rounded-lg py-2 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Cancel plan
                 </button>

@@ -187,7 +187,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         >
           ← Change bundle
         </button>
-        <div className="mb-4 rounded-xl border border-ink/10 p-4">
+        <div className="mb-4 rounded-xl p-4 bg-neu-base shadow-raised-low">
           <p className="text-small text-slate-100">
             {perRecipientCredits} credits each, for {emails.length} accounts ({emails.length * perRecipientCredits} credits total)
           </p>
@@ -223,7 +223,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                 type="button"
                 onClick={() => setCadence(option.value)}
                 className={`rounded-lg border px-3.5 py-3 text-left transition ${
-                  active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
+                  active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-transparent bg-neu-base shadow-raised-low"
                 }`}
               >
                 <p className={`text-small font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
@@ -248,7 +248,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                 type="button"
                 onClick={() => setTerm(option.value)}
                 className={`rounded-lg border px-3 py-3 text-center transition ${
-                  active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-ink/10 hover:border-ink/15"
+                  active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-transparent bg-neu-base shadow-raised-low"
                 }`}
               >
                 <p className={`text-small font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
@@ -280,7 +280,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                     value={email}
                     onChange={(e) => updateEmail(index, e.target.value)}
                     placeholder={`Recipient ${index + 1} email`}
-                    className="w-full rounded-lg border border-ink/10 bg-slate-950/40 px-3.5 py-2.5 pr-9 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-[rgb(var(--c-s-50)/0.5)]"
+                    className="w-full rounded-lg px-3.5 py-2.5 pr-9 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring bg-neu-base shadow-pressed-low"
                   />
                   <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
                     {status.kind === "checking" && <SpinnerIcon className="text-slate-500" />}
@@ -293,7 +293,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                   onClick={() => removeRecipient(index)}
                   disabled={emails.length <= MIN_FAMILY_BUNDLE_RECIPIENTS}
                   aria-label={`Remove recipient ${index + 1}`}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-ink/10 text-slate-400 transition hover:border-red-400/30 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-ink/10 disabled:hover:text-slate-400"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-ink/10 disabled:hover:text-slate-400 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   <XIcon size={13} />
                 </button>
@@ -352,7 +352,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         </button>
       </div>
 
-      <div className="rounded-xl border border-ink/10 p-4 sm:p-5">
+      <div className="rounded-xl p-4 sm:p-5 bg-neu-base shadow-raised-low">
         <div className="flex items-center justify-between text-small text-slate-400">
           <span>
             {perRecipientCredits} credits × {emails.length} accounts ({formatUsd(total.perRecipientCents)} each)

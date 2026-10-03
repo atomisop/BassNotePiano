@@ -210,7 +210,7 @@ export function ScheduleClient({
         ) : (
           <div className="mt-3 space-y-2.5">
             {upcomingBookings.map((booking) => (
-              <div key={booking.id} className="flex items-center justify-between rounded-lg border border-ink/10 px-3.5 py-2.5">
+              <div key={booking.id} className="flex items-center justify-between rounded-lg px-3.5 py-2.5 bg-neu-base shadow-raised-low">
                 <div>
                   <p className="text-small font-medium text-slate-100">{formatDateTime(booking.scheduledAt)}</p>
                   <p className="text-small text-slate-500">
@@ -231,13 +231,13 @@ export function ScheduleClient({
             way solo self-reschedule is (a real open slot, no conflicts) via
             changeReservedSlot. */}
         {changeSuccess && (
-          <p className="mt-4 rounded-lg border border-slate-50/20 bg-slate-50/5 px-3.5 py-2.5 text-small text-slate-50">
+          <p className="mt-4 rounded-lg bg-slate-50/5 px-3.5 py-2.5 text-small text-slate-50 bg-neu-base shadow-raised-low">
             Your weekly time changed — this week&apos;s class (and the weeks after it) now reflect the new day/time above.
           </p>
         )}
 
         {changingTime ? (
-          <div className="mt-4 rounded-lg border border-ink/10 p-3.5">
+          <div className="mt-4 rounded-lg p-3.5 bg-neu-base shadow-raised-low">
             <div className="flex items-center justify-between gap-3">
               <p className="text-small font-medium text-slate-300">Pick a new weekly time</p>
               <button
@@ -274,7 +274,7 @@ export function ScheduleClient({
                       type="button"
                       onClick={() => handleChangeTime(slot)}
                       disabled={changingSlotKey !== null}
-                      className="flex w-full items-center gap-2.5 rounded-lg border border-ink/10 px-3.5 py-2.5 text-left text-small text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:bg-[rgb(var(--c-s-50)/0.06)] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-left text-small text-slate-300 transition hover:bg-[rgb(var(--c-s-50)/0.06)] disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       {pending ? (
                         <MorphingSquare size={15} className="shrink-0" />
@@ -295,7 +295,7 @@ export function ScheduleClient({
           <button
             type="button"
             onClick={openChangeTime}
-            className="mt-4 w-full rounded-lg border border-ink/10 bg-slate-900/40 px-3.5 py-2.5 text-left text-small text-slate-400 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+            className="mt-4 w-full rounded-lg px-3.5 py-2.5 text-left text-small text-slate-400 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
           >
             Need a different weekly day or time? Change it yourself →
           </button>
@@ -339,7 +339,7 @@ export function ScheduleClient({
                       type="button"
                       onClick={() => handleBuySlot(slot)}
                       disabled={pendingSlotKey !== null}
-                      className="flex w-full items-center gap-2.5 rounded-lg border border-ink/10 px-3.5 py-2.5 text-left text-small text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:bg-[rgb(var(--c-s-50)/0.06)] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-left text-small text-slate-300 transition hover:bg-[rgb(var(--c-s-50)/0.06)] disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       {pending ? (
                         <MorphingSquare size={15} className="shrink-0" />

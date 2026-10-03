@@ -81,7 +81,7 @@ function OptionButton({
     >
       {label}
       {comingSoon && (
-        <span className="shrink-0 rounded-full bg-slate-800 px-1.5 py-0.5 text-small font-semibold uppercase tracking-wide text-slate-400">
+        <span className="shrink-0 rounded-full bg-neu-base shadow-pressed-low px-1.5 py-0.5 text-small font-semibold uppercase tracking-wide text-slate-400">
           Coming soon
         </span>
       )}
@@ -243,7 +243,7 @@ export function OnboardingWizard() {
             type="button"
             onClick={handleBack}
             disabled={submitting}
-            className="rounded-xl border border-ink/10 px-4 py-2.5 text-small font-medium text-slate-300 transition hover:border-ink/15 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-xl px-4 py-2.5 text-small font-medium text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
           >
             Back
           </button>

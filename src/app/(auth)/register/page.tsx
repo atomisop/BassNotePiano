@@ -79,7 +79,7 @@ function RegisterForm() {
       animate="visible"
       className="w-full glass-surface-elevated p-7"
     >
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-ink/10 bg-ink/5 text-slate-300">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-slate-300 bg-neu-base shadow-raised-low">
         <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
           <path
             d="M9 11a4 4 0 100-8 4 4 0 000 8zM3 21a6 6 0 0112 0M19 8v6M22 11h-6"

@@ -15,11 +15,11 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_STYLE: Record<string, string> = {
-  AWAITING_TRANSFER: "bg-slate-800 text-slate-400",
+  AWAITING_TRANSFER: "bg-neu-base shadow-pressed-low text-slate-400",
   PENDING_REVIEW: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]",
   VERIFIED: "bg-slate-50/15 text-slate-100",
   REJECTED: "bg-red-400/15 text-red-300",
-  EXPIRED: "bg-slate-800 text-slate-500",
+  EXPIRED: "bg-neu-base shadow-pressed-low text-slate-500",
 };
 
 function formatUsd(cents: number) {

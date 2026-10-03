@@ -130,7 +130,7 @@ function ScheduleForm({
             type="button"
             onClick={onCancel}
             disabled={submitting}
-            className="flex-1 rounded-lg border border-ink/10 py-2 text-small font-medium text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+            className="flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
           >
             Cancel
           </button>
@@ -227,7 +227,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                   <div
                     key={row.id}
                     className={`flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between ${
-                      row.active ? "border-ink/10" : "border-ink/10 opacity-50"
+                      row.active ? "border-transparent bg-neu-base shadow-raised-low" : "border-transparent opacity-50 bg-neu-base shadow-raised-low"
                     }`}
                   >
                     <div>
@@ -247,7 +247,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                           setEditingId(row.id);
                           setFormError(null);
                         }}
-                        className="rounded-lg border border-ink/10 px-3 py-1.5 text-small font-medium text-slate-300 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+                        className="rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                       >
                         Edit
                       </button>

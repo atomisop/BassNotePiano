@@ -24,7 +24,7 @@ export default async function AdminLessonsPage({ searchParams }: { searchParams:
         </div>
       )}
 
-      <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full border border-ink/10 p-1">
+      <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full p-1 bg-neu-base shadow-pressed-low">
         {SCALE_GROUPS.map((scale) => (
           <Link
             key={scale.slug}

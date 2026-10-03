@@ -39,7 +39,7 @@ function formatDate(d: Date): string {
 export function PlanCancellationFeedbackList({ feedback }: { feedback: PlanCancellationFeedback[] }) {
   if (feedback.length === 0) {
     return (
-      <p className="mt-6 rounded-xl border border-ink/10 p-6 text-center text-small text-slate-500">
+      <p className="mt-6 rounded-xl p-6 text-center text-small text-slate-500 bg-neu-base shadow-raised-low">
         Nothing here yet. This fills in as students cancel their own plan and leave a reason.
       </p>
     );
@@ -62,7 +62,7 @@ export function PlanCancellationFeedbackList({ feedback }: { feedback: PlanCance
             {plan.termMonths === 1 ? "" : "s"} paid
           </p>
 
-          <div className="mt-2 rounded-lg border border-ink/10 bg-slate-900/40 p-3">
+          <div className="mt-2 rounded-lg p-3 bg-neu-base shadow-raised-low">
             <p className="text-small font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">
               {plan.cancellationReason ? REASON_LABELS[plan.cancellationReason] : "No reason given"}
             </p>

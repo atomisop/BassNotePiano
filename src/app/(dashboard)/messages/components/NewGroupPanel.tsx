@@ -103,7 +103,7 @@ export function NewGroupPanel({
                     </div>
                     <div
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-                        checked ? "border-amber-400 bg-amber-400 text-slate-950" : "border-ink/15"
+                        checked ? "border-amber-400 bg-amber-400 text-slate-950" : "border-transparent bg-neu-base shadow-raised-low"
                       }`}
                     >
                       {checked && (

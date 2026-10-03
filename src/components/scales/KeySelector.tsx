@@ -28,7 +28,7 @@ export function KeySelector({ value, onChange }: KeySelectorProps) {
           className={`h-11 min-w-[2.75rem] cursor-pointer rounded-control border px-2 text-small font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
             key === value
               ? "border-signal bg-[rgb(var(--signal)/0.14)] text-signal"
-              : "border-ink/10 text-slate-300 hover:border-ink/20 hover:text-slate-50"
+              : "border-transparent text-slate-300 hover:text-slate-50 bg-neu-base shadow-raised-low"
           }`}
         >
           {key}

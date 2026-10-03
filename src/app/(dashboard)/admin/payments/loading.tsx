@@ -12,7 +12,7 @@ export default function AdminPaymentsLoading() {
         <Skeleton className="mt-1.5 h-8 w-44" />
         <Skeleton className="mt-2 h-4 w-full max-w-xl" />
 
-        <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full border border-ink/10 p-1">
+        <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full p-1 bg-neu-base shadow-pressed-low">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-7 w-16 rounded-full" />
           ))}
