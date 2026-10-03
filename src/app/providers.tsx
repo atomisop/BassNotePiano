@@ -1,11 +1,23 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { SessionProvider } from "next-auth/react";
 import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { Toaster } from "@/components/ui/Toaster";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import { AssistantWidget } from "@/components/assistant/AssistantWidget";
+
+// Sign-in, sign-up and password screens: nothing to ask Atom about yet, and the
+// launcher only gets in the way of the form. Unmounting (not just hiding) also
+// stops its polling and greeting timers on these pages.
+const AUTH_PATHS = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email"];
+
+function AtomUnlessAuth() {
+  const pathname = usePathname();
+  if (pathname && AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null;
+  return <AssistantWidget />;
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -27,8 +39,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
               authenticated app — using whatever theme is active on each. */}
           <CookieConsentBanner />
           {/* Atom, the assistant widget — same "every page, one mount point"
-              reasoning as Toaster/CookieConsentBanner above. */}
-          <AssistantWidget />
+              reasoning as Toaster/CookieConsentBanner above, except on the
+              auth screens (see AtomUnlessAuth). */}
+          <AtomUnlessAuth />
         </ThemeProvider>
       </MotionConfig>
     </SessionProvider>
