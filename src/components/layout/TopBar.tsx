@@ -58,8 +58,10 @@ export function TopBar({ isAdmin }: { isAdmin: boolean }) {
   // to reserve the 64px this now paints over instead of occupying in flow.
   return (
     <header className="chrome fixed inset-x-0 top-0 z-[45] flex h-16 items-center justify-between border-b border-ink/10 px-4 md:px-8">
-      <BrandMark />
+      <BrandMark hideTextOnPhone={isAdmin} />
       <div className="flex items-center gap-2 md:gap-3">
+        {/* Leftmost of the right-hand cluster: Ask AI, admin, attendance, bell, profile. */}
+        <AskAiButton />
         {/* Moved here from AppDock's own row of icons, by direct
             instruction — it was the one dock item that wasn't an everyday
             destination for every signed-in visitor (just the single admin
@@ -83,7 +85,6 @@ export function TopBar({ isAdmin }: { isAdmin: boolean }) {
             everyday action (mark today's classes) without a full admin-page
             navigation first. */}
         {isAdmin && <AdminAttendanceQuickPanel />}
-        <AskAiButton />
         <NotificationBell />
         <ProfileAvatarLink />
       </div>
