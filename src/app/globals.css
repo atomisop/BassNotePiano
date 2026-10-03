@@ -1022,13 +1022,6 @@
   color: rgb(var(--piano-ebony));
 }
 
-/* Engraved back-plane type: the same base color as the page, cut INTO it
-   (shade on the top-left edge, light on the bottom-right). Decorative. */
-@utility engraved {
-  color: rgb(var(--neu-base));
-  text-shadow: 1px 1px 2px var(--neu-hi), -1px -1px 2px var(--neu-lo);
-}
-
 /* ==========================================================================
    Fretted instruments (guitar and bass). A real instrument, drawn like one:
    rosewood board, bone nut, nickel frets, pearl inlays, steel and bronze

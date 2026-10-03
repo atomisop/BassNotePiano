@@ -15,7 +15,7 @@ import { QuizModal } from "@/components/progression/QuizModal";
 import { toast } from "@/components/ui/Toaster";
 import { Button } from "@/components/ui/button";
 import { Card, Eyebrow } from "@/components/ui/Card";
-import { Hero, BackPlane } from "@/components/ui/Hero";
+import { Hero } from "@/components/ui/Hero";
 import { Badge } from "@/components/ui/Badge";
 import { Dialog } from "@/components/ui/Dialog";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -401,9 +401,8 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
         </div>
       </div>
 
-      {/* Back plane + Hero */}
-      <div className="relative mt-2 pt-10 md:pt-16">
-        <BackPlane className="-top-2 md:-top-6">{scaleGroup.kinitName ?? scaleGroup.title}</BackPlane>
+      {/* Hero */}
+      <div className="relative mt-2 pt-4 md:pt-6">
         <div className="relative z-(--z-mid)">
           <Eyebrow>{stepLabel}</Eyebrow>
           <Hero className="mt-2">{heroText}</Hero>
@@ -443,7 +442,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
         ) : selection.kind === "assessment" ? (
           <Card>
             <p className="max-w-[60ch] text-body text-slate-200">
-              {quizQuestions.length} questions on spelling and recognizing {scaleGroup.title}. Pass with {quizPassThreshold}% or
+              {quizQuestions.length} questions on spelling and recognizing {scaleGroup.title}. Pass with {Math.round(quizPassThreshold * 100)}% or
               more to complete the scale.
             </p>
             {quizPassed && quizScore != null && (
