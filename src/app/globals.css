@@ -615,6 +615,21 @@
     overscroll-behavior: none;
   }
 
+  /* The signed-in app is one fixed screen: the shell fills the viewport and
+     only <main> scrolls. <body> is `min-h-screen` (100vh, the LARGE viewport),
+     which is taller than the visible area while a phone browser's toolbar is
+     showing, so the document itself could scroll by that difference and drag
+     the whole shell out of frame, exposing a strip under the dock. Locking the
+     document here (both axes) removes that scroll, and with it any sideways
+     panning, at the root. Marketing pages have no [data-surface="app"] and keep
+     normal document scrolling. */
+  html:has([data-surface="app"]),
+  body:has([data-surface="app"]) {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   /* iOS Safari's default tap-highlight — a translucent gray rectangle,
      shown on every tappable element the instant it's pressed — doesn't
      follow `border-radius` the way the highlight's own box does, so it was
