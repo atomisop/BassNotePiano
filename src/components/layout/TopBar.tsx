@@ -6,6 +6,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { AdminAttendanceQuickPanel } from "@/components/admin/AdminAttendanceQuickPanel";
 import { ProfileMenu } from "./ProfileMenu";
 import { BrandMark } from "./BrandMark";
+import { AskAiButton } from "./AskAiButton";
 
 /**
  * The user's real photo, fetched here rather than read off the session —
@@ -56,9 +57,9 @@ export function TopBar({ isAdmin }: { isAdmin: boolean }) {
   // `(dashboard)/layout.tsx` adds `pt-16` to this header's old flex parent
   // to reserve the 64px this now paints over instead of occupying in flow.
   return (
-    <header className="chrome fixed inset-x-0 top-0 z-[45] flex h-16 items-center justify-between border-b border-ink/10 px-8">
+    <header className="chrome fixed inset-x-0 top-0 z-[45] flex h-16 items-center justify-between border-b border-ink/10 px-4 md:px-8">
       <BrandMark />
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3">
         {/* Moved here from AppDock's own row of icons, by direct
             instruction — it was the one dock item that wasn't an everyday
             destination for every signed-in visitor (just the single admin
@@ -82,6 +83,7 @@ export function TopBar({ isAdmin }: { isAdmin: boolean }) {
             everyday action (mark today's classes) without a full admin-page
             navigation first. */}
         {isAdmin && <AdminAttendanceQuickPanel />}
+        <AskAiButton />
         <NotificationBell />
         <ProfileAvatarLink />
       </div>

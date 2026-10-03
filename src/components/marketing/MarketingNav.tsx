@@ -1,5 +1,6 @@
 "use client";
 
+import { AskAiButton } from "@/components/layout/AskAiButton";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -252,6 +253,10 @@ export function MarketingNav() {
             </Link>
           </div>
 
+          {/* Ask AI lives in the bar itself, never in the mobile menu list, so it is
+              reachable at every width without opening anything. */}
+          <div className="ml-auto flex items-center gap-2 md:ml-3">
+            <AskAiButton />
           {/* 44px minimum target, which the previous icon button did not meet. */}
           <button
             type="button"
@@ -265,6 +270,7 @@ export function MarketingNav() {
               <span className="block h-px w-5 bg-[rgb(var(--c-s-50))]" />
             </span>
           </button>
+          </div>
         </nav>
       </header>
 
