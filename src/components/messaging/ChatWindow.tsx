@@ -6,6 +6,7 @@ import { Avatar } from "./Avatar";
 import { TypingIndicator } from "./TypingIndicator";
 import { MessageBubble } from "./MessageBubble";
 import { XIcon } from "@/components/ui/icons";
+import { scrollWithin } from "@/lib/scrollWithin";
 
 export interface MessageReplyPreview {
   id: string;
@@ -76,7 +77,7 @@ export function ChatWindow({
   const lastTypingPingRef = useRef(0);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollWithin(messagesEndRef.current, "end");
   }, [messages.length]);
 
   // A reply-in-progress that points at a message no longer in the loaded
@@ -132,7 +133,7 @@ export function ChatWindow({
   }
 
   function handleJumpToReply(messageId: string) {
-    document.getElementById(`msg-${messageId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    scrollWithin(document.getElementById(`msg-${messageId}`), "center");
   }
 
   return (
