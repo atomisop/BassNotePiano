@@ -993,7 +993,7 @@
   /* Neumorphic key: the same base as the page, raised by two shadows. A
      played key is pressed in and goes signal green (set by the component). */
   background: rgb(var(--neu-base));
-  box-shadow: var(--neu-raised-low);
+  box-shadow: var(--neu-raised-low), inset 0 0 0 1px var(--neu-edge);
   &:hover {
     background: color-mix(in srgb, rgb(var(--neu-base)), rgb(var(--c-s-50)) 6%);
   }
@@ -1006,7 +1006,7 @@
   /* Black keys read as a deeper step of the same material, so every key
      still has clear edges. */
   background: color-mix(in srgb, rgb(var(--neu-base)), #000 42%);
-  box-shadow: var(--neu-raised-low);
+  box-shadow: var(--neu-raised-low), inset 0 0 0 1px var(--neu-edge);
   &:hover {
     background: color-mix(in srgb, rgb(var(--neu-base)), #000 32%);
   }
@@ -1029,5 +1029,5 @@
    (shade on the top-left edge, light on the bottom-right). Decorative. */
 @utility engraved {
   color: rgb(var(--neu-base));
-  text-shadow: 2px 2px 3px var(--neu-hi), -2px -2px 4px var(--neu-lo);
+  text-shadow: 1px 1px 2px var(--neu-hi), -1px -1px 2px var(--neu-lo);
 }

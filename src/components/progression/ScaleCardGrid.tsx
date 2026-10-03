@@ -54,9 +54,9 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick }: ScaleCardGr
               onClick={() => onCardClick(scale)}
               aria-current={isCurrent ? "step" : undefined}
               className={cn(
-                "group flex h-full w-full cursor-pointer flex-col rounded-card border bg-[rgb(var(--plane-mid-bg))] p-(--space-card) text-left shadow-plane-mid transition-[transform,box-shadow,border-color] duration-(--dur-base) ease-(--ease-ios) hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:hover:translate-y-0",
-                isCurrent ? "shadow-pressed-mid ring-1 ring-signal" : "border-ink/[0.08] hover:border-ink/15",
-                locked && "bg-transparent shadow-none",
+                "group flex h-full w-full cursor-pointer flex-col rounded-card bg-neu-base p-(--space-card) text-left shadow-raised-mid transition-[box-shadow] duration-(--dur-base) ease-(--ease-ios) hover:shadow-raised-high active:shadow-pressed-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                isCurrent && "shadow-pressed-mid ring-1 ring-signal",
+                locked && "shadow-pressed-low",
               )}
             >
               <div className="flex items-center justify-between gap-2">

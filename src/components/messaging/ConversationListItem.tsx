@@ -17,7 +17,7 @@ export function ConversationListItem({
 }) {
   const c = conversation;
   return (
-    <div className={`group flex items-center gap-1 rounded-lg transition ${active ? "bg-amber-400/10" : "hover:bg-ink/5"}`}>
+    <div className={`group flex items-center gap-1 rounded-lg transition ${active ? "bg-neu-base shadow-pressed-low" : "hover:bg-ink/5"}`}>
       <button type="button" onClick={onSelect} className="flex min-w-0 flex-1 items-center gap-2.5 p-2.5 text-left">
         <Avatar image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-9 w-9 text-small" />
         <div className="min-w-0 flex-1">

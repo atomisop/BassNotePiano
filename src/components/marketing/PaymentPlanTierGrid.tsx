@@ -117,11 +117,9 @@ export function PaymentPlanTierGrid() {
 
           return (
             <motion.div key={option.value} variants={cardItem} className={`relative flex flex-col ${featured ? "z-10 lg:scale-[1.02]" : ""}`}>
-              {featured && <AnimatedBorder />}
-
               <div
                 className={`relative flex flex-1 flex-col gap-7 rounded-2xl p-7 sm:p-8 ${
-                  featured ? "bg-surface" : "glass-surface border border-transparent transition hover:border-[rgb(var(--c-s-50)/0.3)]"
+                  featured ? "bg-neu-base shadow-raised-high" : "glass-surface transition hover:shadow-raised-high"
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
@@ -137,7 +135,7 @@ export function PaymentPlanTierGrid() {
                   <p className="h-5 text-small tabular-nums text-slate-500">
                     {percentOff > 0 && <span className="line-through">{formatUsd(monthlyBaseline)}/mo</span>}
                     {percentOff > 0 && (
-                      <span className="ml-2 rounded-full bg-amber-400 px-2 py-0.5 align-middle text-small font-bold text-slate-950">
+                      <span className="ml-2 rounded-full bg-slate-50 px-2 py-0.5 align-middle text-small font-bold text-slate-950">
                         −{percentOff}%
                       </span>
                     )}
@@ -164,7 +162,7 @@ export function PaymentPlanTierGrid() {
                   className={`flex h-12 items-center justify-center rounded-xl text-small font-semibold transition ${
                     featured
                       ? "cta-sheen cta-fill"
-                      : "border border-ink/10 text-slate-100 hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+                      : "bg-neu-base text-slate-100 shadow-raised-low active:shadow-pressed-low hover:text-[rgb(var(--c-s-50))]"
                   }`}
                 >
                   {isFamily ? "Bundle & save" : "Start plan"}
@@ -174,21 +172,6 @@ export function PaymentPlanTierGrid() {
           );
         })}
       </motion.div>
-    </div>
-  );
-}
-
-/** A slowly rotating conic-gradient ring behind the featured card. Stands still for people who ask for reduced motion. */
-function AnimatedBorder() {
-  return (
-    <div aria-hidden className="absolute -inset-[2px] overflow-hidden rounded-2xl">
-      <div
-        className="absolute -inset-full animate-spin blur-[2px] [animation-duration:6s] motion-reduce:animate-none"
-        style={{
-          background:
-            "conic-gradient(from 0deg, rgb(var(--c-s-50)), rgb(251 191 36), rgb(var(--c-s-50) / 0.15), rgb(var(--c-s-50)))",
-        }}
-      />
     </div>
   );
 }
@@ -205,7 +188,7 @@ function Segmented({
   options: { value: string; label: string }[];
 }) {
   return (
-    <div role="group" aria-label={label} className="flex w-fit gap-1.5 rounded-full border border-ink/10 p-1">
+    <div role="group" aria-label={label} className="flex w-fit gap-1.5 rounded-full bg-neu-base p-1 shadow-pressed-low">
       {options.map((option) => (
         <button
           key={option.value}
@@ -214,7 +197,7 @@ function Segmented({
           onClick={() => onChange(option.value)}
           className={`rounded-full px-4 py-1.5 text-small font-medium transition ${
             value === option.value
-              ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]"
+              ? "bg-neu-base text-signal shadow-raised-low"
               : "text-slate-400 hover:text-slate-200"
           }`}
         >
