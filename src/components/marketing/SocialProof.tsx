@@ -3,6 +3,7 @@ import { DiscordIcon } from "@/components/ui/icons";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
+import { EDGE_FADE_STYLE } from "./edgeFade";
 
 /**
  * HOMEPAGE REBUILD: 02 SOCIAL PROOF.
@@ -66,7 +67,7 @@ export function SocialProof() {
       <div
         aria-hidden
         className="absolute inset-0 -z-10 overflow-hidden"
-        style={{ maskImage: "linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)" }}
+        style={EDGE_FADE_STYLE}
       >
         <div className="absolute -inset-x-10 -inset-y-10 blur-3xl">
           <PhotoBackdrop src={BACKDROPS.guitar} scrim="standard" sizes="100vw" />

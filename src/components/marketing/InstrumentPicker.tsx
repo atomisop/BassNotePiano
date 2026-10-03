@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
+import { EDGE_FADE_STYLE } from "./edgeFade";
 
 /**
  * HOMEPAGE ADDITION: structural pattern borrowed from pickupmusic.com's
@@ -55,7 +56,7 @@ const INSTRUMENTS = [
 export function InstrumentPicker() {
   return (
     <section className="relative overflow-hidden py-[var(--space-5)] md:py-[var(--space-7)]">
-      <div aria-hidden className="absolute inset-0 -z-10">
+      <div aria-hidden className="absolute inset-0 -z-10" style={EDGE_FADE_STYLE}>
         <PhotoBackdrop src={BACKDROP_SRC} scrim="dense" sizes="100vw" />
       </div>
       <ScrollReveal className="editorial-grid">

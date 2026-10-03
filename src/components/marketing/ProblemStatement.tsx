@@ -1,6 +1,7 @@
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
+import { EDGE_FADE_STYLE } from "./edgeFade";
 
 /**
  * HOMEPAGE REBUILD: 03 PROBLEM STATEMENT.
@@ -30,7 +31,7 @@ import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 export function ProblemStatement() {
   return (
     <section className="relative overflow-hidden py-[var(--space-5)] md:py-[var(--space-7)]">
-      <div aria-hidden className="absolute inset-0 -z-10">
+      <div aria-hidden className="absolute inset-0 -z-10" style={EDGE_FADE_STYLE}>
         <PhotoBackdrop src={BACKDROPS.classes} scrim="vignette" sizes="100vw" />
       </div>
       <ScrollReveal className="mx-auto max-w-2xl px-6 text-center">

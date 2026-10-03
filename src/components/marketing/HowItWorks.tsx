@@ -3,6 +3,7 @@ import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import { Timeline } from "@/components/ui/Timeline";
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
+import { EDGE_FADE_STYLE } from "./edgeFade";
 
 /**
  * HOMEPAGE REBUILD: 05 HOW IT WORKS.
@@ -70,7 +71,7 @@ export function HowItWorks() {
       <div
         aria-hidden
         className="absolute inset-0 -z-10 overflow-hidden"
-        style={{ maskImage: "linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)" }}
+        style={EDGE_FADE_STYLE}
       >
         <div className="absolute -inset-x-10 -inset-y-10 blur-3xl">
           <PhotoBackdrop src={BACKDROPS.classes} scrim="standard" sizes="100vw" />

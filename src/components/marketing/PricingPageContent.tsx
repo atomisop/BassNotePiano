@@ -41,7 +41,7 @@ export function PricingPageContent() {
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-80px" }}
+        viewport={{ once: true, margin: "0px 0px 8% 0px" }}
         transition={{ type: "spring", bounce: 0, duration: 0.4 }}
         id="plans"
         className="relative mx-auto max-w-5xl px-6 pb-32"
