@@ -58,9 +58,9 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
     if (reduced.matches) return;
 
     const lenis = new Lenis({
-      // Decay constant. Lower = longer glide. 0.085 lands just short of
-      // feeling detached from the input device.
-      lerp: 0.085,
+      // Decay constant. Lower = longer glide. 0.14 settles to 90% of a wheel
+      // notch in roughly 0.27s (0.085 took 0.43s and read as input delay).
+      lerp: 0.14,
       // Slightly under 1 so a single wheel notch travels a touch less than
       // native — this is what reads as "weight" rather than as lag.
       wheelMultiplier: 0.92,
