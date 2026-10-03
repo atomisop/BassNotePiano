@@ -87,7 +87,7 @@ export function MessageBubble({
           transition={swipe.dragX === 0 ? { type: "spring", bounce: 0.2, duration: 0.35 } : { duration: 0 }}
           style={{ touchAction: "pan-y" }}
           className={`min-w-0 rounded-2xl px-3.5 py-2 text-body ${
-            isMine ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "bg-[rgb(var(--c-s-50)/0.08)] text-slate-100"
+            isMine ? "bg-neu-base text-slate-50 shadow-pressed-low" : "bg-neu-base text-slate-100 shadow-raised-low"
           }`}
         >
           {reply && (
@@ -95,7 +95,7 @@ export function MessageBubble({
               type="button"
               onClick={() => onJumpToReply?.(reply.id)}
               className={`mb-1.5 block w-full rounded-lg border-l-2 px-2 py-1 text-left text-small ${
-                isMine ? "border-slate-950/30 bg-slate-950/10" : "border-[rgb(var(--c-s-50)/0.4)] bg-white/5"
+                "border-[rgb(var(--c-s-50)/0.4)] bg-ink/5"
               }`}
             >
               <p className="font-medium">{reply.senderLabel}</p>
@@ -103,7 +103,7 @@ export function MessageBubble({
             </button>
           )}
           <p className="whitespace-pre-wrap break-words">{body}</p>
-          <p className={`mt-1 text-small ${isMine ? "text-slate-950/60" : "text-slate-600"}`}>{timeLabel}</p>
+          <p className="mt-1 text-small text-slate-400">{timeLabel}</p>
         </motion.div>
 
         {/* Always-present, not hover-only: hover has no equivalent on
@@ -119,7 +119,7 @@ export function MessageBubble({
       </div>
 
       {pickerOpen && (
-        <div className="mt-1 flex gap-0.5 rounded-full border border-ink/10 bg-slate-900 p-1 shadow-lg">
+        <div className="mt-1 flex gap-0.5 rounded-full bg-neu-base p-1 shadow-raised-high">
           {REACTION_EMOJI.map((emoji) => (
             <button
               key={emoji}

@@ -139,7 +139,7 @@ export function AdminAttendanceQuickPanel() {
         createPortal(
           <div
             ref={panelRef}
-            className="glass-surface-elevated fixed right-4 top-16 z-[60] max-h-[70vh] w-[22rem] overflow-y-auto rounded-2xl p-3 shadow-xl sm:right-8"
+            className="glass-surface-elevated fixed right-4 top-16 z-[60] max-h-[70vh] w-[22rem] overflow-y-auto rounded-2xl p-3 shadow-raised-high sm:right-8"
             role="dialog"
             aria-label="Quick attendance"
           >

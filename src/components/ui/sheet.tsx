@@ -36,7 +36,7 @@ const sheetVariants = cva(
   // the edges touching the viewport boundary. Same real backdrop-filter
   // material `.chrome` (nav/tab bar) uses for the same reason, expressed
   // directly since `.chrome` is named for navigation specifically.
-  "fixed z-50 gap-4 bg-surface/80 backdrop-blur-xl p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
+  "fixed z-50 gap-4 bg-surface/80 backdrop-blur-xl p-6 shadow-raised-high transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
   {
     variants: {
       side: {
