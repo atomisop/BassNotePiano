@@ -998,22 +998,22 @@ export function AssistantWidget() {
                   <GenerateAIButton
                     key={s}
                     icon={false}
-                    spin={false}
+                    glow
                     surface="bg-neu-base"
                     onClick={() => sendMessage(s)}
                     disabled={loading}
-                    className="h-8 px-3 text-small shadow-raised-low"
+                    className="h-8 px-3 text-small"
                   >
                     {s}
                   </GenerateAIButton>
                 ))}
                 <GenerateAIButton
                   icon={false}
-                  spin={false}
+                  glow
                   surface="bg-neu-base"
                   onClick={offerHandoff}
                   disabled={loading}
-                  className="h-8 px-3 text-small shadow-raised-low"
+                  className="h-8 px-3 text-small"
                 >
                   Talk to our team
                 </GenerateAIButton>

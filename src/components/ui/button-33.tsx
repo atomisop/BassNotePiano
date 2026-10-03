@@ -11,16 +11,22 @@ export function AiBorder({
   spin = true,
   spinClass = "size-40",
   surface = "bg-background",
+  glow = false,
 }: {
   rounded?: string;
   spin?: boolean;
   spinClass?: string;
   /** Fill inside the border. Atom passes the neumorphic base so its parts sit on the same surface as the app. */
   surface?: string;
+  /** Still, even ring: the same blue and orange blended all the way around instead of a moving arc. */
+  glow?: boolean;
 }) {
   return (
     <div className={`pointer-events-none absolute inset-0 z-0 overflow-hidden bg-border ${rounded}`}>
-      <div
+      {glow && (
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,var(--color-blue-500),var(--color-orange-400),var(--color-blue-500))] opacity-80" />
+      )}
+      <div hidden={glow}
         className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[conic-gradient(from_0deg,transparent_0%,transparent_35%,var(--color-blue-500)_50%,transparent_65%,transparent_85%,var(--color-orange-400)_100%)] ${spin ? "animate-spin" : ""} ${spinClass}`}
         style={spin ? { animationDuration: "2.5s" } : undefined}
       />
@@ -38,6 +44,7 @@ const GenerateAIButton = ({
   ariaLabel,
   icon = true,
   spin = true,
+  glow = false,
   surface,
   className = "",
 }: {
@@ -50,6 +57,8 @@ const GenerateAIButton = ({
   icon?: boolean;
   /** false = the gradient glow stays but holds still. */
   spin?: boolean;
+  /** Still, smooth ambient glow all around the button (replaces the moving arc). */
+  glow?: boolean;
   surface?: string;
   className?: string;
 }) => {
@@ -60,10 +69,18 @@ const GenerateAIButton = ({
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel}
+      style={
+        glow
+          ? {
+              boxShadow:
+                "var(--neu-raised-low), 0 0 14px 1px rgb(59 130 246 / 0.35), 0 0 22px 2px rgb(251 146 60 / 0.25)",
+            }
+          : undefined
+      }
       className={`relative h-10 gap-2 overflow-hidden rounded-full border-transparent px-6 text-primary cursor-pointer ${className}`}
     >
       {/* Continuously animated gradient border */}
-      <AiBorder spin={spin} surface={surface} />
+      <AiBorder spin={spin} surface={surface} glow={glow} />
 
       <span className="relative z-10 flex items-center justify-center gap-2">
         {icon && <Sparkles className="size-4" fill="currentColor" />}
