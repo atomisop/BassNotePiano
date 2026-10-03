@@ -62,7 +62,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           rather than inside one. */}
       <header>
         <Link href="/" className="relative mb-3 flex flex-col items-center text-center sm:mb-8">
-          <Image src="/logo-mark.png" alt="" width={44} height={44} className="mb-2 h-11 w-11 rounded-[8px]" priority />
+          <Image src="/logo-mark.png" alt="" width={44} height={44} className="mb-2 h-11 w-11" priority />
           {/* Same wordmark treatment as MarketingNav's own (bold, lowercase).
               This was still the pre-Pianote-pass title-case/split-color
               version. Fully accent-colored at the time; neutral again now

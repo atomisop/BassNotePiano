@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { SITE_NAME } from "@/lib/site";
 
 // A file-based OG image: Next serves this at /opengraph-image and wires the
@@ -55,6 +57,8 @@ async function loadGoogleFont(
   }
 }
 
+const logoDataUri = `data:image/png;base64,${readFileSync(path.join(process.cwd(), "public", "logo-mark.png")).toString("base64")}`;
+
 export default async function OpengraphImage() {
   const headline = "Ethiopian Scales, Rhythm & Chords";
   const supporting =
@@ -95,7 +99,8 @@ export default async function OpengraphImage() {
       >
         {/* Wordmark rail */}
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-          <div style={{ width: 40, height: 3, background: PAPER }} />
+          {/* eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text */}
+          <img src={logoDataUri} width={64} height={64} style={{ width: 64, height: 64 }} />
           <div
             style={{
               fontSize: 23,

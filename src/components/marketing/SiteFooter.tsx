@@ -44,7 +44,7 @@ export function SiteFooter() {
                 nav's was updated. Fully accent-colored at the time; neutral
                 again now under the "premium black and white" pass. */}
             <Link href="/" className="flex items-center gap-2">
-              <Image src="/logo-mark.png" alt="" width={24} height={24} className="h-6 w-6 rounded-[6px]" />
+              <Image src="/logo-mark.png" alt="" width={24} height={24} className="h-6 w-6" />
               <span className="font-serif text-small font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]">
                 Bass Note Piano
               </span>
