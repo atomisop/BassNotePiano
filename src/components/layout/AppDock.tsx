@@ -372,7 +372,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                 here removes the conflict outright instead of relying on a
                 tiebreak this file never actually chose. */}
             <Dock
-              className="items-center !rounded-full !bg-black !bg-none !border-white/10 !backdrop-blur-none !shadow-[0_14px_32px_-10px_rgba(0,0,0,0.65),0_0_40px_-4px_rgba(255,255,255,0.12)]"
+              className="items-center !rounded-full !bg-neu-base !bg-none !border-transparent !backdrop-blur-none !shadow-raised-high"
               magnification={72}
               distance={140}
               panelHeight={60}
@@ -465,7 +465,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                       <motion.div
                         layoutId="dock-active-line"
                         transition={{ type: "spring", bounce: 0.15, duration: 0.55 }}
-                        className="pointer-events-none absolute left-1/2 top-0 h-[2px] w-8 -translate-x-1/2 -translate-y-2 rounded-full bg-white"
+                        className="pointer-events-none absolute left-1/2 top-0 h-[2px] w-8 -translate-x-1/2 -translate-y-2 rounded-full bg-signal shadow-[0_0_8px_rgb(var(--signal)/0.8)]"
                       />
                     )}
                     <motion.div whileTap={{ scale: 0.9 }} className="relative">
@@ -480,15 +480,15 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                           the active tab's icon glows brighter still. */}
                       <DockItem
                         aria-label={item.label}
-                        className={`rounded-full transition-colors duration-200 ${active ? "" : "hover:bg-white/8"}`}
+                        className={`rounded-full transition-colors duration-200 ${active ? "" : "hover:shadow-pressed-low"}`}
                       >
                         <DockIcon>
                           <Icon
                             strokeWidth={active ? 2.5 : 2}
                             className={`h-full w-full transition-[color,filter] duration-200 ${
                               active
-                                ? "text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]"
-                                : "text-white/60 drop-shadow-[0_0_4px_rgba(255,255,255,0.3)]"
+                                ? "text-signal drop-shadow-[0_0_10px_rgb(var(--signal)/0.85)]"
+                                : "text-slate-400 hover:text-slate-50"
                             }`}
                           />
                         </DockIcon>

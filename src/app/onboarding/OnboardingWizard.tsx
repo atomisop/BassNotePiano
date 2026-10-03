@@ -73,10 +73,10 @@ function OptionButton({
       type="button"
       onClick={onClick}
       disabled={comingSoon}
-      className={`flex w-full items-center justify-between gap-2 rounded-xl border px-4 py-3 text-left text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
+      className={`flex w-full items-center justify-between gap-2 rounded-xl bg-neu-base px-4 py-3 text-left text-small font-medium transition-shadow disabled:cursor-not-allowed disabled:opacity-50 ${
         selected
-          ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
-          : "border-ink/10 bg-slate-950 text-slate-300 hover:border-ink/15"
+          ? "text-signal shadow-pressed-low ring-1 ring-signal"
+          : "text-slate-300 shadow-raised-low hover:text-slate-50"
       }`}
     >
       {label}
