@@ -206,10 +206,20 @@ export function buildChordOnDegree(
   scaleRoot: string,
   degreeToken: string,
   quality: ChordQualityKey,
+  scaleNotes?: string[],
 ): NativeChord {
   const rootNote = spellDegree(scaleRoot, degreeToken);
   const { symbol, formula } = CHORD_QUALITIES[quality];
-  const notes = spellScale(rootNote, formula).notes;
+  // `scaleNotes`: reuse the scale's own spelling for any chord tone that is
+  // also a scale tone (Anchihoye's C#+ is C-sharp, F, A, not C#, E#, G##).
+  // Tones outside the scale keep their letter-based spelling.
+  const bySound = new Map((scaleNotes ?? []).map((n) => [pitchClassOf(n), n]));
+  // A tone borrowed from outside the scale never gets Fb, Cb, E# or B# here;
+  // the PDF writes the plain E, B, F or C instead (Db diminished is Db-E-G).
+  const PLAIN: Record<string, string> = { Fb: "E", Cb: "B", "E#": "F", "B#": "C" };
+  const notes = spellScale(rootNote, formula).notes.map((n) =>
+    bySound.get(pitchClassOf(n)) ?? (scaleNotes ? (PLAIN[n] ?? n) : n),
+  );
   return { degree: degreeToken, quality, rootNote, symbol: `${rootNote}${symbol}`, notes };
 }
 

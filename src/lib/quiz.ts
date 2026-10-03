@@ -1,5 +1,5 @@
 import { spellDegree, type RootKey } from "@/lib/music-theory";
-import { SCALE_CONTENT, type ScaleVariant } from "@/lib/scale-content";
+import { SCALE_CONTENT, tokenForRoot, type ScaleVariant } from "@/lib/scale-content";
 
 // ============================================================================
 // Deterministic quiz generation, seeded. No randomness inside this file
@@ -86,14 +86,15 @@ function buildFormulaQuestion(variant: ScaleVariant, seed: number): QuizQuestion
 }
 
 function buildDegreeQuestion(variant: ScaleVariant, degreeToken: string, root: RootKey, seed: number): QuizQuestion {
-  const correct = spellDegree(root, degreeToken);
+  const shown = tokenForRoot(variant, degreeToken, root);
+  const correct = spellDegree(root, shown);
   const otherTokens = variant.formula.split("-").filter((t) => t !== degreeToken);
-  const distractorNotes = otherTokens.map((t) => spellDegree(root, t)).filter((n) => n !== correct);
+  const distractorNotes = otherTokens.map((t) => spellDegree(root, tokenForRoot(variant, t, root))).filter((n) => n !== correct);
   const distractors = sample(distractorNotes, 3, seed);
   const choices = rotate([correct, ...distractors], seed + 1);
   return {
     id: `degree-${slugify(variant.name)}-${degreeToken}-${root}`,
-    prompt: `In the key of ${root}, what is the ${degreeToken} of ${variant.name}?`,
+    prompt: `In the key of ${root}, what is the ${shown} of ${variant.name}?`,
     choices,
     correctIndex: choices.indexOf(correct),
   };

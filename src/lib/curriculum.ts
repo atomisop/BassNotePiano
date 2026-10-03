@@ -122,7 +122,7 @@ export const SCALE_GROUPS: ScaleGroupMeta[] = [
     code: "Scale 14",
     title: "Anchihoye",
     kinitName: "Anchihoye",
-    formula: "1-b2-4-b5-6",
+    formula: "1-#1-4-#4-6",
   },
   {
     slug: "anchihoye-dorian",

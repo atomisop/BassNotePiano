@@ -1,4 +1,4 @@
-import type { ChordQualityKey } from "@/lib/music-theory";
+import { ROOT_KEYS, spellScale, type ChordQualityKey, type RootKey } from "@/lib/music-theory";
 
 // Rich pedagogical content for the /scales/[slug] module page — kept
 // separate from curriculum.ts (which only carries the single representative
@@ -19,6 +19,36 @@ export interface ScaleVariant {
   name: string;
   formula: string;
   nativeChords: NativeChordSpec[];
+  /**
+   * Some scales are spelled differently in a few keys (Anchihoye is written
+   * with C# and F# in most keys, but E, B and F# switch to Db/Gb-style
+   * spelling to avoid E# and B#). In `roots`, each degree token in `tokens`
+   * is replaced before spelling. Which keys sound is never affected.
+   */
+  alternateSpelling?: { roots: RootKey[]; tokens: Record<string, string> };
+  /** Spell chord tones with the scale's own note names where they coincide. */
+  chordSpelling?: "scale";
+}
+
+/** The degree token to spell for `root`, honoring the variant's alternate spelling. */
+export function tokenForRoot(variant: ScaleVariant, token: string, root: string): string {
+  const alt = variant.alternateSpelling;
+  return alt && (alt.roots as string[]).includes(root) ? (alt.tokens[token] ?? token) : token;
+}
+
+/** The variant's formula as spelled in `root`. */
+export function formulaForRoot(variant: ScaleVariant, root: string): string {
+  return variant.formula
+    .split("-")
+    .map((t) => tokenForRoot(variant, t, root))
+    .join("-");
+}
+
+/** The scale's notes in every curriculum key, with per-key spelling applied. */
+export function variantInAllKeys(variant: ScaleVariant): Record<RootKey, string[]> {
+  return Object.fromEntries(
+    ROOT_KEYS.map((root) => [root, spellScale(root, formulaForRoot(variant, root)).notes]),
+  ) as Record<RootKey, string[]>;
 }
 
 export const SCALE_CONTENT: Record<string, ScaleVariant[]> = {
@@ -203,12 +233,16 @@ export const SCALE_CONTENT: Record<string, ScaleVariant[]> = {
   anchihoye: [
     {
       name: "Anchihoye",
-      formula: "1-b2-4-b5-6",
+      // Written #1 and #4 as in the lesson PDF; E, B and F# use the b2/b5
+      // spelling instead (the PDF's "Spelling used" column).
+      formula: "1-#1-4-#4-6",
+      alternateSpelling: { roots: ["E", "B", "F#"], tokens: { "#1": "b2", "#4": "b5" } },
+      chordSpelling: "scale",
       nativeChords: [
         { degree: "1", quality: "diminished", label: "i°" },
-        { degree: "b2", quality: "augmented", label: "bII+" },
+        { degree: "#1", quality: "augmented", label: "#I+" },
         { degree: "4", quality: "major", label: "IV" },
-        { degree: "b5", quality: "minor", label: "bvm" },
+        { degree: "#4", quality: "minor", label: "#iv" },
         { degree: "6", quality: "augmented", label: "VI+" },
       ],
     },

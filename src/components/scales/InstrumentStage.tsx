@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PrimaryInstrument } from "@prisma/client";
-import { ROOT_KEYS, spellScale, getScaleInAllKeys, type RootKey } from "@/lib/music-theory";
-import type { ScaleVariant } from "@/lib/scale-content";
+import { ROOT_KEYS, spellScale, type RootKey } from "@/lib/music-theory";
+import { formulaForRoot, variantInAllKeys, type ScaleVariant } from "@/lib/scale-content";
 import type { ScalePlayer } from "@/components/scales/useScalePlayer";
 import { PianoKeyboard } from "@/components/scales/PianoKeyboard";
 import { Fretboard, GUITAR_STANDARD_TUNING, BASS_STANDARD_TUNING } from "@/components/scales/Fretboard";
@@ -151,7 +151,7 @@ function StopIcon() {
  * sound; the keys are just inert then).
  */
 export function InstrumentStage({ variant, root, player, instrument, onInstrumentChange }: InstrumentStageProps) {
-  const spelled = useMemo(() => spellScale(root, variant.formula), [root, variant.formula]);
+  const spelled = useMemo(() => spellScale(root, formulaForRoot(variant, root)), [root, variant]);
   const { supported, isPlaying, activeIndex, playScale, playKey, stop } = player;
   const fretted = instrument === "GUITAR" || instrument === "BASS";
 
@@ -222,8 +222,8 @@ export function InstrumentStage({ variant, root, player, instrument, onInstrumen
  * and the scale in all twelve keys with the current key marked.
  */
 export function ScaleChart({ variant, root, player }: { variant: ScaleVariant; root: RootKey; player: ScalePlayer }) {
-  const spelled = useMemo(() => spellScale(root, variant.formula), [root, variant.formula]);
-  const allKeys = useMemo(() => getScaleInAllKeys(variant.formula), [variant.formula]);
+  const spelled = useMemo(() => spellScale(root, formulaForRoot(variant, root)), [root, variant]);
+  const allKeys = useMemo(() => variantInAllKeys(variant), [variant]);
   const { supported, activeIndex, playDegree } = player;
 
   return (

@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { buildChordOnDegree, type RootKey } from "@/lib/music-theory";
-import type { ScaleVariant } from "@/lib/scale-content";
+import { buildChordOnDegree, spellScale, type RootKey } from "@/lib/music-theory";
+import { formulaForRoot, tokenForRoot, type ScaleVariant } from "@/lib/scale-content";
 import type { ScalePlayer } from "@/components/scales/useScalePlayer";
 
 export interface ScaleChordsPanelProps {
@@ -21,14 +21,14 @@ function ChordPlayIcon() {
 
 /** Native triads/sevenths built from `variant`'s own scale tones, spelled at `root`. */
 export function ScaleChordsPanel({ variant, root, player }: ScaleChordsPanelProps) {
-  const chords = useMemo(
-    () =>
-      variant.nativeChords.map((spec) => ({
-        spec,
-        chord: buildChordOnDegree(root, spec.degree, spec.quality),
-      })),
-    [variant, root],
-  );
+  const chords = useMemo(() => {
+    const scaleNotes =
+      variant.chordSpelling === "scale" ? spellScale(root, formulaForRoot(variant, root)).notes : undefined;
+    return variant.nativeChords.map((spec) => ({
+      spec,
+      chord: buildChordOnDegree(root, tokenForRoot(variant, spec.degree, root), spec.quality, scaleNotes),
+    }));
+  }, [variant, root]);
 
   const { supported, playChordNotes } = player;
 
