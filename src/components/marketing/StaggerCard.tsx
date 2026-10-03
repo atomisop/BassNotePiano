@@ -31,7 +31,7 @@ export function StaggerCard({
       className={className}
       initial={reduced ? { opacity: 0 } : { opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.4 }}
+      viewport={{ once: true, amount: "some", margin: "0px 0px 20% 0px" }}
       transition={{
         duration: reduced ? 0.25 : 0.45,
         delay: reduced ? 0 : index * 0.08,

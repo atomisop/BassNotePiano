@@ -294,6 +294,18 @@
   letter-spacing: var(--type-display-1-ls);
 }
 
+/* The hero headline only. --type-display-1 (up to 8.5rem) is right for the
+   final CTA but far too big for the hero line on a desktop screen: with the
+   rotating word ("definitive", "authentic", "smartest") it wrapped to four
+   lines of ~136px type and pushed the buttons down behind the fold. Smaller
+   cap for this one headline; phones keep their existing size. */
+@media (min-width: 641px) {
+  [data-surface="marketing"] .display-1.hero-title {
+    font-size: clamp(2.75rem, 4.6vw, 4.5rem);
+    line-height: 0.98;
+  }
+}
+
 [data-surface="marketing"] .display-2 {
   font-size: var(--type-display-2);
   line-height: var(--type-display-2-lh);
