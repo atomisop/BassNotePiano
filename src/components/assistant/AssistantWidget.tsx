@@ -291,7 +291,7 @@ function MessageBubble({
 }) {
   const isMine = message.role === "user";
   return (
-    <div className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}>
+    <div data-atom-msg={isMine ? "user" : "assistant"} className={`scroll-mt-4 flex flex-col ${isMine ? "items-end" : "items-start"}`}>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -646,9 +646,18 @@ export function AssistantWidget() {
     };
   }, [open]);
 
+  // Once Atom has answered, bring the TOP of that answer into view so it can be
+  // read from the start (the suggestion chips sit below it in the same scroll
+  // list). Every other change (typing dots, handoff forms, support thread)
+  // still follows the bottom.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, threadMessages, loading, escalationOffer, collectingEmail]);
+    const list = messagesEndRef.current?.parentElement;
+    const answers = list?.querySelectorAll<HTMLElement>('[data-atom-msg="assistant"]');
+    const lastAnswer = answers && answers.length > 0 ? answers[answers.length - 1] : null;
+    const answeredJustNow = !loading && !activeEscalationId && messages[messages.length - 1]?.role === "assistant";
+    if (answeredJustNow && lastAnswer) lastAnswer.scrollIntoView({ behavior: "smooth", block: "start" });
+    else messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, threadMessages, loading, escalationOffer, collectingEmail, activeEscalationId]);
 
   async function sendAtomMessage(trimmed: string) {
     const nextHistory: Message[] = [...messages, { role: "user", content: trimmed }];
@@ -998,11 +1007,8 @@ export function AssistantWidget() {
                 </form>
               )}
 
-              <div ref={messagesEndRef} />
-            </div>
-
             {showSuggestions && (
-              <div className="flex flex-wrap gap-1.5 border-t border-border px-4 py-2.5">
+              <div className="flex flex-wrap gap-2 pt-1">
                 {SUGGESTIONS.map((s) => (
                   <GenerateAIButton
                     key={s}
@@ -1028,6 +1034,8 @@ export function AssistantWidget() {
                 </GenerateAIButton>
               </div>
             )}
+              <div ref={messagesEndRef} />
+            </div>
 
             <form onSubmit={handleSubmit} className="flex min-w-0 items-center gap-2 border-t border-border p-3">
               <div
