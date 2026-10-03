@@ -99,7 +99,7 @@ function Dock({
         height: height,
         scrollbarWidth: 'none',
       }}
-      className='mx-2 flex max-w-full items-end overflow-x-auto'
+      className='mx-2 flex max-w-full items-end overflow-visible'
     >
       <motion.div
         // Pointer Events, not Mouse Events, and gated on `pointerType` —
