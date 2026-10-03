@@ -69,14 +69,22 @@ const FEATURES = [
   },
 ];
 
-// Only two, not three: /screenshots/lessons.png was a real capture but a
-// stale one (predated this session's booking-model rebuild, still showed
-// "up to 10 students per class"). Removed rather than shipped as a real
-// screenshot of something no longer true. A fresh capture is real product
-// work someone with a live session has to do, not something to fake.
+// Real captures from inside the app (the demo student "Alex"), retaken for the
+// current look. Order tells the story: where you are, how you learn, the three
+// virtual instruments and their tools, then classes, progress and settings.
 const SCREENS = [
-  { key: "dashboard", label: "Roadmap", src: "/screenshots/dashboard.png", alt: "Roadmap dashboard showing scale progress, badges, and practice streak" },
-  { key: "profile", label: "Profile", src: "/screenshots/profile.png", alt: "Profile page showing streak history and earned badges" },
+  { key: "roadmap", label: "Roadmap", src: "/screenshots/roadmap.webp", title: "Your roadmap", caption: "Your next step, weekly streak, progress and badges on one screen.", alt: "Roadmap showing the next step, a four day streak, progress and badges" },
+  { key: "path", label: "Path", src: "/screenshots/path.webp", title: "Scale by scale", caption: "Fourteen scales, each one unlocked by your teacher as you finish the last.", alt: "List of scales with the current scale's module, practice and quiz progress" },
+  { key: "lesson", label: "Lessons", src: "/screenshots/lesson.webp", title: "Video lessons", caption: "Watch the lesson, then practice on the instrument right below it.", alt: "A video lesson with playback controls and a virtual piano underneath" },
+  { key: "piano", label: "Piano", src: "/screenshots/piano.webp", title: "Virtual piano", caption: "Tap any key to hear it. The scale lights up in whichever key you choose.", alt: "Virtual piano with the C major scale highlighted" },
+  { key: "guitar", label: "Guitar", src: "/screenshots/guitar.webp", title: "Virtual guitar", caption: "The same scale mapped across the fretboard, ready to play along.", alt: "Virtual guitar fretboard showing the scale notes" },
+  { key: "bass", label: "Bass", src: "/screenshots/bass.webp", title: "Virtual bass", caption: "Four strings, every note of the scale, one tap to hear it.", alt: "Virtual bass fretboard showing the scale notes" },
+  { key: "chords", label: "Chords", src: "/screenshots/chords.webp", title: "Native chords", caption: "Every chord that belongs to the scale, with a play button on each.", alt: "List of the scale's chords with play buttons" },
+  { key: "metronome", label: "Metronome", src: "/screenshots/metronome.webp", title: "Built-in metronome", caption: "Set your tempo and time signature without leaving the lesson.", alt: "Metronome with tempo slider and time signature options" },
+  { key: "classes", label: "Classes", src: "/screenshots/classes.webp", title: "Live classes", caption: "Book one-on-one time with your teacher, live over Discord.", alt: "Calendar of available live class times with Book buttons" },
+  { key: "profile", label: "Profile", src: "/screenshots/profile.webp", title: "Streaks and badges", caption: "Practice daily, earn badges, and watch your streak grow.", alt: "Profile page with the weekly streak and earned badges" },
+  { key: "settings", label: "Settings", src: "/screenshots/settings.webp", title: "Your settings", caption: "Notifications, themes, billing and privacy, all in one place.", alt: "Account settings menu" },
+  { key: "light", label: "Light mode", src: "/screenshots/light.webp", title: "Light or dark", caption: "Pick the look that suits the room you practice in.", alt: "Roadmap shown in the light theme" },
 ];
 
 export function Solution() {
@@ -108,7 +116,7 @@ export function Solution() {
             card habit. SolutionScreenshotTabs already carries its own
             rounded border for the image itself. */}
         <div className="col-span-12 md:col-span-6 md:col-start-7">
-          <SolutionScreenshotTabs screens={SCREENS} defaultKey="dashboard" />
+          <SolutionScreenshotTabs screens={SCREENS} defaultKey="roadmap" />
         </div>
       </ScrollReveal>
     </section>
