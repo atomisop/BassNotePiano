@@ -40,7 +40,7 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick }: ScaleCardGr
       variants={gridContainer}
       initial="hidden"
       animate="visible"
-      className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
+      className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
     >
       {roadmap.map((scale) => {
         const locked = !scale.canAccess;
