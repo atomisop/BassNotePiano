@@ -109,9 +109,8 @@ function NextClassSkeleton() {
 /**
  * Home (STEP 2B wireframe, approved 2026-10-02).
  *
- * Desktop: a wide main column (greeting, next step, learning tabs) and a
- * right panel for the week, progress, next class, and badges, so the next
- * step, the stats, and the first row of scales all fit on the first screen.
+ * Desktop: the full width. A band of cards (next step, week, progress, next
+ * class, badges) sits on the same four columns as the scales below it.
  * Below lg the five cards become one swipeable deck (CardDeck).
  *
  * STEP 2C: the greeting is the one Hero; the student's progress ("3/14")
@@ -141,7 +140,7 @@ export default async function DashboardPage() {
   // element twice: a streamed <Suspense> reused in two spots fails to hydrate): the phone deck below
   // `lg`, and the normal layout from `lg` up (the other copy is display:none).
   const nextStepCard = () => (
-    <Card className="relative z-(--z-mid) lg:col-start-1">
+    <Card className="relative z-(--z-mid)">
       <Eyebrow>Your next step</Eyebrow>
       <p className="mt-2 text-body font-semibold text-slate-50">{nextStep.action}</p>
       <p className="mt-1 max-w-[60ch] text-small text-slate-400">{nextStep.detail}</p>
@@ -214,9 +213,9 @@ export default async function DashboardPage() {
 
   return (
     <WideLayout>
-      <div className="grid gap-x-(--space-section) gap-y-(--space-group) lg:grid-cols-[minmax(0,1fr)_20rem] lg:grid-rows-[auto_auto_1fr] xl:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid gap-y-(--space-group)">
         {/* ---- Hero -------------------------------------------------------- */}
-        <div className="relative pt-4 md:pt-6 lg:col-start-1">
+        <div className="relative pt-4 md:pt-6">
           <TodayGreeting name={user?.name ?? null} className="relative z-(--z-mid)" />
         </div>
 
@@ -233,22 +232,20 @@ export default async function DashboardPage() {
           {badgesCard()}
         </CardDeck>
 
-        {/* ---- Desktop: the one thing to do next --------------------------- */}
-        <div className="hidden lg:contents">{nextStepCard()}</div>
-
-        {/* ---- Desktop: right panel ---------------------------------------- */}
-        <aside
-          aria-label="Your week and progress"
-          className="hidden gap-3 lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:grid lg:grid-cols-1 lg:content-start"
-        >
-          {weekCard()}
-          {progressCard()}
-          {classCard()}
-          {badgesCard()}
-        </aside>
+        {/* ---- Desktop: one band of cards, on the same four columns as the
+            scales below. The next step is only as wide as it needs to be, and
+            the week and progress cards take the space it used to leave empty,
+            so there is no side column and the scales get the full width. ---- */}
+        <div className="hidden gap-3 lg:grid lg:grid-cols-4 [&>*>*]:h-full">
+          <div className="lg:col-span-2">{nextStepCard()}</div>
+          <div>{weekCard()}</div>
+          <div>{progressCard()}</div>
+          <div className="lg:col-span-2">{classCard()}</div>
+          <div className="lg:col-span-2">{badgesCard()}</div>
+        </div>
 
         {/* ---- The path: tabs + scale grid --------------------------------- */}
-        <div className="lg:col-start-1">
+        <div>
           <ScaleRoadmap roadmap={roadmap} earnedBadgeCodes={earnedBadgeCodes} />
         </div>
       </div>
