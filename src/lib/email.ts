@@ -45,6 +45,12 @@ async function sendEmail({ to, subject, html, text }: SendEmailParams): Promise<
   const client = getResendClient();
 
   if (!client) {
+    // Never log a message body in production: these emails carry sign-in and
+    // reset codes, and a missing key must not turn the host's log stream into
+    // a place to read them.
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("RESEND_API_KEY is not set; refusing to send or log an email in production.");
+    }
     console.log(
       [
         "",

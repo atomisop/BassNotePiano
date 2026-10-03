@@ -102,11 +102,11 @@ const nextConfig = {
     // the specific origins listed above.
     const csp = [
       "default-src 'self'",
-      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+      `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${isDev ? " 'unsafe-eval'" : ""}`,
       "style-src 'self' 'unsafe-inline'",
       `img-src 'self' data: blob: https://images.unsplash.com${r2Origin ? ` ${r2Origin}` : ""}`,
       `media-src 'self'${r2Origin ? ` ${r2Origin}` : ""}`,
-      `frame-src 'self'${r2Origin ? ` ${r2Origin}` : ""}`,
+      `frame-src 'self' https://challenges.cloudflare.com${r2Origin ? ` ${r2Origin}` : ""}`,
       "font-src 'self' data:",
       // r2Origin: react-pdf/pdfjs-dist fetches the PDF binary itself (via
       // fetch/XHR, to feed it to the wasm/JS decoder) rather than letting

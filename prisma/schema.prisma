@@ -1495,3 +1495,15 @@ model CreditAdjustment {
   @@index([userId, createdAt])
   @@index([createdAt])
 }
+
+// Per-key request ledger for public endpoints that have no table of their
+// own to count against (sign-up, the public class form). `key` is
+// "<action>:<ip>" or "<action>:<email>". Rows older than a day are pruned
+// opportunistically by consumeRateLimit (src/lib/rateLimit.ts).
+model RateLimitEvent {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}

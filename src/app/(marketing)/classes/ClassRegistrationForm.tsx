@@ -1,5 +1,6 @@
 "use client";
 
+import { TurnstileWidget } from "@/components/security/TurnstileWidget";
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import type { PrimaryInstrument, SkillLevel } from "@prisma/client";
@@ -83,6 +84,10 @@ export function ClassRegistrationForm() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  // Honeypot, see submitClassRegistrationAction. Real visitors never see or fill it.
+  const [website, setWebsite] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [captchaReset, setCaptchaReset] = useState(0);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -94,10 +99,11 @@ export function ClassRegistrationForm() {
     }
 
     setSubmitting(true);
-    const result = await submitClassRegistrationAction({ fullName, email, phone, instrument, skillLevel, notes });
+    const result = await submitClassRegistrationAction({ fullName, email, phone, instrument, skillLevel, notes, website, turnstileToken });
     setSubmitting(false);
 
     if (!result.ok) {
+      setCaptchaReset((n) => n + 1);
       setError(result.error);
       return;
     }
@@ -121,7 +127,11 @@ export function ClassRegistrationForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="glass-surface-elevated space-y-5 p-6 sm:p-8">
+    <form onSubmit={handleSubmit} className="glass-surface-elevated relative space-y-5 p-6 sm:p-8">
+      <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+        <label htmlFor="cls-hp">Leave this empty</label>
+        <input id="cls-hp" name="hp_company" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+      </div>
       {/* Every label is tied to its field with htmlFor/id.
           These labels used to be plain siblings with no association, which
           looks identical on screen but leaves a screen reader announcing four
@@ -228,6 +238,8 @@ export function ClassRegistrationForm() {
           className={`${fieldClass()} resize-none`}
         />
       </div>
+
+      <TurnstileWidget action="class_form" onToken={setTurnstileToken} resetKey={captchaReset} />
 
       {error && <p className="text-small text-red-400">{error}</p>}
 

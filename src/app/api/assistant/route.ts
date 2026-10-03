@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { headers } from "next/headers";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -27,6 +28,7 @@ const MAX_MESSAGE_LENGTH = 2000;
  * during a manual check of the widget end-to-end.
  */
 export async function POST(req: Request) {
+  if (!isSameOriginJsonPost(req)) return NextResponse.json({ error: "Bad request." }, { status: 403 });
   try {
     const body = await req.json().catch(() => null);
     const rawHistory = Array.isArray(body?.messages) ? body.messages : null;

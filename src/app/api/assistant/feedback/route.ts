@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { headers } from "next/headers";
 import { getServerAuthSession } from "@/lib/auth";
 import { submitAssistantFeedback, type FeedbackRating } from "@/lib/assistantFeedback";
@@ -19,6 +20,7 @@ function isRating(value: unknown): value is FeedbackRating {
  * than crashing silently with nothing to grep for later.
  */
 export async function POST(req: Request) {
+  if (!isSameOriginJsonPost(req)) return NextResponse.json({ error: "Bad request." }, { status: 403 });
   try {
     const body = await req.json().catch(() => null);
     const rating = body?.rating;
