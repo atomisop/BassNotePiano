@@ -24,7 +24,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
  * chrome since this sits directly on the transparent header, not inside a
  * colored button that needs its own width to animate.
  */
-export function BrandMark() {
+export function BrandMark({ hideTextOnPhone = false }: { hideTextOnPhone?: boolean }) {
   const [hovered, setHovered] = useState(false);
   const reducedMotion = useReducedMotion();
 
@@ -44,7 +44,11 @@ export function BrandMark() {
           uppercase/split-color version this used to be. Fully accent-colored
           at the time; neutral again now under the "premium black and white"
           pass. */}
-      <span className="text-small font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))] md:hidden">
+      <span
+        className={`whitespace-nowrap text-small font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))] md:hidden ${
+          hideTextOnPhone ? "max-[460px]:hidden" : ""
+        }`}
+      >
         Bass Note Piano
       </span>
 
