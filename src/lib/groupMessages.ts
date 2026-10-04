@@ -3,7 +3,7 @@ import { sendEmailIfEnabled } from "@/lib/notifications";
 import { getAppUrl } from "@/lib/email";
 import { isFriend, normalizeUsername, SocialError } from "@/lib/social";
 import { assertRateLimit } from "@/lib/rateLimit";
-import { REACTION_EMOJI } from "@/lib/reactions";
+import { isValidReaction } from "@/lib/reactions";
 
 const MAX_MESSAGE_LENGTH = 2000;
 // Creator + up to 23 friends — generous headroom over a normal friend-group
@@ -208,7 +208,7 @@ export async function sendGroupMessage(senderId: string, groupId: string, body: 
 
 /** Same shape as 1-on-1 messages' own reactToMessage, see its comment. */
 export async function reactToGroupMessage(userId: string, messageId: string, emoji: string): Promise<{ removed: boolean }> {
-  if (!REACTION_EMOJI.includes(emoji as (typeof REACTION_EMOJI)[number])) {
+  if (!isValidReaction(emoji)) {
     throw new SocialError("Not a real reaction.");
   }
 
@@ -228,6 +228,20 @@ export async function reactToGroupMessage(userId: string, messageId: string, emo
     update: { emoji },
   });
   return { removed: false };
+}
+
+/**
+ * When each OTHER member last opened this group, straight from the database.
+ * A message counts as seen by a member once their lastReadAt (stamped only
+ * while the chat is actually open and visible, see markGroupRead) is at or
+ * after it was sent.
+ */
+export async function getGroupReadReceipts(userId: string, groupId: string): Promise<{ lastReadAt: Date | null }[]> {
+  await requireMembership(userId, groupId);
+  return prisma.groupMember.findMany({
+    where: { conversationId: groupId, userId: { not: userId } },
+    select: { lastReadAt: true },
+  });
 }
 
 export async function markGroupRead(userId: string, groupId: string): Promise<void> {

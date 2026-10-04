@@ -16,11 +16,11 @@ export function ConversationList({
   onTogglePin: (friendId: string) => void;
 }) {
   if (conversations.length === 0) {
-    return <p className="p-4 text-center text-small text-slate-600">No other conversations.</p>;
+    return null;
   }
 
   return (
-    <div className="space-y-0.5 p-2">
+    <div className="space-y-1 p-2">
       {conversations.map((c) => (
         <motion.div key={c.friendId} layout layoutId={`conv-${c.friendId}`}>
           <ConversationListItem

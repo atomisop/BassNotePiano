@@ -16,6 +16,7 @@ import {
   getGroups,
   getGroupDetail,
   getGroupMessages,
+  getGroupReadReceipts,
   sendGroupMessage,
   markGroupRead,
   leaveGroup,
@@ -48,6 +49,7 @@ export async function getConversationMessagesAction(friendId: string): Promise<M
       senderId: m.senderId,
       body: m.body,
       createdAt: m.createdAt.toISOString(),
+      readAt: m.readAt ? m.readAt.toISOString() : null,
       replyTo: m.replyTo ? { id: m.replyTo.id, senderId: m.replyTo.senderId, body: m.replyTo.body } : null,
       reactions: m.reactions,
     }));
@@ -112,6 +114,10 @@ export interface GroupMessageRow {
   createdAt: string;
   replyTo: GroupMessageReplyPreview | null;
   reactions: { userId: string; emoji: string }[];
+  /** Own messages only: how many other members have opened the group since this was sent (from the database). */
+  seenByCount: number;
+  /** Everyone else in the group right now, so the UI can say "everyone". */
+  otherMemberCount: number;
 }
 
 export async function getFriendsListAction() {
@@ -147,7 +153,7 @@ export async function getGroupDetailAction(groupId: string) {
 export async function getGroupMessagesAction(groupId: string): Promise<GroupMessageRow[]> {
   const userId = await requireUserId();
   try {
-    const messages = await getGroupMessages(userId, groupId);
+    const [messages, receipts] = await Promise.all([getGroupMessages(userId, groupId), getGroupReadReceipts(userId, groupId)]);
     return messages.map((m) => ({
       id: m.id,
       senderId: m.senderId,
@@ -166,6 +172,9 @@ export async function getGroupMessagesAction(groupId: string): Promise<GroupMess
           }
         : null,
       reactions: m.reactions,
+      seenByCount:
+        m.senderId === userId ? receipts.filter((r) => r.lastReadAt && r.lastReadAt >= m.createdAt).length : 0,
+      otherMemberCount: receipts.length,
     }));
   } catch {
     return [];

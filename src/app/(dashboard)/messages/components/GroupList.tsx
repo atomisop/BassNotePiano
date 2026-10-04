@@ -8,21 +8,24 @@ export function GroupList({
   activeGroupId,
   onSelect,
   onNewGroup,
+  filtering = false,
 }: {
   groups: GroupSummary[];
   activeGroupId: string | null;
   onSelect: (groupId: string) => void;
   onNewGroup: () => void;
+  /** A search is active: hide the empty-state copy rather than claim there are no groups. */
+  filtering?: boolean;
 }) {
   return (
-    <div className="border-t border-ink/10 p-2">
-      <div className="flex items-center justify-between px-2.5 py-1.5">
-        <p className="text-small font-medium uppercase tracking-[0.15em] text-slate-600">Groups</p>
+    <div className="p-2">
+      <div className="flex items-center justify-between px-2 pb-1.5 pt-3">
+        <p className="text-small font-semibold uppercase tracking-[0.16em] text-slate-500">Groups</p>
         <button
           type="button"
           onClick={onNewGroup}
           aria-label="New group"
-          className="flex h-6 w-6 items-center justify-center rounded-full text-slate-500 transition hover:bg-ink/5 hover:text-[rgb(var(--c-s-50))]"
+          className="tap flex h-8 w-8 items-center justify-center rounded-full bg-neu-base text-slate-300 shadow-raised-low transition hover:text-[rgb(var(--c-s-50))] active:shadow-pressed-low"
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
             <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
@@ -31,9 +34,9 @@ export function GroupList({
       </div>
 
       {groups.length === 0 ? (
-        <p className="px-2.5 py-2 text-small text-slate-600">No group chats yet.</p>
+        !filtering && <p className="px-2 py-2 text-small text-slate-500">No group chats yet. Tap + to start one.</p>
       ) : (
-        <div className="space-y-0.5">
+        <div className="space-y-1">
           {groups.map((g) => (
             <GroupListItem key={g.id} group={g} active={activeGroupId === g.id} onSelect={() => onSelect(g.id)} />
           ))}

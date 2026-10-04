@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Reply } from "lucide-react";
 import { motion } from "framer-motion";
 import { REACTION_EMOJI } from "@/lib/reactions";
+import { AttachmentButton } from "@/components/ui/attachment-button";
+import { EmojiPicker, EmojiPickerContent, EmojiPickerSearch } from "@/components/ui/emoji-picker";
 import { useSwipeReply } from "@/lib/useSwipeReply";
 import { ReplyArrowIcon, SmileyPlusIcon } from "@/components/ui/icons";
 
@@ -31,6 +34,9 @@ export function MessageBubble({
   isMine,
   body,
   timeLabel,
+  showTime = true,
+  statusLabel,
+  endsCluster = true,
   senderLabel,
   reply,
   reactions,
@@ -44,6 +50,12 @@ export function MessageBubble({
   isMine: boolean;
   body: string;
   timeLabel: string;
+  /** Only the last bubble of a run shows its time; earlier ones stay compact. */
+  showTime?: boolean;
+  /** Delivery line under my latest message ("Sent", "Seen 3:42 PM"), decided by the server. */
+  statusLabel?: string;
+  /** Last bubble of a run gets the squared tail corner. */
+  endsCluster?: boolean;
   /** Group chat only: the sender's display name, shown above the bubble for messages that aren't mine. 1:1 chat leaves this unset since the thread header already establishes who's who. */
   senderLabel?: string;
   reply: BubbleReply | null;
@@ -56,6 +68,13 @@ export function MessageBubble({
   onJumpToReply?: (messageId: string) => void;
 }) {
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [customOpen, setCustomOpen] = useState(false);
+
+  function closePicker() {
+    setPickerOpen(false);
+    setCustomOpen(false);
+  }
+
   const swipe = useSwipeReply(onReplyStart);
 
   const myReaction = reactions.find((r) => r.userId === currentUserId)?.emoji ?? null;
@@ -87,7 +106,9 @@ export function MessageBubble({
           transition={swipe.dragX === 0 ? { type: "spring", bounce: 0.2, duration: 0.35 } : { duration: 0 }}
           style={{ touchAction: "pan-y" }}
           className={`min-w-0 rounded-2xl px-3.5 py-2 text-body ${
-            isMine ? "bg-neu-base text-slate-50 shadow-pressed-low" : "bg-neu-base text-slate-100 shadow-raised-low"
+            isMine
+              ? `bg-[rgb(var(--signal)/0.16)] text-slate-50 shadow-raised-low ${endsCluster ? "rounded-br-md" : ""}`
+              : `bg-neu-base text-slate-100 shadow-raised-low ${endsCluster ? "rounded-bl-md" : ""}`
           }`}
         >
           {reply && (
@@ -103,38 +124,66 @@ export function MessageBubble({
             </button>
           )}
           <p className="whitespace-pre-wrap break-words">{body}</p>
-          <p className="mt-1 text-small text-slate-400">{timeLabel}</p>
+          {showTime && <p className="mt-1 text-right text-small text-slate-400">{timeLabel}</p>}
         </motion.div>
 
         {/* Always-present, not hover-only: hover has no equivalent on
             touch, and this is the one reliable way to react on either. */}
+        {/* Computers only (md+): reply on hover, since a mouse can't swipe. */}
+        <button
+          type="button"
+          onClick={onReplyStart}
+          aria-label="Reply"
+          className="hidden h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-500 opacity-0 transition hover:text-slate-300 group-hover/bubble:opacity-100 focus-visible:opacity-100 md:flex"
+        >
+          <Reply size={15} />
+        </button>
         <button
           type="button"
           onClick={() => setPickerOpen((v) => !v)}
           aria-label="React"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-600 opacity-0 transition hover:text-slate-300 group-hover/bubble:opacity-100 focus-visible:opacity-100"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-500 opacity-60 transition hover:text-slate-300 md:opacity-0 md:group-hover/bubble:opacity-100 focus-visible:opacity-100"
         >
           <SmileyPlusIcon size={15} />
         </button>
       </div>
 
+      {statusLabel && isMine && <p className="mt-0.5 px-1 text-small text-slate-500">{statusLabel}</p>}
+
       {pickerOpen && (
-        <div className="mt-1 flex gap-0.5 rounded-full bg-neu-base p-1 shadow-raised-high">
-          {REACTION_EMOJI.map((emoji) => (
-            <button
-              key={emoji}
-              type="button"
-              onClick={() => {
-                onReact(emoji);
-                setPickerOpen(false);
-              }}
-              className={`rounded-full px-1.5 py-0.5 text-body leading-none transition hover:bg-white/10 ${
-                myReaction === emoji ? "bg-[rgb(var(--c-s-50)/0.15)]" : ""
-              }`}
-            >
-              {emoji}
-            </button>
-          ))}
+        <div className="mt-1.5 max-w-full rounded-3xl bg-neu-base p-1.5 shadow-raised-high">
+          <div className="flex flex-wrap gap-0.5">
+            {REACTION_EMOJI.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                aria-label={`React ${emoji}`}
+                onClick={() => {
+                  onReact(emoji);
+                  closePicker();
+                }}
+                className={`tap flex h-9 w-9 items-center justify-center rounded-full text-body leading-none transition ${
+                  myReaction === emoji ? "bg-neu-base shadow-pressed-low" : "hover:shadow-raised-low"
+                }`}
+              >
+                {emoji}
+              </button>
+            ))}
+            <AttachmentButton label="Choose any emoji" expanded={customOpen} onClick={() => setCustomOpen((v) => !v)} />
+          </div>
+          {customOpen && (
+            <div className="mt-1.5 h-72 w-[min(20rem,calc(100vw-3rem))] overflow-hidden rounded-2xl shadow-pressed-low">
+              <EmojiPicker
+                onEmojiSelect={({ emoji }) => {
+                  onReact(emoji);
+                  closePicker();
+                }}
+              >
+                <EmojiPickerSearch />
+                <EmojiPickerContent />
+              </EmojiPicker>
+            </div>
+          )}
         </div>
       )}
 
@@ -145,10 +194,8 @@ export function MessageBubble({
               key={emoji}
               type="button"
               onClick={() => onReact(emoji)}
-              className={`rounded-full border px-1.5 py-0.5 text-small leading-none transition ${
-                myReaction === emoji
-                  ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]"
-                  : "border-transparent text-slate-400 bg-neu-base shadow-raised-low"
+              className={`rounded-full bg-neu-base px-2 py-1 text-small leading-none transition ${
+                myReaction === emoji ? "text-slate-100 shadow-pressed-low" : "text-slate-400 shadow-raised-low"
               }`}
             >
               {emoji}

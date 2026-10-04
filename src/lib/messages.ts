@@ -3,7 +3,7 @@ import { sendEmailIfEnabled } from "@/lib/notifications";
 import { getAppUrl } from "@/lib/email";
 import { isFriend, getFriendsList, SocialError } from "@/lib/social";
 import { assertRateLimit } from "@/lib/rateLimit";
-import { REACTION_EMOJI } from "@/lib/reactions";
+import { isValidReaction } from "@/lib/reactions";
 
 const MAX_MESSAGE_LENGTH = 2000;
 
@@ -278,7 +278,7 @@ export async function getConversationMessages(userId: string, friendId: string, 
  * still reaching the other through the thread's own old messages.
  */
 export async function reactToMessage(userId: string, messageId: string, emoji: string): Promise<{ removed: boolean }> {
-  if (!REACTION_EMOJI.includes(emoji as (typeof REACTION_EMOJI)[number])) {
+  if (!isValidReaction(emoji)) {
     throw new SocialError("Not a real reaction.");
   }
 

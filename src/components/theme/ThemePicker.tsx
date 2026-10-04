@@ -64,7 +64,7 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
                 aria-pressed={selected}
                 className={`w-full rounded-lg border p-2.5 text-left transition ${
                   selected
-                    ? "border-amber-400 bg-amber-400/10"
+                    ? "border-amber-400/70 bg-neu-base shadow-pressed-low"
                     : "border-transparent hover:border-[rgb(var(--c-s-50)/0.4)] bg-neu-base shadow-raised-low"
                 }`}
               >

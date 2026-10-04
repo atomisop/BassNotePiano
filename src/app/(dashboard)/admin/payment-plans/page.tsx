@@ -1,3 +1,4 @@
+import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 import Link from "next/link";
 import type { PaymentPlanStatus } from "@prisma/client";
 import { getAdminPaymentPlans, getPlanCancellationFeedback } from "@/lib/paymentPlans";
@@ -39,18 +40,16 @@ export default async function AdminPaymentPlansPage({ searchParams }: { searchPa
           {feedback.length} cancellation{feedback.length === 1 ? "" : "s"} with a reason left, newest first.
         </p>
 
-        <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full p-1 bg-neu-base shadow-pressed-low">
-          {FILTERS.map((filter) => (
-            <Link
-              key={filter.value}
-              href={filter.value === "ACTIVE" ? "/admin/payment-plans" : `/admin/payment-plans?status=${filter.value}`}
-              className={`tap inline-flex items-center rounded-full px-3 py-1.5 text-small font-medium transition ${
-                activeFilter === filter.value ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
-              }`}
-            >
-              {filter.label}
-            </Link>
-          ))}
+        <div className="mt-6">
+          <AdminFilterTabs
+            label="Plan status"
+            mobile="scroll"
+            items={FILTERS.map((filter) => ({
+              label: filter.label,
+              href: filter.value === "ACTIVE" ? "/admin/payment-plans" : `/admin/payment-plans?status=${filter.value}`,
+              active: activeFilter === filter.value,
+            }))}
+          />
         </div>
 
         <PlanCancellationFeedbackList feedback={feedback} />
@@ -77,18 +76,16 @@ export default async function AdminPaymentPlansPage({ searchParams }: { searchPa
         — this list is for tracking who&apos;s on a plan and canceling one if needed.
       </p>
 
-      <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full p-1 bg-neu-base shadow-pressed-low">
-        {FILTERS.map((filter) => (
-          <Link
-            key={filter.value}
-            href={filter.value === "ACTIVE" ? "/admin/payment-plans" : `/admin/payment-plans?status=${filter.value}`}
-            className={`tap inline-flex items-center rounded-full px-3 py-1.5 text-small font-medium transition ${
-              activeFilter === filter.value ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
-            }`}
-          >
-            {filter.label}
-          </Link>
-        ))}
+      <div className="mt-6">
+        <AdminFilterTabs
+          label="Plan status"
+          mobile="scroll"
+          items={FILTERS.map((filter) => ({
+            label: filter.label,
+            href: filter.value === "ACTIVE" ? "/admin/payment-plans" : `/admin/payment-plans?status=${filter.value}`,
+            active: activeFilter === filter.value,
+          }))}
+        />
       </div>
 
       <div className="mt-6">

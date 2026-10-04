@@ -6,6 +6,7 @@ import { Avatar } from "./Avatar";
 import { TypingIndicator } from "./TypingIndicator";
 import { MessageBubble } from "./MessageBubble";
 import { XIcon } from "@/components/ui/icons";
+import { ComposerBar, DayDivider, THREAD_HEADER, ThreadBackButton, clockLabel, layoutThread } from "./threadUi";
 import { scrollWithin } from "@/lib/scrollWithin";
 
 export interface MessageReplyPreview {
@@ -25,18 +26,10 @@ export interface MessageRow {
   senderId: string;
   body: string;
   createdAt: string;
+  /** Set by the server the moment the recipient actually has the chat open and visible. */
+  readAt: string | null;
   replyTo: MessageReplyPreview | null;
   reactions: MessageReactionRow[];
-}
-
-function relativeTime(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const minutes = Math.floor(diffMs / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-  return `${Math.floor(hours / 24)}d`;
 }
 
 // Throttled, not debounced — pings the server at most once per window while
@@ -44,6 +37,8 @@ function relativeTime(iso: string): string {
 // go stale on their own (see TYPING_STALE_MS in src/lib/messages.ts), so
 // there's no matching "stopped typing" call to send.
 const TYPING_PING_THROTTLE_MS = 1_500;
+// While the composer stays focused, re-ping a little inside the server's 4s staleness window.
+const TYPING_REFRESH_MS = 2_500;
 
 // A compose box taller than this scrolls internally instead of growing
 // further, about six lines at text-body, generous for a real message
@@ -75,6 +70,8 @@ export function ChatWindow({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const lastTypingPingRef = useRef(0);
+  const [composerFocused, setComposerFocused] = useState(false);
+  const lastMineId = [...messages].reverse().find((m) => m.senderId !== conversation.friendId)?.id ?? null;
 
   useEffect(() => {
     scrollWithin(messagesEndRef.current, "end");
@@ -96,6 +93,23 @@ export function ChatWindow({
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, MAX_COMPOSE_HEIGHT_PX)}px`;
   }, [draft]);
+
+  // "Typing" starts when the keyboard opens (the box gets focus), not only on
+  // a keystroke, and keeps refreshing server-side while it stays open: the
+  // other person's screen reads it back from the database, and a row goes
+  // stale on its own a few seconds after the last ping (TYPING_STALE_MS).
+  useEffect(() => {
+    if (!composerFocused) return;
+    const ping = () => {
+      if (document.visibilityState !== "visible") return;
+      lastTypingPingRef.current = Date.now();
+      onTyping(conversation.friendId);
+    };
+    ping();
+    const timer = window.setInterval(ping, TYPING_REFRESH_MS);
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [composerFocused, conversation.friendId]);
 
   function handleDraftChange(value: string) {
     setDraft(value);
@@ -138,10 +152,11 @@ export function ChatWindow({
 
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col">
-      <div className="flex items-center gap-2.5 border-b border-ink/10 p-4">
-        <Avatar image={conversation.friendImage} label={conversation.friendName ?? conversation.friendUsername ?? "?"} />
+      <div className={THREAD_HEADER}>
+        <ThreadBackButton onClick={onMinimize} />
+        <Avatar image={conversation.friendImage} label={conversation.friendName ?? conversation.friendUsername ?? "?"} className="h-10 w-10 text-body" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-small text-slate-100">{conversation.friendName ?? "Unnamed"}</p>
+          <p className="truncate text-body font-semibold text-slate-100">{conversation.friendName ?? "Unnamed"}</p>
           {conversation.isTyping ? (
             <p className="flex items-center gap-1.5 text-small text-[rgb(var(--c-s-50))]">
               typing <TypingIndicator />
@@ -150,16 +165,6 @@ export function ChatWindow({
             conversation.friendUsername && <p className="truncate text-small text-slate-500">@{conversation.friendUsername}</p>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onMinimize}
-          aria-label="Minimize chat"
-          className="tap flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-        >
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-          </svg>
-        </button>
       </div>
 
       {/* overscroll-contain: this list sits right below a static header row
@@ -167,16 +172,21 @@ export function ChatWindow({
           bottom of a thread and flinging back up rubber-bands and can
           visibly slide over that header for an instant on iOS. Same fix
           (dashboard)/layout.tsx already applies to its own <main>. */}
-      <div className="min-w-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
-        {messages.map((m) => {
+      <div className="min-w-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 md:px-4">
+        {layoutThread(messages).map((meta, i) => {
+          const m = messages[i];
           const isMine = m.senderId !== conversation.friendId;
           return (
+            <div key={m.id} className={meta.startsCluster && i > 0 && !meta.showDay ? "mt-3" : "mt-0.5"}>
+              {meta.showDay && <DayDivider iso={m.createdAt} />}
             <MessageBubble
-              key={m.id}
               id={`msg-${m.id}`}
               isMine={isMine}
               body={m.body}
-              timeLabel={relativeTime(m.createdAt)}
+              timeLabel={clockLabel(m.createdAt)}
+              statusLabel={m.id === lastMineId ? (m.readAt ? `Seen ${clockLabel(m.readAt)}` : "Sent") : undefined}
+              showTime={meta.endsCluster}
+              endsCluster={meta.endsCluster}
               reply={
                 m.replyTo
                   ? {
@@ -192,6 +202,7 @@ export function ChatWindow({
               onReact={(emoji) => onReact(m.id, emoji)}
               onJumpToReply={handleJumpToReply}
             />
+            </div>
           );
         })}
         <div ref={messagesEndRef} />
@@ -216,32 +227,17 @@ export function ChatWindow({
         </div>
       )}
 
-      <form ref={formRef} onSubmit={handleSubmit} className="flex min-w-0 items-end gap-2 border-t border-ink/10 p-3">
-        <textarea
-          ref={textareaRef}
-          value={draft}
-          onChange={(e) => handleDraftChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Write a message…"
-          maxLength={2000}
-          rows={1}
-          enterKeyHint="send"
-          // text-body (16px), not text-small: below 16px, iOS Safari auto-zooms
-          // the whole page in on focus and doesn't reliably zoom back out
-          // after — reported live as "the message box zooms in and I can't
-          // even see who I'm writing to." Same fix applied to every real
-          // text-entry control across the signed-in app, not just this one.
-          className="min-w-0 flex-1 resize-none overflow-y-auto glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
-          style={{ maxHeight: MAX_COMPOSE_HEIGHT_PX }}
-        />
-        <button
-          type="submit"
-          disabled={sending || !draft.trim()}
-          className="tap cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          Send
-        </button>
-      </form>
+      <ComposerBar
+        formRef={formRef}
+        textareaRef={textareaRef}
+        value={draft}
+        onChange={handleDraftChange}
+        onKeyDown={handleKeyDown}
+        onSubmit={handleSubmit}
+        sending={sending}
+        maxHeight={MAX_COMPOSE_HEIGHT_PX}
+        onFocusChange={setComposerFocused}
+      />
     </div>
   );
 }

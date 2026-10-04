@@ -24,7 +24,7 @@ export function PinnedGrid({
   if (pinned.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-3 gap-x-2 gap-y-4 border-b border-ink/10 p-3">
+    <div className="grid grid-cols-3 gap-x-2 gap-y-4 border-b border-ink/10 px-3 pb-4 pt-3">
       {pinned.map((c) => {
         const showBadge = c.isTyping || c.unreadCount > 0;
         const active = activeFriendId === c.friendId;
@@ -35,7 +35,7 @@ export function PinnedGrid({
                 type="button"
                 onClick={() => onSelect(c.friendId)}
                 className={`overflow-hidden rounded-full border-2 transition ${
-                  active ? "border-amber-400" : "border-transparent bg-neu-base shadow-raised-low"
+                  active ? "border-[rgb(var(--c-s-50))] shadow-pressed-low" : "border-transparent bg-neu-base shadow-raised-low"
                 }`}
               >
                 <Avatar image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-16 w-16 text-body font-semibold" />
@@ -44,7 +44,7 @@ export function PinnedGrid({
               {showBadge && (
                 <span
                   className={`absolute -right-2 -top-1 flex max-w-[6rem] items-center justify-center rounded-full border border-ink/10 px-2 py-1 text-small font-medium shadow-raised-mid ${
-                    c.isTyping ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "bg-surface text-slate-100"
+                    c.isTyping ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "bg-neu-base text-slate-100"
                   }`}
                 >
                   {c.isTyping ? <TypingIndicator /> : truncateSnippet(c.lastMessageBody ?? "")}
