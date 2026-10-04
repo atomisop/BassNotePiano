@@ -24,7 +24,7 @@ export function PinnedGrid({
   if (pinned.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-3 gap-x-2 gap-y-4 border-b border-ink/10 px-3 pb-4 pt-3">
+    <div className="grid grid-cols-3 gap-x-2 gap-y-4 neu-groove-b px-3 pb-4 pt-3">
       {pinned.map((c) => {
         const showBadge = c.isTyping || c.unreadCount > 0;
         const active = activeFriendId === c.friendId;

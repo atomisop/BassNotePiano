@@ -91,7 +91,7 @@ export function ThreadBackButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-export const THREAD_HEADER = "flex items-center gap-3 border-b border-ink/10 px-3 py-3 md:px-4";
+export const THREAD_HEADER = "neu-groove-b flex items-center gap-3 px-3 py-3 md:px-4";
 
 /**
  * The compose bar shared by 1:1 and group chat. text-body (16px) on the field
@@ -121,7 +121,7 @@ export function ComposerBar({
 }) {
   const canSend = !sending && value.trim().length > 0;
   return (
-    <form ref={formRef} onSubmit={onSubmit} className="flex min-w-0 items-end gap-2.5 border-t border-ink/10 p-3">
+    <form ref={formRef} onSubmit={onSubmit} className="flex min-w-0 items-end gap-2.5 neu-groove-t p-3">
       <textarea
         ref={textareaRef}
         value={value}

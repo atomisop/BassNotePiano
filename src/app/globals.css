@@ -293,6 +293,19 @@
   backdrop-filter: blur(var(--surface-blur));
 }
 
+/* Engraved dividers for neumorphic panels: a dark line with a light line right
+   beside it, like a groove cut into the surface, instead of a flat hairline.
+   Use the one for the edge the divider sits on. */
+@utility neu-groove-t {
+  box-shadow: inset 0 1px 0 var(--neu-lo), inset 0 2px 0 var(--neu-hi);
+}
+@utility neu-groove-b {
+  box-shadow: inset 0 -1px 0 var(--neu-lo), inset 0 -2px 0 var(--neu-hi);
+}
+@utility neu-groove-r {
+  box-shadow: inset -1px 0 0 var(--neu-lo), inset -2px 0 0 var(--neu-hi);
+}
+
 @utility rule {
   /* Full-measure hairline, the way a rule separates sections in print. */
   border-top: 1px solid var(--surface-border);

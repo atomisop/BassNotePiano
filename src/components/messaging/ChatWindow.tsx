@@ -209,7 +209,7 @@ export function ChatWindow({
       </div>
 
       {replyingTo && (
-        <div className="flex items-center gap-2 border-t border-ink/10 bg-neu-base shadow-pressed-low px-4 py-2">
+        <div className="flex items-center gap-2 bg-neu-base shadow-pressed-low px-4 py-2">
           <div className="min-w-0 flex-1 border-l-2 border-[rgb(var(--c-s-50)/0.5)] pl-2">
             <p className="text-small font-medium text-slate-300">
               Replying to {replyingTo.senderId === conversation.friendId ? conversation.friendName ?? conversation.friendUsername ?? "Unnamed" : "yourself"}
