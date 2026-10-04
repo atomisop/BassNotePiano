@@ -877,6 +877,18 @@
    direct instruction, a deliberate reversal of that original
    performance-first stance — see themes.css's own header comment), so
    every theme pays the same real, measurable scroll cost here. */
+  /* No backdrop-filter at all on glass surfaces inside the app. Their blur
+     radius is already 0px there, but `blur(0px)` still creates a backdrop
+     compositing layer, and WebKit does not mask that layer to the element's
+     rounded corners (or its box-shadow), which draws the faint square-cornered
+     polygon halo around smooth curves first found on the dock. Nothing is lost
+     visually: there is no blur to see. */
+  :is([data-surface="app"], [data-surface="marketing"], body:has([data-surface="app"]), body:has([data-surface="marketing"]))
+    :is(.glass-surface, .glass-surface-subtle, .glass-surface-elevated, .glass-pill) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
   .chrome {
     background: rgb(var(--c-surface-solid) / 0.72);
     backdrop-filter: blur(20px) saturate(180%);
@@ -1029,7 +1041,13 @@
      re-pointing the material variables rather than editing ~200 call
      sites; the marketing pages keep their own glass. */
   [data-surface="app"],
-  [data-surface="marketing"] {
+  [data-surface="marketing"],
+  /* Portaled UI (dialogs, drawers, the Atom widget) is a child of <body>, not
+     of the surface wrapper, so it used to fall back to the theme's translucent
+     fill and real blur. Re-pointing the variables on <body> too gives it the
+     same solid material as the rest of the screen it opens over. */
+  body:has([data-surface="app"]),
+  body:has([data-surface="marketing"]) {
     --surface-bg: rgb(var(--plane-mid-bg));
     --surface-border: transparent;
     --surface-shadow: var(--plane-mid-shadow);

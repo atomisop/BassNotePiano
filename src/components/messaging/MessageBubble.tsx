@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Reply } from "lucide-react";
 import { motion } from "framer-motion";
 import { REACTION_EMOJI } from "@/lib/reactions";
@@ -8,6 +8,10 @@ import { AttachmentButton } from "@/components/ui/attachment-button";
 import { EmojiPicker, EmojiPickerContent, EmojiPickerSearch } from "@/components/ui/emoji-picker";
 import { useSwipeReply } from "@/lib/useSwipeReply";
 import { ReplyArrowIcon, SmileyPlusIcon } from "@/components/ui/icons";
+
+// Hold time before the reaction row opens, and how far a finger may drift before it counts as a swipe/scroll instead.
+const LONG_PRESS_MS = 420;
+const HOLD_MOVE_TOLERANCE_PX = 8;
 
 export interface BubbleReply {
   id: string;
@@ -77,6 +81,40 @@ export function MessageBubble({
 
   const swipe = useSwipeReply(onReplyStart);
 
+  // Long-press (touch or pen) opens the reaction row, like iMessage's Tapback.
+  // Any real movement cancels it, so a swipe-to-reply or a scroll never opens
+  // the picker; a mouse keeps the hover button instead.
+  const holdTimer = useRef<number | null>(null);
+  const holdStart = useRef<{ x: number; y: number } | null>(null);
+  const lastPointerType = useRef<string>("mouse");
+  function cancelHold() {
+    if (holdTimer.current !== null) window.clearTimeout(holdTimer.current);
+    holdTimer.current = null;
+    holdStart.current = null;
+  }
+  useEffect(() => cancelHold, []);
+
+  function onHoldDown(e: React.PointerEvent) {
+    swipe.onPointerDown(e);
+    lastPointerType.current = e.pointerType;
+    if (e.pointerType === "mouse") return;
+    holdStart.current = { x: e.clientX, y: e.clientY };
+    holdTimer.current = window.setTimeout(() => {
+      holdTimer.current = null;
+      setPickerOpen(true);
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(12);
+    }, LONG_PRESS_MS);
+  }
+  function onHoldMove(e: React.PointerEvent) {
+    const start = holdStart.current;
+    if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > HOLD_MOVE_TOLERANCE_PX) cancelHold();
+    swipe.onPointerMove(e);
+  }
+  function onHoldUp(e: React.PointerEvent) {
+    cancelHold();
+    swipe.onPointerUp(e);
+  }
+
   const myReaction = reactions.find((r) => r.userId === currentUserId)?.emoji ?? null;
   const counts = new Map<string, number>();
   for (const r of reactions) counts.set(r.emoji, (counts.get(r.emoji) ?? 0) + 1);
@@ -98,14 +136,18 @@ export function MessageBubble({
         </div>
 
         <motion.div
-          onPointerDown={swipe.onPointerDown}
-          onPointerMove={swipe.onPointerMove}
-          onPointerUp={swipe.onPointerUp}
-          onPointerCancel={swipe.onPointerUp}
+          onPointerDown={onHoldDown}
+          onPointerMove={onHoldMove}
+          onPointerUp={onHoldUp}
+          onPointerCancel={onHoldUp}
+          // Stop the OS long-press menu / text-selection callout so only the reaction row opens.
+          onContextMenu={(e) => {
+            if (lastPointerType.current !== "mouse") e.preventDefault();
+          }}
           animate={{ x: swipe.dragX }}
           transition={swipe.dragX === 0 ? { type: "spring", bounce: 0.2, duration: 0.35 } : { duration: 0 }}
           style={{ touchAction: "pan-y" }}
-          className={`min-w-0 rounded-2xl px-3.5 py-2 text-body ${
+          className={`min-w-0 select-none rounded-2xl px-3.5 py-2 text-body [-webkit-touch-callout:none] md:select-text ${
             isMine
               ? `bg-[rgb(var(--signal)/0.16)] text-slate-50 shadow-raised-low ${endsCluster ? "rounded-br-md" : ""}`
               : `bg-neu-base text-slate-100 shadow-raised-low ${endsCluster ? "rounded-bl-md" : ""}`
