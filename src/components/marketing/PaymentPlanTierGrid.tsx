@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
@@ -12,6 +12,7 @@ import {
   PLAN_CADENCE_CREDITS_PER_WEEK,
 } from "@/lib/classCreditPricing";
 import { CheckIcon } from "@/components/ui/icons";
+import { NumberTicker } from "@/components/ui/number-ticker";
 
 const CADENCE_OPTIONS: { value: PaymentPlanCadence; label: string }[] = [
   { value: "MIN_30_WEEKLY", label: "30 min/week" },
@@ -87,7 +88,8 @@ export function PaymentPlanTierGrid() {
       </div>
 
       <motion.div
-        key={`${audience}-${cadence}`}
+        // No `key` on purpose: the cards stay mounted when you flip Solo/Family
+        // or the weekly length, so only the numbers change (they count).
         variants={gridContainer}
         initial="hidden"
         animate="visible"
@@ -103,16 +105,29 @@ export function PaymentPlanTierGrid() {
           const classesPerMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
           const percentOff = Math.round((1 - perStudentCents / monthlyBaseline) * 100);
 
-          const features = isFamily
+          const features: ReactNode[] = isFamily
             ? [
-                `${classesPerMonth} live classes a month, per student`,
+                <>
+                  <NumberTicker value={classesPerMonth} /> live classes a month, per student
+                </>,
                 "Each student's weekly time reserved",
-                `Paid once for the whole term: ${formatUsd(family.totalCents)} for ${family.recipientCount} students`,
+                <>
+                  Paid once for the whole term: <NumberTicker value={family.totalCents} format={formatUsd} /> for{" "}
+                  <NumberTicker value={family.recipientCount} /> students
+                </>,
               ]
             : [
-                `${classesPerMonth} live classes a month`,
+                <>
+                  <NumberTicker value={classesPerMonth} /> live classes a month
+                </>,
                 "Your weekly time reserved",
-                isMonthly ? "No commitment, pay month to month" : `Locked in for ${rate.termMonths} months, paid monthly`,
+                isMonthly ? (
+                  "No commitment, pay month to month"
+                ) : (
+                  <>
+                    Locked in for <NumberTicker value={rate.termMonths} /> months, paid monthly
+                  </>
+                ),
               ];
 
           return (
@@ -133,15 +148,22 @@ export function PaymentPlanTierGrid() {
 
                 <div>
                   <p className="h-5 text-small tabular-nums text-slate-500">
-                    {percentOff > 0 && <span className="line-through">{formatUsd(monthlyBaseline)}/mo</span>}
+                    {percentOff > 0 && (
+                      <span className="line-through">
+                        <NumberTicker value={monthlyBaseline} format={formatUsd} />
+                        /mo
+                      </span>
+                    )}
                     {percentOff > 0 && (
                       <span className="ml-2 rounded-full bg-slate-50 px-2 py-0.5 align-middle text-small font-bold text-slate-950">
-                        −{percentOff}%
+                        −<NumberTicker value={percentOff} />%
                       </span>
                     )}
                   </p>
                   <p className="mt-1 flex items-baseline gap-1.5">
-                    <span className="font-serif text-hero tabular-nums text-slate-50">{formatUsd(perStudentCents)}</span>
+                    <span className="font-serif text-hero tabular-nums text-slate-50">
+                      <NumberTicker value={perStudentCents} format={formatUsd} />
+                    </span>
                     <span className="text-small text-slate-400">{isFamily ? "/student/mo" : "/month"}</span>
                   </p>
                 </div>
@@ -149,8 +171,8 @@ export function PaymentPlanTierGrid() {
                 <div className="h-px w-full bg-ink/10" />
 
                 <ul className="flex flex-1 flex-col gap-3.5">
-                  {features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-3 text-small text-slate-300">
+                  {features.map((feature, i) => (
+                    <li key={i} className="flex items-start gap-3 text-small text-slate-300">
                       <CheckIcon size={16} className="mt-0.5 shrink-0 text-[rgb(var(--c-s-50))]" />
                       {feature}
                     </li>
