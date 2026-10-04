@@ -1,3 +1,4 @@
+import { PullToRefreshMain } from "@/components/layout/PullToRefreshMain";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
@@ -74,7 +75,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             chaining up to the body once it hits the top/bottom — without
             it, an iOS overscroll bounce here could visibly tug at the fixed
             shell around it, the same "things move weird" complaint. */}
-        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-6 pb-28 md:px-8 md:py-10">{children}</main>
+        <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-6 pb-28 md:px-8 md:py-10">{children}</PullToRefreshMain>
       </div>
       <AppDock unreadMessageCount={unreadMessageCount} />
       <CommandMenu isAdmin={isAdmin} />
