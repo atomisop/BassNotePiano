@@ -459,8 +459,13 @@ export function NotificationBell() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Notifications"
+        aria-expanded={open}
         data-tour="notification-bell"
-        className="tap relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+        className={`tap relative flex h-9 w-9 items-center justify-center rounded-lg bg-neu-base transition ${
+          open
+            ? "text-signal shadow-pressed-low"
+            : "text-slate-400 shadow-raised-low hover:text-slate-200 hover:shadow-raised-mid active:shadow-pressed-low"
+        }`}
       >
         <Bell size={18} strokeWidth={1.5} />
         {unreadCount > 0 && (
@@ -474,28 +479,35 @@ export function NotificationBell() {
         createPortal(
           <AnimatePresence>
             {open && (
+              // Same shape as the Edit profile drawer (SlideOverPanel): a dimmed
+              // strip stays on the left, tapping it closes the panel, and the
+              // panel itself only takes part of the screen (never full width).
               <motion.div
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                // Slowed from 0.3s: fast enough that it wasn't reading as a
-                // slide at all, just a cut — this is the same spring
-                // (bounce 0, no overshoot) at a duration long enough to
-                // actually see it travel from off-screen.
-                transition={{ type: "spring", bounce: 0, duration: 0.45 }}
-                // Opaque white panel. This one scrolls its own notification
-                // list, so a blur here would have cost a repaint on every
-                // scroll frame inside the panel, not just during the slide-in.
-                //
-                // h-[100svh], not inset-0's own implicit bottom:0 sizing,
-                // same fix as QuizModal's own full-screen panel (see its
-                // comment): sizing a position:fixed element off Safari's
-                // *large* viewport (as if the toolbar were always hidden)
-                // can leave a gap or get clipped once the toolbar's
-                // actually showing.
-                style={{ willChange: "transform" }}
-                className="fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full flex-col bg-surface"
+                className="fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full justify-end"
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
               >
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute inset-0 bg-scrim/40"
+                  onClick={() => setOpen(false)}
+                  aria-hidden
+                />
+                <motion.div
+                  initial={{ x: "100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "100%" }}
+                  transition={{ type: "spring", bounce: 0, duration: 0.45 }}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Notifications"
+                  style={{ willChange: "transform" }}
+                  className="relative flex h-full w-[86%] max-w-md flex-col border-l border-ink/10 bg-surface"
+                >
                 <div className="flex items-center gap-4 border-b border-ink/10 px-6 py-5">
                   <button
                     type="button"
@@ -573,6 +585,7 @@ export function NotificationBell() {
                     </div>
                   )}
                 </div>
+                </motion.div>
               </motion.div>
             )}
           </AnimatePresence>,
