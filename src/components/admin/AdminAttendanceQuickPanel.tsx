@@ -196,9 +196,17 @@ export function AdminAttendanceQuickPanel() {
         }`}
       >
         <ClipboardCheck className="h-[18px] w-[18px]" strokeWidth={1.5} />
-        {readyCount > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950">
-            {readyCount > 9 ? "9+" : readyCount}
+        {rows.length > 0 && (
+          // Total active bookings, from the moment each is made until it is
+          // marked present, absent or canceled. Orange while any class is ready
+          // for attendance, neutral otherwise.
+          <span
+            className={`absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-small font-bold ${
+              readyCount > 0 ? "bg-signal text-slate-950" : "bg-slate-600 text-white"
+            }`}
+            aria-label={`${rows.length} active booking${rows.length === 1 ? "" : "s"}${readyCount > 0 ? `, ${readyCount} ready for attendance` : ""}`}
+          >
+            {rows.length > 99 ? "99+" : rows.length}
           </span>
         )}
       </button>
@@ -215,7 +223,10 @@ export function AdminAttendanceQuickPanel() {
             <div className="flex items-start justify-between gap-3 px-1">
               <div>
                 <p className="text-body font-semibold text-slate-100">Class bookings</p>
-                <p className="text-small text-slate-500">Attendance opens {ATTENDANCE_OPENS_MIN_BEFORE} minutes before class.</p>
+                <p className="text-small text-slate-500">
+                  {rows.length} booking{rows.length === 1 ? "" : "s"}
+                  {readyCount > 0 ? ` · ${readyCount} ready` : ""} · attendance opens {ATTENDANCE_OPENS_MIN_BEFORE} min before class
+                </p>
               </div>
               <Link
                 href="/admin/schedule?view=ATTENDANCE"

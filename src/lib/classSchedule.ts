@@ -1536,16 +1536,17 @@ export interface BookingFeedRow extends PendingAttendanceRow {
 }
 
 /**
- * Every active (SCHEDULED) class booking from the oldest one still waiting
- * for an attendance call through the next 45 days, soonest first: the same
+ * Every active (SCHEDULED) class booking, from the oldest one still waiting
+ * for an attendance call to the furthest one booked, soonest first. A booking
+ * is in here from the instant it is made until it is marked present, absent
+ * or canceled, which is what the TopBar badge counts: the same
  * ClassBooking rows the admin Schedule page's bookings tab works on, in a
  * light shape for the TopBar's class-bookings panel (AdminAttendanceQuickPanel).
  * Past ones are the "needs a call" ones; future ones are what is coming.
  */
-export async function getBookingFeed(limit = 120): Promise<BookingFeedRow[]> {
-  const horizon = new Date(Date.now() + 45 * 86_400_000);
+export async function getBookingFeed(limit = 300): Promise<BookingFeedRow[]> {
   const bookings = await prisma.classBooking.findMany({
-    where: { status: "SCHEDULED", scheduledAt: { lte: horizon } },
+    where: { status: "SCHEDULED" },
     include: { student: { select: { name: true, email: true } }, schedule: { select: { label: true } } },
     orderBy: { scheduledAt: "asc" },
     take: limit,
