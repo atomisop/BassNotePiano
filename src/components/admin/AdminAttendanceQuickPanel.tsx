@@ -124,7 +124,12 @@ export function AdminAttendanceQuickPanel() {
         onClick={() => setOpen((o) => !o)}
         aria-label="Quick attendance"
         title="Quick attendance"
-        className="tap relative flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+        aria-expanded={open}
+        className={`tap relative flex h-9 w-9 items-center justify-center rounded-lg bg-neu-base transition ${
+          open
+            ? "text-signal shadow-pressed-low"
+            : "text-slate-400 shadow-raised-low hover:text-slate-200 hover:shadow-raised-mid active:shadow-pressed-low"
+        }`}
       >
         <ClipboardCheck className="h-[18px] w-[18px]" strokeWidth={1.5} />
         {rows.length > 0 && (

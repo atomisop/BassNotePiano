@@ -71,16 +71,18 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
         aria-expanded={open}
         data-tour="nav-profile"
         onClick={() => setOpen((v) => !v)}
-        className={`tap h-8 w-8 shrink-0 overflow-hidden rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)] transition hover:border-[rgb(var(--c-s-50)/0.6)] ${triggerClassName ?? ""}`}
+        className={`tap flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neu-base p-[3px] transition ${
+          open ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+        } ${triggerClassName ?? ""}`}
       >
-        {image ? (
-          // eslint-disable-next-line @next/next/no-img-element -- data URI, next/image can't optimize it
-          <img src={image} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-small text-[rgb(var(--c-s-50))]">
-            {initial}
-          </div>
-        )}
+        <span className="block h-full w-full overflow-hidden rounded-full bg-[rgb(var(--c-s-50)/0.1)] shadow-pressed-low">
+          {image ? (
+            // eslint-disable-next-line @next/next/no-img-element -- data URI, next/image can't optimize it
+            <img src={image} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center text-small text-[rgb(var(--c-s-50))]">{initial}</span>
+          )}
+        </span>
       </button>
 
       {open && (

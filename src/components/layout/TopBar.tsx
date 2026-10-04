@@ -1,10 +1,9 @@
-import Link from "next/link";
-import { Shield } from "lucide-react";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { AdminAttendanceQuickPanel } from "@/components/admin/AdminAttendanceQuickPanel";
 import { ProfileMenu } from "./ProfileMenu";
+import { AdminTopLink } from "./AdminTopLink";
 import { BrandMark } from "./BrandMark";
 import { AskAiButton } from "./AskAiButton";
 
@@ -70,15 +69,7 @@ export function TopBar({ isAdmin }: { isAdmin: boolean }) {
             Home/Lessons/Friends/Messages/Settings. Same `h-9 w-9 rounded-lg`
             treatment as the bell right next to it, so the two read as one
             matched pair of icon buttons rather than two different styles. */}
-        {isAdmin && (
-          <Link
-            href="/admin"
-            aria-label="Admin"
-            className="tap flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-200 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-          >
-            <Shield className="h-[18px] w-[18px]" strokeWidth={1.5} />
-          </Link>
-        )}
+        {isAdmin && <AdminTopLink />}
         {/* Quick Present/No-show from anywhere, by direct instruction — the
             full roster at Schedule → Attendance still exists for
             history/cancellation, this is just the fast path for the one
