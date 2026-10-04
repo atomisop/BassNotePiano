@@ -1,5 +1,6 @@
 "use client";
 
+import { NumberTicker } from "@/components/ui/number-ticker";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -174,7 +175,9 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                 className={`glass-surface rounded-xl p-4 ${isCurrent ? "border border-[rgb(var(--c-s-50)/0.5)] shadow-pressed-low" : "border border-transparent"}`}
               >
                 <p className="text-small font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">{option.label}</p>
-                <p className="mt-2 text-body text-slate-50 font-semibold">{formatUsd(rate.installmentAmountCents)}</p>
+                <p className="mt-2 text-body text-slate-50 font-semibold">
+                  <NumberTicker value={rate.installmentAmountCents} format={formatUsd} />
+                </p>
                 {/* Classes/month, not a raw credit count, by direct
                     instruction: same reasoning as PaymentPlanEnrollmentFlow's
                     own classesPerMonth, both cadences work out to 4 classes
@@ -188,10 +191,12 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   const perMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
                   return (
                     <>
-                      <p className="text-small text-slate-500">per month · {perMonth} classes</p>
+                      <p className="text-small text-slate-500">
+                        per month · <NumberTicker value={perMonth} /> classes
+                      </p>
                       {option.value !== "MONTHLY" && (
                         <p className="text-small text-slate-500">
-                          {perMonth * rate.termMonths} total over {rate.termMonths} months
+                          <NumberTicker value={perMonth * rate.termMonths} /> total over <NumberTicker value={rate.termMonths} /> months
                         </p>
                       )}
                     </>
