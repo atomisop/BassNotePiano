@@ -5,7 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason } from "@prisma/client";
-import { calculatePaymentPlanRate, FAMILY_BUNDLE_DISCOUNT_RATE, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { calculatePaymentPlanRate, FAMILY_BUNDLE_DISCOUNT_RATE, PLAN_CADENCE_CREDITS_PER_WEEK, isPlanTermOffered } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
 function formatUsd(cents: number) {
@@ -132,6 +132,10 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
     router.refresh();
   }
 
+  // Same terms the Pricing page and the plan picker offer. Yearly was retired,
+  // so it only shows for someone who is still on a Yearly plan (as "Current").
+  const visibleTerms = TERM_OPTIONS.filter((t) => isPlanTermOffered(t.value) || t.value === activePlan?.term);
+
   const currentRank = activePlan ? TERM_OPTIONS.find((t) => t.value === activePlan.term)!.rank : null;
 
   return (
@@ -162,8 +166,8 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
           </>
         )}
 
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {TERM_OPTIONS.map((option) => {
+        <div className={`mt-3 grid gap-3 ${visibleTerms.length >= 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-1 sm:grid-cols-3"}`}>
+          {visibleTerms.map((option) => {
             const rate = calculatePaymentPlanRate(cadence, option.value);
             const isCurrent = activePlan ? option.value === activePlan.term : false;
             const isUpgrade = currentRank !== null && option.rank > currentRank;
