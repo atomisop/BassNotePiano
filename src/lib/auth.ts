@@ -6,6 +6,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { verifyCode } from "@/lib/verification";
+import { assertRateLimit } from "@/lib/rateLimit";
 import { getCurriculumEntitlement } from "@/lib/entitlement";
 import { isFullAccess } from "@/lib/entitlementRules";
 
@@ -164,8 +165,28 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials.code) return null;
 
-        const result = await verifyCode(credentials.email, "LOGIN_2FA", credentials.code);
-        if (!result.ok || !result.userId) return null;
+        // Guess limit for the code itself. Codes used to be issued only after a
+        // correct password and never left the server, so this could not be
+        // reached without one. "Email me a code" now emails a code to anyone who
+        // asks for it, so signing in with a code must lock out like a password
+        // does: the same failed-attempt log and limits as loginStepOneAction
+        // (8 in 15 minutes per email), plus verifyCode's own 5 guesses per code.
+        const normalizedEmail = credentials.email.trim().toLowerCase();
+        try {
+          await assertRateLimit(
+            prisma.failedLoginAttempt.count,
+            { email: normalizedEmail },
+            { windowMinutes: 15, max: 8, message: "locked" },
+          );
+        } catch {
+          return null;
+        }
+
+        const result = await verifyCode(normalizedEmail, "LOGIN_2FA", credentials.code);
+        if (!result.ok || !result.userId) {
+          await prisma.failedLoginAttempt.create({ data: { email: normalizedEmail } }).catch(() => undefined);
+          return null;
+        }
 
         const user = await prisma.user.findUnique({ where: { id: result.userId } });
         if (!user) return null;

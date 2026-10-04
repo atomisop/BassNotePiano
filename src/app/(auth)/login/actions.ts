@@ -102,3 +102,37 @@ async function loginStepOneWork(email: string, password: string): Promise<LoginS
     throw err;
   }
 }
+
+// ---------------------------------------------------------------------------
+// "Email me a code instead": the passwordless way in.
+// ---------------------------------------------------------------------------
+
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Emails a 6-digit sign-in code to a verified account. The answer is always
+ * the same ({ ok: true }) whether or not the address has an account, whether a
+ * code was actually sent, and even when the per-email request limit was hit, so
+ * this can't be used to find out which emails are registered; the timing floor
+ * covers the response-time gap the same way loginStepOneAction does. Request
+ * volume is capped per email by the shared code issuer (5 per 15 minutes), and
+ * guessing the code is capped by the failed-attempt lockout checked in the
+ * NextAuth authorize step (src/lib/auth.ts), which this code is verified in.
+ * Only a verified address can be signed into this way.
+ */
+export async function requestLoginCodeAction(email: string): Promise<{ ok: true }> {
+  return withTimingFloor(async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!EMAIL_SHAPE.test(normalizedEmail)) return { ok: true as const };
+
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (!user || !user.emailVerified) return { ok: true as const };
+
+    try {
+      await createAndSendCode({ email: user.email, userId: user.id, purpose: "LOGIN_2FA" });
+    } catch (err) {
+      if (!(err instanceof CodeRateLimitError)) console.error("Login code request failed (non-blocking):", err);
+    }
+    return { ok: true as const };
+  });
+}
