@@ -1,5 +1,6 @@
 "use client";
 
+import { NumberTicker } from "@/components/ui/number-ticker";
 import { useEffect, useMemo, useState } from "react";
 import type { PaymentPlanCadence, PaymentPlanTerm, ZellePaymentStatus } from "@prisma/client";
 import { calculatePaymentPlanRate, describePaymentPlan, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
@@ -249,7 +250,13 @@ export function PaymentPlanEnrollmentFlow({
               >
                 <p className={`text-small font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
                 <p className="mt-0.5 text-small text-slate-500">
-                  {percentOff > 0 ? `−${percentOff}%` : "No commitment"}
+                  {percentOff > 0 ? (
+                    <>
+                      −<NumberTicker value={percentOff} />%
+                    </>
+                  ) : (
+                    "No commitment"
+                  )}
                 </p>
               </button>
             );
@@ -304,21 +311,31 @@ export function PaymentPlanEnrollmentFlow({
       <div className="rounded-xl p-4 sm:p-5 bg-neu-base shadow-raised-low">
         <div className="flex items-center justify-between text-small text-slate-400">
           <span>
-            {rate.termMonths === 1
-              ? `${formatUsd(rate.installmentAmountCents)}, one month`
-              : `${formatUsd(rate.installmentAmountCents)}/month × ${rate.termMonths} months`}
+            <NumberTicker value={rate.installmentAmountCents} format={formatUsd} />
+            {rate.termMonths === 1 ? (
+              ", one month"
+            ) : (
+              <>
+                /month × <NumberTicker value={rate.termMonths} /> months
+              </>
+            )}
           </span>
-          <span>{formatUsd(rate.totalCommittedCents)}</span>
+          <NumberTicker value={rate.totalCommittedCents} format={formatUsd} />
         </div>
         <div className="mt-2 flex items-center justify-between border-t border-ink/10 pt-2 text-body font-semibold text-slate-50">
           <span>{rate.termMonths === 1 ? "Due now" : "Due each month"}</span>
-          <span>{formatUsd(rate.installmentAmountCents)}</span>
+          <NumberTicker value={rate.installmentAmountCents} format={formatUsd} />
         </div>
         <div className="mt-1 flex items-center justify-between text-small text-slate-500">
           <span>{classMinutes}-min classes</span>
           <span>
-            {classesPerMonth} classes/month
-            {rate.termMonths > 1 && ` · ${classesPerMonth * rate.termMonths} total over ${rate.termMonths} months`}
+            <NumberTicker value={classesPerMonth} /> classes/month
+            {rate.termMonths > 1 && (
+              <>
+                {" "}
+                · <NumberTicker value={classesPerMonth * rate.termMonths} /> total over <NumberTicker value={rate.termMonths} /> months
+              </>
+            )}
           </span>
         </div>
         <p className="mt-2 text-small text-slate-500">
@@ -336,9 +353,16 @@ export function PaymentPlanEnrollmentFlow({
           className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-s-50))]"
         />
         <span>
-          {rate.termMonths === 1
-            ? `I'm paying for one month (${formatUsd(rate.installmentAmountCents)}), no further commitment.`
-            : `I'm committing to ${rate.termMonths} monthly installments of ${formatUsd(rate.installmentAmountCents)} each.`}{" "}
+          {rate.termMonths === 1 ? (
+            <>
+              I&apos;m paying for one month (<NumberTicker value={rate.installmentAmountCents} format={formatUsd} />), no further commitment.
+            </>
+          ) : (
+            <>
+              I&apos;m committing to <NumberTicker value={rate.termMonths} /> monthly installments of{" "}
+              <NumberTicker value={rate.installmentAmountCents} format={formatUsd} /> each.
+            </>
+          )}{" "}
           My selected weekly time is reserved for me exclusively and auto-booked automatically every week this
           plan stays active, I don&apos;t need to book it myself. If a specific week doesn&apos;t work for me, I&apos;ll
           message support rather than rescheduling it myself. Money spent is{" "}

@@ -1,10 +1,11 @@
 "use client";
 
+import { NumberTicker } from "@/components/ui/number-ticker";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason } from "@prisma/client";
-import { calculatePaymentPlanRate, FAMILY_BUNDLE_DISCOUNT_RATE, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { calculatePaymentPlanRate, FAMILY_BUNDLE_DISCOUNT_RATE, PLAN_CADENCE_CREDITS_PER_WEEK, isPlanTermOffered } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
 function formatUsd(cents: number) {
@@ -131,6 +132,10 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
     router.refresh();
   }
 
+  // Same terms the Pricing page and the plan picker offer. Yearly was retired,
+  // so it only shows for someone who is still on a Yearly plan (as "Current").
+  const visibleTerms = TERM_OPTIONS.filter((t) => isPlanTermOffered(t.value) || t.value === activePlan?.term);
+
   const currentRank = activePlan ? TERM_OPTIONS.find((t) => t.value === activePlan.term)!.rank : null;
 
   return (
@@ -161,8 +166,8 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
           </>
         )}
 
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {TERM_OPTIONS.map((option) => {
+        <div className={`mt-3 grid gap-3 ${visibleTerms.length >= 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-1 sm:grid-cols-3"}`}>
+          {visibleTerms.map((option) => {
             const rate = calculatePaymentPlanRate(cadence, option.value);
             const isCurrent = activePlan ? option.value === activePlan.term : false;
             const isUpgrade = currentRank !== null && option.rank > currentRank;
@@ -174,7 +179,9 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                 className={`glass-surface rounded-xl p-4 ${isCurrent ? "border border-[rgb(var(--c-s-50)/0.5)] shadow-pressed-low" : "border border-transparent"}`}
               >
                 <p className="text-small font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">{option.label}</p>
-                <p className="mt-2 text-body text-slate-50 font-semibold">{formatUsd(rate.installmentAmountCents)}</p>
+                <p className="mt-2 text-body text-slate-50 font-semibold">
+                  <NumberTicker value={rate.installmentAmountCents} format={formatUsd} />
+                </p>
                 {/* Classes/month, not a raw credit count, by direct
                     instruction: same reasoning as PaymentPlanEnrollmentFlow's
                     own classesPerMonth, both cadences work out to 4 classes
@@ -188,10 +195,12 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   const perMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
                   return (
                     <>
-                      <p className="text-small text-slate-500">per month · {perMonth} classes</p>
+                      <p className="text-small text-slate-500">
+                        per month · <NumberTicker value={perMonth} /> classes
+                      </p>
                       {option.value !== "MONTHLY" && (
                         <p className="text-small text-slate-500">
-                          {perMonth * rate.termMonths} total over {rate.termMonths} months
+                          <NumberTicker value={perMonth * rate.termMonths} /> total over <NumberTicker value={rate.termMonths} /> months
                         </p>
                       )}
                     </>
