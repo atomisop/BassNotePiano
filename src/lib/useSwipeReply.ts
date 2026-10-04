@@ -41,6 +41,8 @@ export function useSwipeReply(onReply: () => void): SwipeReply {
   const drag = useRef<{ id: number; startX: number; startY: number; locked: "x" | "y" | null } | null>(null);
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
+    // A mouse never swipes: on a computer, reply is the hover button on the bubble (and dragging should select text).
+    if (e.pointerType === "mouse") return;
     drag.current = { id: e.pointerId, startX: e.clientX, startY: e.clientY, locked: null };
   }, []);
 

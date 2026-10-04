@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Reply } from "lucide-react";
 import { motion } from "framer-motion";
 import { REACTION_EMOJI } from "@/lib/reactions";
 import { AttachmentButton } from "@/components/ui/attachment-button";
@@ -128,6 +129,15 @@ export function MessageBubble({
 
         {/* Always-present, not hover-only: hover has no equivalent on
             touch, and this is the one reliable way to react on either. */}
+        {/* Computers only (md+): reply on hover, since a mouse can't swipe. */}
+        <button
+          type="button"
+          onClick={onReplyStart}
+          aria-label="Reply"
+          className="hidden h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-500 opacity-0 transition hover:text-slate-300 group-hover/bubble:opacity-100 focus-visible:opacity-100 md:flex"
+        >
+          <Reply size={15} />
+        </button>
         <button
           type="button"
           onClick={() => setPickerOpen((v) => !v)}
