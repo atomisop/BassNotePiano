@@ -1531,6 +1531,35 @@ export async function getPendingAttendanceBookings(limit = 20): Promise<PendingA
   }));
 }
 
+export interface BookingFeedRow extends PendingAttendanceRow {
+  creditsSpent: number;
+}
+
+/**
+ * Every active (SCHEDULED) class booking from the oldest one still waiting
+ * for an attendance call through the next 45 days, soonest first: the same
+ * ClassBooking rows the admin Schedule page's bookings tab works on, in a
+ * light shape for the TopBar's class-bookings panel (AdminAttendanceQuickPanel).
+ * Past ones are the "needs a call" ones; future ones are what is coming.
+ */
+export async function getBookingFeed(limit = 120): Promise<BookingFeedRow[]> {
+  const horizon = new Date(Date.now() + 45 * 86_400_000);
+  const bookings = await prisma.classBooking.findMany({
+    where: { status: "SCHEDULED", scheduledAt: { lte: horizon } },
+    include: { student: { select: { name: true, email: true } }, schedule: { select: { label: true } } },
+    orderBy: { scheduledAt: "asc" },
+    take: limit,
+  });
+  return bookings.map((b) => ({
+    bookingId: b.id,
+    studentName: b.student.name,
+    studentEmail: b.student.email,
+    scheduleLabel: b.schedule.label,
+    scheduledAt: b.scheduledAt,
+    creditsSpent: b.creditsSpent,
+  }));
+}
+
 /** Every occurrence with at least one non-canceled booking, in the recent-past-to-future window, newest first. */
 export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
   const windowStart = new Date(Date.now() - ADMIN_ROSTER_WINDOW_DAYS * 86_400_000);
