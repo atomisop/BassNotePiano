@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Home, CalendarCheck, Users, MessageSquare, Settings, type LucideIcon } from "lucide-react";
 import { Dock, DockIcon, DockItem } from "@/components/ui/dock";
 import { fetchUnreadMessageCountAction } from "@/app/(dashboard)/notification-actions";
@@ -126,7 +126,6 @@ const NAV_ITEMS = [
 export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDockProps) {
   const pathname = usePathname();
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const reducedMotion = useReducedMotion();
 
   // Seeded from the layout's own server-rendered count (no flash of 0 on
   // first paint), then kept fresh client-side — this badge used to be that
@@ -310,16 +309,11 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
           animate={{ y: effectivelyVisible ? 0 : "calc(100% + 24px)", opacity: effectivelyVisible ? 1 : 0 }}
           transition={{ type: "spring", bounce: 0, duration: 0.35 }}
         >
-          {/* A slow, continuous bob — the same idle-float touch the reference
-              dock has at rest. Independent of the hide/show transform above
-              (that one's a one-shot spring to a target, this one's an
-              infinite loop), so it's its own nested motion.div rather than
-              merged into the same animate prop. Off entirely under reduced
-              motion, same as the hide/reveal slide itself. */}
-          <motion.div
-            animate={reducedMotion ? undefined : { y: [-2, 2, -2] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          >
+          {/* No idle bob: the dock used to drift up and down by 2px on an
+              endless loop, which read as the bar never sitting still. It now
+              rests; the only things that move it are the deliberate
+              hide/reveal slide above and the tap squish on an icon. */}
+          <div>
             {/* !bg-black/!bg-none/!border-white/10 override `glass-surface-
                 elevated`'s own theme-driven glass background — solid black
                 regardless of theme or accent, by direct instruction. Both
@@ -504,7 +498,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                 );
               })}
             </Dock>
-          </motion.div>
+          </div>
         </motion.div>
       </div>
     </>
