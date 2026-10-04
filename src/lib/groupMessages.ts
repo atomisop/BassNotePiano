@@ -184,6 +184,9 @@ export async function sendGroupMessage(senderId: string, groupId: string, body: 
     prisma.groupMember.update({ where: { id: membership.id }, data: { lastReadAt: new Date() } }),
   ]);
 
+  // A message landing ends "typing" right away, same as 1-on-1.
+  await prisma.groupTypingStatus.deleteMany({ where: { conversationId: groupId, userId: senderId } });
+
   // Same pattern as 1-on-1 messages: no in-app Notification row (the
   // Messages nav badge + group list are the unread surface), email-only for
   // members who aren't actively on the site.
@@ -242,6 +245,34 @@ export async function getGroupReadReceipts(userId: string, groupId: string): Pro
     where: { conversationId: groupId, userId: { not: userId } },
     select: { lastReadAt: true },
   });
+}
+
+// Same staleness window as 1-on-1 typing (TYPING_STALE_MS in messages.ts).
+const GROUP_TYPING_STALE_MS = 4_000;
+
+/** Upserted while the composer is focused or typed in; recency is the signal. Members only. */
+export async function setGroupTyping(userId: string, groupId: string): Promise<void> {
+  await requireMembership(userId, groupId);
+  await prisma.groupTypingStatus.upsert({
+    where: { conversationId_userId: { conversationId: groupId, userId } },
+    update: {},
+    create: { conversationId: groupId, userId },
+  });
+}
+
+/** Display names of the OTHER members who pinged typing within the last few seconds. */
+export async function getGroupTypers(userId: string, groupId: string): Promise<string[]> {
+  await requireMembership(userId, groupId);
+  const rows = await prisma.groupTypingStatus.findMany({
+    where: {
+      conversationId: groupId,
+      userId: { not: userId },
+      updatedAt: { gte: new Date(Date.now() - GROUP_TYPING_STALE_MS) },
+    },
+    orderBy: { updatedAt: "asc" },
+    select: { user: { select: { name: true, username: true } } },
+  });
+  return rows.map((r) => r.user.name ?? (r.user.username ? `@${r.user.username}` : "Someone"));
 }
 
 export async function markGroupRead(userId: string, groupId: string): Promise<void> {
