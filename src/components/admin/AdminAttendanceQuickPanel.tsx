@@ -133,7 +133,7 @@ export function AdminAttendanceQuickPanel() {
       >
         <ClipboardCheck className="h-[18px] w-[18px]" strokeWidth={1.5} />
         {rows.length > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[rgb(var(--c-s-50))] px-1 text-small font-bold text-slate-950">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950">
             {rows.length > 9 ? "9+" : rows.length}
           </span>
         )}
