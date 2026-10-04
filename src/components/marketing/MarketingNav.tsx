@@ -258,6 +258,17 @@ export function MarketingNav() {
           {/* Ask AI lives in the bar itself, never in the mobile menu list, so it is
               reachable at every width without opening anything. */}
           <div className="ml-auto flex items-center gap-2 md:ml-3">
+            {/* Phones only (md and up already has "Log in" in the row above):
+                a visitor who is not signed in should see how to log in without
+                opening the menu. */}
+            {secondary && (
+              <Link
+                href={secondary.href}
+                className="tap flex h-9 items-center rounded-full bg-neu-base px-4 text-small font-semibold text-[rgb(var(--c-s-50))] shadow-raised-low transition active:shadow-pressed-low md:hidden"
+              >
+                {secondary.label}
+              </Link>
+            )}
             <AskAiButton />
           {/* 44px minimum target, which the previous icon button did not meet. */}
           <button
