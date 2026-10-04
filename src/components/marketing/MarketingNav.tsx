@@ -134,7 +134,7 @@ export function MarketingNav() {
 
   const primary = isLoggedIn
     ? { label: "Dashboard", href: "/dashboard" }
-    : { label: "Start learning", href: "/register" };
+    : { label: "Get started", href: "/register" };
   // Logged in: no separate "Account" pill any more — ProfileMenu's own
   // Settings item goes to the same /account, so it'd be a second link
   // pointing at the same place. Logged out: unchanged, "Log in".
@@ -258,18 +258,48 @@ export function MarketingNav() {
           {/* Ask AI lives in the bar itself, never in the mobile menu list, so it is
               reachable at every width without opening anything. */}
           <div className="ml-auto flex items-center gap-2 md:ml-3">
-            {/* Phones only (md and up already has "Log in" in the row above):
-                a visitor who is not signed in should see how to log in without
-                opening the menu. */}
-            {secondary && (
-              <Link
-                href={secondary.href}
-                className="tap flex h-9 items-center rounded-full bg-neu-base px-4 text-small font-semibold text-[rgb(var(--c-s-50))] shadow-raised-low transition active:shadow-pressed-low md:hidden"
-              >
-                {secondary.label}
-              </Link>
-            )}
-            <AskAiButton />
+            {/* Phones (md and up has these in the row above). Signed out: Log in
+                and Get started, so how to get in is visible without opening the
+                menu. Signed in: Dashboard and the profile button (Sign out lives
+                inside it). Get started / Dashboard appear from 360px up; on the
+                narrowest phones the menu still has them. */}
+            <div className="flex items-center gap-2 md:hidden">
+              {status === "loading" ? null : isLoggedIn ? (
+                <>
+                  <Link
+                    href={primary.href}
+                    className="tap hidden h-9 items-center rounded-full bg-neu-base px-4 text-small font-semibold text-[rgb(var(--c-s-50))] shadow-raised-low transition active:shadow-pressed-low min-[360px]:flex"
+                  >
+                    {primary.label}
+                  </Link>
+                  <ProfileMenu
+                    name={session?.user?.name ?? null}
+                    username={null}
+                    email={session?.user?.email ?? null}
+                    image={image}
+                    triggerClassName="!h-9 !w-9"
+                  />
+                </>
+              ) : (
+                <>
+                  {secondary && (
+                    <Link
+                      href={secondary.href}
+                      className="tap flex h-9 items-center rounded-full px-3 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:opacity-80"
+                    >
+                      {secondary.label}
+                    </Link>
+                  )}
+                  <Link
+                    href={primary.href}
+                    className="tap hidden h-9 items-center rounded-full bg-[rgb(var(--signal))] px-4 text-small font-semibold text-slate-950 shadow-raised-low transition active:shadow-pressed-low min-[360px]:flex"
+                  >
+                    {primary.label}
+                  </Link>
+                </>
+              )}
+            </div>
+            <AskAiButton compactOnPhones />
           {/* 44px minimum target, which the previous icon button did not meet. */}
           <button
             type="button"
