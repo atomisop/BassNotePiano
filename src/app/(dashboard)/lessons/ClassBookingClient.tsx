@@ -15,6 +15,7 @@ import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { CheckIcon, XIcon } from "@/components/ui/icons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { WideLayout } from "@/components/layout/PageLayouts";
+import { Tabs } from "@/components/ui/Tabs";
 
 const NETWORK_ERROR = "That didn't go through. Check your connection and try again.";
 
@@ -42,6 +43,7 @@ interface BookingRow {
 }
 
 type BookingMode = "SOLO" | "FAMILY";
+type PanelId = "credits" | "for" | "upcoming" | "past";
 
 const STATUS_LABEL: Record<BookingRow["status"], string> = {
   SCHEDULED: "Scheduled",
@@ -378,6 +380,8 @@ export function ClassBookingClient({
   // explanation confused first-time students. It switches them on.
   const [multiSelect, setMultiSelect] = useState(false);
   const timesRef = useRef<HTMLDivElement>(null);
+  // Which panel of the small tab slider is open (credits, who the class is for, upcoming, past).
+  const [panel, setPanel] = useState<PanelId>("credits");
   const [bundleSubmitting, setBundleSubmitting] = useState(false);
 
   // Family booking: which occurrence, and the list of attendee emails being
@@ -599,6 +603,7 @@ export function ClassBookingClient({
     // Toggling the same booking's button again cancels the in-progress pick
     // rather than restarting it — same as clicking a lit calendar day twice.
     setReschedulingBooking((prev) => (prev?.id === booking.id ? null : booking));
+    document.getElementById("booking-calendar")?.scrollIntoView({ behavior: "smooth", block: "start" });
     setMode("SOLO");
     setSelectedKeys(new Set());
     setFamilyRowKey(null);
@@ -732,132 +737,16 @@ export function ClassBookingClient({
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Book a class</h1>
       <p className="mt-2 text-small text-slate-500">Pick a day, choose a time, confirm. Classes are live on Discord.</p>
 
-      {/* Two columns on desktop: booking on the left, your credits and
-          bookings in a side panel that stays in view. On phones the panel
-          comes first but only holds what is relevant right now: your credits,
-          and your bookings once you have any. Empty "no bookings yet" boxes
-          are not shown. */}
+      {/* The calendar comes first, straight after the title. Credits, who the
+          class is for, upcoming and past classes all sit in one small tab
+          slider below it (to its right on desktop, where it stays in view). */}
       <div className="mt-(--space-group) grid gap-(--space-group) lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
-        <aside className="space-y-4 lg:sticky lg:top-0 lg:col-start-2 lg:row-start-1" aria-label="Your credits and bookings">
-          <div className="glass-surface p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-small uppercase tracking-wide text-slate-500">Your credits</p>
-                <p className="mt-1 text-body font-semibold text-slate-50">
-                  {credits} credit{credits === 1 ? "" : "s"}
-                </p>
-                <p className="mt-0.5 text-small text-slate-500">1 hour of class = 2 credits</p>
-              </div>
-              <Link
-                href="/billing/lessons"
-                className={`tap inline-flex items-center rounded-lg px-4 py-2 text-small font-semibold transition ${
-                  hasNoCredits
-                    ? "cta-sheen cta-fill"
-                    : "text-slate-200 hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-                }`}
-              >
-                Buy credits
-              </Link>
-            </div>
-            {hasNoCredits && (
-              <p className="mt-3 rounded-xl bg-neu-base px-3 py-2 text-small text-slate-300 shadow-pressed-low">
-                You don&apos;t have enough credits to book yet. Buy credits first, then pick your time.
-              </p>
-            )}
-            <p className="mt-3 text-small text-slate-500">
-              You&apos;re charged when your teacher takes attendance. Cancel for free up to {cancellationCutoffHours} hours before class.
-            </p>
-          </div>
-
-          {upcoming.length > 0 && (
-            <div className="glass-surface p-5">
-              <h2 className="mb-3 text-body font-semibold text-slate-100">Your upcoming classes</h2>
-              <div className="space-y-2">
-                {upcoming.map((b) => (
-                  <BookingCard
-                    key={b.id}
-                    booking={b}
-                    cancellationCutoffHours={cancellationCutoffHours}
-                    supportContactId={supportContactId}
-                    cancelingId={cancelingId}
-                    reschedulingBookingId={reschedulingBooking?.id ?? null}
-                    onCancel={handleCancel}
-                    onStartReschedule={startReschedule}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {history.length > 0 && (
-            <details className="glass-surface group p-5">
-              <summary className="tap flex cursor-pointer list-none items-center justify-between text-body font-semibold text-slate-100">
-                Past classes
-                <span className="text-small font-normal text-slate-500">{history.length}</span>
-              </summary>
-              <div className="mt-3 space-y-2">
-                {historyGroups.map((group, i) => (
-                  <MonthGroup
-                    key={group.key}
-                    group={group}
-                    defaultOpen={i === 0}
-                    cancellationCutoffHours={cancellationCutoffHours}
-                    supportContactId={supportContactId}
-                    cancelingId={cancelingId}
-                    reschedulingBookingId={reschedulingBooking?.id ?? null}
-                    onCancel={handleCancel}
-                    onStartReschedule={startReschedule}
-                  />
-                ))}
-              </div>
-            </details>
-          )}
-        </aside>
-
         <div className="min-w-0 lg:col-start-1 lg:row-start-1">
-          {/* Who is the class for. Two plain choices; "Group" is left out until it exists. */}
-          <p className="text-small font-medium text-slate-400">Who is this class for?</p>
-          <div className="mt-2 flex w-fit flex-wrap gap-1.5 rounded-full bg-neu-base p-1 shadow-pressed-low">
-            <button
-              type="button"
-              onClick={() => {
-                setMode("SOLO");
-                setPendingKey(null);
-              }}
-              aria-pressed={mode === "SOLO"}
-              className={`tap rounded-full px-4 py-2 text-small font-medium transition ${
-                mode === "SOLO" ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
-              }`}
-            >
-              Just me
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode("FAMILY");
-                setPendingKey(null);
-                setMultiSelect(false);
-                setSelectedKeys(new Set());
-              }}
-              aria-pressed={mode === "FAMILY"}
-              className={`tap rounded-full px-4 py-2 text-small font-medium transition ${
-                mode === "FAMILY" ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
-              }`}
-            >
-              Me and my family
-            </button>
-          </div>
-          <p className="mt-2 text-small text-slate-500">
-            {mode === "SOLO"
-              ? "One-on-one time with your teacher."
-              : `Two or more family members with their own accounts, taught together. ${familyCreditsPerStudent} credits each, however many join.`}
-          </p>
-
-          {error && <p className="mt-4 text-small text-red-400">{error}</p>}
-          {success && <p className="mt-4 text-small text-slate-50">{success}</p>}
+          {error && <p className="mb-4 text-small text-red-400">{error}</p>}
+          {success && <p className="mb-4 text-small text-slate-50">{success}</p>}
 
           {rows.length > 0 && (
-            <div className="mt-8">
+            <div id="booking-calendar" className="scroll-mt-20">
               <h2 className="text-body font-semibold text-slate-100">1. Pick a day</h2>
               <p className="mb-3 mt-0.5 text-small text-slate-500">Days with a dot have open times.</p>
               <BookingCalendar occurrences={rows} selectedDateKey={selectedDateKey} onSelectDate={setSelectedDateKey} />
@@ -1143,6 +1032,141 @@ export function ClassBookingClient({
             )}
           </div>
         </div>
+
+        {/* Everything that is not the booking itself lives in one small tab
+            slider, the same sliding tabs the rest of the app uses. */}
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-0 lg:col-start-2 lg:row-start-1" aria-label="Credits and bookings">
+          <Tabs<PanelId>
+            label="Credits and bookings"
+            value={panel}
+            onChange={setPanel}
+            items={[
+              { id: "credits", label: "Credits" },
+              { id: "for", label: "Booking for" },
+              { id: "upcoming", label: "Upcoming", count: upcoming.length || undefined },
+              { id: "past", label: "Past", count: history.length || undefined },
+            ]}
+          />
+
+          {panel === "credits" && (
+            <div className="glass-surface p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-small uppercase tracking-wide text-slate-500">Your credits</p>
+                  <p className="mt-1 text-body font-semibold text-slate-50">
+                    {credits} credit{credits === 1 ? "" : "s"}
+                  </p>
+                  <p className="mt-0.5 text-small text-slate-500">1 hour of class = 2 credits</p>
+                </div>
+                <Link
+                  href="/billing/lessons"
+                  className={`tap inline-flex items-center rounded-lg px-4 py-2 text-small font-semibold transition ${
+                    hasNoCredits
+                      ? "cta-sheen cta-fill"
+                      : "text-slate-200 hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  }`}
+                >
+                  Buy credits
+                </Link>
+              </div>
+              {hasNoCredits && (
+                <p className="mt-3 rounded-xl bg-neu-base px-3 py-2 text-small text-slate-300 shadow-pressed-low">
+                  You don&apos;t have enough credits to book yet. Buy credits first, then pick your time.
+                </p>
+              )}
+              <p className="mt-3 text-small text-slate-500">
+                You&apos;re charged when your teacher takes attendance. Cancel for free up to {cancellationCutoffHours} hours before class.
+              </p>
+            </div>
+          )}
+
+          {panel === "for" && <div className="glass-surface p-5">
+          {/* Who is the class for. Two plain choices; "Group" is left out until it exists. */}
+          <p className="text-small font-medium text-slate-400">Who is this class for?</p>
+          <div className="mt-2 flex w-fit flex-wrap gap-1.5 rounded-full bg-neu-base p-1 shadow-pressed-low">
+            <button
+              type="button"
+              onClick={() => {
+                setMode("SOLO");
+                setPendingKey(null);
+              }}
+              aria-pressed={mode === "SOLO"}
+              className={`tap rounded-full px-4 py-2 text-small font-medium transition ${
+                mode === "SOLO" ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
+              }`}
+            >
+              Just me
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode("FAMILY");
+                setPendingKey(null);
+                setMultiSelect(false);
+                setSelectedKeys(new Set());
+              }}
+              aria-pressed={mode === "FAMILY"}
+              className={`tap rounded-full px-4 py-2 text-small font-medium transition ${
+                mode === "FAMILY" ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
+              }`}
+            >
+              Me and my family
+            </button>
+          </div>
+          <p className="mt-2 text-small text-slate-500">
+            {mode === "SOLO"
+              ? "One-on-one time with your teacher."
+              : `Two or more family members with their own accounts, taught together. ${familyCreditsPerStudent} credits each, however many join.`}
+          </p>
+          </div>}
+
+          {panel === "upcoming" && (
+            <div className="glass-surface p-5">
+              {upcoming.length === 0 ? (
+                <p className="text-small text-slate-500">No upcoming classes. Pick a day above to book one.</p>
+              ) : (
+                <div className="space-y-2">
+                  {upcoming.map((b) => (
+                    <BookingCard
+                      key={b.id}
+                      booking={b}
+                      cancellationCutoffHours={cancellationCutoffHours}
+                      supportContactId={supportContactId}
+                      cancelingId={cancelingId}
+                      reschedulingBookingId={reschedulingBooking?.id ?? null}
+                      onCancel={handleCancel}
+                      onStartReschedule={startReschedule}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {panel === "past" && (
+            <div className="glass-surface p-5">
+              {historyGroups.length === 0 ? (
+                <p className="text-small text-slate-500">No past classes yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {historyGroups.map((group, i) => (
+                    <MonthGroup
+                      key={group.key}
+                      group={group}
+                      defaultOpen={i === 0}
+                      cancellationCutoffHours={cancellationCutoffHours}
+                      supportContactId={supportContactId}
+                      cancelingId={cancelingId}
+                      reschedulingBookingId={reschedulingBooking?.id ?? null}
+                      onCancel={handleCancel}
+                      onStartReschedule={startReschedule}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </aside>
       </div>
     </WideLayout>
   );
