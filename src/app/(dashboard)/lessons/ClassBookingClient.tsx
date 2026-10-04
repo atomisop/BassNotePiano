@@ -351,6 +351,15 @@ export function ClassBookingClient({
   const [credits, setCredits] = useState(initialCredits);
   const [bookings, setBookings] = useState(initialBookings);
   const [rows, setRows] = useState(occurrences);
+
+  // The page re-fetches its data in the background (AutoRefresh), so a class
+  // booked or canceled from elsewhere shows up here without a reload. Compared
+  // by content so an unchanged refresh does not reset anything.
+  const occurrencesSig = JSON.stringify(occurrences);
+  const bookingsSig = JSON.stringify(initialBookings);
+  useEffect(() => setRows(occurrences), [occurrencesSig]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => setBookings(initialBookings), [bookingsSig]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => setCredits(initialCredits), [initialCredits]);
   const [mode, setMode] = useState<BookingMode>("SOLO");
   const [bookingKey, setBookingKey] = useState<string | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
