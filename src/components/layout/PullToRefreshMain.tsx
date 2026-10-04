@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { ArrowDown } from "lucide-react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
@@ -9,8 +9,6 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 // the content is allowed to travel.
 const THRESHOLD_PX = 64;
 const MAX_PULL_PX = 96;
-// Keep the spinner up at least this long so a fast refresh doesn't just blink.
-const MIN_SPINNER_MS = 700;
 
 /**
  * The signed-in app's scroll area, with pull-to-refresh back.
@@ -19,37 +17,22 @@ const MIN_SPINNER_MS = 700;
  * the body, `overscroll-contain` here) so the top bar and dock can never be
  * dragged, and that also switches off the browser's own pull-to-refresh. This
  * gives it back inside the one scroll area: pull down while at the very top and
- * release past the threshold to re-fetch the current page's data
- * (`router.refresh()`), without a full reload and without the shell moving.
+ * release past the threshold to reload the tab, the same as the browser's own
+ * pull-to-refresh, without the shell ever moving.
  *
  * Skipped on /messages (its panes have their own scrolling lists, and a
  * pull there would fight them), when the touch began inside something that is
  * itself scrolled down, and for sideways drags.
  */
 export function PullToRefreshMain({ className, children }: { className: string; children: React.ReactNode }) {
-  const router = useRouter();
   const pathname = usePathname();
   const mainRef = useRef<HTMLElement>(null);
   const [pull, setPull] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const [isPending, startTransition] = useTransition();
   const startRef = useRef<{ x: number; y: number } | null>(null);
   const pullRef = useRef(0);
-  const shownAtRef = useRef(0);
 
   const enabled = !pathname.startsWith("/messages");
-
-  // Clear the spinner once the refresh has landed and it has been visible long enough.
-  useEffect(() => {
-    if (!refreshing || isPending) return;
-    const wait = Math.max(0, MIN_SPINNER_MS - (Date.now() - shownAtRef.current));
-    const t = window.setTimeout(() => {
-      setRefreshing(false);
-      setPull(0);
-      pullRef.current = 0;
-    }, wait);
-    return () => window.clearTimeout(t);
-  }, [refreshing, isPending]);
 
   function startedInsideScrolledArea(target: EventTarget | null): boolean {
     let el = target instanceof HTMLElement ? target : null;
@@ -90,10 +73,10 @@ export function PullToRefreshMain({ className, children }: { className: string; 
     if (!startRef.current) return;
     startRef.current = null;
     if (pullRef.current >= THRESHOLD_PX) {
-      shownAtRef.current = Date.now();
       setRefreshing(true);
       setPull(THRESHOLD_PX);
-      startTransition(() => router.refresh());
+      // A real reload, not router.refresh(): this stands in for the browser's own gesture.
+      window.location.reload();
     } else {
       pullRef.current = 0;
       setPull(0);
