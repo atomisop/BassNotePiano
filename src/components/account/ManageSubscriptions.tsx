@@ -151,7 +151,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   type="button"
                   onClick={() => setCadence(option.value)}
                   className={`tap rounded-full px-3 py-1 text-small font-medium transition ${
-                    cadence === option.value ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "text-slate-400 hover:text-slate-200"
+                    cadence === option.value ? "bg-neu-base text-[rgb(var(--c-s-50))] shadow-raised-low" : "text-slate-400 hover:text-slate-200"
                   }`}
                 >
                   {option.label}
@@ -171,7 +171,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
             return (
               <div
                 key={option.value}
-                className={`glass-surface rounded-xl p-4 ${isCurrent ? "border border-[rgb(var(--c-s-50)/0.5)]" : "border border-transparent"}`}
+                className={`glass-surface rounded-xl p-4 ${isCurrent ? "border border-[rgb(var(--c-s-50)/0.5)] shadow-pressed-low" : "border border-transparent"}`}
               >
                 <p className="text-small font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">{option.label}</p>
                 <p className="mt-2 text-body text-slate-50 font-semibold">{formatUsd(rate.installmentAmountCents)}</p>
@@ -281,7 +281,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
           )}
 
           {(cancelStage === "reason" || cancelStage === "canceling") && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-4">
+            <div className="rounded-xl border border-red-500/30 bg-neu-base p-4 shadow-pressed-low">
               <p className="text-small text-slate-100">Tell us why you&apos;re canceling.</p>
               <p className="mt-1 text-small text-slate-500">
                 This ends your plan and frees your reserved weekly time right away. It can&apos;t be undone from here.
@@ -295,7 +295,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                       checked={reason === r.value}
                       onChange={() => setReason(r.value)}
                       disabled={cancelStage === "canceling"}
-                      className="accent-red-500"
+                      className="h-5 w-5 shrink-0 cursor-pointer appearance-none rounded-full border border-(--neu-edge) bg-neu-base shadow-pressed-low transition checked:border-red-400/60 checked:bg-[radial-gradient(circle,rgb(239_68_68)_0_38%,transparent_42%)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                     />
                     {r.label}
                   </label>
@@ -308,7 +308,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   placeholder="Tell us a bit more"
                   rows={3}
                   disabled={cancelStage === "canceling"}
-                  className="mt-3 w-full rounded-lg p-3 text-body text-slate-100 outline-none transition focus:border-red-400/60 disabled:opacity-60 bg-neu-base shadow-raised-low"
+                  className="mt-3 w-full rounded-lg border border-(--neu-edge) p-3 text-body text-slate-100 outline-none transition focus:border-red-400/60 disabled:opacity-60 bg-neu-base shadow-pressed-low"
                 />
               )}
               {cancelError && <p className="mt-2 text-small text-red-400">{cancelError}</p>}
@@ -317,7 +317,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   type="button"
                   onClick={handleConfirmCancel}
                   disabled={!reason || cancelStage === "canceling"}
-                  className="tap flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="tap flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-small font-semibold text-white shadow-raised-low transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {cancelStage === "canceling" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                   {cancelStage === "canceling" ? "Canceling…" : "Cancel my subscription"}

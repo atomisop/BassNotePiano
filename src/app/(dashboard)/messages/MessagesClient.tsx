@@ -108,7 +108,9 @@ function MessagesInner({
       previousConversationLastId.current = newest?.id ?? previous;
 
       setMessages(rows);
-      await markConversationReadAction(friendId);
+      // Seen means the chat is open AND on screen. A background tab keeps
+      // polling but must not tell the sender "Seen" (see visibility effect below).
+      if (document.visibilityState === "visible") await markConversationReadAction(friendId);
       const nextConversations = await getConversationsAction();
       if (signal.aborted) return;
       setConversations(nextConversations);
@@ -132,7 +134,7 @@ function MessagesInner({
       previousGroupLastId.current = newest?.id ?? previous;
 
       setGroupMessages(rows);
-      await markGroupReadAction(groupId);
+      if (document.visibilityState === "visible") await markGroupReadAction(groupId);
       const nextGroups = await getGroupsAction();
       if (signal.aborted) return;
       setGroups(nextGroups);
@@ -142,6 +144,19 @@ function MessagesInner({
   );
 
   const pollFailed = listPoll.failed || conversationPoll.failed || groupPoll.failed;
+  // Coming back to the tab with a chat open is the moment those messages are
+  // actually seen, so run a tick right away instead of waiting out the interval.
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState !== "visible") return;
+      conversationPoll.retry();
+      groupPoll.retry();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeConversationId, activeGroupPollId]);
+
   function retryPolls() {
     listPoll.retry();
     conversationPoll.retry();

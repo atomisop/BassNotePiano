@@ -115,7 +115,9 @@ const nextConfig = {
       // so it needs its own entry here. Confirmed missing live: a real CSP
       // violation blocked an actual R2-hosted lesson PDF from loading
       // before this line was added.
-      `connect-src 'self' https://app.glitchtip.com${r2Origin ? ` ${r2Origin}` : ""}${r2UploadOrigin ? ` ${r2UploadOrigin}` : ""}`,
+      // cdn.jsdelivr.net: the chat emoji picker (frimousse) downloads its emoji
+      // list (plain JSON, emojibase-data) from there. Data only, no scripts.
+      `connect-src 'self' https://app.glitchtip.com https://cdn.jsdelivr.net${r2Origin ? ` ${r2Origin}` : ""}${r2UploadOrigin ? ` ${r2UploadOrigin}` : ""}`,
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",

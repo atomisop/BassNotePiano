@@ -107,7 +107,7 @@ function AboutLink() {
   return (
     <Link
       href="/about"
-      className="flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left text-small text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200"
+      className="flex items-center gap-2.5 tap rounded-xl border border-transparent px-3 py-2.5 text-left text-small text-slate-400 transition hover:text-slate-200 hover:shadow-raised-low active:shadow-pressed-low"
     >
       <TabIcon path={TAB_ICONS.about} />
       About
@@ -122,7 +122,7 @@ function SignOutButton({ className = "" }: { className?: string }) {
     <button
       type="button"
       onClick={() => signOut({ callbackUrl: "/" })}
-      className={`flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left text-small text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200 ${className}`}
+      className={`tap flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left text-small text-slate-400 transition hover:text-slate-200 hover:shadow-raised-low active:shadow-pressed-low ${className}`}
     >
       <TabIcon path={TAB_ICONS.logout} />
       Sign out
@@ -166,8 +166,8 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
                 onClick={() => onSelect(tab.id)}
                 className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-small transition ${
                   activeTab === tab.id
-                    ? "border-transparent bg-[rgb(var(--signal)/0.14)] text-signal"
-                    : "border-transparent text-slate-400 hover:bg-slate-800/60 hover:text-slate-200"
+                    ? "border-transparent bg-neu-base text-signal shadow-pressed-low"
+                    : "border-transparent text-slate-400 hover:text-slate-200 hover:shadow-raised-low active:shadow-pressed-low"
                 }`}
               >
                 <TabIcon path={tab.icon} />
@@ -189,42 +189,45 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
 // full-screen SlideOverPanel instead of swapping content in place. Sign out
 // stays bottom-pinned, always last, same reasoning as the desktop nav.
 function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
+  // Each category is its own raised card; every icon sits in a small pressed
+  // well. Rows press in on tap so the list reads as physical buttons.
+  const row = "tap flex w-full items-center gap-3 px-4 py-3 text-left transition active:shadow-pressed-low";
+  const well = "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neu-base text-slate-400 shadow-pressed-low";
   return (
-    <div className="glass-surface lg:hidden">
-      {groupedTabs().map((group, i) => (
-        <div key={group.category} className={i === 0 ? "" : "border-t border-ink/10 pt-1"}>
+    <div className="space-y-5 lg:hidden">
+      {groupedTabs().map((group) => (
+        <section key={group.category}>
           <p
-            className={`px-4 pb-1 pt-3 text-small font-semibold uppercase tracking-[0.16em] ${
+            className={`px-1 pb-2 text-small font-semibold uppercase tracking-[0.16em] ${
               group.category === "Danger zone" ? "text-[rgb(var(--c-rd-300))]" : "text-slate-500"
             }`}
           >
             {group.category}
           </p>
-          <div className="divide-y divide-ink/10">
+          <div className="divide-y divide-ink/10 overflow-hidden rounded-2xl bg-neu-base shadow-raised-low">
             {group.tabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => onSelect(tab.id)}
-                className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-ink/5"
-              >
-                <TabIcon path={tab.icon} className="h-5 w-5 shrink-0 text-slate-400" />
+              <button key={tab.id} type="button" onClick={() => onSelect(tab.id)} className={row}>
+                <span className={`${well} ${group.category === "Danger zone" ? "text-[rgb(var(--c-rd-300))]" : ""}`}>
+                  <TabIcon path={tab.icon} />
+                </span>
                 <span className="flex-1 text-small text-slate-100">{tab.label}</span>
                 <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
               </button>
             ))}
             {group.category === "Help" && (
-              <Link href="/about" className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-ink/5">
-                <TabIcon path={TAB_ICONS.about} className="h-5 w-5 shrink-0 text-slate-400" />
+              <Link href="/about" className={row}>
+                <span className={well}>
+                  <TabIcon path={TAB_ICONS.about} />
+                </span>
                 <span className="flex-1 text-small text-slate-100">About</span>
                 <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
               </Link>
             )}
           </div>
-        </div>
+        </section>
       ))}
-      <div className="border-t border-ink/10">
-        <SignOutButton className="w-full rounded-none px-4 py-4 hover:bg-ink/5" />
+      <div className="overflow-hidden rounded-2xl bg-neu-base shadow-raised-low">
+        <SignOutButton className="w-full rounded-none px-4 py-3 hover:shadow-none active:shadow-pressed-low" />
       </div>
     </div>
   );
@@ -668,7 +671,7 @@ function DangerZoneSection() {
 
   return (
     <SectionCard title="Danger zone" description="Permanently delete your account and everything tied to it.">
-      <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-4">
+      <div className="rounded-xl border border-red-500/30 bg-neu-base p-4 shadow-pressed-low">
         <p className="text-small text-slate-200">
           This deletes your profile, curriculum progress, class bookings, credits, messages, and everything else tied
           to your account.
@@ -682,7 +685,7 @@ function DangerZoneSection() {
           <button
             type="button"
             onClick={() => setStage("password")}
-            className="tap mt-4 rounded-lg bg-red-600 px-4 py-2 text-small font-semibold text-white transition hover:bg-red-500"
+            className="tap mt-4 rounded-lg bg-red-600 px-4 py-2 text-small font-semibold text-white shadow-raised-low transition hover:bg-red-500 active:shadow-pressed-low"
           >
             Delete my account
           </button>
@@ -738,7 +741,7 @@ function DangerZoneSection() {
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               disabled={deleting}
-              className="w-full glass-surface-subtle px-3 py-2 text-center text-body tracking-[0.4em] text-slate-100 outline-none transition focus:border-red-400/60 disabled:opacity-60"
+              className="h-11 w-full rounded-control border border-(--neu-edge) bg-neu-base px-3 py-2 text-center text-body tracking-[0.4em] text-slate-100 shadow-pressed-low outline-none transition focus:border-red-400/60 disabled:opacity-60"
             />
             <label className="flex items-start gap-2 text-small text-slate-400">
               <input
@@ -746,7 +749,7 @@ function DangerZoneSection() {
                 checked={confirmed}
                 onChange={(e) => setConfirmed(e.target.checked)}
                 disabled={deleting}
-                className="mt-0.5 accent-red-500"
+                className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer appearance-none rounded-md border border-(--neu-edge) bg-neu-base shadow-pressed-low transition checked:border-transparent checked:bg-red-500 checked:bg-[length:70%] checked:bg-center checked:bg-no-repeat checked:bg-[url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22white%22 stroke-width=%223.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M5 12.5l4.5 4.5L19 7%22/%3E%3C/svg%3E')] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
               />
               I understand this permanently deletes my account and everything in it, and can&apos;t be undone.
             </label>

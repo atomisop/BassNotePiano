@@ -69,7 +69,7 @@ export function NewGroupPanel({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Tizita crew"
-              className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+              className="h-11 w-full rounded-full border border-(--neu-edge) bg-neu-base px-4 text-body text-slate-100 shadow-pressed-low outline-none transition placeholder:text-slate-500 focus:border-signal"
             />
           </div>
           <p className="text-small font-medium text-slate-400">Add friends</p>
@@ -77,9 +77,9 @@ export function NewGroupPanel({
 
         <div className="flex-1 overflow-y-auto px-4">
           {friends === null ? (
-            <p className="text-small text-slate-600">Loading friends…</p>
+            <p className="text-small text-slate-500">Loading friends…</p>
           ) : friends.length === 0 ? (
-            <p className="text-small text-slate-600">
+            <p className="text-small text-slate-500">
               You don&apos;t have any friends yet — add some on the Friends page first.
             </p>
           ) : (
@@ -92,8 +92,8 @@ export function NewGroupPanel({
                     type="button"
                     disabled={!f.username}
                     onClick={() => toggle(f.username)}
-                    className={`flex w-full items-center gap-2.5 rounded-lg p-2.5 text-left transition ${
-                      checked ? "bg-amber-400/10" : "hover:bg-ink/5"
+                    className={`flex w-full items-center gap-2.5 tap rounded-2xl p-2.5 text-left transition ${
+                      checked ? "bg-neu-base shadow-pressed-low" : "hover:shadow-raised-low"
                     } disabled:opacity-40`}
                   >
                     <Avatar image={f.image} label={f.name ?? f.username ?? "?"} className="h-8 w-8 text-small" />
@@ -103,7 +103,7 @@ export function NewGroupPanel({
                     </div>
                     <div
                       className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-                        checked ? "border-amber-400 bg-amber-400 text-slate-950" : "border-transparent bg-neu-base shadow-raised-low"
+                        checked ? "border-transparent bg-signal text-slate-950" : "border-transparent bg-neu-base shadow-pressed-low"
                       }`}
                     >
                       {checked && (
