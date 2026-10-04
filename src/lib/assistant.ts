@@ -16,7 +16,6 @@ import { SCALE_GROUPS } from "@/lib/curriculum";
 import {
   FAMILY_BUNDLE_DISCOUNT_RATE,
   MIN_FAMILY_BUNDLE_RECIPIENTS,
-  EXTRA_SESSION_FLAT_PRICE_CENTS,
   calculateFamilyBundleTotal,
   calculatePaymentPlanRate,
   describePaymentPlan,
@@ -135,7 +134,7 @@ ${planList}
   - Family (2+ separate, already-existing accounts sharing the same cadence and term at once) is a different, separate purchase: the exact same per-month rate and term discount a solo Payment Plan gets, paid once upfront for the whole term instead of monthly installments, plus an extra ${FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total (these credits never expire):
 ${bundleList}
   - Each class is capped at 10 students.
-  - A Payment Plan subscriber never books anything themselves: their weekly slot is auto-booked, and their /lessons page shows their own week (usage, upcoming classes) plus a guided pick-a-time-and-pay flow for an extra class (a flat ${formatUsd(EXTRA_SESSION_FLAT_PRICE_CENTS)}), booked automatically once the payment verifies. Anyone without an active plan sees the regular open booking calendar at /lessons instead (Family sessions, or a between-plans student).
+  - A Payment Plan subscriber never books anything themselves: their weekly slot is auto-booked, and their /lessons page shows their own week (usage, upcoming classes). There is no extra-session purchase; anyone who wants a different or additional time should message the studio. Anyone without an active plan sees the regular open booking calendar at /lessons instead (Family sessions, or a between-plans student).
   - Cancelling 24+ hours before a class automatically refunds the credit to your balance. Inside 24 hours, self-cancellation is turned off; message the studio directly for a case-by-case call.
   - Nothing about a purchase (curriculum, a payment plan installment, or a family bundle) is refundable as cash — the only way a credit comes back is the 24h+ cancellation above.
 

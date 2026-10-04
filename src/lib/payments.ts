@@ -8,7 +8,6 @@ import {
   calculateFamilyBundleTotal,
   isPlanTermOffered,
   MIN_FAMILY_BUNDLE_RECIPIENTS,
-  EXTRA_SESSION_FLAT_PRICE_CENTS,
 } from "@/lib/classCreditPricing";
 import { calculateCurriculumFamilyBundleTotal, MIN_CURRICULUM_FAMILY_BUNDLE_RECIPIENTS } from "@/lib/curriculum";
 import { addCalendarMonthsClamped } from "@/lib/paymentPlans";
@@ -69,9 +68,9 @@ interface PendingPaymentParams {
  * getOrCreateOpenInstallmentPayment), so this was never their shared helper
  * to begin with. CLASS_CREDITS's own old *a-la-carte, buy-any-quantity*
  * purchase page was removed once Payment Plans covered every solo case, but
- * the purpose itself lives on: getOrCreatePendingExtraSessionPayment below
- * reuses it for the Schedule screen's flat-rate single-session top-up,
- * which is idempotent in exactly this same "reuse an open row" way.
+ * the purpose itself lives on for historical rows and Family Bundle credits.
+ * (The Schedule screen's flat-rate extra-session purchase was removed too;
+ * only the verification of any such payment already in flight remains below.)
  */
 async function getOrCreatePendingZellePayment({ userId, purpose, amountCents, zelleHandle, lessonQuantity }: PendingPaymentParams) {
   await expireStalePendingPayments();
@@ -99,100 +98,6 @@ async function getOrCreatePendingZellePayment({ userId, purpose, amountCents, ze
 
 export function getOrCreatePendingCurriculumPayment(userId: string, amountCents: number, zelleHandle: string) {
   return getOrCreatePendingZellePayment({ userId, purpose: "CURRICULUM", amountCents, zelleHandle });
-}
-
-export class ExtraSessionError extends Error {}
-
-export interface ExtraSessionOccurrence {
-  scheduleId: string;
-  occurrenceDateMs: number;
-  chunkIndex: number;
-}
-
-/**
- * The Schedule screen's "buy an extra session" flow: a flat
- * EXTRA_SESSION_FLAT_PRICE_CENTS for exactly one specific one-off occurrence
- * the student picked before paying, for a student who already has (or had) a
- * Payment Plan and just wants one more class this week, without enrolling in
- * a whole new plan. Deliberately its own creation path rather than going
- * through getOrCreatePendingZellePayment above, same reasoning
- * createFamilyBundlePayment and getOrCreateOpenInstallmentPayment already
- * have their own paths: this purpose now carries occurrence-specific fields
- * that helper knows nothing about, and "reuse the open row" here means
- * updating it to whichever occurrence the student picked most recently, not
- * just refreshing amountCents.
- *
- * Takes chunkIndex, not a raw scheduledAt, same reason bookClass never
- * trusts a client-supplied scheduledAt either: scheduledAt and the chunk's
- * own creditCost are both recomputed here from the schedule itself, never
- * taken as given. Skipping that (an earlier version of this function did)
- * would let a client request any timestamp it wants, real occurrence or
- * not, and would let a 2-credit chunk get flat-rate-priced as if it were
- * the single 30-min credit this price is actually for.
- *
- * approveZellePayment books the exact occurrence directly the moment this
- * payment verifies (bookExtraSessionOccurrence in classSchedule.ts), the
- * student never has to separately go spend anything at /lessons, picking a
- * time and paying for it is the whole purchase.
- */
-export async function getOrCreatePendingExtraSessionPayment(
-  userId: string,
-  zelleHandle: string,
-  occurrence: ExtraSessionOccurrence,
-) {
-  await expireStalePendingPayments();
-
-  const schedule = await prisma.classSchedule.findUnique({ where: { id: occurrence.scheduleId } });
-  if (!schedule || !schedule.active) throw new ExtraSessionError("That class time is no longer offered, pick another.");
-
-  const chunk = chunksForSchedule(schedule)[occurrence.chunkIndex];
-  if (!chunk) throw new ExtraSessionError("That time slot doesn't exist.");
-  if (chunk.creditCost !== 1) {
-    throw new ExtraSessionError("That time is longer than a single extra session covers, pick a 30-minute time instead.");
-  }
-
-  const occurrenceDate = new Date(occurrence.occurrenceDateMs);
-  const scheduledAt = computeScheduledAt(schedule, occurrenceDate, chunk);
-  if (scheduledAt.getTime() <= Date.now()) {
-    throw new ExtraSessionError("That class has already started or passed, pick another.");
-  }
-
-  const taken = await prisma.classBooking.findFirst({
-    where: { scheduleId: occurrence.scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED" },
-    select: { id: true },
-  });
-  if (taken) throw new ExtraSessionError("That time was just booked by someone else, pick another.");
-
-  // One class a day, same rule bookClass/bookFamilyClass enforce (see
-  // assertNoOtherBookingSameDay in classSchedule.ts). Checked here too so a
-  // student can't pay for a same-day conflict in the first place, rather
-  // than paying and then getting refused (or worse, silently double-booked)
-  // once an admin actually approves it.
-  const conflictingDay = await prisma.classBooking.findFirst({
-    where: { studentId: userId, occurrenceDate, status: "SCHEDULED" },
-    select: { id: true },
-  });
-  if (conflictingDay) {
-    throw new ExtraSessionError("You already have a class booked that day, one class per day, pick a different date.");
-  }
-
-  const existing = await prisma.zellePayment.findFirst({
-    where: { userId, purpose: "CLASS_CREDITS", extraSessionScheduleId: { not: null }, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
-    orderBy: { createdAt: "desc" },
-  });
-  const data = {
-    amountCents: EXTRA_SESSION_FLAT_PRICE_CENTS,
-    lessonQuantity: 1,
-    extraSessionScheduleId: occurrence.scheduleId,
-    extraSessionOccurrenceDate: occurrenceDate,
-    extraSessionScheduledAt: scheduledAt,
-  };
-  if (existing) {
-    return prisma.zellePayment.update({ where: { id: existing.id }, data });
-  }
-  return prisma.zellePayment.create({
-    data: { userId, purpose: "CLASS_CREDITS", zelleHandle, status: "AWAITING_TRANSFER", ...data },
-  });
 }
 
 // ---------------------------------------------------------------------------
