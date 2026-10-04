@@ -23,12 +23,12 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Dump (pg_dump 17 must be >= the Neon Postgres version)
+      - name: Dump (pg_dump 18 must be >= the Neon Postgres version)
         env:
           DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
         run: |
           set -euo pipefail
-          docker run --rm postgres:17-alpine pg_dump --format=custom --no-owner "$DATABASE_URL" > backup.dump
+          docker run --rm postgres:18-alpine pg_dump --format=custom --no-owner "$DATABASE_URL" > backup.dump
           test -s backup.dump
 
       - name: Encrypt
