@@ -119,7 +119,7 @@ export function NewGroupPanel({
           )}
         </div>
 
-        <div className="border-t border-ink/10 p-4">
+        <div className="neu-groove-t p-4">
           {error && <p className="mb-2 text-small text-red-400">{error}</p>}
           <button
             type="button"

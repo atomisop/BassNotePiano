@@ -56,7 +56,7 @@ export function TopBar({ isAdmin }: { isAdmin: boolean }) {
   // `(dashboard)/layout.tsx` adds `pt-16` to this header's old flex parent
   // to reserve the 64px this now paints over instead of occupying in flow.
   return (
-    <header className="chrome fixed inset-x-0 top-0 z-[45] flex h-16 items-center justify-between border-b border-ink/10 px-4 md:px-8">
+    <header className="fixed inset-x-0 top-0 z-[45] flex h-16 items-center justify-between bg-neu-base px-4 shadow-raised-mid md:px-8">
       <BrandMark />
       <div className="flex items-center gap-2 md:gap-3">
         {/* Leftmost of the right-hand cluster: Ask AI, admin, attendance, bell, profile. */}
@@ -69,6 +69,8 @@ export function TopBar({ isAdmin }: { isAdmin: boolean }) {
             Home/Lessons/Friends/Messages/Settings. Same `h-9 w-9 rounded-lg`
             treatment as the bell right next to it, so the two read as one
             matched pair of icon buttons rather than two different styles. */}
+        {/* Buttons sit in one pressed-in tray so they read as raised keys set into the bar. */}
+        <div className="flex items-center gap-1.5 rounded-2xl bg-neu-base p-1 shadow-pressed-low">
         {isAdmin && <AdminTopLink />}
         {/* Quick Present/No-show from anywhere, by direct instruction — the
             full roster at Schedule → Attendance still exists for
@@ -78,6 +80,7 @@ export function TopBar({ isAdmin }: { isAdmin: boolean }) {
         {isAdmin && <AdminAttendanceQuickPanel />}
         <NotificationBell />
         <ProfileAvatarLink />
+        </div>
       </div>
     </header>
   );
