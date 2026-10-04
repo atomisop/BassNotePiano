@@ -11,6 +11,8 @@ import { DiscordIcon } from "@/components/ui/icons";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { ProfileMenu } from "@/components/layout/ProfileMenu";
 import { setFullscreenNavOpen } from "@/lib/overlayNav";
+import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
+import { LoginForm } from "@/components/auth/LoginForm";
 
 /**
  * The homepage header.
@@ -64,6 +66,16 @@ export function MarketingNav() {
 
   const [lifted, setLifted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // "Log in" opens a panel over the page instead of navigating to /login, so a
+  // visitor sees the form straight away and stays where they were. The links
+  // keep their /login href, so middle-click, open-in-new-tab and no-JS still work.
+  const [loginOpen, setLoginOpen] = useState(false);
+  function openLogin(e: React.MouseEvent) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    setMenuOpen(false);
+    setLoginOpen(true);
+  }
   // `image` isn't on the session (see the avatar route's own comment), so
   // this is the client-side equivalent of TopBar's server-side DB fetch:
   // one small authenticated GET, only once actually signed in, cached in
@@ -211,6 +223,7 @@ export function MarketingNav() {
             {secondary && (
               <Link
                 href={secondary.href}
+                onClick={openLogin}
                 className="tap glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-small font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
               >
                 {secondary.label}
@@ -285,6 +298,7 @@ export function MarketingNav() {
                   {secondary && (
                     <Link
                       href={secondary.href}
+                      onClick={openLogin}
                       className="tap flex h-9 items-center rounded-full px-3 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:opacity-80"
                     >
                       {secondary.label}
@@ -366,7 +380,7 @@ export function MarketingNav() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    onClick={() => setMenuOpen(false)}
+                    onClick={link.href === "/login" ? openLogin : () => setMenuOpen(false)}
                     aria-current={isActive ? "page" : undefined}
                     className={`display-3 border-b border-[rgb(var(--c-s-50)/0.08)] py-6 ${
                       isActive ? "text-[rgb(var(--c-s-50))]" : ""
@@ -425,6 +439,14 @@ export function MarketingNav() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Log in panel: the same slide-over used for Edit profile and
+          notifications. Stays on the current page after login (the header
+          flips to the profile button on its own). */}
+      <SlideOverPanel open={loginOpen} onClose={() => setLoginOpen(false)} title="Log in">
+        <p className="mb-5 text-small text-slate-500">Pick up your roadmap right where you left it.</p>
+        <LoginForm embedded callbackUrl={pathname || "/"} onSuccess={() => setLoginOpen(false)} onNavigateAway={() => setLoginOpen(false)} />
+      </SlideOverPanel>
     </>
   );
 }
