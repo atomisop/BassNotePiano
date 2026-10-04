@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { headers } from "next/headers";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -29,6 +30,7 @@ const ESCALATION_LIMIT = { windowMinutes: 60, max: 3 };
  * crash or client-side JSON parsing.
  */
 export async function POST(req: Request) {
+  if (!isSameOriginJsonPost(req)) return NextResponse.json({ error: "Bad request." }, { status: 403 });
   try {
     const body = await req.json().catch(() => null);
     const rawHistory = Array.isArray(body?.messages) ? body.messages : null;

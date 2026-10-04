@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { headers } from "next/headers";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -29,6 +30,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
 /** Sends a visitor's follow-up message into an already-created support thread. */
 export async function POST(req: Request, { params }: { params: { id: string } }) {
+  if (!isSameOriginJsonPost(req)) return NextResponse.json({ error: "Bad request." }, { status: 403 });
   try {
     const body = await req.json().catch(() => null);
     const message = body?.message;

@@ -1,16 +1,43 @@
 import { hasApprovedRegistration, startTrialForEmail } from "@/lib/entitlement";
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createAndSendCode, RateLimitError } from "@/lib/verification";
 import { isDisposableEmailDomain } from "@/lib/disposableEmail";
+import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
+import { verifyTurnstile } from "@/lib/turnstile";
+import { clientIpFrom, consumeRateLimit, RateLimitError as IpRateLimitError } from "@/lib/rateLimit";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
 
-export async function POST(req: Request) {
+// Sign-up costs a bcrypt hash, a row, and an outbound email per call, so it
+// is capped per IP before any of that runs.
+const SIGNUP_LIMIT = { windowMinutes: 60, max: 10, message: "Too many sign-up attempts from this network. Try again in an hour." };
+
+export async function POST(req: NextRequest) {
+  if (!isSameOriginJsonPost(req)) return NextResponse.json({ error: "Bad request." }, { status: 403 });
+
   const body = await req.json().catch(() => null);
+
+  // Honeypot: a hidden field real visitors never fill. Answered with a fake
+  // success so a bot gets no signal that it was caught.
+  if (typeof body?.website === "string" && body.website.length > 0) {
+    return NextResponse.json({ id: "ok", email: "" }, { status: 201 });
+  }
+
+  try {
+    const ip = clientIpFrom(req.headers);
+    await consumeRateLimit(prisma, `signup:${ip}`, SIGNUP_LIMIT);
+    if (!(await verifyTurnstile(body?.turnstileToken, "signup", ip))) {
+      return NextResponse.json({ error: "Please complete the human check and try again." }, { status: 400 });
+    }
+  } catch (err) {
+    if (err instanceof IpRateLimitError) return NextResponse.json({ error: err.message }, { status: 429 });
+    throw err;
+  }
+
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body?.password === "string" ? body.password : "";

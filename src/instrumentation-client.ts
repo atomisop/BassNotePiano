@@ -37,7 +37,7 @@ Sentry.init({
     const scrub = (obj: Record<string, unknown> | undefined) => {
       if (!obj) return;
       for (const key of Object.keys(obj)) {
-        if (/password|token|secret|dsn|referenceCode|zelleHandle|senderName/i.test(key)) {
+        if (/password|token|secret|dsn|code|authorization|cookie|card|referenceCode|zelleHandle|senderName/i.test(key)) {
           delete obj[key];
         }
       }

@@ -1,5 +1,6 @@
 "use client";
 
+import { TurnstileWidget } from "@/components/security/TurnstileWidget";
 import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -32,6 +33,10 @@ function RegisterForm() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Honeypot, see /api/auth/register. Real visitors never see or fill it.
+  const [website, setWebsite] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [captchaReset, setCaptchaReset] = useState(0);
   const shakeControls = useErrorShake(error);
 
   async function handleSubmit(e: FormEvent) {
@@ -56,12 +61,13 @@ function RegisterForm() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, website, turnstileToken }),
     });
 
     if (!res.ok) {
       const body = await res.json().catch(() => null);
       setError(body?.error ?? "Something went wrong creating your account.");
+      setCaptchaReset((n) => n + 1);
       setSubmitting(false);
       return;
     }
@@ -94,6 +100,10 @@ function RegisterForm() {
       <p className="mt-1.5 text-center text-small text-slate-500">Sign up to get started.</p>
 
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">
+      <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+        <label htmlFor="reg-hp">Leave this empty</label>
+        <input id="reg-hp" name="hp_company" type="text" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+      </div>
         <div>
           <Label htmlFor="name" className={fieldLabel}>
             Name
@@ -194,6 +204,8 @@ function RegisterForm() {
             .
           </span>
         </label>
+
+        <TurnstileWidget action="signup" onToken={setTurnstileToken} resetKey={captchaReset} />
 
         {error && (
           <p role="alert" className="text-small text-red-400">

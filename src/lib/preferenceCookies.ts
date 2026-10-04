@@ -1,5 +1,3 @@
-import type { NextRequest } from "next/server";
-
 /**
  * Small preference cookies the server sets so a choice sticks to the device
  * (see cookieConsent.ts for why server-set, not written from JavaScript).
@@ -26,7 +24,7 @@ export function preferenceCookieOptions(httpOnly: boolean) {
  * approves), and the Origin check rejects any other site outright: no other
  * page can, say, flip someone's cookie choice to "accept".
  */
-export function isSameOriginJsonPost(req: NextRequest): boolean {
+export function isSameOriginJsonPost(req: Request): boolean {
   if (!req.headers.get("content-type")?.toLowerCase().startsWith("application/json")) return false;
   const origin = req.headers.get("origin");
   if (!origin) return false;

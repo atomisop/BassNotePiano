@@ -1,0 +1,51 @@
+# Nightly encrypted dump of the production database to a PRIVATE R2 bucket.
+# Neon's own point-in-time restore window is short on the free plan, and it
+# lives in the same account as the database; this is the copy that survives
+# a deleted project or a bad migration noticed a week late.
+#
+# One-time setup (repo Settings > Secrets and variables > Actions):
+#   BACKUP_DATABASE_URL   Neon DIRECT connection string (read-only role is ideal)
+#   BACKUP_PASSPHRASE     long random string; without it the dumps can't be read
+#   BACKUP_R2_ACCOUNT_ID, BACKUP_R2_ACCESS_KEY_ID, BACKUP_R2_SECRET_ACCESS_KEY
+#   BACKUP_R2_BUCKET      a NEW private bucket, never the public lesson bucket
+# In R2, add a lifecycle rule on that bucket to expire objects after 30 days.
+name: Database backup
+
+on:
+  schedule:
+    - cron: "17 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump (pg_dump 17 must be >= the Neon Postgres version)
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          docker run --rm postgres:17-alpine pg_dump --format=custom --no-owner "$DATABASE_URL" > backup.dump
+          test -s backup.dump
+
+      - name: Encrypt
+        env:
+          PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$PASSPHRASE" --symmetric --cipher-algo AES256 -o backup.dump.gpg backup.dump
+          rm backup.dump
+
+      - name: Upload to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          ACCOUNT_ID: ${{ secrets.BACKUP_R2_ACCOUNT_ID }}
+          BUCKET: ${{ secrets.BACKUP_R2_BUCKET }}
+        run: |
+          set -euo pipefail
+          aws s3 cp backup.dump.gpg "s3://$BUCKET/bnp-$(date -u +%Y-%m-%d).dump.gpg" --endpoint-url "https://$ACCOUNT_ID.r2.cloudflarestorage.com"

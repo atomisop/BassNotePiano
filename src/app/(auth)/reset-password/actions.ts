@@ -32,7 +32,10 @@ export async function resetPasswordAction(email: string, code: string, newPasswo
   const user = await prisma.$transaction(async (tx) => {
     const updated = await tx.user.update({
       where: { id: result.userId! },
-      data: { passwordHash },
+      // Bumping sessionVersion signs out every device holding an older
+      // token: the point of resetting a password is often "someone else
+      // may have my account", and a stolen session must not survive it.
+      data: { passwordHash, sessionVersion: { increment: 1 } },
       select: { id: true, email: true },
     });
     return updated;
