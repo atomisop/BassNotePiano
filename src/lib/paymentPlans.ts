@@ -544,7 +544,8 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
         scheduleId: newScheduleId,
         occurrenceDate,
         scheduledAt,
-        creditsSpent: chunk.creditCost,
+        // The plan's own weekly amount (1 or 2 credits), not the time block's full size.
+        creditsSpent: PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence],
         planId: plan.id,
       });
     } catch (err) {

@@ -22,11 +22,18 @@ Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   environment: process.env.NODE_ENV,
 
+  // Only the live site reports. Local dev (whose .env holds the production
+  // address) and test runs used to send their errors and traces into the same
+  // GlitchTip project, which burned the quota and caused 429 rate limits.
+  enabled: process.env.NODE_ENV === "production",
+
   // 10% of normal transactions, 100% of ones that hit an error — enough to
   // spot real performance regressions without paying to trace every request
   // on a studio-sized app. Errors are always captured regardless of this
   // number; it only governs performance/tracing volume.
-  tracesSampleRate: 0.1,
+  // Errors only. Performance traces (10% of every page load and navigation) were
+  // most of the event volume and are not read anywhere.
+  tracesSampleRate: 0,
 
   // STEP 21 explicitly says "do not log sensitive values" — Sentry's
   // default request-body/breadcrumb capture can otherwise pick up form

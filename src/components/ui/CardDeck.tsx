@@ -15,9 +15,10 @@ const SWIPE_PX = 60;
  * there is no hydration flash). Swipe the front card, tap a dot, or use the
  * arrow keys to change cards.
  *
- * Cards behind the front one are `aria-hidden` and their content is
- * `visibility: hidden`, so nothing in them can be focused or read out of
- * order. Intended for phones: the page shows it below `lg` and renders the
+ * Cards behind the front one are `aria-hidden` and `inert`, so nothing in them
+ * can be focused, tapped or read out of order, but their content is always
+ * drawn: while you drag the front card, the next one beneath is already there
+ * and grows into place as you pull. Intended for phones: the page shows it below `lg` and renders the
  * normal layout above.
  */
 export function CardDeck({
@@ -38,6 +39,11 @@ export function CardDeck({
   const [dx, setDx] = useState(0);
   const start = useRef<{ x: number; y: number; id: number } | null>(null);
   const dragged = useRef(false);
+
+  // While dragging, the card that is about to come forward (next when swiping
+  // left, previous when swiping right) rises to full size in step with the drag.
+  const pullTarget = dx === 0 ? -1 : dx < 0 ? (active + 1) % count : (active - 1 + count) % count;
+  const pull = Math.min(1, Math.abs(dx) / (SWIPE_PX * 2));
 
   const go = (i: number) => setActive(((i % count) + count) % count);
 
@@ -94,6 +100,9 @@ export function CardDeck({
               aria-hidden={!front}
               aria-roledescription="slide"
               aria-label={`${labels[i]}, ${i + 1} of ${count}`}
+              ref={(el) => {
+                el?.toggleAttribute("inert", !front);
+              }}
               style={
                 front
                   ? {
@@ -101,7 +110,14 @@ export function CardDeck({
                       transition: dx !== 0 ? "none" : undefined,
                       touchAction: "pan-y",
                     }
-                  : undefined
+                  : i === pullTarget
+                    ? {
+                        transform: `translateY(${(1 - pull) * 0.6}rem) scale(${0.94 + 0.06 * pull})`,
+                        opacity: 0.85 + 0.15 * pull,
+                        transition: "none",
+                        zIndex: 2,
+                      }
+                    : undefined
               }
               onPointerDown={front ? onPointerDown : undefined}
               onPointerMove={front ? onPointerMove : undefined}

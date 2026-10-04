@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { QUIZ_PASS_THRESHOLD } from "@/lib/curriculum";
@@ -198,9 +198,43 @@ function RotatingHeroWord() {
   );
 }
 
+/**
+ * Keeps the background loop playing. autoPlay alone leaves it stopped on phones
+ * in a few ordinary cases: iOS Low Power Mode and data-saver modes refuse to
+ * autoplay until the person touches the page, and Safari pauses it when you
+ * switch apps or tabs and does not always resume it. This asks it to play again
+ * on load, when the tab becomes visible, and on the first touch, click, key
+ * press or scroll, and quietly gives up if the browser still says no.
+ */
+function useKeepPlaying(ref: React.RefObject<HTMLVideoElement>) {
+  useEffect(() => {
+    const video = ref.current;
+    if (!video) return;
+    const tryPlay = () => {
+      if (video.paused && document.visibilityState === "visible") void video.play().catch(() => {});
+    };
+    tryPlay();
+    const onVisible = () => tryPlay();
+    const gestures = ["touchstart", "pointerdown", "keydown", "scroll"] as const;
+    const onGesture = () => tryPlay();
+    video.addEventListener("pause", onGesture);
+    video.addEventListener("stalled", onGesture);
+    document.addEventListener("visibilitychange", onVisible);
+    gestures.forEach((g) => window.addEventListener(g, onGesture, { passive: true }));
+    return () => {
+      video.removeEventListener("pause", onGesture);
+      video.removeEventListener("stalled", onGesture);
+      document.removeEventListener("visibilitychange", onVisible);
+      gestures.forEach((g) => window.removeEventListener(g, onGesture));
+    };
+  }, [ref]);
+}
+
 export function Hero() {
   const { data: session } = useSession();
   const isLoggedIn = Boolean(session?.user);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  useKeepPlaying(videoRef);
 
   return (
     // min-h-[100svh], not min-h-screen (100vh): on a real phone, 100vh is
@@ -238,6 +272,7 @@ export function Hero() {
             video's first frame sitting still, same as a static photo,
             instead of a stray, non-functional button. */}
         <video
+          ref={videoRef}
           aria-hidden
           autoPlay
           loop

@@ -11,7 +11,14 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   environment: process.env.NODE_ENV,
-  tracesSampleRate: 0.1,
+
+  // Only the live site reports. Local dev (whose .env holds the production
+  // address) and test runs used to send their errors and traces into the same
+  // GlitchTip project, which burned the quota and caused 429 rate limits.
+  enabled: process.env.NODE_ENV === "production",
+  // Errors only. Performance traces (10% of every page load and navigation) were
+  // most of the event volume and are not read anywhere.
+  tracesSampleRate: 0,
 
   // Same scrub as the client config — server errors are exactly where a
   // caught Prisma error or a thrown SocialError/ClassBookingError could

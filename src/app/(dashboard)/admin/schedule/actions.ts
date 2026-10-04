@@ -13,10 +13,12 @@ import {
   adminCancelClassBooking,
   adminBookClass,
   getPendingAttendanceBookings,
+  getBookingFeed,
   ClassScheduleError,
   ClassBookingError,
   type ClassScheduleInput,
   type PendingAttendanceRow,
+  type BookingFeedRow,
 } from "@/lib/classSchedule";
 import { searchStudentsForBooking, type BookableStudent } from "@/lib/admin";
 
@@ -94,6 +96,12 @@ export async function undoAttendanceAction(bookingId: string) {
 export async function getPendingAttendanceBookingsAction(): Promise<PendingAttendanceRow[]> {
   await requireAdmin();
   return getPendingAttendanceBookings();
+}
+
+/** Feeds the TopBar's class-bookings panel: every active booking, soonest first. */
+export async function getBookingFeedAction(): Promise<BookingFeedRow[]> {
+  await requireAdmin();
+  return getBookingFeed();
 }
 
 export async function adminCancelBookingAction(bookingId: string, reason?: string) {

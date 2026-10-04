@@ -1,4 +1,5 @@
 import { PullToRefreshMain } from "@/components/layout/PullToRefreshMain";
+import { AutoRefresh } from "@/components/layout/AutoRefresh";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
@@ -77,6 +78,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             shell around it, the same "things move weird" complaint. */}
         <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-6 pb-28 md:px-8 md:py-10">{children}</PullToRefreshMain>
       </div>
+      <AutoRefresh />
       <AppDock unreadMessageCount={unreadMessageCount} />
       <CommandMenu isAdmin={isAdmin} />
       <WhatsNewModal show={shouldShowWhatsNew} entry={LATEST_ENTRY} />

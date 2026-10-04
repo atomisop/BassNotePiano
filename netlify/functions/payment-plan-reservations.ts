@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { schedule } from "@netlify/functions";
 import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
+import { PLAN_CADENCE_CREDITS_PER_WEEK } from "../../src/lib/classCreditPricing";
 import {
   OCCURRENCES_PER_SLOT,
   chunksForSchedule,
@@ -64,12 +65,31 @@ export const handler = schedule("30 9 * * *", async () => {
     const chunk = chunksForSchedule(reservedSchedule)[plan.reservedChunkIndex];
     if (!chunk) continue; // the reserved chunk no longer exists on this schedule; shouldn't happen given updateClassSchedule's guard, defensive only
 
+    // What the plan itself pays for each week: 1 credit for a 30-minute plan,
+    // 2 for a 60-minute one. NOT chunk.creditCost, which is the whole time
+    // block's size (2 credits) and used to be charged to every plan, so a
+    // 30-minute subscriber (4 credits a month) ran out after two weeks.
+    const creditsPerClass = PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence];
+
+    // Self-heal: upcoming, not-yet-attended classes this plan already booked
+    // at the old (too high) price are brought down to the plan's own rate.
+    // Only future SCHEDULED rows of this plan's own reservation are touched.
+    await prisma.classBooking.updateMany({
+      where: {
+        reservedByPlanId: plan.id,
+        status: "SCHEDULED",
+        scheduledAt: { gt: new Date() },
+        creditsSpent: { not: creditsPerClass },
+      },
+      data: { creditsSpent: creditsPerClass },
+    });
+
     for (const occurrenceDate of nextOccurrenceDates(reservedSchedule.dayOfWeek, OCCURRENCES_PER_SLOT)) {
       const scheduledAt = computeScheduledAt(reservedSchedule, occurrenceDate, chunk);
       if (scheduledAt.getTime() <= Date.now()) continue; // already started/passed
 
       const available = await getEffectiveClassCredits(plan.userId);
-      if (available < chunk.creditCost) {
+      if (available < creditsPerClass) {
         // Not enough left for this week yet — skip rather than book, the
         // one thing keeping User.classCredits from ever going negative
         // (markAttendance decrements unconditionally, with no floor guard).
@@ -85,7 +105,7 @@ export const handler = schedule("30 9 * * *", async () => {
           scheduleId: reservedSchedule.id,
           occurrenceDate,
           scheduledAt,
-          creditsSpent: chunk.creditCost,
+          creditsSpent: creditsPerClass,
           planId: plan.id,
         });
         if (result) booked++;
