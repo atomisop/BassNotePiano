@@ -34,7 +34,16 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     // where a real device measurement showed it was actually needed); the
     // reset-password card's own internal spacing is trimmed the same way,
     // see that page.
-    <div data-surface="app" className="relative flex min-h-[100svh] flex-col items-center justify-center px-6 py-4 sm:py-16">
+    //
+    // The scroll container is this layout itself (fixed to the screen, its own
+    // overflow-y-auto), not the page. `data-surface="app"` locks the document
+    // from scrolling (globals.css: the signed-in app is one fixed screen), and
+    // this shell used to rely on page scroll, so any form taller than a phone
+    // screen, the Create account form most of all, could not be scrolled to
+    // the bottom. Now the form scrolls inside its own box, with the content
+    // still centered whenever it fits.
+    <div data-surface="app" className="fixed inset-0 overflow-y-auto overscroll-contain">
+      <div className="relative flex min-h-full flex-col items-center justify-center px-6 py-6 sm:py-16">
       {/* Login and register are the top of their own flow, with nothing
           else on-page to signal a way out: the brand lockup below is a
           real link, but a logo alone doesn't read as "click this to leave"
@@ -78,6 +87,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </Link>
       </header>
       <main className="relative flex w-full justify-center">{children}</main>
+      </div>
     </div>
   );
 }
