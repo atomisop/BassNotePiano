@@ -484,10 +484,10 @@
   opacity: 0;
   pointer-events: none;
 }
-/* The shell of a card behind the front one stays visible; its contents do not. */
-.deck-item:not([data-depth="0"]) > * > * {
-  visibility: hidden;
-}
+/* Cards behind the front one show their real content at all times, so
+   swiping the front card reveals a live card underneath rather than an empty
+   shell that fills in afterwards. They are made inert in CardDeck.tsx, so
+   nothing in them can be focused or tapped while it sits behind. */
 @media (prefers-reduced-motion: reduce) {
   .deck-item {
     transition: none;
