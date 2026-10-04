@@ -23,6 +23,8 @@ import {
   getGroupMessagesAction,
   sendGroupMessageAction,
   markGroupReadAction,
+  setGroupTypingAction,
+  getGroupTypersAction,
   createGroupAction,
   leaveGroupAction,
   reactToGroupMessageAction,
@@ -54,6 +56,7 @@ function MessagesInner({
   const [messages, setMessages] = useState<MessageRow[]>([]);
   const [groupMessages, setGroupMessages] = useState<GroupMessageRow[]>([]);
   const [newGroupOpen, setNewGroupOpen] = useState(false);
+  const [groupTypers, setGroupTypers] = useState<string[]>([]);
 
   // activeChatId is a real, intentional null state (no auto-selecting the
   // first conversation) — that's what makes the empty state and the mobile
@@ -88,6 +91,7 @@ function MessagesInner({
 
   useEffect(() => {
     previousGroupLastId.current = null;
+    setGroupTypers([]);
     if (!activeGroupPollId) setGroupMessages([]);
   }, [activeGroupPollId]);
 
@@ -123,8 +127,9 @@ function MessagesInner({
     async (signal) => {
       const groupId = activeGroupPollId;
       if (!groupId) return;
-      const rows = await getGroupMessagesAction(groupId);
+      const [rows, typers] = await Promise.all([getGroupMessagesAction(groupId), getGroupTypersAction(groupId)]);
       if (signal.aborted) return;
+      setGroupTypers(typers);
 
       const newest = rows[rows.length - 1];
       const previous = previousGroupLastId.current;
@@ -313,6 +318,8 @@ function MessagesInner({
               onMinimize={handleMinimize}
               onLeave={handleLeaveGroup}
               onReact={handleReactGroup}
+              typingNames={groupTypers}
+              onTyping={(groupId) => void setGroupTypingAction(groupId)}
             />
           ) : (
             <EmptyState />

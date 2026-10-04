@@ -623,6 +623,22 @@ model GroupConversation {
 
   members  GroupMember[]
   messages GroupMessage[]
+  typing   GroupTypingStatus[]
+}
+
+// Who is typing in a group right now. Same idea as TypingStatus for 1-on-1:
+// recency is the signal (a row older than a few seconds is ignored), and the
+// writer re-pings while their keyboard is open. One row per (group, person).
+model GroupTypingStatus {
+  id             String            @id @default(cuid())
+  conversationId String
+  conversation   GroupConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User              @relation("GroupTypingUser", fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt      DateTime          @updatedAt
+
+  @@unique([conversationId, userId])
+  @@index([conversationId, updatedAt])
 }
 
 // unreadCount is derived at query time from lastReadAt rather than a
@@ -831,6 +847,7 @@ model User {
 
   createdGroups         GroupConversation[]    @relation("GroupCreator")
   groupMemberships      GroupMember[]          @relation("GroupMembership")
+  groupTypingStatuses   GroupTypingStatus[]    @relation("GroupTypingUser")
   groupMessagesSent     GroupMessage[]         @relation("GroupMessageSender")
   groupMessageReactions GroupMessageReaction[] @relation("GroupMessageReactionUser")
 

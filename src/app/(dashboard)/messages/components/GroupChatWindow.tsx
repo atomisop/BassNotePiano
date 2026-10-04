@@ -6,6 +6,7 @@ import { Avatar } from "@/components/messaging/Avatar";
 import { MessageBubble } from "@/components/messaging/MessageBubble";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { XIcon } from "@/components/ui/icons";
+import { TypingIndicator as GroupTypingIndicator } from "@/components/ui/typing-indicator";
 import { ComposerBar, DayDivider, THREAD_HEADER, ThreadBackButton, clockLabel, layoutThread } from "@/components/messaging/threadUi";
 import { GroupAvatar } from "./GroupAvatar";
 import type { GroupMessageRow } from "../actions";
@@ -28,6 +29,11 @@ function labelFor(senderId: string, currentUserId: string, name: string | null, 
 // equivalent of this compose box).
 const MAX_COMPOSE_HEIGHT_PX = 140;
 
+// Same cadence as ChatWindow: ping at most every 1.5s while typing, and re-ping
+// every 2.5s while the box stays focused, inside the server's 4s window.
+const TYPING_PING_THROTTLE_MS = 1_500;
+const TYPING_REFRESH_MS = 2_500;
+
 export function GroupChatWindow({
   group,
   currentUserId,
@@ -36,6 +42,8 @@ export function GroupChatWindow({
   onMinimize,
   onLeave,
   onReact,
+  typingNames,
+  onTyping,
 }: {
   group: GroupSummary;
   currentUserId: string;
@@ -44,11 +52,17 @@ export function GroupChatWindow({
   onMinimize: () => void;
   onLeave: () => Promise<void>;
   onReact: (messageId: string, emoji: string) => void;
+  /** Other members typing right now, as reported by the server. */
+  typingNames: string[];
+  /** Tell the server this person is typing in this group (caller wires setGroupTypingAction). */
+  onTyping: (groupId: string) => void;
 }) {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [replyingTo, setReplyingTo] = useState<GroupMessageRow | null>(null);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
+  const [composerFocused, setComposerFocused] = useState(false);
+  const lastTypingPingRef = useRef(0);
   const lastMineId = [...messages].reverse().find((m) => m.senderId === currentUserId)?.id ?? null;
   const [leaving, setLeaving] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -98,6 +112,30 @@ export function GroupChatWindow({
 
   function handleJumpToReply(messageId: string) {
     scrollWithin(document.getElementById(`msg-${messageId}`), "center");
+  }
+
+  // Same rule as 1-on-1: typing starts when the keyboard opens and keeps
+  // refreshing server-side while the box stays focused (rows go stale on
+  // their own a few seconds after the last ping).
+  useEffect(() => {
+    if (!composerFocused) return;
+    const ping = () => {
+      if (document.visibilityState !== "visible") return;
+      lastTypingPingRef.current = Date.now();
+      onTyping(group.id);
+    };
+    ping();
+    const timer = window.setInterval(ping, TYPING_REFRESH_MS);
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [composerFocused, group.id]);
+
+  function handleDraftChange(value: string) {
+    setDraft(value);
+    if (Date.now() - lastTypingPingRef.current > TYPING_PING_THROTTLE_MS) {
+      lastTypingPingRef.current = Date.now();
+      onTyping(group.id);
+    }
   }
 
   async function handleLeave() {
@@ -203,6 +241,11 @@ export function GroupChatWindow({
             </div>
           );
         })}
+        {typingNames.length > 0 && (
+          <div className="mt-2">
+            <GroupTypingIndicator typists={typingNames} size={28} />
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -229,7 +272,8 @@ export function GroupChatWindow({
         formRef={formRef}
         textareaRef={textareaRef}
         value={draft}
-        onChange={setDraft}
+        onChange={handleDraftChange}
+        onFocusChange={setComposerFocused}
         onKeyDown={handleKeyDown}
         onSubmit={handleSubmit}
         sending={sending}

@@ -17,6 +17,8 @@ import {
   getGroupDetail,
   getGroupMessages,
   getGroupReadReceipts,
+  setGroupTyping,
+  getGroupTypers,
   sendGroupMessage,
   markGroupRead,
   leaveGroup,
@@ -197,6 +199,24 @@ export async function reactToGroupMessageAction(messageId: string, emoji: string
     return { ok: true as const, ...(await reactToGroupMessage(userId, messageId, emoji)) };
   } catch (err) {
     return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
+  }
+}
+
+export async function setGroupTypingAction(groupId: string): Promise<void> {
+  const userId = await requireUserId();
+  try {
+    await setGroupTyping(userId, groupId);
+  } catch {
+    // Not a member (or the group is gone): nothing to record.
+  }
+}
+
+export async function getGroupTypersAction(groupId: string): Promise<string[]> {
+  const userId = await requireUserId();
+  try {
+    return await getGroupTypers(userId, groupId);
+  } catch {
+    return [];
   }
 }
 
