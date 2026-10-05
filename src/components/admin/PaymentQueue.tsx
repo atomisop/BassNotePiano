@@ -22,7 +22,7 @@ function formatUsd(cents: number) {
 
 function describePayment(payment: PendingZellePayment): { eyebrow: string; title: string } {
   if (payment.purpose === "CURRICULUM") {
-    return { eyebrow: "Curriculum — $69.99", title: "Full platform unlock" };
+    return { eyebrow: "Curriculum $69.99", title: "Full platform unlock" };
   }
   // The Schedule screen's guided extra-session flow: show the exact picked
   // time so the reviewing admin sees what this $35 is actually for, same
@@ -172,12 +172,12 @@ export function PaymentQueue({
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-small">
             <div>
               <dt className="text-small text-slate-600">Sender name</dt>
-              <dd className="text-slate-300">{payment.senderName ?? "—"}</dd>
+              <dd className="text-slate-300">{payment.senderName ?? "None"}</dd>
             </div>
             <div>
               <dt className="text-small text-slate-600">Submitted</dt>
               <dd className="text-slate-300">
-                {payment.submittedAt ? new Date(payment.submittedAt).toLocaleString() : "—"}
+                {payment.submittedAt ? new Date(payment.submittedAt).toLocaleString() : "None"}
               </dd>
             </div>
           </dl>

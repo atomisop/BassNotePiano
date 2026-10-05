@@ -57,7 +57,7 @@ const FEATURES = [
   },
   {
     title: "A reserved weekly slot",
-    body: "Enroll in a plan and that day and time is yours, every week — nothing is charged until the lesson actually happens.",
+    body: "Enroll in a plan and that day and time is yours, every week. Nothing is charged until the lesson actually happens.",
   },
 ];
 
@@ -86,10 +86,6 @@ export function Solution() {
         <div className="col-span-12 md:col-span-6">
           <p className="label label-muted">The fix</p>
           <h2 className="display-2 mt-4 max-w-[18ch] text-balance">A spelling engine for Ethiopian music.</h2>
-          <p className="lead mt-5 max-w-[46ch]">
-            This teaches the underlying grammar instead of one song at a time, so you can play
-            anything in the tradition, in any key, correctly.
-          </p>
 
           <Accordion type="single" collapsible className="mt-8" defaultValue="feature-0">
             {FEATURES.map((feature, i) => (

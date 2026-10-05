@@ -95,12 +95,6 @@ export function ThemePicker({ compact = false }: { compact?: boolean }) {
         </div>
       </fieldset>
 
-      {!compact && (
-        <p className="mt-6 text-small text-slate-600">
-          Saved in this browser, so it applies straight away and follows you around the site — but it won&apos;t carry
-          over to a different device or browser.
-        </p>
-      )}
     </div>
   );
 }

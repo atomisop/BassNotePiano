@@ -97,7 +97,6 @@ function RegisterForm() {
         </svg>
       </div>
       <h1 className="font-hero text-hero font-bold text-balance text-center text-slate-50">Create your account</h1>
-      <p className="mt-1.5 text-center text-small text-slate-500">Sign up to get started.</p>
 
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">

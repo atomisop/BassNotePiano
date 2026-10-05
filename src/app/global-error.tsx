@@ -77,8 +77,7 @@ export default function GlobalError({
             The app failed to start.
           </h1>
           <p style={{ margin: "14px 0 0", fontSize: 15, lineHeight: 1.6, color: "#AAAAAA" }}>
-            This is a fault on our side. Reloading usually clears it — your account and progress
-            are unaffected.
+            This is a fault on our side. Your account and progress are unaffected.
           </p>
 
           <button

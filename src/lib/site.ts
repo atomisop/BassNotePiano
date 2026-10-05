@@ -48,7 +48,7 @@ export const SITE_TAGLINE = "Ethiopian Scales, Rhythm & Chords";
  * thing someone would plausibly search for.
  */
 export const SITE_DESCRIPTION =
-  "An interactive masterclass in the Ethiopian scale system — Tizita, Bati, Anchihoye and Mixolydian pentatonics — spelled correctly in all twelve keys, with the native chords mapped for each one.";
+  "An interactive masterclass in the Ethiopian scale system: Tizita, Bati, Anchihoye and Mixolydian pentatonics, spelled correctly in all twelve keys, with the native chords mapped for each one.";
 
 /** Absolute URL helper — sitemap entries and canonicals both need one. */
 export function absoluteUrl(path = "/"): string {
@@ -87,7 +87,7 @@ export function pageMetadata(opts: {
   // Re-stating the file-convention image explicitly is what survives the
   // shallow merge above. It resolves to an absolute URL via metadataBase.
   const images = ["/opengraph-image"];
-  const ogTitle = title ? `${title} — ${SITE_NAME}` : `${SITE_NAME} — ${SITE_TAGLINE}`;
+  const ogTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} | ${SITE_TAGLINE}`;
   const resolvedDescription = description ?? SITE_DESCRIPTION;
 
   return {

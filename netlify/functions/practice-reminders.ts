@@ -42,7 +42,7 @@ export const handler = schedule("0 15 * * *", async () => {
       userId: user.id,
       type: "PRACTICE_REMINDER",
       title: "Time for a practice session?",
-      body: `It's been ${gap} day${gap === 1 ? "" : "s"} since your last practice — pick up where you left off.`,
+      body: `It's been ${gap} day${gap === 1 ? "" : "s"} since your last practice. Pick up where you left off.`,
       emailCategory: "reminders",
     });
     sent++;

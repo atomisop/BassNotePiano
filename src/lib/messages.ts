@@ -75,7 +75,7 @@ export async function sendMessage(senderId: string, recipientId: string, body: s
   await assertRateLimit(
     prisma.message.count,
     { senderId },
-    { windowMinutes: 1, max: 30, message: "You're sending messages too fast — please slow down." },
+    { windowMinutes: 1, max: 30, message: "You're sending messages too fast. Please slow down." },
   );
 
   const message = await prisma.message.create({ data: { senderId, recipientId, body: trimmed, replyToId: replyToId ?? null } });

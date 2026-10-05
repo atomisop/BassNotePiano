@@ -123,7 +123,7 @@ export async function adjustUserCredits(
     userId,
     type: "CREDIT_ADJUSTED",
     title: amount > 0 ? `${magnitude} class credit${magnitude === 1 ? "" : "s"} added` : `${magnitude} class credit${magnitude === 1 ? "" : "s"} removed`,
-    body: `${note} — new balance: ${balance} credit${balance === 1 ? "" : "s"}.`,
+    body: `${note}. New balance: ${balance} credit${balance === 1 ? "" : "s"}.`,
     emailCategory: "payments",
   });
 

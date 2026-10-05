@@ -65,7 +65,7 @@ export async function createAssistantEscalation(input: CreateAssistantEscalation
 
   const transcript = sanitizeTranscript(input.transcript);
   if (transcript.length === 0) {
-    throw new AssistantEscalationError("Ask Atom something first — there's no conversation to hand off yet.");
+    throw new AssistantEscalationError("Ask Atom something first. There's no conversation to hand off yet.");
   }
 
   const escalation = await prisma.assistantEscalation.create({

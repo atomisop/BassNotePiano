@@ -12,10 +12,6 @@ export default async function AdminCreditsPage() {
     <div>
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Class credits</h1>
-      <p className="mt-2 text-small text-slate-500">
-        Manually grant or deduct class credits — for anything paid outside Zelle, corrections, or goodwill credit.
-        Every change is logged with a reason and notifies the student.
-      </p>
 
       <div className="mt-6">
         <AdminCreditGrantPanel

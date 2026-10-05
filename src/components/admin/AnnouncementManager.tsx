@@ -86,7 +86,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Title — e.g. New scale added: Bati"
+          placeholder="Title, e.g. New scale added: Bati"
           maxLength={120}
           className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
         />
@@ -103,7 +103,6 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
       <div className="mt-4 flex items-center justify-between rounded-lg px-3 py-2.5 bg-neu-base shadow-raised-low">
         <div>
           <p className="text-small font-medium text-slate-200">Send email</p>
-          <p className="text-small text-slate-500">Also emails every signed-up account, not just the in-app banner.</p>
         </div>
         <EmailToggle
           checked={sendEmail}

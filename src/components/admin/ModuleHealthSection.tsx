@@ -12,8 +12,7 @@ export async function ModuleHealthSection() {
 
   return (
     <>
-      <h2 className="mb-1 text-body text-slate-100 font-semibold">Module health</h2>
-      <p className="mb-4 text-small text-slate-500">Unlocks and completions across the whole user base.</p>
+      <h2 className="mb-4 text-body text-slate-100 font-semibold">Module health</h2>
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
         {moduleHealth.map((row) => {
           const rate = row.unlockedCount === 0 ? 0 : Math.round((row.completedCount / row.unlockedCount) * 100);
@@ -55,8 +54,7 @@ export async function ModuleHealthSection() {
 export function ModuleHealthSkeleton() {
   return (
     <div aria-hidden>
-      <h2 className="mb-1 text-body font-semibold text-slate-100">Module health</h2>
-      <p className="mb-4 text-small text-slate-500">Unlocks and completions across the whole user base.</p>
+      <h2 className="mb-4 text-body font-semibold text-slate-100">Module health</h2>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="flex flex-col items-center rounded-2xl bg-neu-base p-4 shadow-raised-mid">

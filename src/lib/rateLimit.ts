@@ -21,7 +21,7 @@
  */
 
 export class RateLimitError extends Error {
-  constructor(message = "You're doing that too often — please wait a few minutes and try again.") {
+  constructor(message = "You're doing that too often. Please wait a few minutes and try again.") {
     super(message);
     this.name = "RateLimitError";
   }

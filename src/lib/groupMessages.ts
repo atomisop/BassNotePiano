@@ -37,7 +37,7 @@ export async function createGroup({ creatorId, name, memberUsernames }: CreateGr
   await assertRateLimit(
     prisma.groupConversation.count,
     { createdById: creatorId },
-    { windowMinutes: 60, max: 10, message: "You're creating groups too fast — please wait a bit and try again." },
+    { windowMinutes: 60, max: 10, message: "You're creating groups too fast. Please wait a bit and try again." },
   );
 
   for (const member of members) {
@@ -176,7 +176,7 @@ export async function sendGroupMessage(senderId: string, groupId: string, body: 
   await assertRateLimit(
     prisma.groupMessage.count,
     { senderId },
-    { windowMinutes: 1, max: 30, message: "You're sending messages too fast — please slow down." },
+    { windowMinutes: 1, max: 30, message: "You're sending messages too fast. Please slow down." },
   );
 
   const [message] = await prisma.$transaction([

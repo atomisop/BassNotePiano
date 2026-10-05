@@ -34,7 +34,7 @@ function cellClasses(cell: AdminProgressScaleCell): string {
 
 function cellTooltip(cell: AdminProgressScaleCell): string {
   const parts = [
-    `${cell.code} — ${cell.title}`,
+    `${cell.code} · ${cell.title}`,
     cell.moduleRead ? "Module read" : "Module unread",
     cell.practiceCompleted ? "Practice logged" : "Practice pending",
     cell.quizPassed ? `Quiz passed${cell.quizScore !== null ? ` (${cell.quizScore})` : ""}` : "Quiz pending",
@@ -137,7 +137,7 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale, onApproveNex
                   Student
                 </th>
                 {scaleColumns.map((sg) => (
-                  <th key={sg.slug} title={`${sg.code} — ${sg.title}`} className="p-2 text-center text-small font-medium text-slate-500">
+                  <th key={sg.slug} title={`${sg.code} · ${sg.title}`} className="p-2 text-center text-small font-medium text-slate-500">
                     S{sg.order + 1}
                   </th>
                 ))}
@@ -147,7 +147,7 @@ export function ProgressMatrix({ rows, initialQuery, onToggleScale, onApproveNex
               {rows.map((row) => (
                 <tr key={row.id} className="border-t border-ink/10">
                   <td className="sticky left-0 z-10 bg-[var(--c-bg,theme(colors.slate.950))] p-3">
-                    <p className="text-small text-slate-100">{row.name ?? "—"}</p>
+                    <p className="text-small text-slate-100">{row.name ?? "No name"}</p>
                     <p className="text-small text-slate-500">{row.email}</p>
                     <div className="mt-1 flex items-center gap-2">
                       <span

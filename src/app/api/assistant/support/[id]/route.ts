@@ -45,7 +45,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       await assertRateLimit(
         prisma.supportMessage.count,
         { identifier, sender: "VISITOR" },
-        { ...SEND_LIMIT, message: "You're sending messages too fast — please slow down." },
+        { ...SEND_LIMIT, message: "You're sending messages too fast. Please slow down." },
       );
     } catch (err) {
       if (err instanceof RateLimitError) return NextResponse.json({ error: err.message }, { status: 429 });
@@ -62,6 +62,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
   } catch (err) {
     console.error("POST /api/assistant/support/[id] failed:", err);
-    return NextResponse.json({ error: "Something went wrong sending that — please try again." }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong sending that. Please try again." }, { status: 500 });
   }
 }

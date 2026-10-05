@@ -196,7 +196,7 @@ function buildTimeline(data: {
     events.push({
       at: c.createdAt,
       label: `${c.amount > 0 ? "+" : "−"}${magnitude} credit${magnitude === 1 ? "" : "s"} (admin)`,
-      detail: `${c.reasonNote} — ${c.adjustedBy.name ?? c.adjustedBy.email}`,
+      detail: `${c.reasonNote}, ${c.adjustedBy.name ?? c.adjustedBy.email}`,
     });
   }
 

@@ -36,9 +36,6 @@ export default function ForgotPasswordPage() {
     >
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Reset password</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Forgot your password?</h1>
-      <p className="mt-2 text-small text-slate-500">
-        Enter your account email and we&apos;ll send a 6-digit code to reset it.
-      </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>

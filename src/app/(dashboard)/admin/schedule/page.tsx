@@ -112,10 +112,6 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
     <div>
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Weekly schedule</h1>
-      <p className="mt-2 text-small text-slate-500">
-        The recurring windows students book classes into. Turning one off stops it from showing up as bookable —
-        existing bookings and their history are never affected.
-      </p>
 
       {viewSwitcher}
 

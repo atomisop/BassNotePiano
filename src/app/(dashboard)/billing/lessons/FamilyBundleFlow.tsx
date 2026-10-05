@@ -241,7 +241,6 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           <p className="text-small font-medium text-slate-400">
             Recipient accounts ({emails.length}/{MAX_FAMILY_BUNDLE_RECIPIENTS})
           </p>
-          <span className="text-small text-slate-500">Each needs its own Bass Note Piano account already</span>
         </div>
 
         <div className="space-y-2.5">

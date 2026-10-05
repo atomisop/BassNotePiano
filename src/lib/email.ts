@@ -55,7 +55,7 @@ async function sendEmail({ to, subject, html, text }: SendEmailParams): Promise<
       [
         "",
         "=".repeat(60),
-        "📧  EMAIL (dev mode — RESEND_API_KEY not set, not actually sent)",
+        "📧  EMAIL (dev mode: RESEND_API_KEY not set, not actually sent)",
         `To:      ${to}`,
         `Subject: ${subject}`,
         "-".repeat(60),
@@ -157,40 +157,40 @@ function codeBlockHtml(code: string): string {
 
 const PURPOSE_COPY: Record<VerificationPurpose, { subject: string; heading: string; intro: string }> = {
   EMAIL_VERIFY: {
-    subject: "Verify your email — Bass Note Piano",
+    subject: "Verify your email | Bass Note Piano",
     heading: "Confirm your email",
     intro: "Welcome to Bass Note Piano. Enter this code to verify your email and finish creating your account.",
   },
   LOGIN_2FA: {
-    subject: "Your login code — Bass Note Piano",
+    subject: "Your login code | Bass Note Piano",
     heading: "Confirm it's you",
     intro: "Enter this code to finish logging in.",
   },
   PASSWORD_RESET: {
-    subject: "Reset your password — Bass Note Piano",
+    subject: "Reset your password | Bass Note Piano",
     heading: "Reset your password",
     intro: "Enter this code to choose a new password.",
   },
   CHANGE_PASSWORD: {
-    subject: "Confirm your password change — Bass Note Piano",
+    subject: "Confirm your password change | Bass Note Piano",
     heading: "Confirm password change",
     intro: "Enter this code to confirm you'd like to change your account password.",
   },
   CHANGE_NAME: {
-    subject: "Confirm your name change — Bass Note Piano",
+    subject: "Confirm your name change | Bass Note Piano",
     heading: "Confirm name change",
     intro: "Enter this code to confirm your new display name.",
   },
   CHANGE_AVATAR: {
-    subject: "Confirm your profile photo change — Bass Note Piano",
+    subject: "Confirm your profile photo change | Bass Note Piano",
     heading: "Confirm photo change",
     intro: "Enter this code to confirm your new profile photo.",
   },
   DELETE_ACCOUNT: {
-    subject: "Confirm account deletion — Bass Note Piano",
+    subject: "Confirm account deletion | Bass Note Piano",
     heading: "Confirm account deletion",
     intro:
-      "Enter this code to permanently delete your account. This can't be undone — if you didn't request this, do not share this code with anyone.",
+      "Enter this code to permanently delete your account. This can't be undone. If you didn't request this, do not share this code with anyone.",
   },
 };
 
@@ -201,7 +201,7 @@ export async function sendVerificationCodeEmail(to: string, purpose: Verificatio
     `<p style="margin:0 0 4px;">${copy.intro}</p>${codeBlockHtml(code)}<p style="margin:0;color:#999999;font-size:13px;">This code expires in 10 minutes.</p>`,
     // Codes are a different concern than a "manage preferences" footer — the
     // relevant reassurance here is "someone else can't get in", not "opt out".
-    { footerNote: "If you didn't request this, you can safely ignore this email — your account is still secure." },
+    { footerNote: "If you didn't request this, you can safely ignore this email. Your account is still secure." },
   );
   const text = `${copy.intro}\n\nYour code: ${code}\n\nThis code expires in 10 minutes.`;
   await sendEmail({ to, subject: copy.subject, html, text });
@@ -220,7 +220,7 @@ function escapeHtml(text: string): string {
 export async function sendNotificationEmail(to: string, title: string, body: string, kind: "default" | "notice" = "default") {
   const html = emailShell(title, `<p style="margin:0;">${escapeHtml(body)}</p>`, { kind });
   const text = body;
-  await sendEmail({ to, subject: `${title} — Bass Note Piano`, html, text });
+  await sendEmail({ to, subject: `${title} | Bass Note Piano`, html, text });
 }
 
 function ctaButtonHtml(cta: { label: string; url: string }): string {
@@ -250,7 +250,7 @@ export async function sendNotificationEmailWithCta(
 ) {
   const html = emailShell(title, `<p style="margin:0 0 20px;">${escapeHtml(body)}</p>${ctaButtonHtml(cta)}`, { kind });
   const text = `${body}\n\n${cta.label}: ${cta.url}`;
-  await sendEmail({ to, subject: `${title} — Bass Note Piano`, html, text });
+  await sendEmail({ to, subject: `${title} | Bass Note Piano`, html, text });
 }
 
 function formatUsdCents(cents: number): string {
@@ -343,7 +343,7 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
     `${details.cta.label}: ${details.cta.url}`,
   ].join("\n");
 
-  await sendEmail({ to, subject: `${heading} — Bass Note Piano`, html, text });
+  await sendEmail({ to, subject: `${heading} | Bass Note Piano`, html, text });
 }
 
 /** First-time-only welcome email, fired the moment email verification succeeds (see verify-email/actions.ts). */
@@ -351,7 +351,7 @@ export async function sendWelcomeEmail(to: string, name: string | null) {
   const firstName = name?.trim().split(" ")[0];
   const greeting = firstName ? `Welcome, ${escapeHtml(firstName)}!` : "Welcome!";
   const body =
-    "Your account is verified and ready to go. Explore the six-scale Ethiopian curriculum, book a live Discord class, or just look around — here's a quick tour of what's here.";
+    "Your account is verified and ready to go. Explore the six-scale Ethiopian curriculum, book a live Discord class, or just look around. Here's a quick tour of what's here.";
   const html = emailShell(greeting, `<p style="margin:0 0 20px;">${body}</p>${ctaButtonHtml({ label: "Learn more about Bass Note Piano", url: getAppUrl("/about") })}`);
   const text = `${greeting}\n\n${body}\n\nLearn more: ${getAppUrl("/about")}`;
   await sendEmail({ to, subject: "Welcome to Bass Note Piano 🎹", html, text });

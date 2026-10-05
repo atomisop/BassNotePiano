@@ -76,7 +76,7 @@ export function BuyCreditsFlow({ zelleHandle }: { zelleHandle: string }) {
     <div className="space-y-6">
       <div>
         <p className="text-small font-medium text-slate-400">How many extra classes?</p>
-        <p className="mt-0.5 text-small text-slate-500">{formatUsd(EXTRA_CLASS_PRICE_CENTS)} each. Each class is {CLASS_MINUTES} minutes.</p>
+        <p className="mt-0.5 text-small text-slate-500">{formatUsd(EXTRA_CLASS_PRICE_CENTS)} each, {CLASS_MINUTES} minutes.</p>
 
         <div className="mt-3 flex items-center justify-center gap-4">
           <button

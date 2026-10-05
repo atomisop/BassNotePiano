@@ -76,15 +76,10 @@ export default async function BillingHistoryPage() {
       </Link>
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Billing</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment history</h1>
-      <p className="mt-2 text-small text-slate-500">
-        {payments.length === 0
-          ? "You haven't submitted any payments yet."
-          : `${payments.length} payment${payments.length === 1 ? "" : "s"}.`}
-      </p>
 
       {payments.length === 0 ? (
         <div className="mt-6 glass-surface p-8 text-center text-small text-slate-500">
-          Nothing here yet — buy the curriculum or a lesson package to see your payments listed here.
+          No payments yet.
         </div>
       ) : (
         <div className="mt-6 space-y-3">

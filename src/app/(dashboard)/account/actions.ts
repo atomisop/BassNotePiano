@@ -197,12 +197,12 @@ const DELETE_ACCOUNT_CODE_PURPOSE = "DELETE_ACCOUNT" as const;
 
 async function verifyCurrentPassword(userId: string, currentPassword: string) {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, passwordHash: true } });
-  if (!user) return { ok: false as const, error: "Something went wrong — try signing in again." };
+  if (!user) return { ok: false as const, error: "Something went wrong. Try signing in again." };
   if (!user.passwordHash) {
     // An account with no password (nothing in this app issues one today,
     // but the column is nullable) has no credential to check against —
     // fail closed rather than silently skipping the check.
-    return { ok: false as const, error: "This account has no password set — message the studio to have your account removed." };
+    return { ok: false as const, error: "This account has no password set. Message the studio to have your account removed." };
   }
   if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
     return { ok: false as const, error: "Current password is incorrect." };
@@ -218,7 +218,7 @@ export async function requestAccountDeletionCodeAction(currentPassword: string) 
 
   try {
     const result = await createAndSendCode({ email: check.email, userId: id, purpose: DELETE_ACCOUNT_CODE_PURPOSE });
-    if (!result.ok) return { ok: false as const, error: "Couldn't send a verification code — try again in a moment." };
+    if (!result.ok) return { ok: false as const, error: "Couldn't send a verification code. Try again in a moment." };
   } catch (err) {
     if (err instanceof RateLimitError) return { ok: false as const, error: err.message };
     throw err;
@@ -237,8 +237,8 @@ export async function confirmAccountDeletionAction(currentPassword: string, code
   if (!verified.ok) {
     const REASON_MESSAGE: Record<typeof verified.reason, string> = {
       not_found: "Request a verification code first.",
-      expired: "That code expired — request a new one.",
-      too_many_attempts: "Too many incorrect attempts — request a new code.",
+      expired: "That code expired. Request a new one.",
+      too_many_attempts: "Too many incorrect attempts. Request a new code.",
       incorrect: "Incorrect code.",
     };
     return { ok: false as const, error: REASON_MESSAGE[verified.reason] };

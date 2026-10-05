@@ -39,8 +39,7 @@ export function ZelleUnlockGate({
     return (
       <div className="rounded-2xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] p-6 text-center">
         <p className="text-small text-[rgb(var(--c-s-50)/0.8)]">
-          Your payment confirmation is in — we&apos;re verifying it now. You&apos;ll get access to{" "}
-          <span className="text-[rgb(var(--c-s-50))]">{scaleTitle}</span> as soon as it clears review.
+          Your payment confirmation is in. We&apos;re verifying it now.
         </p>
       </div>
     );

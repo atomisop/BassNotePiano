@@ -6,7 +6,7 @@ import { OG_MARK_DATA_URI } from "@/assets/ogMark";
 // correct absolute URL + dimensions into both the og: and twitter: tags, so
 // nothing here has to be repeated in `metadata`.
 export const runtime = "nodejs";
-export const alt = `${SITE_NAME} — an interactive masterclass in the Ethiopian scale system`;
+export const alt = `${SITE_NAME}, an interactive masterclass in the Ethiopian scale system`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

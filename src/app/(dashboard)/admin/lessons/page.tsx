@@ -17,15 +17,11 @@ export default async function AdminLessonsPage({ searchParams }: { searchParams:
     <div>
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Lessons</h1>
-      <p className="mt-2 text-small text-slate-500">
-        Upload the video/PDF course content that drives each scale&apos;s course player.
-      </p>
 
       {!storageConfigured && (
         <div className="mt-6 rounded-xl border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-4 py-3 text-small text-[rgb(var(--c-s-50))]">
-          Object storage isn&apos;t configured yet — set the <code className="font-mono text-small">R2_*</code> env vars
-          (see <code className="font-mono text-small">.env.example</code>) before uploading. The list and reorder/delete
-          controls below still work for anything already uploaded.
+          Object storage isn&apos;t configured. Set the <code className="font-mono text-small">R2_*</code> env vars
+          before uploading.
         </div>
       )}
 
@@ -46,7 +42,7 @@ export default async function AdminLessonsPage({ searchParams }: { searchParams:
         <AdminLessonManager
           key={activeSlug}
           scaleGroupSlug={activeScale.slug}
-          scaleGroupLabel={`${activeScale.code} — ${activeScale.title}`}
+          scaleGroupLabel={`${activeScale.code} · ${activeScale.title}`}
           lessons={lessons}
           storageConfigured={storageConfigured}
           onRequestUploadUrl={requestLessonUploadUrlAction}

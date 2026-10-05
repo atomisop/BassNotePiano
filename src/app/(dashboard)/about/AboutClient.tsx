@@ -121,8 +121,7 @@ function TermsTab() {
         <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Legal</p>
         <p className="mt-1 text-body text-slate-50 font-semibold">Terms &amp; refund policy</p>
         <p className="mt-2 text-small text-slate-500">
-          Last updated {TERMS_LAST_UPDATED}. Also shown before you create an account and before your first purchase —
-          this page is just here so you can find it again later.
+          Last updated {TERMS_LAST_UPDATED}.
         </p>
       </div>
       <TermsContent />
@@ -137,8 +136,7 @@ function PrivacyTab() {
         <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Legal</p>
         <p className="mt-1 text-body text-slate-50 font-semibold">Privacy policy</p>
         <p className="mt-2 text-small text-slate-500">
-          Last updated {PRIVACY_LAST_UPDATED}. Also shown before you create an account. This page is just here so
-          you can find it again later.
+          Last updated {PRIVACY_LAST_UPDATED}.
         </p>
       </div>
       <PrivacyContent />

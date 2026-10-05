@@ -395,7 +395,7 @@ export async function bookClass(
   await assertRateLimit(
     prisma.classBooking.count,
     { studentId },
-    { windowMinutes: 60, max: 20, message: "You're booking too fast — please wait a bit and try again." },
+    { windowMinutes: 60, max: 20, message: "You're booking too fast. Please wait a bit and try again." },
   );
 
   let booking;
@@ -407,7 +407,7 @@ export async function bookClass(
         // separate appointment slot and shouldn't block this one.
         const takenByAnyone = await tx.classBooking.findFirst({ where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED" } });
         if (takenByAnyone && takenByAnyone.studentId !== studentId) {
-          throw new ClassBookingError("This time was just booked by someone else — pick another slot.");
+          throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
         }
 
         // Defense-in-depth against a Payment Plan's own reserved slot —
@@ -455,7 +455,7 @@ export async function bookClass(
         const available = user.classCredits - (pending._sum.creditsSpent ?? 0);
         if (available < credits) {
           throw new ClassBookingError(
-            `You need ${credits} credit${credits === 1 ? "" : "s"} available — you have ${available} free right now.`,
+            `You need ${credits} credit${credits === 1 ? "" : "s"} available. You have ${available} free right now.`,
           );
         }
 
@@ -486,7 +486,7 @@ export async function bookClass(
       throw new ClassBookingError("You've already booked this class.");
     }
     if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2034") {
-      throw new ClassBookingError("That slot was just taken — try again.");
+      throw new ClassBookingError("That slot was just taken. Try again.");
     }
     throw err;
   }
@@ -740,7 +740,7 @@ export async function bookFamilyClass(
   const normalizedEmails = Array.from(new Set(attendeeEmails.map((e) => e.trim().toLowerCase()).filter(Boolean)));
   if (normalizedEmails.length < FAMILY_MIN_ATTENDEES) {
     throw new ClassBookingError(
-      `A family booking needs at least ${FAMILY_MIN_ATTENDEES} students — for just one, use the regular one-on-one booking instead.`,
+      `A family booking needs at least ${FAMILY_MIN_ATTENDEES} students. For just one, use the regular one-on-one booking instead.`,
     );
   }
 
@@ -771,7 +771,7 @@ export async function bookFamilyClass(
   await assertRateLimit(
     prisma.classBooking.count,
     { studentId: initiatorId },
-    { windowMinutes: 60, max: 20, message: "You're booking too fast — please wait a bit and try again." },
+    { windowMinutes: 60, max: 20, message: "You're booking too fast. Please wait a bit and try again." },
   );
 
   // Re-verified here, never trusted from whatever the client last showed —
@@ -815,7 +815,7 @@ export async function bookFamilyClass(
     bookings = await prisma.$transaction(
       async (tx) => {
         const takenByAnyone = await tx.classBooking.findFirst({ where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED" } });
-        if (takenByAnyone) throw new ClassBookingError("This time was just booked — pick another slot.");
+        if (takenByAnyone) throw new ClassBookingError("This time was just booked. Pick another slot.");
 
         // Same defense-in-depth as bookClass's own guard (see its comment) —
         // a family booking never coincides with a solo Payment Plan
@@ -855,7 +855,7 @@ export async function bookFamilyClass(
           ]);
           const available = user.classCredits - (pending._sum.creditsSpent ?? 0);
           if (available < FAMILY_CREDITS_PER_STUDENT) {
-            throw new ClassBookingError(`${email} needs ${FAMILY_CREDITS_PER_STUDENT} credits available — they have ${available} free right now.`);
+            throw new ClassBookingError(`${email} needs ${FAMILY_CREDITS_PER_STUDENT} credits available. They have ${available} free right now.`);
           }
 
           const data = {
@@ -884,7 +884,7 @@ export async function bookFamilyClass(
       throw new ClassBookingError("One of these students already has a booking for this occurrence.");
     }
     if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2034") {
-      throw new ClassBookingError("That slot was just taken — try again.");
+      throw new ClassBookingError("That slot was just taken. Try again.");
     }
     throw err;
   }
@@ -1041,7 +1041,7 @@ export async function createReservedBookingIfAbsent(
   });
   if (conflict) {
     console.error(
-      `Reserved booking conflict: plan ${planId}'s student ${studentId} vs. existing booking ${conflict.id} at schedule ${scheduleId}, ${occurrenceDate.toISOString()} — skipped, needs admin attention.`,
+      `Reserved booking conflict: plan ${planId}'s student ${studentId} vs. existing booking ${conflict.id} at schedule ${scheduleId}, ${occurrenceDate.toISOString()}: skipped, needs admin attention.`,
     );
     return null;
   }
@@ -1225,7 +1225,7 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
   const hoursUntil = (booking.scheduledAt.getTime() - Date.now()) / 3_600_000;
   if (hoursUntil < CANCELLATION_CUTOFF_HOURS) {
     throw new ClassBookingError(
-      `Too close to class time to cancel yourself (inside ${CANCELLATION_CUTOFF_HOURS} hours) — message us and we'll help.`,
+      `Too close to class time to cancel yourself (inside ${CANCELLATION_CUTOFF_HOURS} hours). Message us and we'll help.`,
     );
   }
 
@@ -1243,7 +1243,7 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
     userId: studentId,
     type: "LESSON_BOOKING_CANCELED",
     title: "Class canceled",
-    body: `Your ${booking.scheduledAt.toLocaleString()} class was canceled — no credits were charged.`,
+    body: `Your ${booking.scheduledAt.toLocaleString()} class was canceled. No credits were charged.`,
     emailCategory: "social",
   });
 
@@ -1286,13 +1286,13 @@ export async function rescheduleClassBooking(
   if (oldBooking.studentId !== studentId) throw new ClassBookingError("Not your booking.");
   if (oldBooking.status !== "SCHEDULED") throw new ClassBookingError("This booking isn't active.");
   if (oldBooking.reservedByPlanId) {
-    throw new ClassBookingError("Your weekly class is set by your payment plan — change your reserved day from the Lessons page instead.");
+    throw new ClassBookingError("Your weekly class is set by your payment plan. Change your reserved day from the Lessons page instead.");
   }
 
   const hoursUntil = (oldBooking.scheduledAt.getTime() - Date.now()) / 3_600_000;
   if (hoursUntil < CANCELLATION_CUTOFF_HOURS) {
     throw new ClassBookingError(
-      `Too close to class time to reschedule yourself (inside ${CANCELLATION_CUTOFF_HOURS} hours) — message us and we'll help.`,
+      `Too close to class time to reschedule yourself (inside ${CANCELLATION_CUTOFF_HOURS} hours). Message us and we'll help.`,
     );
   }
 
@@ -1323,7 +1323,7 @@ export async function rescheduleClassBooking(
   await assertRateLimit(
     prisma.classBooking.count,
     { studentId },
-    { windowMinutes: 60, max: 20, message: "You're rescheduling too fast — please wait a bit and try again." },
+    { windowMinutes: 60, max: 20, message: "You're rescheduling too fast. Please wait a bit and try again." },
   );
 
   let newBooking;
@@ -1334,7 +1334,7 @@ export async function rescheduleClassBooking(
           where: { scheduleId: newScheduleId, occurrenceDate: newOccurrenceDate, scheduledAt: newScheduledAt, status: "SCHEDULED" },
         });
         if (takenByAnyone && takenByAnyone.studentId !== studentId) {
-          throw new ClassBookingError("This time was just booked by someone else — pick another slot.");
+          throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
         }
 
         const reservedByOtherPlan = await tx.paymentPlan.findFirst({
@@ -1371,7 +1371,7 @@ export async function rescheduleClassBooking(
         const available = user.classCredits - (pendingOthers._sum.creditsSpent ?? 0);
         if (available < credits) {
           throw new ClassBookingError(
-            `You need ${credits} credit${credits === 1 ? "" : "s"} available — you have ${available} free right now.`,
+            `You need ${credits} credit${credits === 1 ? "" : "s"} available. You have ${available} free right now.`,
           );
         }
 
@@ -1412,7 +1412,7 @@ export async function rescheduleClassBooking(
       throw new ClassBookingError("You've already booked this class.");
     }
     if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2034") {
-      throw new ClassBookingError("That slot was just taken — try again.");
+      throw new ClassBookingError("That slot was just taken. Try again.");
     }
     throw err;
   }
@@ -1421,7 +1421,7 @@ export async function rescheduleClassBooking(
     userId: studentId,
     type: "LESSON_BOOKING_CANCELED",
     title: "Class rescheduled",
-    body: `Your class moved to ${newScheduledAt.toLocaleString()} — no credits were charged for the change.`,
+    body: `Your class moved to ${newScheduledAt.toLocaleString()}. No credits were charged for the change.`,
     emailCategory: "social",
   });
   notifyAdminsOfBooking(studentId, newSchedule, newScheduledAt, credits).catch((err) =>
@@ -1447,7 +1447,7 @@ export interface RosterFocus {
 }
 
 /** Reuses the exact same "what's next" logic the student's own dashboard
-    is built on (src/lib/next-step.ts) — so a class-day roster grouped by
+    is built on (src/lib/next-step.ts). So a class-day roster grouped by
     this can never disagree with what a student sees when they log in. */
 function summarizeFocus(roadmap: ScaleAccessState[]): RosterFocus {
   const next = resolveNextStep(roadmap);
@@ -1480,7 +1480,7 @@ export interface AdminOccurrenceRosterEntry {
       unrelated-looking students who happen to share a start time. */
   familyBookingGroupId: string | null;
   /** Where this student actually is in the self-paced curriculum right
-      now — lets the roster group "who's here today" by level, for a
+      now. Lets the roster group "who's here today" by level, for a
       flipped-classroom-style live session (teacher circulates by level
       instead of teaching one lockstep lesson to everyone). */
   focus: RosterFocus;
@@ -1680,7 +1680,7 @@ export async function markAttendance(bookingId: string, attendance: AttendanceSt
 export async function undoAttendance(bookingId: string): Promise<void> {
   const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
   if (booking.status !== "COMPLETED") {
-    throw new ClassBookingError("This booking isn't marked yet — nothing to undo.");
+    throw new ClassBookingError("This booking isn't marked yet. Nothing to undo.");
   }
 
   await prisma.$transaction(async (tx) => {
@@ -1693,7 +1693,7 @@ export async function undoAttendance(bookingId: string): Promise<void> {
     userId: booking.studentId,
     type: "CREDIT_ADJUSTED",
     title: `${booking.creditsSpent} class credit${booking.creditsSpent === 1 ? "" : "s"} refunded`,
-    body: "An admin corrected an attendance mark on your account — this class is back on your schedule and the credit was refunded.",
+    body: "An admin corrected an attendance mark on your account. This class is back on your schedule and the credit was refunded.",
     emailCategory: "payments",
   }).catch((err) => console.error(`Failed to notify user ${booking.studentId} of attendance-undo refund (non-blocking):`, err));
 }
@@ -1722,8 +1722,8 @@ export async function adminCancelClassBooking(bookingId: string, reason?: string
     type: "LESSON_BOOKING_CANCELED",
     title: "Class canceled",
     body: trimmedReason
-      ? `Your ${booking.scheduledAt.toLocaleString()} class was canceled by the studio (${trimmedReason}) — no credits were charged.`
-      : `Your ${booking.scheduledAt.toLocaleString()} class was canceled by the studio — no credits were charged.`,
+      ? `Your ${booking.scheduledAt.toLocaleString()} class was canceled by the studio (${trimmedReason}). No credits were charged.`
+      : `Your ${booking.scheduledAt.toLocaleString()} class was canceled by the studio. No credits were charged.`,
     emailCategory: "social",
   });
 }
@@ -1803,7 +1803,7 @@ export async function updateClassSchedule(scheduleId: string, input: ClassSchedu
   const reservationCount = await prisma.paymentPlan.count({ where: { reservedScheduleId: scheduleId, status: "ACTIVE" } });
   if (reservationCount > 0) {
     throw new ClassScheduleError(
-      `${reservationCount} active payment plan${reservationCount === 1 ? "" : "s"} reserve${reservationCount === 1 ? "s" : ""} this schedule — cancel ${
+      `${reservationCount} active payment plan${reservationCount === 1 ? "" : "s"} reserve${reservationCount === 1 ? "s" : ""} this schedule. Cancel ${
         reservationCount === 1 ? "it" : "them"
       } or wait for ${reservationCount === 1 ? "it" : "them"} to complete before changing its time.`,
     );

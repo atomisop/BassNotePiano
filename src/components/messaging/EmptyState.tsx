@@ -8,7 +8,6 @@ export function EmptyState() {
       </div>
       <div>
         <p className="text-body font-semibold text-slate-200">Your messages</p>
-        <p className="mt-1 text-small text-slate-500">Pick a conversation on the left to start chatting.</p>
       </div>
     </div>
   );

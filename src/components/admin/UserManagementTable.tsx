@@ -180,7 +180,7 @@ export function UserManagementTable({
                   className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[rgb(var(--c-s-50))]"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="text-slate-100">{user.name ?? "—"}</p>
+                  <p className="text-slate-100">{user.name ?? "No name"}</p>
                   <p className="text-small text-slate-500">{user.email}</p>
                   <Link
                     href={`/admin/users/${user.id}`}
@@ -215,7 +215,7 @@ export function UserManagementTable({
                     <button
                       key={su.slug}
                       type="button"
-                      title={`${scaleGroup.code} — ${scaleGroup.title} (${state}). Click to ${su.unlocked ? "lock" : "unlock"}.`}
+                      title={`${scaleGroup.code} · ${scaleGroup.title} (${state}). Click to ${su.unlocked ? "lock" : "unlock"}.`}
                       disabled={busy}
                       onClick={() => withBusy(user.id, () => onToggleScale(user.id, su.slug, !su.unlocked))}
                       className={`tap h-8 min-w-[2.25rem] rounded-lg border px-2 text-small font-medium transition disabled:opacity-40 ${
@@ -238,10 +238,10 @@ export function UserManagementTable({
                     {pendingAction.kind === "role" &&
                       (user.role === "ADMIN"
                         ? `Remove admin access from ${user.name ?? user.email}?`
-                        : `Make ${user.name ?? user.email} an admin? They'll get full access to payments, users, and every other admin tool.`)}
+                        : `Make ${user.name ?? user.email} an admin?`)}
                     {pendingAction.kind === "curriculum" &&
                       (user.hasCurriculumAccess
-                        ? `Revoke curriculum access from ${user.name ?? user.email}? They'll lose access to paid lessons immediately.`
+                        ? `Revoke curriculum access from ${user.name ?? user.email}?`
                         : `Grant curriculum access to ${user.name ?? user.email}?`)}
                     {pendingAction.kind === "history" &&
                       `Permanently delete ${user.assistantMessageCount} stored Atom message(s) for this account? This can't be undone.`}

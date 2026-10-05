@@ -9,7 +9,7 @@ import { assertRateLimit } from "@/lib/rateLimit";
 
 export type FeedbackRating = "UP" | "DOWN";
 
-const MAX_MESSAGE_LENGTH = 4000; // generous — MAX_OUTPUT_TOKENS (800) in assistant.ts caps real replies well under this
+const MAX_MESSAGE_LENGTH = 4000; // generous. MAX_OUTPUT_TOKENS (800) in assistant.ts caps real replies well under this
 const FEEDBACK_LIMIT = { windowMinutes: 30, max: 40 };
 
 export interface SubmitAssistantFeedbackInput {
@@ -24,7 +24,7 @@ export async function submitAssistantFeedback(input: SubmitAssistantFeedbackInpu
   await assertRateLimit(
     prisma.assistantFeedback.count,
     { identifier: input.identifier },
-    { ...FEEDBACK_LIMIT, message: "That's a lot of feedback in a short time — try again in a bit." },
+    { ...FEEDBACK_LIMIT, message: "That's a lot of feedback in a short time. Try again in a bit." },
   );
 
   await prisma.assistantFeedback.create({

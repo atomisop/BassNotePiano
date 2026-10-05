@@ -406,7 +406,7 @@ export async function submitZellePaymentReference(
   await assertRateLimit(
     prisma.zellePayment.count,
     { userId },
-    { windowMinutes: 60, max: 10, timestampField: "submittedAt", message: "Too many submissions — please wait a bit and try again." },
+    { windowMinutes: 60, max: 10, timestampField: "submittedAt", message: "Too many submissions. Please wait a bit and try again." },
   );
 
   return prisma.zellePayment.update({
@@ -620,7 +620,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
 
   let notificationBody = "Your payment was verified.";
   if (payment.purpose === "CURRICULUM") {
-    notificationBody = "Your $69.99 curriculum payment was verified — every scale is unlocked, for good.";
+    notificationBody = "Your $69.99 curriculum payment was verified. Every scale is unlocked, for good.";
   } else if (payment.purpose === "CLASS_CREDITS" && payment.extraSessionScheduleId) {
     notificationBody = extraSessionBooked
       ? "Your extra session payment was verified and the class is booked. See it on your Schedule."
@@ -641,7 +641,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
       : `Your payment plan installment was verified. ${creditsNote}.`;
   } else if (payment.scaleGroupId) {
     const scaleGroup = await prisma.scaleGroup.findUniqueOrThrow({ where: { id: payment.scaleGroupId } });
-    notificationBody = `Your payment for ${scaleGroup.code} — ${scaleGroup.title} was verified. It's unlocked now.`;
+    notificationBody = `Your payment for ${scaleGroup.code}: ${scaleGroup.title} was verified. It's unlocked now.`;
   }
 
   await createNotification({

@@ -80,7 +80,7 @@ export function NewGroupPanel({
             <p className="text-small text-slate-500">Loading friends…</p>
           ) : friends.length === 0 ? (
             <p className="text-small text-slate-500">
-              You don&apos;t have any friends yet — add some on the Friends page first.
+              You don&apos;t have any friends yet.
             </p>
           ) : (
             <div className="space-y-1">

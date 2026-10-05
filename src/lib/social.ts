@@ -70,7 +70,7 @@ async function acceptFriendRequestById(requestId: string) {
     userId: request.senderId,
     type: "FRIEND_REQUEST_ACCEPTED",
     title: "Friend request accepted",
-    body: "Your friend request was accepted — you can now message each other.",
+    body: "Your friend request was accepted. You can now message each other.",
     emailCategory: "social",
   });
 
@@ -96,7 +96,7 @@ export async function sendFriendRequest(senderId: string, receiverUsername: stri
   await assertRateLimit(
     prisma.friendRequest.count,
     { senderId },
-    { windowMinutes: 60, max: 20, message: "You're sending friend requests too fast — please wait a bit and try again." },
+    { windowMinutes: 60, max: 20, message: "You're sending friend requests too fast. Please wait a bit and try again." },
   );
 
   // They already sent us a pending request — accept theirs instead of creating a mirrored duplicate.

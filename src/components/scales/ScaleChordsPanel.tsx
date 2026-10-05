@@ -36,9 +36,7 @@ export function ScaleChordsPanel({ variant, root, player }: ScaleChordsPanelProp
     // Lives inside the lesson page's Chords tool panel, which supplies the
     // heading, so this is just the chord list.
     <div>
-      <p className="text-small text-slate-400">Native chords of {variant.name}, in {root}.</p>
-
-      <div className="mt-4 grid grid-cols-1 gap-2">
+      <div className="grid grid-cols-1 gap-2">
         {chords.map(({ spec, chord }, i) => {
           const body = (
             <>

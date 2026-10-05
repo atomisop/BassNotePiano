@@ -172,7 +172,7 @@ export function LoginForm({
               className="space-y-4"
             >
               <p className="text-small text-slate-400">
-                If <span className="text-slate-200">{email.trim()}</span> has an account, a 6-digit code is on its way. It expires in 10 minutes.
+                Code sent to <span className="text-slate-200">{email.trim()}</span>.
               </p>
               <div>
                 <Label htmlFor={codeId} className={fieldLabel}>

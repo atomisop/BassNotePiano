@@ -196,7 +196,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
   return (
     <div className="space-y-4">
       {byDay.length === 0 && (
-        <p className="glass-surface p-6 text-center text-small text-slate-500">No weekly slots yet — add the first one below.</p>
+        <p className="glass-surface p-6 text-center text-small text-slate-500">No weekly slots yet.</p>
       )}
 
       {grouped
@@ -238,7 +238,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                       </p>
                       <p className="mt-0.5 text-small text-slate-500">
                         {row.durationMin} min window · {classesInWindow(row.durationMin)} class{classesInWindow(row.durationMin) === 1 ? "" : "es"} ·{" "}
-                        {row.active ? "Bookable" : "Off — not shown to students"}
+                        {row.active ? "Bookable" : "Off"}
                       </p>
                     </div>
                     <div className="flex shrink-0 gap-2">

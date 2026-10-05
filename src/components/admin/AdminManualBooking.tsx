@@ -194,7 +194,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
 
           {!student.hasCurriculumAccess && (
             <p className="mt-3 text-small text-slate-300">
-              This account has no curriculum access yet — booking will still fail server-side without it.
+              No curriculum access.
             </p>
           )}
 

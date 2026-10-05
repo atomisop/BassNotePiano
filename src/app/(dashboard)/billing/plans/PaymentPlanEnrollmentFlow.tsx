@@ -207,14 +207,14 @@ export function PaymentPlanEnrollmentFlow({
           // month, not an error.
           <div className="rounded-xl p-4 text-center bg-neu-base shadow-raised-low">
             <p className="text-small text-slate-100">You&apos;re all paid up for now.</p>
-            <p className="mt-1 text-small text-slate-500">
-              {nextInstallmentDueDate
-                ? `Your next installment opens for payment on ${new Date(nextInstallmentDueDate).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                  })}. We'll email you when it's ready.`
-                : "We'll email you when your next installment is ready to pay."}
-            </p>
+            {nextInstallmentDueDate && (
+              <p className="mt-1 text-small text-slate-500">
+                {`Your next installment opens for payment on ${new Date(nextInstallmentDueDate).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                })}.`}
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -258,17 +258,14 @@ export function PaymentPlanEnrollmentFlow({
       </div>
 
       <div>
-        <p className="text-small font-medium text-slate-400">Your weekly time</p>
-        <p className="mt-0.5 mb-3 text-small text-slate-500">
-          Pick a day, then a time. It becomes yours every week for {termPhrase}, booked for you automatically.
-        </p>
+        <p className="mb-3 text-small font-medium text-slate-400">Your weekly time</p>
         {slotsLoading ? (
           <div className="flex items-center justify-center rounded-lg py-6 bg-neu-base shadow-raised-low">
             <MorphingSquare size={16} />
           </div>
         ) : slots.length === 0 ? (
           <p className="rounded-lg px-3.5 py-3 text-small text-slate-500 bg-neu-base shadow-raised-low">
-            No open weekly times for this cadence right now, message us and we&apos;ll help you find one.
+            No open weekly times right now.
           </p>
         ) : (
           <>
@@ -282,7 +279,7 @@ export function PaymentPlanEnrollmentFlow({
             />
             <div className="mt-4">
               {!selectedDateKey ? (
-                <p className="text-small text-slate-500">Tap a day with a dot to see its open times.</p>
+                <p className="text-small text-slate-500">Pick a day.</p>
               ) : (
                 <>
                   <p className="mb-2 text-small font-medium text-slate-300">
@@ -358,11 +355,6 @@ export function PaymentPlanEnrollmentFlow({
             )}
           </span>
         </div>
-        <p className="mt-2 text-small text-slate-500">
-          {rate.termMonths === 1
-            ? "One Zelle payment for one month, no term, re-enroll any time."
-            : "Billed one installment at a time via Zelle, never all at once — we’ll email you an invoice as each one comes due."}
-        </p>
       </div>
 
       <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] p-3.5 text-small text-slate-300">

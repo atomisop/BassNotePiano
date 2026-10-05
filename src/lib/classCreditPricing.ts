@@ -264,7 +264,7 @@ const PLAN_TERM_LABEL: Record<PaymentPlanTerm, string> = {
  * drift between them.
  */
 export function describePaymentPlan(cadence: PaymentPlanCadence, term: PaymentPlanTerm): string {
-  return `${PLAN_TERM_LABEL[term]} plan — ${PLAN_CADENCE_LABEL[cadence]}`;
+  return `${PLAN_TERM_LABEL[term]} plan, ${PLAN_CADENCE_LABEL[cadence]}`;
 }
 
 export interface PaymentPlanRate {

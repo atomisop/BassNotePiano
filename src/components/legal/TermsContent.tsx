@@ -42,7 +42,7 @@ export function TermsContent() {
 
       <TermsSection title="Class credits & bundles">
         <p>
-          Every class is 45 minutes, one-on-one. Your weekly classes come from a Payment Plan — Monthly,
+          Every class is 45 minutes, one-on-one. Your weekly classes come from a Payment Plan: Monthly,
           3-Month, or 6-Month, paid one Zelle installment at a time, longer terms at a lower rate. Enrolling
           reserves your weekly day and time exclusively and auto-books it every week for as long as the plan stays
           active. You can skip or change a class up to 24 hours before it starts; inside 24 hours, please attend

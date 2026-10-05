@@ -144,7 +144,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
           </p>
         ) : (
           <>
-            <p className="text-small font-medium text-slate-400">No active plan right now. One 45-minute class a week, $55 a class.</p>
+            <p className="text-small font-medium text-slate-400">No active plan.</p>
           </>
         )}
 
@@ -246,10 +246,6 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
           {cancelStage === "downgrade-offer" && (
             <div className="rounded-xl p-4 bg-neu-base shadow-raised-low">
               <p className="text-small text-slate-100">Before you cancel, want to switch to 3-Month instead?</p>
-              <p className="mt-1 text-small text-slate-500">
-                Same weekly time, lower commitment than what you&apos;re on now, still a real discount off the
-                monthly rate.
-              </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"

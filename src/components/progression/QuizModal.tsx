@@ -317,7 +317,6 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                     </h3>
                     <p className="mx-auto mt-1.5 max-w-xs text-small text-slate-400">
                       <CountUpNumber value={result.score} /> of {result.total} correct
-                      {result.passed ? " — this scale is complete once your other checklist items are done." : ". Review the formula and try again."}
                     </p>
                     <div
                       className={`mx-auto mt-3 w-fit rounded-full px-3 py-1 text-small font-medium ${

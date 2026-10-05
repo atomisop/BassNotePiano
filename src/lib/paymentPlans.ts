@@ -85,7 +85,7 @@ export async function createPaymentPlan(
         }
 
         const schedule = await tx.classSchedule.findUniqueOrThrow({ where: { id: reservedScheduleId } });
-        if (!schedule.active) throw new PaymentPlanError("That class time is no longer offered — pick another.");
+        if (!schedule.active) throw new PaymentPlanError("That class time is no longer offered. Pick another.");
         const chunk = chunksForSchedule(schedule)[reservedChunkIndex];
         if (!chunk) throw new PaymentPlanError("That time slot doesn't exist.");
         if (chunk.creditCost < creditsPerWeek) {
@@ -96,7 +96,7 @@ export async function createPaymentPlan(
           where: { reservedScheduleId, reservedChunkIndex, OR: livePaymentPlanConditions() },
           select: { id: true },
         });
-        if (reservedByAnother) throw new PaymentPlanError("That slot was just taken — try again.");
+        if (reservedByAnother) throw new PaymentPlanError("That slot was just taken. Try again.");
 
         // A chunk with no other PaymentPlan reservation can still have a
         // pre-existing ordinary ClassBooking (from the self-serve bookClass/
@@ -120,7 +120,7 @@ export async function createPaymentPlan(
           select: { id: true },
         });
         if (conflictingBooking) {
-          throw new PaymentPlanError("Someone already has a booking on one of this slot's upcoming weeks — pick another time.");
+          throw new PaymentPlanError("Someone already has a booking on one of this slot's upcoming weeks. Pick another time.");
         }
 
         return tx.paymentPlan.create({
@@ -156,7 +156,7 @@ export async function createPaymentPlan(
   } catch (err) {
     if (err instanceof PaymentPlanError) throw err;
     if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2034") {
-      throw new PaymentPlanError("That slot was just taken — try again.");
+      throw new PaymentPlanError("That slot was just taken. Try again.");
     }
     throw err;
   }
@@ -491,14 +491,14 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
       const plan = await tx.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
       if (!plan) throw new PaymentPlanError("You don't have an active payment plan.");
       if (!plan.reservedScheduleId || plan.reservedChunkIndex === null) {
-        throw new PaymentPlanError("Your plan doesn't have a reserved slot yet — message us and we'll help.");
+        throw new PaymentPlanError("Your plan doesn't have a reserved slot yet. Message us and we'll help.");
       }
       if (plan.reservedScheduleId === newScheduleId && plan.reservedChunkIndex === newChunkIndex) {
         throw new PaymentPlanError("That's already your weekly time.");
       }
 
       const schedule = await tx.classSchedule.findUniqueOrThrow({ where: { id: newScheduleId } });
-      if (!schedule.active) throw new PaymentPlanError("That class time is no longer offered — pick another.");
+      if (!schedule.active) throw new PaymentPlanError("That class time is no longer offered. Pick another.");
       const chunk = chunksForSchedule(schedule)[newChunkIndex];
       if (!chunk) throw new PaymentPlanError("That time slot doesn't exist.");
       const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence];
@@ -510,7 +510,7 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
         where: { reservedScheduleId: newScheduleId, reservedChunkIndex: newChunkIndex, userId: { not: userId }, OR: livePaymentPlanConditions() },
         select: { id: true },
       });
-      if (reservedByAnother) throw new PaymentPlanError("That slot was just taken — try again.");
+      if (reservedByAnother) throw new PaymentPlanError("That slot was just taken. Try again.");
 
       const occurrenceDates = nextOccurrenceDates(schedule.dayOfWeek, OCCURRENCES_PER_SLOT);
       const conflictingBooking = await tx.classBooking.findFirst({
@@ -523,7 +523,7 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
         select: { id: true },
       });
       if (conflictingBooking) {
-        throw new PaymentPlanError("Someone already has a booking on one of this slot's upcoming weeks — pick another time.");
+        throw new PaymentPlanError("Someone already has a booking on one of this slot's upcoming weeks. Pick another time.");
       }
 
       // Same 24-hour rule as cancelling a class: a class that starts within the
@@ -592,7 +592,7 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
     userId,
     type: "RESERVED_SLOT_CHANGED",
     title: "Your weekly class time changed",
-    body: "Your standing weekly class moved to a new day/time — check Lessons for your updated schedule.",
+    body: "Your standing weekly class moved to a new day/time. Check Lessons for your updated schedule.",
     emailCategory: "payments",
   }).catch((err) => console.error("RESERVED_SLOT_CHANGED notification failed (non-blocking):", err));
 
