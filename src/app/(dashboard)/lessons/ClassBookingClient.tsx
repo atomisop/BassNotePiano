@@ -338,7 +338,10 @@ export function ClassBookingClient({
   supportContactId,
   occurrences,
   initialBookings,
+  extraMode = false,
 }: {
+  /** A student on a payment plan: this is where they book EXTRA sessions on top of their weekly class. */
+  extraMode?: boolean;
   initialCredits: number;
   cancellationCutoffHours: number;
   soloMaxCredits: number;
@@ -742,9 +745,17 @@ export function ClassBookingClient({
 
   return (
     <WideLayout>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Live Lessons</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Book a class</h1>
-      <p className="mt-2 text-small text-slate-500">Pick a day, choose a time, confirm. Classes are live on Discord.</p>
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+        {extraMode ? "Extra sessions" : "Live Lessons"}
+      </p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">
+        {extraMode ? "Book an extra class" : "Book a class"}
+      </h1>
+      <p className="mt-2 text-small text-slate-500">
+        {extraMode
+          ? "Extra time with your teacher, on top of your weekly class. Pick a day, choose a time, confirm. Uses credits ($40 each)."
+          : "Pick a day, choose a time, confirm. Classes are live on Discord."}
+      </p>
 
       {/* The calendar comes first, straight after the title. Credits, who the
           class is for, upcoming and past classes all sit in one small tab

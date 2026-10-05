@@ -3,6 +3,7 @@ import { schedule } from "@netlify/functions";
 import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
 import { PLAN_CADENCE_CREDITS_PER_WEEK } from "../../src/lib/classCreditPricing";
+import { addCalendarMonthsClamped } from "../../src/lib/paymentPlans";
 import {
   OCCURRENCES_PER_SLOT,
   chunksForSchedule,
@@ -70,6 +71,7 @@ export const handler = schedule("30 9 * * *", async () => {
     // block's size (2 credits) and used to be charged to every plan, so a
     // 30-minute subscriber (4 credits a month) ran out after two weeks.
     const creditsPerClass = PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence];
+    const paidUntil = plan.status === "COMPLETED" ? addCalendarMonthsClamped(plan.nextDueDate, 1) : plan.nextDueDate;
 
     // Self-heal: upcoming, not-yet-attended classes this plan already booked
     // at the old (too high) price are brought down to the plan's own rate.
@@ -87,6 +89,12 @@ export const handler = schedule("30 9 * * *", async () => {
     for (const occurrenceDate of nextOccurrenceDates(reservedSchedule.dayOfWeek, OCCURRENCES_PER_SLOT)) {
       const scheduledAt = computeScheduledAt(reservedSchedule, occurrenceDate, chunk);
       if (scheduledAt.getTime() <= Date.now()) continue; // already started/passed
+      // Only classes inside the period already paid for (the same "paid until"
+      // rule entitlement.ts uses: a COMPLETED plan's last installment does not
+      // advance nextDueDate, so its paid period runs one month past it).
+      // Without this, credits a student bought for extra sessions could be used
+      // up by this job to book their weekly slot for weeks not yet paid for.
+      if (scheduledAt.getTime() >= paidUntil.getTime()) continue;
 
       const available = await getEffectiveClassCredits(plan.userId);
       if (available < creditsPerClass) {

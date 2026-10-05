@@ -375,34 +375,14 @@ export async function bookClass(
   if (scheduledAt.getTime() <= Date.now()) {
     throw new ClassBookingError("That class has already started or passed.");
   }
-
-  // A student on an active Payment Plan already has their one weekly slot
-  // auto-booked for them (see createReservedBookingIfAbsent) and, if they
-  // want more than that, a guided pick-a-time-and-pay flow right on their
-  // own /lessons page (getOrCreatePendingExtraSessionPayment, booked directly by
-  // bookExtraSessionOccurrence once the payment clears). Nothing routes
-  // through this ad hoc path for them anymore, on purpose, by direct
-  // instruction: letting a subscriber spend a banked balance here however
-  // they want is exactly the "buy credits, then go schedule it all
-  // yourself" friction (and same-day binge risk) this flow was built to
-  // remove. Plain inline query rather than importing getActivePaymentPlan
-  // from paymentPlans.ts, that module already imports from this one, and a
-  // one-line lookup isn't worth the circular dependency.
-  //
-  // isAdminAssisted exists for exactly one caller, adminBookClass below.
-  // An admin helping a specific student with a booking issue directly is
-  // the judgment call this guard exists to require instead of open self-
-  // service, not something it should also block (it also skips the "a
-  // student booked a class" admin notification further down, for the same
-  // reason: the admin doing the booking already knows). Every other check
-  // in this function (real occurrence, real capacity, real credit balance)
-  // still applies unconditionally either way.
-  if (!options.isAdminAssisted) {
-    const activePlan = await prisma.paymentPlan.findFirst({ where: { userId: studentId, status: "ACTIVE" }, select: { id: true } });
-    if (activePlan) {
-      throw new ClassBookingError("Your weekly class is already set by your payment plan. Head to Schedule to check your week or add an extra session.");
-    }
-  }
+  // Payment Plan subscribers can book here too: their weekly class is
+  // auto-booked and paid by the plan, and this is where they book EXTRA
+  // sessions on top of it, with credits bought at $40 each (see
+  // createExtraCreditsPayment). Everything below still applies: a real
+  // occurrence, real capacity, a real credit balance, one class a day.
+  // (isAdminAssisted now only skips the "a student booked a class" admin
+  // notification further down, since an admin booking for a student already
+  // knows.)
 
   // STEP 20: a real student booking their week's classes might reasonably
   // book several in a row — 20/hour covers that comfortably while still

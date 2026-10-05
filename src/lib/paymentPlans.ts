@@ -538,6 +538,9 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
   for (const occurrenceDate of nextOccurrenceDates(schedule.dayOfWeek, OCCURRENCES_PER_SLOT)) {
     const scheduledAt = computeScheduledAt(schedule, occurrenceDate, chunk);
     if (scheduledAt.getTime() <= Date.now()) continue;
+    // Only classes inside the paid period, same rule as the daily job.
+    const paidUntil = plan.status === "COMPLETED" ? addCalendarMonthsClamped(plan.nextDueDate, 1) : plan.nextDueDate;
+    if (scheduledAt.getTime() >= paidUntil.getTime()) continue;
     try {
       await createReservedBookingIfAbsent({
         studentId: userId,
