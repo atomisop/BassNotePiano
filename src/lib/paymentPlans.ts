@@ -403,12 +403,20 @@ export async function cancelPaymentPlan(planId: string, adminId: string, note: s
  * changing anything.
  */
 async function assertNoOpenInstallment(planId: string): Promise<void> {
+  // An installment the student opened but never said they paid is just an
+  // unpaid bill: close it so canceling or changing plans never waits on
+  // someone to expire it. Only one they already submitted (money may be on
+  // its way) still blocks, and the email match usually clears that on its own.
+  await prisma.zellePayment.updateMany({
+    where: { paymentPlanId: planId, status: "AWAITING_TRANSFER" },
+    data: { status: "EXPIRED" },
+  });
   const openPayment = await prisma.zellePayment.findFirst({
-    where: { paymentPlanId: planId, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
+    where: { paymentPlanId: planId, status: "PENDING_REVIEW" },
     select: { id: true },
   });
   if (openPayment) {
-    throw new PaymentPlanError("You have a payment in progress right now. Finish or wait for that to clear, then change your plan.");
+    throw new PaymentPlanError("Your last payment is still being confirmed. Try again in a few minutes, or message support if it takes longer.");
   }
 }
 
