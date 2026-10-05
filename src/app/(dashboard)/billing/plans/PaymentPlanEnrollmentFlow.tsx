@@ -3,7 +3,7 @@
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { useEffect, useMemo, useState } from "react";
 import type { PaymentPlanCadence, PaymentPlanTerm, ZellePaymentStatus } from "@prisma/client";
-import { calculatePaymentPlanRate, describePaymentPlan, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { calculatePaymentPlanRate, describePaymentPlan, CLASS_MINUTES, OFFERED_PLAN_CADENCE, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -40,10 +40,6 @@ function upcomingDatesFor(dayOfWeek: number, weeks: number): number[] {
   return Array.from({ length: weeks }, (_, i) => today + (ahead + i * 7) * 86_400_000);
 }
 
-const CADENCE_OPTIONS: { value: PaymentPlanCadence; label: string }[] = [
-  { value: "MIN_30_WEEKLY", label: "30 min/week" },
-  { value: "MIN_60_WEEKLY", label: "60 min/week" },
-];
 
 const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
   { value: "MONTHLY", label: "Monthly" },
@@ -92,7 +88,8 @@ export function PaymentPlanEnrollmentFlow({
   initialCadence,
   initialTerm,
 }: PaymentPlanEnrollmentFlowProps) {
-  const [cadence, setCadence] = useState<PaymentPlanCadence>(initialCadence ?? "MIN_30_WEEKLY");
+  // One plan: a 45-minute class a week. (initialCadence from old links is ignored.)
+  const cadence: PaymentPlanCadence = OFFERED_PLAN_CADENCE;
   const [term, setTerm] = useState<PaymentPlanTerm>(initialTerm ?? "TERM_6");
   const [slots, setSlots] = useState<ReservableSlot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(true);
@@ -116,7 +113,7 @@ export function PaymentPlanEnrollmentFlow({
   // the cadence's own weekly cost (rather than hardcoding 4) keeps this
   // correct if the pricing table above it ever changes.
   const classesPerMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
-  const classMinutes = cadence === "MIN_60_WEEKLY" ? 60 : 30;
+  const classMinutes = CLASS_MINUTES;
   const termPhrase = rate.termMonths === 1 ? "this month" : `your whole ${rate.termMonths}-month term`;
 
   // A calendar like the class booking page: every open weekly time shows up
@@ -226,27 +223,6 @@ export function PaymentPlanEnrollmentFlow({
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="mb-2 text-small font-medium text-slate-400">Weekly cadence</p>
-        <div className="grid grid-cols-2 gap-3">
-          {CADENCE_OPTIONS.map((option) => {
-            const active = cadence === option.value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setCadence(option.value)}
-                className={`rounded-lg border px-3.5 py-3 text-left transition ${
-                  active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-transparent bg-neu-base shadow-raised-low"
-                }`}
-              >
-                <p className={`text-small font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       <div>
         <p className="mb-2 text-small font-medium text-slate-400">Term</p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

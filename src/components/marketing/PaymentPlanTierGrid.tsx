@@ -10,14 +10,11 @@ import {
   FAMILY_BUNDLE_DISCOUNT_RATE,
   MIN_FAMILY_BUNDLE_RECIPIENTS,
   PLAN_CADENCE_CREDITS_PER_WEEK,
+  OFFERED_PLAN_CADENCE,
+  CLASS_MINUTES,
 } from "@/lib/classCreditPricing";
 import { CheckIcon } from "@/components/ui/icons";
 import { NumberTicker } from "@/components/ui/number-ticker";
-
-const CADENCE_OPTIONS: { value: PaymentPlanCadence; label: string }[] = [
-  { value: "MIN_30_WEEKLY", label: "30 min/week" },
-  { value: "MIN_60_WEEKLY", label: "60 min/week" },
-];
 
 const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
   { value: "MONTHLY", label: "Monthly" },
@@ -57,7 +54,8 @@ const cardItem = {
  * the combined total, so it is cheaper than the solo price at every term.
  */
 export function PaymentPlanTierGrid() {
-  const [cadence, setCadence] = useState<PaymentPlanCadence>("MIN_30_WEEKLY");
+  // One plan on offer: a 45-minute class a week.
+  const cadence: PaymentPlanCadence = OFFERED_PLAN_CADENCE;
   const [audience, setAudience] = useState<Audience>("solo");
   const monthlyBaseline = calculatePaymentPlanRate(cadence, "MONTHLY").installmentAmountCents;
   const isFamily = audience === "family";
@@ -73,12 +71,6 @@ export function PaymentPlanTierGrid() {
             { value: "solo", label: "Just me" },
             { value: "family", label: `Family (${MIN_FAMILY_BUNDLE_RECIPIENTS}+ students)` },
           ]}
-        />
-        <Segmented
-          label="Weekly class length"
-          value={cadence}
-          onChange={(v) => setCadence(v as PaymentPlanCadence)}
-          options={CADENCE_OPTIONS}
         />
         {isFamily && (
           <p className="text-small text-slate-400">
@@ -108,7 +100,7 @@ export function PaymentPlanTierGrid() {
           const features: ReactNode[] = isFamily
             ? [
                 <>
-                  <NumberTicker value={classesPerMonth} /> live classes a month, per student
+                  <NumberTicker value={classesPerMonth} /> live {CLASS_MINUTES}-minute classes a month, per student
                 </>,
                 "Each student's weekly time reserved",
                 <>
@@ -118,7 +110,7 @@ export function PaymentPlanTierGrid() {
               ]
             : [
                 <>
-                  <NumberTicker value={classesPerMonth} /> live classes a month
+                  <NumberTicker value={classesPerMonth} /> live {CLASS_MINUTES}-minute classes a month
                 </>,
                 "Your weekly time reserved",
                 isMonthly ? (

@@ -9,6 +9,8 @@ import {
   FAMILY_BUNDLE_DISCOUNT_RATE,
   calculatePaymentPlanRate,
   calculateFamilyBundleTotal,
+  OFFERED_PLAN_CADENCE,
+  CREDITS_PER_CLASS,
 } from "@/lib/classCreditPricing";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { CheckIcon, SpinnerIcon, XIcon } from "@/components/ui/icons";
@@ -33,17 +35,13 @@ function formatUsd(cents: number) {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Same options, labels and order as PaymentPlanEnrollmentFlow.tsx's own
-// CADENCE_OPTIONS/TERM_OPTIONS (billing/plans). A family bundle applies
-// one of these to every recipient at once, the same choice a solo Payment
-// Plan buyer makes for themself, kept as its own small copy rather than a
-// shared import across the two flows, same "duplicated on purpose"
-// convention this codebase already uses for e.g. formatTimeLabel.
-const CADENCE_OPTIONS: { value: PaymentPlanCadence; label: string }[] = [
-  { value: "MIN_30_WEEKLY", label: "30 min/week" },
-  { value: "MIN_60_WEEKLY", label: "60 min/week" },
-];
-
+// Same terms, labels and order as PaymentPlanEnrollmentFlow.tsx's own
+// TERM_OPTIONS (billing/plans). A family bundle applies one of these to every
+// recipient at once, the same choice a solo Payment Plan buyer makes for
+// themself, kept as its own small copy rather than a shared import across the
+// two flows, same "duplicated on purpose" convention this codebase already
+// uses for e.g. formatTimeLabel. There is one plan length now: a 45-minute
+// class a week, so no cadence to choose.
 const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
   { value: "MONTHLY", label: "Monthly" },
   { value: "TERM_3", label: "3-Month" },
@@ -78,7 +76,7 @@ type RowStatus =
  * always granted its credits, see calculateFamilyBundleTotal's own comment.
  */
 export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
-  const [cadence, setCadence] = useState<PaymentPlanCadence>("MIN_30_WEEKLY");
+  const cadence: PaymentPlanCadence = OFFERED_PLAN_CADENCE;
   const [term, setTerm] = useState<PaymentPlanTerm>("TERM_6");
 
   const [emails, setEmails] = useState<string[]>(["", ""]);
@@ -160,6 +158,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
   const filledCount = normalized.filter(Boolean).length;
   const total = calculateFamilyBundleTotal(cadence, term, filledCount || MIN_FAMILY_BUNDLE_RECIPIENTS);
   const perRecipientCredits = total.creditsPerRecipient;
+  const perRecipientClasses = perRecipientCredits / CREDITS_PER_CLASS;
 
   const allRowsVerified =
     emails.length >= MIN_FAMILY_BUNDLE_RECIPIENTS && emails.every((_, i) => rowStatus(i).kind === "found");
@@ -189,7 +188,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         </button>
         <div className="mb-4 rounded-xl p-4 bg-neu-base shadow-raised-low">
           <p className="text-small text-slate-100">
-            {perRecipientCredits} credits each, for {emails.length} accounts ({emails.length * perRecipientCredits} credits total)
+            {perRecipientClasses} classes each, for {emails.length} accounts ({emails.length * perRecipientClasses} classes total)
           </p>
           <p className="mt-1 text-small text-slate-50">
             {FAMILY_BUNDLE_DISCOUNT_RATE * 100}% family bundle discount applied (limited time), on top of the
@@ -200,7 +199,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           status={payment.status}
           rejectionReason={payment.rejectionReason}
           scaleCode="Weekly Classes"
-          scaleTitle={`${perRecipientCredits} credits × ${emails.length} accounts`}
+          scaleTitle={`${perRecipientClasses} classes × ${emails.length} accounts`}
           eyebrowLabel="Family Bundle"
           amountCents={payment.amountCents}
           zelleHandle={zelleHandle}
@@ -212,30 +211,6 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="mb-2 text-small font-medium text-slate-400">Weekly cadence, applied to every recipient</p>
-        <div className="grid grid-cols-2 gap-3">
-          {CADENCE_OPTIONS.map((option) => {
-            const active = cadence === option.value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setCadence(option.value)}
-                className={`rounded-lg border px-3.5 py-3 text-left transition ${
-                  active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-transparent bg-neu-base shadow-raised-low"
-                }`}
-              >
-                <p className={`text-small font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
-                <p className="mt-0.5 text-small text-slate-500">
-                  {calculatePaymentPlanRate(option.value, term).creditsPerInstallment} credits/month
-                </p>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       <div>
         <p className="mb-2 text-small font-medium text-slate-400">Term, applied to every recipient</p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -355,7 +330,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
       <div className="rounded-xl p-4 sm:p-5 bg-neu-base shadow-raised-low">
         <div className="flex items-center justify-between text-small text-slate-400">
           <span>
-            {perRecipientCredits} credits × {emails.length} accounts ({formatUsd(total.perRecipientCents)} each)
+            {perRecipientClasses} classes × {emails.length} accounts ({formatUsd(total.perRecipientCents)} each)
           </span>
           <span>{formatUsd(total.combinedBeforeFamilyDiscountCents)}</span>
         </div>
@@ -377,8 +352,8 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-s-50))]"
         />
         <span>
-          I understand these credits go directly to the accounts listed above, not to my own, and that the purchase is{" "}
-          <span className="font-medium text-[rgb(var(--c-s-50))]">non-refundable</span>. The only way a credit comes back is
+          I understand these classes go directly to the accounts listed above, not to my own, and that the purchase is{" "}
+          <span className="font-medium text-[rgb(var(--c-s-50))]">non-refundable</span>. The only way a class comes back is
           canceling a booking 24+ hours before it starts. Full{" "}
           <Link href="/terms" target="_blank" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
             terms &amp; refund policy

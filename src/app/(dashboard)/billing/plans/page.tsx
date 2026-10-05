@@ -55,7 +55,7 @@ export default async function BillingPlansPage({
         <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment plan</h1>
         <p className="mt-3 text-body text-slate-400">
-          Pick a weekly cadence and pay month to month, or commit to 3 or 6 months for a lower rate — one Zelle
+          One 45-minute class a week. Pay month to month, or commit to 3 or 6 months for a lower rate — one Zelle
           installment at a time, never all at once, never auto-charged. We&apos;ll email an invoice as each installment
           comes due.
         </p>
