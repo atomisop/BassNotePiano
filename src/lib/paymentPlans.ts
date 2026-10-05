@@ -7,8 +7,7 @@ import {
   nextOccurrenceDates,
   computeScheduledAt,
   createReservedBookingIfAbsent,
-  OCCURRENCES_PER_SLOT,
-} from "@/lib/classSchedule";
+  OCCURRENCES_PER_SLOT, CANCELLATION_CUTOFF_HOURS } from "@/lib/classSchedule";
 import { createNotification } from "@/lib/notifications";
 
 export class PaymentPlanError extends Error {}
@@ -512,6 +511,24 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
         throw new PaymentPlanError("Someone already has a booking on one of this slot's upcoming weeks — pick another time.");
       }
 
+      // Same 24-hour rule as cancelling a class: a class that starts within the
+      // cutoff has to be attended (or sorted out with support), so the standing
+      // time cannot be moved out from under it.
+      const startingSoon = await tx.classBooking.findFirst({
+        where: {
+          studentId: userId,
+          reservedByPlanId: plan.id,
+          status: "SCHEDULED",
+          scheduledAt: { gt: new Date(), lt: new Date(Date.now() + CANCELLATION_CUTOFF_HOURS * 3_600_000) },
+        },
+        select: { id: true },
+      });
+      if (startingSoon) {
+        throw new PaymentPlanError(
+          `Your next class starts within ${CANCELLATION_CUTOFF_HOURS} hours, so please attend it or message support. You can change your weekly time after that.`,
+        );
+      }
+
       // Frees the old slot right away — same no-charge cancellation as
       // cancelClassBooking, just triggered by the reservation moving rather
       // than the student canceling one class at a time.
@@ -538,6 +555,9 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
   for (const occurrenceDate of nextOccurrenceDates(schedule.dayOfWeek, OCCURRENCES_PER_SLOT)) {
     const scheduledAt = computeScheduledAt(schedule, occurrenceDate, chunk);
     if (scheduledAt.getTime() <= Date.now()) continue;
+    // Only classes inside the paid period, same rule as the daily job.
+    const paidUntil = plan.status === "COMPLETED" ? addCalendarMonthsClamped(plan.nextDueDate, 1) : plan.nextDueDate;
+    if (scheduledAt.getTime() >= paidUntil.getTime()) continue;
     try {
       await createReservedBookingIfAbsent({
         studentId: userId,

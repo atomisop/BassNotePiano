@@ -11,6 +11,8 @@ import { DiscordIcon } from "@/components/ui/icons";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { ProfileMenu } from "@/components/layout/ProfileMenu";
 import { setFullscreenNavOpen } from "@/lib/overlayNav";
+import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
+import { LoginForm } from "@/components/auth/LoginForm";
 
 /**
  * The homepage header.
@@ -64,6 +66,16 @@ export function MarketingNav() {
 
   const [lifted, setLifted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // "Log in" opens a panel over the page instead of navigating to /login, so a
+  // visitor sees the form straight away and stays where they were. The links
+  // keep their /login href, so middle-click, open-in-new-tab and no-JS still work.
+  const [loginOpen, setLoginOpen] = useState(false);
+  function openLogin(e: React.MouseEvent) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    setMenuOpen(false);
+    setLoginOpen(true);
+  }
   // `image` isn't on the session (see the avatar route's own comment), so
   // this is the client-side equivalent of TopBar's server-side DB fetch:
   // one small authenticated GET, only once actually signed in, cached in
@@ -134,7 +146,7 @@ export function MarketingNav() {
 
   const primary = isLoggedIn
     ? { label: "Dashboard", href: "/dashboard" }
-    : { label: "Start learning", href: "/register" };
+    : { label: "Get started", href: "/register" };
   // Logged in: no separate "Account" pill any more — ProfileMenu's own
   // Settings item goes to the same /account, so it'd be a second link
   // pointing at the same place. Logged out: unchanged, "Log in".
@@ -155,7 +167,7 @@ export function MarketingNav() {
             used. */}
         <nav
           className={[
-            "mx-auto flex w-full max-w-[90rem] items-center justify-between px-6 transition-[height,padding] duration-500 md:px-16",
+            "mx-auto flex w-full max-w-[90rem] items-center justify-between px-6 transition-[height,padding] duration-500 md:px-8 lg:px-16",
             lifted ? "h-16 md:h-20" : "h-20 md:h-24",
           ].join(" ")}
         >
@@ -176,11 +188,12 @@ export function MarketingNav() {
                 wordmark treatment (studied directly), not the small label
                 this replaces. Colored in the accent at the time; neutral
                 again now under the "premium black and white" pass. */}
-            <span className="hidden font-serif text-body font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))] md:inline">
+            <span className="hidden whitespace-nowrap font-serif text-body font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))] xl:inline">
               Bass Note Piano
             </span>
-            {/* Phones show the logo alone (the link keeps its aria-label); the
-                wordmark returns at md and up, i.e. iPad and desktop. */}
+            {/* Phones and tablets show the logo alone (the link keeps its aria-label);
+                the wordmark returns at xl, where the row has room for it. It used
+                to show from md and wrapped onto two lines beside the links. */}
           </Link>
 
           {/* Classes/Pricing/Log in — real glass too, one tier down from the
@@ -190,7 +203,7 @@ export function MarketingNav() {
               important element on screen — already spent on "Start
               learning"). Using elevated glass on all four would flatten
               that hierarchy back to "everything's equally important". */}
-          <div className="hidden items-center gap-3 md:flex">
+          <div className="hidden items-center gap-2 md:flex lg:gap-3">
             {LINKS.map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -211,6 +224,7 @@ export function MarketingNav() {
             {secondary && (
               <Link
                 href={secondary.href}
+                onClick={openLogin}
                 className="tap glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-small font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
               >
                 {secondary.label}
@@ -247,29 +261,58 @@ export function MarketingNav() {
                 `.btn-primary`'s solid gradient fill. Scoped to just this one
                 nav button; `.btn-primary` itself is untouched, so the Hero/
                 FinalCTA/etc. CTAs elsewhere keep their existing solid look. */}
-            <Link
-              href={primary.href}
-              className="btn glass-surface-elevated !h-10 !px-5 !text-small text-[rgb(var(--c-s-50))]"
-            >
-              {primary.label}
-            </Link>
+            {/* Signed in, the Dashboard button is gone from the bar: the page already
+                has its own, and the profile menu has a Dashboard link. */}
+            {!isLoggedIn && (
+              <Link
+                href={primary.href}
+                className="btn glass-surface-elevated !h-10 !px-5 !text-small text-[rgb(var(--c-s-50))]"
+              >
+                {primary.label}
+              </Link>
+            )}
           </div>
 
           {/* Ask AI lives in the bar itself, never in the mobile menu list, so it is
               reachable at every width without opening anything. */}
           <div className="ml-auto flex items-center gap-2 md:ml-3">
-            {/* Phones only (md and up already has "Log in" in the row above):
-                a visitor who is not signed in should see how to log in without
-                opening the menu. */}
-            {secondary && (
-              <Link
-                href={secondary.href}
-                className="tap flex h-9 items-center rounded-full bg-neu-base px-4 text-small font-semibold text-[rgb(var(--c-s-50))] shadow-raised-low transition active:shadow-pressed-low md:hidden"
-              >
-                {secondary.label}
-              </Link>
-            )}
-            <AskAiButton />
+            {/* Phones (md and up has these in the row above). Signed out: Log in
+                and Get started, so how to get in is visible without opening the
+                menu. Signed in: the profile button (Dashboard and Sign out live
+                inside it). Get started appears from 360px up; on the narrowest
+                phones the menu still has it. */}
+            <div className="flex items-center gap-2 md:hidden">
+              {status === "loading" ? null : isLoggedIn ? (
+                <>
+                  <ProfileMenu
+                    name={session?.user?.name ?? null}
+                    username={null}
+                    email={session?.user?.email ?? null}
+                    image={image}
+                    triggerClassName="!h-9 !w-9"
+                  />
+                </>
+              ) : (
+                <>
+                  {secondary && (
+                    <Link
+                      href={secondary.href}
+                      onClick={openLogin}
+                      className="tap flex h-9 items-center rounded-full px-3 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:opacity-80"
+                    >
+                      {secondary.label}
+                    </Link>
+                  )}
+                  <Link
+                    href={primary.href}
+                    className="tap hidden h-9 items-center rounded-full bg-[rgb(var(--signal))] px-4 text-small font-semibold text-slate-950 shadow-raised-low transition active:shadow-pressed-low min-[360px]:flex"
+                  >
+                    {primary.label}
+                  </Link>
+                </>
+              )}
+            </div>
+            <AskAiButton compactOnPhones />
           {/* 44px minimum target, which the previous icon button did not meet. */}
           <button
             type="button"
@@ -336,7 +379,7 @@ export function MarketingNav() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    onClick={() => setMenuOpen(false)}
+                    onClick={link.href === "/login" ? openLogin : () => setMenuOpen(false)}
                     aria-current={isActive ? "page" : undefined}
                     className={`display-3 border-b border-[rgb(var(--c-s-50)/0.08)] py-6 ${
                       isActive ? "text-[rgb(var(--c-s-50))]" : ""
@@ -395,6 +438,14 @@ export function MarketingNav() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Log in panel: the same slide-over used for Edit profile and
+          notifications. Stays on the current page after login (the header
+          flips to the profile button on its own). */}
+      <SlideOverPanel open={loginOpen} onClose={() => setLoginOpen(false)} title="Log in">
+        <p className="mb-5 text-small text-slate-500">Pick up your roadmap right where you left it.</p>
+        <LoginForm embedded callbackUrl={pathname || "/"} onSuccess={() => setLoginOpen(false)} onNavigateAway={() => setLoginOpen(false)} />
+      </SlideOverPanel>
     </>
   );
 }

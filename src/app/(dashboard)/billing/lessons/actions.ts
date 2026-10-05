@@ -8,6 +8,8 @@ import {
   submitZellePaymentReference,
   checkFamilyBundleRecipients,
   createFamilyBundlePayment,
+  createExtraCreditsPayment,
+  ExtraCreditsError,
   FamilyBundleError,
   type ZelleReferenceSubmission,
   type FamilyBundleRecipientCheck,
@@ -96,5 +98,32 @@ export async function createFamilyBundlePaymentAction(
       return { ok: false, id: null, status: null, amountCents: null, error: error.message };
     }
     throw error;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Extra credits ($40 each), for extra sessions on top of a weekly class
+// ---------------------------------------------------------------------------
+
+export interface ExtraCreditsPaymentResult {
+  ok: boolean;
+  id: string | null;
+  status: string | null;
+  amountCents: number | null;
+  error: string | null;
+}
+
+export async function createExtraCreditsPaymentAction(quantity: number): Promise<ExtraCreditsPaymentResult> {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/billing/credits");
+
+  const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
+  try {
+    const payment = await createExtraCreditsPayment(session.user.id, quantity, zelleHandle);
+    revalidatePath("/billing/credits");
+    return { ok: true, id: payment.id, status: payment.status, amountCents: payment.amountCents, error: null };
+  } catch (err) {
+    if (err instanceof ExtraCreditsError) return { ok: false, id: null, status: null, amountCents: null, error: err.message };
+    throw err;
   }
 }

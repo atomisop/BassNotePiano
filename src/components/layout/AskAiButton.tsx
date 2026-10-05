@@ -5,7 +5,7 @@ import GenerateAIButton from "@/components/ui/button-33";
 import { openAtom, setAtomTriggerPresent } from "@/lib/atomTrigger";
 
 /** Top-bar trigger for Atom. While mounted, Atom's floating launcher hides. */
-export function AskAiButton() {
+export function AskAiButton({ compactOnPhones = false }: { compactOnPhones?: boolean }) {
   useEffect(() => {
     setAtomTriggerPresent(true);
     return () => setAtomTriggerPresent(false);
@@ -15,7 +15,15 @@ export function AskAiButton() {
   // sit right under the button.
   return (
     <span data-atom-trigger className="inline-flex">
-      <GenerateAIButton label="Ask AI" onClick={openAi} className="tap h-9 px-4" />
+      {compactOnPhones ? (
+        // Icon only below md, to leave room for Log in / Get started: the label
+        // is still there for screen readers and returns at md and up.
+        <GenerateAIButton ariaLabel="Ask AI" onClick={openAi} className="tap h-9 px-3 md:px-4">
+          <span className="hidden md:inline">Ask AI</span>
+        </GenerateAIButton>
+      ) : (
+        <GenerateAIButton label="Ask AI" onClick={openAi} className="tap h-9 px-4" />
+      )}
     </span>
   );
 }

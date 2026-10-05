@@ -6,7 +6,7 @@ import Link from "next/link";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { Calendar } from "lucide-react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { getReservableSlotsForChangeAction, changeReservedSlotAction } from "../lessons/actions";
+import { getReservableSlotsForChangeAction, changeReservedSlotAction, cancelClassBookingAction } from "../lessons/actions";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { WideLayout } from "@/components/layout/PageLayouts";
 
@@ -38,6 +38,8 @@ interface WeeklyTime {
 
 interface ScheduleClientProps {
   supportContactId: string | null;
+  /** Hours before class that changing or cancelling stops being self-service. */
+  cancellationCutoffHours: number;
   /** Whether this calendar week already has a class on the books. A
       subscriber never sees a credit count, just whether this week is
       handled or needs attention. */
@@ -52,11 +54,30 @@ interface ScheduleClientProps {
 
 export function ScheduleClient({
   supportContactId,
+  cancellationCutoffHours,
   hasClassThisWeek,
   weeklyTime,
   upcomingBookings,
 }: ScheduleClientProps) {
   const router = useRouter();
+  // Skipping one class (24+ hours ahead): two taps, then it is gone and its
+  // credit stays on the account, to use on a different time under Extra sessions.
+  const [confirmSkipId, setConfirmSkipId] = useState<string | null>(null);
+  const [skippingId, setSkippingId] = useState<string | null>(null);
+  const [skipError, setSkipError] = useState<string | null>(null);
+
+  async function handleSkip(bookingId: string) {
+    setSkippingId(bookingId);
+    setSkipError(null);
+    const result = await cancelClassBookingAction(bookingId);
+    setSkippingId(null);
+    if (!result.ok) {
+      setSkipError(result.error);
+      return;
+    }
+    setConfirmSkipId(null);
+    router.refresh();
+  }
 
   // Self-service move of the standing weekly reservation — by direct
   // instruction, replacing the previous "that's not self-service, message
@@ -150,17 +171,81 @@ export function ScheduleClient({
           <p className="mt-3 text-small text-slate-500">Nothing booked yet. Your weekly class appears here on its own.</p>
         ) : (
           <div className="mt-3 space-y-2.5">
-            {upcomingBookings.map((booking) => (
-              <div key={booking.id} className="flex items-center justify-between rounded-lg px-3.5 py-2.5 bg-neu-base shadow-raised-low">
-                <div>
-                  <p className="text-small font-medium text-slate-100">{formatDateTime(booking.scheduledAt)}</p>
-                  <p className="text-small text-slate-500">
-                    {booking.label ?? "Weekly class"} · ends {formatEndTime(booking.scheduledAt, booking.creditsSpent)}
-                  </p>
+            {upcomingBookings.map((booking) => {
+              const hoursUntil = (new Date(booking.scheduledAt).getTime() - Date.now()) / 3_600_000;
+              const canChange = hoursUntil >= cancellationCutoffHours;
+              const confirming = confirmSkipId === booking.id;
+              const busy = skippingId === booking.id;
+              return (
+                <div key={booking.id} className="rounded-lg bg-neu-base px-3.5 py-2.5 shadow-raised-low">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-small font-medium text-slate-100">{formatDateTime(booking.scheduledAt)}</p>
+                      <p className="text-small text-slate-500">
+                        {booking.label ?? "Weekly class"} · ends {formatEndTime(booking.scheduledAt, booking.creditsSpent)}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-small text-slate-500">{booking.creditsSpent * 30} min</span>
+                  </div>
+                  {canChange ? (
+                    confirming ? (
+                      <div className="mt-2.5 rounded-lg bg-neu-base px-3 py-2.5 shadow-pressed-low">
+                        <p className="text-small text-slate-300">
+                          Skip this class? Your credit stays on your account, and you can use it to book a different time under{" "}
+                          <Link href="/lessons?tab=extra" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
+                            Extra sessions
+                          </Link>
+                          .
+                        </p>
+                        <div className="mt-2 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setConfirmSkipId(null)}
+                            disabled={busy}
+                            className="tap rounded-lg px-3 py-2 text-small font-medium text-slate-300 bg-neu-base shadow-raised-low active:shadow-pressed-low disabled:opacity-50"
+                          >
+                            Keep it
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSkip(booking.id)}
+                            disabled={busy}
+                            className="tap flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-2 text-small font-semibold text-white shadow-raised-low hover:bg-red-400 disabled:opacity-50"
+                          >
+                            {busy && <MorphingSquare size={12} />}
+                            {busy ? "Skipping…" : "Skip this class"}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSkipError(null);
+                          setConfirmSkipId(booking.id);
+                        }}
+                        className="tap mt-2 text-small font-medium text-slate-400 transition hover:text-red-300"
+                      >
+                        Can&apos;t make it? Skip this class
+                      </button>
+                    )
+                  ) : (
+                    <p className="mt-2 text-small text-slate-500">
+                      Starts within {cancellationCutoffHours} hours, so it can&apos;t be changed here. Please attend, or{" "}
+                      {supportContactId ? (
+                        <Link href={`/messages?with=${supportContactId}`} className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
+                          message support
+                        </Link>
+                      ) : (
+                        "message support"
+                      )}
+                      .
+                    </p>
+                  )}
                 </div>
-                <span className="text-small text-slate-500">{booking.creditsSpent * 30} min</span>
-              </div>
-            ))}
+              );
+            })}
+            {skipError && <p className="text-small text-red-400">{skipError}</p>}
           </div>
         )}
 

@@ -40,6 +40,8 @@ interface BookingRow {
   refunded: boolean;
   attendance: "PRESENT" | "NO_SHOW" | null;
   canceledReason: string | null;
+  /** Booked by the student's payment plan (their weekly class). It can be skipped, not rescheduled here. */
+  reserved?: boolean;
 }
 
 type BookingMode = "SOLO" | "FAMILY";
@@ -172,7 +174,7 @@ function BookingCard({
         {b.status === "CANCELED" && <p className="mt-0.5 text-small text-slate-50">Canceled — no credits were charged</p>}
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        {cancelEligible && (
+        {cancelEligible && !b.reserved && (
           <button
             type="button"
             onClick={() => onStartReschedule(b)}
@@ -194,7 +196,7 @@ function BookingCard({
             className="tap flex items-center justify-center rounded-lg border border-red-400/20 px-3 py-1.5 text-small font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {cancelingId === b.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-            {cancelingId === b.id ? "Canceling…" : "Cancel"}
+            {cancelingId === b.id ? "Canceling…" : b.reserved ? "Skip" : "Cancel"}
           </button>
         )}
         {pastSelfServeWindow && supportContactId && (
@@ -338,7 +340,10 @@ export function ClassBookingClient({
   supportContactId,
   occurrences,
   initialBookings,
+  extraMode = false,
 }: {
+  /** A student on a payment plan: this is where they book EXTRA sessions on top of their weekly class. */
+  extraMode?: boolean;
   initialCredits: number;
   cancellationCutoffHours: number;
   soloMaxCredits: number;
@@ -742,9 +747,17 @@ export function ClassBookingClient({
 
   return (
     <WideLayout>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Live Lessons</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Book a class</h1>
-      <p className="mt-2 text-small text-slate-500">Pick a day, choose a time, confirm. Classes are live on Discord.</p>
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+        {extraMode ? "Extra sessions" : "Live Lessons"}
+      </p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">
+        {extraMode ? "Book an extra class" : "Book a class"}
+      </h1>
+      <p className="mt-2 text-small text-slate-500">
+        {extraMode
+          ? "Extra time with your teacher, on top of your weekly class. Pick a day, choose a time, confirm. Uses credits ($40 each)."
+          : "Pick a day, choose a time, confirm. Classes are live on Discord."}
+      </p>
 
       {/* The calendar comes first, straight after the title. Credits, who the
           class is for, upcoming and past classes all sit in one small tab
@@ -1012,7 +1025,7 @@ export function ClassBookingClient({
                               </button>
                             ) : mode === "SOLO" ? (
                               multiSelect ? null : row.isBooked ? null : insufficientCredits ? (
-                                <Link href="/billing/lessons" className={actionClass}>
+                                <Link href="/billing/credits" className={actionClass}>
                                   Buy credits
                                 </Link>
                               ) : (
@@ -1065,10 +1078,10 @@ export function ClassBookingClient({
                   <p className="mt-1 text-body font-semibold text-slate-50">
                     {credits} credit{credits === 1 ? "" : "s"}
                   </p>
-                  <p className="mt-0.5 text-small text-slate-500">1 hour of class = 2 credits</p>
+                  <p className="mt-0.5 text-small text-slate-500">1 credit = 30 minutes · $40 each</p>
                 </div>
                 <Link
-                  href="/billing/lessons"
+                  href="/billing/credits"
                   className={`tap inline-flex items-center rounded-lg px-4 py-2 text-small font-semibold transition ${
                     hasNoCredits
                       ? "cta-sheen cta-fill"

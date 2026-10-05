@@ -164,8 +164,27 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials.code) return null;
 
-        const result = await verifyCode(credentials.email, "LOGIN_2FA", credentials.code);
+        // Guess limit for the code itself. Codes used to be issued only after a
+        // correct password and never left the server, so this could not be
+        // reached without one. "Email me a code" now emails a code to anyone who
+        // asks for it, so signing in with a code must lock out like a password
+        // does: the same failed-attempt log and limits as loginStepOneAction
+        // (8 in 15 minutes per email), plus verifyCode's own 5 guesses per code.
+        const normalizedEmail = credentials.email.trim().toLowerCase();
+
+        // This try is written down BEFORE the window is counted (counting first
+        // lets a burst of parallel requests all read a low count and all pass),
+        // and removed again if the code turns out to be right so legitimate
+        // sign-ins do not pile up toward the limit.
+        const attempt = await prisma.failedLoginAttempt.create({ data: { email: normalizedEmail } });
+        const recentTries = await prisma.failedLoginAttempt.count({
+          where: { email: normalizedEmail, createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) } },
+        });
+        if (recentTries > 8) return null;
+
+        const result = await verifyCode(normalizedEmail, "LOGIN_2FA", credentials.code);
         if (!result.ok || !result.userId) return null;
+        await prisma.failedLoginAttempt.delete({ where: { id: attempt.id } }).catch(() => undefined);
 
         const user = await prisma.user.findUnique({ where: { id: result.userId } });
         if (!user) return null;

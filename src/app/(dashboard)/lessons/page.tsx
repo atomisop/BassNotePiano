@@ -15,28 +15,17 @@ import { getActivePaymentPlan } from "@/lib/paymentPlans";
 import { getSupportContactId } from "@/lib/admin";
 import { ClassBookingClient } from "./ClassBookingClient";
 import { ScheduleClient } from "../schedule/ScheduleClient";
+import { LessonsHub } from "./LessonsHub";
 
 /**
- * A student on an active Payment Plan doesn't get sent away from here
- * (they used to get redirected to /schedule, which reads as "you're
- * blocked from this tab" even though nothing about their access changed).
- * They're not blocked from Lessons, they're blocked from self-service
- * *editing* of a schedule they already paid for and locked in. This page
- * still shows them their week, right here: upcoming classes. bookClass itself still refuses their ad hoc
- * self-booking either way (see its own comment in classSchedule.ts), that
- * restriction was never about this page, only the old open calendar.
- *
- * No credit numbers on this branch, by direct instruction: a subscriber
- * never sees "X of Y credits" or picks a duration, they just see whether
- * this week's class is booked, and if not, plainly why (see
- * ScheduleClient's own weeklyTime/hasClassThisWeek props). Credits/cadence
- * math still exists, it's just admin-facing bookkeeping now (CustomerProfile,
- * the feedback page's installments-paid figure, etc.), never shown here.
- *
- * Everyone else (no active plan, historical Family Bundle credits, between
- * plans) keeps the full open booking calendar exactly as before.
+ * A student on an active Payment Plan sees two tabs here. "My weekly class" is
+ * their locked-in time: it is paid by the plan and auto-booked, so there is
+ * nothing to buy or book, only a way to move or cancel a single class up to 24
+ * hours ahead. "Extra sessions" is the booking calendar, for extra time with the
+ * teacher on top of that, paid with credits at $40 each. Everyone else (no
+ * active plan, between plans) goes straight to the booking calendar.
  */
-export default async function LessonsPage() {
+export default async function LessonsPage({ searchParams }: { searchParams: { tab?: string } }) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
   // Booking a class requires curriculum access first — credits themselves
@@ -44,36 +33,6 @@ export default async function LessonsPage() {
   // this covers anyone who somehow already holds credits without it too.
 
   const activePlan = await getActivePaymentPlan(session.user.id);
-
-  if (activePlan) {
-    const [weeklyUsage, bookings, supportContactId, reservedSchedule] = await Promise.all([
-      getWeeklyCreditUsage(session.user.id),
-      getUserClassBookings(session.user.id),
-      getSupportContactId(),
-      activePlan.reservedScheduleId
-        ? prisma.classSchedule.findUnique({ where: { id: activePlan.reservedScheduleId }, select: { dayOfWeek: true, startTime: true } })
-        : null,
-    ]);
-
-    const now = Date.now();
-    const upcomingBookings = bookings
-      .filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > now)
-      .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
-
-    return (
-      <ScheduleClient
-        supportContactId={supportContactId}
-        hasClassThisWeek={weeklyUsage.creditsUsedThisWeek > 0}
-        weeklyTime={reservedSchedule}
-        upcomingBookings={upcomingBookings.map((b) => ({
-          id: b.id,
-          label: b.schedule.label,
-          scheduledAt: b.scheduledAt.toISOString(),
-          creditsSpent: b.creditsSpent,
-        }))}
-      />
-    );
-  }
 
   const [credits, occurrences, bookings, supportContactId] = await Promise.all([
     // Effective, not raw: a credit already reserved by another SCHEDULED
@@ -85,8 +44,9 @@ export default async function LessonsPage() {
     getSupportContactId(),
   ]);
 
-  return (
+  const bookingClient = (
     <ClassBookingClient
+      extraMode={Boolean(activePlan)}
       initialCredits={credits}
       cancellationCutoffHours={CANCELLATION_CUTOFF_HOURS}
       soloMaxCredits={SOLO_MAX_CREDITS}
@@ -113,7 +73,43 @@ export default async function LessonsPage() {
         refunded: b.refunded,
         attendance: b.attendance,
         canceledReason: b.canceledReason,
+        reserved: Boolean(b.reservedByPlanId),
       }))}
+    />
+  );
+
+  if (!activePlan) return bookingClient;
+
+  const [weeklyUsage, reservedSchedule] = await Promise.all([
+    getWeeklyCreditUsage(session.user.id),
+    activePlan.reservedScheduleId
+      ? prisma.classSchedule.findUnique({ where: { id: activePlan.reservedScheduleId }, select: { dayOfWeek: true, startTime: true } })
+      : null,
+  ]);
+
+  const now = Date.now();
+  const upcomingBookings = bookings
+    .filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > now)
+    .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
+
+  return (
+    <LessonsHub
+      initialTab={searchParams.tab === "extra" ? "extra" : "weekly"}
+      weekly={
+        <ScheduleClient
+          supportContactId={supportContactId}
+          cancellationCutoffHours={CANCELLATION_CUTOFF_HOURS}
+          hasClassThisWeek={weeklyUsage.creditsUsedThisWeek > 0}
+          weeklyTime={reservedSchedule}
+          upcomingBookings={upcomingBookings.map((b) => ({
+            id: b.id,
+            label: b.schedule.label,
+            scheduledAt: b.scheduledAt.toISOString(),
+            creditsSpent: b.creditsSpent,
+          }))}
+        />
+      }
+      extras={bookingClient}
     />
   );
 }

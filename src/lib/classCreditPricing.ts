@@ -10,6 +10,18 @@ import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
 
 export const CREDIT_BASE_PRICE_CENTS = 3499; // $34.99 per credit (1 credit = 30 min), full price
 
+/**
+ * What an extra credit costs: a flat $40 for 1 credit (30 minutes), no bundle
+ * tiers. Credits are for extra sessions on top of a student's weekly class (and
+ * for anyone without a plan); a plan's own weekly class is paid by the plan, not
+ * by credits bought here. Deliberately its own number, separate from
+ * CREDIT_BASE_PRICE_CENTS above, which still prices Family Bundles.
+ */
+export const EXTRA_CREDIT_PRICE_CENTS = 4000;
+
+/** Most credits one purchase can ask for; keeps a typo from becoming a huge invoice. */
+export const MAX_EXTRA_CREDITS_PER_PURCHASE = 20;
+
 /** Pre-discount per-credit price, kept only so marketing pages can show a struck-through "was" price and a % off badge. */
 export const CREDIT_ORIGINAL_PRICE_CENTS = 5000;
 
