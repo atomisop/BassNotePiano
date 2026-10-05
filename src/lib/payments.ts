@@ -16,7 +16,7 @@ import {
   MIN_FAMILY_BUNDLE_RECIPIENTS,
 } from "@/lib/classCreditPricing";
 import { calculateCurriculumFamilyBundleTotal, MIN_CURRICULUM_FAMILY_BUNDLE_RECIPIENTS } from "@/lib/curriculum";
-import { addCalendarMonthsClamped } from "@/lib/paymentPlans";
+import { addCalendarMonthsClamped, bookReservedWindowForPlan, describeReservedSlot } from "@/lib/paymentPlans";
 import { createNotification } from "@/lib/notifications";
 import { assertRateLimit } from "@/lib/rateLimit";
 
@@ -447,9 +447,10 @@ async function notifyAdminsIfStillPending(paymentId: string) {
   try {
     const payment = await prisma.zellePayment.findUnique({
       where: { id: paymentId },
-      select: { status: true, amountCents: true, method: true, user: { select: { name: true, email: true } } },
+      select: { status: true, amountCents: true, method: true, paymentPlanId: true, installmentNumber: true, user: { select: { name: true, email: true } } },
     });
     if (!payment || payment.status !== "PENDING_REVIEW") return;
+    const slot = payment.paymentPlanId ? await describeReservedSlot(payment.paymentPlanId) : null;
     const admins = await getAdminRecipients("PAYMENT_REVIEW");
     const amount = (payment.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
     await Promise.all(
@@ -458,7 +459,7 @@ async function notifyAdminsIfStillPending(paymentId: string) {
           userId: admin.id,
           type: "PAYMENT_SUBMITTED",
           title: "Payment to review",
-          body: `${payment.user.name ?? payment.user.email} says they sent ${amount} by ${payment.method === "VENMO" ? "Venmo" : "Zelle"}.`,
+          body: `${payment.user.name ?? payment.user.email} says they sent ${amount} by ${payment.method === "VENMO" ? "Venmo" : "Zelle"}.${slot ? ` Weekly time: ${slot}.` : ""}`,
           emailCategory: "payments",
         }),
       ),
@@ -720,6 +721,12 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
       throw new Error("That payment was just processed elsewhere, please try approving it again.");
     }
     throw err;
+  }
+
+  // The plan's weekly classes for the period just paid for go on the calendar
+  // (and into the admin's Attendance list) right now, not at tomorrow's job.
+  if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId) {
+    await bookReservedWindowForPlan(payment.paymentPlanId);
   }
 
   let notificationBody = "Your payment was verified.";

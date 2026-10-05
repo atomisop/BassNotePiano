@@ -11,6 +11,7 @@ export const OWNER_EMAIL = (process.env.OWNER_EMAIL ?? "isaacberhanu777@gmail.co
 
 export const ADMIN_NOTIFICATION_KINDS = [
   { kind: "NEW_REGISTRATION", label: "New class registration", defaultOn: true },
+  { kind: "NEW_SUBSCRIPTION", label: "New subscription and weekly time", defaultOn: true },
   { kind: "NEW_BOOKING", label: "New class booking", defaultOn: true },
   { kind: "PAYMENT_REVIEW", label: "Payment to review", defaultOn: true },
   { kind: "PAYMENT_AUTO_APPROVED", label: "Payment approved automatically", defaultOn: false },
