@@ -2,10 +2,11 @@ import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 import type { ZellePaymentStatus } from "@prisma/client";
 import { getAdminPayments } from "@/lib/payments";
 import { PaymentQueue } from "@/components/admin/PaymentQueue";
-import { approvePaymentAction, rejectPaymentAction } from "./actions";
+import { approvePaymentAction, checkPaymentAction, rejectPaymentAction } from "./actions";
 
-const FILTERS: { label: string; value: ZellePaymentStatus | "ALL" }[] = [
+const FILTERS: { label: string; value: ZellePaymentStatus | "ALL" | "UNCHECKED" }[] = [
   { label: "Pending", value: "PENDING_REVIEW" },
+  { label: "Unchecked", value: "UNCHECKED" },
   { label: "Verified", value: "VERIFIED" },
   { label: "Rejected", value: "REJECTED" },
   { label: "Awaiting", value: "AWAITING_TRANSFER" },
@@ -44,6 +45,7 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
           payments={payments}
           onApprove={approvePaymentAction}
           onReject={rejectPaymentAction}
+          onCheck={checkPaymentAction}
           emptyMessage={
             activeFilter === "PENDING_REVIEW" ? "Nothing pending review." : `No ${activeLabel.toLowerCase()} payments.`
           }

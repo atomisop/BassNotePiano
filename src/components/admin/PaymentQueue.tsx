@@ -13,6 +13,7 @@ export interface PaymentQueueProps {
   payments: PendingZellePayment[];
   onApprove: (paymentId: string) => Promise<void>;
   onReject: (paymentId: string, reason: string) => Promise<void>;
+  onCheck?: (paymentId: string) => Promise<void>;
   emptyMessage?: string;
 }
 
@@ -93,6 +94,7 @@ export function PaymentQueue({
   payments,
   onApprove,
   onReject,
+  onCheck,
   emptyMessage = "Nothing to review right now.",
 }: PaymentQueueProps) {
   const [query, setQuery] = useState("");
@@ -185,6 +187,32 @@ export function PaymentQueue({
               </dd>
             </div>
           </dl>
+
+          {payment.autoApproved && (
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-lg bg-neu-base p-3 shadow-pressed-low">
+              <p className="text-small text-slate-300">
+                {payment.checkedAt ? "Auto-approved, checked" : "Auto-approved, check the transfer arrived"}
+              </p>
+              {!payment.checkedAt && onCheck && (
+                <button
+                  type="button"
+                  disabled={busyId === payment.id}
+                  onClick={async () => {
+                    setBusyId(payment.id);
+                    try {
+                      await onCheck(payment.id);
+                      router.refresh();
+                    } finally {
+                      setBusyId(null);
+                    }
+                  }}
+                  className="tap shrink-0 rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                >
+                  Mark checked
+                </button>
+              )}
+            </div>
+          )}
 
           {payment.note && <p className="mt-3 text-small text-slate-500">Note: {payment.note}</p>}
           {payment.status === "REJECTED" && payment.rejectionReason && (

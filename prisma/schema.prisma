@@ -1324,6 +1324,12 @@ model ZellePayment {
   // Set when the student submits. Rows created before Venmo existed are Zelle.
   method PaymentMethod @default(ZELLE)
 
+  // Set when a returning student's installment was approved by the system on
+  // submit instead of by the admin (see maybeAutoApprovePayment). Stays
+  // "unchecked" until the admin confirms the money arrived (checkedAt).
+  autoApproved Boolean   @default(false)
+  checkedAt    DateTime?
+
   // Filled in by the student on the "I've sent it" step of the modal
   senderName    String?
   referenceCode String? // Zelle confirmation/reference number

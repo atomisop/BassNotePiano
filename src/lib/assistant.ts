@@ -143,7 +143,7 @@ ${bundleList}
   - Nothing about a purchase (curriculum, a payment plan installment, or a family bundle) is refundable as cash, the only way a class comes back is the 24h+ cancellation above.
 
 Payment:
-  - Payment is by Zelle or Venmo, the student picks one when paying. It's reviewed by hand, so access isn't instant, usually the same day.
+  - Payment is by Zelle or Venmo, the student picks one when paying. It's checked by hand, so access isn't instant for a new student, usually the same day. A returning student's monthly installment unlocks right away and is checked afterward.
   - Submitting a fake or altered payment reference is treated as fraud and results in the account being closed.
 
 Privacy (full policy at /privacy, last updated ${PRIVACY_LAST_UPDATED}):
