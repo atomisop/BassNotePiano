@@ -1,14 +1,26 @@
 import type { BadgeCode } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { SCALE_GROUPS } from "@/lib/curriculum";
+import { BADGES } from "@/lib/badges";
+import { createNotification } from "@/lib/notifications";
 
 /** Idempotent — the unique (userId, code) constraint makes a re-award a no-op. */
 async function awardBadge(userId: string, code: BadgeCode) {
-  await prisma.userBadge.upsert({
-    where: { userId_code: { userId, code } },
-    update: {},
-    create: { userId, code },
-  });
+  const existing = await prisma.userBadge.findUnique({ where: { userId_code: { userId, code } }, select: { id: true } });
+  if (existing) return;
+  try {
+    await prisma.userBadge.create({ data: { userId, code } });
+  } catch (err) {
+    // A concurrent award won the race: it sends the notification, so this one stays quiet.
+    if ((err as { code?: string })?.code === "P2002") return;
+    throw err;
+  }
+  const label = BADGES.find((badge) => badge.code === code)?.label ?? "new";
+  await createNotification({
+    userId,
+    type: "BADGE_EARNED",
+    title: `You earned the ${label} badge \u{1F389}`,
+  }).catch((err) => console.error("Badge notification failed (non-blocking):", err));
 }
 
 const COURSE_MILESTONES: { completedCount: number; code: BadgeCode }[] = [
