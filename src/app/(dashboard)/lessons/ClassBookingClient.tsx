@@ -1012,7 +1012,7 @@ export function ClassBookingClient({
                               </button>
                             ) : mode === "SOLO" ? (
                               multiSelect ? null : row.isBooked ? null : insufficientCredits ? (
-                                <Link href="/billing/lessons" className={actionClass}>
+                                <Link href="/billing/credits" className={actionClass}>
                                   Buy credits
                                 </Link>
                               ) : (
@@ -1065,10 +1065,10 @@ export function ClassBookingClient({
                   <p className="mt-1 text-body font-semibold text-slate-50">
                     {credits} credit{credits === 1 ? "" : "s"}
                   </p>
-                  <p className="mt-0.5 text-small text-slate-500">1 hour of class = 2 credits</p>
+                  <p className="mt-0.5 text-small text-slate-500">1 credit = 30 minutes · $40 each</p>
                 </div>
                 <Link
-                  href="/billing/lessons"
+                  href="/billing/credits"
                   className={`tap inline-flex items-center rounded-lg px-4 py-2 text-small font-semibold transition ${
                     hasNoCredits
                       ? "cta-sheen cta-fill"

@@ -7,6 +7,8 @@ import {
   calculateClassCreditTotal,
   calculateFamilyBundleTotal,
   isPlanTermOffered,
+  EXTRA_CREDIT_PRICE_CENTS,
+  MAX_EXTRA_CREDITS_PER_PURCHASE,
   MIN_FAMILY_BUNDLE_RECIPIENTS,
 } from "@/lib/classCreditPricing";
 import { calculateCurriculumFamilyBundleTotal, MIN_CURRICULUM_FAMILY_BUNDLE_RECIPIENTS } from "@/lib/curriculum";
@@ -93,6 +95,39 @@ async function getOrCreatePendingZellePayment({ userId, purpose, amountCents, ze
 
   return prisma.zellePayment.create({
     data: { userId, purpose, amountCents, zelleHandle, lessonQuantity, status: "AWAITING_TRANSFER" },
+  });
+}
+
+export class ExtraCreditsError extends Error {}
+
+/**
+ * The "buy extra credits" purchase: quantity x a flat $40, paid by Zelle and
+ * granted (non-expiring) when an admin verifies it, same as every CLASS_CREDITS
+ * payment. One open request per student: asking again before paying updates
+ * that row's quantity and amount together (never just one of them, so the
+ * credits granted always match the amount shown). Once a reference code has been
+ * submitted (PENDING_REVIEW) it is left alone and a new request waits until
+ * it is verified or rejected.
+ */
+export async function createExtraCreditsPayment(userId: string, quantity: number, zelleHandle: string) {
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_EXTRA_CREDITS_PER_PURCHASE) {
+    throw new ExtraCreditsError(`Choose between 1 and ${MAX_EXTRA_CREDITS_PER_PURCHASE} credits.`);
+  }
+  await expireStalePendingPayments();
+
+  const amountCents = quantity * EXTRA_CREDIT_PRICE_CENTS;
+  const existing = await prisma.zellePayment.findFirst({
+    where: { userId, purpose: "CLASS_CREDITS", extraSessionScheduleId: null, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
+    orderBy: { createdAt: "desc" },
+  });
+  if (existing) {
+    if (existing.status === "PENDING_REVIEW") {
+      throw new ExtraCreditsError("You already have a credits payment waiting to be checked. You can buy more once it is verified.");
+    }
+    return prisma.zellePayment.update({ where: { id: existing.id }, data: { amountCents, lessonQuantity: quantity } });
+  }
+  return prisma.zellePayment.create({
+    data: { userId, purpose: "CLASS_CREDITS", amountCents, zelleHandle, lessonQuantity: quantity, status: "AWAITING_TRANSFER" },
   });
 }
 
@@ -573,9 +608,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
       ? "Your extra session payment was verified and the class is booked. See it on your Schedule."
       : "Your extra session payment was verified, but that time was taken in the meantime. Pick another open time from Lessons, your credit is already on your account.";
   } else if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
-    const { discountCents } = calculateClassCreditTotal(payment.lessonQuantity);
-    const discountNote = discountCents > 0 ? ", bundle discount applied" : "";
-    notificationBody = `Your ${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} payment was verified${discountNote}. Credits are on your account.`;
+    notificationBody = `Your ${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} payment was verified. Credits are on your account, ready to book an extra class.`;
   } else if (payment.purpose === "FAMILY_BUNDLE" && payment.lessonQuantity) {
     notificationBody = `Your family bundle payment was verified. ${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} each went out to everyone in the bundle.`;
   } else if (payment.purpose === "CURRICULUM_FAMILY_BUNDLE") {
