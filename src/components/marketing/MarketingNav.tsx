@@ -167,7 +167,7 @@ export function MarketingNav() {
             used. */}
         <nav
           className={[
-            "mx-auto flex w-full max-w-[90rem] items-center justify-between px-6 transition-[height,padding] duration-500 md:px-16",
+            "mx-auto flex w-full max-w-[90rem] items-center justify-between px-6 transition-[height,padding] duration-500 md:px-8 lg:px-16",
             lifted ? "h-16 md:h-20" : "h-20 md:h-24",
           ].join(" ")}
         >
@@ -188,11 +188,12 @@ export function MarketingNav() {
                 wordmark treatment (studied directly), not the small label
                 this replaces. Colored in the accent at the time; neutral
                 again now under the "premium black and white" pass. */}
-            <span className="hidden font-serif text-body font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))] md:inline">
+            <span className="hidden whitespace-nowrap font-serif text-body font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))] xl:inline">
               Bass Note Piano
             </span>
-            {/* Phones show the logo alone (the link keeps its aria-label); the
-                wordmark returns at md and up, i.e. iPad and desktop. */}
+            {/* Phones and tablets show the logo alone (the link keeps its aria-label);
+                the wordmark returns at xl, where the row has room for it. It used
+                to show from md and wrapped onto two lines beside the links. */}
           </Link>
 
           {/* Classes/Pricing/Log in — real glass too, one tier down from the
@@ -202,7 +203,7 @@ export function MarketingNav() {
               important element on screen — already spent on "Start
               learning"). Using elevated glass on all four would flatten
               that hierarchy back to "everything's equally important". */}
-          <div className="hidden items-center gap-3 md:flex">
+          <div className="hidden items-center gap-2 md:flex lg:gap-3">
             {LINKS.map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -260,12 +261,16 @@ export function MarketingNav() {
                 `.btn-primary`'s solid gradient fill. Scoped to just this one
                 nav button; `.btn-primary` itself is untouched, so the Hero/
                 FinalCTA/etc. CTAs elsewhere keep their existing solid look. */}
-            <Link
-              href={primary.href}
-              className="btn glass-surface-elevated !h-10 !px-5 !text-small text-[rgb(var(--c-s-50))]"
-            >
-              {primary.label}
-            </Link>
+            {/* Signed in, the Dashboard button is gone from the bar: the page already
+                has its own, and the profile menu has a Dashboard link. */}
+            {!isLoggedIn && (
+              <Link
+                href={primary.href}
+                className="btn glass-surface-elevated !h-10 !px-5 !text-small text-[rgb(var(--c-s-50))]"
+              >
+                {primary.label}
+              </Link>
+            )}
           </div>
 
           {/* Ask AI lives in the bar itself, never in the mobile menu list, so it is
@@ -273,18 +278,12 @@ export function MarketingNav() {
           <div className="ml-auto flex items-center gap-2 md:ml-3">
             {/* Phones (md and up has these in the row above). Signed out: Log in
                 and Get started, so how to get in is visible without opening the
-                menu. Signed in: Dashboard and the profile button (Sign out lives
-                inside it). Get started / Dashboard appear from 360px up; on the
-                narrowest phones the menu still has them. */}
+                menu. Signed in: the profile button (Dashboard and Sign out live
+                inside it). Get started appears from 360px up; on the narrowest
+                phones the menu still has it. */}
             <div className="flex items-center gap-2 md:hidden">
               {status === "loading" ? null : isLoggedIn ? (
                 <>
-                  <Link
-                    href={primary.href}
-                    className="tap hidden h-9 items-center rounded-full bg-neu-base px-4 text-small font-semibold text-[rgb(var(--c-s-50))] shadow-raised-low transition active:shadow-pressed-low min-[360px]:flex"
-                  >
-                    {primary.label}
-                  </Link>
                   <ProfileMenu
                     name={session?.user?.name ?? null}
                     username={null}
