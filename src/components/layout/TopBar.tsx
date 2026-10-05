@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -61,6 +62,13 @@ export function TopBar({ isAdmin }: { isAdmin: boolean }) {
       <div className="flex items-center gap-2 md:gap-3">
         {/* Leftmost of the right-hand cluster: Ask AI, admin, attendance, bell, profile. */}
         <AskAiButton />
+        {/* A labeled way back to the public site. The logo does the same, but nothing says so. Phones get it in the profile menu, where the bar has no room. */}
+        <Link
+          href="/"
+          className="tap hidden h-9 items-center rounded-full bg-neu-base px-4 text-small font-medium text-slate-200 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low md:inline-flex"
+        >
+          Website
+        </Link>
         {/* Moved here from AppDock's own row of icons, by direct
             instruction — it was the one dock item that wasn't an everyday
             destination for every signed-in visitor (just the single admin
