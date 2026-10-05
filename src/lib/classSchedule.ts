@@ -1,3 +1,4 @@
+import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 import type { AttendanceStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
@@ -980,7 +981,9 @@ export async function getReservableSlots(creditsPerWeek: number): Promise<Reserv
       scheduleId: schedule.id,
       label: schedule.label,
       dayOfWeek: schedule.dayOfWeek,
-      startTime: schedule.startTime,
+      // The PIECE's own start time (window start + its offset), not the whole
+      // window's: every piece of an 11:00-3:00 window used to read "11:00 AM".
+      startTime: addMinutesToHHmm(schedule.startTime, chunk.offsetMin),
       chunkIndex: chunk.chunkIndex,
       creditCost: chunk.creditCost,
     }));

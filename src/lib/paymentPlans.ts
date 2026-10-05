@@ -1,3 +1,4 @@
+import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 import { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason, type Prisma, type PaymentPlanStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { calculatePaymentPlanRate, describePaymentPlan, isPlanTermOffered, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
@@ -278,7 +279,7 @@ export function addCalendarMonthsClamped(date: Date, months: number): Date {
 
 const adminPaymentPlanInclude = {
   user: { select: { id: true, name: true, email: true } },
-  reservedSchedule: { select: { id: true, label: true, dayOfWeek: true, startTime: true } },
+  reservedSchedule: { select: { id: true, label: true, dayOfWeek: true, startTime: true, durationMin: true } },
 } satisfies Prisma.PaymentPlanInclude;
 
 export type AdminPaymentPlan = Prisma.PaymentPlanGetPayload<{ include: typeof adminPaymentPlanInclude }> & {
@@ -298,7 +299,18 @@ export async function getAdminPaymentPlans(status?: PaymentPlanStatus): Promise<
     include: adminPaymentPlanInclude,
   });
   const now = Date.now();
-  return plans.map((plan) => ({ ...plan, isOverdue: plan.status === "ACTIVE" && plan.nextDueDate.getTime() < now }));
+  return plans.map((plan) => ({
+    ...plan,
+    // Show the plan's own piece of the window (e.g. 12:00 PM), not the window's start.
+    reservedSchedule:
+      plan.reservedSchedule && plan.reservedChunkIndex !== null
+        ? {
+            ...plan.reservedSchedule,
+            startTime: addMinutesToHHmm(plan.reservedSchedule.startTime, chunksForSchedule(plan.reservedSchedule)[plan.reservedChunkIndex]?.offsetMin ?? 0),
+          }
+        : plan.reservedSchedule,
+    isOverdue: plan.status === "ACTIVE" && plan.nextDueDate.getTime() < now,
+  }));
 }
 
 const feedbackInclude = {
