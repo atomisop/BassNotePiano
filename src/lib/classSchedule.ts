@@ -6,7 +6,7 @@ import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { getRoadmap, type ScaleAccessState } from "@/lib/access";
 import { resolveNextStep } from "@/lib/next-step";
 import { drawDownCredits, recordCreditGrant } from "@/lib/creditLedger";
-import { PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { PLAN_CADENCE_CREDITS_PER_WEEK, CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
 
 export class ClassBookingError extends Error {}
 
@@ -127,7 +127,11 @@ export function chunksForSchedule(schedule: { durationMin: number }): ScheduleCh
   const chunks: ScheduleChunk[] = [];
   for (let offsetMin = 0; offsetMin < schedule.durationMin; offsetMin += CHUNK_MIN) {
     const remainingMin = schedule.durationMin - offsetMin;
-    chunks.push({ chunkIndex: chunks.length, offsetMin, creditCost: Math.min(remainingMin, CHUNK_MIN) / 30 });
+    // A slot starts every CHUNK_MIN (the hour) and holds one class of
+    // CLASS_MINUTES. Whatever is left at the end of a window that cannot fit a
+    // whole class (say the last 30 minutes of a 90-minute window) is not offered.
+    if (remainingMin < CLASS_MINUTES) continue;
+    chunks.push({ chunkIndex: chunks.length, offsetMin, creditCost: CREDITS_PER_CLASS });
   }
   return chunks;
 }
@@ -252,7 +256,7 @@ export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
         label: c.schedule.label,
         dayOfWeek: c.schedule.dayOfWeek,
         chunkIndex: c.chunk.chunkIndex,
-        durationMin: c.chunk.creditCost * 30,
+        durationMin: CLASS_MINUTES,
         creditCost: c.chunk.creditCost,
         occurrenceDate: c.occurrenceDate,
         scheduledAt: c.scheduledAt,
@@ -326,10 +330,9 @@ async function assertNoOtherBookingSameDay(
 
 /**
  * Books a specific occurrence for one student alone. Solo 1:1 is the
- * default tier now: `creditsToBook` is 1 or 2 (30 or 60 minutes), the
- * student's own choice, capped at SOLO_MAX_CREDITS regardless of how long
- * the underlying schedule window itself is — by direct instruction, no
- * single 1:1 booking should ever run past an hour.
+ * default tier now: every booking is one class of CLASS_MINUTES (45), which
+ * costs CREDITS_PER_CLASS internal credits; `creditsToBook`, if passed, must
+ * equal that.
  *
  * Capacity is binary, not counted: an occurrence is claimed by whichever
  * booking (solo or family) lands on it first, and everyone else is locked
@@ -356,10 +359,11 @@ export async function bookClass(
   const chunk = chunksForSchedule(schedule)[chunkIndex];
   if (!chunk) throw new ClassBookingError("That time slot doesn't exist.");
 
-  const maxCredits = Math.min(chunk.creditCost, SOLO_MAX_CREDITS);
-  const credits = creditsToBook ?? maxCredits;
-  if (!Number.isInteger(credits) || credits < 1 || credits > maxCredits) {
-    throw new ClassBookingError(`Choose between 1 and ${maxCredits} credits for this class.`);
+  // A class is always one fixed size. Anything else (a half-priced, shorter
+  // booking) is refused, so the price per class cannot be dodged.
+  const credits = chunk.creditCost;
+  if (creditsToBook !== undefined && creditsToBook !== credits) {
+    throw new ClassBookingError("Classes are 45 minutes. Please book a full class.");
   }
 
   const occurrenceDate = new Date(occurrenceDateMs);
@@ -541,7 +545,7 @@ async function notifyAdminsOfBooking(
   ]);
   const studentLabel = student?.name ?? student?.email ?? "A student";
   const when = scheduledAt.toLocaleString("en-US", { timeZone: ET_ZONE, dateStyle: "full", timeStyle: "short" });
-  const endsAt = new Date(scheduledAt.getTime() + creditsBooked * 30 * 60_000).toLocaleTimeString("en-US", {
+  const endsAt = new Date(scheduledAt.getTime() + (creditsBooked / CREDITS_PER_CLASS) * CLASS_MINUTES * 60_000).toLocaleTimeString("en-US", {
     timeZone: ET_ZONE,
     hour: "numeric",
     minute: "2-digit",
@@ -575,7 +579,7 @@ async function notifyAdminsOfFamilyBooking(
   ]);
   const names = students.map((s) => s.name ?? s.email).join(", ");
   const when = scheduledAt.toLocaleString("en-US", { timeZone: ET_ZONE, dateStyle: "full", timeStyle: "short" });
-  const endsAt = new Date(scheduledAt.getTime() + FAMILY_CREDITS_PER_STUDENT * 30 * 60_000).toLocaleTimeString("en-US", {
+  const endsAt = new Date(scheduledAt.getTime() + (FAMILY_CREDITS_PER_STUDENT / CREDITS_PER_CLASS) * CLASS_MINUTES * 60_000).toLocaleTimeString("en-US", {
     timeZone: ET_ZONE,
     hour: "numeric",
     minute: "2-digit",
@@ -1297,10 +1301,10 @@ export async function rescheduleClassBooking(
   const chunk = chunksForSchedule(newSchedule)[newChunkIndex];
   if (!chunk) throw new ClassBookingError("That time slot doesn't exist.");
 
-  const maxCredits = Math.min(chunk.creditCost, SOLO_MAX_CREDITS);
-  const credits = newCreditsToBook ?? maxCredits;
-  if (!Number.isInteger(credits) || credits < 1 || credits > maxCredits) {
-    throw new ClassBookingError(`Choose between 1 and ${maxCredits} credits for this class.`);
+  // One fixed class size, same as bookClass.
+  const credits = chunk.creditCost;
+  if (newCreditsToBook !== undefined && newCreditsToBook !== credits) {
+    throw new ClassBookingError("Classes are 45 minutes. Please book a full class.");
   }
 
   const newOccurrenceDate = new Date(newOccurrenceDateMs);

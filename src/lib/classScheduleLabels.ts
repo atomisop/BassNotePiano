@@ -3,13 +3,15 @@
 // view and the admin attendance roster format occurrence times client-side).
 // Same pattern as classCreditPricing.ts / classRegistrationLabels.ts.
 
+import { CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
+
 export function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
-/** The clock time `credits` worth of 30-minute chunks past `scheduledAtIso` lands on. */
+/** The clock time a booking that spent `credits` ends at: a class (CREDITS_PER_CLASS credits) runs CLASS_MINUTES. */
 export function formatEndTime(scheduledAtIso: string, credits: number): string {
-  const end = new Date(new Date(scheduledAtIso).getTime() + credits * 30 * 60_000);
+  const end = new Date(new Date(scheduledAtIso).getTime() + (credits / CREDITS_PER_CLASS) * CLASS_MINUTES * 60_000);
   return end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 

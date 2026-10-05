@@ -1,7 +1,7 @@
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 import { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason, type Prisma, type PaymentPlanStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { calculatePaymentPlanRate, describePaymentPlan, isPlanTermOffered, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { calculatePaymentPlanRate, describePaymentPlan, isPlanTermOffered, isPlanCadenceOffered, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import {
   chunksForSchedule,
   livePaymentPlanConditions,
@@ -66,6 +66,9 @@ export async function createPaymentPlan(
     throw new PaymentPlanError(`"${term}" isn't a valid term.`);
   }
 
+  if (!isPlanCadenceOffered(cadence)) {
+    throw new PaymentPlanError("That weekly length isn't offered anymore. Classes are 45 minutes a week.");
+  }
   if (!isPlanTermOffered(term)) {
     throw new PaymentPlanError("That plan length is no longer offered. Pick Monthly, 3-Month, or 6-Month.");
   }

@@ -19,7 +19,10 @@ import {
   calculateFamilyBundleTotal,
   calculatePaymentPlanRate,
   describePaymentPlan,
-  EXTRA_CREDIT_PRICE_CENTS,
+  EXTRA_CLASS_PRICE_CENTS,
+  OFFERED_PLAN_CADENCE,
+  CLASS_MINUTES,
+  CREDITS_PER_CLASS,
 } from "@/lib/classCreditPricing";
 import { TERMS_LAST_UPDATED } from "@/components/legal/TermsContent";
 import { PRIVACY_LAST_UPDATED } from "@/components/legal/PrivacyContent";
@@ -81,9 +84,9 @@ function buildSystemPrompt(visitor: VisitorContext): string {
     (s) => `  - ${s.code}: ${s.title}${s.kinitName ? ` (${s.kinitName})` : ""}`,
   ).join("\n");
 
+  // One plan: a 45-minute class a week (stored as MIN_60_WEEKLY, one hourly slot).
   const PLAN_CADENCES: { value: PaymentPlanCadence; label: string }[] = [
-    { value: "MIN_30_WEEKLY", label: "30 min/week" },
-    { value: "MIN_60_WEEKLY", label: "60 min/week" },
+    { value: OFFERED_PLAN_CADENCE, label: `${CLASS_MINUTES} min/week` },
   ];
   const PLAN_TERMS: PaymentPlanTerm[] = ["MONTHLY", "TERM_3", "TERM_6"];
   const planList = PLAN_CADENCES.map(({ value: cadence, label }) => {
@@ -104,7 +107,7 @@ function buildSystemPrompt(visitor: VisitorContext): string {
   const bundleList = PLAN_CADENCES.map(({ value: cadence, label }) => {
     const rows = PLAN_TERMS.map((term) => {
       const total = calculateFamilyBundleTotal(cadence, term, MIN_FAMILY_BUNDLE_RECIPIENTS);
-      return `      - ${describePaymentPlan(cadence, term)}: ${total.creditsPerRecipient} credits per recipient, ${formatUsd(
+      return `      - ${describePaymentPlan(cadence, term)}: ${total.creditsPerRecipient / CREDITS_PER_CLASS} classes per recipient, ${formatUsd(
         total.totalCents,
       )} total for ${MIN_FAMILY_BUNDLE_RECIPIENTS} recipients (one upfront payment, not recurring)`;
     }).join("\n");
@@ -114,7 +117,7 @@ function buildSystemPrompt(visitor: VisitorContext): string {
   const visitorLine = visitor.signedIn
     ? `The visitor is signed in${visitor.name ? ` as ${visitor.name}` : ""}. Curriculum access: ${
         visitor.hasCurriculumAccess ? "yes" : "no"
-      }. Class credit balance: ${visitor.classCredits ?? "unknown"}.${visitor.isAdmin ? " They are an ADMIN of the studio, not just a student." : ""}`
+      }. Classes on their account: ${visitor.classCredits == null ? "unknown" : Math.floor(visitor.classCredits / CREDITS_PER_CLASS)}.${visitor.isAdmin ? " They are an ADMIN of the studio, not just a student." : ""}`
     : "The visitor is not signed in (a member of the public, possibly deciding whether to sign up).";
 
   return `You are Atom, the friendly assistant embedded in Bass Note Piano's website and app. Bass Note Piano teaches the Ethiopian kiñit scale system (the traditional five/seven-note scales such as Tizita, Bati, Anchihoye, and the Mixolydian pentatonics) for piano and guitar, spelled correctly in every key, plus live weekly group classes on Discord currently covering piano, guitar, and bass. Drums and voice are not taught yet. The class registration form still collects interest for them (flagged "Coming soon" there), but never tell anyone they can book a drum or voice class today.
@@ -129,15 +132,15 @@ Curriculum (self-paced, on the website):
 ${scaleList}
   - Each scale group includes video/PDF lessons, a practice tracker, and a quiz you need to pass to mark it complete.
 
-Live classes (weekly, on Discord), bought as "class credits" (1 credit = one 30-minute class):
-  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a weekly cadence and a term (Monthly, no commitment, 3-Month, or 6-Month), paid one Zelle installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active, nothing to book yourself. If a specific week doesn't work, message the studio rather than rescheduling it yourself, only an admin changes a booked week. Longer terms cost less per month:
+Live classes (weekly, on Discord). Every class is one 45-minute lesson, one-on-one with the teacher, starting on the hour:
+  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a term (Monthly, no commitment, 3-Month, or 6-Month), paid one Zelle installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active, nothing to book yourself. If a specific week doesn't work, message the studio rather than rescheduling it yourself, only an admin changes a booked week. Longer terms cost less per month:
 ${planList}
   - Family (2+ separate, already-existing accounts sharing the same cadence and term at once) is a different, separate purchase: the exact same per-month rate and term discount a solo Payment Plan gets, paid once upfront for the whole term instead of monthly installments, plus an extra ${FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total (these credits never expire):
 ${bundleList}
   - Each class is capped at 10 students.
-  - When someone starts a Payment Plan they pick their weekly day and time on a calendar of the open spots, and that time is locked in for them every week of the term and booked automatically, so a subscriber never has to buy credits and then book their weekly class. The /lessons page has two tabs for them: "My weekly class" and "Extra sessions". Extra sessions is the booking calendar for extra time with the teacher on top of their weekly class, paid with credits at a flat ${formatUsd(EXTRA_CREDIT_PRICE_CENTS)} per credit (1 credit = 30 minutes), bought at /billing/credits and paid by Zelle. Anyone without an active plan sees the same booking calendar directly (Family sessions, or a between-plans student).
-  - A scheduled class can be cancelled or changed until 24 hours before it starts, and the credit stays on the account. Inside 24 hours it can't be changed in the app: the student attends, or messages the studio for a case-by-case call. A subscriber's weekly class works the same way: "skip this class" until 24 hours before, then use the credit to book a different time under Extra sessions. The standing weekly time can't be moved while a class is starting within 24 hours.
-  - Nothing about a purchase (curriculum, a payment plan installment, or a family bundle) is refundable as cash — the only way a credit comes back is the 24h+ cancellation above.
+  - When someone starts a Payment Plan they pick their weekly day and time on a calendar of the open spots, and that time is locked in for them every week of the term and booked automatically, so a subscriber never has to buy anything or book their weekly class. The /lessons page has two tabs for them: "My weekly class" and "Extra sessions". Extra sessions is the booking calendar for extra time with the teacher on top of their weekly class, paid by buying extra classes at a flat ${formatUsd(EXTRA_CLASS_PRICE_CENTS)} each (one 45-minute class), bought at /billing/credits and paid by Zelle. Anyone without an active plan sees the same booking calendar directly (Family sessions, or a between-plans student).
+  - A scheduled class can be cancelled or changed until 24 hours before it starts, and the class stays on the account for the student to rebook. Inside 24 hours it can't be changed in the app: the student attends, or messages the studio for a case-by-case call. A subscriber's weekly class works the same way: "skip this class" until 24 hours before, then use it to book a different time under Extra sessions. The standing weekly time can't be moved while a class is starting within 24 hours.
+  - Nothing about a purchase (curriculum, a payment plan installment, or a family bundle) is refundable as cash — the only way a class comes back is the 24h+ cancellation above.
 
 Payment:
   - The only payment method is Zelle. It's reviewed by hand, so access isn't instant — usually the same day.
