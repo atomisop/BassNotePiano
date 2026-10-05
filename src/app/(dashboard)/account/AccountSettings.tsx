@@ -87,11 +87,10 @@ function TabIcon({ path, className = "h-[18px] w-[18px] shrink-0" }: { path: str
   );
 }
 
-function SectionCard({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="glass-surface p-6">
       <h2 className="text-body text-slate-50 font-semibold">{title}</h2>
-      <p className="mt-1 text-small text-slate-500">{description}</p>
       <div className="mt-4">{children}</div>
     </div>
   );
@@ -263,13 +262,9 @@ function TabContent({
 // who wants it gone sooner.
 function PrivacySection({ history }: { history: AssistantMessage[] }) {
   return (
-    <SectionCard title="Privacy & data" description="What's saved about your conversations, and where to go for the rest.">
+    <SectionCard title="Privacy & data">
       <div>
         <h3 className="text-small font-medium text-slate-200">History → Atom</h3>
-        <p className="mt-1 text-small text-slate-500">
-          Atom&apos;s chat window always opens fresh, but everything you&apos;ve asked it while signed in is kept here for 30
-          days, then deleted on its own: {history.length} message{history.length === 1 ? "" : "s"} right now.
-        </p>
         <div className="mt-3 max-h-96 space-y-2 overflow-y-auto rounded-xl p-3 bg-neu-base shadow-raised-low">
           {history.length === 0 ? (
             <p className="py-6 text-center text-small text-slate-600">
@@ -290,11 +285,9 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
           )}
         </div>
         <p className="mt-3 text-small text-slate-500">
-          Want it gone sooner than 30 days? Message us directly through the app. See the{" "}
           <Link href="/privacy" className="underline underline-offset-2 text-[rgb(var(--c-s-50))] hover:opacity-70">
             Privacy policy
-          </Link>{" "}
-          for how deletion works.
+          </Link>
         </p>
       </div>
     </SectionCard>
@@ -305,9 +298,6 @@ function AppearanceSection() {
   return (
     <section>
       <h2 className="text-body text-slate-50 font-semibold">Themes &amp; appearance</h2>
-      <p className="mt-1.5 text-small text-slate-500">
-        Change how Bass Note Piano looks for you. Nothing here affects what anyone else sees.
-      </p>
       <div className="mt-6">
         <ThemePicker />
       </div>
@@ -358,13 +348,6 @@ function AccountSettingsInner({
           <div>
             <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Settings</p>
             <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Account</h1>
-            <p className="mt-1 text-small text-slate-500">
-              Want to edit your name, username, or photo? Head to{" "}
-              <Link href="/profile" className="underline underline-offset-2 text-[rgb(var(--c-s-50))] hover:opacity-70">
-                your profile
-              </Link>
-              .
-            </p>
           </div>
         }
         menu={
@@ -421,15 +404,10 @@ function MembershipSection({
 }) {
   return (
     <div className="space-y-6">
-      <SectionCard title="Membership & purchases" description="Your curriculum and payment history.">
+      <SectionCard title="Membership & purchases">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl p-4 bg-neu-base shadow-raised-low">
           <div>
             <p className="text-small text-slate-100">{hasCurriculumAccess ? "Curriculum included" : "No active class plan"}</p>
-            <p className="mt-0.5 text-small text-slate-500">
-              {hasCurriculumAccess
-                ? "The curriculum comes with your live classes. Your teacher opens each new scale as you progress."
-                : "The curriculum comes with live classes. Start a plan to unlock it."}
-            </p>
           </div>
           {!hasCurriculumAccess && (
             <Link href="/billing/plans" className="tap inline-flex items-center cta-sheen cta-fill rounded-lg px-4 py-2 text-small font-semibold">
@@ -447,10 +425,7 @@ function MembershipSection({
         </Link>
       </SectionCard>
 
-      <SectionCard
-        title="Manage subscriptions"
-        description="Your weekly class plan: switch terms, or cancel. The family bundle is here too, for buying a term for 2 or more kids."
-      >
+      <SectionCard title="Manage subscriptions">
         <ManageSubscriptions
           activePlan={activePlan}
           onChangeTerm={changePaymentPlanTermAction}
@@ -508,7 +483,7 @@ function PasswordSection() {
 
   return (
     <div className="space-y-6">
-      <SectionCard title="Password" description="Changing it signs out any other devices you're currently signed in on.">
+      <SectionCard title="Password">
         <form onSubmit={handleSubmit} className="space-y-3">
           <PasswordInput
             placeholder="Current password"
@@ -595,10 +570,7 @@ function SignOutOtherDevicesCard() {
   }
 
   return (
-    <SectionCard
-      title="Sign out of other devices"
-      description="If you're signed in somewhere you don't recognize, or just used a shared computer, this ends every session except this one."
-    >
+    <SectionCard title="Sign out of other devices">
       <button
         type="button"
         onClick={handleClick}
@@ -670,14 +642,14 @@ function DangerZoneSection() {
   }
 
   return (
-    <SectionCard title="Danger zone" description="Permanently delete your account and everything tied to it.">
+    <SectionCard title="Danger zone">
       <div className="rounded-xl border border-red-500/30 bg-neu-base p-4 shadow-pressed-low">
         <p className="text-small text-slate-200">
           This deletes your profile, curriculum progress, class bookings, credits, messages, and everything else tied
           to your account.
         </p>
         <p className="mt-1.5 text-small font-medium text-red-300">
-          This can&apos;t be undone. Once your data is deleted there is no way to get it back — not even by
+          This can&apos;t be undone. Once your data is deleted there is no way to get it back, not even by
           contacting us.
         </p>
 
@@ -782,11 +754,7 @@ function DangerZoneSection() {
 function TutorialsSection() {
   const router = useRouter();
   return (
-    <SectionCard title="Tutorials" description="Replay the app walkthrough — the same spotlight tour shown once when you first joined.">
-      <p className="text-small text-slate-400">
-        A quick tour of the roadmap, online lessons, friends, messages, notifications, your profile, and settings —
-        with a &quot;Skip tour&quot; option on every step if you want out early.
-      </p>
+    <SectionCard title="Tutorials">
       <button
         type="button"
         onClick={() => router.push("/dashboard?tour=1")}
@@ -809,7 +777,7 @@ const NOTIFICATION_TOGGLES: { key: keyof NotificationPreferencesInput; label: st
   {
     key: "notifyEmailReminders",
     label: "Practice reminders",
-    description: "Nudges after a few days away. Off means off — no bell, no email.",
+    description: "Nudges after a few days away. Off means no bell and no email.",
   },
 ];
 
@@ -829,10 +797,7 @@ function NotificationSettingsSection({ initial }: { initial: NotificationPrefere
   }
 
   return (
-    <SectionCard
-      title="Notification settings"
-      description="Payments, role updates, and social always show in the bell — choose which also send an email. Practice reminders can be muted completely."
-    >
+    <SectionCard title="Notification settings">
       <div className="space-y-3">
         {NOTIFICATION_TOGGLES.map((item) => (
           <div key={item.key} className="flex items-center justify-between gap-4">

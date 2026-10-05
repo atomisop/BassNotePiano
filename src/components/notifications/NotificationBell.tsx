@@ -544,7 +544,7 @@ export function NotificationBell() {
                       <span className="flex h-14 w-14 items-center justify-center rounded-full text-slate-600 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low">
                         <Bell size={24} strokeWidth={1.5} />
                       </span>
-                      <p className="text-small font-medium text-slate-400">You&apos;re all caught up — no notifications yet.</p>
+                      <p className="text-small font-medium text-slate-400">No notifications yet.</p>
                       <Link
                         href="/account?tab=notifications"
                         onClick={() => setOpen(false)}

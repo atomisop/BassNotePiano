@@ -205,14 +205,6 @@ export function InstrumentStage({ variant, root, player, instrument, onInstrumen
           />
         )}
       </div>
-
-      {supported && (
-        <p className="mt-2 text-small text-slate-400">
-          {fretted
-            ? "Tap any note or fret to hear it. Frets outside the scale still sound."
-            : "Tap any note or key to hear it. Keys outside the scale still sound."}
-        </p>
-      )}
     </div>
   );
 }

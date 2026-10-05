@@ -91,11 +91,6 @@ export function ScaleRoadmap({ roadmap, earnedBadgeCodes }: ScaleRoadmapProps) {
         ) : shown.length === 0 ? (
           <EmptyState
             title={tab === "completed" ? "No finished scales yet" : "Every scale is finished"}
-            description={
-              tab === "completed"
-                ? "Scales you complete show up here, with everything you passed."
-                : "You have completed the whole path. Revisit any scale from Completed."
-            }
           />
         ) : view === "grid" ? (
           <ScaleCardGrid roadmap={shown} currentSlug={currentSlug} onCardClick={handleCardClick} />

@@ -34,7 +34,7 @@ export function GroupList({
       </div>
 
       {groups.length === 0 ? (
-        !filtering && <p className="px-2 py-2 text-small text-slate-500">No group chats yet. Tap + to start one.</p>
+        !filtering && <p className="px-2 py-2 text-small text-slate-500">No group chats yet.</p>
       ) : (
         <div className="space-y-1">
           {groups.map((g) => (

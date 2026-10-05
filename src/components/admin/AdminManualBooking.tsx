@@ -1,5 +1,7 @@
 "use client";
 
+import { CLASS_MINUTES } from "@/lib/classCreditPricing";
+import { creditsToClasses } from "@/lib/classScheduleLabels";
 import { useEffect, useRef, useState } from "react";
 import { formatDateTime } from "@/lib/classScheduleLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
@@ -92,7 +94,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
 
   function pickSlot(slot: OpenOccurrence) {
     setSelectedSlot(slot);
-    setCreditsToBook(Math.min(slot.creditCost, 2));
+    setCreditsToBook(slot.creditCost);
     setSuccess(null);
     setError(null);
   }
@@ -168,7 +170,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
                     <p className="text-small text-slate-500">{s.email}</p>
                   </div>
                   <div className="text-right text-small text-slate-500">
-                    <p>{s.classCredits} credit{s.classCredits === 1 ? "" : "s"}</p>
+                    <p>{creditsToClasses(s.classCredits)} class{creditsToClasses(s.classCredits) === 1 ? "" : "es"}</p>
                     {!s.hasCurriculumAccess && <p className="text-slate-300">No curriculum access</p>}
                   </div>
                 </button>
@@ -182,7 +184,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
             <div>
               <p className="text-small text-slate-100">{student.name ?? student.email}</p>
               <p className="text-small text-slate-500">
-                {student.email} · {student.classCredits} credit{student.classCredits === 1 ? "" : "s"} available
+                {student.email} · {creditsToClasses(student.classCredits)} class{creditsToClasses(student.classCredits) === 1 ? "" : "es"} available
               </p>
             </div>
             <button type="button" onClick={reset} className="text-small text-slate-500 underline hover:text-slate-300">
@@ -192,7 +194,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
 
           {!student.hasCurriculumAccess && (
             <p className="mt-3 text-small text-slate-300">
-              This account has no curriculum access yet — booking will still fail server-side without it.
+              No curriculum access.
             </p>
           )}
 
@@ -214,7 +216,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
                   >
                     <span className={active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}>{formatDateTime(slot.scheduledAt)}</span>
                     <span className="text-small text-slate-500">
-                      {slot.label ?? "Class"} · up to {slot.creditCost} credit{slot.creditCost === 1 ? "" : "s"}
+                      {slot.label ?? "Class"} · {CLASS_MINUTES} min
                     </span>
                   </button>
                 );
@@ -222,26 +224,8 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
             </div>
           )}
 
-          {selectedSlot && selectedSlot.creditCost > 1 && (
-            <div className="mt-4">
-              <p className="mb-2 text-small font-medium text-slate-400">Length</p>
-              <div className="flex gap-2">
-                {Array.from({ length: selectedSlot.creditCost }, (_, i) => i + 1).map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setCreditsToBook(n)}
-                    className={`tap rounded-lg border px-3.5 py-2 text-small font-medium transition ${
-                      creditsToBook === n
-                        ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
-                        : "border-transparent text-slate-300 bg-neu-base shadow-raised-low"
-                    }`}
-                  >
-                    {n * 30} min ({n} credit{n === 1 ? "" : "s"})
-                  </button>
-                ))}
-              </div>
-            </div>
+          {selectedSlot && (
+            <p className="mt-4 text-small text-slate-500">One class, {CLASS_MINUTES} minutes.</p>
           )}
 
           {error && <p className="mt-3 text-small text-red-400">{error}</p>}

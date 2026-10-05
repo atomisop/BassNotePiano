@@ -97,6 +97,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ reply });
   } catch (err) {
     console.error("POST /api/assistant failed:", err);
-    return NextResponse.json({ error: "Something went wrong — try again in a moment." }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong. Try again in a moment." }, { status: 500 });
   }
 }

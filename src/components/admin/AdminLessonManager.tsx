@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import type { LessonMediaType } from "@prisma/client";
 import type { CourseLesson } from "@/lib/courseContent";
 import { FileDropzone } from "@/components/ui/FileDropzone";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
 interface PresignedUpload {
@@ -42,13 +41,13 @@ export interface AdminLessonManagerProps {
 }
 
 function formatBytes(bytes: number | null): string {
-  if (bytes == null) return "—";
+  if (bytes == null) return "n/a";
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function formatDuration(seconds: number | null): string {
-  if (seconds == null) return "—";
+  if (seconds == null) return "n/a";
   const m = Math.floor(seconds / 60);
   const s = Math.round(seconds % 60);
   return `${m}:${s.toString().padStart(2, "0")}`;
@@ -276,10 +275,7 @@ export function AdminLessonManager({
       )}
 
       {lessons.length === 0 ? (
-        <EmptyState
-          title="No lessons for this scale yet"
-          description="Upload a video or PDF and it becomes the first module students work through. They unlock in the order you set here."
-        />
+        <p className="glass-surface p-6 text-center text-small text-slate-500">No lessons for this scale yet.</p>
       ) : (
         <div className="space-y-3">
           {lessons.map((lesson, index) => (

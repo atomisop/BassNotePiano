@@ -141,7 +141,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
           <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
           <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Friends</h1>
         </div>
-        <SectionCard title="Set a username first" description="Needed so other students can find and add you.">
+        <SectionCard title="Set a username first">
           <Link
             href="/profile"
             className="tap cta-sheen cta-fill inline-block rounded-lg px-4 py-2 text-small font-semibold"
@@ -169,7 +169,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
         <div className="space-y-6">
           <SectionCard title={`Friends (${friends.length})`}>
             {friends.length === 0 ? (
-              <p className="text-small text-slate-500">No friends yet. Use Find people to add some.</p>
+              <p className="text-small text-slate-500">No friends yet.</p>
             ) : (
               <div className="space-y-2">
                 {friends.map((friend) => (
@@ -251,7 +251,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
       }
       detail={
         <div className="space-y-6">
-          <SectionCard title="Find people" description="Search by username.">
+          <SectionCard title="Find people">
             <form onSubmit={handleSearch} className="flex gap-2">
               <input
                 type="text"

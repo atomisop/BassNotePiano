@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { getUserPaymentHistory } from "@/lib/payments";
-import { calculateClassCreditTotal, describePaymentPlan } from "@/lib/classCreditPricing";
+import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -51,10 +51,11 @@ function describePayment(payment: {
         title: `${payment.lessonQuantity} × ${typeLabel} lesson${payment.lessonQuantity === 1 ? "" : "s"}`,
       };
     }
-    const { discountCents } = calculateClassCreditTotal(payment.lessonQuantity);
+    // Extra classes: the row stores internal credits, a class is CREDITS_PER_CLASS of them.
+    const classes = Math.max(1, Math.round(payment.lessonQuantity / CREDITS_PER_CLASS));
     return {
-      eyebrow: "Class credits",
-      title: `${payment.lessonQuantity} credit${payment.lessonQuantity === 1 ? "" : "s"}${discountCents > 0 ? " (bundle discount)" : ""}`,
+      eyebrow: "Extra classes",
+      title: `${classes} extra class${classes === 1 ? "" : "es"}`,
     };
   }
   // Legacy Pay-As-You-Go row from before per-scale purchase was retired.
@@ -75,15 +76,10 @@ export default async function BillingHistoryPage() {
       </Link>
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Billing</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment history</h1>
-      <p className="mt-2 text-small text-slate-500">
-        {payments.length === 0
-          ? "You haven't submitted any payments yet."
-          : `${payments.length} payment${payments.length === 1 ? "" : "s"}.`}
-      </p>
 
       {payments.length === 0 ? (
         <div className="mt-6 glass-surface p-8 text-center text-small text-slate-500">
-          Nothing here yet — buy the curriculum or a lesson package to see your payments listed here.
+          No payments yet.
         </div>
       ) : (
         <div className="mt-6 space-y-3">

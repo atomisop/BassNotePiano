@@ -190,8 +190,8 @@ export function CustomerProfile({
               {pendingAction === "curriculum" ? (
                 <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-1.5 text-small text-slate-200">
                   {user.hasCurriculumAccess
-                    ? "Remove complimentary access? Unless they have an active plan, they lose the curriculum immediately."
-                    : "Give this account complimentary curriculum access (no plan needed)? You still release it one scale at a time."}
+                    ? "Remove complimentary access?"
+                    : "Give complimentary curriculum access?"}
                   <button
                     type="button"
                     disabled={busy}
@@ -220,7 +220,7 @@ export function CustomerProfile({
                 <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-1.5 text-small text-slate-200">
                   {user.role === "ADMIN"
                     ? "Remove admin access from this account?"
-                    : "Make this account an admin? They'll get full access to payments, users, and every other admin tool."}
+                    : "Make this account an admin?"}
                   <button
                     type="button"
                     disabled={busy}
@@ -337,7 +337,7 @@ export function CustomerProfile({
           </SectionCard>
 
           {/* Credits + bookings */}
-          <SectionCard title={`Class credits — ${user.classCredits} available`}>
+          <SectionCard title={`Class credits · ${user.classCredits} available`}>
             <form onSubmit={handleReviewCredits} className="flex flex-wrap items-end gap-2">
               <div>
                 <label htmlFor="cp-amount" className="text-small font-medium uppercase tracking-wide text-slate-500">

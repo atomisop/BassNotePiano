@@ -58,7 +58,7 @@ export async function POST(req: Request) {
       await assertRateLimit(
         prisma.assistantEscalation.count,
         { identifier },
-        { ...ESCALATION_LIMIT, message: "You've already reached out — our team will follow up soon." },
+        { ...ESCALATION_LIMIT, message: "You've already reached out. Our team will follow up soon." },
       );
     } catch (err) {
       if (err instanceof RateLimitError) return NextResponse.json({ error: err.message }, { status: 429 });
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("POST /api/assistant/escalate failed:", err);
     return NextResponse.json(
-      { error: "Something went wrong sending this to our team — please try again, or message the studio directly." },
+      { error: "Something went wrong sending this to our team. Please try again, or message the studio directly." },
       { status: 500 },
     );
   }

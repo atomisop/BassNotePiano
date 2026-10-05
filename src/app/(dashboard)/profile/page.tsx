@@ -101,7 +101,6 @@ export default async function ProfilePage() {
             {earnedCodes.length} of {BADGES.length} earned
           </p>
         </div>
-        <p className="mt-1 text-small text-slate-500">Earned and locked achievements — hover a badge to see how to unlock it.</p>
         <div className="mt-4 glass-surface p-6">
           <BadgeGrid earnedCodes={new Set(earnedCodes)} />
         </div>

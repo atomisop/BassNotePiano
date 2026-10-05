@@ -348,7 +348,7 @@ export async function setUserRole(userId: string, role: Role) {
       userId,
       type: "ROLE_UPDATED",
       title: "You've been granted Admin access",
-      body: "Your account now has Admin permissions — you can manage payments and users from the Admin panel.",
+      body: "Your account now has Admin permissions. You can manage payments and users from the Admin panel.",
       emailCategory: "roleUpdates",
     });
   }

@@ -13,6 +13,7 @@ import {
 import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { CheckIcon, XIcon } from "@/components/ui/icons";
+import { CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { Tabs } from "@/components/ui/Tabs";
@@ -64,13 +65,16 @@ function formatOccurrenceDay(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
 }
 
-/** "30 min" / "1 hour" / "1.5 hours": what a student cares about, instead of a credit count. */
+/** Length of a booking that spent `credits`: a class is CLASS_MINUTES. */
 function lengthLabel(credits: number) {
-  const minutes = credits * 30;
-  if (minutes < 60) return `${minutes} min`;
-  const hours = minutes / 60;
-  return `${hours === 1 ? "1 hour" : `${hours} hours`}`;
+  return `${Math.round((credits / CREDITS_PER_CLASS) * CLASS_MINUTES)} min`;
 }
+
+/** Whole classes behind a credit amount (credits are internal; students see classes). */
+function classCount(credits: number) {
+  return Math.floor(credits / CREDITS_PER_CLASS);
+}
+const classWord = (n: number) => `class${n === 1 ? "" : "es"}`;
 
 function formatOccurrenceTime(iso: string) {
   return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
@@ -155,23 +159,19 @@ function BookingCard({
     <div className="glass-surface flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <p className="text-small text-slate-100">
-          {b.label ?? "Class"} — {formatDateTime(b.scheduledAt)}
+          {b.label ?? "Class"} · {formatDateTime(b.scheduledAt)}
         </p>
         <p className="mt-0.5 text-small text-slate-500">
-          {b.creditsSpent} credit{b.creditsSpent === 1 ? "" : "s"}
+          {classCount(b.creditsSpent)} {classWord(classCount(b.creditsSpent))}
           {b.status === "SCHEDULED" &&
-            (cancelEligible
-              ? ` · Cancel by ${new Date(new Date(b.scheduledAt).getTime() - cancellationCutoffHours * 3_600_000).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`
-              : pastSelfServeWindow
-                ? " · Too close to class time to self-cancel"
-                : "")}
+            (pastSelfServeWindow ? " · Too close to class time to self-cancel" : "")}
         </p>
         {b.status === "COMPLETED" && b.attendance && (
           <p className={`mt-0.5 text-small ${b.attendance === "PRESENT" ? "text-slate-50" : "text-red-400"}`}>
-            {b.attendance === "PRESENT" ? "Attended" : "Marked no-show — still charged, per our terms"}
+            {b.attendance === "PRESENT" ? "Attended" : "Marked no-show, still charged"}
           </p>
         )}
-        {b.status === "CANCELED" && <p className="mt-0.5 text-small text-slate-50">Canceled — no credits were charged</p>}
+        {b.status === "CANCELED" && <p className="mt-0.5 text-small text-slate-50">Canceled</p>}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {cancelEligible && !b.reserved && (
@@ -511,7 +511,7 @@ export function ClassBookingClient({
       },
       ...prev,
     ]);
-    setSuccess("Booked — you're on the schedule.");
+    setSuccess("Booked.");
   }
 
   /**
@@ -577,7 +577,7 @@ export function ClassBookingClient({
     }
 
     if (failed.length === 0) {
-      setSuccess(`Booked ${succeeded.length} class${succeeded.length === 1 ? "" : "es"} — you're on the schedule.`);
+      setSuccess(`Booked ${succeeded.length} class${succeeded.length === 1 ? "" : "es"}.`);
     } else if (succeeded.length === 0) {
       setError(failed[0]!.error ?? "Couldn't book those classes.");
     } else {
@@ -608,7 +608,7 @@ export function ClassBookingClient({
     // Frees the reservation, not a refund of anything actually charged —
     // nothing was charged yet (see cancelClassBookingAction).
     setCredits((c) => c + booking.creditsSpent);
-    setSuccess("Canceled — no credits were charged.");
+    setSuccess("Canceled.");
   }
 
   function startReschedule(booking: BookingRow) {
@@ -676,7 +676,7 @@ export function ClassBookingClient({
     // instead — only a net change if the two differ in length (e.g. moving
     // from a 30-min slot to a 60-min one).
     setCredits((c) => c + oldBooking.creditsSpent - chosen);
-    setSuccess("Rescheduled — you're on the new time.");
+    setSuccess("Rescheduled.");
   }
 
   function openFamilyBooking(row: OccurrenceRow) {
@@ -742,7 +742,7 @@ export function ClassBookingClient({
     setFamilyRowKey(null);
     setFamilyEmails(["", ""]);
     setFamilyChecks({});
-    setSuccess(`Booked for ${familyEmailsTrimmed.length} students — ${familyCreditsPerStudent} credits reserved from each.`);
+    setSuccess(`Booked for ${familyEmailsTrimmed.length} students, ${classCount(familyCreditsPerStudent)} ${classWord(classCount(familyCreditsPerStudent))} reserved from each.`);
   }
 
   return (
@@ -753,11 +753,6 @@ export function ClassBookingClient({
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">
         {extraMode ? "Book an extra class" : "Book a class"}
       </h1>
-      <p className="mt-2 text-small text-slate-500">
-        {extraMode
-          ? "Extra time with your teacher, on top of your weekly class. Pick a day, choose a time, confirm. Uses credits ($40 each)."
-          : "Pick a day, choose a time, confirm. Classes are live on Discord."}
-      </p>
 
       {/* The calendar comes first, straight after the title. Credits, who the
           class is for, upcoming and past classes all sit in one small tab
@@ -769,8 +764,7 @@ export function ClassBookingClient({
 
           {rows.length > 0 && (
             <div id="booking-calendar" className="scroll-mt-20">
-              <h2 className="text-body font-semibold text-slate-100">1. Pick a day</h2>
-              <p className="mb-3 mt-0.5 text-small text-slate-500">Days with a dot have open times.</p>
+              <h2 className="mb-3 text-body font-semibold text-slate-100">1. Pick a day</h2>
               <BookingCalendar occurrences={rows} selectedDateKey={selectedDateKey} onSelectDate={setSelectedDateKey} />
             </div>
           )}
@@ -782,8 +776,8 @@ export function ClassBookingClient({
                   {selectedRows.length} class{selectedRows.length === 1 ? "" : "es"} selected
                 </p>
                 <p className={`mt-0.5 text-small ${selectedExceedsBalance ? "text-red-400" : "text-slate-500"}`}>
-                  {selectedCreditTotal} credit{selectedCreditTotal === 1 ? "" : "s"} total
-                  {selectedExceedsBalance && ` — you only have ${credits}`}
+                  {classCount(selectedCreditTotal)} {classWord(classCount(selectedCreditTotal))} in total
+                  {selectedExceedsBalance && `, you only have ${classCount(credits)}`}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -811,10 +805,7 @@ export function ClassBookingClient({
           {mode === "FAMILY" && familyRow && (
             <div className="glass-surface-elevated mt-8 p-5">
               <p className="text-small font-medium text-slate-100">
-                Family booking — {formatOccurrenceDay(familyRow.scheduledAt)} at {formatOccurrenceTime(familyRow.scheduledAt)}
-              </p>
-              <p className="mt-1 text-small text-slate-500">
-                Every student listed must already have a verified account. {familyCreditsPerStudent} credits will be reserved from each.
+                Family booking · {formatOccurrenceDay(familyRow.scheduledAt)} at {formatOccurrenceTime(familyRow.scheduledAt)}
               </p>
               <div className="mt-4 space-y-2">
                 {familyEmails.map((email, i) => (
@@ -863,9 +854,8 @@ export function ClassBookingClient({
             <div className="glass-surface-elevated mt-8 flex flex-wrap items-center justify-between gap-4 p-5">
               <div>
                 <p className="text-small font-medium text-slate-100">
-                  Rescheduling {reschedulingBooking.label ?? "your class"} — {formatDateTime(reschedulingBooking.scheduledAt)}
+                  Rescheduling {reschedulingBooking.label ?? "your class"} · {formatDateTime(reschedulingBooking.scheduledAt)}
                 </p>
-                <p className="mt-0.5 text-small text-slate-500">Tap a day above, then pick a new time. Nothing changes until you choose one.</p>
               </div>
               <button
                 type="button"
@@ -887,8 +877,8 @@ export function ClassBookingClient({
               </p>
               <ul className="mt-3 space-y-1 text-small text-slate-400">
                 <li>
-                  {lengthLabel(creditsFor(pendingRow))} · {creditsFor(pendingRow)} credit{creditsFor(pendingRow) === 1 ? "" : "s"}, you&apos;ll have{" "}
-                  {credits - creditsFor(pendingRow)} left
+                  {lengthLabel(creditsFor(pendingRow))} · 1 class, you&apos;ll have{" "}
+                  {classCount(credits - creditsFor(pendingRow))} left
                 </li>
                 <li>Live on Discord</li>
                 <li>
@@ -929,11 +919,11 @@ export function ClassBookingClient({
             <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <div>
                 <h2 className="text-body font-semibold text-slate-100">2. Choose a time</h2>
-                <p className="mt-0.5 text-small text-slate-500">
-                  {selectedDateKey
-                    ? new Date(selectedDateKey).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })
-                    : "Tap a day above to see its open times."}
-                </p>
+                {selectedDateKey && (
+                  <p className="mt-0.5 text-small text-slate-500">
+                    {new Date(selectedDateKey).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-3">
                 {selectedDateKey && (
@@ -961,13 +951,10 @@ export function ClassBookingClient({
                 )}
               </div>
             </div>
-            {multiSelect && mode === "SOLO" && (
-              <p className="mb-3 text-small text-slate-500">Tick every class you want, then book them all at once.</p>
-            )}
             {rows.length === 0 ? (
-              <p className="text-small text-slate-500">No classes scheduled right now. Check back soon.</p>
+              <p className="text-small text-slate-500">No classes scheduled.</p>
             ) : !selectedDateKey ? null : displayRows.length === 0 ? (
-              <p className="text-small text-slate-500">No open times on that day. Try another date.</p>
+              <p className="text-small text-slate-500">No open times on that day.</p>
             ) : (
               <div className="space-y-6">
                 {occurrenceGroups.map((group) => (
@@ -1012,8 +999,8 @@ export function ClassBookingClient({
                               </p>
                               <p className="text-small text-slate-500">
                                 {mode === "SOLO"
-                                  ? `${lengthLabel(chosen)} · ${chosen} credit${chosen === 1 ? "" : "s"}`
-                                  : `${lengthLabel(familyCreditsPerStudent)} · ${familyCreditsPerStudent} credits per student`}
+                                  ? lengthLabel(chosen)
+                                  : `${lengthLabel(familyCreditsPerStudent)} per student`}
                                 {row.isBooked && <span className="text-red-400"> · Booked</span>}
                                 {isCurrentRescheduleSlot && <span className="text-[rgb(var(--c-s-50))]"> · Your current time</span>}
                               </p>
@@ -1021,12 +1008,12 @@ export function ClassBookingClient({
                             {reschedulingBooking ? (
                               <button type="button" onClick={() => handleReschedule(row)} disabled={disabled} className={actionClass}>
                                 {reschedulingKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                                {reschedulingKey === key ? "Moving…" : isCurrentRescheduleSlot ? "Current" : insufficientCredits ? "Not enough credits" : "Move here"}
+                                {reschedulingKey === key ? "Moving…" : isCurrentRescheduleSlot ? "Current" : insufficientCredits ? "Not enough classes" : "Move here"}
                               </button>
                             ) : mode === "SOLO" ? (
                               multiSelect ? null : row.isBooked ? null : insufficientCredits ? (
                                 <Link href="/billing/credits" className={actionClass}>
-                                  Buy credits
+                                  Buy classes
                                 </Link>
                               ) : (
                                 <button
@@ -1063,7 +1050,7 @@ export function ClassBookingClient({
             value={panel}
             onChange={setPanel}
             items={[
-              { id: "credits", label: "Credits" },
+              { id: "credits", label: "Classes" },
               { id: "for", label: "Booking for" },
               { id: "upcoming", label: "Upcoming", count: upcoming.length || undefined },
               { id: "past", label: "Past", count: history.length || undefined },
@@ -1074,11 +1061,11 @@ export function ClassBookingClient({
             <div className="glass-surface p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-small uppercase tracking-wide text-slate-500">Your credits</p>
+                  <p className="text-small uppercase tracking-wide text-slate-500">Extra classes</p>
                   <p className="mt-1 text-body font-semibold text-slate-50">
-                    {credits} credit{credits === 1 ? "" : "s"}
+                    {classCount(credits)} {classWord(classCount(credits))}
                   </p>
-                  <p className="mt-0.5 text-small text-slate-500">1 credit = 30 minutes · $40 each</p>
+                  <p className="mt-0.5 text-small text-slate-500">$55 per 45-minute class</p>
                 </div>
                 <Link
                   href="/billing/credits"
@@ -1088,17 +1075,14 @@ export function ClassBookingClient({
                       : "text-slate-200 hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   }`}
                 >
-                  Buy credits
+                  Buy classes
                 </Link>
               </div>
               {hasNoCredits && (
                 <p className="mt-3 rounded-xl bg-neu-base px-3 py-2 text-small text-slate-300 shadow-pressed-low">
-                  You don&apos;t have enough credits to book yet. Buy credits first, then pick your time.
+                  No extra classes left.
                 </p>
               )}
-              <p className="mt-3 text-small text-slate-500">
-                You&apos;re charged when your teacher takes attendance. Cancel for free up to {cancellationCutoffHours} hours before class.
-              </p>
             </div>
           )}
 
@@ -1135,17 +1119,12 @@ export function ClassBookingClient({
               Me and my family
             </button>
           </div>
-          <p className="mt-2 text-small text-slate-500">
-            {mode === "SOLO"
-              ? "One-on-one time with your teacher."
-              : `Two or more family members with their own accounts, taught together. ${familyCreditsPerStudent} credits each, however many join.`}
-          </p>
           </div>}
 
           {panel === "upcoming" && (
             <div className="glass-surface p-5">
               {upcoming.length === 0 ? (
-                <p className="text-small text-slate-500">No upcoming classes. Pick a day above to book one.</p>
+                <p className="text-small text-slate-500">No upcoming classes.</p>
               ) : (
                 <div className="space-y-2">
                   {upcoming.map((b) => (

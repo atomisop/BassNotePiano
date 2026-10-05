@@ -711,7 +711,7 @@ export function AssistantWidget() {
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        setError(data?.error ?? "Something went wrong — try again in a moment.");
+        setError(data?.error ?? "Something went wrong. Try again in a moment.");
         return;
       }
 
@@ -722,7 +722,7 @@ export function AssistantWidget() {
       if (HUMAN_REQUEST_RE.test(trimmed)) offerHandoff();
       void refreshSuggestions([...nextHistory, { role: "assistant", content: data.reply as string }]);
     } catch {
-      setError("Couldn't reach Atom — check your connection and try again.");
+      setError("Couldn't reach Atom. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -738,13 +738,13 @@ export function AssistantWidget() {
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setError(data?.error ?? "Something went wrong sending that — try again in a moment.");
+        setError(data?.error ?? "Something went wrong sending that. Try again in a moment.");
         return;
       }
       setThreadMessages(data.messages);
       setThreadStatus(data.status);
     } catch {
-      setError("Couldn't send that — check your connection and try again.");
+      setError("Couldn't send that. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -818,7 +818,7 @@ export function AssistantWidget() {
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setEscalationError(data?.error ?? "Couldn't reach our team — try again in a moment.");
+        setEscalationError(data?.error ?? "Couldn't reach our team. Try again in a moment.");
         return;
       }
       setEscalationOffer(false);
@@ -828,7 +828,7 @@ export function AssistantWidget() {
       // the seeded thread, which already contains this whole conversation.
       setActiveEscalationId(data.escalationId as string);
     } catch {
-      setEscalationError("Couldn't reach our team — check your connection and try again.");
+      setEscalationError("Couldn't reach our team. Check your connection and try again.");
     } finally {
       setEscalationSubmitting(false);
     }
@@ -983,7 +983,7 @@ export function AssistantWidget() {
                   ))}
                   {!hasSupportReply && threadStatus === "OPEN" && (
                     <p className="rounded-2xl bg-neu-base p-3 shadow-raised-low text-center text-small text-slate-500">
-                      You&apos;re connected — our support team has been notified and will reply here shortly.
+                      You&apos;re connected. Our support team has been notified and will reply here shortly.
                     </p>
                   )}
                   {threadPoll.failed && (
@@ -1033,7 +1033,7 @@ export function AssistantWidget() {
               {collectingEmail && (
                 <form onSubmit={handleEmailSubmit} className="space-y-2 rounded-2xl bg-neu-base p-3 shadow-raised-low">
                   <p className="text-small text-slate-300">
-                    The team will reply right here in this chat — what&apos;s a good email for them to reach you at
+                    The team will reply right here in this chat. What&apos;s a good email for them to reach you at
                     only if you&apos;re not around when they do?
                   </p>
                   <input

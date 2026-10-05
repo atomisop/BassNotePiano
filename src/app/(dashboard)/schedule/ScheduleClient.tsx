@@ -1,5 +1,6 @@
 "use client";
 
+import { CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -124,9 +125,6 @@ export function ScheduleClient({
       <div>
         <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Your schedule</h1>
-        <p className="mt-2 text-small text-slate-400">
-          Where your week stands and your upcoming classes.
-        </p>
       </div>
 
       {/* This week */}
@@ -134,32 +132,22 @@ export function ScheduleClient({
         <p className="text-small font-medium uppercase tracking-[0.14em] text-slate-400">This week</p>
         {hasClassThisWeek ? (
           <p className="mt-2 text-small text-slate-300">
-            <span className="text-[rgb(var(--c-s-50))]">✓ Booked</span>, see it under &ldquo;Your classes&rdquo; below.
+            <span className="text-[rgb(var(--c-s-50))]">✓ Booked</span>
           </p>
         ) : weeklyTime ? (
           <p className="mt-2 text-small text-slate-300">
             Your weekly time is <span className="text-slate-100">{DAY_LABELS[weeklyTime.dayOfWeek]}s at {formatTimeLabel(weeklyTime.startTime)}</span>.
-            This week&apos;s class is set to appear here automatically. If it hasn&apos;t by the day before,{" "}
-            {supportContactId ? (
-              <Link href={`/messages?with=${supportContactId}`} className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
-                message support
-              </Link>
-            ) : (
-              "message support"
-            )}{" "}
-            and we&apos;ll sort it out.
           </p>
         ) : (
           <p className="mt-2 text-small text-slate-300">
-            We haven&apos;t set your weekly time yet.{" "}
+            No weekly time set.{" "}
             {supportContactId ? (
               <Link href={`/messages?with=${supportContactId}`} className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
                 Message support
               </Link>
             ) : (
               "Message support"
-            )}{" "}
-            and we&apos;ll get you scheduled.
+            )}
           </p>
         )}
       </div>
@@ -168,7 +156,7 @@ export function ScheduleClient({
       <div className="glass-surface rounded-2xl p-5 sm:p-6">
         <p className="text-small font-medium uppercase tracking-[0.14em] text-slate-400">Your classes</p>
         {upcomingBookings.length === 0 ? (
-          <p className="mt-3 text-small text-slate-500">Nothing booked yet. Your weekly class appears here on its own.</p>
+          <p className="mt-3 text-small text-slate-500">Nothing booked yet.</p>
         ) : (
           <div className="mt-3 space-y-2.5">
             {upcomingBookings.map((booking) => {
@@ -185,17 +173,13 @@ export function ScheduleClient({
                         {booking.label ?? "Weekly class"} · ends {formatEndTime(booking.scheduledAt, booking.creditsSpent)}
                       </p>
                     </div>
-                    <span className="shrink-0 text-small text-slate-500">{booking.creditsSpent * 30} min</span>
+                    <span className="shrink-0 text-small text-slate-500">{Math.round((booking.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES)} min</span>
                   </div>
                   {canChange ? (
                     confirming ? (
                       <div className="mt-2.5 rounded-lg bg-neu-base px-3 py-2.5 shadow-pressed-low">
                         <p className="text-small text-slate-300">
-                          Skip this class? Your credit stays on your account, and you can use it to book a different time under{" "}
-                          <Link href="/lessons?tab=extra" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
-                            Extra sessions
-                          </Link>
-                          .
+                          Skip this class? It stays on your account.
                         </p>
                         <div className="mt-2 flex gap-2">
                           <button
@@ -226,20 +210,17 @@ export function ScheduleClient({
                         }}
                         className="tap mt-2 text-small font-medium text-slate-400 transition hover:text-red-300"
                       >
-                        Can&apos;t make it? Skip this class
+                        Skip this class
                       </button>
                     )
                   ) : (
                     <p className="mt-2 text-small text-slate-500">
-                      Starts within {cancellationCutoffHours} hours, so it can&apos;t be changed here. Please attend, or{" "}
-                      {supportContactId ? (
+                      Starts within {cancellationCutoffHours} hours, so it can&apos;t be changed here.{" "}
+                      {supportContactId && (
                         <Link href={`/messages?with=${supportContactId}`} className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
-                          message support
+                          Message support
                         </Link>
-                      ) : (
-                        "message support"
                       )}
-                      .
                     </p>
                   )}
                 </div>
@@ -258,7 +239,7 @@ export function ScheduleClient({
             changeReservedSlot. */}
         {changeSuccess && (
           <p className="mt-4 rounded-lg bg-slate-50/5 px-3.5 py-2.5 text-small text-slate-50 bg-neu-base shadow-raised-low">
-            Your weekly time changed — this week&apos;s class (and the weeks after it) now reflect the new day/time above.
+            Your weekly time changed.
           </p>
         )}
 
@@ -279,15 +260,7 @@ export function ScheduleClient({
               <p className="mt-3 text-small text-slate-500">Loading open times…</p>
             ) : !reservableSlots || reservableSlots.length === 0 ? (
               <p className="mt-3 text-small text-slate-500">
-                Nothing open right now for your cadence.{" "}
-                {supportContactId ? (
-                  <Link href={`/messages?with=${supportContactId}`} className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
-                    Message support
-                  </Link>
-                ) : (
-                  "Message support"
-                )}{" "}
-                and we&apos;ll help you find one.
+                Nothing open right now.
               </p>
             ) : (
               <div className="mt-3 space-y-2">
@@ -323,7 +296,7 @@ export function ScheduleClient({
             onClick={openChangeTime}
             className="mt-4 w-full rounded-lg px-3.5 py-2.5 text-left text-small text-slate-400 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
           >
-            Need a different weekly day or time? Change it yourself →
+            Change weekly time →
           </button>
         )}
       </div>

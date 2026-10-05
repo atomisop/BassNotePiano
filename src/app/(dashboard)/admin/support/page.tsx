@@ -20,9 +20,7 @@ export default async function AdminSupportPage({ searchParams }: { searchParams:
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Support Chat</h1>
       <p className="mt-2 text-small text-slate-500">
-        {threads.length} conversation{threads.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()} — when a visitor
-        asks Atom to connect them with a person, the full chat lands here. Your replies show up to them as
-        &quot;Support&quot;, never your name.
+        {threads.length} conversation{threads.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
       </p>
 
       <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full p-1 bg-neu-base shadow-pressed-low">
@@ -43,7 +41,7 @@ export default async function AdminSupportPage({ searchParams }: { searchParams:
         <SupportChatPanel
           initialThreads={threads}
           statusFilter={activeFilter === "ALL" ? undefined : activeFilter}
-          emptyMessage={activeFilter === "OPEN" ? "No open conversations — Atom's handling things on its own." : `No ${activeLabel.toLowerCase()} conversations.`}
+          emptyMessage={activeFilter === "OPEN" ? "No open conversations." : `No ${activeLabel.toLowerCase()} conversations.`}
         />
       </div>
     </div>

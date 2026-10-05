@@ -83,16 +83,14 @@ export default function ShopPage() {
           <h1 className="text-balance font-serif text-hero leading-tight tracking-[-0.02em] text-slate-50 sm:text-hero">
             Gear that works for beginners
           </h1>
-          <p className="mx-auto mt-4 max-w-xl text-body text-slate-200">
-            Don&apos;t have a keyboard or guitar yet? Here&apos;s what we&apos;d point a beginner toward. Plain links
-            to Amazon: we&apos;re not affiliated with Amazon and don&apos;t earn anything from these, and there&apos;s
-            nothing to buy here on our end.
-          </p>
         </section>
 
         <section className="relative mx-auto max-w-6xl px-6 pb-24 pt-10">
           <ProductSection title="Keyboards" products={keyboards} />
           <ProductSection title="Guitars" products={guitars} />
+          <p className="mt-10 text-center text-small text-slate-500">
+            Plain links to Amazon. We&apos;re not affiliated with Amazon and earn nothing from them.
+          </p>
         </section>
       </main>
 

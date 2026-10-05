@@ -62,8 +62,7 @@ export function CookieConsentBanner() {
       >
         <p className="text-small font-medium text-[rgb(var(--c-s-50))]">This site uses cookies</p>
         <p className="mt-1.5 text-small leading-relaxed text-[rgb(var(--c-s-300))]">
-          A necessary cookie keeps you signed in — that one&apos;s never optional. Everything else
-          is your choice.
+          A necessary cookie keeps you signed in and is always on. Everything else is your choice.
         </p>
 
         {customizing && (

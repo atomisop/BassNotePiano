@@ -43,7 +43,7 @@ function VerifyEmailForm() {
 
     const signInResult = await signIn("credentials", { email, code: result.autoCode, redirect: false });
     if (signInResult?.error) {
-      setError("Verified — but automatic login failed. Try logging in manually.");
+      setError("Verified, but automatic login failed. Try logging in manually.");
       setSubmitting(false);
       return;
     }
@@ -95,7 +95,7 @@ function VerifyEmailForm() {
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Almost there</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Verify your email</h1>
       <p className="mt-2 text-small text-slate-500">
-        We sent a 6-digit code to <span className="text-slate-300">{email}</span>.
+        Code sent to <span className="text-slate-300">{email}</span>.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">

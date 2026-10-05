@@ -77,7 +77,6 @@ export function MetronomePanel({ metronome }: { metronome: Metronome }) {
       <Button className="w-full" onClick={running ? stop : start}>
         {running ? "Stop" : "Start"}
       </Button>
-      <p className="text-small text-slate-400">Keeps playing while you close this panel.</p>
     </div>
   );
 }

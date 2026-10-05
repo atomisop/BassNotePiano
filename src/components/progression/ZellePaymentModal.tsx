@@ -208,9 +208,6 @@ export function ZellePaymentModal({
                 {step === "confirming" && (
                   <motion.div key="confirming" variants={stepVariants} initial="enter" animate="center" exit="exit">
                     <div className="space-y-3.5">
-                      <p className="text-small text-slate-400">
-                        Confirming your <span className="font-semibold text-[rgb(var(--c-s-50))]">{formatUsd(amountCents)}</span> payment.
-                      </p>
                       <div>
                         <label className="mb-1 block text-small font-medium text-slate-400">Name on the Zelle transfer</label>
                         <input
@@ -283,8 +280,7 @@ export function ZellePaymentModal({
                     </motion.div>
                     <h3 className="text-body text-slate-50">Confirmation received</h3>
                     <p className="mx-auto mt-1.5 max-w-xs text-small text-slate-400">
-                      We&apos;re verifying your transfer for <span className="text-slate-200">{scaleTitle}</span>. This is
-                      usually quick — you&apos;ll get access as soon as it clears review.
+                      We&apos;re verifying your transfer.
                     </p>
                     <button
                       type="button"

@@ -21,7 +21,7 @@ const RATE_LIMIT_MAX_ISSUANCES = 5;
 
 export class RateLimitError extends Error {
   constructor() {
-    super("Too many codes requested for this email — please wait a few minutes and try again.");
+    super("Too many codes requested for this email. Please wait a few minutes and try again.");
     this.name = "RateLimitError";
   }
 }

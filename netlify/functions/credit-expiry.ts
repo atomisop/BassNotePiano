@@ -31,7 +31,7 @@ export const handler = schedule("0 9 * * *", async () => {
       title: "Unused credits expiring soon",
       body: `${summary.creditsRemaining} class credit${summary.creditsRemaining === 1 ? "" : "s"} from your payment plan ${
         summary.creditsRemaining === 1 ? "expires" : "expire"
-      } in ${daysLeft} day${daysLeft === 1 ? "" : "s"} — book a class before then to use ${summary.creditsRemaining === 1 ? "it" : "them"}.`,
+      } in ${daysLeft} day${daysLeft === 1 ? "" : "s"}. Book a class before then to use ${summary.creditsRemaining === 1 ? "it" : "them"}.`,
       emailCategory: "payments",
     }).catch((err) => console.error(`CREDITS_EXPIRING_SOON notification failed for user ${summary.userId} (non-blocking):`, err));
   }

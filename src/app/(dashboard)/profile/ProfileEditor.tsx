@@ -165,11 +165,10 @@ function Pill({
   );
 }
 
-function SectionCard({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="glass-surface p-6">
       <h2 className="text-body text-slate-50 font-semibold">{title}</h2>
-      <p className="mt-1 text-small text-slate-500">{description}</p>
       <div className="mt-4">{children}</div>
     </div>
   );
@@ -226,7 +225,7 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
   }
 
   return (
-    <SectionCard title="Music profile" description="Personalizes your dashboard — collected once during onboarding.">
+    <SectionCard title="Music profile">
       <div className="space-y-4">
         <div>
           <p className="mb-1.5 text-small font-medium text-slate-400">Primary instrument</p>
@@ -339,7 +338,7 @@ function AvatarSection({
   }
 
   return (
-    <SectionCard title="Profile photo" description="Shown across your dashboard and the admin panel.">
+    <SectionCard title="Profile photo">
       <div className="flex items-center gap-4">
         <div className="h-16 w-16 overflow-hidden rounded-full bg-neu-base shadow-raised-low">
           {image ? (
@@ -392,7 +391,7 @@ function NameSection({ initialName, onDone }: { initialName: string | null; onDo
   }
 
   return (
-    <SectionCard title="Display name" description="How you're addressed across the platform.">
+    <SectionCard title="Display name">
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
           type="text"
@@ -440,7 +439,7 @@ function UsernameSection({ initialUsername }: { initialUsername: string | null }
   }
 
   return (
-    <SectionCard title="Username" description="How friends find and add you on the Friends page.">
+    <SectionCard title="Username">
       <form onSubmit={handleSubmit} className="flex gap-2">
         <div className="flex flex-1 items-center glass-surface-subtle pl-3 focus-within:border-[rgb(var(--c-s-50)/0.6)]">
           <span className="text-small text-slate-500">@</span>

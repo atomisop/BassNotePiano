@@ -6,7 +6,7 @@
 
 import { FAMILY_BUNDLE_DISCOUNT_RATE } from "@/lib/classCreditPricing";
 
-export const TERMS_LAST_UPDATED = "September 25, 2026";
+export const TERMS_LAST_UPDATED = "October 5, 2026";
 
 function TermsSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -42,11 +42,16 @@ export function TermsContent() {
 
       <TermsSection title="Class credits & bundles">
         <p>
-          Solo class credits come from a Payment Plan — Monthly, 3-Month, or 6-Month, paid one Zelle
-          installment at a time, longer terms at a lower rate. Enrolling reserves your weekly day and time
-          exclusively and auto-books it every week for as long as the plan stays active. If you skip a week, make
-          it up on another week before that installment&apos;s monthly cycle ends — an unused credit is forfeited
-          once its cycle expires.
+          Every class is 45 minutes, one-on-one. Your weekly classes come from a Payment Plan: Monthly,
+          3-Month, or 6-Month, paid one Zelle installment at a time, longer terms at a lower rate. Enrolling
+          reserves your weekly day and time exclusively and auto-books it every week for as long as the plan stays
+          active. You can skip or change a class up to 24 hours before it starts; inside 24 hours, please attend
+          or message us. A skipped class stays on your account to rebook on another day, but it is forfeited if
+          unused once that installment&apos;s monthly cycle expires.
+        </p>
+        <p>
+          Extra classes are $55 each, bought separately and paid by Zelle, for more time on top of your weekly
+          class. Extra classes never expire.
         </p>
         <p>
           Family bundles use the same cadence and term rates a solo Payment Plan does, for 2 or more separate,

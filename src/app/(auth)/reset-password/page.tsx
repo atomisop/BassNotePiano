@@ -61,7 +61,7 @@ function ResetPasswordForm() {
 
     const signInResult = await signIn("credentials", { email, code: result.autoCode, redirect: false });
     if (signInResult?.error) {
-      setError("Password changed — but automatic login failed. Try logging in manually.");
+      setError("Password changed, but automatic login failed. Try logging in manually.");
       setSubmitting(false);
       return;
     }
@@ -120,7 +120,7 @@ function ResetPasswordForm() {
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Reset password</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Choose a new password</h1>
       <p className="mt-1.5 text-small text-slate-500 sm:mt-2">
-        We sent a 6-digit code to <span className="text-slate-300">{email}</span>.
+        Code sent to <span className="text-slate-300">{email}</span>.
       </p>
 
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-3 space-y-2 sm:mt-6 sm:space-y-4">

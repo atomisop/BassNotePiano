@@ -123,7 +123,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
         setConfirming(false);
         return;
       }
-      setSuccess(`Done — ${selected.name ?? selected.email} now has ${result.balance} credit${result.balance === 1 ? "" : "s"}.`);
+      setSuccess(`Done. ${selected.name ?? selected.email} now has ${result.balance} credit${result.balance === 1 ? "" : "s"}.`);
       setSelected({ ...selected, classCredits: result.balance });
       setUsers((prev) => prev.map((u) => (u.id === selected.id ? { ...u, classCredits: result.balance } : u)));
       setAmount("");
@@ -175,7 +175,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-small text-slate-100">{user.name ?? "—"}</p>
+                  <p className="truncate text-small text-slate-100">{user.name ?? "No name"}</p>
                   <p className="truncate text-small text-slate-500">{user.email}</p>
                 </div>
                 <span className="shrink-0 rounded-full bg-neu-base shadow-pressed-low px-2.5 py-1 text-small font-medium text-slate-300">
@@ -292,7 +292,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
 
       {/* Right: global recent activity */}
       <div>
-        <p className="text-small font-medium uppercase tracking-wide text-slate-500">Recent activity — all students</p>
+        <p className="text-small font-medium uppercase tracking-wide text-slate-500">Recent activity</p>
         <div className="mt-2 space-y-2">
           {recentAdjustments.length === 0 && (
             <div className="glass-surface p-6 text-center text-small text-slate-500">No adjustments yet.</div>

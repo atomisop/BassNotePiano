@@ -5,21 +5,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason } from "@prisma/client";
-import { calculatePaymentPlanRate, FAMILY_BUNDLE_DISCOUNT_RATE, PLAN_CADENCE_CREDITS_PER_WEEK, isPlanTermOffered } from "@/lib/classCreditPricing";
+import { calculatePaymentPlanRate, FAMILY_BUNDLE_DISCOUNT_RATE, PLAN_CADENCE_CREDITS_PER_WEEK, isPlanTermOffered, OFFERED_PLAN_CADENCE, CLASS_MINUTES } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
-const CADENCE_OPTIONS: { value: PaymentPlanCadence; label: string }[] = [
-  { value: "MIN_30_WEEKLY", label: "30 min/week" },
-  { value: "MIN_60_WEEKLY", label: "60 min/week" },
-];
-
 const CADENCE_LABELS: Record<PaymentPlanCadence, string> = {
   MIN_30_WEEKLY: "30 min/week",
-  MIN_60_WEEKLY: "60 min/week",
+  MIN_60_WEEKLY: `${CLASS_MINUTES} min/week`,
 };
 
 // rank orders the term ladder for the Current/Upgrade/Downgrade comparison
@@ -82,7 +77,8 @@ type CancelStage = "idle" | "downgrade-offer" | "reason" | "canceling";
  */
 export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: ManageSubscriptionsProps) {
   const router = useRouter();
-  const [cadence, setCadence] = useState<PaymentPlanCadence>(activePlan?.cadence ?? "MIN_30_WEEKLY");
+  // One plan on offer (45 minutes a week). A plan on a retired length keeps showing its own.
+  const cadence: PaymentPlanCadence = activePlan?.cadence ?? OFFERED_PLAN_CADENCE;
   const [pendingTerm, setPendingTerm] = useState<PaymentPlanTerm | null>(null);
   const [termError, setTermError] = useState<string | null>(null);
   const [cancelStage, setCancelStage] = useState<CancelStage>("idle");
@@ -148,21 +144,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
           </p>
         ) : (
           <>
-            <p className="text-small font-medium text-slate-400">No active plan right now.</p>
-            <div className="mt-2 flex w-fit gap-1.5 rounded-full p-1 bg-neu-base shadow-pressed-low">
-              {CADENCE_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setCadence(option.value)}
-                  className={`tap rounded-full px-3 py-1 text-small font-medium transition ${
-                    cadence === option.value ? "bg-neu-base text-[rgb(var(--c-s-50))] shadow-raised-low" : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            <p className="text-small font-medium text-slate-400">No active plan.</p>
           </>
         )}
 
@@ -264,10 +246,6 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
           {cancelStage === "downgrade-offer" && (
             <div className="rounded-xl p-4 bg-neu-base shadow-raised-low">
               <p className="text-small text-slate-100">Before you cancel, want to switch to 3-Month instead?</p>
-              <p className="mt-1 text-small text-slate-500">
-                Same weekly time, lower commitment than what you&apos;re on now, still a real discount off the
-                monthly rate.
-              </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"

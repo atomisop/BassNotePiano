@@ -326,8 +326,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                           {isCanceling && (
                             <div className="mt-3 space-y-2 border-t border-ink/10 pt-3">
                               <p className="text-small text-slate-500">
-                                This refunds {entry.studentName ?? "the student"}&apos;s credit and notifies them — no
-                                24-hour cutoff applies to a cancellation you make.
+                                Cancel and refund {entry.studentName ?? "the student"}&apos;s credit?
                               </p>
                               <input
                                 type="text"

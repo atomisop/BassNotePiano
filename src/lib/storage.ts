@@ -36,7 +36,7 @@ let client: S3Client | null = null;
 function getClient(): S3Client {
   if (!isStorageConfigured()) {
     throw new Error(
-      "Object storage isn't configured yet — set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, " +
+      "Object storage isn't configured yet. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, " +
         "R2_BUCKET_NAME, and R2_PUBLIC_URL (see .env.example) before uploading lessons.",
     );
   }
@@ -128,7 +128,7 @@ function assertValidUpload(
     throw new Error(`Missing or invalid file size for this ${label} upload.`);
   }
   if (fileSize > maxBytes) {
-    throw new Error(`That ${label} is too large — max ${Math.round(maxBytes / MB)} MB.`);
+    throw new Error(`That ${label} is too large. Max ${Math.round(maxBytes / MB)} MB.`);
   }
 }
 

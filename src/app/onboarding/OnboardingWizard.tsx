@@ -178,7 +178,6 @@ export function OnboardingWizard() {
         Step {step + 1} of {STEP_TITLES.length}
       </p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{STEP_TITLES[step]}</h1>
-      <p className="mt-2 text-small text-slate-500">A few quick questions to personalize your dashboard.</p>
 
       <AnimatePresence mode="wait">
         <motion.div key={step} variants={stepVariants} initial="enter" animate="center" exit="exit" className="mt-6 space-y-2">

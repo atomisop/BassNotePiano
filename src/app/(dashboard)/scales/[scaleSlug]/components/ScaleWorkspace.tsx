@@ -324,8 +324,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
         <div className="mt-4 rounded-control p-3 text-small text-slate-300 bg-neu-base shadow-raised-low">
           <p>
             <span className="font-semibold text-slate-50">Free trial</span> until{" "}
-            {new Date(freeTrial.endsAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}. The first lessons
-            are open; the rest come with live classes.
+            {new Date(freeTrial.endsAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}.
           </p>
           <Link href="/billing/plans" className="mt-2 inline-block font-semibold text-slate-50 underline underline-offset-4">
             See class plans
@@ -340,7 +339,6 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
   const toolBody: ReactNode =
     tool === "key" ? (
       <div>
-        <p className="mb-3 text-small text-slate-400">Changes the key of the instrument, the scale chart, and the chords.</p>
         <KeySelector value={root} onChange={setRoot} />
       </div>
     ) : tool === "chart" ? (
@@ -442,8 +440,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
         ) : selection.kind === "assessment" ? (
           <Card>
             <p className="max-w-[60ch] text-body text-slate-200">
-              {quizQuestions.length} questions on spelling and recognizing {scaleGroup.title}. Pass with {Math.round(quizPassThreshold * 100)}% or
-              more to complete the scale.
+              {quizQuestions.length} questions. Pass with {Math.round(quizPassThreshold * 100)}% or more.
             </p>
             {quizPassed && quizScore != null && (
               <Badge tone="success" className="mt-4">
@@ -461,7 +458,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
             </div>
           </Card>
         ) : (
-          <EmptyState title="Lessons are on their way" description="Content for this scale is coming soon. The instrument and tools below already work." />
+          <EmptyState title="Lessons are on their way" />
         )}
       </div>
 

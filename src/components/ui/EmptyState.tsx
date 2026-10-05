@@ -22,7 +22,7 @@ export function EmptyState({
 }: {
   icon?: ReactNode;
   title: string;
-  description: string;
+  description?: string;
   actionLabel?: string;
   actionHref?: string;
   onAction?: () => void;
@@ -41,7 +41,7 @@ export function EmptyState({
         </div>
       )}
       <h3 className="text-body font-semibold text-slate-50">{title}</h3>
-      <p className="mt-1.5 max-w-[42ch] text-small text-slate-400">{description}</p>
+      {description && <p className="mt-1.5 max-w-[42ch] text-small text-slate-400">{description}</p>}
 
       {actionLabel && actionHref && (
         <Link

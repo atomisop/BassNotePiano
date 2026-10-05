@@ -20,8 +20,7 @@ export default function NotFound() {
         That page isn&apos;t here.
       </h1>
       <p className="mt-4 text-body text-slate-400">
-        The link may be out of date, or the address slightly off. Nothing is broken — the page
-        simply doesn&apos;t exist.
+        The link may be out of date, or the address slightly off.
       </p>
 
       <div className="mt-8 flex flex-wrap items-center gap-3">

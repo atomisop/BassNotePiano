@@ -131,7 +131,7 @@ export function Fretboard({
     <div
       className="flex"
       role="group"
-      aria-label={`${instrumentLabel} fretboard — scale notes are highlighted`}
+      aria-label={`${instrumentLabel} fretboard, scale notes are highlighted`}
     >
       {/* String names stay outside the scroll area so they remain readable
           while the neck scrolls. High string at the top, the same order a

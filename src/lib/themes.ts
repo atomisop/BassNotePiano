@@ -50,7 +50,7 @@ export const THEMES: ThemeMeta[] = [
   {
     id: "ink",
     label: "Editorial Ink",
-    description: "True near-black and near-white, with frosted-glass panels — the default look.",
+    description: "True near-black and near-white, with frosted-glass panels, the default look.",
     mode: "dark",
     source: "curated",
     swatch: ["#1A1A1A", "#2E2E2E", "#F5F5F5"],

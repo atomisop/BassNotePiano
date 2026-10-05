@@ -6,6 +6,7 @@ import {
   getUpcomingOccurrences,
   getUserClassBookings,
   getWeeklyCreditUsage,
+  chunksForSchedule,
   CANCELLATION_CUTOFF_HOURS,
   SOLO_MAX_CREDITS,
   FAMILY_MIN_ATTENDEES,
@@ -16,6 +17,7 @@ import { getSupportContactId } from "@/lib/admin";
 import { ClassBookingClient } from "./ClassBookingClient";
 import { ScheduleClient } from "../schedule/ScheduleClient";
 import { LessonsHub } from "./LessonsHub";
+import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 
 /**
  * A student on an active Payment Plan sees two tabs here. "My weekly class" is
@@ -83,7 +85,7 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
   const [weeklyUsage, reservedSchedule] = await Promise.all([
     getWeeklyCreditUsage(session.user.id),
     activePlan.reservedScheduleId
-      ? prisma.classSchedule.findUnique({ where: { id: activePlan.reservedScheduleId }, select: { dayOfWeek: true, startTime: true } })
+      ? prisma.classSchedule.findUnique({ where: { id: activePlan.reservedScheduleId }, select: { dayOfWeek: true, startTime: true, durationMin: true } })
       : null,
   ]);
 
@@ -100,7 +102,18 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
           supportContactId={supportContactId}
           cancellationCutoffHours={CANCELLATION_CUTOFF_HOURS}
           hasClassThisWeek={weeklyUsage.creditsUsedThisWeek > 0}
-          weeklyTime={reservedSchedule}
+          weeklyTime={
+            reservedSchedule
+              ? {
+                  dayOfWeek: reservedSchedule.dayOfWeek,
+                  // The plan's own piece of the window, not the window's start.
+                  startTime: addMinutesToHHmm(
+                    reservedSchedule.startTime,
+                    chunksForSchedule(reservedSchedule)[activePlan.reservedChunkIndex ?? 0]?.offsetMin ?? 0,
+                  ),
+                }
+              : null
+          }
           upcomingBookings={upcomingBookings.map((b) => ({
             id: b.id,
             label: b.schedule.label,

@@ -225,7 +225,7 @@ export function AdminAttendanceQuickPanel() {
                 <p className="text-body font-semibold text-slate-100">Class bookings</p>
                 <p className="text-small text-slate-500">
                   {rows.length} booking{rows.length === 1 ? "" : "s"}
-                  {readyCount > 0 ? ` · ${readyCount} ready` : ""} · attendance opens {ATTENDANCE_OPENS_MIN_BEFORE} min before class
+                  {readyCount > 0 ? ` · ${readyCount} ready` : ""}
                 </p>
               </div>
               <Link

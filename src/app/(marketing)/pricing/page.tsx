@@ -5,7 +5,7 @@ import { PricingPageContent } from "@/components/marketing/PricingPageContent";
 export const metadata: Metadata = pageMetadata({
   title: "Pricing",
   description:
-    "One payment unlocks the full six-scale curriculum for life, no subscription. Live group classes on Discord are bought separately as class credits, discounted by the bundle.",
+    "Live one-on-one classes on Discord, 45 minutes a week, with the full curriculum included. Plans from $45 a class on a 6-month term.",
   path: "/pricing",
 });
 

@@ -23,7 +23,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: "welcome",
     target: null,
     title: "Welcome to Bass Note Piano",
-    body: "Here's a quick tour of where everything lives. Skip anytime — this only ever shows automatically once.",
+    body: "Here's a quick tour of where everything lives. Skip anytime. This only ever shows automatically once.",
   },
   {
     id: "roadmap",
@@ -47,19 +47,19 @@ export const TOUR_STEPS: TourStep[] = [
     id: "messages",
     target: "nav-messages",
     title: "Messages",
-    body: "Message friends directly — or reach us here any time you need help.",
+    body: "Message friends directly, or reach us here any time you need help.",
   },
   {
     id: "bell",
     target: "notification-bell",
     title: "Notifications",
-    body: "Payments, replies, and announcements all land here — nothing important gets missed.",
+    body: "Payments, replies, and announcements all land here. Nothing important gets missed.",
   },
   {
     id: "profile",
     target: "nav-profile",
     title: "Your profile",
-    body: "Badges, streaks, and your photo live here — this is what other students see.",
+    body: "Badges, streaks, and your photo live here. This is what other students see.",
   },
   {
     id: "settings",

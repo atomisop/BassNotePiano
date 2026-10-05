@@ -17,7 +17,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-08-24",
     title: "Live classes move to Discord",
     items: [
-      "Weekly live group classes now happen on Discord instead of Zoom — join the server from the classes page or your account settings",
+      "Weekly live group classes now happen on Discord instead of Zoom, join the server from the classes page or your account settings",
     ],
   },
   {
@@ -25,7 +25,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-08-08",
     title: "Bigger profile photos",
     items: [
-      "Profile photo uploads now accept images up to 10MB — resized automatically in your browser first, so it still uploads fast",
+      "Profile photo uploads now accept images up to 10MB, resized automatically in your browser first, so it still uploads fast",
     ],
   },
   {
@@ -33,10 +33,10 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-08-07",
     title: "Weekly live classes, direct messages, and announcements",
     items: [
-      "Live group classes on Zoom replace 1:1 lesson booking — pick from six recurring weekly slots, pay with simple credit bundles, and cancel 24+ hours ahead for a refund",
-      "We can now message you directly — replies land right in your existing Messages inbox",
+      "Live group classes on Zoom replace 1:1 lesson booking, pick from six recurring weekly slots, pay with simple credit bundles, and cancel 24+ hours ahead for a refund",
+      "We can now message you directly, replies land right in your existing Messages inbox",
       "Site announcements show up as a dismissible banner and a bell notification, so you never miss the news",
-      "Logging in, and changing your password, name, or photo, no longer need a confirmation code — just your password",
+      "Logging in, and changing your password, name, or photo, no longer need a confirmation code, just your password",
     ],
   },
   {
@@ -67,7 +67,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: "2026-07-22",
     title: "Bass Note Piano launches",
     items: [
-      "The full Ethiopian scale curriculum — Tizita, Bati, Anchihoye, and Mixolydian pentatonics — spelled correctly in every key",
+      "The full Ethiopian scale curriculum, Tizita, Bati, Anchihoye, and Mixolydian pentatonics, spelled correctly in every key",
       "Pay-as-you-go per scale, or one-time lifetime Pro access",
       "Secure accounts with email verification and two-factor login",
     ],

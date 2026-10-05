@@ -11,16 +11,27 @@ import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
 export const CREDIT_BASE_PRICE_CENTS = 3499; // $34.99 per credit (1 credit = 30 min), full price
 
 /**
- * What an extra credit costs: a flat $40 for 1 credit (30 minutes), no bundle
- * tiers. Credits are for extra sessions on top of a student's weekly class (and
- * for anyone without a plan); a plan's own weekly class is paid by the plan, not
- * by credits bought here. Deliberately its own number, separate from
- * CREDIT_BASE_PRICE_CENTS above, which still prices Family Bundles.
+ * A class is one fixed length: 45 minutes, priced at $55 a class. Students see
+ * classes, never credits. Internally the booking engine still counts in
+ * 30-minute credit units, and a class always costs CREDITS_PER_CLASS of them
+ * (the same 2 a full hour used to), so a class is one bookable slot and nothing
+ * about slots, plans or attendance had to be re-based. Slots start on the hour
+ * and a class runs 45 minutes, leaving a 15-minute break after it.
  */
-export const EXTRA_CREDIT_PRICE_CENTS = 4000;
+export const CLASS_MINUTES = 45;
+export const CREDITS_PER_CLASS = 2;
 
-/** Most credits one purchase can ask for; keeps a typo from becoming a huge invoice. */
-export const MAX_EXTRA_CREDITS_PER_PURCHASE = 20;
+/**
+ * What an extra class costs: a flat $55, no bundle tiers. Extra classes are for
+ * extra time on top of a student's weekly class (and for anyone without a plan);
+ * a plan's own weekly class is paid by the plan. Deliberately its own number,
+ * separate from CREDIT_BASE_PRICE_CENTS above, which still prices Family
+ * Bundles.
+ */
+export const EXTRA_CLASS_PRICE_CENTS = 5500;
+
+/** Most extra classes one purchase can ask for; keeps a typo from becoming a huge invoice. */
+export const MAX_EXTRA_CLASSES_PER_PURCHASE = 10;
 
 /** Pre-discount per-credit price, kept only so marketing pages can show a struck-through "was" price and a % off badge. */
 export const CREDIT_ORIGINAL_PRICE_CENTS = 5000;
@@ -157,14 +168,32 @@ export function calculateClassCreditTotal(quantity: number): CreditTotal {
 // rest of this file (see the header comment).
 // ---------------------------------------------------------------------------
 
-// $120/mo (30 min/week) and $240/mo (60 min/week) — the confirmed anchor,
+// The one plan offered is 45 minutes a week at $55 a class: 4 classes a month,
+// $220 before term discounts. (Older anchor: $120/mo for 30 min/week and
+// $240/mo for 60 min/week, both retired and kept only so existing data types.)
 // close to today's live CREDIT_BASE_PRICE_CENTS rate rather than a return to
 // CREDIT_ORIGINAL_PRICE_CENTS, so this term ladder rewards a longer
 // commitment without also pushing through a price increase.
 const PLAN_CADENCE_MONTHLY_BASE_CENTS: Record<PaymentPlanCadence, number> = {
   MIN_30_WEEKLY: 12000,
-  MIN_60_WEEKLY: 24000,
+  // The one live plan: 4 classes x $55.
+  MIN_60_WEEKLY: 22000,
 };
+
+/**
+ * Weekly lengths nobody can newly enroll in. The plan on offer is a single
+ * 45-minute class a week, stored as MIN_60_WEEKLY (it books one full hourly
+ * slot, 2 internal credits); MIN_30_WEEKLY was retired. Both enum values stay so
+ * existing rows still read and display correctly.
+ */
+export const RETIRED_PLAN_CADENCES: readonly PaymentPlanCadence[] = ["MIN_30_WEEKLY"];
+
+export function isPlanCadenceOffered(cadence: PaymentPlanCadence): boolean {
+  return !RETIRED_PLAN_CADENCES.includes(cadence);
+}
+
+/** The plan every new subscriber gets. */
+export const OFFERED_PLAN_CADENCE: PaymentPlanCadence = "MIN_60_WEEKLY";
 
 // 1 credit = 30 min (matches classSchedule.ts). A plan just supplies the
 // monthly credit total — booking itself, and SOLO_MAX_CREDITS's own 2-credit
@@ -217,7 +246,7 @@ const PLAN_TERM_MONTHS: Record<PaymentPlanTerm, number> = {
 
 const PLAN_CADENCE_LABEL: Record<PaymentPlanCadence, string> = {
   MIN_30_WEEKLY: "30 min/week",
-  MIN_60_WEEKLY: "60 min/week",
+  MIN_60_WEEKLY: "45 min/week",
 };
 
 const PLAN_TERM_LABEL: Record<PaymentPlanTerm, string> = {
@@ -235,7 +264,7 @@ const PLAN_TERM_LABEL: Record<PaymentPlanTerm, string> = {
  * drift between them.
  */
 export function describePaymentPlan(cadence: PaymentPlanCadence, term: PaymentPlanTerm): string {
-  return `${PLAN_TERM_LABEL[term]} plan — ${PLAN_CADENCE_LABEL[cadence]}`;
+  return `${PLAN_TERM_LABEL[term]} plan, ${PLAN_CADENCE_LABEL[cadence]}`;
 }
 
 export interface PaymentPlanRate {
@@ -255,8 +284,8 @@ export interface PaymentPlanRate {
  * promise made at signup, not a live price.
  *
  * The discounted rate is then rounded up to just under the next $5
- * (toPlanPriceCents), so the 30 min/week ladder is $119.99 / $109.99 /
- * $99.99 and the 60 min/week ladder $239.99 / $219.99 / $194.99. Math.round
+ * (toPlanPriceCents), so the 45 min/week plan is $219.99 / $199.99 / $179.99
+ * (Monthly / 3-Month / 6-Month). Math.round
  * on the discount step is a guard against float error from the multipliers.
  */
 export function calculatePaymentPlanRate(cadence: PaymentPlanCadence, term: PaymentPlanTerm): PaymentPlanRate {

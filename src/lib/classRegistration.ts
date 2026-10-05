@@ -59,7 +59,7 @@ export async function submitClassRegistration(input: SubmitClassRegistrationInpu
   // they're registering with (most commonly you, testing the form), and
   // that account's email must never silently swallow this.
   const confirmationTitle = "We've got your registration";
-  const confirmationBody = `Thanks, ${fullName} — we've received your registration for ${INSTRUMENT_LABEL[input.instrument]} lessons (${SKILL_LABEL[input.skillLevel]}). We'll be in touch at ${email} or ${phone} soon.`;
+  const confirmationBody = `Thanks, ${fullName}. We've received your registration for ${INSTRUMENT_LABEL[input.instrument]} lessons (${SKILL_LABEL[input.skillLevel]}). We'll be in touch at ${email} or ${phone} soon.`;
 
   // No account uses this email yet — nudge them toward creating one while
   // the registration is reviewed, so they land somewhere real once it's
