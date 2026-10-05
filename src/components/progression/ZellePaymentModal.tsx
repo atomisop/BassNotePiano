@@ -57,7 +57,7 @@ const stepVariants = {
 
 // Venmo usernames are letters, digits, dashes and underscores. Anything else
 // in the env var would break the link, so Venmo is simply hidden.
-const VENMO_HANDLE = (process.env.NEXT_PUBLIC_VENMO_HANDLE ?? "").replace(/^@/, "").trim();
+const VENMO_HANDLE = (process.env.NEXT_PUBLIC_VENMO_HANDLE ?? "BassNotePiano").replace(/^@/, "").trim();
 const VENMO_OK = /^[A-Za-z0-9_-]{2,40}$/.test(VENMO_HANDLE);
 
 /** Pre-filled Venmo links. The app link opens Venmo on a phone, the web link is what the QR code carries. */

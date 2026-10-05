@@ -53,7 +53,7 @@ const FAQS = [
   },
   {
     q: "How do live lessons work?",
-    a: `Every class is 45 minutes, one-on-one with your teacher, live on Discord. Start a Payment Plan (Monthly, 3-Month, or 6-Month, paid one Zelle installment at a time) and you pick your weekly day and time on a calendar of open spots. It is yours every week, booked for you automatically. Want more time? Buy extra classes at ${formatUsd(EXTRA_CLASS_PRICE_CENTS)} each and book them whenever there's an open spot. Siblings learning together can use a family bundle instead.`,
+    a: `Every class is 45 minutes, one-on-one with your teacher, live on Discord. Start a Payment Plan (Monthly, 3-Month, or 6-Month, paid one Zelle or Venmo installment at a time) and you pick your weekly day and time on a calendar of open spots. It is yours every week, booked for you automatically. Want more time? Buy extra classes at ${formatUsd(EXTRA_CLASS_PRICE_CENTS)} each and book them whenever there's an open spot. Siblings learning together can use a family bundle instead.`,
   },
   {
     q: "Can I cancel a booked lesson?",
