@@ -178,6 +178,7 @@ enum PaymentPlanStatus {
 // OTHER as the 9th, freeform via cancellationReasonNote. Read by admins on
 // /admin/feedback. Order here is display order in the picker.
 enum PlanCancellationReason {
+  NON_PAYMENT // set by the system when a plan goes a week past due, never offered to a student
   TOO_EXPENSIVE
   NOT_ENOUGH_TIME
   SCHEDULE_CONFLICT

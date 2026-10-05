@@ -626,7 +626,7 @@ export async function cancelPaymentPlanBySelf(
   reason: PlanCancellationReason,
   reasonNote: string | null,
 ): Promise<void> {
-  if (!Object.values(PlanCancellationReason).includes(reason)) {
+  if (!Object.values(PlanCancellationReason).includes(reason) || reason === "NON_PAYMENT") {
     throw new PaymentPlanError(`"${reason}" isn't a valid reason.`);
   }
   const trimmedNote = reasonNote?.trim() || null;
@@ -676,4 +676,47 @@ export async function cancelPaymentPlanBySelf(
       }),
     ),
   );
+}
+
+/** Days a plan may sit past due before the system cancels it. */
+export const LAPSE_AFTER_DAYS = 7;
+
+/**
+ * Cancels a plan that has gone LAPSE_AFTER_DAYS past due with nothing in
+ * review: same effects as a self-cancel (open unpaid bill closed, future
+ * reserved classes released) with the system as the actor. Returns false
+ * when it should not lapse (already settled, or a payment is mid-review).
+ */
+export async function lapsePlanForNonPayment(planId: string): Promise<boolean> {
+  const plan = await prisma.paymentPlan.findUnique({ where: { id: planId } });
+  if (!plan || plan.status !== "ACTIVE") return false;
+  const inReview = await prisma.zellePayment.findFirst({
+    where: { paymentPlanId: planId, status: "PENDING_REVIEW" },
+    select: { id: true },
+  });
+  if (inReview) return false;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.paymentPlan.update({
+      where: { id: planId },
+      data: { status: "CANCELED", canceledAt: new Date(), cancellationReason: "NON_PAYMENT" },
+    });
+    await tx.zellePayment.updateMany({
+      where: { paymentPlanId: planId, status: "AWAITING_TRANSFER" },
+      data: { status: "EXPIRED" },
+    });
+    await tx.classBooking.updateMany({
+      where: { reservedByPlanId: planId, status: "SCHEDULED", scheduledAt: { gt: new Date() } },
+      data: { status: "CANCELED", refunded: true },
+    });
+  });
+
+  await createNotification({
+    userId: plan.userId,
+    type: "PAYMENT_PLAN_CANCELED",
+    title: "Your plan was canceled",
+    body: "Your payment is a week overdue, so your plan was canceled and your weekly time is open again. Start a new plan to come back.",
+    emailCategory: "payments",
+  });
+  return true;
 }

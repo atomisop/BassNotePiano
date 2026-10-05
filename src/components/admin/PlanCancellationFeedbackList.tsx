@@ -8,6 +8,7 @@ import { describePaymentPlan } from "@/lib/classCreditPricing";
 // e.g. PaymentPlanTierGrid.tsx and PaymentPlanEnrollmentFlow.tsx both
 // defining their own CADENCE_OPTIONS/TERM_OPTIONS rather than sharing one).
 const REASON_LABELS: Record<PlanCancellationReason, string> = {
+  NON_PAYMENT: "Stopped paying, canceled after a week",
   TOO_EXPENSIVE: "Too expensive",
   NOT_ENOUGH_TIME: "Not enough time to practice or attend",
   SCHEDULE_CONFLICT: "Weekly time no longer worked",
