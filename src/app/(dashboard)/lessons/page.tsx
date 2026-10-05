@@ -73,6 +73,7 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
         refunded: b.refunded,
         attendance: b.attendance,
         canceledReason: b.canceledReason,
+        reserved: Boolean(b.reservedByPlanId),
       }))}
     />
   );
@@ -97,6 +98,7 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
       weekly={
         <ScheduleClient
           supportContactId={supportContactId}
+          cancellationCutoffHours={CANCELLATION_CUTOFF_HOURS}
           hasClassThisWeek={weeklyUsage.creditsUsedThisWeek > 0}
           weeklyTime={reservedSchedule}
           upcomingBookings={upcomingBookings.map((b) => ({

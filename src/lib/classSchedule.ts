@@ -1019,6 +1019,8 @@ export async function createReservedBookingIfAbsent(
     where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId, occurrenceDate } },
   });
   if (existing?.status === "SCHEDULED") return null;
+  // The student cancelled this one on purpose (24+ hours ahead): do not book it again.
+  if (existing?.status === "CANCELED" && existing.canceledReason === SKIPPED_BY_STUDENT) return null;
 
   // Defense-in-depth against a different student somehow already holding
   // this exact instant despite the enrollment-time conflict check
@@ -1201,6 +1203,13 @@ export async function getWeeklyCreditUsage(studentId: string): Promise<WeeklyCre
  * that point is a manual, discretionary admin credit adjustment, not
  * something this function grants automatically.
  */
+/**
+ * canceledReason stamped on a plan-reserved class its student cancelled
+ * themselves. The daily reservation job (createReservedBookingIfAbsent) leaves
+ * a class carrying it alone, instead of booking it again the next morning.
+ */
+export const SKIPPED_BY_STUDENT = "SKIPPED_BY_STUDENT";
+
 export async function cancelClassBooking(bookingId: string, studentId: string): Promise<{ refunded: true }> {
   const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
   if (booking.studentId !== studentId) throw new ClassBookingError("Not your booking.");
@@ -1218,7 +1227,10 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
   // still SCHEDULED at this point has never been attendance-marked — there
   // is nothing to refund because nothing was ever actually taken. `refunded`
   // stays true regardless, meaning "this booking never cost you anything."
-  await prisma.classBooking.update({ where: { id: bookingId }, data: { status: "CANCELED", refunded: true } });
+  await prisma.classBooking.update({
+    where: { id: bookingId },
+    data: { status: "CANCELED", refunded: true, ...(booking.reservedByPlanId ? { canceledReason: SKIPPED_BY_STUDENT } : {}) },
+  });
 
   await createNotification({
     userId: studentId,

@@ -40,6 +40,8 @@ interface BookingRow {
   refunded: boolean;
   attendance: "PRESENT" | "NO_SHOW" | null;
   canceledReason: string | null;
+  /** Booked by the student's payment plan (their weekly class). It can be skipped, not rescheduled here. */
+  reserved?: boolean;
 }
 
 type BookingMode = "SOLO" | "FAMILY";
@@ -172,7 +174,7 @@ function BookingCard({
         {b.status === "CANCELED" && <p className="mt-0.5 text-small text-slate-50">Canceled — no credits were charged</p>}
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        {cancelEligible && (
+        {cancelEligible && !b.reserved && (
           <button
             type="button"
             onClick={() => onStartReschedule(b)}
@@ -194,7 +196,7 @@ function BookingCard({
             className="tap flex items-center justify-center rounded-lg border border-red-400/20 px-3 py-1.5 text-small font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {cancelingId === b.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-            {cancelingId === b.id ? "Canceling…" : "Cancel"}
+            {cancelingId === b.id ? "Canceling…" : b.reserved ? "Skip" : "Cancel"}
           </button>
         )}
         {pastSelfServeWindow && supportContactId && (
