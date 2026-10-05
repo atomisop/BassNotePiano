@@ -1,5 +1,6 @@
 "use client";
 
+import { classesInWindow } from "@/lib/classScheduleLabels";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
@@ -236,7 +237,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                         {row.label && ` · ${row.label}`}
                       </p>
                       <p className="mt-0.5 text-small text-slate-500">
-                        {row.durationMin} min window · up to {row.creditCost} credit{row.creditCost === 1 ? "" : "s"} ·{" "}
+                        {row.durationMin} min window · {classesInWindow(row.durationMin)} class{classesInWindow(row.durationMin) === 1 ? "" : "es"} ·{" "}
                         {row.active ? "Bookable" : "Off — not shown to students"}
                       </p>
                     </div>

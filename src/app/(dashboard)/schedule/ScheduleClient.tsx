@@ -1,5 +1,6 @@
 "use client";
 
+import { CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -185,13 +186,13 @@ export function ScheduleClient({
                         {booking.label ?? "Weekly class"} · ends {formatEndTime(booking.scheduledAt, booking.creditsSpent)}
                       </p>
                     </div>
-                    <span className="shrink-0 text-small text-slate-500">{booking.creditsSpent * 30} min</span>
+                    <span className="shrink-0 text-small text-slate-500">{Math.round((booking.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES)} min</span>
                   </div>
                   {canChange ? (
                     confirming ? (
                       <div className="mt-2.5 rounded-lg bg-neu-base px-3 py-2.5 shadow-pressed-low">
                         <p className="text-small text-slate-300">
-                          Skip this class? Your credit stays on your account, and you can use it to book a different time under{" "}
+                          Skip this class? It stays on your account, and you can use it to book a different time under{" "}
                           <Link href="/lessons?tab=extra" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
                             Extra sessions
                           </Link>

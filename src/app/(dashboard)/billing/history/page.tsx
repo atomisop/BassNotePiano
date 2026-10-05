@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { getUserPaymentHistory } from "@/lib/payments";
-import { calculateClassCreditTotal, describePaymentPlan } from "@/lib/classCreditPricing";
+import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -51,10 +51,11 @@ function describePayment(payment: {
         title: `${payment.lessonQuantity} × ${typeLabel} lesson${payment.lessonQuantity === 1 ? "" : "s"}`,
       };
     }
-    const { discountCents } = calculateClassCreditTotal(payment.lessonQuantity);
+    // Extra classes: the row stores internal credits, a class is CREDITS_PER_CLASS of them.
+    const classes = Math.max(1, Math.round(payment.lessonQuantity / CREDITS_PER_CLASS));
     return {
-      eyebrow: "Class credits",
-      title: `${payment.lessonQuantity} credit${payment.lessonQuantity === 1 ? "" : "s"}${discountCents > 0 ? " (bundle discount)" : ""}`,
+      eyebrow: "Extra classes",
+      title: `${classes} extra class${classes === 1 ? "" : "es"}`,
     };
   }
   // Legacy Pay-As-You-Go row from before per-scale purchase was retired.

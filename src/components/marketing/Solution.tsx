@@ -1,3 +1,4 @@
+import { CLASS_MINUTES } from "@/lib/classCreditPricing";
 import { SOLO_MAX_CREDITS } from "@/lib/classSchedule";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
@@ -51,16 +52,7 @@ const FEATURES = [
     body: "Each scale unlocks the next only after you've actually practiced it and passed its quiz, not just clicked through.",
   },
   {
-    // SOLO_MAX_CREDITS is in 30-minute units (see classSchedule.ts's own
-    // CHUNK_MIN); computed rather than hardcoded so this can't drift from
-    // the real booking cap, and phrased in minutes instead of assuming a
-    // clean hour boundary in case that constant ever changes to something
-    // that doesn't divide evenly into 60.
-    title: (() => {
-      const minutes = SOLO_MAX_CREDITS * 30;
-      const durationLabel = minutes % 60 === 0 ? `${minutes / 60} hour${minutes === 60 ? "" : "s"}` : `${minutes} minutes`;
-      return `Live lessons, up to ${durationLabel} at a time`;
-    })(),
+    title: `Live lessons, ${CLASS_MINUTES} minutes one-on-one`,
     body: "One-on-one with your teacher, or a family session if siblings are learning together, booked on your own schedule over Discord.",
   },
   {

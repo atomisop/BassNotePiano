@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { CREDIT_BASE_PRICE_CENTS } from "@/lib/classCreditPricing";
-import { CANCELLATION_CUTOFF_HOURS, SOLO_MAX_CREDITS, FAMILY_CREDITS_PER_STUDENT } from "@/lib/classSchedule";
+import { EXTRA_CLASS_PRICE_CENTS } from "@/lib/classCreditPricing";
+import { CANCELLATION_CUTOFF_HOURS } from "@/lib/classSchedule";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { BACKDROPS } from "@/lib/backdrops";
@@ -53,11 +53,11 @@ const FAQS = [
   },
   {
     q: "How do live lessons work?",
-    a: `Book one-on-one time with your teacher (up to ${SOLO_MAX_CREDITS} credits, about an hour), or a family session if siblings are learning together (${FAMILY_CREDITS_PER_STUDENT} credits per student). Solo credits come from a Payment Plan — Monthly, 3-Month, or 6-Month, paid one Zelle installment at a time — which reserves your weekly day and time exclusively and expires with that installment's monthly cycle if unused. Family bundles are priced per credit at ${formatUsd(CREDIT_BASE_PRICE_CENTS)} at full price and never expire.`,
+    a: `Every class is 45 minutes, one-on-one with your teacher, live on Discord. Start a Payment Plan — Monthly, 3-Month, or 6-Month, paid one Zelle installment at a time — and you pick your weekly day and time on a calendar of open spots. It is yours every week, booked for you automatically. Want more time? Buy extra classes at ${formatUsd(EXTRA_CLASS_PRICE_CENTS)} each and book them whenever there's an open spot. Siblings learning together can use a family bundle instead.`,
   },
   {
     q: "Can I cancel a booked lesson?",
-    a: `Yes, up to ${CANCELLATION_CUTOFF_HOURS} hours before it starts, and the credit goes back to your balance. Inside that window, there's no automatic refund since that time was held for you; message us directly and it's a case-by-case call.`,
+    a: `Yes, you can cancel or change a class up to ${CANCELLATION_CUTOFF_HOURS} hours before it starts, and it stays on your account for you to rebook. Inside that window it can't be changed in the app since that time was held for you: please attend, or message us directly for a case-by-case call.`,
   },
   {
     q: "Is there a way to try the community before paying for anything?",

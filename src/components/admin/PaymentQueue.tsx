@@ -5,7 +5,7 @@ import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearc
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PendingZellePayment } from "@/lib/payments";
-import { calculateClassCreditTotal, describePaymentPlan } from "@/lib/classCreditPricing";
+import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing";
 import { formatDateTime } from "@/lib/classScheduleLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
@@ -42,10 +42,11 @@ function describePayment(payment: PendingZellePayment): { eyebrow: string; title
         title: `${payment.lessonQuantity} × ${typeLabel} lesson${payment.lessonQuantity === 1 ? "" : "s"}`,
       };
     }
-    const { discountCents } = calculateClassCreditTotal(payment.lessonQuantity);
+    // Extra classes: the row stores internal credits, a class is CREDITS_PER_CLASS of them.
+    const classes = Math.max(1, Math.round(payment.lessonQuantity / CREDITS_PER_CLASS));
     return {
-      eyebrow: "Class credits",
-      title: `${payment.lessonQuantity} credit${payment.lessonQuantity === 1 ? "" : "s"}${discountCents > 0 ? " — bundle discount applied" : ""}`,
+      eyebrow: "Extra classes",
+      title: `${classes} extra class${classes === 1 ? "" : "es"}`,
     };
   }
   if (payment.purpose === "FAMILY_BUNDLE" && payment.lessonQuantity) {

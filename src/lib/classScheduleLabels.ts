@@ -28,3 +28,13 @@ export function addMinutesToHHmm(hhmm: string, minutes: number): string {
   const wrapped = ((total % 1440) + 1440) % 1440;
   return `${String(Math.floor(wrapped / 60)).padStart(2, "0")}:${String(wrapped % 60).padStart(2, "0")}`;
 }
+
+/** Whole classes a weekly window holds: one starts every hour, and a class needs CLASS_MINUTES free. */
+export function classesInWindow(durationMin: number): number {
+  return durationMin < CLASS_MINUTES ? 0 : Math.floor((durationMin - CLASS_MINUTES) / 60) + 1;
+}
+
+/** Internal credits as whole classes, for showing a balance ("3 classes"). */
+export function creditsToClasses(credits: number): number {
+  return Math.floor(credits / CREDITS_PER_CLASS);
+}
