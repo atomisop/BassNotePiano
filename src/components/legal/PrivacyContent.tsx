@@ -5,7 +5,7 @@
 // Written to describe what this app actually does, not a generic template:
 // every claim below should stay true to the real data model (prisma/schema.prisma)
 // and the real third parties actually wired up in src/lib (Resend, Cloudflare
-// R2, Neon, Google's Gemini API, Sentry). If a new integration starts
+// R2, Neon, Google's Gemini API, GlitchTip). If a new integration starts
 // collecting or sending user data somewhere new, this page needs updating in
 // the same change. The assistant.ts system prompt has its own condensed
 // summary of this page that needs to stay in sync too, since Atom quotes it.
@@ -21,7 +21,7 @@
 // an email they type has an account. Account deletion now actually deletes
 // the stored avatar file, not just the database row pointing at it: a real
 // gap this pass fixed in the code, not just in what this page claims.
-export const PRIVACY_LAST_UPDATED = "October 2, 2026";
+export const PRIVACY_LAST_UPDATED = "October 5, 2026";
 
 function PrivacySection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -76,10 +76,10 @@ export function PrivacyContent() {
           A handful of vendors process data on our behalf, strictly to run the app: Resend sends
           the emails the app triggers (verification codes, notifications), Cloudflare stores
           uploaded avatars and lesson video/PDF files, Neon hosts the database, Netlify hosts the
-          app itself, and Sentry receives error reports when something breaks so we can fix it.
+          app itself, and GlitchTip, our error-monitoring service, receives error reports when something breaks so we can fix it.
           Google&apos;s Gemini API is what actually generates Atom&apos;s replies: whatever you type to
           Atom is sent to Google to produce an answer, along with a few facts about your account
-          (your name, whether you have curriculum access, your credit balance) so the reply can be
+          (your name, whether you have curriculum access, how many classes are on your account) so the reply can be
           personalized. How Google itself retains or uses that data beyond generating the reply is
           governed by Google&apos;s own API terms, not something we control past choosing to use
           their service. None of these vendors are permitted to use your data for their own
