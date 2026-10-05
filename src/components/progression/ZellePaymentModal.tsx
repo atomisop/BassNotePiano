@@ -88,7 +88,7 @@ export function ZellePaymentModal({
   const [note, setNote] = useState("");
   const [copied, setCopied] = useState(false);
   const [method, setMethod] = useState<"ZELLE" | "VENMO">("ZELLE");
-  const venmo = venmoLinks(amountCents, `${scaleTitle} (Bass Note Piano)`);
+  const venmo = venmoLinks(amountCents, `${scaleCode}: ${scaleTitle} (Bass Note Piano)`);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
