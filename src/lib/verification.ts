@@ -138,16 +138,24 @@ export async function verifyCode(email: string, purpose: VerificationPurpose, su
 
   if (!record) return { ok: false, reason: "not_found" };
   if (record.expiresAt < new Date()) return { ok: false, reason: "expired" };
-  if (record.attempts >= MAX_VERIFICATION_ATTEMPTS) {
-    await prisma.verificationCode.update({ where: { id: record.id }, data: { consumedAt: new Date() } });
+  // Claim one guess atomically: the increment only happens while the code still
+  // has guesses left, so a burst of parallel requests cannot all read "attempts
+  // is 0" and each get a free try. Counted whether or not the guess is right.
+  const claimed = await prisma.verificationCode.updateMany({
+    where: { id: record.id, consumedAt: null, attempts: { lt: MAX_VERIFICATION_ATTEMPTS } },
+    data: { attempts: { increment: 1 } },
+  });
+  if (claimed.count === 0) {
+    await prisma.verificationCode.updateMany({ where: { id: record.id, consumedAt: null }, data: { consumedAt: new Date() } });
     return { ok: false, reason: "too_many_attempts" };
   }
 
   if (hashCode(submittedCode) !== record.codeHash) {
-    await prisma.verificationCode.update({ where: { id: record.id }, data: { attempts: { increment: 1 } } });
     return { ok: false, reason: "incorrect" };
   }
 
-  await prisma.verificationCode.update({ where: { id: record.id }, data: { consumedAt: new Date() } });
+  // Single use, enforced by the database: only one caller can flip consumedAt.
+  const consumed = await prisma.verificationCode.updateMany({ where: { id: record.id, consumedAt: null }, data: { consumedAt: new Date() } });
+  if (consumed.count === 0) return { ok: false, reason: "not_found" };
   return { ok: true, userId: record.userId, payload: record.payload };
 }

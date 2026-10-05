@@ -124,7 +124,17 @@ export async function createExtraCreditsPayment(userId: string, quantity: number
     if (existing.status === "PENDING_REVIEW") {
       throw new ExtraCreditsError("You already have a credits payment waiting to be checked. You can buy more once it is verified.");
     }
-    return prisma.zellePayment.update({ where: { id: existing.id }, data: { amountCents, lessonQuantity: quantity } });
+    // Guarded by status: if the student submitted their Zelle reference in the
+    // moment between the read above and this write, the row is already in
+    // review and its quantity/amount must not change under it.
+    const updated = await prisma.zellePayment.updateMany({
+      where: { id: existing.id, status: "AWAITING_TRANSFER" },
+      data: { amountCents, lessonQuantity: quantity },
+    });
+    if (updated.count === 0) {
+      throw new ExtraCreditsError("Your payment was just submitted for review. You can buy more once it is verified.");
+    }
+    return prisma.zellePayment.findUniqueOrThrow({ where: { id: existing.id } });
   }
   return prisma.zellePayment.create({
     data: { userId, purpose: "CLASS_CREDITS", amountCents, zelleHandle, lessonQuantity: quantity, status: "AWAITING_TRANSFER" },
