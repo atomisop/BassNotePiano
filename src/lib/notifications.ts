@@ -28,6 +28,7 @@ interface NotificationCta {
 // by the caller in messages.ts/groupMessages.ts instead, where the
 // senderId is actually known.
 const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
+  PAYMENT_SUBMITTED: { label: "Review payment", url: getAppUrl("/admin/payments"), kind: "default" },
   PAYMENT_APPROVED: { label: "View your purchase", url: getAppUrl("/billing/history"), kind: "default" },
   PAYMENT_REJECTED: { label: "Review & resubmit", url: getAppUrl("/billing/history"), kind: "notice" },
   ROLE_UPDATED: { label: "Go to admin panel", url: getAppUrl("/admin"), kind: "default" },

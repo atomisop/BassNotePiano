@@ -377,6 +377,7 @@ model UserBadge {
 // ---------------------------------------------------------------------------
 
 enum NotificationType {
+  PAYMENT_SUBMITTED // to every admin, when a payment is waiting for review (not for one approved automatically)
   PAYMENT_APPROVED
   PAYMENT_REJECTED
   ROLE_UPDATED

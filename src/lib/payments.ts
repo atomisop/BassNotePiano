@@ -434,7 +434,37 @@ export async function submitZellePaymentReference(
   if (!(await settleWithStoredReceipt(submitted.id).catch(() => false))) {
     await maybeAutoApprovePayment(submitted);
   }
+  await notifyAdminsIfStillPending(submitted.id);
   return submitted;
+}
+
+/**
+ * Tells every admin a payment is waiting, only when it really is: one the
+ * email match or the returning-student rule already approved needs no one.
+ */
+async function notifyAdminsIfStillPending(paymentId: string) {
+  try {
+    const payment = await prisma.zellePayment.findUnique({
+      where: { id: paymentId },
+      select: { status: true, amountCents: true, method: true, user: { select: { name: true, email: true } } },
+    });
+    if (!payment || payment.status !== "PENDING_REVIEW") return;
+    const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
+    const amount = (payment.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+    await Promise.all(
+      admins.map((admin) =>
+        createNotification({
+          userId: admin.id,
+          type: "PAYMENT_SUBMITTED",
+          title: "Payment to review",
+          body: `${payment.user.name ?? payment.user.email} says they sent ${amount} by ${payment.method === "VENMO" ? "Venmo" : "Zelle"}.`,
+          emailCategory: "payments",
+        }),
+      ),
+    );
+  } catch (err) {
+    console.error("Admin payment notification failed (non-blocking):", err);
+  }
 }
 
 /** Verified payments a student needs before their installments are approved on submit. */

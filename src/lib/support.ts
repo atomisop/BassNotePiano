@@ -189,9 +189,32 @@ export async function postVisitorMessage(
   const trimmed = body.trim().slice(0, MAX_VISITOR_MESSAGE_LENGTH);
   if (!trimmed) throw new AssistantEscalationError("Message can't be empty.");
 
+  // Only the first message of a burst pings the admins, so a visitor typing
+  // three lines in a row doesn't send three emails.
+  const previous = await prisma.supportMessage.findFirst({
+    where: { escalationId },
+    orderBy: { createdAt: "desc" },
+    select: { sender: true },
+  });
+
   await prisma.supportMessage.create({
     data: { escalationId, sender: "VISITOR", body: trimmed, identifier },
   });
+
+  if (previous?.sender !== "VISITOR") {
+    const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
+    await Promise.all(
+      admins.map((admin) =>
+        createNotification({
+          userId: admin.id,
+          type: "ASSISTANT_ESCALATION",
+          title: "New message in Support Chat",
+          body: `${escalation.contactName ?? escalation.contactEmail}: "${trimmed.slice(0, 160)}"`,
+          emailCategory: "social",
+        }).catch((err) => console.error("Support chat notification failed (non-blocking):", err)),
+      ),
+    );
+  }
 
   return getThreadForVisitor(escalationId);
 }

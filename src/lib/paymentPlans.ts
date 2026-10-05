@@ -673,6 +673,7 @@ export async function cancelPaymentPlanBySelf(
         type: "PLAN_CANCELLATION_FEEDBACK",
         title: "A student canceled their plan",
         body: `${describePaymentPlan(plan.cadence, plan.term)} was self-canceled. See Payment Plans → Feedback for their reason.`,
+        emailCategory: "social",
       }),
     ),
   );
