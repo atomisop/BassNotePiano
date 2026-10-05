@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { pitchClassOf } from "@/lib/music-theory";
 
 /**
@@ -69,6 +69,8 @@ export interface FretboardProps {
   degrees: string[];
   /** Index of the note currently sounding, or null. */
   activeIndex: number | null;
+  /** The exact pitch sounding now. One spot on the neck lights for it, not every place the same letter appears. */
+  activeMidi: number | null;
   /**
    * Fired with the pressed position's own MIDI number, plus which scale
    * degree it represents (null when the position isn't in the scale).
@@ -83,7 +85,8 @@ export interface FretboardProps {
 export function Fretboard({
   notes,
   degrees,
-  activeIndex,
+  activeIndex: _activeIndex,
+  activeMidi,
   onPlayKey,
   disabled,
   tuning,
@@ -103,8 +106,28 @@ export function Fretboard({
     return map;
   }, [notes]);
 
-  function handlePress(midi: number, degreeIndex: number | undefined) {
+  // The string and fret the player last pressed, so a tapped spot lights
+  // itself even where the same pitch also sits on another string.
+  const [pressed, setPressed] = useState<{ stringIndex: number; fret: number; midi: number } | null>(null);
+
+  // The one spot lit while a scale plays: the same pitch can sit on two or
+  // three strings, so pick the lowest fret (a pressed spot wins when it is
+  // the note that is sounding).
+  const litCell = useMemo(() => {
+    if (activeMidi === null) return null;
+    if (pressed && pressed.midi === activeMidi) return pressed;
+    let best: { stringIndex: number; fret: number } | null = null;
+    openStringMidi.forEach((openMidi, stringIndex) => {
+      const fret = activeMidi - openMidi;
+      if (fret < 0 || fret > FRET_COUNT) return;
+      if (!best || fret < best.fret || (fret === best.fret && stringIndex > best.stringIndex)) best = { stringIndex, fret };
+    });
+    return best;
+  }, [activeMidi, pressed, openStringMidi]);
+
+  function handlePress(midi: number, degreeIndex: number | undefined, stringIndex: number, fret: number) {
     if (disabled) return;
+    setPressed({ stringIndex, fret, midi });
     onPlayKey(midi, degreeIndex ?? null);
   }
 
@@ -197,9 +220,7 @@ export function Fretboard({
                     const pitchClass = ((midi % 12) + 12) % 12;
                     const degreeIndex = degreeByPitchClass.get(pitchClass);
                     const inScale = degreeIndex !== undefined;
-                    const isActive =
-                      inScale &&
-                      (activeIndex === degreeIndex || (activeIndex === notes.length && degreeIndex === 0));
+                    const isActive = inScale && litCell?.stringIndex === stringIndex && litCell?.fret === fret;
                     const width = fret === 0 ? OPEN_WIDTH + NUT_WIDTH : FRET_WIDTHS[fret - 1];
 
                     return (
@@ -207,7 +228,7 @@ export function Fretboard({
                         key={fret}
                         type="button"
                         disabled={disabled}
-                        onClick={() => handlePress(midi, degreeIndex)}
+                        onClick={() => handlePress(midi, degreeIndex, stringIndex, fret)}
                         aria-label={labelFor(degreeIndex, openStringName[stringIndex], fret)}
                         aria-pressed={inScale}
                         style={{ width }}

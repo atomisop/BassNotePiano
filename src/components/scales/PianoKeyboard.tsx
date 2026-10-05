@@ -48,6 +48,8 @@ export interface PianoKeyboardProps {
   degrees: string[];
   /** Index of the note currently sounding, or null. */
   activeIndex: number | null;
+  /** The exact pitch sounding now: only that one key lights, not the same letter in other octaves. */
+  activeMidi: number | null;
   /**
    * Fired with the pressed key's own MIDI number, plus which scale degree it
    * represents (null when the key isn't in the scale). The pitch must come
@@ -60,7 +62,8 @@ export interface PianoKeyboardProps {
 export function PianoKeyboard({
   notes,
   degrees,
-  activeIndex,
+  activeIndex: _activeIndex,
+  activeMidi,
   onPlayKey,
   disabled,
 }: PianoKeyboardProps) {
@@ -130,8 +133,8 @@ export function PianoKeyboard({
     return `${notes[degreeIndex]}, scale degree ${degrees[degreeIndex]}`;
   }
 
-  function isSounding(degreeIndex: number | undefined) {
-    return degreeIndex !== undefined && (activeIndex === degreeIndex || (activeIndex === notes.length && degreeIndex === 0));
+  function isSounding(midi: number) {
+    return activeMidi === midi;
   }
 
   const keyHandlers = (midi: number, degreeIndex: number | undefined) => ({
@@ -166,7 +169,7 @@ export function PianoKeyboard({
             <div className="absolute inset-0 flex gap-[2px]">
               {whiteKeys.map(({ midi, degreeIndex }) => {
                 const inScale = degreeIndex !== undefined;
-                const lit = isSounding(degreeIndex) || pressedMidi === midi;
+                const lit = isSounding(midi) || pressedMidi === midi;
                 return (
                   <button
                     key={midi}
@@ -204,7 +207,7 @@ export function PianoKeyboard({
                 const midi = startMidi + o * 12 + offset;
                 const degreeIndex = degreeByMidi.get(midi);
                 const inScale = degreeIndex !== undefined;
-                const lit = isSounding(degreeIndex) || pressedMidi === midi;
+                const lit = isSounding(midi) || pressedMidi === midi;
 
                 // Centre of the seam between this white key and the next.
                 const whiteIndex = o * 7 + afterWhite;
