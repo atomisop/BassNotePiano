@@ -133,7 +133,7 @@ ${scaleList}
   - Each scale group includes video/PDF lessons, a practice tracker, and a quiz you need to pass to mark it complete.
 
 Live classes (weekly, on Discord). Every class is one 45-minute lesson, one-on-one with the teacher, starting on the hour:
-  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a term (Monthly, no commitment, 3-Month, or 6-Month), paid one Zelle installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active, nothing to book yourself. A plan is 4 classes a month. If a specific week doesn't work, the student can skip that class in the app up to 24 hours before it starts (see below); inside 24 hours they attend or message the studio. Longer terms cost less per month:
+  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a term (Monthly, no commitment, 3-Month, or 6-Month), paid one Zelle or Venmo installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active, nothing to book yourself. A plan is 4 classes a month. If a specific week doesn't work, the student can skip that class in the app up to 24 hours before it starts (see below); inside 24 hours they attend or message the studio. Longer terms cost less per month:
 ${planList}
   - Family (2+ separate, already-existing accounts sharing the same cadence and term at once) is a different, separate purchase: the exact same per-month rate and term discount a solo Payment Plan gets, paid once upfront for the whole term instead of monthly installments, plus an extra ${FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total (these classes never expire):
 ${bundleList}
@@ -143,7 +143,7 @@ ${bundleList}
   - Nothing about a purchase (curriculum, a payment plan installment, or a family bundle) is refundable as cash, the only way a class comes back is the 24h+ cancellation above.
 
 Payment:
-  - The only payment method is Zelle. It's reviewed by hand, so access isn't instant, usually the same day.
+  - Payment is by Zelle or Venmo, the student picks one when paying. It's reviewed by hand, so access isn't instant, usually the same day.
   - Submitting a fake or altered payment reference is treated as fraud and results in the account being closed.
 
 Privacy (full policy at /privacy, last updated ${PRIVACY_LAST_UPDATED}):

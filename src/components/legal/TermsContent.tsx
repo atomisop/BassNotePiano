@@ -43,14 +43,14 @@ export function TermsContent() {
       <TermsSection title="Class credits & bundles">
         <p>
           Every class is 45 minutes, one-on-one. Your weekly classes come from a Payment Plan: Monthly,
-          3-Month, or 6-Month, paid one Zelle installment at a time, longer terms at a lower rate. Enrolling
+          3-Month, or 6-Month, paid one Zelle or Venmo installment at a time, longer terms at a lower rate. Enrolling
           reserves your weekly day and time exclusively and auto-books it every week for as long as the plan stays
           active. You can skip or change a class up to 24 hours before it starts; inside 24 hours, please attend
           or message us. A skipped class stays on your account to rebook on another day, but it is forfeited if
           unused once that installment&apos;s monthly cycle expires.
         </p>
         <p>
-          Extra classes are $55 each, bought separately and paid by Zelle, for more time on top of your weekly
+          Extra classes are $55 each, bought separately and paid by Zelle or Venmo, for more time on top of your weekly
           class. Extra classes never expire.
         </p>
         <p>
@@ -88,15 +88,15 @@ export function TermsContent() {
         </p>
       </TermsSection>
 
-      <TermsSection title="Payment & Zelle">
+      <TermsSection title="Payment & Zelle or Venmo">
         <p>
-          Payments go through Zelle and are checked by hand before access or credits are granted, which is why
+          Payments go through Zelle or Venmo and are checked by hand before access or credits are granted, which is why
           it&apos;s not instant. Submitting a fake or altered payment reference to get access is fraud and results in
           the access being revoked and the account closed, no warning.
         </p>
         <p>
           Once access has been granted, reversing the underlying bank transfer instead of contacting us directly
-          (a &quot;chargeback&quot; on a Zelle payment) will get the account suspended while we sort it out.
+          (a &quot;chargeback&quot; on a Zelle or Venmo payment) will get the account suspended while we sort it out.
         </p>
       </TermsSection>
 

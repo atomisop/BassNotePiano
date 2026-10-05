@@ -369,6 +369,7 @@ export async function createCurriculumFamilyBundlePayment(input: CurriculumFamil
 export interface ZelleReferenceSubmission {
   senderName: string;
   note?: string;
+  method?: "ZELLE" | "VENMO";
 }
 
 /**
@@ -420,6 +421,7 @@ export async function submitZellePaymentReference(
       // that never provided one.
       referenceCode: null,
       note: input.note,
+      method: input.method === "VENMO" ? "VENMO" : "ZELLE",
       status: "PENDING_REVIEW",
       submittedAt: new Date(),
       rejectionReason: null,

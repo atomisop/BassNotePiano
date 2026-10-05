@@ -59,7 +59,7 @@ export function ZelleUnlockGate({
         onClick={() => setIsOpen(true)}
         className="cta-sheen cta-fill w-full rounded-xl py-2.5 text-small font-semibold"
       >
-        {status === "REJECTED" ? "Resubmit payment" : "Pay with Zelle"}
+        {status === "REJECTED" ? "Resubmit payment" : "Pay"}
       </button>
 
       <ZellePaymentModal
