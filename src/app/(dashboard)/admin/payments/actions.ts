@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
-import { approveZellePayment, rejectZellePayment } from "@/lib/payments";
+import { approveZellePayment, markPaymentChecked, rejectZellePayment } from "@/lib/payments";
 
 // The admin layout's redirect only protects rendering — Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
@@ -18,6 +18,12 @@ async function requireAdmin() {
 export async function approvePaymentAction(paymentId: string) {
   const admin = await requireAdmin();
   await approveZellePayment(paymentId, admin.id);
+  revalidatePath("/admin/payments");
+}
+
+export async function checkPaymentAction(paymentId: string) {
+  await requireAdmin();
+  await markPaymentChecked(paymentId);
   revalidatePath("/admin/payments");
 }
 

@@ -91,7 +91,8 @@ export function TermsContent() {
       <TermsSection title="Payment & Zelle or Venmo">
         <p>
           Payments go through Zelle or Venmo and are checked by hand before access or credits are granted, which is why
-          it&apos;s not instant. Submitting a fake or altered payment reference to get access is fraud and results in
+          it&apos;s not instant. For returning students, a monthly installment unlocks right away and is checked
+          afterward. Submitting a fake or altered payment reference to get access is fraud and results in
           the access being revoked and the account closed, no warning.
         </p>
         <p>

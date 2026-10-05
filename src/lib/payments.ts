@@ -1,4 +1,6 @@
-import { PaymentPlanCadence, PaymentPlanTerm, type Prisma, type ZellePaymentStatus } from "@prisma/client";
+import { getAdminRecipients, notifyAdmins } from "@/lib/adminNotifications";
+import { settleWithStoredReceipt } from "@/lib/paymentEmail";
+import { PaymentPlanCadence, PaymentPlanTerm, type PaymentPurpose, type Prisma, type ZellePaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AccessDeniedError, unlockScaleForUser, grantCurriculumAccess } from "@/lib/access";
 import { grantCredits } from "@/lib/creditLedger";
@@ -410,7 +412,7 @@ export async function submitZellePaymentReference(
     { windowMinutes: 60, max: 10, timestampField: "submittedAt", message: "Too many submissions. Please wait a bit and try again." },
   );
 
-  return prisma.zellePayment.update({
+  const submitted = await prisma.zellePayment.update({
     where: { id: paymentId },
     data: {
       senderName: input.senderName,
@@ -426,6 +428,106 @@ export async function submitZellePaymentReference(
       submittedAt: new Date(),
       rejectionReason: null,
     },
+  });
+
+  // If the money's email already arrived, settle now, otherwise fall back to
+  // the returning-student rule.
+  if (!(await settleWithStoredReceipt(submitted.id).catch(() => false))) {
+    await maybeAutoApprovePayment(submitted);
+  }
+  await notifyAdminsIfStillPending(submitted.id);
+  return submitted;
+}
+
+/**
+ * Tells every admin a payment is waiting, only when it really is: one the
+ * email match or the returning-student rule already approved needs no one.
+ */
+async function notifyAdminsIfStillPending(paymentId: string) {
+  try {
+    const payment = await prisma.zellePayment.findUnique({
+      where: { id: paymentId },
+      select: { status: true, amountCents: true, method: true, user: { select: { name: true, email: true } } },
+    });
+    if (!payment || payment.status !== "PENDING_REVIEW") return;
+    const admins = await getAdminRecipients("PAYMENT_REVIEW");
+    const amount = (payment.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+    await Promise.all(
+      admins.map((admin) =>
+        createNotification({
+          userId: admin.id,
+          type: "PAYMENT_SUBMITTED",
+          title: "Payment to review",
+          body: `${payment.user.name ?? payment.user.email} says they sent ${amount} by ${payment.method === "VENMO" ? "Venmo" : "Zelle"}.`,
+          emailCategory: "payments",
+        }),
+      ),
+    );
+  } catch (err) {
+    console.error("Admin payment notification failed (non-blocking):", err);
+  }
+}
+
+/** Verified payments a student needs before their installments are approved on submit. */
+const AUTO_APPROVE_MIN_VERIFIED = 2;
+
+/**
+ * Returning students get their monthly installment approved the moment they
+ * say they sent it, so access never waits on the admin. The admin still
+ * matches every one against the real transfer ("unchecked" until checkedAt).
+ *
+ * Exposure is capped on purpose: only plan installments, at least
+ * AUTO_APPROVE_MIN_VERIFIED payments the admin approved or checked, no
+ * rejection in the last 90 days, and never a second auto-approval while one
+ * is still unchecked. A fake payment therefore costs at most one month.
+ * Any failure here just leaves the payment in the normal pending queue.
+ */
+async function maybeAutoApprovePayment(payment: { id: string; userId: string; purpose: PaymentPurpose }) {
+  if (payment.purpose !== "PAYMENT_PLAN_INSTALLMENT") return;
+  try {
+    const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const [trusted, recentReject, unchecked] = await Promise.all([
+      prisma.zellePayment.count({
+        where: {
+          userId: payment.userId,
+          status: "VERIFIED",
+          OR: [{ autoApproved: false }, { checkedAt: { not: null } }],
+        },
+      }),
+      prisma.zellePayment.count({ where: { userId: payment.userId, status: "REJECTED", reviewedAt: { gte: since } } }),
+      prisma.zellePayment.count({
+        where: { userId: payment.userId, status: "VERIFIED", autoApproved: true, checkedAt: null },
+      }),
+    ]);
+    if (trusted < AUTO_APPROVE_MIN_VERIFIED || recentReject > 0 || unchecked > 0) return;
+    await approveZellePayment(payment.id, null, { auto: true });
+    await notifyAutoApproved(payment.id);
+  } catch (err) {
+    console.error("Auto-approval skipped", err);
+  }
+}
+
+/** Optional heads-up (owner decides who gets it) that a payment was approved without a person. */
+export async function notifyAutoApproved(paymentId: string) {
+  const payment = await prisma.zellePayment.findUnique({
+    where: { id: paymentId },
+    select: { amountCents: true, method: true, user: { select: { name: true, email: true } } },
+  });
+  if (!payment) return;
+  const amount = (payment.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+  await notifyAdmins("PAYMENT_AUTO_APPROVED", {
+    type: "ADMIN_ALERT",
+    title: "Payment approved automatically",
+    body: `${payment.user.name ?? payment.user.email} paid ${amount} by ${payment.method === "VENMO" ? "Venmo" : "Zelle"}.`,
+    emailCategory: "payments",
+  });
+}
+
+/** Admin confirms an auto-approved payment really arrived. */
+export async function markPaymentChecked(paymentId: string) {
+  await prisma.zellePayment.updateMany({
+    where: { id: paymentId, autoApproved: true, checkedAt: null },
+    data: { checkedAt: new Date() },
   });
 }
 
@@ -473,10 +575,10 @@ export type PendingZellePayment = Prisma.ZellePaymentGetPayload<{ include: typeo
  * the richer "all payments" view (verified/rejected/expired history), not
  * just the live pending queue.
  */
-export async function getAdminPayments(status?: ZellePaymentStatus): Promise<PendingZellePayment[]> {
+export async function getAdminPayments(status?: ZellePaymentStatus | "UNCHECKED"): Promise<PendingZellePayment[]> {
   await expireStalePendingPayments();
   return prisma.zellePayment.findMany({
-    where: status ? { status } : undefined,
+    where: status === "UNCHECKED" ? { autoApproved: true, checkedAt: null } : status ? { status } : undefined,
     orderBy: { createdAt: "desc" },
     include: pendingPaymentInclude,
   });
@@ -489,7 +591,7 @@ export async function getAdminPayments(status?: ZellePaymentStatus): Promise<Pen
  * entitlement grant happen here so the two can never drift apart (a
  * VERIFIED payment that never actually unlocked anything).
  */
-export async function approveZellePayment(paymentId: string, reviewerId: string) {
+export async function approveZellePayment(paymentId: string, reviewerId: string | null, opts?: { auto?: boolean }) {
   // STEP 19: the status flip and the entitlement grant used to be two (or
   // three, counting the legacy-scale read) separate, un-transacted writes.
   // The docstring above already says the point is that they "can never
@@ -525,7 +627,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string)
 
         await tx.zellePayment.update({
           where: { id: paymentId },
-          data: { status: "VERIFIED", reviewedAt: new Date(), reviewedById: reviewerId },
+          data: { status: "VERIFIED", reviewedAt: new Date(), reviewedById: reviewerId, autoApproved: opts?.auto === true },
         });
 
         if (payment.purpose === "CURRICULUM") {

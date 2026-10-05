@@ -1,3 +1,4 @@
+import { getAdminRecipients } from "@/lib/adminNotifications";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 import type { AttendanceStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -541,7 +542,7 @@ async function notifyAdminsOfBooking(
 ) {
   const [student, admins] = await Promise.all([
     prisma.user.findUnique({ where: { id: studentId }, select: { name: true, email: true } }),
-    prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } }),
+    getAdminRecipients("NEW_BOOKING"),
   ]);
   const studentLabel = student?.name ?? student?.email ?? "A student";
   const when = scheduledAt.toLocaleString("en-US", { timeZone: ET_ZONE, dateStyle: "full", timeStyle: "short" });
@@ -575,7 +576,7 @@ async function notifyAdminsOfFamilyBooking(
 ) {
   const [students, admins] = await Promise.all([
     prisma.user.findMany({ where: { id: { in: attendeeIds } }, select: { name: true, email: true } }),
-    prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } }),
+    getAdminRecipients("NEW_BOOKING"),
   ]);
   const names = students.map((s) => s.name ?? s.email).join(", ");
   const when = scheduledAt.toLocaleString("en-US", { timeZone: ET_ZONE, dateStyle: "full", timeStyle: "short" });

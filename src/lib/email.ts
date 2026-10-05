@@ -357,3 +357,32 @@ export async function sendWelcomeEmail(to: string, name: string | null) {
   await sendEmail({ to, subject: "Welcome to Bass Note Piano 🎹", html, text });
 }
 
+/**
+ * A copy of an email that arrived at the studio inbox (music@), sent to an
+ * employee. Plain text only, escaped, and replies go to the original sender.
+ */
+export async function sendForwardedStudioMail(to: string, mail: { from: string; subject: string; text: string }) {
+  const body = mail.text.length > 4000 ? `${mail.text.slice(0, 4000)}...` : mail.text;
+  const html = emailShell(
+    mail.subject,
+    `<p style="margin:0 0 12px;color:#9ca3af;font-size:13px;">From ${escapeHtml(mail.from)}</p><p style="margin:0;white-space:pre-wrap;">${escapeHtml(body)}</p>`,
+    { footerNote: "A copy of an email sent to the studio inbox, forwarded to you as an admin." },
+  );
+  const text = `From ${mail.from}\n\n${body}`;
+  const client = getResendClient();
+  if (!client) {
+    if (process.env.NODE_ENV === "production") throw new Error("RESEND_API_KEY is not set.");
+    console.log(`[dev] Forwarded studio mail to ${to}: ${mail.subject}`);
+    return;
+  }
+  const replyTo = mail.from.match(/<([^>]+)>/)?.[1] ?? mail.from;
+  const result = await client.emails.send({
+    from: EMAIL_FROM,
+    to,
+    subject: `Studio inbox: ${mail.subject}`.slice(0, 200),
+    html,
+    text,
+    replyTo: /^[^\s@<>]+@[^\s@<>]+$/.test(replyTo) ? replyTo : EMAIL_REPLY_TO,
+  });
+  if (result.error) throw new Error(`Resend failed to forward studio mail: ${result.error.message}`);
+}

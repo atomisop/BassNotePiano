@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { sendEmailIfEnabled } from "@/lib/notifications";
+import { createNotification, sendEmailIfEnabled } from "@/lib/notifications";
+import { getEmployeeRecipients, isOwnerEmail } from "@/lib/adminNotifications";
 import { getAppUrl } from "@/lib/email";
 import { isFriend, getFriendsList, SocialError } from "@/lib/social";
 import { assertRateLimit } from "@/lib/rateLimit";
@@ -96,6 +97,24 @@ export async function sendMessage(senderId: string, recipientId: string, body: s
     `${sender?.name ?? (sender?.username ? `@${sender.username}` : "Someone")} sent you a message.`,
     { label: "Click here to reply", url: getAppUrl(`/messages?with=${senderId}`) },
   );
+
+  // Optional heads-up for employees (the owner decides) that someone wrote to
+  // the owner account. Names the sender and a short preview only.
+  const recipient = await prisma.user.findUnique({ where: { id: recipientId }, select: { email: true } });
+  if (isOwnerEmail(recipient?.email)) {
+    const employees = await getEmployeeRecipients("OWNER_MESSAGES");
+    await Promise.all(
+      employees.map((employee) =>
+        createNotification({
+          userId: employee.id,
+          type: "ADMIN_ALERT",
+          title: "New message to the owner",
+          body: `${sender?.name ?? (sender?.username ? `@${sender.username}` : "Someone")}: "${trimmed.slice(0, 120)}"`,
+          emailCategory: "social",
+        }).catch((err) => console.error("Owner message alert failed (non-blocking):", err)),
+      ),
+    );
+  }
 
   return message;
 }

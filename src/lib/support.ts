@@ -1,3 +1,4 @@
+import { getAdminRecipients } from "@/lib/adminNotifications";
 // The live support chat behind Atom's "connect me to a person" handoff (see
 // AssistantWidget.tsx). An AssistantEscalation is the thread; SupportMessage
 // rows are its timeline — seeded from the pre-escalation Atom transcript at
@@ -87,31 +88,26 @@ export async function createAssistantEscalation(input: CreateAssistantEscalation
   const lastUserMessage = [...transcript].reverse().find((m) => m.role === "user");
   const whoLabel = contactName ? `${contactName} (${contactEmail})` : contactEmail;
 
-  // Deliberately NOT "every ADMIN" — per direct instruction, only the
-  // studio's own inbox should see a live handoff ping, regardless of how
-  // many other accounts hold the ADMIN role later (a co-instructor helping
-  // with the roster, say). If that email doesn't resolve to a real user
-  // (renamed, deleted), this silently notifies no one rather than falling
-  // back to every admin — a missed ping is recoverable from the /admin/support
-  // queue itself; an unwanted fan-out to the wrong inbox isn't.
-  const primaryAdmin = await prisma.user.findUnique({
-    where: { email: "isaacberhanu777@gmail.com" },
-    select: { id: true },
-  });
-  if (primaryAdmin) {
-    await createNotification({
-      userId: primaryAdmin.id,
-      type: "ASSISTANT_ESCALATION",
-      title: "Atom handoff: someone needs a person",
-      body: `${whoLabel} asked Atom to connect them with the team.${
-        lastUserMessage ? ` Last question: "${lastUserMessage.content.slice(0, 160)}"` : ""
-      }`,
-      // Mirrors the other admin-facing lead notification (class
-      // registrations) — there's no dedicated "ops alerts" email
-      // category, and this is the closest fit of the four that exist.
-      emailCategory: "social",
-    });
-  }
+  // Every admin sees a live handoff ping, so a co-instructor on the Employees
+  // list is reachable the same way the owner is. Each admin's own email
+  // preference still applies.
+  const admins = await getAdminRecipients("SUPPORT_CHAT");
+  await Promise.all(
+    admins.map((admin) =>
+      createNotification({
+        userId: admin.id,
+        type: "ASSISTANT_ESCALATION",
+        title: "Atom handoff: someone needs a person",
+        body: `${whoLabel} asked Atom to connect them with the team.${
+          lastUserMessage ? ` Last question: "${lastUserMessage.content.slice(0, 160)}"` : ""
+        }`,
+        // Mirrors the other admin-facing lead notification (class
+        // registrations): there's no dedicated "ops alerts" email category,
+        // and this is the closest fit of the four that exist.
+        emailCategory: "social",
+      }),
+    ),
+  );
 
   return escalation;
 }
@@ -194,9 +190,32 @@ export async function postVisitorMessage(
   const trimmed = body.trim().slice(0, MAX_VISITOR_MESSAGE_LENGTH);
   if (!trimmed) throw new AssistantEscalationError("Message can't be empty.");
 
+  // Only the first message of a burst pings the admins, so a visitor typing
+  // three lines in a row doesn't send three emails.
+  const previous = await prisma.supportMessage.findFirst({
+    where: { escalationId },
+    orderBy: { createdAt: "desc" },
+    select: { sender: true },
+  });
+
   await prisma.supportMessage.create({
     data: { escalationId, sender: "VISITOR", body: trimmed, identifier },
   });
+
+  if (previous?.sender !== "VISITOR") {
+    const admins = await getAdminRecipients("SUPPORT_CHAT");
+    await Promise.all(
+      admins.map((admin) =>
+        createNotification({
+          userId: admin.id,
+          type: "ASSISTANT_ESCALATION",
+          title: "New message in Support Chat",
+          body: `${escalation.contactName ?? escalation.contactEmail}: "${trimmed.slice(0, 160)}"`,
+          emailCategory: "social",
+        }).catch((err) => console.error("Support chat notification failed (non-blocking):", err)),
+      ),
+    );
+  }
 
   return getThreadForVisitor(escalationId);
 }

@@ -1,3 +1,4 @@
+import { getAdminRecipients } from "@/lib/adminNotifications";
 import { startTrialForEmail } from "@/lib/entitlement";
 import { TRIAL_DAYS } from "@/lib/entitlementRules";
 import type { ClassRegistrationStatus, PrimaryInstrument, SkillLevel } from "@prisma/client";
@@ -79,7 +80,7 @@ export async function submitClassRegistration(input: SubmitClassRegistrationInpu
     ).catch((err) => console.error("Class registration confirmation email failed (non-blocking):", err));
   }
 
-  const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
+  const admins = await getAdminRecipients("NEW_REGISTRATION");
   await Promise.all(
     admins.map((admin) =>
       createNotification({

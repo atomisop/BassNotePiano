@@ -1,3 +1,4 @@
+import { getAdminRecipients, notifyAdmins } from "@/lib/adminNotifications";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 import { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason, type Prisma, type PaymentPlanStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -403,12 +404,20 @@ export async function cancelPaymentPlan(planId: string, adminId: string, note: s
  * changing anything.
  */
 async function assertNoOpenInstallment(planId: string): Promise<void> {
+  // An installment the student opened but never said they paid is just an
+  // unpaid bill: close it so canceling or changing plans never waits on
+  // someone to expire it. Only one they already submitted (money may be on
+  // its way) still blocks, and the email match usually clears that on its own.
+  await prisma.zellePayment.updateMany({
+    where: { paymentPlanId: planId, status: "AWAITING_TRANSFER" },
+    data: { status: "EXPIRED" },
+  });
   const openPayment = await prisma.zellePayment.findFirst({
-    where: { paymentPlanId: planId, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
+    where: { paymentPlanId: planId, status: "PENDING_REVIEW" },
     select: { id: true },
   });
   if (openPayment) {
-    throw new PaymentPlanError("You have a payment in progress right now. Finish or wait for that to clear, then change your plan.");
+    throw new PaymentPlanError("Your last payment is still being confirmed. Try again in a few minutes, or message support if it takes longer.");
   }
 }
 
@@ -618,7 +627,7 @@ export async function cancelPaymentPlanBySelf(
   reason: PlanCancellationReason,
   reasonNote: string | null,
 ): Promise<void> {
-  if (!Object.values(PlanCancellationReason).includes(reason)) {
+  if (!Object.values(PlanCancellationReason).includes(reason) || reason === "NON_PAYMENT") {
     throw new PaymentPlanError(`"${reason}" isn't a valid reason.`);
   }
   const trimmedNote = reasonNote?.trim() || null;
@@ -657,7 +666,7 @@ export async function cancelPaymentPlanBySelf(
     emailCategory: "payments",
   });
 
-  const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
+  const admins = await getAdminRecipients("PLAN_CANCEL_FEEDBACK");
   await Promise.all(
     admins.map((admin) =>
       createNotification({
@@ -665,7 +674,59 @@ export async function cancelPaymentPlanBySelf(
         type: "PLAN_CANCELLATION_FEEDBACK",
         title: "A student canceled their plan",
         body: `${describePaymentPlan(plan.cadence, plan.term)} was self-canceled. See Payment Plans → Feedback for their reason.`,
+        emailCategory: "social",
       }),
     ),
   );
+}
+
+/** Days a plan may sit past due before the system cancels it. */
+export const LAPSE_AFTER_DAYS = 7;
+
+/**
+ * Cancels a plan that has gone LAPSE_AFTER_DAYS past due with nothing in
+ * review: same effects as a self-cancel (open unpaid bill closed, future
+ * reserved classes released) with the system as the actor. Returns false
+ * when it should not lapse (already settled, or a payment is mid-review).
+ */
+export async function lapsePlanForNonPayment(planId: string): Promise<boolean> {
+  const plan = await prisma.paymentPlan.findUnique({ where: { id: planId } });
+  if (!plan || plan.status !== "ACTIVE") return false;
+  const inReview = await prisma.zellePayment.findFirst({
+    where: { paymentPlanId: planId, status: "PENDING_REVIEW" },
+    select: { id: true },
+  });
+  if (inReview) return false;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.paymentPlan.update({
+      where: { id: planId },
+      data: { status: "CANCELED", canceledAt: new Date(), cancellationReason: "NON_PAYMENT" },
+    });
+    await tx.zellePayment.updateMany({
+      where: { paymentPlanId: planId, status: "AWAITING_TRANSFER" },
+      data: { status: "EXPIRED" },
+    });
+    await tx.classBooking.updateMany({
+      where: { reservedByPlanId: planId, status: "SCHEDULED", scheduledAt: { gt: new Date() } },
+      data: { status: "CANCELED", refunded: true },
+    });
+  });
+
+  await createNotification({
+    userId: plan.userId,
+    type: "PAYMENT_PLAN_CANCELED",
+    title: "Your plan was canceled",
+    body: "Your payment is a week overdue, so your plan was canceled and your weekly time is open again. Start a new plan to come back.",
+    emailCategory: "payments",
+  });
+
+  const student = await prisma.user.findUnique({ where: { id: plan.userId }, select: { name: true, email: true } });
+  await notifyAdmins("PLAN_LAPSED", {
+    type: "ADMIN_ALERT",
+    title: "Plan canceled for non-payment",
+    body: `${student?.name ?? student?.email ?? "A student"} went a week past due, so their plan was canceled.`,
+    emailCategory: "social",
+  });
+  return true;
 }

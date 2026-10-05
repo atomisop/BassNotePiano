@@ -178,6 +178,7 @@ enum PaymentPlanStatus {
 // OTHER as the 9th, freeform via cancellationReasonNote. Read by admins on
 // /admin/feedback. Order here is display order in the picker.
 enum PlanCancellationReason {
+  NON_PAYMENT // set by the system when a plan goes a week past due, never offered to a student
   TOO_EXPENSIVE
   NOT_ENOUGH_TIME
   SCHEDULE_CONFLICT
@@ -376,6 +377,9 @@ model UserBadge {
 // ---------------------------------------------------------------------------
 
 enum NotificationType {
+  BADGE_EARNED // to the student, when they earn a badge
+  ADMIN_ALERT // to admins, for the optional alerts the owner switches on (lapsed plans, automatic approvals, owner messages)
+  PAYMENT_SUBMITTED // to every admin, when a payment is waiting for review (not for one approved automatically)
   PAYMENT_APPROVED
   PAYMENT_REJECTED
   ROLE_UPDATED
@@ -1324,6 +1328,12 @@ model ZellePayment {
   // Set when the student submits. Rows created before Venmo existed are Zelle.
   method PaymentMethod @default(ZELLE)
 
+  // Set when a returning student's installment was approved by the system on
+  // submit instead of by the admin (see maybeAutoApprovePayment). Stays
+  // "unchecked" until the admin confirms the money arrived (checkedAt).
+  autoApproved Boolean   @default(false)
+  checkedAt    DateTime?
+
   // Filled in by the student on the "I've sent it" step of the modal
   senderName    String?
   referenceCode String? // Zelle confirmation/reference number
@@ -1532,4 +1542,39 @@ model RateLimitEvent {
   createdAt DateTime @default(now())
 
   @@index([key, createdAt])
+}
+
+// One row per "you received money" email the owner's Gmail forwarded in
+// (see src/lib/paymentEmail.ts). messageId is unique so the same email can
+// never approve two payments. paymentId is set once a payment is settled
+// from it; null means no open payment matched yet, and a later submission
+// can still claim it.
+model ProcessedPaymentEmail {
+  id          String        @id @default(cuid())
+  messageId   String        @unique
+  method      PaymentMethod
+  senderName  String
+  amountCents Int
+  memo        String?       @db.Text
+  paymentId   String?
+  createdAt   DateTime      @default(now())
+
+  @@index([amountCents, createdAt])
+}
+
+// Which admin-facing notifications reach employees (every admin except the
+// owner). One row per kind in src/lib/adminNotifications.ts; no row means the
+// kind's default. Only the owner account can change these.
+model AdminNotificationSetting {
+  kind             String   @id
+  employeesEnabled Boolean
+  updatedAt        DateTime @updatedAt
+}
+
+// Emails sent to music@bassnotepiano.com that the owner's Gmail script
+// passed on, so the same message is never copied to employees twice.
+model ForwardedMail {
+  id        String   @id @default(cuid())
+  messageId String   @unique
+  createdAt DateTime @default(now())
 }
