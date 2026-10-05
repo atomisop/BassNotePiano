@@ -8,6 +8,7 @@ import type { ReservableSlot } from "@/lib/classSchedule";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { BookingCalendar } from "../../lessons/BookingCalendar";
 import { enrollInPaymentPlanAction, getReservableSlotsAction, submitPlanInstallmentPaymentAction } from "./actions";
 
 function formatUsd(cents: number) {
@@ -22,6 +23,21 @@ function formatTimeLabel(hhmm: string): string {
   const period = h >= 12 ? "PM" : "AM";
   const hour12 = h % 12 === 0 ? 12 : h % 12;
   return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
+}
+
+/** Start time plus the plan's class length, e.g. "6:00 PM to 6:30 PM". */
+function formatTimeRange(startHHmm: string, minutes: number): string {
+  const [h, m] = startHHmm.split(":").map(Number);
+  const total = h * 60 + m + minutes;
+  return `${formatTimeLabel(startHHmm)} to ${formatTimeLabel(`${Math.floor(total / 60) % 24}:${String(total % 60).padStart(2, "0")}`)}`;
+}
+
+/** The next `weeks` calendar dates (as UTC-midnight ms, the key BookingCalendar uses) that fall on `dayOfWeek`, starting today. */
+function upcomingDatesFor(dayOfWeek: number, weeks: number): number[] {
+  const now = new Date();
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const ahead = (dayOfWeek - now.getDay() + 7) % 7;
+  return Array.from({ length: weeks }, (_, i) => today + (ahead + i * 7) * 86_400_000);
 }
 
 const CADENCE_OPTIONS: { value: PaymentPlanCadence; label: string }[] = [
@@ -81,6 +97,7 @@ export function PaymentPlanEnrollmentFlow({
   const [slots, setSlots] = useState<ReservableSlot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [selectedSlot, setSelectedSlot] = useState<ReservableSlot | null>(null);
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
   const [acknowledged, setAcknowledged] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,21 +119,20 @@ export function PaymentPlanEnrollmentFlow({
   const classMinutes = cadence === "MIN_60_WEEKLY" ? 60 : 30;
   const termPhrase = rate.termMonths === 1 ? "this month" : `your whole ${rate.termMonths}-month term`;
 
-  // Grouped by day, not one flat list: the same weekday can legitimately
-  // offer more than one start time (a longer admin-defined window split
-  // into several bookable chunks), which used to render as the day name
-  // repeated back to back for each time, reading as a bug ("the days
-  // double up") rather than what it actually is, more than one option on
-  // that day.
-  const slotsByDay = useMemo(() => {
-    const groups = new Map<number, ReservableSlot[]>();
-    for (const slot of slots) {
-      const forDay = groups.get(slot.dayOfWeek) ?? [];
-      forDay.push(slot);
-      groups.set(slot.dayOfWeek, forDay);
-    }
-    return Array.from(groups.entries()).sort(([a], [b]) => a - b);
-  }, [slots]);
+  // A calendar like the class booking page: every open weekly time shows up
+  // on the next few dates that fall on its weekday, so you pick a day you can
+  // see, then a time. What you are really choosing is "every <weekday> at
+  // <time>", locked in for the term; the dates are just a friendly way to
+  // point at it.
+  const calendarRows = useMemo(
+    () => slots.flatMap((slot) => upcomingDatesFor(slot.dayOfWeek, 6).map((ms) => ({ occurrenceDateMs: ms, isBooked: false, slot }))),
+    [slots],
+  );
+  const daySlots = useMemo(() => {
+    if (!selectedDateKey) return [];
+    const weekday = new Date(`${selectedDateKey}T00:00:00Z`).getUTCDay();
+    return slots.filter((slot) => slot.dayOfWeek === weekday).sort((x, y) => x.startTime.localeCompare(y.startTime));
+  }, [slots, selectedDateKey]);
 
   // Re-fetched whenever cadence changes (not term — a slot's room only
   // depends on the weekly credit cost, which is cadence-only, see
@@ -127,6 +143,7 @@ export function PaymentPlanEnrollmentFlow({
     let cancelled = false;
     setSlotsLoading(true);
     setSelectedSlot(null);
+    setSelectedDateKey(null);
     getReservableSlotsAction(cadence).then((result) => {
       if (!cancelled) {
         setSlots(result);
@@ -266,8 +283,8 @@ export function PaymentPlanEnrollmentFlow({
 
       <div>
         <p className="text-small font-medium text-slate-400">Your weekly time</p>
-        <p className="mt-0.5 mb-2 text-small text-slate-500">
-          Pick one below, it&apos;s yours every week for {termPhrase}, booked for you automatically.
+        <p className="mt-0.5 mb-3 text-small text-slate-500">
+          Pick a day, then a time. It becomes yours every week for {termPhrase}, booked for you automatically.
         </p>
         {slotsLoading ? (
           <div className="flex items-center justify-center rounded-lg py-6 bg-neu-base shadow-raised-low">
@@ -278,33 +295,60 @@ export function PaymentPlanEnrollmentFlow({
             No open weekly times for this cadence right now, message us and we&apos;ll help you find one.
           </p>
         ) : (
-          <div className="max-h-56 space-y-3 overflow-y-auto pr-1">
-            {slotsByDay.map(([dayOfWeek, daySlots]) => (
-              <div key={dayOfWeek}>
-                <p className="mb-1 text-small font-medium text-slate-500">{DAY_LABELS[dayOfWeek]}</p>
-                <div className="space-y-1.5">
-                  {daySlots.map((slot) => {
-                    const active = selectedSlot?.scheduleId === slot.scheduleId && selectedSlot?.chunkIndex === slot.chunkIndex;
-                    return (
-                      <button
-                        key={`${slot.scheduleId}:${slot.chunkIndex}`}
-                        type="button"
-                        onClick={() => setSelectedSlot(slot)}
-                        className={`flex w-full items-center justify-between rounded-lg border px-3.5 py-2.5 text-left transition ${
-                          active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-transparent bg-neu-base shadow-raised-low"
-                        }`}
-                      >
-                        <span className={`text-small font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>
-                          {formatTimeLabel(slot.startTime)}
-                        </span>
-                        {slot.label && <span className="text-small text-slate-500">{slot.label}</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
+          <>
+            <BookingCalendar
+              occurrences={calendarRows}
+              selectedDateKey={selectedDateKey}
+              onSelectDate={(key) => {
+                setSelectedDateKey(key);
+                setSelectedSlot(null);
+              }}
+            />
+            <div className="mt-4">
+              {!selectedDateKey ? (
+                <p className="text-small text-slate-500">Tap a day with a dot to see its open times.</p>
+              ) : (
+                <>
+                  <p className="mb-2 text-small font-medium text-slate-300">
+                    {new Date(`${selectedDateKey}T00:00:00Z`).toLocaleDateString(undefined, {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                      timeZone: "UTC",
+                    })}
+                  </p>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {daySlots.map((slot) => {
+                      const active = selectedSlot?.scheduleId === slot.scheduleId && selectedSlot?.chunkIndex === slot.chunkIndex;
+                      return (
+                        <button
+                          key={`${slot.scheduleId}:${slot.chunkIndex}`}
+                          type="button"
+                          onClick={() => setSelectedSlot(slot)}
+                          aria-pressed={active}
+                          className={`tap flex min-h-11 items-center justify-between rounded-xl px-3.5 py-2.5 text-left transition bg-neu-base ${
+                            active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                          }`}
+                        >
+                          <span className={`text-small font-semibold ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>
+                            {formatTimeRange(slot.startTime, classMinutes)}
+                          </span>
+                          <span className="text-small text-slate-500">{active ? "Selected" : slot.label ?? `${classMinutes} min`}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+            {selectedSlot && (
+              <p className="mt-3 rounded-xl bg-neu-base px-3.5 py-3 text-small text-slate-300 shadow-pressed-low">
+                Locked in every <span className="font-semibold text-slate-50">{DAY_LABELS[selectedSlot.dayOfWeek]}</span> at{" "}
+                <span className="font-semibold text-slate-50">{formatTimeRange(selectedSlot.startTime, classMinutes)}</span>{" "}
+                for {termPhrase}.
+              </p>
+            )}
+          </>
         )}
       </div>
 
