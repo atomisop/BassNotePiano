@@ -19,6 +19,10 @@ function forwardPaymentEmails() {
   GmailApp.search(query, 0, 30).forEach(function (thread) {
     let allSent = true;
     thread.getMessages().forEach(function (message) {
+      // Gmail records whether the sender really owns the domain. A forged
+      // "from" fails this, so it is never sent to the site.
+      const header = message.getRawContent().split('\r\n\r\n')[0];
+      if (!/Authentication-Results:[^]*?dmarc=pass/i.test(header)) return;
       const response = UrlFetchApp.fetch(URL, {
         method: 'post',
         contentType: 'application/json',

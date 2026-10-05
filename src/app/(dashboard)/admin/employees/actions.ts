@@ -17,6 +17,8 @@ async function requireAdmin() {
 
 export async function revokeEmployeeAction(targetUserId: string): Promise<{ ok: boolean; error: string | null }> {
   const admin = await requireAdmin();
+  // Only the owner removes admins. An employee can't remove another employee.
+  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can revoke admin access." };
   try {
     await revokeEmployee(targetUserId, admin.id);
   } catch (err) {

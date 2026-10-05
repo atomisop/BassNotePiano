@@ -1,3 +1,4 @@
+import { isOwnerEmail } from "@/lib/adminNotifications";
 import { getCurriculumEntitlements } from "@/lib/entitlement";
 import { computeNextApproval, isFullAccess, type CurriculumAccessKind, type NextApproval } from "@/lib/entitlementRules";
 import type { Role } from "@prisma/client";
@@ -422,7 +423,7 @@ export async function listEmployees(): Promise<EmployeeRow[]> {
     orderBy: { createdAt: "asc" },
     select: { id: true, name: true, email: true, createdAt: true },
   });
-  return admins.map((admin, index) => ({ ...admin, isOwner: index === 0 }));
+  return admins.map((admin) => ({ ...admin, isOwner: isOwnerEmail(admin.email) }));
 }
 
 /** Takes admin access away from one employee. Refuses the owner, yourself, and the last admin. */

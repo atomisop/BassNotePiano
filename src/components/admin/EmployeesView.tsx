@@ -54,7 +54,7 @@ export function EmployeesView({ employees, currentUserId, onRevoke, notification
       )}
 
       {tab === "ADMINS" || !notifications ? (
-        <EmployeeList employees={employees} currentUserId={currentUserId} onRevoke={onRevoke} />
+        <EmployeeList employees={employees} currentUserId={currentUserId} canRevoke={notifications !== null} onRevoke={onRevoke} />
       ) : (
         <div className="glass-surface divide-y divide-[rgb(var(--c-s-50)/0.08)] p-2">
           {error && <p className="px-3 py-2 text-small text-red-400">{error}</p>}

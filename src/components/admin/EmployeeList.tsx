@@ -8,11 +8,13 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 export interface EmployeeListProps {
   employees: EmployeeRow[];
   currentUserId: string;
+  /** Only the owner can revoke, so everyone else sees the list without the button. */
+  canRevoke: boolean;
   onRevoke: (userId: string) => Promise<{ ok: boolean; error: string | null }>;
 }
 
 /** Admin accounts with a two-step revoke, same confirm pattern as the payment queue. */
-export function EmployeeList({ employees, currentUserId, onRevoke }: EmployeeListProps) {
+export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRevoke, onRevoke }: EmployeeListProps) {
   const router = useRouter();
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -38,7 +40,7 @@ export function EmployeeList({ employees, currentUserId, onRevoke }: EmployeeLis
     <div className="space-y-3">
       {error && <p className="text-small text-red-400">{error}</p>}
       {employees.map((employee) => {
-        const canRevoke = !employee.isOwner && employee.id !== currentUserId;
+        const canRevoke = viewerCanRevoke && !employee.isOwner && employee.id !== currentUserId;
         return (
           <div key={employee.id} className="glass-surface p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">

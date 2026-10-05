@@ -102,10 +102,10 @@ type OpenPayment = {
 };
 
 function paymentMatchesReceipt(payment: OpenPayment, receipt: { senderName: string; amountCents: number }) {
-  return (
-    payment.amountCents === receipt.amountCents &&
-    (namesMatch(payment.senderName, receipt.senderName) || namesMatch(payment.user.name, receipt.senderName))
-  );
+  // Only the account holder's own name counts. The sender name a student types
+  // when submitting is theirs to choose, so it must never be what claims
+  // someone else's money. A mismatch just leaves the payment for the admin.
+  return payment.amountCents === receipt.amountCents && namesMatch(payment.user.name, receipt.senderName);
 }
 
 async function approveFromReceipt(paymentId: string, receipt: { id: string; senderName: string; method: PaymentMethod }) {
