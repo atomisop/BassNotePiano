@@ -1533,6 +1533,8 @@ export async function getPendingAttendanceBookings(limit = 20): Promise<PendingA
 
 export interface BookingFeedRow extends PendingAttendanceRow {
   creditsSpent: number;
+  /** A subscription whose first payment has not been approved yet: shown with its chosen weekly time, but nothing to mark. */
+  awaitingPayment?: boolean;
 }
 
 /**
@@ -1551,7 +1553,7 @@ export async function getBookingFeed(limit = 300): Promise<BookingFeedRow[]> {
     orderBy: { scheduledAt: "asc" },
     take: limit,
   });
-  return bookings.map((b) => ({
+  const rows: BookingFeedRow[] = bookings.map((b) => ({
     bookingId: b.id,
     studentName: b.student.name,
     studentEmail: b.student.email,
@@ -1559,6 +1561,35 @@ export async function getBookingFeed(limit = 300): Promise<BookingFeedRow[]> {
     scheduledAt: b.scheduledAt,
     creditsSpent: b.creditsSpent,
   }));
+
+  // New subscriptions show up the moment they are chosen, as the first class of
+  // the weekly time they committed to. The real weekly bookings replace this row
+  // as soon as the first payment is approved.
+  const waiting = await prisma.paymentPlan.findMany({
+    where: { status: "ACTIVE", installmentsPaid: 0, reservedScheduleId: { not: null } },
+    include: { user: { select: { name: true, email: true } }, reservedSchedule: true },
+  });
+  for (const plan of waiting) {
+    const slot = plan.reservedSchedule;
+    if (!slot || plan.reservedChunkIndex === null || !slot.active) continue;
+    const chunk = chunksForSchedule(slot)[plan.reservedChunkIndex];
+    if (!chunk) continue;
+    // Today's date comes first, so skip it if this week's class already started.
+    const upcoming = nextOccurrenceDates(slot.dayOfWeek, 2)
+      .map((date) => computeScheduledAt(slot, date, chunk))
+      .find((at) => at.getTime() > Date.now());
+    if (!upcoming) continue;
+    rows.push({
+      bookingId: `plan:${plan.id}`,
+      studentName: plan.user.name,
+      studentEmail: plan.user.email,
+      scheduleLabel: slot.label,
+      scheduledAt: upcoming,
+      creditsSpent: 0,
+      awaitingPayment: true,
+    });
+  }
+  return rows.sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
 }
 
 /** Every occurrence with at least one non-canceled booking, in the recent-past-to-future window, newest first. */
