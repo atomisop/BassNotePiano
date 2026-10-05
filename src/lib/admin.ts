@@ -341,7 +341,12 @@ export async function searchStudentsForBooking(query: string): Promise<BookableS
 
 export async function setUserRole(userId: string, role: Role) {
   const before = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { role: true } });
-  const updated = await prisma.user.update({ where: { id: userId }, data: { role } });
+  // Losing admin signs every open session out (sessionVersion), so the old
+  // admin tab stops working immediately instead of at its next refresh.
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: role === "ADMIN" ? { role } : { role, ...(before.role === "ADMIN" ? { sessionVersion: { increment: 1 } } : {}) },
+  });
 
   if (role === "ADMIN" && before.role !== "ADMIN") {
     await createNotification({
@@ -400,4 +405,33 @@ export async function setCurriculumAccess(userId: string, hasAccess: boolean) {
   }).catch((err) => console.error(`Failed to notify user ${userId} of curriculum access change (non-blocking):`, err));
 
   return user;
+}
+
+export interface EmployeeRow {
+  id: string;
+  name: string | null;
+  email: string;
+  createdAt: Date;
+  isOwner: boolean;
+}
+
+/** Every admin account, longest-standing first. The first one is the owner and cannot be revoked here. */
+export async function listEmployees(): Promise<EmployeeRow[]> {
+  const admins = await prisma.user.findMany({
+    where: { role: "ADMIN" },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true, email: true, createdAt: true },
+  });
+  return admins.map((admin, index) => ({ ...admin, isOwner: index === 0 }));
+}
+
+/** Takes admin access away from one employee. Refuses the owner, yourself, and the last admin. */
+export async function revokeEmployee(targetUserId: string, actingAdminId: string) {
+  if (targetUserId === actingAdminId) throw new Error("You can't revoke your own admin access.");
+  const admins = await listEmployees();
+  const target = admins.find((admin) => admin.id === targetUserId);
+  if (!target) throw new Error("That account isn't an admin.");
+  if (target.isOwner) throw new Error("The owner account can't be revoked.");
+  if (admins.length <= 1) throw new Error("There must always be one admin.");
+  await setUserRole(targetUserId, "STUDENT");
 }

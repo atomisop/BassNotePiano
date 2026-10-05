@@ -46,6 +46,7 @@ const NAV_GROUPS: AdminNavGroup[] = [
     label: "Students",
     leaves: [
       { href: "/admin/students", label: "Students" },
+      { href: "/admin/employees", label: "Employees" },
       { href: "/admin/users", label: "Users" },
       { href: "/admin/progress", label: "Progress" },
     ],
