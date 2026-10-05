@@ -1,11 +1,13 @@
 import { getServerAuthSession } from "@/lib/auth";
 import { listEmployees } from "@/lib/admin";
-import { EmployeeList } from "@/components/admin/EmployeeList";
-import { revokeEmployeeAction } from "./actions";
+import { ADMIN_NOTIFICATION_KINDS, getAdminNotificationSettings, isOwnerEmail } from "@/lib/adminNotifications";
+import { EmployeesView } from "@/components/admin/EmployeesView";
+import { revokeEmployeeAction, setEmployeeNotificationAction } from "./actions";
 
 export default async function AdminEmployeesPage() {
   const session = await getServerAuthSession();
-  const employees = await listEmployees();
+  const isOwner = isOwnerEmail(session?.user.email);
+  const [employees, settings] = await Promise.all([listEmployees(), isOwner ? getAdminNotificationSettings() : null]);
 
   return (
     <div>
@@ -16,7 +18,17 @@ export default async function AdminEmployeesPage() {
       </p>
 
       <div className="mt-6">
-        <EmployeeList employees={employees} currentUserId={session?.user.id ?? ""} onRevoke={revokeEmployeeAction} />
+        <EmployeesView
+          employees={employees}
+          currentUserId={session?.user.id ?? ""}
+          onRevoke={revokeEmployeeAction}
+          notifications={
+            isOwner && settings
+              ? ADMIN_NOTIFICATION_KINDS.map(({ kind, label }) => ({ kind, label, enabled: settings[kind] }))
+              : null
+          }
+          onToggleNotification={setEmployeeNotificationAction}
+        />
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { getAdminRecipients, notifyAdmins } from "@/lib/adminNotifications";
 import { settleWithStoredReceipt } from "@/lib/paymentEmail";
 import { PaymentPlanCadence, PaymentPlanTerm, type PaymentPurpose, type Prisma, type ZellePaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -449,7 +450,7 @@ async function notifyAdminsIfStillPending(paymentId: string) {
       select: { status: true, amountCents: true, method: true, user: { select: { name: true, email: true } } },
     });
     if (!payment || payment.status !== "PENDING_REVIEW") return;
-    const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
+    const admins = await getAdminRecipients("PAYMENT_REVIEW");
     const amount = (payment.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
     await Promise.all(
       admins.map((admin) =>
@@ -500,9 +501,26 @@ async function maybeAutoApprovePayment(payment: { id: string; userId: string; pu
     ]);
     if (trusted < AUTO_APPROVE_MIN_VERIFIED || recentReject > 0 || unchecked > 0) return;
     await approveZellePayment(payment.id, null, { auto: true });
+    await notifyAutoApproved(payment.id);
   } catch (err) {
     console.error("Auto-approval skipped", err);
   }
+}
+
+/** Optional heads-up (owner decides who gets it) that a payment was approved without a person. */
+export async function notifyAutoApproved(paymentId: string) {
+  const payment = await prisma.zellePayment.findUnique({
+    where: { id: paymentId },
+    select: { amountCents: true, method: true, user: { select: { name: true, email: true } } },
+  });
+  if (!payment) return;
+  const amount = (payment.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+  await notifyAdmins("PAYMENT_AUTO_APPROVED", {
+    type: "ADMIN_ALERT",
+    title: "Payment approved automatically",
+    body: `${payment.user.name ?? payment.user.email} paid ${amount} by ${payment.method === "VENMO" ? "Venmo" : "Zelle"}.`,
+    emailCategory: "payments",
+  });
 }
 
 /** Admin confirms an auto-approved payment really arrived. */

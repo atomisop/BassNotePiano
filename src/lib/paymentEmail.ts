@@ -1,6 +1,6 @@
 import type { PaymentMethod } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { approveZellePayment } from "@/lib/payments";
+import { approveZellePayment, notifyAutoApproved } from "@/lib/payments";
 
 /**
  * Settles payments from the "you received money" emails the owner's Gmail
@@ -129,6 +129,7 @@ async function approveFromReceipt(paymentId: string, receipt: { id: string; send
     await approveZellePayment(paymentId, null, { auto: true });
     // The money is confirmed by the email itself, so nothing is left to check.
     await prisma.zellePayment.update({ where: { id: paymentId }, data: { checkedAt: new Date() } });
+    await notifyAutoApproved(paymentId);
     return true;
   } catch (err) {
     console.error("Email approval failed, releasing the receipt", err);

@@ -1,3 +1,4 @@
+import { getAdminRecipients, notifyAdmins } from "@/lib/adminNotifications";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 import { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason, type Prisma, type PaymentPlanStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -665,7 +666,7 @@ export async function cancelPaymentPlanBySelf(
     emailCategory: "payments",
   });
 
-  const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
+  const admins = await getAdminRecipients("PLAN_CANCEL_FEEDBACK");
   await Promise.all(
     admins.map((admin) =>
       createNotification({
@@ -718,6 +719,14 @@ export async function lapsePlanForNonPayment(planId: string): Promise<boolean> {
     title: "Your plan was canceled",
     body: "Your payment is a week overdue, so your plan was canceled and your weekly time is open again. Start a new plan to come back.",
     emailCategory: "payments",
+  });
+
+  const student = await prisma.user.findUnique({ where: { id: plan.userId }, select: { name: true, email: true } });
+  await notifyAdmins("PLAN_LAPSED", {
+    type: "ADMIN_ALERT",
+    title: "Plan canceled for non-payment",
+    body: `${student?.name ?? student?.email ?? "A student"} went a week past due, so their plan was canceled.`,
+    emailCategory: "social",
   });
   return true;
 }

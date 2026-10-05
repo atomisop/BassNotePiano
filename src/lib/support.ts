@@ -1,3 +1,4 @@
+import { getAdminRecipients } from "@/lib/adminNotifications";
 // The live support chat behind Atom's "connect me to a person" handoff (see
 // AssistantWidget.tsx). An AssistantEscalation is the thread; SupportMessage
 // rows are its timeline — seeded from the pre-escalation Atom transcript at
@@ -90,7 +91,7 @@ export async function createAssistantEscalation(input: CreateAssistantEscalation
   // Every admin sees a live handoff ping, so a co-instructor on the Employees
   // list is reachable the same way the owner is. Each admin's own email
   // preference still applies.
-  const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
+  const admins = await getAdminRecipients("SUPPORT_CHAT");
   await Promise.all(
     admins.map((admin) =>
       createNotification({
@@ -202,7 +203,7 @@ export async function postVisitorMessage(
   });
 
   if (previous?.sender !== "VISITOR") {
-    const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true } });
+    const admins = await getAdminRecipients("SUPPORT_CHAT");
     await Promise.all(
       admins.map((admin) =>
         createNotification({
