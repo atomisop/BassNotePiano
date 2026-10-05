@@ -171,8 +171,12 @@ export function PaymentQueue({
 
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-small">
             <div>
-              <dt className="text-small text-slate-600">Sender name</dt>
+              <dt className="text-small text-slate-600">{payment.method === "VENMO" ? "Venmo name" : "Zelle name"}</dt>
               <dd className="text-slate-300">{payment.senderName ?? "None"}</dd>
+            </div>
+            <div>
+              <dt className="text-small text-slate-600">Paid with</dt>
+              <dd className="text-slate-300">{payment.method === "VENMO" ? "Venmo" : "Zelle"}</dd>
             </div>
             <div>
               <dt className="text-small text-slate-600">Submitted</dt>

@@ -276,6 +276,12 @@ enum LessonBookingStatus {
   CANCELED
 }
 
+// How the student paid. Both are manual: the admin matches the transfer by hand.
+enum PaymentMethod {
+  ZELLE
+  VENMO
+}
+
 enum ZellePaymentStatus {
   AWAITING_TRANSFER // modal opened, instructions shown, user hasn't submitted a reference yet
   PENDING_REVIEW // user submitted a reference code; awaiting manual/automated verification
@@ -1314,6 +1320,9 @@ model ZellePayment {
 
   amountCents Int
   zelleHandle String // platform's receiving handle/email shown to the user at request time
+
+  // Set when the student submits. Rows created before Venmo existed are Zelle.
+  method PaymentMethod @default(ZELLE)
 
   // Filled in by the student on the "I've sent it" step of the modal
   senderName    String?

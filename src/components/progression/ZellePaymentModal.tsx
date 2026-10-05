@@ -4,6 +4,8 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { Tabs } from "@/components/ui/Tabs";
+import { QRCodeSVG } from "qrcode.react";
 
 export interface ZellePaymentModalProps {
   isOpen: boolean;
@@ -20,6 +22,7 @@ export interface ZellePaymentModalProps {
   onSubmit: (payload: {
     senderName: string;
     note?: string;
+    method: "ZELLE" | "VENMO";
   }) => Promise<void>;
 }
 
@@ -52,6 +55,20 @@ const stepVariants = {
   exit: { opacity: 0, x: -16, transition: { duration: 0.15 } },
 };
 
+// Venmo usernames are letters, digits, dashes and underscores. Anything else
+// in the env var would break the link, so Venmo is simply hidden.
+const VENMO_HANDLE = (process.env.NEXT_PUBLIC_VENMO_HANDLE ?? "").replace(/^@/, "").trim();
+const VENMO_OK = /^[A-Za-z0-9_-]{2,40}$/.test(VENMO_HANDLE);
+
+/** Pre-filled Venmo links. The app link opens Venmo on a phone, the web link is what the QR code carries. */
+function venmoLinks(amountCents: number, note: string) {
+  const query = `txn=pay&amount=${(amountCents / 100).toFixed(2)}&note=${encodeURIComponent(note)}&audience=private`;
+  return {
+    app: `venmo://paycharge?recipients=${VENMO_HANDLE}&${query}`,
+    web: `https://venmo.com/${VENMO_HANDLE}?${query}`,
+  };
+}
+
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
@@ -70,11 +87,14 @@ export function ZellePaymentModal({
   const [senderName, setSenderName] = useState("");
   const [note, setNote] = useState("");
   const [copied, setCopied] = useState(false);
+  const [method, setMethod] = useState<"ZELLE" | "VENMO">("ZELLE");
+  const venmo = venmoLinks(amountCents, `${scaleTitle} (Bass Note Piano)`);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function reset() {
     setStep("instructions");
+    setMethod("ZELLE");
     setSenderName("");
     setNote("");
     setError(null);
@@ -88,7 +108,7 @@ export function ZellePaymentModal({
   }
 
   async function handleCopyHandle() {
-    await navigator.clipboard.writeText(zelleHandle);
+    await navigator.clipboard.writeText(method === "VENMO" ? `@${VENMO_HANDLE}` : zelleHandle);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1800);
   }
@@ -101,7 +121,7 @@ export function ZellePaymentModal({
     setError(null);
     setSubmitting(true);
     try {
-      await onSubmit({ senderName: senderName.trim(), note: note.trim() || undefined });
+      await onSubmit({ senderName: senderName.trim(), note: note.trim() || undefined, method });
       setStep("pending");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong submitting your confirmation.");
@@ -165,15 +185,44 @@ export function ZellePaymentModal({
               <AnimatePresence mode="wait">
                 {step === "instructions" && (
                   <motion.div key="instructions" variants={stepVariants} initial="enter" animate="center" exit="exit">
+                    {VENMO_OK && (
+                      <Tabs<"ZELLE" | "VENMO">
+                        label="Payment method"
+                        value={method}
+                        onChange={setMethod}
+                        items={[
+                          { id: "ZELLE", label: "Zelle" },
+                          { id: "VENMO", label: "Venmo" },
+                        ]}
+                        className="mb-4"
+                      />
+                    )}
                     <p className="text-small text-slate-400">
-                      Send <span className="font-semibold text-[rgb(var(--c-s-50))]">{formatUsd(amountCents)}</span> via Zelle to
-                      unlock {scaleTitle}, then confirm below.
+                      Send <span className="font-semibold text-[rgb(var(--c-s-50))]">{formatUsd(amountCents)}</span> via{" "}
+                      {method === "VENMO" ? "Venmo" : "Zelle"} for {scaleTitle}, then confirm below.
                     </p>
+
+                    {method === "VENMO" && (
+                      <>
+                        <a
+                          href={venmo.app}
+                          className="cta-sheen cta-fill mt-4 flex w-full items-center justify-center rounded-xl py-2.5 text-small font-semibold md:hidden"
+                        >
+                          Open Venmo
+                        </a>
+                        <div className="mt-4 hidden flex-col items-center gap-2 md:flex">
+                          <div className="rounded-xl bg-white p-3">
+                            <QRCodeSVG value={venmo.web} size={148} />
+                          </div>
+                          <p className="text-small text-slate-500">Scan with your phone camera</p>
+                        </div>
+                      </>
+                    )}
 
                     <div className="mt-4 flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-neu-base shadow-raised-low">
                       <div className="min-w-0">
-                        <p className="text-small uppercase tracking-wide text-slate-500">Zelle handle</p>
-                        <p className="truncate font-mono text-small text-slate-100">{zelleHandle}</p>
+                        <p className="text-small uppercase tracking-wide text-slate-500">{method === "VENMO" ? "Venmo" : "Zelle handle"}</p>
+                        <p className="truncate font-mono text-small text-slate-100">{method === "VENMO" ? `@${VENMO_HANDLE}` : zelleHandle}</p>
                       </div>
                       <button
                         type="button"
@@ -187,7 +236,9 @@ export function ZellePaymentModal({
                     <ol className="mt-5 space-y-2.5 text-small text-slate-300">
                       <li className="flex gap-2.5">
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-small font-semibold text-[rgb(var(--c-s-50))]">1</span>
-                        Open your bank&apos;s Zelle transfer and send {formatUsd(amountCents)} to the handle above.
+                        {method === "VENMO"
+                          ? `Send ${formatUsd(amountCents)} on Venmo, set to Private.`
+                          : `Open your bank's Zelle transfer and send ${formatUsd(amountCents)} to the handle above.`}
                       </li>
                       <li className="flex gap-2.5">
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-small font-semibold text-[rgb(var(--c-s-50))]">2</span>
@@ -209,7 +260,7 @@ export function ZellePaymentModal({
                   <motion.div key="confirming" variants={stepVariants} initial="enter" animate="center" exit="exit">
                     <div className="space-y-3.5">
                       <div>
-                        <label className="mb-1 block text-small font-medium text-slate-400">Name on the Zelle transfer</label>
+                        <label className="mb-1 block text-small font-medium text-slate-400">{method === "VENMO" ? "Name on the Venmo account" : "Name on the Zelle transfer"}</label>
                         <input
                           autoFocus
                           value={senderName}
