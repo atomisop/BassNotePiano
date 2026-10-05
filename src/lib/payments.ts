@@ -1,3 +1,4 @@
+import { settleWithStoredReceipt } from "@/lib/paymentEmail";
 import { PaymentPlanCadence, PaymentPlanTerm, type PaymentPurpose, type Prisma, type ZellePaymentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AccessDeniedError, unlockScaleForUser, grantCurriculumAccess } from "@/lib/access";
@@ -428,7 +429,11 @@ export async function submitZellePaymentReference(
     },
   });
 
-  await maybeAutoApprovePayment(submitted);
+  // If the money's email already arrived, settle now, otherwise fall back to
+  // the returning-student rule.
+  if (!(await settleWithStoredReceipt(submitted.id).catch(() => false))) {
+    await maybeAutoApprovePayment(submitted);
+  }
   return submitted;
 }
 

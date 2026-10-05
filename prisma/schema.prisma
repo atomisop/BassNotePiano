@@ -1539,3 +1539,21 @@ model RateLimitEvent {
 
   @@index([key, createdAt])
 }
+
+// One row per "you received money" email the owner's Gmail forwarded in
+// (see src/lib/paymentEmail.ts). messageId is unique so the same email can
+// never approve two payments. paymentId is set once a payment is settled
+// from it; null means no open payment matched yet, and a later submission
+// can still claim it.
+model ProcessedPaymentEmail {
+  id          String        @id @default(cuid())
+  messageId   String        @unique
+  method      PaymentMethod
+  senderName  String
+  amountCents Int
+  memo        String?       @db.Text
+  paymentId   String?
+  createdAt   DateTime      @default(now())
+
+  @@index([amountCents, createdAt])
+}
