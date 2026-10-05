@@ -1197,3 +1197,29 @@
   color: rgb(34 28 22);
   box-shadow: 0 2px 4px rgb(0 0 0 / 0.55), inset 0 0 0 1px rgb(0 0 0 / 0.12);
 }
+
+/* Ask AI button: one slow orbit every 10 seconds, invisible the rest of the time. */
+@keyframes ai-orbit {
+  0% {
+    transform: rotate(0deg);
+    opacity: 1;
+  }
+  22% {
+    transform: rotate(360deg);
+    opacity: 1;
+  }
+  24%,
+  100% {
+    transform: rotate(360deg);
+    opacity: 0;
+  }
+}
+.ai-orbit {
+  animation: ai-orbit 10s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-orbit {
+    animation: none;
+    opacity: 0;
+  }
+}

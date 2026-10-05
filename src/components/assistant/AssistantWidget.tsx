@@ -153,7 +153,7 @@ function readAnonymousGreetingDismissCount(): number {
 }
 
 function AtomButton({ onClick, label }: { onClick: () => void; label: string }) {
-  return <GenerateAIButton label="Ask AI" ariaLabel={label} onClick={onClick} />;
+  return <GenerateAIButton calm label="Ask AI" ariaLabel={label} onClick={onClick} />;
 }
 
 // Deliberately tiny and low-contrast — a CSAT prompt that competed
