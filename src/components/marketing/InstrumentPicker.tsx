@@ -1,4 +1,4 @@
-import { PillCTA } from "@/components/ui/pill-cta";
+import { WordsPullUp } from "@/components/ui/words-pull-up";
 import { ElasticGallery } from "@/components/ui/elastic-gallery";
 import { BACKDROPS } from "@/lib/backdrops";
 
@@ -14,10 +14,12 @@ const ITEMS = [
 export function InstrumentPicker() {
   return (
     <section className="mx-auto w-full max-w-6xl px-6 pb-24 md:pb-40">
-      <h2 className="sr-only">Piano, guitar and bass</h2>
-      <div className="mb-8">
-        <PillCTA href="/register">Choose your instrument</PillCTA>
-      </div>
+      <h2 className="mb-8">
+        <WordsPullUp
+          text="Choose your instrument"
+          className="text-[clamp(2rem,5vw,4rem)] font-medium leading-[0.95] tracking-[-0.05em] text-[#E1E0CC]"
+        />
+      </h2>
       <ElasticGallery items={ITEMS} />
     </section>
   );
