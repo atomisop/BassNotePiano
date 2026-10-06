@@ -1,6 +1,7 @@
 import { schedule } from "@netlify/functions";
 import { prisma } from "../../src/lib/prisma";
 import { OWNER_EMAIL } from "../../src/lib/adminNotifications";
+import { todayBoundsEt } from "../../src/lib/classSchedule";
 import { sendNotificationEmailWithCta, getAppUrl } from "../../src/lib/email";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -16,7 +17,8 @@ function count(n: number, one: string, many: string): string | null {
 // cache (see the other scheduled functions).
 export const handler = schedule("0 12 * * *", async () => {
   const now = Date.now();
-  const [pendingPayments, uncheckedAuto, unmatchedEmails, applications, openChats] = await Promise.all([
+  const today = todayBoundsEt();
+  const [pendingPayments, uncheckedAuto, unmatchedEmails, applications, openChats, classesToday] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
     prisma.zellePayment.count({ where: { autoApproved: true, checkedAt: null, status: "VERIFIED" } }),
     // A payment email that matched nobody an hour later, from the last week.
@@ -25,7 +27,21 @@ export const handler = schedule("0 12 * * *", async () => {
     }),
     prisma.classRegistration.count({ where: { status: "PENDING" } }),
     prisma.assistantEscalation.count({ where: { status: "OPEN" } }),
+    prisma.classBooking.findMany({
+      where: { status: "SCHEDULED", scheduledAt: { gte: today.start, lt: today.end } },
+      orderBy: { scheduledAt: "asc" },
+      select: { scheduledAt: true, student: { select: { name: true, email: true } } },
+    }),
   ]);
+
+  const classLine = classesToday.length
+    ? `Teaching today: ${classesToday
+        .map((c) => {
+          const time = c.scheduledAt.toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });
+          return `${time} ${c.student.name ?? c.student.email}`;
+        })
+        .join(", ")}.`
+    : null;
 
   const parts = [
     count(pendingPayments, "payment waiting for review", "payments waiting for review"),
@@ -35,7 +51,7 @@ export const handler = schedule("0 12 * * *", async () => {
     count(openChats, "open support chat", "open support chats"),
   ].filter((p): p is string => p !== null);
 
-  if (parts.length === 0) {
+  if (parts.length === 0 && !classLine) {
     console.log("Admin daily summary: nothing needs a decision, no email sent");
     return { statusCode: 200 };
   }
@@ -43,9 +59,9 @@ export const handler = schedule("0 12 * * *", async () => {
   await sendNotificationEmailWithCta(
     OWNER_EMAIL,
     "Today's to-do",
-    `${parts.join(". ")}.`,
+    [classLine, parts.length ? `${parts.join(". ")}.` : null].filter(Boolean).join(" "),
     { label: "Open admin", url: getAppUrl("/admin") },
   );
-  console.log(`Admin daily summary: sent (${parts.length} items)`);
+  console.log(`Admin daily summary: sent (${parts.length} items, ${classesToday.length} classes)`);
   return { statusCode: 200 };
 });

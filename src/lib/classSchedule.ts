@@ -94,6 +94,12 @@ function todayInEt(): { year: number; month: number; day: number } {
   return { year: get("year"), month: get("month"), day: get("day") };
 }
 
+/** Today in ET as a [start, end) pair of UTC instants. */
+export function todayBoundsEt(): { start: Date; end: Date } {
+  const { year, month, day } = todayInEt();
+  return { start: etWallTimeToUtc(year, month, day, 0, 0), end: etWallTimeToUtc(year, month, day + 1, 0, 0) };
+}
+
 /** The instant this week ends: next Monday 00:00 in ET. The admin Attendance icon only lists classes before it, so it rolls to the new week on its own. */
 export function endOfThisWeekEt(): Date {
   const { year, month, day } = todayInEt();
