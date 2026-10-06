@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import type { Role } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { setUserRole, setCurriculumAccess } from "@/lib/admin";
+import { isOwnerEmail } from "@/lib/adminNotifications";
+import { prisma } from "@/lib/prisma";
 import { unlockScaleForUser, lockScaleForUser } from "@/lib/access";
 import { clearPersistedHistory } from "@/lib/assistant";
 import { approveNextScale, ScaleApprovalError } from "@/lib/scaleApproval";
@@ -25,6 +27,14 @@ export async function setUserRoleAction(targetUserId: string, role: Role) {
     // Prevents an easy self-lockout — removing your own admin role has to
     // happen from another admin account or directly against the DB.
     throw new Error("You can't remove your own admin role from this panel.");
+  }
+  // Admin access is the owner's to give and take. An employee can change a student's
+  // details but never promote, demote or touch another admin, and nobody can change the owner.
+  const target = await prisma.user.findUnique({ where: { id: targetUserId }, select: { email: true, role: true } });
+  if (!target) throw new Error("That account doesn't exist.");
+  if (isOwnerEmail(target.email) && role !== "ADMIN") throw new Error("The owner account can't lose admin access.");
+  if ((role === "ADMIN" || target.role === "ADMIN") && !isOwnerEmail(admin.email)) {
+    throw new Error("Only the owner can change admin access.");
   }
   await setUserRole(targetUserId, role);
   revalidatePath("/admin/users");
