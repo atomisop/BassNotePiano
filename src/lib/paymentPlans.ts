@@ -768,6 +768,33 @@ export async function describeReservedSlot(planId: string): Promise<string | nul
 }
 
 /**
+ * How many more weekly classes this plan may book inside the paid month. A
+ * month pays for creditsPerInstallment / creditsPerClass classes (4 for the
+ * 45-minute plan) no matter how many of that weekday fall inside it, so a
+ * month with five Thursdays still gets four. Classes the student skipped or
+ * canceled do not count against it.
+ */
+export async function classesLeftInPaidMonth(plan: {
+  id: string;
+  cadence: PaymentPlanCadence;
+  status: PaymentPlanStatus;
+  nextDueDate: Date;
+  creditsPerInstallment: number;
+}): Promise<number> {
+  const paidUntil = plan.status === "COMPLETED" ? addCalendarMonthsClamped(plan.nextDueDate, 1) : plan.nextDueDate;
+  const monthStart = addCalendarMonthsClamped(paidUntil, -1);
+  const allowed = Math.floor(plan.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
+  const used = await prisma.classBooking.count({
+    where: {
+      reservedByPlanId: plan.id,
+      status: { in: ["SCHEDULED", "COMPLETED"] },
+      scheduledAt: { gte: monthStart, lt: paidUntil },
+    },
+  });
+  return Math.max(0, allowed - used);
+}
+
+/**
  * Books the plan's weekly class for every upcoming week it has paid for, now,
  * instead of waiting for the daily job. Called the moment an installment is
  * approved so the classes show up in the admin's Attendance list right away.
@@ -788,6 +815,7 @@ export async function bookReservedWindowForPlan(planId: string): Promise<void> {
       const scheduledAt = computeScheduledAt(plan.reservedSchedule, occurrenceDate, chunk);
       if (scheduledAt.getTime() <= Date.now() || scheduledAt.getTime() >= paidUntil.getTime()) continue;
       if ((await getEffectiveClassCredits(plan.userId)) < creditsPerClass) continue;
+      if ((await classesLeftInPaidMonth(plan)) <= 0) break;
       await createReservedBookingIfAbsent({
         studentId: plan.userId,
         scheduleId: plan.reservedSchedule.id,
@@ -826,6 +854,27 @@ export async function bookMissingReservedWindows(): Promise<void> {
       select: { id: true },
     });
     for (const plan of plans) await bookReservedWindowForPlan(plan.id);
+
+    // A month pays for 4 classes. A plan booked before that cap existed may hold
+    // a fifth in the same paid month: drop the extra, latest first, and refund it.
+    const live = await prisma.paymentPlan.findMany({ where: { reservedScheduleId: { not: null }, OR: livePaymentPlanConditions() } });
+    for (const plan of live) {
+      const paidUntil = plan.status === "COMPLETED" ? addCalendarMonthsClamped(plan.nextDueDate, 1) : plan.nextDueDate;
+      const monthStart = addCalendarMonthsClamped(paidUntil, -1);
+      const allowed = Math.floor(plan.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
+      const inMonth = await prisma.classBooking.findMany({
+        where: { reservedByPlanId: plan.id, status: { in: ["SCHEDULED", "COMPLETED"] }, scheduledAt: { gte: monthStart, lt: paidUntil } },
+        orderBy: { scheduledAt: "asc" },
+        select: { id: true, status: true, scheduledAt: true },
+      });
+      const extra = inMonth.slice(allowed).filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > Date.now());
+      if (extra.length > 0) {
+        await prisma.classBooking.updateMany({
+          where: { id: { in: extra.map((b) => b.id) } },
+          data: { status: "CANCELED", refunded: true },
+        });
+      }
+    }
   } catch (err) {
     console.error("bookMissingReservedWindows failed (non-blocking):", err);
   }
