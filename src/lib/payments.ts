@@ -4,14 +4,13 @@ import { PaymentPlanCadence, PaymentPlanTerm, type PaymentPurpose, type Prisma, 
 import { prisma } from "@/lib/prisma";
 import { AccessDeniedError, unlockScaleForUser, grantCurriculumAccess } from "@/lib/access";
 import { grantCredits } from "@/lib/creditLedger";
-import { bookExtraSessionOccurrence, chunksForSchedule, computeScheduledAt } from "@/lib/classSchedule";
+import { bookExtraSessionOccurrence, chunksForSchedule, computeScheduledAt, nextOccurrenceDates, OCCURRENCES_PER_SLOT } from "@/lib/classSchedule";
 import {
   calculateClassCreditTotal,
   calculateFamilyBundleTotal,
   isPlanTermOffered,
   isPlanCadenceOffered,
   EXTRA_CLASS_PRICE_CENTS,
-  MAX_EXTRA_CLASSES_PER_PURCHASE,
   CREDITS_PER_CLASS,
   MIN_FAMILY_BUNDLE_RECIPIENTS,
 } from "@/lib/classCreditPricing";
@@ -104,46 +103,71 @@ async function getOrCreatePendingZellePayment({ userId, purpose, amountCents, ze
 export class ExtraCreditsError extends Error {}
 
 /**
- * The "buy extra classes" purchase: quantity (in classes) x a flat $55, paid by
- * Zelle and granted (non-expiring) when an admin verifies it, same as every
- * CLASS_CREDITS payment. The row stores the credits it grants
- * (lessonQuantity = classes x CREDITS_PER_CLASS), since credits are what the
- * booking engine counts. One open request per student: asking again before
- * paying updates that row's quantity and amount together (never just one of
- * them, so the credits granted always match the amount shown). Once a reference
- * code has been submitted (PENDING_REVIEW) it is left alone and a new request
- * waits until it is verified or rejected.
+ * One extra class paid for directly: the student picks a specific open time and
+ * pays a flat $55 for it by Zelle or Venmo. The row carries that exact time
+ * (extraSession* columns) and the 2 credits it is worth; approving the payment
+ * grants those credits and books the time with them in the same step (see
+ * approveZellePayment), so credits are only ever the mechanism underneath, never
+ * something a student buys on its own. Asking again for the same time before
+ * paying returns the same open payment.
  */
-export async function createExtraClassesPayment(userId: string, classes: number, zelleHandle: string) {
-  if (!Number.isInteger(classes) || classes < 1 || classes > MAX_EXTRA_CLASSES_PER_PURCHASE) {
-    throw new ExtraCreditsError(`Choose between 1 and ${MAX_EXTRA_CLASSES_PER_PURCHASE} classes.`);
-  }
+export async function createExtraClassPayment(
+  userId: string,
+  scheduleId: string,
+  occurrenceDateMs: number,
+  chunkIndex: number,
+  zelleHandle: string,
+) {
   await expireStalePendingPayments();
 
-  const amountCents = classes * EXTRA_CLASS_PRICE_CENTS;
-  const lessonQuantity = classes * CREDITS_PER_CLASS;
+  const schedule = await prisma.classSchedule.findUnique({ where: { id: scheduleId } });
+  if (!schedule || !schedule.active) throw new ExtraCreditsError("That class time isn't offered.");
+  const chunk = chunksForSchedule(schedule)[chunkIndex];
+  if (!chunk) throw new ExtraCreditsError("That time slot doesn't exist.");
+
+  const occurrenceDate = new Date(occurrenceDateMs);
+  const isOpenDate = nextOccurrenceDates(schedule.dayOfWeek, OCCURRENCES_PER_SLOT).some((d) => d.getTime() === occurrenceDate.getTime());
+  if (!isOpenDate) throw new ExtraCreditsError("That day isn't open for booking.");
+  const scheduledAt = computeScheduledAt(schedule, occurrenceDate, chunk);
+  if (scheduledAt.getTime() <= Date.now()) throw new ExtraCreditsError("That time has already started.");
+
+  const taken = await prisma.classBooking.findFirst({
+    where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED" },
+    select: { id: true },
+  });
+  if (taken) throw new ExtraCreditsError("That time was just taken.");
+
+  const sameDay = await prisma.classBooking.findFirst({
+    where: { studentId: userId, occurrenceDate, status: "SCHEDULED" },
+    select: { id: true },
+  });
+  if (sameDay) throw new ExtraCreditsError("You already have a class that day.");
+
   const existing = await prisma.zellePayment.findFirst({
-    where: { userId, purpose: "CLASS_CREDITS", extraSessionScheduleId: null, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
+    where: {
+      userId,
+      purpose: "CLASS_CREDITS",
+      extraSessionScheduleId: scheduleId,
+      extraSessionOccurrenceDate: occurrenceDate,
+      extraSessionScheduledAt: scheduledAt,
+      status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] },
+    },
     orderBy: { createdAt: "desc" },
   });
-  if (existing) {
-    if (existing.status === "PENDING_REVIEW") {
-      throw new ExtraCreditsError("You already have a payment waiting to be checked. You can buy more once it is verified.");
-    }
-    // Guarded by status: if the student submitted their Zelle reference in the
-    // moment between the read above and this write, the row is already in
-    // review and its quantity/amount must not change under it.
-    const updated = await prisma.zellePayment.updateMany({
-      where: { id: existing.id, status: "AWAITING_TRANSFER" },
-      data: { amountCents, lessonQuantity },
-    });
-    if (updated.count === 0) {
-      throw new ExtraCreditsError("Your payment was just submitted for review. You can buy more once it is verified.");
-    }
-    return prisma.zellePayment.findUniqueOrThrow({ where: { id: existing.id } });
-  }
+  if (existing) return existing;
+
   return prisma.zellePayment.create({
-    data: { userId, purpose: "CLASS_CREDITS", amountCents, zelleHandle, lessonQuantity, status: "AWAITING_TRANSFER" },
+    data: {
+      userId,
+      purpose: "CLASS_CREDITS",
+      amountCents: EXTRA_CLASS_PRICE_CENTS,
+      zelleHandle,
+      lessonQuantity: CREDITS_PER_CLASS,
+      extraSessionScheduleId: scheduleId,
+      extraSessionOccurrenceDate: occurrenceDate,
+      extraSessionScheduledAt: scheduledAt,
+      status: "AWAITING_TRANSFER",
+    },
   });
 }
 

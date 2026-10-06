@@ -30,9 +30,6 @@ export const CREDITS_PER_CLASS = 2;
  */
 export const EXTRA_CLASS_PRICE_CENTS = 5500;
 
-/** Most extra classes one purchase can ask for; keeps a typo from becoming a huge invoice. */
-export const MAX_EXTRA_CLASSES_PER_PURCHASE = 10;
-
 /** Pre-discount per-credit price, kept only so marketing pages can show a struck-through "was" price and a % off badge. */
 export const CREDIT_ORIGINAL_PRICE_CENTS = 5000;
 

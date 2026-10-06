@@ -50,8 +50,9 @@ export function TermsContent() {
           unused once that installment&apos;s monthly cycle expires.
         </p>
         <p>
-          Extra classes are $55 each, bought separately and paid by Zelle or Venmo, for more time on top of your weekly
-          class. Extra classes never expire.
+          Extra classes are $55 each, booked and paid for one at a time on the Lessons page, for more time on top of
+          your weekly class. Credits cannot be bought. They come only as a gift, a refund or an employee benefit, and
+          can be used when booking an extra class.
         </p>
         <p>
           Family bundles use the same cadence and term rates a solo Payment Plan does, for 2 or more separate,
