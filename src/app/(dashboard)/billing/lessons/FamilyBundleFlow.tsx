@@ -155,8 +155,10 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
     setEmails((prev) => (prev.length <= MIN_FAMILY_BUNDLE_RECIPIENTS ? prev : prev.filter((_, i) => i !== index)));
   }
 
-  const filledCount = normalized.filter(Boolean).length;
-  const total = calculateFamilyBundleTotal(cadence, term, filledCount || MIN_FAMILY_BUNDLE_RECIPIENTS);
+  // Priced by the number of recipient rows, so the total follows each tap on
+  // "Add another recipient" whether or not the emails are filled in yet.
+  // Continuing to payment still needs every row to be a real account.
+  const total = calculateFamilyBundleTotal(cadence, term, emails.length);
   const perRecipientCredits = total.creditsPerRecipient;
   const perRecipientClasses = perRecipientCredits / CREDITS_PER_CLASS;
 
