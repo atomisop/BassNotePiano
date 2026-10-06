@@ -5,13 +5,24 @@ export interface ChangelogEntry {
   items: string[];
 }
 
-// Newest first. CURRENT_VERSION and the "What's new" popup always reflect
-// entries[0]. Read tracking is a single timestamp, not a per-version flag
-// (see lastSeenPatchNotesAt on User) — the popup shows once by comparing
-// that timestamp against entries[0].date, so adding a new entry here with
-// today's date is what makes it reappear for everyone. Backdating an entry
-// or leaving its date stale would suppress it; keep dates truthful.
+// Newest first. The "What's new" popup always shows entries[0], once per
+// device: the browser remembers the version it has shown, so a new top entry
+// with a new version number is what makes it appear again for everyone.
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "2.0.0",
+    date: "2026-10-06",
+    title: "The biggest update yet",
+    items: [
+      "Daily 10-minute finger exercises for piano, guitar and bass, with a metronome, hand and finger guides, and seven streak levels with their own badges. Your lessons open once the day's practice is done",
+      "A new Inbox: notifications and Mail in one place, with payments, billing and notes from the team grouped under Mail",
+      "Booking is quicker: pick a day, pick a time, confirm. Subscribers choose their weekly day and time on a calendar",
+      "Pay by Zelle or Venmo, and use any credits you have when you book an extra class",
+      "Messages now show when yours is read and who is typing in a group, and you can react to any message",
+      "The virtual instruments light up only the note you play",
+      "Log in with a code sent to your email, and land straight in the app",
+    ],
+  },
   {
     version: "1.5.0",
     date: "2026-08-24",

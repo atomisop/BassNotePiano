@@ -24,24 +24,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const [directUnreadCount, groupUnreadCount, user, activeAnnouncement] = await Promise.all([
     getTotalUnreadMessageCount(session.user.id),
     getTotalUnreadGroupMessageCount(session.user.id),
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { lastSeenPatchNotesAt: true, onboardingTourSeenAt: true } }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { onboardingTourSeenAt: true } }),
     getActiveAnnouncementForUser(session.user.id),
   ]);
   const unreadMessageCount = directUnreadCount + groupUnreadCount;
 
   const shouldShowTour = !user?.onboardingTourSeenAt;
-  // Deferred until the tour's been seen once — a brand-new account
-  // shouldn't get the spotlight tour and the "what's new" popup stacked on
-  // top of each other on the very first dashboard visit.
-  //
-  // Once per new release, not once per day: compares against the latest
-  // changelog entry's own date, not "today" — the old check
-  // (`!isSameUtcDay(lastSeenPatchNotesAt, now)`) meant anyone logging in on
-  // a new calendar day saw the same "what's new" card again, forever, even
-  // though nothing shipped. Marking it seen now holds until a genuinely
-  // newer entry lands at the front of CHANGELOG.
-  const shouldShowWhatsNew =
-    !shouldShowTour && (!user?.lastSeenPatchNotesAt || user.lastSeenPatchNotesAt < new Date(LATEST_ENTRY.date));
+  // The tour goes first: a brand-new account never gets the tour and the "what's new" popup stacked on top of each other.
   const isAdmin = session.user.role === "ADMIN";
   const isOwner = isAdmin && isOwnerEmail(session.user.email);
   const owner = await prisma.user.findUnique({ where: { email: OWNER_EMAIL }, select: { id: true } });
@@ -86,7 +75,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <AutoRefresh />
       <AppDock unreadMessageCount={unreadMessageCount} />
       <CommandMenu isAdmin={isAdmin} />
-      <WhatsNewModal show={shouldShowWhatsNew} entry={LATEST_ENTRY} />
+      <WhatsNewModal suppress={shouldShowTour} entry={LATEST_ENTRY} />
       <Suspense fallback={null}>
         <OnboardingTour autoShow={shouldShowTour} />
       </Suspense>
