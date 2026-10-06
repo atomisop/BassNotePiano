@@ -94,6 +94,14 @@ function todayInEt(): { year: number; month: number; day: number } {
   return { year: get("year"), month: get("month"), day: get("day") };
 }
 
+/** The instant this week ends: next Monday 00:00 in ET. The admin Attendance icon only lists classes before it, so it rolls to the new week on its own. */
+export function endOfThisWeekEt(): Date {
+  const { year, month, day } = todayInEt();
+  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay(); // 0 = Sunday
+  const daysUntilMonday = ((8 - weekday) % 7) || 7;
+  return etWallTimeToUtc(year, month, day + daysUntilMonday, 0, 0);
+}
+
 function parseStartTime(startTime: string): { hour: number; minute: number } {
   const [hour, minute] = startTime.split(":").map(Number);
   return { hour, minute };
@@ -1553,7 +1561,10 @@ export async function getBookingFeed(limit = 300): Promise<BookingFeedRow[]> {
     orderBy: { scheduledAt: "asc" },
     take: limit,
   });
-  const rows: BookingFeedRow[] = bookings.map((b) => ({
+  const weekEnd = endOfThisWeekEt().getTime();
+  const rows: BookingFeedRow[] = bookings
+    .filter((b) => b.scheduledAt.getTime() < weekEnd) // this week, plus any past class still waiting for an attendance call
+    .map((b) => ({
     bookingId: b.id,
     studentName: b.student.name,
     studentEmail: b.student.email,
@@ -1645,7 +1656,12 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
     });
   }
 
-  return Array.from(groups.values());
+  // Soonest first: what is coming up leads, then the recent past, newest first.
+  const all = Array.from(groups.values());
+  const now = Date.now();
+  const upcoming = all.filter((g) => g.scheduledAt.getTime() >= now).sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
+  const past = all.filter((g) => g.scheduledAt.getTime() < now).sort((a, b) => b.scheduledAt.getTime() - a.scheduledAt.getTime());
+  return [...upcoming, ...past];
 }
 
 /**

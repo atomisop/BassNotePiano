@@ -223,7 +223,7 @@ export function AdminAttendanceQuickPanel() {
           >
             <div className="flex items-start justify-between gap-3 px-1">
               <div>
-                <p className="text-body font-semibold text-slate-100">Class bookings</p>
+                <p className="text-body font-semibold text-slate-100">Class bookings this week</p>
                 <p className="text-small text-slate-500">
                   {rows.length} booking{rows.length === 1 ? "" : "s"}
                   {readyCount > 0 ? ` · ${readyCount} ready` : ""}
@@ -243,7 +243,7 @@ export function AdminAttendanceQuickPanel() {
             {loading && rows.length === 0 ? (
               <p className="mt-3 px-1 text-small text-slate-500">Loading…</p>
             ) : groups.length === 0 ? (
-              <p className="mt-3 px-1 text-small text-slate-500">No bookings coming up.</p>
+              <p className="mt-3 px-1 text-small text-slate-500">No bookings left this week.</p>
             ) : (
               <div className="mt-3 space-y-2.5">
                 {groups.map((group) => {
