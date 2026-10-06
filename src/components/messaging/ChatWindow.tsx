@@ -220,7 +220,7 @@ export function ChatWindow({
             type="button"
             onClick={() => setReplyingTo(null)}
             aria-label="Cancel reply"
-            className="shrink-0 text-slate-500 transition hover:text-slate-300"
+            className="tap flex shrink-0 items-center justify-center text-slate-500 transition hover:text-slate-300"
           >
             <XIcon size={14} />
           </button>

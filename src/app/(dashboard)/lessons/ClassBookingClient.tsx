@@ -1,5 +1,6 @@
 "use client";
 
+import { scrollWithin } from "@/lib/scrollWithin";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -322,7 +323,7 @@ function AttendeeEmailRow({
           type="button"
           onClick={onRemove}
           aria-label="Remove this student"
-          className="shrink-0 text-slate-500 transition hover:text-red-400"
+          className="tap flex shrink-0 items-center justify-center text-slate-500 transition hover:text-red-400"
         >
           <XIcon size={12} />
         </button>
@@ -428,8 +429,7 @@ export function ClassBookingClient({
   // the calendar to find them.
   useEffect(() => {
     if (!selectedDateKey) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    timesRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    scrollWithin(timesRef.current, "start");
   }, [selectedDateKey]);
 
   const selectedRows = useMemo(
@@ -617,7 +617,7 @@ export function ClassBookingClient({
     // Toggling the same booking's button again cancels the in-progress pick
     // rather than restarting it — same as clicking a lit calendar day twice.
     setReschedulingBooking((prev) => (prev?.id === booking.id ? null : booking));
-    document.getElementById("booking-calendar")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollWithin(document.getElementById("booking-calendar"), "start");
     setMode("SOLO");
     setSelectedKeys(new Set());
     setFamilyRowKey(null);

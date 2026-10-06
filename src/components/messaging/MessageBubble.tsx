@@ -176,7 +176,7 @@ export function MessageBubble({
           type="button"
           onClick={onReplyStart}
           aria-label="Reply"
-          className="hidden h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-500 opacity-0 transition hover:text-slate-300 group-hover/bubble:opacity-100 focus-visible:opacity-100 md:flex"
+          className="tap hidden h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-500 opacity-0 transition hover:text-slate-300 group-hover/bubble:opacity-100 focus-visible:opacity-100 md:flex"
         >
           <Reply size={15} />
         </button>
@@ -184,7 +184,7 @@ export function MessageBubble({
           type="button"
           onClick={() => setPickerOpen((v) => !v)}
           aria-label="React"
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-500 opacity-60 transition hover:text-slate-300 md:opacity-0 md:group-hover/bubble:opacity-100 focus-visible:opacity-100"
+          className="tap flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-500 opacity-60 transition hover:text-slate-300 md:opacity-0 md:group-hover/bubble:opacity-100 focus-visible:opacity-100"
         >
           <SmileyPlusIcon size={15} />
         </button>
@@ -236,7 +236,9 @@ export function MessageBubble({
               key={emoji}
               type="button"
               onClick={() => onReact(emoji)}
-              className={`rounded-full bg-neu-base px-2 py-1 text-small leading-none transition ${
+              aria-label={`${emoji}${count > 1 ? `, ${count} reactions` : ""}${myReaction === emoji ? ", yours" : ""}`}
+              aria-pressed={myReaction === emoji}
+              className={`tap rounded-full bg-neu-base px-2 py-1 text-small leading-none transition ${
                 myReaction === emoji ? "text-slate-100 shadow-pressed-low" : "text-slate-400 shadow-raised-low"
               }`}
             >

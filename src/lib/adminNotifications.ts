@@ -17,6 +17,7 @@ export const ADMIN_NOTIFICATION_KINDS = [
   { kind: "PAYMENT_AUTO_APPROVED", label: "Payment approved automatically", defaultOn: false },
   { kind: "SUPPORT_CHAT", label: "Support Chat handoffs and messages", defaultOn: true },
   { kind: "PLAN_CANCEL_FEEDBACK", label: "Student canceled their plan", defaultOn: true },
+  { kind: "SLOT_PROBLEM", label: "A subscriber's weekly time no longer exists", defaultOn: true },
   { kind: "PLAN_LAPSED", label: "Plan canceled for non-payment", defaultOn: false },
   { kind: "OWNER_MESSAGES", label: "Messages sent to the owner account", defaultOn: false },
   { kind: "MUSIC_INBOX", label: "Emails sent to music@bassnotepiano.com", defaultOn: true },

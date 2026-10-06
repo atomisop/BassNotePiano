@@ -219,8 +219,8 @@ export function CustomerProfile({
               {pendingAction === "role" ? (
                 <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-1.5 text-small text-slate-200">
                   {user.role === "ADMIN"
-                    ? "Remove admin access from this account?"
-                    : "Make this account an admin?"}
+                    ? "Remove admin access from this account? They are signed out right away."
+                    : "Make this account an admin? They will be able to manage payments, users and credits."}
                   <button
                     type="button"
                     disabled={busy}

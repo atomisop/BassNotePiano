@@ -237,8 +237,8 @@ export function UserManagementTable({
                   <p className="text-small text-slate-300">
                     {pendingAction.kind === "role" &&
                       (user.role === "ADMIN"
-                        ? `Remove admin access from ${user.name ?? user.email}?`
-                        : `Make ${user.name ?? user.email} an admin?`)}
+                        ? `Remove admin access from ${user.name ?? user.email}? They are signed out right away.`
+                        : `Make ${user.name ?? user.email} an admin? They will be able to manage payments, users and credits.`)}
                     {pendingAction.kind === "curriculum" &&
                       (user.hasCurriculumAccess
                         ? `Revoke curriculum access from ${user.name ?? user.email}?`

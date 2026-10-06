@@ -72,6 +72,9 @@ export function AdminAttendanceQuickPanel() {
   const [toggled, setToggled] = useState<Record<string, boolean>>({});
   // Ticks so the greyed-out buttons light up on their own as a class nears.
   const [now, setNow] = useState(() => Date.now());
+  // Rows just marked or canceled stay hidden for a minute, so a refresh that was already
+  // in flight (it still lists them) cannot bring them back.
+  const removedRef = useRef<Map<string, number>>(new Map());
   const wrapperRef = useRef<HTMLDivElement>(null);
   // The panel is portaled to document.body, so it is never a DOM descendant of
   // wrapperRef; the outside-click handler has to check both.
@@ -82,7 +85,15 @@ export function AdminAttendanceQuickPanel() {
   async function refresh() {
     try {
       const found = await getBookingFeedAction();
-      setRows(found.map((r) => ({ ...r, scheduledAt: new Date(r.scheduledAt).toISOString() })));
+      const cutoff = Date.now() - 60_000;
+      removedRef.current.forEach((at, id) => {
+        if (at < cutoff) removedRef.current.delete(id);
+      });
+      setRows(
+        found
+          .filter((r) => !removedRef.current.has(r.bookingId))
+          .map((r) => ({ ...r, scheduledAt: new Date(r.scheduledAt).toISOString() })),
+      );
     } catch (err) {
       console.error("Class bookings refresh failed (non-blocking, will retry):", err);
     }
@@ -146,13 +157,16 @@ export function AdminAttendanceQuickPanel() {
       map.set(key, group);
     }
     return Array.from(map.values());
-  }, [rows]);
+    // The clock's day is a dependency so "Today" and "Tomorrow" roll over at midnight on their own.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, dayKeyOf(new Date(now).toISOString())]);
 
   async function handleMark(bookingId: string, attendance: "PRESENT" | "NO_SHOW") {
     setBusyId(bookingId);
     setError(null);
     try {
       await markAttendanceAction(bookingId, attendance);
+      removedRef.current.set(bookingId, Date.now());
       setRows((prev) => prev.filter((r) => r.bookingId !== bookingId));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -170,6 +184,7 @@ export function AdminAttendanceQuickPanel() {
         setError(result.error);
         return;
       }
+      removedRef.current.set(bookingId, Date.now());
       setRows((prev) => prev.filter((r) => r.bookingId !== bookingId));
       setConfirmCancelId(null);
     } catch (err) {
@@ -188,6 +203,7 @@ export function AdminAttendanceQuickPanel() {
         setError(result.error);
         return;
       }
+      removedRef.current.set(rowId, Date.now());
       setRows((prev) => prev.filter((r) => r.bookingId !== rowId));
       setConfirmCancelId(null);
     } catch (err) {

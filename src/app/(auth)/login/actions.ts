@@ -126,7 +126,8 @@ export async function requestLoginCodeAction(email: string): Promise<{ ok: true 
     if (!EMAIL_SHAPE.test(normalizedEmail)) return { ok: true as const };
 
     const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-    if (!user || !user.emailVerified) return { ok: true as const };
+    // Admin accounts always need their password: an inbox alone is not enough to reach them.
+    if (!user || !user.emailVerified || user.role === "ADMIN") return { ok: true as const };
 
     try {
       await createAndSendCode({ email: user.email, userId: user.id, purpose: "LOGIN_2FA" });
