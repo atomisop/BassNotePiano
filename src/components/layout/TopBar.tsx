@@ -1,10 +1,11 @@
-import Link from "next/link";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { AdminAttendanceQuickPanel } from "@/components/admin/AdminAttendanceQuickPanel";
 import { ProfileMenu } from "./ProfileMenu";
 import { AdminTopLink } from "./AdminTopLink";
+import { LiveClassesTopLink } from "./LiveClassesTopLink";
+import { isOwnerEmail } from "@/lib/adminNotifications";
 import { BrandMark } from "./BrandMark";
 import { AskAiButton } from "./AskAiButton";
 
@@ -29,10 +30,18 @@ async function ProfileAvatarLink() {
   });
   if (!user) return null;
 
-  return <ProfileMenu name={user.name} username={user.username} email={session.user.email ?? null} image={user.image} />;
+  return (
+    <ProfileMenu
+      name={user.name}
+      username={user.username}
+      email={session.user.email ?? null}
+      image={user.image}
+      isOwner={isOwnerEmail(session.user.email)}
+    />
+  );
 }
 
-export function TopBar({ isAdmin }: { isAdmin: boolean }) {
+export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolean }) {
   // fixed, not in-flow: this used to be a plain flex child (relative z-30)
   // that never scrolled away purely because it sat outside `<main>`'s own
   // scroll area in `(dashboard)/layout.tsx` — structurally sound, but a
@@ -62,13 +71,6 @@ export function TopBar({ isAdmin }: { isAdmin: boolean }) {
       <div className="flex items-center gap-2 md:gap-3">
         {/* Leftmost of the right-hand cluster: Ask AI, admin, attendance, bell, profile. */}
         <AskAiButton />
-        {/* A labeled way back to the public site. The logo does the same, but nothing says so. Phones get it in the profile menu, where the bar has no room. */}
-        <Link
-          href="/"
-          className="tap hidden h-9 items-center rounded-full bg-neu-base px-4 text-small font-medium text-slate-200 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low md:inline-flex"
-        >
-          Website
-        </Link>
         {/* Moved here from AppDock's own row of icons, by direct
             instruction — it was the one dock item that wasn't an everyday
             destination for every signed-in visitor (just the single admin
@@ -79,13 +81,13 @@ export function TopBar({ isAdmin }: { isAdmin: boolean }) {
             matched pair of icon buttons rather than two different styles. */}
         {/* Buttons sit in one pressed-in tray so they read as raised keys set into the bar. */}
         <div className="flex items-center gap-1.5 rounded-2xl bg-neu-base p-1 shadow-pressed-low">
-        {isAdmin && <AdminTopLink />}
-        {/* Quick Present/No-show from anywhere, by direct instruction — the
+        {isAdmin ? <AdminTopLink /> : <LiveClassesTopLink />}
+        {/* Owner only. Quick Present/No-show from anywhere, by direct instruction — the
             full roster at Schedule → Attendance still exists for
             history/cancellation, this is just the fast path for the one
             everyday action (mark today's classes) without a full admin-page
             navigation first. */}
-        {isAdmin && <AdminAttendanceQuickPanel />}
+        {isOwner && <AdminAttendanceQuickPanel />}
         <NotificationBell />
         <ProfileAvatarLink />
         </div>

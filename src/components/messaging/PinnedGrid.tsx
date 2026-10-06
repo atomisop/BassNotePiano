@@ -38,7 +38,7 @@ export function PinnedGrid({
                   active ? "border-[rgb(var(--c-s-50))] shadow-pressed-low" : "border-transparent bg-neu-base shadow-raised-low"
                 }`}
               >
-                <Avatar image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-16 w-16 text-body font-semibold" />
+                <Avatar userId={c.friendId} image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-16 w-16 text-body font-semibold" />
               </button>
 
               {showBadge && (

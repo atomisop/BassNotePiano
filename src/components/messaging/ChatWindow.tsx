@@ -154,7 +154,7 @@ export function ChatWindow({
     <div className="flex h-full min-w-0 flex-1 flex-col">
       <div className={THREAD_HEADER}>
         <ThreadBackButton onClick={onMinimize} />
-        <Avatar image={conversation.friendImage} label={conversation.friendName ?? conversation.friendUsername ?? "?"} className="h-10 w-10 text-body" />
+        <Avatar userId={conversation.friendId} image={conversation.friendImage} label={conversation.friendName ?? conversation.friendUsername ?? "?"} className="h-10 w-10 text-body" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-body font-semibold text-slate-100">{conversation.friendName ?? "Unnamed"}</p>
           {conversation.isTyping ? (

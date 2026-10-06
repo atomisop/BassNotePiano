@@ -33,7 +33,7 @@ export function ConversationListItem({
       }`}
     >
       <button type="button" onClick={onSelect} className="tap flex min-w-0 flex-1 items-center gap-3 p-3 text-left">
-        <Avatar image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-11 w-11 text-body" />
+        <Avatar userId={c.friendId} image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-11 w-11 text-body" />
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
             <p className={`truncate text-body ${c.unreadCount > 0 ? "font-semibold text-slate-50" : "text-slate-100"}`}>
