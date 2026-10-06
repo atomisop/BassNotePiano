@@ -187,7 +187,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
                 {student.email} · {creditsToClasses(student.classCredits)} class{creditsToClasses(student.classCredits) === 1 ? "" : "es"} available
               </p>
             </div>
-            <button type="button" onClick={reset} className="text-small text-slate-500 underline hover:text-slate-300">
+            <button type="button" onClick={reset} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
               Change
             </button>
           </div>

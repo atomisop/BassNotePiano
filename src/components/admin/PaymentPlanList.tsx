@@ -230,7 +230,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, emptyMessage
                     type="button"
                     onClick={() => handleCancel(plan.id)}
                     disabled={busyId === plan.id || !note.trim()}
-                    className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                   >
                     {busyId === plan.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                     {busyId === plan.id ? "Canceling…" : "Confirm cancel"}

@@ -238,7 +238,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
       {activePlan && (
         <div className="border-t border-ink/10 pt-4">
           {cancelStage === "idle" && (
-            <button type="button" onClick={startCancelFlow} className="text-small text-red-400 underline hover:text-red-300">
+            <button type="button" onClick={startCancelFlow} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
               Cancel subscription
             </button>
           )}

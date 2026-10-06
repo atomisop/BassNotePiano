@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { EmployeeRow } from "@/lib/admin";
-import { ADMIN_NOTIFICATION_GROUPS, type AdminNotificationGroup, type AdminNotificationKind } from "@/lib/adminNotifications";
+import { ADMIN_NOTIFICATION_GROUPS, type AdminNotificationGroup, type AdminNotificationKind } from "@/lib/adminNotificationKinds";
 import { EmployeeList } from "@/components/admin/EmployeeList";
 import { Switch } from "@/components/ui/switch";
 import { Tabs } from "@/components/ui/Tabs";

@@ -283,6 +283,12 @@
   box-shadow: var(--elev-shadow);
 }
 
+/* The one neumorphic button. Raised at rest, deeper on hover, pressed in on
+   tap. Callers add their own padding and size. */
+@utility neu-btn {
+  @apply bg-neu-base text-slate-300 shadow-raised-low transition hover:text-slate-100 hover:shadow-raised-mid active:shadow-pressed-low disabled:cursor-not-allowed disabled:opacity-50;
+}
+
 @utility glass-pill {
   /* Chips, nav pills, filter tags, badges. */
   @apply rounded-full;

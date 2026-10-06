@@ -298,7 +298,7 @@ export function AdminLessonManager({
                     type="button"
                     onClick={() => setDeletingId(null)}
                     disabled={busy}
-                    className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 disabled:opacity-50"
+                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
                   >
                     Keep
                   </button>
@@ -306,7 +306,7 @@ export function AdminLessonManager({
                     type="button"
                     onClick={() => handleDelete(lesson.id)}
                     disabled={busy}
-                    className="tap flex items-center justify-center rounded-lg bg-red-500/95 px-3 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="tap flex items-center justify-center rounded-lg bg-red-500/95 px-3 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                   >
                     {busy && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                     {busy ? "Deleting…" : "Delete"}
@@ -319,7 +319,7 @@ export function AdminLessonManager({
                     onClick={() => handleMove(index, -1)}
                     disabled={busy || index === 0}
                     aria-label="Move up"
-                    className="tap flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                    className="tap flex h-9 w-9 items-center justify-center rounded-lg transition disabled:cursor-not-allowed disabled:opacity-30 neu-btn"
                   >
                     <ChevronUp className="h-4 w-4" />
                   </button>
@@ -328,7 +328,7 @@ export function AdminLessonManager({
                     onClick={() => handleMove(index, 1)}
                     disabled={busy || index === lessons.length - 1}
                     aria-label="Move down"
-                    className="tap flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-30"
+                    className="tap flex h-9 w-9 items-center justify-center rounded-lg transition disabled:cursor-not-allowed disabled:opacity-30 neu-btn"
                   >
                     <ChevronDown className="h-4 w-4" />
                   </button>
@@ -336,7 +336,7 @@ export function AdminLessonManager({
                     type="button"
                     onClick={() => setDeletingId(lesson.id)}
                     aria-label={`Delete ${lesson.title}`}
-                    className="tap flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:text-red-300"
+                    className="tap flex h-9 w-9 items-center justify-center rounded-lg transition neu-btn"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

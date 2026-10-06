@@ -197,7 +197,7 @@ function BookingCard({
             type="button"
             onClick={() => onCancel(b)}
             disabled={cancelingId === b.id}
-            className="tap flex items-center justify-center rounded-lg border border-red-400/20 px-3 py-1.5 text-small font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="tap flex items-center justify-center rounded-lg border border-red-400/20 px-3 py-1.5 text-small font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
           >
             {cancelingId === b.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {cancelingId === b.id ? "Canceling…" : b.reserved ? "Skip" : "Cancel"}
@@ -256,7 +256,7 @@ function MonthGroup({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-ink/5"
+        className="tap neu-btn rounded-lg px-3 py-1.5 text-small flex w-full items-center justify-between gap-3"
       >
         <span className="text-small font-medium text-slate-200">{group.label}</span>
         <span className="flex items-center gap-2 text-small text-slate-500">
@@ -326,7 +326,7 @@ function AttendeeEmailRow({
           type="button"
           onClick={onRemove}
           aria-label="Remove this student"
-          className="tap flex shrink-0 items-center justify-center text-slate-500 transition hover:text-red-400"
+          className="tap neu-btn rounded-lg px-3 py-1.5 text-small flex shrink-0 items-center justify-center"
         >
           <XIcon size={12} />
         </button>
@@ -795,7 +795,7 @@ export function ClassBookingClient({
                   type="button"
                   onClick={() => setSelectedKeys(new Set())}
                   disabled={bundleSubmitting}
-                  className="text-small font-medium text-slate-500 transition hover:text-slate-300 disabled:pointer-events-none disabled:opacity-50"
+                  className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
                 >
                   Clear
                 </button>
@@ -833,7 +833,7 @@ export function ClassBookingClient({
                 <button
                   type="button"
                   onClick={() => setFamilyEmails((prev) => [...prev, ""])}
-                  className="text-small font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70"
+                  className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
                 >
                   + Add another student
                 </button>
@@ -842,7 +842,7 @@ export function ClassBookingClient({
                     type="button"
                     onClick={() => setFamilyRowKey(null)}
                     disabled={familySubmitting}
-                    className="text-small font-medium text-slate-500 transition hover:text-slate-300 disabled:pointer-events-none disabled:opacity-50"
+                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
                   >
                     Cancel
                   </button>
@@ -870,7 +870,7 @@ export function ClassBookingClient({
               <button
                 type="button"
                 onClick={() => setReschedulingBooking(null)}
-                className="shrink-0 text-small font-medium text-slate-500 transition hover:text-slate-300"
+                className="tap neu-btn rounded-lg px-3 py-1.5 text-small shrink-0"
               >
                 Cancel reschedule
               </button>
@@ -967,7 +967,7 @@ export function ClassBookingClient({
                       type="button"
                       onClick={() => setPendingKey(null)}
                       disabled={bookingKey !== null || payBusy}
-                      className="tap rounded-lg px-4 py-2 text-small font-medium text-slate-400 transition hover:text-slate-200 disabled:opacity-50"
+                      className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
                     >
                       Change
                     </button>
@@ -992,7 +992,7 @@ export function ClassBookingClient({
                   <button
                     type="button"
                     onClick={() => setSelectedDateKey(null)}
-                    className="tap shrink-0 text-small font-medium text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
+                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small shrink-0"
                   >
                     Clear day
                   </button>
@@ -1006,7 +1006,7 @@ export function ClassBookingClient({
                       setPendingKey(null);
                       setSelectedKeys(new Set());
                     }}
-                    className="tap shrink-0 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70"
+                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small shrink-0"
                   >
                     {multiSelect ? "Done selecting" : "Book several"}
                   </button>

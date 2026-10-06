@@ -232,7 +232,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   <button
                     type="button"
                     onClick={() => setAmount(String(selected.classCredits))}
-                    className="tap mt-1.5 inline-flex items-center text-small font-medium text-slate-400 underline transition hover:text-slate-200"
+                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-1.5 inline-flex items-center"
                   >
                     Revoke all {selected.classCredits}
                   </button>

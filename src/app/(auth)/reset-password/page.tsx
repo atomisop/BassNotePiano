@@ -221,7 +221,7 @@ function ResetPasswordForm() {
       <button
         type="button"
         onClick={handleResend}
-        className="mt-2 w-full text-center text-small text-slate-500 transition hover:text-[rgb(var(--c-s-50))] sm:mt-4"
+        className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-2 w-full sm:mt-4"
       >
         Didn&apos;t get a code? Resend
       </button>

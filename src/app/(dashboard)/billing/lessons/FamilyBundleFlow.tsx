@@ -182,7 +182,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         <button
           type="button"
           onClick={() => setPayment(null)}
-          className="mb-4 text-small text-slate-500 transition hover:text-slate-300"
+          className="tap neu-btn rounded-lg px-3 py-1.5 text-small mb-4"
         >
           ← Change bundle
         </button>
@@ -321,7 +321,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           type="button"
           onClick={addRecipient}
           disabled={emails.length >= MAX_FAMILY_BUNDLE_RECIPIENTS}
-          className="mt-3 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-40"
+          className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-3"
         >
           + Add another recipient
         </button>

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { ADMIN_NOTIFICATION_KINDS, type AdminNotificationKind } from "@/lib/adminNotificationKinds";
 import { createNotification, type CreateNotificationParams } from "@/lib/notifications";
 
 /**
@@ -9,27 +10,7 @@ import { createNotification, type CreateNotificationParams } from "@/lib/notific
 
 export const OWNER_EMAIL = (process.env.OWNER_EMAIL ?? "isaacberhanu777@gmail.com").toLowerCase();
 
-export const ADMIN_NOTIFICATION_GROUPS = ["People", "Payments", "Classes", "Messages"] as const;
-export type AdminNotificationGroup = (typeof ADMIN_NOTIFICATION_GROUPS)[number];
-
-/** ownerOnly kinds never reach employees; the owner can still switch them off for themselves. */
-export const ADMIN_NOTIFICATION_KINDS = [
-  { kind: "NEW_ACCOUNT", label: "New account created, not verified yet", group: "People", defaultOn: false, ownerOnly: true },
-  { kind: "ACCOUNT_VERIFIED", label: "New account verified", group: "People", defaultOn: false, ownerOnly: true },
-  { kind: "NEW_REGISTRATION", label: "New class registration", group: "People", defaultOn: true, ownerOnly: false },
-  { kind: "NEW_SUBSCRIPTION", label: "New subscription and weekly time", group: "Payments", defaultOn: true, ownerOnly: false },
-  { kind: "PAYMENT_REVIEW", label: "Payment to review", group: "Payments", defaultOn: true, ownerOnly: false },
-  { kind: "PAYMENT_AUTO_APPROVED", label: "Payment approved automatically", group: "Payments", defaultOn: false, ownerOnly: false },
-  { kind: "PLAN_CANCEL_FEEDBACK", label: "Student canceled their plan", group: "Payments", defaultOn: true, ownerOnly: false },
-  { kind: "PLAN_LAPSED", label: "Plan canceled for non-payment", group: "Payments", defaultOn: false, ownerOnly: false },
-  { kind: "NEW_BOOKING", label: "New class booking", group: "Classes", defaultOn: true, ownerOnly: false },
-  { kind: "SLOT_PROBLEM", label: "A subscriber's weekly time no longer exists", group: "Classes", defaultOn: true, ownerOnly: false },
-  { kind: "SUPPORT_CHAT", label: "Support Chat handoffs and messages", group: "Messages", defaultOn: true, ownerOnly: false },
-  { kind: "OWNER_MESSAGES", label: "Messages sent to the owner account", group: "Messages", defaultOn: false, ownerOnly: false },
-  { kind: "MUSIC_INBOX", label: "Emails sent to music@bassnotepiano.com", group: "Messages", defaultOn: true, ownerOnly: false },
-] as const;
-
-export type AdminNotificationKind = (typeof ADMIN_NOTIFICATION_KINDS)[number]["kind"];
+export { ADMIN_NOTIFICATION_GROUPS, ADMIN_NOTIFICATION_KINDS, type AdminNotificationGroup, type AdminNotificationKind } from "@/lib/adminNotificationKinds";
 
 export function isOwnerEmail(email: string | null | undefined): boolean {
   return !!email && email.toLowerCase() === OWNER_EMAIL;

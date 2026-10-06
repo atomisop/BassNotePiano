@@ -126,7 +126,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
                     type="button"
                     onClick={() => setRecipients((current) => current.filter((c) => c.id !== r.id))}
                     aria-label={`Remove ${r.name ?? r.email}`}
-                    className="tap flex h-6 w-6 items-center justify-center rounded-full text-slate-400 transition hover:text-slate-100"
+                    className="tap flex h-6 w-6 items-center justify-center transition neu-btn rounded-lg"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -159,7 +159,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
                       <button
                         type="button"
                         onClick={() => addRecipients(visibleResults)}
-                        className="tap inline-flex items-center px-1 text-small font-medium text-slate-300 underline underline-offset-2 transition hover:text-slate-100"
+                        className="tap neu-btn rounded-lg px-3 py-1.5 text-small inline-flex items-center"
                       >
                         Add all {visibleResults.length}
                       </button>
