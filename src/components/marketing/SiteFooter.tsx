@@ -53,7 +53,7 @@ export function SiteFooter() {
               href={DISCORD_INVITE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 text-small text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
+              className="tap mt-4 inline-flex items-center gap-2 text-small text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
             >
               <DiscordIcon size={18} className="text-[#5865F2]" />
               Join our Discord
@@ -70,7 +70,7 @@ export function SiteFooter() {
             <ul className="mt-4 flex flex-col gap-3 text-small">
               {EXPLORE_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
+                  <Link href={link.href} className="tap inline-flex items-center text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
                     {link.label}
                   </Link>
                 </li>
@@ -83,19 +83,19 @@ export function SiteFooter() {
             <ul className="mt-4 flex flex-col gap-3 text-small">
               {isLoggedIn ? (
                 <li>
-                  <Link href="/dashboard" className="text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
+                  <Link href="/dashboard" className="tap inline-flex items-center text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
                     Dashboard
                   </Link>
                 </li>
               ) : (
                 <>
                   <li>
-                    <Link href="/login" className="text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
+                    <Link href="/login" className="tap inline-flex items-center text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
                       Log in
                     </Link>
                   </li>
                   <li>
-                    <Link href="/register" className="text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
+                    <Link href="/register" className="tap inline-flex items-center text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
                       Create account
                     </Link>
                   </li>
@@ -103,7 +103,7 @@ export function SiteFooter() {
               )}
               {LEGAL_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
+                  <Link href={link.href} className="tap inline-flex items-center text-slate-500 transition hover:text-[rgb(var(--c-s-50))]">
                     {link.label}
                   </Link>
                 </li>

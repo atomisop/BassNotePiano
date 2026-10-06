@@ -4,8 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useSession } from "next-auth/react";
-import { QUIZ_PASS_THRESHOLD } from "@/lib/curriculum";
-import { CheckIcon, ArrowRightIcon } from "@/components/ui/icons";
+import { ArrowRightIcon } from "@/components/ui/icons";
 
 // Served from R2 (the same object storage the app already uses for lesson
 // videos/avatars, see lib/storage.ts), not the Next.js public folder: 17MB
@@ -87,13 +86,14 @@ const HERO_VIDEO_URL = "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/mark
  * "Chords built in, not bolted on" feature, and the real interactive
  * PianoKeyboard.tsx/Fretboard.tsx components used inside lessons), not
  * new claims invented for this grid.
+ *
+ * The six-item fact grid described above has since been removed from the
+ * hero: it is a feature list, and Solution.tsx already carries every one of
+ * those facts.
  */
-// Cool, on-brand synonyms for "best" in this exact slot, cycled on a
-// timer by direct instruction: best -> only -> right -> the three below ->
-// loop. The three additions lean into the app's actual positioning
-// (correctness of the scale system, cultural fit, modern teaching) rather
-// than generic hype adjectives.
-const HERO_ROTATING_WORDS = ["best", "only", "right", "definitive", "authentic", "smartest"];
+// Synonyms for "best" in this slot, cycled on a timer. Kept to words the
+// product can stand behind: no "only", "definitive" or "smartest".
+const HERO_ROTATING_WORDS = ["best", "right", "clearest", "proper"];
 const HERO_WORD_INTERVAL_MS = 2000;
 
 // No reserved width slot: the word takes its own width, so "way" sits right
@@ -303,33 +303,9 @@ export function Hero() {
         </h1>
         <p className="lead mt-6 max-w-lg text-slate-300">15 scales, spelled correctly in every key.</p>
 
-        {/* grid-cols-2 unconditionally, not grid-cols-1 below sm: stacked
-            into one column, this list alone was 160px tall on a real phone
-            (measured against a 390x664 viewport) — the single biggest
-            contributor to the hero's content needing more height than a
-            short phone screen actually has, worse than the min-h-[100svh]/
-            padding tuning below could fix on their own. Two columns halves
-            that to ~80px; six short check-marked facts read fine at ~160px
-            per column even at this width. */}
-        <div className="mt-6 grid max-w-md grid-cols-2 gap-x-6 gap-y-2">
-          {[
-            "15 scales",
-            "12 keys",
-            "Live 1:1 teacher",
-            `${Math.round(QUIZ_PASS_THRESHOLD * 100)}% quiz gate`,
-            "Native chords",
-            "Virtual instruments",
-          ].map((fact) => (
-            <span key={fact} className="flex items-center gap-2 text-small text-slate-300">
-              <CheckIcon className="shrink-0 text-[rgb(var(--c-s-50))]" size={14} />
-              {fact}
-            </span>
-          ))}
-        </div>
-
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <Link href={isLoggedIn ? "/dashboard" : "/register"} className="btn btn-primary">
-            {isLoggedIn ? "Go to dashboard" : "Start learning"}
+            {isLoggedIn ? "Go to dashboard" : "Get started"}
             <ArrowRightIcon size={16} />
           </Link>
           <a href="#curriculum" className="btn btn-secondary">

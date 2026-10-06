@@ -35,8 +35,7 @@ export function ProblemStatement() {
         <PhotoBackdrop src={BACKDROPS.classes} scrim="vignette" sizes="100vw" />
       </div>
       <ScrollReveal className="mx-auto max-w-2xl px-6 text-center">
-        <p className="label label-muted">The gap</p>
-        <h2 className="display-2 mt-4 text-balance">Tabs teach you one song. Not the language.</h2>
+        <h2 className="display-2 text-balance">Tabs teach you one song. Not the language.</h2>
         <p className="lead mx-auto mt-5 max-w-[46ch]">
           Most Ethiopian music resources hand you a transcription of one specific piece. Learn it,
           and you can play that one song, in that one key. Try to play anything new, jam with
