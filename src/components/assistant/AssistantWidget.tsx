@@ -81,6 +81,7 @@ const GREETING_SEEN_KEY = "bnp-atom-greeting-seen";
 const FEEDBACK_KEY = "bnp-atom-feedback";
 const ESCALATION_ID_KEY = "bnp-atom-escalation-id";
 const GREETING_DELAY_MS = 1800;
+const GREETING_VISIBLE_MS = 9000;
 
 // Local fallback copy of the dismissal count (the real count lives on the
 // server: a one-year device cookie plus the account, see
@@ -625,6 +626,16 @@ export function AssistantWidget() {
       clearTimeout(timer);
     };
   }, [mounted, messages.length, greetingSuppressed]);
+
+  // The bubble introduces itself, then gets out of the way on its own so it
+  // never sits on top of page content for long.
+  useEffect(() => {
+    if (!showGreeting) return;
+    const timer = setTimeout(() => hideGreetingForSession(), GREETING_VISIBLE_MS);
+    return () => clearTimeout(timer);
+    // hideGreetingForSession only touches state setters and sessionStorage.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showGreeting]);
 
   // Hides the bubble for the rest of this tab's session regardless of how
   // that happened. Opening the chat (openPanel) counts just as much as an

@@ -85,8 +85,7 @@ export function FAQ() {
         </div>
       </div>
       <ScrollReveal className="mx-auto max-w-2xl px-6">
-        <p className="label label-muted">Questions</p>
-        <h2 className="display-2 mt-4 max-w-[20ch] text-balance">Before you commit to anything.</h2>
+        <h2 className="display-2 max-w-[20ch] text-balance">Before you commit to anything.</h2>
 
         <Accordion type="single" collapsible className="mt-10">
           {FAQS.map((item, i) => (
@@ -99,17 +98,14 @@ export function FAQ() {
           ))}
         </Accordion>
 
-        <p className="mt-8 text-center text-small text-slate-500">
-          More on pricing and bundles on the{" "}
-          <Link href="/pricing" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
-            full pricing page
+        <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-1 text-small">
+          <Link href="/pricing" className="tap inline-flex items-center text-[rgb(var(--c-s-50))] transition hover:opacity-70">
+            Full pricing
           </Link>
-          , or read the complete{" "}
-          <Link href="/terms" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
-            terms &amp; refund policy
+          <Link href="/terms" className="tap inline-flex items-center text-[rgb(var(--c-s-50))] transition hover:opacity-70">
+            Terms &amp; refund policy
           </Link>
-          .
-        </p>
+        </div>
       </ScrollReveal>
     </section>
   );

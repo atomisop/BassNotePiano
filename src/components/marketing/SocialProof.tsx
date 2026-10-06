@@ -73,30 +73,24 @@ export function SocialProof() {
           <PhotoBackdrop src={BACKDROPS.guitar} scrim="standard" sizes="100vw" />
         </div>
       </div>
-      <ScrollReveal className="editorial-grid">
-        <p className="label label-muted col-span-12 md:col-span-3">Why trust this</p>
+      <ScrollReveal className="editorial-grid items-start">
+        <h2 className="display-2 col-span-12 text-balance md:col-span-5">Nothing here asks you to take our word for it.</h2>
 
-        <div className="col-span-12 md:col-span-9">
-          <h2 className="display-2 max-w-[26ch] text-balance">Nothing here asks you to take our word for it.</h2>
-
-          <div className="mt-10">
-            <hr className="rule-hairline" />
+        <div className="col-span-12 md:col-span-6 md:col-start-7">
+          <ul className="flex flex-col gap-8">
             {PROOF_POINTS.map((point) => (
-              <div key={point.label}>
-                <div className="flex flex-col gap-2 py-6 sm:flex-row sm:items-baseline sm:gap-8">
-                  <p className="label sm:w-32 sm:shrink-0">{point.label}</p>
-                  <p className="body-copy max-w-[52ch]">{point.body}</p>
-                </div>
-                <hr className="rule-hairline" />
-              </div>
+              <li key={point.label} className="body-copy max-w-[52ch]">
+                <span className="font-semibold text-slate-50">{point.label}. </span>
+                {point.body}
+              </li>
             ))}
-          </div>
+          </ul>
 
           <a
             href={DISCORD_INVITE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-8 inline-flex items-center gap-2 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70"
+            className="tap mt-8 inline-flex items-center gap-2 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70"
           >
             <DiscordIcon size={16} className="text-[#5865F2]" />
             See the community for yourself

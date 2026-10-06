@@ -60,9 +60,7 @@ export function InstrumentPicker() {
         <PhotoBackdrop src={BACKDROP_SRC} scrim="dense" sizes="100vw" />
       </div>
       <ScrollReveal className="editorial-grid">
-        <p className="label label-muted col-span-12 md:col-span-3">Choose your instrument</p>
-
-        <div className="col-span-12 md:col-span-9">
+        <div className="col-span-12 md:col-span-9 md:col-start-4">
           <h2 className="display-2 max-w-[20ch] text-balance">One curriculum, three instruments.</h2>
 
           <div className="mt-10">

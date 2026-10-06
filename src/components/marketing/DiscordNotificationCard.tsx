@@ -6,6 +6,9 @@ import { DiscordIcon, XIcon } from "@/components/ui/icons";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 
 const DISMISS_KEY = "bnp-discord-card-dismissed";
+// Held back until the Atom greeting has gone, then leaves on its own.
+const SHOW_AFTER_MS = 13000;
+const VISIBLE_MS = 8000;
 
 /**
  * A small, dismissible promo for the Discord server, mounted once in the
@@ -36,11 +39,21 @@ export function DiscordNotificationCard() {
 
   useEffect(() => {
     setMounted(true);
-    setVisible(localStorage.getItem(DISMISS_KEY) !== "1");
+    if (localStorage.getItem(DISMISS_KEY) === "1") return;
+    const show = setTimeout(() => setVisible(true), SHOW_AFTER_MS);
+    const hide = setTimeout(() => dismiss(), SHOW_AFTER_MS + VISIBLE_MS);
+    return () => {
+      clearTimeout(show);
+      clearTimeout(hide);
+    };
   }, []);
 
   function dismiss() {
-    localStorage.setItem(DISMISS_KEY, "1");
+    try {
+      localStorage.setItem(DISMISS_KEY, "1");
+    } catch {
+      // Non-fatal: worst case it shows once more.
+    }
     setVisible(false);
   }
 

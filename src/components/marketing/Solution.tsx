@@ -84,8 +84,7 @@ export function Solution() {
     <section id="curriculum" className="scroll-mt-24 py-[var(--space-5)] md:py-[var(--space-8)]">
       <ScrollReveal className="editorial-grid items-start">
         <div className="col-span-12 md:col-span-6">
-          <p className="label label-muted">The fix</p>
-          <h2 className="display-2 mt-4 max-w-[18ch] text-balance">A spelling engine for Ethiopian music.</h2>
+          <h2 className="display-2 max-w-[18ch] text-balance">A spelling engine for Ethiopian music.</h2>
 
           <Accordion type="single" collapsible className="mt-8" defaultValue="feature-0">
             {FEATURES.map((feature, i) => (
