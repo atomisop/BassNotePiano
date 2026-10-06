@@ -23,10 +23,12 @@ and `sentry.*.config.ts` filenames; the DSN just points at GlitchTip's
 self-hosted-compatible endpoint) · Discord (live lessons happen there now,
 **not Zoom** — `src/lib/discord.ts`).
 
-Node 24 pinned (`.nvmrc` / `engines`). No test suite exists yet (`npm test`
-is a no-op placeholder) — `tsc --noEmit`, `next lint`, and `next build` are
-the real correctness gates, plus manual verification against a real
-Postgres (see below).
+Node 24 pinned (`.nvmrc` / `engines`). A small Vitest suite lives in `tests/`
+(`npm test`, pure logic and the calendar routes, no database) and runs in CI.
+`tsc --noEmit`, `next lint`, `next build` and the tests are the correctness
+gates, plus manual verification against a real Postgres (see below). Every
+scheduled Netlify function wraps its body in `runJob` (`src/lib/jobRun.ts`) so
+the owner overview and the morning email can show a job that stopped.
 
 ## Repo shape
 
