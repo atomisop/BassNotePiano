@@ -89,7 +89,7 @@ const GREETING_DELAY_MS = 1800;
 // survive closing the tab, unlike GREETING_SEEN_KEY above.
 const ANONYMOUS_GREETING_DISMISS_KEY = "bnp-atom-greeting-dismiss-count";
 const ANONYMOUS_GREETING_DISMISS_LIMIT = 3;
-const SUPPORT_POLL_MS = 4000;
+const SUPPORT_POLL_MS = 2500;
 
 const SUGGESTIONS = [
   "How much does the curriculum cost?",
@@ -397,6 +397,8 @@ export function AssistantWidget() {
   const [activeEscalationId, setActiveEscalationId] = useState<string | null>(null);
   const [threadMessages, setThreadMessages] = useState<ThreadMessage[]>([]);
   const [threadStatus, setThreadStatus] = useState<ThreadStatus | null>(null);
+  const [supportTyping, setSupportTyping] = useState(false);
+  const lastTypingPingRef = useRef(0);
 
   // See lib/overlayNav.ts — true while MarketingNav's mobile menu or the
   // dashboard's MoreSheet is open, so the launcher steps aside instead of
@@ -536,6 +538,7 @@ export function AssistantWidget() {
       if (signal.aborted) return;
       setThreadMessages(data.messages);
       setThreadStatus(data.status);
+      setSupportTyping(Boolean(data.supportTyping));
     },
     SUPPORT_POLL_MS,
     { enabled: Boolean(activeEscalationId && open), resetKey: activeEscalationId },
@@ -755,6 +758,7 @@ export function AssistantWidget() {
       }
       setThreadMessages(data.messages);
       setThreadStatus(data.status);
+      setSupportTyping(Boolean(data.supportTyping));
     } catch {
       setError("Couldn't send that. Check your connection and try again.");
     } finally {
@@ -993,7 +997,12 @@ export function AssistantWidget() {
                   {threadMessages.map((m) => (
                     <ThreadMessageBubble key={m.id} message={m} />
                   ))}
-                  {!hasSupportReply && threadStatus === "OPEN" && (
+                  {supportTyping && threadStatus === "OPEN" && (
+                    <div className="flex items-center gap-2 px-1 text-small text-slate-500" aria-live="polite">
+                      Support is typing <TypingIndicator />
+                    </div>
+                  )}
+                  {!hasSupportReply && threadStatus === "OPEN" && !supportTyping && (
                     <p className="rounded-2xl bg-neu-base p-3 shadow-raised-low text-center text-small text-slate-500">
                       You&apos;re connected. Our support team has been notified and will reply here shortly.
                     </p>
@@ -1115,7 +1124,19 @@ export function AssistantWidget() {
                   ref={inputRef}
                   type="text"
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    // In a live thread the team sees "Customer is typing": at most one ping every 1.5s.
+                    const now = Date.now();
+                    if (activeEscalationId && now - lastTypingPingRef.current > 1_500) {
+                      lastTypingPingRef.current = now;
+                      void fetch(`/api/assistant/support/${activeEscalationId}/typing`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: "{}",
+                      }).catch(() => {});
+                    }
+                  }}
                   placeholder={isResolved ? "This conversation is closed" : inSupportMode ? "Message support…" : "Ask Atom anything…"}
                   maxLength={2000}
                   disabled={loading || isResolved}

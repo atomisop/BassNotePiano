@@ -128,6 +128,8 @@ export interface ThreadMessageView {
 export interface ThreadView {
   status: AssistantEscalationStatus;
   messages: ThreadMessageView[];
+  /** The team is typing a reply right now. */
+  supportTyping: boolean;
 }
 
 const THREAD_SELECT = {
@@ -167,7 +169,7 @@ export async function getThreadForVisitor(escalationId: string): Promise<ThreadV
     select: THREAD_SELECT,
   });
 
-  return { status: escalation.status, messages };
+  return { status: escalation.status, messages, supportTyping: await isSideTyping(escalationId, "SUPPORT") };
 }
 
 export async function postVisitorMessage(
@@ -201,6 +203,7 @@ export async function postVisitorMessage(
   await prisma.supportMessage.create({
     data: { escalationId, sender: "VISITOR", body: trimmed, identifier },
   });
+  await clearSupportTyping(escalationId, "VISITOR");
 
   if (previous?.sender !== "VISITOR") {
     const admins = await getAdminRecipients("SUPPORT_CHAT");
@@ -275,7 +278,7 @@ export interface AdminThreadMessage extends ThreadMessageView {
   sentByName: string | null;
 }
 
-export async function getSupportThread(escalationId: string): Promise<{ status: AssistantEscalationStatus; messages: AdminThreadMessage[] } | null> {
+export async function getSupportThread(escalationId: string): Promise<{ status: AssistantEscalationStatus; messages: AdminThreadMessage[]; visitorTyping: boolean } | null> {
   const escalation = await prisma.assistantEscalation.findUnique({ where: { id: escalationId } });
   if (!escalation) return null;
 
@@ -293,6 +296,7 @@ export async function getSupportThread(escalationId: string): Promise<{ status: 
   return {
     status: escalation.status,
     messages: messages.map((m) => ({ id: m.id, sender: m.sender, body: m.body, createdAt: m.createdAt, sentByName: m.sentBy?.name ?? null })),
+    visitorTyping: await isSideTyping(escalationId, "VISITOR"),
   };
 }
 
@@ -303,6 +307,7 @@ export async function postAdminReply(escalationId: string, adminId: string, body
   await prisma.supportMessage.create({
     data: { escalationId, sender: "SUPPORT", body: trimmed, sentById: adminId },
   });
+  await clearSupportTyping(escalationId, "SUPPORT");
   // Replying is itself "an admin looked at this."
   await prisma.assistantEscalation.update({ where: { id: escalationId }, data: { adminLastReadAt: new Date() } });
 }
@@ -323,4 +328,33 @@ export async function resolveSupportThread(escalationId: string, adminId: string
 // already gone, is a no-op instead of throwing.
 export async function deleteSupportThread(escalationId: string): Promise<void> {
   await prisma.assistantEscalation.deleteMany({ where: { id: escalationId } });
+}
+
+// ---------------------------------------------------------------------------
+// Typing: shown to the other side while a message is being written
+// ---------------------------------------------------------------------------
+
+// Same staleness window as direct-message typing: the composer re-pings a little inside it.
+const SUPPORT_TYPING_STALE_MS = 6_000;
+
+/** Called while someone writes in a thread. The customer is VISITOR, the team is SUPPORT. */
+export async function setSupportTyping(escalationId: string, side: "VISITOR" | "SUPPORT"): Promise<void> {
+  const exists = await prisma.assistantEscalation.findUnique({ where: { id: escalationId }, select: { id: true } });
+  if (!exists) return;
+  await prisma.supportTypingStatus.upsert({
+    where: { escalationId_side: { escalationId, side } },
+    // Explicit: an empty update does not touch @updatedAt, and recency is the signal.
+    update: { updatedAt: new Date() },
+    create: { escalationId, side },
+  });
+}
+
+export async function isSideTyping(escalationId: string, side: "VISITOR" | "SUPPORT"): Promise<boolean> {
+  const row = await prisma.supportTypingStatus.findUnique({ where: { escalationId_side: { escalationId, side } }, select: { updatedAt: true } });
+  return !!row && Date.now() - row.updatedAt.getTime() < SUPPORT_TYPING_STALE_MS;
+}
+
+/** A sent message ends that side's typing straight away. */
+export async function clearSupportTyping(escalationId: string, side: "VISITOR" | "SUPPORT"): Promise<void> {
+  await prisma.supportTypingStatus.deleteMany({ where: { escalationId, side } });
 }

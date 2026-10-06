@@ -7,6 +7,7 @@ import {
   getSupportThreadsAction,
   getSupportThreadAction,
   sendSupportReplyAction,
+  setSupportTypingAction,
   resolveSupportThreadAction,
   deleteSupportThreadAction,
   type AdminThreadSummary,
@@ -15,6 +16,7 @@ import {
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
+import { TypingIndicator } from "@/components/messaging/TypingIndicator";
 
 const THREAD_LIST_POLL_MS = 15_000;
 const ACTIVE_THREAD_POLL_MS = 2_500;
@@ -129,6 +131,8 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [threadStatus, setThreadStatus] = useState<AssistantEscalationStatus | null>(null);
   const [reply, setReply] = useState("");
+  const [visitorTyping, setVisitorTyping] = useState(false);
+  const lastTypingPingRef = useRef(0);
   const [sending, setSending] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -174,6 +178,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
   useEffect(() => {
     setMessages([]);
     setThreadStatus(null);
+    setVisitorTyping(false);
     setMessagesLoading(Boolean(activeId));
   }, [activeId]);
 
@@ -185,6 +190,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
       if (result) {
         setMessages(result.messages);
         setThreadStatus(result.status);
+        setVisitorTyping(result.visitorTyping);
       }
       setMessagesLoading(false);
     },
@@ -362,6 +368,11 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                   {messages.map((m) => (
                     <MessageRow key={m.id} message={m} />
                   ))}
+                  {visitorTyping && threadStatus === "OPEN" && (
+                    <div className="flex items-center gap-2 text-small text-slate-500" aria-live="polite">
+                      Customer is typing <TypingIndicator />
+                    </div>
+                  )}
                   {(threadPoll.failed || listPoll.failed) && (
                     <RegionError
                       title="Live updates paused."
@@ -381,7 +392,15 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
               <input
                 type="text"
                 value={reply}
-                onChange={(e) => setReply(e.target.value)}
+                onChange={(e) => {
+                  setReply(e.target.value);
+                  // At most one ping every 1.5s while the team is writing.
+                  const now = Date.now();
+                  if (activeId && now - lastTypingPingRef.current > 1_500) {
+                    lastTypingPingRef.current = now;
+                    void setSupportTypingAction(activeId);
+                  }
+                }}
                 placeholder="Reply as Support…"
                 maxLength={2000}
                 disabled={sending}
