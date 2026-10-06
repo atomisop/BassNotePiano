@@ -1,3 +1,4 @@
+import { PillCTA } from "@/components/ui/pill-cta";
 import { ElasticGallery } from "@/components/ui/elastic-gallery";
 import { BACKDROPS } from "@/lib/backdrops";
 
@@ -14,6 +15,9 @@ export function InstrumentPicker() {
   return (
     <section className="mx-auto w-full max-w-6xl px-6 pb-24 md:pb-40">
       <h2 className="sr-only">Piano, guitar and bass</h2>
+      <div className="mb-8">
+        <PillCTA href="/register">Choose your instrument</PillCTA>
+      </div>
       <ElasticGallery items={ITEMS} />
     </section>
   );

@@ -15,7 +15,7 @@
   }
 }
 
-@theme {
+@theme inline {
   --font-serif: var(--font-display), ui-serif, Georgia, serif;
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
