@@ -116,12 +116,9 @@ function PianoExerciseView({ exercise, activeStep }: { exercise: PianoExercise; 
 
 function GuitarTab({ exercise, activeStep }: { exercise: GuitarExercise; activeStep: number | null }) {
   const lit = activeStep === null ? null : activeStep % exercise.steps.length;
-  const fingerstyle = exercise.steps.some((s) => s.pickFinger);
   const names = ["e", "B", "G", "D", "A", "E"];
 
-  const legend = fingerstyle
-    ? [["p", "thumb"], ["i", "index"], ["m", "middle"], ["a", "ring"]]
-    : [["1", "index"], ["2", "middle"], ["3", "ring"], ["4", "little"]];
+  const legend = [["1", "index"], ["2", "middle"], ["3", "ring"], ["4", "little"]];
 
   return (
     <div className="rounded-2xl bg-neu-base p-3 shadow-raised-low sm:p-5">
@@ -146,7 +143,7 @@ function GuitarTab({ exercise, activeStep }: { exercise: GuitarExercise; activeS
           {exercise.steps.map((step, i) => (
             <div key={i} className="flex min-w-[2.75rem] flex-1 flex-col items-center">
               <span className="flex h-7 items-center text-body font-bold text-slate-400">
-                {step.pick === "D" ? "\u2193" : step.pick === "U" ? "\u2191" : step.pickFinger ?? ""}
+                {step.pick === "D" ? "\u2193" : step.pick === "U" ? "\u2191" : ""}
               </span>
               {[1, 2, 3, 4, 5, 6].map((str) => (
                 <div key={str} className="relative flex h-10 w-full items-center justify-center">
@@ -163,7 +160,7 @@ function GuitarTab({ exercise, activeStep }: { exercise: GuitarExercise; activeS
                 </div>
               ))}
               <span className="mt-1 flex h-7 items-center text-small font-bold text-[rgb(var(--signal))]">
-                {step.finger === 0 ? (step.pickFinger ? "" : "open") : step.finger}
+                {step.finger === 0 ? "open" : step.finger}
               </span>
             </div>
           ))}
@@ -310,7 +307,7 @@ export function PracticeClient({
       </Card>
 
       {/* ---- Exercises ---- */}
-      <div className="space-y-3 md:space-y-4">
+      <div className="min-w-0 space-y-3 md:space-y-4">
         <Tabs<Instrument>
           label="Instrument"
           value={instrument}
@@ -321,14 +318,14 @@ export function PracticeClient({
           ]}
         />
 
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 flex touch-pan-x snap-x gap-2 overflow-x-auto overscroll-x-contain px-4 pb-1 [scrollbar-width:none] md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden">
           {exercises.map((e) => (
             <button
               key={e.id}
               type="button"
               onClick={() => chooseExercise(e.id, e.bpm)}
               aria-pressed={e.id === exerciseId}
-              className={`tap shrink-0 rounded-xl bg-neu-base px-4 py-2.5 text-small font-semibold transition ${
+              className={`tap shrink-0 snap-start scroll-mx-4 rounded-xl bg-neu-base px-4 py-2.5 text-small font-semibold transition ${
                 e.id === exerciseId ? "text-[rgb(var(--signal))] shadow-pressed-low" : "text-slate-300 shadow-raised-low hover:shadow-raised-mid"
               }`}
             >
