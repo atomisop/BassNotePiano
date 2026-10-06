@@ -805,7 +805,7 @@ export async function classesLeftInPaidMonth(plan: {
 export async function bookReservedWindowForPlan(planId: string): Promise<void> {
   try {
     const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, include: { reservedSchedule: true } });
-    if (!plan || !plan.reservedSchedule || plan.reservedChunkIndex === null || !plan.reservedSchedule.active) return;
+    if (!plan || plan.status === "CANCELED" || !plan.reservedSchedule || plan.reservedChunkIndex === null || !plan.reservedSchedule.active) return;
     const chunk = chunksForSchedule(plan.reservedSchedule)[plan.reservedChunkIndex];
     if (!chunk) return;
     const creditsPerClass = PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence];

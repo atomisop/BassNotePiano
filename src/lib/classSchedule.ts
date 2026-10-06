@@ -1035,8 +1035,16 @@ export async function createReservedBookingIfAbsent(
     where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId, occurrenceDate } },
   });
   if (existing?.status === "SCHEDULED") return null;
-  // The student cancelled this one on purpose (24+ hours ahead): do not book it again.
-  if (existing?.status === "CANCELED" && existing.canceledReason === SKIPPED_BY_STUDENT) return null;
+  // Canceled on purpose, by the student (24+ hours ahead) or by the studio: do not book it again.
+  // A plan-wide cancel leaves no reason, so those can still be booked by a new plan.
+  if (existing?.status === "CANCELED" && existing.canceledReason !== null) return null;
+
+  // One class a day: another SCHEDULED class the same day wins over the weekly slot.
+  const sameDay = await db.classBooking.findFirst({
+    where: { studentId, occurrenceDate, status: "SCHEDULED", NOT: { scheduleId } },
+    select: { id: true },
+  });
+  if (sameDay) return null;
 
   // Defense-in-depth against a different student somehow already holding
   // this exact instant despite the enrollment-time conflict check
@@ -1762,7 +1770,8 @@ export async function adminCancelClassBooking(bookingId: string, reason?: string
 
   await prisma.classBooking.update({
     where: { id: bookingId },
-    data: { status: "CANCELED", refunded: true, canceledReason: trimmedReason },
+    // Always a reason, so a weekly-slot job never brings a class the studio canceled back.
+    data: { status: "CANCELED", refunded: true, canceledReason: trimmedReason ?? "Canceled by the studio" },
   });
 
   await createNotification({

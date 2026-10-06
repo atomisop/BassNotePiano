@@ -412,8 +412,10 @@ export async function submitZellePaymentReference(
     { windowMinutes: 60, max: 10, timestampField: "submittedAt", message: "Too many submissions. Please wait a bit and try again." },
   );
 
-  const submitted = await prisma.zellePayment.update({
-    where: { id: paymentId },
+  // Guarded by status: if the forwarded bank email approved this payment a moment ago,
+  // submitting must not push it back to PENDING_REVIEW (that would let it be approved twice).
+  const claimed = await prisma.zellePayment.updateMany({
+    where: { id: paymentId, status: { in: ["AWAITING_TRANSFER", "REJECTED"] } },
     data: {
       senderName: input.senderName,
       // Explicit null, not just omitted: a REJECTED payment being
@@ -429,6 +431,8 @@ export async function submitZellePaymentReference(
       rejectionReason: null,
     },
   });
+  const submitted = await prisma.zellePayment.findUniqueOrThrow({ where: { id: paymentId } });
+  if (claimed.count !== 1) return submitted; // already settled while this request was running
 
   // If the money's email already arrived, settle now, otherwise fall back to
   // the returning-student rule.
@@ -676,7 +680,10 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
           // *next* installment becomes due. cycleEnd is computed once and
           // reused for both, below.
           const plan = await tx.paymentPlan.findUnique({ where: { id: payment.paymentPlanId } });
-          const cycleEnd = plan ? addCalendarMonthsClamped(plan.nextDueDate, 1) : null;
+          // The first month starts when the first payment is approved, not when the plan was
+          // created, so a student who pays a few days after signing up still gets a full month.
+          const cycleStart = plan && plan.installmentsPaid === 0 && plan.nextDueDate < new Date() ? new Date() : plan?.nextDueDate;
+          const cycleEnd = plan && cycleStart ? addCalendarMonthsClamped(cycleStart, 1) : null;
 
           // Quantity is snapshotted onto the payment row at installment-creation
           // time (see createPaymentPlan/getOrCreateOpenInstallmentPayment in
