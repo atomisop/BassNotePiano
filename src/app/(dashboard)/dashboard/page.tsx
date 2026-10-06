@@ -1,11 +1,10 @@
-import { Suspense, cache } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { getRoadmap } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { BADGES } from "@/lib/badges";
-import { getUserClassBookings } from "@/lib/classSchedule";
+import { DAILY_GOAL_SECONDS, getFingerPracticeStatus } from "@/lib/fingerPractice";
 import { resolveNextStep, summariseProgress } from "@/lib/next-step";
 import { cn } from "@/lib/utils";
 import { ScaleRoadmap } from "@/components/progression/ScaleRoadmap";
@@ -16,7 +15,6 @@ import { Card, Eyebrow } from "@/components/ui/Card";
 import { CardDeck } from "@/components/ui/CardDeck";
 import { buttonVariants } from "@/components/ui/button";
 import { WideLayout } from "@/components/layout/PageLayouts";
-import { Skeleton } from "@/components/ui/Skeleton";
 
 function ArrowIcon() {
   return (
@@ -37,76 +35,6 @@ function Stat({ value, label }: { value: string; label: string }) {
 }
 
 /**
- * The next-class card streams in on its own: it needs a separate bookings
- * query that nothing else on the page depends on, so the rest of the home
- * screen no longer waits for it. The skeleton matches the card's footprint so
- * the cards below don't shift when it resolves.
- */
-// The card is rendered twice (phone deck and desktop panel); cache() makes both
-// share one query per request.
-const getBookingsOnce = cache(getUserClassBookings);
-
-async function NextClassCard({ userId }: { userId: string }) {
-  const bookings = await getBookingsOnce(userId);
-
-  // getUserClassBookings returns newest-first across all statuses; the next
-  // class is the earliest still-scheduled one in the future.
-  const now = Date.now();
-  const nextClass = bookings
-    .filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > now)
-    .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())[0];
-
-  return nextClass ? (
-            <Link
-              href="/lessons"
-              className="group block h-full rounded-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <Card interactive className="flex h-full items-center justify-between gap-4">
-                <div>
-                  <Eyebrow>Next live class</Eyebrow>
-                  <p className="mt-2 text-small font-semibold text-slate-50">
-                    {/* Server-rendered in one stable time zone; /lessons shows
-                        the student's own local time. */}
-                    {nextClass.scheduledAt.toLocaleString("en-US", {
-                      weekday: "long",
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                      timeZone: "America/New_York",
-                      timeZoneName: "short",
-                    })}
-                  </p>
-                  {nextClass.schedule.label && <p className="text-small text-slate-400">{nextClass.schedule.label}</p>}
-                </div>
-                <span className="shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5">
-                  <ArrowIcon />
-                </span>
-              </Card>
-            </Link>
-          ) : (
-            <Card className="h-full">
-              <Eyebrow>Live classes</Eyebrow>
-              <p className="mt-2 text-small text-slate-400">No class booked yet.</p>
-              <Link
-                href="/lessons"
-                className="tap mt-2 inline-flex items-center text-small font-semibold text-slate-50 underline-offset-4 hover:underline"
-              >
-                Book a class
-              </Link>
-            </Card>
-          );
-}
-
-function NextClassSkeleton() {
-  return (
-    <div aria-hidden>
-      <Skeleton className="h-[7.5rem] w-full rounded-card" />
-    </div>
-  );
-}
-
-/**
  * Home (STEP 2B wireframe, approved 2026-10-02).
  *
  * Desktop: the full width. A band of cards (next step, week, progress, next
@@ -121,13 +49,14 @@ export default async function DashboardPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
 
-  const [roadmap, badgeRows, user] = await Promise.all([
+  const [roadmap, badgeRows, user, practice] = await Promise.all([
     getRoadmap(session.user.id),
     prisma.userBadge.findMany({ where: { userId: session.user.id }, select: { code: true } }),
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: { name: true, currentStreak: true, classCredits: true },
     }),
+    getFingerPracticeStatus(session.user.id),
   ]);
 
   const progress = summariseProgress(roadmap);
@@ -190,10 +119,32 @@ export default async function DashboardPage() {
     </Card>
   );
 
-  const classCard = () => (
-    <Suspense fallback={<NextClassSkeleton />}>
-      <NextClassCard userId={session.user.id} />
-    </Suspense>
+  const practiceCard = () => (
+    <Card className="relative z-(--z-mid)">
+      <Eyebrow>Finger practice</Eyebrow>
+      <p className="mt-2 text-body font-semibold text-slate-50">
+        {practice.completedToday ? "Done for today" : "10 minutes to unlock your scales"}
+      </p>
+      <div
+        className="mt-3 h-2 overflow-hidden rounded-full bg-neu-base shadow-pressed-low"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={DAILY_GOAL_SECONDS}
+        aria-valuenow={practice.todaySeconds}
+        aria-label="Finger practice today"
+      >
+        <div className="h-full rounded-full bg-[rgb(var(--signal))] transition-all" style={{ width: `${Math.round((practice.todaySeconds / DAILY_GOAL_SECONDS) * 100)}%` }} />
+      </div>
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <Link href="/practice" className={cn(buttonVariants(), "relative z-(--z-front)")}>
+          {practice.completedToday ? "Practice more" : practice.todaySeconds > 0 ? "Continue" : "Start practice"}
+          <ArrowIcon />
+        </Link>
+        <span className="text-small text-slate-400">
+          {practice.streak} day streak · Level {practice.level}/7
+        </span>
+      </div>
+    </Card>
   );
 
   const badgesCard = () => (
@@ -223,12 +174,12 @@ export default async function DashboardPage() {
         <CardDeck
           className="lg:hidden"
           label="Your home cards"
-          labels={["Your next step", "This week", "Progress", "Live classes", "Badges"]}
+          labels={["Finger practice", "Your next step", "This week", "Progress", "Badges"]}
         >
+          {practiceCard()}
           {nextStepCard()}
           {weekCard()}
           {progressCard()}
-          {classCard()}
           {badgesCard()}
         </CardDeck>
 
@@ -237,10 +188,10 @@ export default async function DashboardPage() {
             the week and progress cards take the space it used to leave empty,
             so there is no side column and the scales get the full width. ---- */}
         <div className="hidden gap-3 lg:grid lg:grid-cols-4 [&>*>*]:h-full">
+          <div className="lg:col-span-2">{practiceCard()}</div>
           <div className="lg:col-span-2">{nextStepCard()}</div>
           <div>{weekCard()}</div>
           <div>{progressCard()}</div>
-          <div className="lg:col-span-2">{classCard()}</div>
           <div className="lg:col-span-2">{badgesCard()}</div>
         </div>
 
