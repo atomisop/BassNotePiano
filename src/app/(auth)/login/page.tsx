@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { safeCallbackPath } from "@/lib/safeRedirect";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -22,8 +23,8 @@ function LoginCard() {
   // against the server's own view of the session, so a stale cookie cannot cause a loop.
   useEffect(() => {
     if (status !== "authenticated") return;
-    const safe = callbackUrl.startsWith("/") && !callbackUrl.startsWith("//") && callbackUrl !== "/" ? callbackUrl : "/dashboard";
-    router.replace(safe);
+    const safe = safeCallbackPath(callbackUrl);
+    router.replace(safe === "/" ? "/dashboard" : safe);
   }, [status, callbackUrl, router]);
 
   return (

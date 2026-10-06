@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { safeCallbackPath } from "@/lib/safeRedirect";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -67,7 +68,8 @@ export function LoginForm({
     // Logged in means into the signed-in app: the Log in panel on the public pages
     // goes to the dashboard, and a plain "/" callback does too. Only a real in-app
     // destination (a relative path) is kept.
-    const target = embedded || !callbackUrl.startsWith("/") || callbackUrl.startsWith("//") || callbackUrl === "/" ? "/dashboard" : callbackUrl;
+    const safe = safeCallbackPath(callbackUrl);
+    const target = embedded || safe === "/" ? "/dashboard" : safe;
     if (embedded) onSuccess?.();
     router.push(target);
     router.refresh();
