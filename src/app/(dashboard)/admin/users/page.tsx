@@ -17,7 +17,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
         id: u.id,
         name: u.name,
         email: u.email,
-        roleLabel: u.role === "STUDENT" ? null : u.role === "ADMIN" ? "Admin" : "Employee",
+        roleLabel: u.role === "ADMIN" ? "Admin" : null,
         progress: p ? `${p.scalesCompleted}/${p.scales.length}` : null,
         readyScale: ready ? (p!.scales.find((s) => s.slug === ready)?.code ?? "next") : null,
       };

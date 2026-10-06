@@ -16,7 +16,7 @@ import Link from "next/link";
 // queue, standing installment plans plus their own cancellation-feedback
 // tab, manual credit corrections). Students is every page about a
 // specific person's account (the registration queue, full account
-// management, per-scale progress). Operations is everything else that
+// management, who is ready for their next scale). Operations is everything else that
 // keeps the actual teaching running (the weekly schedule plus its own
 // booking/attendance tab, uploaded lesson content, live support, and
 // broadcast announcements) — the one deliberately mixed bucket, since
