@@ -4,12 +4,6 @@ import { revalidatePath } from "next/cache";
 import { getServerAuthSession } from "@/lib/auth";
 import { getMailUnreadCount, markAllMailRead, openSupportCaseFromMail, MailError } from "@/lib/mail";
 
-export async function mailUnreadCountAction(): Promise<number> {
-  const session = await getServerAuthSession();
-  if (!session?.user) return 0;
-  return getMailUnreadCount(session.user.id);
-}
-
 export async function markAllMailReadAction(): Promise<void> {
   const session = await getServerAuthSession();
   if (!session?.user) return;

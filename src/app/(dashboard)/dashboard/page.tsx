@@ -141,7 +141,7 @@ export default async function DashboardPage() {
           <ArrowIcon />
         </Link>
         <span className="text-small text-slate-400">
-          {practice.streak} day streak · Level {practice.level}/7
+          {practice.streak} day streak
         </span>
       </div>
     </Card>

@@ -39,15 +39,10 @@ export async function getFingerPracticeStatus(userId: string): Promise<FingerPra
   const todayRow = await prisma.fingerPracticeDay.findUnique({ where: { userId_day: { userId, day: today } }, select: { seconds: true } });
   const completed = new Set(rows.map((r) => r.day));
   const streak = computeStreak(completed, today);
-  const earned = await prisma.userBadge.findMany({ where: { userId, code: { in: FINGER_LEVELS.map((l) => l.code) } }, select: { code: true } });
-  const level = Math.max(0, ...earned.map((b) => FINGER_LEVELS.find((l) => l.code === b.code)?.level ?? 0));
-  const nextLevel = FINGER_LEVELS.find((l) => l.level === level + 1);
   return {
     todaySeconds: Math.min(todayRow?.seconds ?? 0, DAILY_GOAL_SECONDS),
     completedToday: completed.has(today),
     streak,
-    level,
-    next: nextLevel ? { level: nextLevel.level, label: nextLevel.label, days: nextLevel.days, daysToGo: Math.max(0, nextLevel.days - streak) } : null,
   };
 }
 

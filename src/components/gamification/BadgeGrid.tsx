@@ -2,7 +2,24 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import type { BadgeCode } from "@prisma/client";
+import { Medal } from "lucide-react";
 import { BADGES, type BadgeCategory } from "@/lib/badges";
+
+// Each finger level has its own metal or gem, so the seven badges are easy to tell apart at a glance.
+const FINGER_TIERS = [
+  { name: "Bronze", color: "#cd7f32" },
+  { name: "Silver", color: "#c7ccd4" },
+  { name: "Gold", color: "#f5c542" },
+  { name: "Sapphire", color: "#5b8def" },
+  { name: "Ruby", color: "#e5484d" },
+  { name: "Amethyst", color: "#a78bfa" },
+  { name: "Diamond", color: "#7dd3fc" },
+] as const;
+
+function fingerLevelOf(code: string): number | null {
+  const match = /^FINGER_LEVEL_(\d+)$/.exec(code);
+  return match ? Number(match[1]) : null;
+}
 
 const CATEGORY_LABELS: Record<BadgeCategory, string> = {
   COURSE: "Course completion",
@@ -75,7 +92,21 @@ export function BadgeGrid({ earnedCodes }: BadgeGridProps) {
                           : "border-transparent text-slate-600 opacity-50 bg-neu-base shadow-raised-low"
                       }`}
                     >
-                      {earned ? <AwardIcon /> : <LockIcon />}
+                      {(() => {
+                        const level = fingerLevelOf(badge.code);
+                        const tier = level ? FINGER_TIERS[level - 1] : null;
+                        if (tier && level) {
+                          return (
+                            <>
+                              {earned ? <Medal className="h-7 w-7" strokeWidth={1.75} style={{ color: tier.color }} aria-hidden /> : <LockIcon />}
+                              <span className="mt-0.5 text-small font-bold leading-none" style={earned ? { color: tier.color } : undefined}>
+                                {level}
+                              </span>
+                            </>
+                          );
+                        }
+                        return earned ? <AwardIcon /> : <LockIcon />;
+                      })()}
                     </motion.div>
                     <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-44 -translate-x-1/2 glass-surface-subtle p-2.5 text-center opacity-0 shadow-raised-mid transition group-hover:opacity-100">
                       <p className="text-small font-semibold text-slate-100">{badge.label}</p>

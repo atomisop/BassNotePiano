@@ -14,7 +14,7 @@ import {
   type PianoExercise,
   type PianoSection,
 } from "@/lib/fingerExercises";
-import { DAILY_GOAL_SECONDS, FINGER_LEVELS, type FingerPracticeStatus } from "@/lib/fingerPracticeConstants";
+import { DAILY_GOAL_SECONDS, type FingerPracticeStatus } from "@/lib/fingerPracticeConstants";
 
 type Instrument = "PIANO" | "GUITAR";
 
@@ -68,7 +68,6 @@ function PianoSectionView({ section, activeStep }: { section: PianoSection; acti
     <div className="rounded-2xl bg-neu-base p-4 shadow-raised-low">
       <div className="flex items-center gap-3">
         <HandBadge hand={section.hand} />
-        <p className="text-small text-slate-400">{section.label}</p>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-1.5">
@@ -262,20 +261,17 @@ export function PracticeClient({
   const exercises = instrument === "PIANO" ? PIANO_EXERCISES : GUITAR_EXERCISES;
 
   return (
-    <div className="grid gap-(--space-group)">
-      <div className="pt-2">
-        <Eyebrow>Daily practice</Eyebrow>
-        <h1 className="mt-1.5 font-hero text-hero font-bold text-balance text-slate-50">Finger exercises</h1>
-      </div>
+    <div className="grid gap-4 md:gap-(--space-group)">
+      <h1 className="pt-2 font-hero text-hero font-bold text-balance text-slate-50">Finger exercises</h1>
 
       {/* ---- Today ---- */}
-      <Card>
-        <div className="flex flex-wrap items-center gap-6">
+      <Card className="!p-4 md:!p-6">
+        <div className="flex items-center gap-4">
           <ProgressRing
             value={shownSeconds}
             max={DAILY_GOAL_SECONDS}
-            size={112}
-            strokeWidth={9}
+            size={96}
+            strokeWidth={8}
             label={`Practice today: ${mmss(shownSeconds)} of ${mmss(DAILY_GOAL_SECONDS)}`}
             caption={`${mmss(shownSeconds)} / ${mmss(DAILY_GOAL_SECONDS)}`}
           />
@@ -283,41 +279,29 @@ export function PracticeClient({
             <p className="text-body font-semibold text-slate-50">
               {status.completedToday ? "Done for today" : running ? "Practicing" : "10 minutes to go"}
             </p>
-            <p className="mt-1 text-small text-slate-400">
-              {status.completedToday ? "Your scales are unlocked." : "Scales unlock when the ring is full."}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button type="button" onClick={toggle} className={raisedKey}>
-                {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                {running ? "Pause" : status.completedToday ? "Practice more" : "Start"}
-              </button>
-              {status.completedToday && (
-                <a href="/dashboard" className={raisedKey}>
-                  Go to scales
-                </a>
-              )}
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-            <div>
-              <p className="text-body font-semibold tabular-nums text-slate-50">{status.streak}</p>
-              <p className="text-small text-slate-400">Day streak</p>
-            </div>
-            <div>
-              <p className="text-body font-semibold tabular-nums text-slate-50">{status.level}/7</p>
-              <p className="text-small text-slate-400">Level</p>
-            </div>
+            <p className="mt-1 text-small text-slate-400">{status.streak} day streak</p>
           </div>
         </div>
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:flex">
+          <button type="button" onClick={toggle} className={`${raisedKey} min-h-12 w-full sm:w-auto`}>
+            {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            {running ? "Pause" : status.completedToday ? "Practice more" : "Start"}
+          </button>
+          {status.completedToday && (
+            <a href="/dashboard" className={`${raisedKey} min-h-12 w-full sm:w-auto`}>
+              Go to scales
+            </a>
+          )}
+        </div>
         {justCompleted && (
-          <p className="mt-4 rounded-xl bg-neu-base px-4 py-3 text-small font-semibold text-slate-50 shadow-pressed-low">
+          <p className="mt-3 rounded-xl bg-neu-base px-4 py-3 text-small font-semibold text-slate-50 shadow-pressed-low">
             10 minutes done. {"\u{1F389}"}
           </p>
         )}
       </Card>
 
       {/* ---- Exercises ---- */}
-      <div className="space-y-4">
+      <div className="space-y-3 md:space-y-4">
         <Tabs<Instrument>
           label="Instrument"
           value={instrument}
@@ -328,7 +312,7 @@ export function PracticeClient({
           ]}
         />
 
-        <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden">
           {exercises.map((e) => (
             <button
               key={e.id}
@@ -344,63 +328,48 @@ export function PracticeClient({
           ))}
         </div>
 
-        <Card>
-          <h2 className="text-body font-semibold text-slate-50">{exercise.title}</h2>
-          <p className="mt-1 text-small text-slate-400">{exercise.summary}</p>
-          <ol className="mt-4 space-y-2 text-small text-slate-300">
-            {exercise.how.map((line, i) => (
-              <li key={i} className="flex gap-2.5">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-neu-base text-small font-bold text-[rgb(var(--signal))] shadow-pressed-low">
-                  {i + 1}
-                </span>
-                {line}
-              </li>
-            ))}
-          </ol>
-        </Card>
-
         {instrument === "PIANO" ? (
           <PianoExerciseView exercise={pianoExercise} activeStep={activeStep} />
         ) : (
           <GuitarTab exercise={guitarExercise} activeStep={activeStep} />
         )}
+
+        {/* The method is one tap away, not in the way. */}
+        <details className="group rounded-2xl bg-neu-base shadow-raised-low">
+          <summary className="tap flex cursor-pointer list-none items-center justify-between px-4 py-3 text-small font-semibold text-slate-100 [&::-webkit-details-marker]:hidden">
+            How to play
+            <span className="text-slate-500 transition group-open:rotate-45">+</span>
+          </summary>
+          <div className="px-4 pb-4">
+            <ol className="space-y-2 text-small text-slate-300">
+              {exercise.how.map((line, i) => (
+                <li key={i} className="flex gap-2.5">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-neu-base text-small font-bold text-[rgb(var(--signal))] shadow-pressed-low">
+                    {i + 1}
+                  </span>
+                  {line}
+                </li>
+              ))}
+            </ol>
+            <p className="mt-4 text-small text-slate-600">
+              Sources:{" "}
+              {FINGER_SOURCES.map((src, i) => (
+                <span key={src.url}>
+                  {i > 0 && " · "}
+                  <a href={src.url} target="_blank" rel="noopener noreferrer" className="underline-offset-4 hover:underline">
+                    {src.label}
+                  </a>
+                </span>
+              ))}
+            </p>
+          </div>
+        </details>
       </div>
 
       {/* ---- Metronome ---- */}
-      <Card>
-        <Eyebrow>Metronome</Eyebrow>
-        <div className="mt-3 flex flex-wrap items-center gap-4">
-          <button
-            type="button"
-            onClick={() => (metronome.running ? metronome.stop() : metronome.start())}
-            disabled={!metronome.supported}
-            className={raisedKey}
-          >
-            {metronome.running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            {metronome.running ? "Stop" : "Start"}
-          </button>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="Slower"
-              onClick={() => metronome.setBpm(Math.max(METRONOME_MIN_BPM, metronome.bpm - 4))}
-              className={`${raisedKey} h-11 w-11 !px-0`}
-            >
-              <Minus className="h-4 w-4" />
-            </button>
-            <div className="w-24 rounded-xl bg-neu-base py-2 text-center shadow-pressed-low">
-              <p className="text-body font-semibold tabular-nums text-slate-50">{metronome.bpm}</p>
-              <p className="text-small text-slate-500">BPM</p>
-            </div>
-            <button
-              type="button"
-              aria-label="Faster"
-              onClick={() => metronome.setBpm(Math.min(METRONOME_MAX_BPM, metronome.bpm + 4))}
-              className={`${raisedKey} h-11 w-11 !px-0`}
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-          </div>
+      <Card className="!p-4 md:!p-6">
+        <div className="flex items-center justify-between gap-3">
+          <Eyebrow>Metronome</Eyebrow>
           <div className="flex items-center gap-1.5" aria-hidden>
             {Array.from({ length: metronome.beatsPerBar }).map((_, i) => (
               <span
@@ -410,46 +379,38 @@ export function PracticeClient({
             ))}
           </div>
         </div>
-      </Card>
-
-      {/* ---- Levels ---- */}
-      <Card>
-        <Eyebrow>Levels</Eyebrow>
-        <p className="mt-2 text-small text-slate-300">
-          {status.next ? `${status.next.daysToGo} more day${status.next.daysToGo === 1 ? "" : "s"} to Level ${status.next.level}, ${status.next.label}` : "Every level earned"}
-        </p>
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          {FINGER_LEVELS.map((l) => {
-            const earned = status.level >= l.level;
-            return (
-              <div
-                key={l.level}
-                className={`flex items-center justify-between rounded-xl bg-neu-base px-4 py-3 ${earned ? "shadow-pressed-low" : "shadow-raised-low"}`}
-              >
-                <div>
-                  <p className={`text-small font-semibold ${earned ? "text-[rgb(var(--signal))]" : "text-slate-200"}`}>
-                    Level {l.level}: {l.label}
-                  </p>
-                  <p className="text-small text-slate-500">{l.days} days in a row</p>
-                </div>
-                <span className="text-small font-semibold text-slate-400">{earned ? "Earned" : `${Math.min(status.streak, l.days)}/${l.days}`}</span>
-              </div>
-            );
-          })}
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            aria-label="Slower"
+            onClick={() => metronome.setBpm(Math.max(METRONOME_MIN_BPM, metronome.bpm - 4))}
+            className={`${raisedKey} h-12 w-12 !px-0`}
+          >
+            <Minus className="h-4 w-4" />
+          </button>
+          <div className="flex-1 rounded-xl bg-neu-base py-2 text-center shadow-pressed-low">
+            <p className="text-body font-semibold tabular-nums text-slate-50">{metronome.bpm}</p>
+            <p className="text-small text-slate-500">BPM</p>
+          </div>
+          <button
+            type="button"
+            aria-label="Faster"
+            onClick={() => metronome.setBpm(Math.min(METRONOME_MAX_BPM, metronome.bpm + 4))}
+            className={`${raisedKey} h-12 w-12 !px-0`}
+          >
+            <Plus className="h-4 w-4" />
+          </button>
         </div>
+        <button
+          type="button"
+          onClick={() => (metronome.running ? metronome.stop() : metronome.start())}
+          disabled={!metronome.supported}
+          className={`${raisedKey} mt-3 min-h-12 w-full`}
+        >
+          {metronome.running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          {metronome.running ? "Stop" : "Start"}
+        </button>
       </Card>
-
-      <p className="text-small text-slate-600">
-        Sources:{" "}
-        {FINGER_SOURCES.map((s, i) => (
-          <span key={s.url}>
-            {i > 0 && " · "}
-            <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline-offset-4 hover:underline">
-              {s.label}
-            </a>
-          </span>
-        ))}
-      </p>
     </div>
   );
 }
