@@ -791,6 +791,7 @@ model User {
   // in UTC) the first time a signed-in user hits any dashboard page, not on
   // every login. Null means "never seen one," which also shows it.
   lastSeenPatchNotesAt DateTime?
+  lastSeenPatchVersion String? // the last What's new version this account has been shown
 
   // Drives the interactive spotlight walkthrough — shown automatically
   // exactly once (right after onboarding wizard + first login), never

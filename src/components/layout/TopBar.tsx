@@ -5,6 +5,7 @@ import { AdminAttendanceQuickPanel } from "@/components/admin/AdminAttendanceQui
 import { ProfileMenu } from "./ProfileMenu";
 import { AdminTopLink } from "./AdminTopLink";
 import { LiveClassesTopLink } from "./LiveClassesTopLink";
+import { WhatsNewButton } from "./WhatsNewButton";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { BrandMark } from "./BrandMark";
 import { AskAiButton } from "./AskAiButton";
@@ -88,6 +89,7 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
             everyday action (mark today's classes) without a full admin-page
             navigation first. */}
         {isOwner && <AdminAttendanceQuickPanel />}
+        <WhatsNewButton />
         <NotificationBell />
         <ProfileAvatarLink />
         </div>

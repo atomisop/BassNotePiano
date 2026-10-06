@@ -10,7 +10,7 @@ import { getActiveAnnouncementForUser } from "@/lib/announcements";
 import { LATEST_ENTRY } from "@/lib/changelog";
 import { AppDock } from "@/components/layout/AppDock";
 import { TopBar } from "@/components/layout/TopBar";
-import { WhatsNewModal } from "@/components/layout/WhatsNewModal";
+import { WhatsNewProvider } from "@/components/layout/WhatsNewProvider";
 import { AnnouncementBanner } from "@/components/layout/AnnouncementBanner";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { CommandMenu } from "@/components/layout/CommandMenu";
@@ -24,19 +24,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const [directUnreadCount, groupUnreadCount, user, activeAnnouncement] = await Promise.all([
     getTotalUnreadMessageCount(session.user.id),
     getTotalUnreadGroupMessageCount(session.user.id),
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { onboardingTourSeenAt: true } }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { onboardingTourSeenAt: true, lastSeenPatchVersion: true } }),
     getActiveAnnouncementForUser(session.user.id),
   ]);
   const unreadMessageCount = directUnreadCount + groupUnreadCount;
 
   const shouldShowTour = !user?.onboardingTourSeenAt;
   // The tour goes first: a brand-new account never gets the tour and the "what's new" popup stacked on top of each other.
+  // Once per account for each new version, and not on top of the first-visit tour.
+  const showWhatsNew = !shouldShowTour && user?.lastSeenPatchVersion !== LATEST_ENTRY.version;
   const isAdmin = session.user.role === "ADMIN";
   const isOwner = isAdmin && isOwnerEmail(session.user.email);
   const owner = await prisma.user.findUnique({ where: { email: OWNER_EMAIL }, select: { id: true } });
 
   return (
     <OwnerStarProvider ownerId={owner?.id ?? null}>
+    <WhatsNewProvider entry={LATEST_ENTRY} showInitially={showWhatsNew}>
     <div data-surface="app" className="fixed inset-0 flex overflow-hidden bg-neu-base">
       {/* No photographic backdrop behind the app shell, deliberately. The
           previous system wallpapered every authenticated page with a piano
@@ -75,11 +78,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <AutoRefresh />
       <AppDock unreadMessageCount={unreadMessageCount} />
       <CommandMenu isAdmin={isAdmin} />
-      <WhatsNewModal suppress={shouldShowTour} entry={LATEST_ENTRY} />
-      <Suspense fallback={null}>
+            <Suspense fallback={null}>
         <OnboardingTour autoShow={shouldShowTour} />
       </Suspense>
     </div>
+    </WhatsNewProvider>
     </OwnerStarProvider>
   );
 }
