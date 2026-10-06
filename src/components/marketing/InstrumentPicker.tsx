@@ -13,7 +13,7 @@ const ITEMS = [
 
 export function InstrumentPicker() {
   return (
-    <section className="mx-auto w-full max-w-6xl px-6 pb-24 md:pb-40">
+    <section className="mx-auto w-full max-w-6xl px-6 pb-24 pt-24 md:pb-40 md:pt-40">
       <h2 className="mb-8">
         <WordsPullUp
           text="Choose your instrument"
