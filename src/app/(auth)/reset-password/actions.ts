@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { verifyCode, createSilentCode, createAndSendCode, RateLimitError, type VerifyCodeResult } from "@/lib/verification";
 import { withTimingFloor } from "@/lib/timingSafe";
+import { sendPasswordChangedEmail } from "@/lib/email";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -36,10 +37,16 @@ export async function resetPasswordAction(email: string, code: string, newPasswo
       // token: the point of resetting a password is often "someone else
       // may have my account", and a stolen session must not survive it.
       data: { passwordHash, passwordChangedAt: new Date(), sessionVersion: { increment: 1 } },
-      select: { id: true, email: true },
+      select: { id: true, email: true, name: true },
     });
     return updated;
   });
+
+  try {
+    await sendPasswordChangedEmail(user.email, user.name);
+  } catch (err) {
+    console.error("Failed to send password-changed notice:", err);
+  }
 
   try {
     const { code: autoCode } = await createSilentCode({ email: user.email, userId: user.id, purpose: "LOGIN_2FA" });

@@ -6,7 +6,9 @@ import { SCALE_GROUPS } from "@/lib/curriculum";
 // the root domain; see the deployment notes) so a missing env var fails
 // the same way production is actually configured, rather than to an
 // unverified address Resend would just bounce.
-const EMAIL_FROM = process.env.EMAIL_FROM ?? "Bass Note Piano <noreply@noreply.bassnotepiano.com>";
+// The one automatic sender. A stale EMAIL_FROM still pointing at the retired noreply subdomain is ignored.
+const NOREPLY_FROM = "Bass Note Piano <noreply@bassnotepiano.com>";
+const EMAIL_FROM = process.env.EMAIL_FROM && !process.env.EMAIL_FROM.includes("@noreply.") ? process.env.EMAIL_FROM : NOREPLY_FROM;
 // Real inbox (Squarespace-forwarded), not the noreply sender above. Set so
 // hitting "reply" on any app email actually reaches someone, and the
 // footer has a real contact address rather than just a link back into the
@@ -17,7 +19,6 @@ const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO ?? "music@bassnotepiano.com";
 // The physical mailing address CAN-SPAM asks for. Set MAILING_ADDRESS in the environment and it shows in every email footer.
 // Messages typed by a person (announcements, direct messages) come from an address people can answer.
 // A normal-looking, reply-able sender is far less likely to be filed under Promotions than a noreply one.
-const FALLBACK_FROM = "Bass Note Piano <noreply@bassnotepiano.com>";
 const PERSONAL_FROM = process.env.PERSONAL_EMAIL_FROM ?? "Bass Note Piano <music@bassnotepiano.com>";
 const MAILING_ADDRESS = process.env.MAILING_ADDRESS?.trim() ?? "";
 
@@ -78,7 +79,7 @@ async function sendEmail({ to, subject, html, text, from }: SendEmailParams): Pr
 
   // Try the wanted sender first, then the standard one, then the root-domain one. A sender whose domain
   // is not verified for this Resend key is refused, and the message should still go out.
-  const senders = Array.from(new Set([from ?? EMAIL_FROM, EMAIL_FROM, FALLBACK_FROM]));
+  const senders = Array.from(new Set([from ?? EMAIL_FROM, EMAIL_FROM, NOREPLY_FROM]));
   let result = await client.emails.send({ from: senders[0], to, subject, html, text, replyTo: EMAIL_REPLY_TO });
   for (const next of senders.slice(1)) {
     if (!result.error) break;
@@ -231,6 +232,19 @@ export async function sendNotificationEmail(to: string, title: string, body: str
   const html = emailShell(title, `<p style="margin:0;">${escapeHtml(body)}</p>`, { kind });
   const text = body;
   await sendEmail({ to, subject: title, html, text });
+}
+
+/** Security notice after a password change or reset. Sent from the standard noreply sender. */
+export async function sendPasswordChangedEmail(to: string, name: string | null) {
+  const greeting = name ? `Hi ${escapeHtml(name.split(" ")[0])},` : "Hi,";
+  const resetUrl = getAppUrl("/forgot-password");
+  const html = emailShell(
+    "Your password was changed",
+    `<p style="margin:0 0 12px;">${greeting}</p><p style="margin:0 0 12px;">The password on your Bass Note Piano account was just changed, and any other devices were signed out.</p><p style="margin:0;">If this was you, nothing more to do. If it wasn't, <a href="${resetUrl}">reset your password now</a> and reply to the studio so we can look into it.</p>`,
+    { kind: "notice" },
+  );
+  const text = `${name ? `Hi ${name.split(" ")[0]},` : "Hi,"}\n\nThe password on your Bass Note Piano account was just changed, and any other devices were signed out.\n\nIf this was you, nothing more to do. If it wasn't, reset your password now: ${resetUrl}\nand reply to the studio so we can look into it.`;
+  await sendEmail({ to, subject: "Your password was changed", html, text });
 }
 
 /**

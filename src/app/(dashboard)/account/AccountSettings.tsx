@@ -14,6 +14,7 @@ import { ManageSubscriptions, type ActivePlanInfo } from "@/components/account/M
 import type { AssistantMessage } from "@/lib/assistant";
 import {
   updatePasswordAction,
+  requestPasswordChangeCodeAction,
   signOutOtherDevicesAction,
   updateNotificationPreferencesAction,
   requestAccountDeletionCodeAction,
@@ -447,6 +448,14 @@ function PasswordSection() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [awaitingCode, setAwaitingCode] = useState(false);
+  const [code, setCode] = useState("");
+
+  function cancelCode() {
+    setAwaitingCode(false);
+    setCode("");
+    setError(null);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -463,12 +472,24 @@ function PasswordSection() {
     }
 
     setSubmitting(true);
-    const result = await updatePasswordAction(currentPassword, newPassword);
+    if (!awaitingCode) {
+      const sent = await requestPasswordChangeCodeAction(currentPassword, newPassword);
+      setSubmitting(false);
+      if (!sent.ok) {
+        setError(sent.error);
+        return;
+      }
+      setAwaitingCode(true);
+      return;
+    }
+    const result = await updatePasswordAction(currentPassword, newPassword, code);
     setSubmitting(false);
     if (!result.ok) {
       setError(result.error);
       return;
     }
+    setAwaitingCode(false);
+    setCode("");
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
@@ -491,7 +512,7 @@ function PasswordSection() {
             required
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
-            disabled={submitting}
+            disabled={submitting || awaitingCode}
             className="w-full disabled:opacity-60"
           />
           <div>
@@ -502,7 +523,7 @@ function PasswordSection() {
               minLength={MIN_PASSWORD_LENGTH}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              disabled={submitting}
+              disabled={submitting || awaitingCode}
               className="w-full disabled:opacity-60"
             />
             {newPassword.length > 0 && (
@@ -520,7 +541,7 @@ function PasswordSection() {
               minLength={MIN_PASSWORD_LENGTH}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={submitting}
+              disabled={submitting || awaitingCode}
               className="w-full disabled:opacity-60"
             />
             {confirmPassword.length > 0 && (
@@ -531,16 +552,47 @@ function PasswordSection() {
             )}
           </div>
 
+          {awaitingCode && (
+            <div className="space-y-2">
+              <p className="text-small text-slate-500">
+                We emailed a 6-digit code to your account&apos;s email address. It expires in 10 minutes.
+              </p>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                placeholder="6-digit code"
+                maxLength={6}
+                autoFocus
+                required
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                disabled={submitting}
+                className="h-11 w-full rounded-control border border-(--neu-edge) bg-neu-base px-3 py-2 text-center text-body tracking-[0.4em] text-slate-100 shadow-pressed-low outline-none transition focus:border-signal/60 disabled:opacity-60"
+              />
+            </div>
+          )}
+
           {error && <p className="text-small text-red-400">{error}</p>}
           {success && <p className="text-small text-slate-50">Password updated. Other devices have been signed out.</p>}
 
+          {awaitingCode && (
+            <button
+              type="button"
+              onClick={cancelCode}
+              disabled={submitting}
+              className="tap flex w-full items-center justify-center rounded-lg bg-neu-base py-2 text-small font-medium text-slate-300 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          )}
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || (awaitingCode && code.length !== 6)}
             className="tap cta-sheen cta-fill flex w-full items-center justify-center rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-            {submitting ? "Saving…" : "Change password"}
+            {submitting ? (awaitingCode ? "Saving…" : "Sending code…") : awaitingCode ? "Confirm change" : "Send verification code"}
           </button>
         </form>
       </SectionCard>
