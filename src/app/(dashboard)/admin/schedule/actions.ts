@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { AttendanceStatus } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
+import { bookMissingReservedWindows } from "@/lib/paymentPlans";
 import {
   createClassSchedule,
   updateClassSchedule,
@@ -101,6 +102,7 @@ export async function getPendingAttendanceBookingsAction(): Promise<PendingAtten
 /** Feeds the TopBar's class-bookings panel: every active booking, soonest first. */
 export async function getBookingFeedAction(): Promise<BookingFeedRow[]> {
   await requireAdmin();
+  await bookMissingReservedWindows();
   return getBookingFeed();
 }
 
