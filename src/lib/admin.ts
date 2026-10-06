@@ -467,3 +467,30 @@ export async function getSubscriptionStats(): Promise<SubscriptionStats> {
     refundedCents: refunded._sum.amountCents ?? 0,
   };
 }
+
+export interface AttentionItem {
+  label: string;
+  count: number;
+  href: string;
+}
+
+/** Everything waiting on the owner or staff right now, each with the page that handles it. Items with nothing waiting are left out. */
+export async function getAttentionItems(): Promise<AttentionItem[]> {
+  const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000);
+  const [payments, applications, chats, unmarked, progress] = await Promise.all([
+    prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
+    prisma.classRegistration.count({ where: { status: "PENDING" } }),
+    prisma.assistantEscalation.count({ where: { status: "OPEN" } }),
+    prisma.classBooking.count({ where: { status: "SCHEDULED", scheduledAt: { lt: hoursAgo(3) } } }),
+    getAdminProgressOverview(""),
+  ]);
+  const readyScales = progress.filter((p) => p.hasCurriculumAccess && p.accessKind !== "ADMIN" && p.nextApproval.state === "READY").length;
+  const items: AttentionItem[] = [
+    { label: payments === 1 ? "Payment to review" : "Payments to review", count: payments, href: "/admin/payments" },
+    { label: applications === 1 ? "Class application" : "Class applications", count: applications, href: "/admin/students" },
+    { label: chats === 1 ? "Open support chat" : "Open support chats", count: chats, href: "/admin/support" },
+    { label: unmarked === 1 ? "Finished class to mark" : "Finished classes to mark", count: unmarked, href: "/admin/schedule?view=ATTENDANCE" },
+    { label: readyScales === 1 ? "Student ready for the next scale" : "Students ready for the next scale", count: readyScales, href: "/admin/users?filter=approval" },
+  ];
+  return items.filter((i) => i.count > 0);
+}

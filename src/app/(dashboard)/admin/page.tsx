@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { getOverviewStats, getOverviewTrends, getSubscriptionStats } from "@/lib/admin";
+import { getAttentionItems, getOverviewStats, getOverviewTrends, getSubscriptionStats } from "@/lib/admin";
+import Link from "next/link";
 import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { listAudit } from "@/lib/audit";
@@ -17,7 +18,7 @@ function formatUsd(cents: number) {
 }
 
 export default async function AdminOverviewPage() {
-  const [stats, trends, session, subs] = await Promise.all([getOverviewStats(), getOverviewTrends(6), getServerAuthSession(), getSubscriptionStats()]);
+  const [stats, trends, session, subs, attention] = await Promise.all([getOverviewStats(), getOverviewTrends(6), getServerAuthSession(), getSubscriptionStats(), getAttentionItems()]);
   const isOwner = isOwnerEmail(session?.user?.email);
   const [activity, jobs, visits] = isOwner
     ? await Promise.all([
@@ -36,6 +37,24 @@ export default async function AdminOverviewPage() {
     <div>
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Overview</h1>
+
+      <section className="mt-6 rounded-2xl bg-neu-base p-4 shadow-raised-low">
+        <h2 className="text-body font-semibold text-slate-50">Needs you now</h2>
+        {attention.length === 0 ? (
+          <p className="mt-2 text-small text-slate-500">Nothing is waiting.</p>
+        ) : (
+          <ul className="mt-2 divide-y divide-slate-50/10">
+            {attention.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href} className="tap flex items-center justify-between gap-3 py-2.5 text-small transition hover:opacity-80">
+                  <span className="text-slate-200">{item.label}</span>
+                  <span className="rounded-full bg-[rgb(var(--signal)/0.14)] px-2.5 py-0.5 font-semibold tabular-nums text-signal">{item.count}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {/* Two trend cards over the last six months, both from real rows
           (User.createdAt and VERIFIED payments). Flat stretches are real

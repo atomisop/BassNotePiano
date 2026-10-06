@@ -15,6 +15,9 @@ import { Card, Eyebrow } from "@/components/ui/Card";
 import { CardDeck } from "@/components/ui/CardDeck";
 import { buttonVariants } from "@/components/ui/button";
 import { WideLayout } from "@/components/layout/PageLayouts";
+import { formatEtDateTime } from "@/lib/classScheduleLabels";
+import { DISCORD_INVITE_URL, discordChannelUrl } from "@/lib/discord";
+import { CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
 
 function ArrowIcon() {
   return (
@@ -22,6 +25,17 @@ function ArrowIcon() {
       <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
+}
+
+/** "in 3 days", "tomorrow", "in 2 hours", "starting now". */
+function untilLabel(when: Date): string {
+  const minutes = Math.round((when.getTime() - Date.now()) / 60_000);
+  if (minutes <= 0) return "starting now";
+  if (minutes < 60) return `in ${minutes} minute${minutes === 1 ? "" : "s"}`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `in ${hours} hour${hours === 1 ? "" : "s"}`;
+  const days = Math.round(hours / 24);
+  return days === 1 ? "tomorrow" : `in ${days} days`;
 }
 
 /** One figure and its label. Figures stay small: the Hero is the greeting. */
@@ -39,7 +53,7 @@ function Stat({ value, label }: { value: string; label: string }) {
  *
  * Desktop: the full width. A band of cards (next step, week, progress, next
  * class, badges) sits on the same four columns as the scales below it.
- * Below lg the five cards become one swipeable deck (CardDeck).
+ * Below lg the cards become one swipeable deck (CardDeck).
  *
  * STEP 2C: the greeting is the one Hero; the student's progress ("3/14")
  * sits huge and faint behind it on the back plane; Continue is the one
@@ -49,7 +63,7 @@ export default async function DashboardPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
 
-  const [roadmap, badgeRows, user, practice] = await Promise.all([
+  const [roadmap, badgeRows, user, practice, nextClass] = await Promise.all([
     getRoadmap(session.user.id),
     prisma.userBadge.findMany({ where: { userId: session.user.id }, select: { code: true } }),
     prisma.user.findUnique({
@@ -57,6 +71,12 @@ export default async function DashboardPage() {
       select: { name: true, currentStreak: true, classCredits: true },
     }),
     getFingerPracticeStatus(session.user.id),
+    // Still counts for an hour after it starts, so "Join" is there if they are a little late.
+    prisma.classBooking.findFirst({
+      where: { studentId: session.user.id, status: "SCHEDULED", scheduledAt: { gt: new Date(Date.now() - 60 * 60_000) } },
+      orderBy: { scheduledAt: "asc" },
+      select: { scheduledAt: true, creditsSpent: true, discordChannelId: true },
+    }),
   ]);
 
   const progress = summariseProgress(roadmap);
@@ -86,6 +106,53 @@ export default async function DashboardPage() {
       </div>
     </Card>
   );
+
+  const nextClassCard = () => {
+    const minutesAway = nextClass ? (nextClass.scheduledAt.getTime() - Date.now()) / 60_000 : 0;
+    const canJoin = nextClass !== null && minutesAway <= 30;
+    const length = nextClass ? Math.round((nextClass.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES) : CLASS_MINUTES;
+    return (
+      <Card className="relative z-(--z-mid)">
+        <Eyebrow>Next class</Eyebrow>
+        {nextClass ? (
+          <>
+            <p className="mt-2 text-body font-semibold text-slate-50">{formatEtDateTime(nextClass.scheduledAt)}</p>
+            <p className="mt-1 text-small text-slate-400">{untilLabel(nextClass.scheduledAt)}</p>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {canJoin && (
+                <a
+                  href={nextClass.discordChannelId ? discordChannelUrl(nextClass.discordChannelId) : DISCORD_INVITE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(buttonVariants(), "relative z-(--z-front)")}
+                >
+                  Join on Discord
+                  <ArrowIcon />
+                </a>
+              )}
+              <a
+                href={`/api/calendar/class?s=${encodeURIComponent(nextClass.scheduledAt.toISOString())}&m=${length}`}
+                className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium"
+              >
+                Add to calendar
+              </a>
+              <Link href="/lessons" className="tap inline-flex items-center text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline">
+                My classes
+              </Link>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="mt-2 text-body font-semibold text-slate-50">No class booked</p>
+            <Link href="/lessons" className={cn(buttonVariants(), "relative z-(--z-front) mt-4")}>
+              Book a class
+              <ArrowIcon />
+            </Link>
+          </>
+        )}
+      </Card>
+    );
+  };
 
   const weekCard = () => (
     <Card>
@@ -174,8 +241,9 @@ export default async function DashboardPage() {
         <CardDeck
           className="lg:hidden"
           label="Your home cards"
-          labels={["Finger practice", "Your next step", "This week", "Progress", "Badges"]}
+          labels={["Next class", "Finger practice", "Your next step", "This week", "Progress", "Badges"]}
         >
+          {nextClassCard()}
           {practiceCard()}
           {nextStepCard()}
           {weekCard()}
@@ -188,11 +256,11 @@ export default async function DashboardPage() {
             the week and progress cards take the space it used to leave empty,
             so there is no side column and the scales get the full width. ---- */}
         <div className="hidden gap-3 lg:grid lg:grid-cols-4 [&>*>*]:h-full">
+          <div className="lg:col-span-2">{nextClassCard()}</div>
           <div className="lg:col-span-2">{practiceCard()}</div>
           <div className="lg:col-span-2">{nextStepCard()}</div>
           <div>{weekCard()}</div>
           <div>{progressCard()}</div>
-          <div className="lg:col-span-2">{badgesCard()}</div>
         </div>
 
         {/* ---- The path: tabs + scale grid --------------------------------- */}
