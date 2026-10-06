@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
-import { approveZellePayment, deleteZellePayment, markPaymentChecked, rejectZellePayment } from "@/lib/payments";
+import { approveZellePayment, deleteZellePayment, markPaymentChecked, refundZellePayment, rejectZellePayment } from "@/lib/payments";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 
 // The admin layout's redirect only protects rendering — Server Actions are
@@ -39,7 +39,26 @@ export async function rejectPaymentAction(paymentId: string, reason: string) {
 export async function deletePaymentAction(paymentId: string) {
   const admin = await requireAdmin();
   if (!isOwnerEmail(admin.email)) redirect("/admin/payments");
-  await deleteZellePayment(paymentId);
+  await deleteZellePayment(paymentId, { id: admin.id, email: admin.email ?? null });
   revalidatePath("/admin/payments");
   revalidatePath("/admin");
+}
+
+// Owner only: a refund changes revenue and can take back credits and end a plan.
+export async function refundPaymentAction(
+  paymentId: string,
+  note: string,
+  removeCredits: boolean,
+  cancelPlan: boolean,
+): Promise<{ ok: boolean; error: string | null }> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can refund a payment." };
+  try {
+    await refundZellePayment(paymentId, { id: admin.id, email: admin.email ?? null }, { note, removeCredits, cancelPlan });
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Could not refund." };
+  }
+  revalidatePath("/admin/payments");
+  revalidatePath("/admin");
+  return { ok: true, error: null };
 }

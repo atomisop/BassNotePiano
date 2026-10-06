@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logAudit } from "@/lib/audit";
 
 // Same pattern as every other admin actions.ts — the admin layout's
 // redirect only protects rendering, not these Server Actions, so this
@@ -26,7 +27,8 @@ async function requireAdmin() {
  * compromised" or "I'm locked out of a stuck session" support requests.
  */
 export async function adminForceSignOutAction(targetUserId: string) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   await prisma.user.update({ where: { id: targetUserId }, data: { sessionVersion: { increment: 1 } } });
+  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "user.sign-out-everywhere", targetType: "User", targetId: targetUserId });
   revalidatePath(`/admin/users/${targetUserId}`);
 }
