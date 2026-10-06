@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { EmployeeRow } from "@/lib/admin";
+import type { AutomationKey } from "@/lib/automationKeys";
 import { ADMIN_NOTIFICATION_GROUPS, type AdminNotificationGroup, type AdminNotificationKind } from "@/lib/adminNotificationKinds";
 import { EmployeeList } from "@/components/admin/EmployeeList";
 import { Switch } from "@/components/ui/switch";
@@ -17,17 +18,27 @@ export interface NotificationRow {
   employees: boolean;
 }
 
+export interface AutomationRow {
+  key: AutomationKey;
+  label: string;
+  enabled: boolean;
+}
+
 interface EmployeesViewProps {
   employees: EmployeeRow[];
   currentUserId: string;
   onRevoke: (userId: string) => Promise<{ ok: boolean; error: string | null }>;
   /** Null for everyone but the owner, who is the only one that sees the Notifications tab. */
   notifications: NotificationRow[] | null;
+  /** Null for everyone but the owner. */
+  automations: AutomationRow[] | null;
+  onToggleAutomation: (key: AutomationKey, enabled: boolean) => Promise<{ ok: boolean; error: string | null }>;
   onToggleNotification: (kind: AdminNotificationKind, who: "owner" | "employees", enabled: boolean) => Promise<{ ok: boolean; error: string | null }>;
 }
 
-export function EmployeesView({ employees, currentUserId, onRevoke, notifications, onToggleNotification }: EmployeesViewProps) {
-  const [tab, setTab] = useState<"ADMINS" | "NOTIFICATIONS">("ADMINS");
+export function EmployeesView({ employees, currentUserId, onRevoke, notifications, onToggleNotification, automations, onToggleAutomation }: EmployeesViewProps) {
+  const [tab, setTab] = useState<"ADMINS" | "NOTIFICATIONS" | "AUTOMATION">("ADMINS");
+  const [autoValues, setAutoValues] = useState<Record<string, boolean>>(Object.fromEntries((automations ?? []).map((a) => [a.key, a.enabled])));
   const toKey = (kind: string, who: "owner" | "employees") => `${kind}:${who}`;
   const initialValues = () =>
     Object.fromEntries((notifications ?? []).flatMap((row) => [[toKey(row.kind, "owner"), row.owner], [toKey(row.kind, "employees"), row.employees]]));
@@ -55,18 +66,41 @@ export function EmployeesView({ employees, currentUserId, onRevoke, notification
   return (
     <div className="space-y-5">
       {notifications && (
-        <Tabs<"ADMINS" | "NOTIFICATIONS">
+        <Tabs<"ADMINS" | "NOTIFICATIONS" | "AUTOMATION">
           label="Employees"
           value={tab}
           onChange={setTab}
           items={[
             { id: "ADMINS", label: "Admins" },
             { id: "NOTIFICATIONS", label: "Notifications" },
+            { id: "AUTOMATION", label: "Automation" },
           ]}
         />
       )}
 
-      {tab === "ADMINS" || !notifications ? (
+      {tab === "AUTOMATION" && automations ? (
+        <div className="glass-surface divide-y divide-[rgb(var(--c-s-50)/0.08)] p-2">
+          {error && <p className="px-3 py-2 text-small text-red-400">{error}</p>}
+          {automations.map((row) => (
+            <div key={row.key} className="flex items-center justify-between gap-4 px-3 py-3.5">
+              <p className="text-small text-slate-200">{row.label}</p>
+              <Switch
+                checked={autoValues[row.key]}
+                onCheckedChange={async (value) => {
+                  setAutoValues((current) => ({ ...current, [row.key]: value }));
+                  setError(null);
+                  const result = await onToggleAutomation(row.key, value);
+                  if (!result.ok) {
+                    setAutoValues((current) => ({ ...current, [row.key]: !value }));
+                    setError(result.error);
+                  }
+                }}
+                aria-label={row.label}
+              />
+            </div>
+          ))}
+        </div>
+      ) : tab === "ADMINS" || !notifications ? (
         <EmployeeList employees={employees} currentUserId={currentUserId} canRevoke={notifications !== null} onRevoke={onRevoke} />
       ) : (
         <div className="space-y-5">

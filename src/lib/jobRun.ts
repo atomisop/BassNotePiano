@@ -22,6 +22,7 @@ export const JOB_MAX_SILENCE_HOURS: Record<string, number> = {
   "practice-reminders": 30,
   "admin-daily-summary": 30,
   "class-reminders": 2,
+  "auto-approvals": 30,
 };
 
 /** Jobs that have not run (or last failed) within their allowed window. */

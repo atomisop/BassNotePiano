@@ -2,12 +2,14 @@ import { getServerAuthSession } from "@/lib/auth";
 import { listEmployees } from "@/lib/admin";
 import { ADMIN_NOTIFICATION_KINDS, getAdminNotificationSettings, isOwnerEmail } from "@/lib/adminNotifications";
 import { EmployeesView } from "@/components/admin/EmployeesView";
-import { revokeEmployeeAction, setEmployeeNotificationAction } from "./actions";
+import { getAutomations } from "@/lib/appSettings";
+import { AUTOMATIONS } from "@/lib/automationKeys";
+import { revokeEmployeeAction, setAutomationAction, setEmployeeNotificationAction } from "./actions";
 
 export default async function AdminEmployeesPage() {
   const session = await getServerAuthSession();
   const isOwner = isOwnerEmail(session?.user.email);
-  const [employees, settings] = await Promise.all([listEmployees(), isOwner ? getAdminNotificationSettings() : null]);
+  const [employees, settings, automations] = await Promise.all([listEmployees(), isOwner ? getAdminNotificationSettings() : null, isOwner ? getAutomations() : null]);
 
   return (
     <div>
@@ -28,6 +30,8 @@ export default async function AdminEmployeesPage() {
               : null
           }
           onToggleNotification={setEmployeeNotificationAction}
+          automations={isOwner && automations ? AUTOMATIONS.map(({ key, label }) => ({ key, label, enabled: automations[key] })) : null}
+          onToggleAutomation={setAutomationAction}
         />
       </div>
     </div>
