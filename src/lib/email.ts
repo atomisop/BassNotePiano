@@ -277,16 +277,41 @@ export interface PaymentPlanInvoiceDetails {
  */
 export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPlanInvoiceDetails): Promise<void> {
   const isOverdue = typeof details.overdueDays === "number";
-  const heading = isOverdue ? "Installment overdue" : "Installment due";
+  const heading = isOverdue ? "Overdue bill" : "Your bill";
   const dueDateLabel = details.dueDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" });
+  const dueShort = details.dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
+  const amountLabel = formatUsdCents(details.amountCents);
+  const dueIso = details.dueDate.toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+  const remindUrl = getAppUrl(`/api/reminders/installment?d=${dueIso}&a=${details.amountCents}`);
   const intro = isOverdue
-    ? `This installment is now ${details.overdueDays} day${details.overdueDays === 1 ? "" : "s"} overdue. Please send it as soon as you can.`
-    : "Here's your next installment.";
+    ? `This bill is ${details.overdueDays} day${details.overdueDays === 1 ? "" : "s"} overdue. Please send it as soon as you can.`
+    : `${details.planLabel}, ${details.installmentLabel.toLowerCase()}.`;
 
   const rowBorder = "border-top:1px solid rgba(255,255,255,0.08);";
   const cycleEndsAtLabel = details.cycleEndsAt?.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" });
+
+  // The two lines that matter, large, the way a bill reads: how much and by when.
+  const headlineHtml = `
+    <p style="margin:0 0 6px;color:#999999;font-size:13px;">${escapeHtml(intro)}</p>
+    <p style="margin:0;color:#f5f5f5;font-size:34px;font-weight:bold;line-height:1.1;">${amountLabel}</p>
+    <p style="margin:6px 0 20px;color:${isOverdue ? "#fca5a5" : "#f5f5f5"};font-size:17px;font-weight:bold;">${isOverdue ? "was due" : "due on"} ${escapeHtml(dueDateLabel)}</p>
+  `;
+
+  const buttonsHtml = `
+    <table role="presentation" width="100%" style="border-collapse:collapse;margin:0 0 22px;">
+      <tr>
+        <td style="padding-right:8px;">
+          <a href="${details.cta.url}" style="display:block;padding:13px 10px;border-radius:999px;background:#fb8a5c;color:#1a140e;font-size:14px;font-weight:bold;text-align:center;text-decoration:none;">Pay bill</a>
+        </td>
+        <td style="padding-left:8px;">
+          <a href="${remindUrl}" style="display:block;padding:13px 10px;border-radius:999px;background:#2a2a2a;color:#f5f5f5;font-size:14px;font-weight:bold;text-align:center;text-decoration:none;">Remind me</a>
+        </td>
+      </tr>
+    </table>
+  `;
+
   const summaryHtml = `
-    <table role="presentation" width="100%" style="margin:4px 0 20px;border-collapse:collapse;">
+    <table role="presentation" width="100%" style="margin:0;border-collapse:collapse;">
       <tr>
         <td style="padding:6px 0;color:#999999;font-size:13px;">Plan</td>
         <td style="padding:6px 0;color:#f5f5f5;font-size:13px;text-align:right;">${escapeHtml(details.planLabel)}</td>
@@ -294,14 +319,6 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
       <tr>
         <td style="padding:6px 0;color:#999999;font-size:13px;${rowBorder}">Installment</td>
         <td style="padding:6px 0;color:#f5f5f5;font-size:13px;text-align:right;${rowBorder}">${escapeHtml(details.installmentLabel)}</td>
-      </tr>
-      <tr>
-        <td style="padding:6px 0;color:#999999;font-size:13px;${rowBorder}">Amount due</td>
-        <td style="padding:6px 0;color:#f5f5f5;font-size:16px;font-weight:bold;text-align:right;${rowBorder}">${formatUsdCents(details.amountCents)}</td>
-      </tr>
-      <tr>
-        <td style="padding:6px 0;color:#999999;font-size:13px;${rowBorder}">Due date</td>
-        <td style="padding:6px 0;color:#f5f5f5;font-size:13px;text-align:right;${rowBorder}">${escapeHtml(dueDateLabel)}</td>
       </tr>
       ${
         cycleEndsAtLabel
@@ -318,25 +335,26 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
     </table>
   `;
 
-  const html = emailShell(
-    heading,
-    `<p style="margin:0 0 4px;">${escapeHtml(intro)}</p>${summaryHtml}${ctaButtonHtml(details.cta)}`,
-    { kind: isOverdue ? "notice" : "default" },
-  );
+  const html = emailShell(heading, `${headlineHtml}${buttonsHtml}${summaryHtml}`, { kind: isOverdue ? "notice" : "default" });
   const text = [
+    `${heading}: ${amountLabel} ${isOverdue ? "was due" : "due on"} ${dueDateLabel}`,
     intro,
     "",
     `Plan: ${details.planLabel}`,
     `Installment: ${details.installmentLabel}`,
-    `Amount due: ${formatUsdCents(details.amountCents)}`,
-    `Due date: ${dueDateLabel}`,
     ...(cycleEndsAtLabel ? [`Credits valid through: ${cycleEndsAtLabel}`] : []),
     `Pay via Zelle to: ${details.zelleHandle}`,
     "",
-    `${details.cta.label}: ${details.cta.url}`,
+    `Pay bill: ${details.cta.url}`,
+    `Remind me: ${remindUrl}`,
   ].join("\n");
 
-  await sendEmail({ to, subject: `${heading} | Bass Note Piano`, html, text });
+  await sendEmail({
+    to,
+    subject: isOverdue ? `Overdue: ${amountLabel} bill | Bass Note Piano` : `Bill: ${amountLabel} due ${dueShort} | Bass Note Piano`,
+    html,
+    text,
+  });
 }
 
 /** First-time-only welcome email, fired the moment email verification succeeds (see verify-email/actions.ts). */

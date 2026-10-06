@@ -3,9 +3,6 @@ import { BookOpen, Video } from "lucide-react";
 import { DiscordIcon } from "@/components/ui/icons";
 import { ProofLoops } from "@/components/marketing/loops";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
-import { BACKDROPS } from "@/lib/backdrops";
-import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
-import { EDGE_FADE_STYLE } from "./edgeFade";
 
 /**
  * HOMEPAGE REBUILD: 02 SOCIAL PROOF.
@@ -44,27 +41,15 @@ import { EDGE_FADE_STYLE } from "./edgeFade";
 
 export function SocialProof() {
   return (
-    <section className="relative overflow-hidden py-[var(--space-5)] md:py-[var(--space-8)]">
-      {/* Masked to fully transparent at both edges, on top of the blur and
-          PhotoBackdrop's own scrim, belt and suspenders so this never
-          reads as a hard cut against Solution's blank ground on either
-          side. Never a bare image-to-image transition anywhere on this
-          page: every image is either at full clarity with a blank section
-          on both sides, or blurred and fading straight to blank, per
-          direct instruction. */}
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 overflow-hidden"
-        style={EDGE_FADE_STYLE}
-      >
-        <div className="absolute -inset-x-10 -inset-y-10 blur-3xl">
-          <PhotoBackdrop src={BACKDROPS.guitar} scrim="standard" sizes="100vw" />
-        </div>
-      </div>
-      <ScrollReveal className="editorial-grid items-start">
-        <h2 className="display-2 col-span-12 text-balance md:col-span-5">The real thing.</h2>
+    <section className="mx-auto w-full max-w-6xl px-6 py-24 md:py-40">
+      <ScrollReveal className="grid items-center gap-12 md:grid-cols-[1fr_1.1fr] md:gap-20">
+        <h2 className="text-[clamp(2.25rem,6vw,4.5rem)] font-bold leading-[1.02] tracking-[-0.03em] text-slate-50">
+          The
+          <br />
+          real thing.
+        </h2>
 
-        <div className="col-span-12 md:col-span-6 md:col-start-7">
+        <div>
           <ProofLoops
             items={[
               { icon: <BookOpen className="h-7 w-7" strokeWidth={1.5} />, caption: "A real book" },
@@ -77,10 +62,10 @@ export function SocialProof() {
             href={DISCORD_INVITE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="tap mt-8 inline-flex items-center gap-2 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70"
+            className="tap mt-8 inline-flex items-center gap-2 text-small font-medium text-slate-300 transition hover:text-slate-50"
           >
             <DiscordIcon size={16} className="text-[#5865F2]" />
-            See the community for yourself
+            Visit the community
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
               <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
