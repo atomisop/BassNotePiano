@@ -2,16 +2,18 @@ import { schedule } from "@netlify/functions";
 import { prisma } from "../../src/lib/prisma";
 import { runJob } from "../../src/lib/jobRun";
 import { OWNER_EMAIL } from "../../src/lib/adminNotifications";
+import { createNotification } from "../../src/lib/notifications";
+import { discordChannelUrl } from "../../src/lib/discord";
 import { classChannelName, createClassChannel, deleteChannel, isGuildMember } from "../../src/lib/discordApi";
 
 const MINUTE_MS = 60_000;
-const OPEN_BEFORE_MIN = 120; // a private channel appears two hours before the class
-const CLOSE_AFTER_MIN = 60; // and goes away an hour after it ends
+const OPEN_BEFORE_MIN = 5; // a private channel appears five minutes before the class
+const CLOSE_AFTER_MIN = 5; // and goes away five minutes after it ends, so it is up for 55 minutes in all
 const CLASS_MINUTES = 45;
 
-// Every 10 minutes. Does nothing until the bot token is set, so it is safe to
+// Every 2 minutes, so a call opens and closes within a couple of minutes of its time. Does nothing until the bot token is set, so it is safe to
 // ship before Discord is fully set up.
-export const handler = schedule("*/10 * * * *", async () =>
+export const handler = schedule("*/2 * * * *", async () =>
   runJob("discord-class-channels", async () => {
     if (!process.env.DISCORD_BOT_TOKEN) {
       console.log("Discord class channels: no bot token yet, nothing to do");
@@ -61,6 +63,17 @@ export const handler = schedule("*/10 * * * *", async () =>
         );
         await prisma.classBooking.updateMany({ where: { id: { in: members.map((m) => m.id) } }, data: { discordChannelId: channelId } });
         created++;
+        // Tell each student their call is open, with a link straight to it.
+        for (const m of inServer) {
+          await createNotification({
+            userId: (await prisma.user.findFirst({ where: { discordId: m.student.discordId }, select: { id: true } }))?.id ?? "",
+            type: "CLASS_REMINDER",
+            title: "Your class call is open",
+            body: "Your teacher is joining. Tap to enter your private call.",
+            emailCategory: "reminders",
+            cta: { label: "Join on Discord", url: discordChannelUrl(channelId) },
+          }).catch((err) => console.error("Class call notification failed (non-blocking):", err));
+        }
       } catch (err) {
         console.error("Discord class channel failed (non-blocking):", err);
       }
