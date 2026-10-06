@@ -48,10 +48,6 @@ const PROOF_POINTS = [
     label: "The teacher",
     body: "Live lessons with a real teacher over Discord.",
   },
-  {
-    label: "The coverage",
-    body: "Every scale spelled correctly in all twelve keys.",
-  },
 ];
 
 export function SocialProof() {

@@ -297,11 +297,10 @@ export function Hero() {
           <span aria-hidden="true">
             The <RotatingHeroWord /> way
             <br />
-            to learn Ethiopian music.
+            to learn music.
           </span>
-          <span className="sr-only">The best way to learn Ethiopian music.</span>
+          <span className="sr-only">The best way to learn music.</span>
         </h1>
-        <p className="lead mt-6 max-w-lg text-slate-300">15 scales, spelled correctly in every key.</p>
 
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <Link href={isLoggedIn ? "/dashboard" : "/register"} className="btn btn-primary">

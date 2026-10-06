@@ -35,7 +35,6 @@ import { SolutionScreenshotTabs } from "@/components/marketing/SolutionScreensho
  * of stacking full-width, reported as "mobile is cooked".
  */
 const FEATURES = [
-  { title: "15 scales, all twelve keys", body: "Tizita, Bati, Anchihoye, Ambassel and more, spelled correctly in every key." },
   { title: "Chords built in", body: "Each scale's chords come from its own notes. No extra theory." },
   { title: "Quiz-gated progression", body: "Pass a scale's quiz to open the next one." },
   { title: `Live lessons, ${CLASS_MINUTES} minutes`, body: "One-on-one with your teacher over Discord, or a family session." },
@@ -57,7 +56,7 @@ export function Solution() {
     <section id="curriculum" className="scroll-mt-24 py-[var(--space-5)] md:py-[var(--space-8)]">
       <ScrollReveal className="editorial-grid items-start">
         <div className="col-span-12 md:col-span-6">
-          <h2 className="display-2 max-w-[18ch] text-balance">A spelling engine for Ethiopian music.</h2>
+          <h2 className="display-2 max-w-[18ch] text-balance">Everything in one place.</h2>
 
           <Accordion type="single" collapsible className="mt-8" defaultValue="feature-0">
             {FEATURES.map((feature, i) => (
