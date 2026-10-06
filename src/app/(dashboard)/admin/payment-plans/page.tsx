@@ -5,7 +5,7 @@ import { PaymentPlanList } from "@/components/admin/PaymentPlanList";
 import { PlanCancellationFeedbackList } from "@/components/admin/PlanCancellationFeedbackList";
 import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
-import { cancelPaymentPlanAction, recordPlanPaymentAction } from "./actions";
+import { cancelPaymentPlanAction, recordPlanPaymentAction, resendBillAction } from "./actions";
 
 // "Overdue" isn't a real PaymentPlanStatus — it's derived (ACTIVE && past its
 // nextDueDate) in getAdminPaymentPlans, never stored. This filter just
@@ -89,6 +89,7 @@ export default async function AdminPaymentPlansPage({ searchParams }: { searchPa
           plans={plans}
           onCancel={cancelPaymentPlanAction}
           onRecordPayment={isOwner ? recordPlanPaymentAction : undefined}
+          onResendBill={resendBillAction}
           emptyMessage={activeFilter === "ACTIVE" ? "No active plans." : `No ${activeLabel.toLowerCase()} plans.`}
         />
       </div>
