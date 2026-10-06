@@ -384,6 +384,7 @@ model UserBadge {
 // ---------------------------------------------------------------------------
 
 enum NotificationType {
+  MAIL_MESSAGE // to the student, when an admin sends them a message (the message itself lives in Mail)
   BADGE_EARNED // to the student, when they earn a badge
   ADMIN_ALERT // to admins, for the optional alerts the owner switches on (lapsed plans, automatic approvals, owner messages)
   PAYMENT_SUBMITTED // to every admin, when a payment is waiting for review (not for one approved automatically)
@@ -840,6 +841,7 @@ model User {
   loginEvents       LoginEvent[]
   badges            UserBadge[]
   fingerPracticeDays FingerPracticeDay[]
+  mailMessages       MailMessage[]       @relation("MailRecipient")
 
   assistantFeedback            AssistantFeedback[]
   assistantEscalations         AssistantEscalation[]          @relation("AssistantEscalationSubmitter")
@@ -1601,4 +1603,36 @@ model FingerPracticeDay {
 
   @@unique([userId, day])
   @@index([userId, completedAt])
+}
+
+// Serious, per-person messages that must not get lost among the bell's
+// everyday notifications: payment and billing notices, and messages an admin
+// writes to one student. Shown in the Mail icon's inbox.
+enum MailKind {
+  ADMIN_MESSAGE
+  PAYMENT
+  BILLING
+}
+
+model MailMessage {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation("MailRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  kind          MailKind
+  title         String
+  body          String    @db.Text
+  // When true the message offers "Click here to contact support".
+  supportCta    Boolean   @default(false)
+  // A related page to open (for example the billing screen) and its button label.
+  actionLabel   String?
+  actionHref    String?
+  // Which admin wrote it (ADMIN_MESSAGE only); never shown to the student.
+  sentById      String?
+  readAt        DateTime?
+  // The support case the student opened from this message, if any.
+  supportCaseId String?
+  createdAt     DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
 }

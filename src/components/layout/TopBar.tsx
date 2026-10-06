@@ -5,6 +5,8 @@ import { AdminAttendanceQuickPanel } from "@/components/admin/AdminAttendanceQui
 import { ProfileMenu } from "./ProfileMenu";
 import { AdminTopLink } from "./AdminTopLink";
 import { LiveClassesTopLink } from "./LiveClassesTopLink";
+import { MailTopLink } from "./MailTopLink";
+import { getMailUnreadCount } from "@/lib/mail";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { BrandMark } from "./BrandMark";
 import { AskAiButton } from "./AskAiButton";
@@ -41,7 +43,9 @@ async function ProfileAvatarLink() {
   );
 }
 
-export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolean }) {
+export async function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolean }) {
+  const session = await getServerAuthSession();
+  const mailUnread = session?.user ? await getMailUnreadCount(session.user.id) : 0;
   // fixed, not in-flow: this used to be a plain flex child (relative z-30)
   // that never scrolled away purely because it sat outside `<main>`'s own
   // scroll area in `(dashboard)/layout.tsx` — structurally sound, but a
@@ -88,6 +92,7 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
             everyday action (mark today's classes) without a full admin-page
             navigation first. */}
         {isOwner && <AdminAttendanceQuickPanel />}
+        <MailTopLink initialCount={mailUnread} />
         <NotificationBell />
         <ProfileAvatarLink />
         </div>
