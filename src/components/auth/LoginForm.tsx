@@ -57,13 +57,19 @@ export function LoginForm({
     return () => window.clearTimeout(t);
   }, [resendIn]);
 
+  // A computer gets the cursor in the email field right away. A phone does not: focusing on
+  // load opens the keyboard and shoves the page up before anyone has touched it.
+  useEffect(() => {
+    if (window.matchMedia("(pointer: fine)").matches) document.getElementById(embedded ? "panel-email" : "email")?.focus();
+  }, [embedded]);
+
   function finishLogin() {
-    if (embedded) {
-      onSuccess?.();
-      router.refresh();
-      return;
-    }
-    router.push(callbackUrl);
+    // Logged in means into the signed-in app: the Log in panel on the public pages
+    // goes to the dashboard, and a plain "/" callback does too. Only a real in-app
+    // destination (a relative path) is kept.
+    const target = embedded || !callbackUrl.startsWith("/") || callbackUrl.startsWith("//") || callbackUrl === "/" ? "/dashboard" : callbackUrl;
+    if (embedded) onSuccess?.();
+    router.push(target);
     router.refresh();
   }
 
@@ -146,7 +152,6 @@ export function LoginForm({
                   autoComplete="username"
                   inputMode="email"
                   required
-                  autoFocus
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
@@ -267,7 +272,6 @@ export function LoginForm({
             autoComplete="username"
             inputMode="email"
             required
-            autoFocus
             aria-invalid={Boolean(error)}
             value={email}
             onChange={(e) => {

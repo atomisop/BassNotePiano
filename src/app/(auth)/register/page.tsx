@@ -1,10 +1,11 @@
 "use client";
 
 import { TurnstileWidget } from "@/components/security/TurnstileWidget";
-import { Suspense, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -25,6 +26,12 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const { status } = useSession();
+
+  // Already signed in: nothing to create, go straight into the app.
+  useEffect(() => {
+    if (status === "authenticated") router.replace("/dashboard");
+  }, [status, router]);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
