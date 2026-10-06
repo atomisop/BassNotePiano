@@ -1,8 +1,7 @@
 import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
 
 /**
- * Mirrors UserManagementTable: a search field, then a stack of user cards
- * (not an actual <table>; that's roster's shape, not this one's).
+ * Mirrors UserList: a search field, then one quiet row per person.
  */
 export default function AdminUsersLoading() {
   return (
