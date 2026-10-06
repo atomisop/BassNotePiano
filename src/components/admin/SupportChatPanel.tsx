@@ -7,6 +7,7 @@ import {
   getSupportThreadsAction,
   getSupportThreadAction,
   sendSupportReplyAction,
+  setSupportTypingAction,
   resolveSupportThreadAction,
   deleteSupportThreadAction,
   type AdminThreadSummary,
@@ -15,6 +16,7 @@ import {
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
+import { TypingIndicator } from "@/components/messaging/TypingIndicator";
 
 const THREAD_LIST_POLL_MS = 15_000;
 const ACTIVE_THREAD_POLL_MS = 2_500;
@@ -129,6 +131,8 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [threadStatus, setThreadStatus] = useState<AssistantEscalationStatus | null>(null);
   const [reply, setReply] = useState("");
+  const [visitorTyping, setVisitorTyping] = useState(false);
+  const [replyFocused, setReplyFocused] = useState(false);
   const [sending, setSending] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -174,6 +178,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
   useEffect(() => {
     setMessages([]);
     setThreadStatus(null);
+    setVisitorTyping(false);
     setMessagesLoading(Boolean(activeId));
   }, [activeId]);
 
@@ -185,12 +190,27 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
       if (result) {
         setMessages(result.messages);
         setThreadStatus(result.status);
+        setVisitorTyping(result.visitorTyping);
       }
       setMessagesLoading(false);
     },
     ACTIVE_THREAD_POLL_MS,
     { enabled: Boolean(activeId), resetKey: activeId },
   );
+
+  // The customer sees "Support is typing" for as long as the reply box is focused:
+  // refreshed every 2 seconds, and stopped at once when it loses focus or the thread changes.
+  useEffect(() => {
+    if (!activeId || !replyFocused) return;
+    void setSupportTypingAction(activeId, true);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void setSupportTypingAction(activeId, true);
+    }, 2_000);
+    return () => {
+      window.clearInterval(timer);
+      void setSupportTypingAction(activeId, false);
+    };
+  }, [activeId, replyFocused]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -362,6 +382,11 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                   {messages.map((m) => (
                     <MessageRow key={m.id} message={m} />
                   ))}
+                  {visitorTyping && threadStatus === "OPEN" && (
+                    <div className="flex items-center gap-2 text-small text-slate-500" aria-live="polite">
+                      Customer is typing <TypingIndicator />
+                    </div>
+                  )}
                   {(threadPoll.failed || listPoll.failed) && (
                     <RegionError
                       title="Live updates paused."
@@ -382,6 +407,8 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
                 type="text"
                 value={reply}
                 onChange={(e) => setReply(e.target.value)}
+                onFocus={() => setReplyFocused(true)}
+                onBlur={() => setReplyFocused(false)}
                 placeholder="Reply as Support…"
                 maxLength={2000}
                 disabled={sending}

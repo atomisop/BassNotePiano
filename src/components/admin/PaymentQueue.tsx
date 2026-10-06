@@ -30,7 +30,7 @@ function describePayment(payment: PendingZellePayment): { eyebrow: string; title
   // reason PAYMENT_PLAN_INSTALLMENT below shows its own cadence/term rather
   // than a bare credit count.
   if (payment.purpose === "CLASS_CREDITS" && payment.extraSessionScheduledAt) {
-    return { eyebrow: "Extra session", title: formatDateTime(payment.extraSessionScheduledAt.toISOString()) };
+    return { eyebrow: "Extra class", title: formatDateTime(payment.extraSessionScheduledAt.toISOString()) };
   }
   if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
     // A lessonType present means this is a historical row from the old

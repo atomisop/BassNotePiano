@@ -1,5 +1,6 @@
 "use client";
 
+import { safeCallbackPath } from "@/lib/safeRedirect";
 import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -48,7 +49,7 @@ function VerifyEmailForm() {
       return;
     }
 
-    router.push(callbackUrl);
+    router.push(safeCallbackPath(callbackUrl));
     router.refresh();
   }
 

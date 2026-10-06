@@ -119,32 +119,41 @@ function GuitarTab({ exercise, activeStep }: { exercise: GuitarExercise; activeS
   const fingerstyle = exercise.steps.some((s) => s.pickFinger);
   const names = ["e", "B", "G", "D", "A", "E"];
 
-  return (
-    <div className="rounded-2xl bg-neu-base p-4 shadow-raised-low">
-      <p className="text-small font-semibold text-slate-100">
-        {fingerstyle ? "Picking hand: p thumb, i index, m middle, a ring" : "Fretting hand: 1 index, 2 middle, 3 ring, 4 little"}
-      </p>
+  const legend = fingerstyle
+    ? [["p", "thumb"], ["i", "index"], ["m", "middle"], ["a", "ring"]]
+    : [["1", "index"], ["2", "middle"], ["3", "ring"], ["4", "little"]];
 
-      <div className="mt-4 overflow-x-auto pb-1">
-        <div className="inline-flex min-w-full gap-0">
-          <div className="flex shrink-0 flex-col pt-6">
-            {names.map((n) => (
-              <span key={n} className="flex h-8 w-6 items-center justify-center text-small font-semibold text-slate-500">
-                {n}
-              </span>
-            ))}
-          </div>
+  return (
+    <div className="rounded-2xl bg-neu-base p-3 shadow-raised-low sm:p-5">
+      <div className="flex flex-wrap gap-1.5">
+        {legend.map(([key, name]) => (
+          <span key={key} className="inline-flex items-center gap-1.5 rounded-full bg-neu-base px-3 py-1 text-small text-slate-300 shadow-pressed-low">
+            <span className="font-bold text-[rgb(var(--signal))]">{key}</span>
+            {name}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-4 flex">
+        <div className="flex shrink-0 flex-col pt-7">
+          {names.map((n) => (
+            <span key={n} className="flex h-10 w-6 items-center justify-center text-small font-semibold text-slate-500">
+              {n}
+            </span>
+          ))}
+        </div>
+        <div className="flex min-w-0 flex-1 overflow-x-auto pb-1">
           {exercise.steps.map((step, i) => (
-            <div key={i} className="flex w-11 shrink-0 flex-col items-center">
-              <span className="flex h-6 items-center text-small font-bold text-slate-400">
-                {step.pick === "D" ? "↓" : step.pick === "U" ? "↑" : step.pickFinger ?? ""}
+            <div key={i} className="flex min-w-[2.75rem] flex-1 flex-col items-center">
+              <span className="flex h-7 items-center text-body font-bold text-slate-400">
+                {step.pick === "D" ? "\u2193" : step.pick === "U" ? "\u2191" : step.pickFinger ?? ""}
               </span>
               {[1, 2, 3, 4, 5, 6].map((str) => (
-                <div key={str} className="relative flex h-8 w-full items-center justify-center">
+                <div key={str} className="relative flex h-10 w-full items-center justify-center">
                   <span className="absolute inset-x-0 top-1/2 h-px bg-slate-500/50" />
                   {step.string === str && (
                     <span
-                      className={`relative z-10 flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-small font-bold ${
+                      className={`relative z-10 flex h-8 min-w-8 items-center justify-center rounded-full px-1 text-small font-bold ${
                         lit === i ? "bg-[rgb(var(--signal))] text-[rgb(var(--signal-ink))]" : "bg-neu-base text-slate-100 shadow-raised-low"
                       }`}
                     >
@@ -153,7 +162,7 @@ function GuitarTab({ exercise, activeStep }: { exercise: GuitarExercise; activeS
                   )}
                 </div>
               ))}
-              <span className="mt-1 flex h-6 items-center text-small font-bold text-[rgb(var(--signal))]">
+              <span className="mt-1 flex h-7 items-center text-small font-bold text-[rgb(var(--signal))]">
                 {step.finger === 0 ? (step.pickFinger ? "" : "open") : step.finger}
               </span>
             </div>

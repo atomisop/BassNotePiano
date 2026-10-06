@@ -107,17 +107,9 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
           <td style="height:4px;background:${accent.bar};"></td>
         </tr>
         <tr>
-          <td style="padding:28px 32px 0;">
-            <table role="presentation">
-              <tr>
-                <td style="vertical-align:middle;padding-right:10px;">
-                  <img src="${getAppUrl("/logo-mark.png")}" width="30" height="30" alt="" style="display:block;width:30px;height:30px;border:0;" />
-                </td>
-                <td style="vertical-align:middle;">
-                  <span style="font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:#f5f5f5;font-weight:bold;">Bass Note Piano</span>
-                </td>
-              </tr>
-            </table>
+          <td align="center" style="padding:30px 32px 0;">
+            <img src="${getAppUrl("/logo-mark.png")}" width="72" height="72" alt="Bass Note Piano" style="display:block;width:72px;height:72px;border:0;border-radius:36px;margin:0 auto;" />
+            <span style="display:block;margin-top:12px;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:#f5f5f5;font-weight:bold;">Bass Note Piano</span>
           </td>
         </tr>
         <tr>

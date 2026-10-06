@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
 import { MorphingSquare } from "@/components/ui/morphing-square";
@@ -91,6 +92,9 @@ export function ZellePaymentModal({
   const venmo = venmoLinks(amountCents, `${scaleCode}: ${scaleTitle} (Bass Note Piano)`);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Portaled to the page itself: inside a page with a transform, `fixed` is measured against that box and the sheet lands off screen.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   function reset() {
     setStep("instructions");
@@ -130,11 +134,13 @@ export function ZellePaymentModal({
     }
   }
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4"
           initial="hidden"
           animate="visible"
           exit="hidden"
@@ -154,7 +160,7 @@ export function ZellePaymentModal({
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="glass-surface-modal relative w-full max-w-md overflow-hidden"
+            className="glass-surface-modal relative !bg-neu-base max-h-[92dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-b-none pb-[env(safe-area-inset-bottom)] sm:max-h-[calc(100dvh-2rem)] sm:rounded-b-[inherit] sm:pb-0"
           >
             {step === "pending" && <SuccessGlowPulse />}
             <div className="h-1 w-full bg-gradient-to-r from-[rgb(var(--c-s-300)/0.4)] via-[rgb(var(--c-s-50))] to-[rgb(var(--c-s-300)/0.4)]" />
@@ -197,11 +203,6 @@ export function ZellePaymentModal({
                         className="mb-4"
                       />
                     )}
-                    <p className="text-small text-slate-400">
-                      Send <span className="font-semibold text-[rgb(var(--c-s-50))]">{formatUsd(amountCents)}</span> via{" "}
-                      {method === "VENMO" ? "Venmo" : "Zelle"} for {scaleTitle}, then confirm below.
-                    </p>
-
                     {method === "VENMO" && (
                       <>
                         <a
@@ -239,10 +240,6 @@ export function ZellePaymentModal({
                         {method === "VENMO"
                           ? `Send ${formatUsd(amountCents)} on Venmo, set to Private.`
                           : `Open your bank's Zelle transfer and send ${formatUsd(amountCents)} to the handle above.`}
-                      </li>
-                      <li className="flex gap-2.5">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-small font-semibold text-[rgb(var(--c-s-50))]">2</span>
-                        Tell us you sent it, access unlocks once we verify the transfer.
                       </li>
                     </ol>
 
@@ -347,6 +344,7 @@ export function ZellePaymentModal({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

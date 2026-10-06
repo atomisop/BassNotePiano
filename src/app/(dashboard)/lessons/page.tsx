@@ -50,6 +50,7 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
     <ClassBookingClient
       extraMode={Boolean(activePlan)}
       initialCredits={credits}
+      zelleHandle={process.env.ZELLE_HANDLE ?? "payments@yourplatform.com"}
       cancellationCutoffHours={CANCELLATION_CUTOFF_HOURS}
       soloMaxCredits={SOLO_MAX_CREDITS}
       familyMinAttendees={FAMILY_MIN_ATTENDEES}

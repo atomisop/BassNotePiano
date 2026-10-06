@@ -14,7 +14,10 @@ import {
 import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { CheckIcon, XIcon } from "@/components/ui/icons";
-import { CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
+import { CLASS_MINUTES, CREDITS_PER_CLASS, EXTRA_CLASS_PRICE_CENTS } from "@/lib/classCreditPricing";
+import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
+import { createExtraClassPaymentAction, submitClassCreditsPaymentAction } from "../billing/lessons/actions";
+import type { ZellePaymentStatus } from "@prisma/client";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { Tabs } from "@/components/ui/Tabs";
@@ -47,7 +50,7 @@ interface BookingRow {
 }
 
 type BookingMode = "SOLO" | "FAMILY";
-type PanelId = "credits" | "for" | "upcoming" | "past";
+type PanelId = "for" | "upcoming" | "past";
 
 const STATUS_LABEL: Record<BookingRow["status"], string> = {
   SCHEDULED: "Scheduled",
@@ -341,6 +344,7 @@ export function ClassBookingClient({
   supportContactId,
   occurrences,
   initialBookings,
+  zelleHandle,
   extraMode = false,
 }: {
   /** A student on a payment plan: this is where they book EXTRA sessions on top of their weekly class. */
@@ -353,8 +357,13 @@ export function ClassBookingClient({
   supportContactId: string | null;
   occurrences: OccurrenceRow[];
   initialBookings: BookingRow[];
+  zelleHandle: string;
 }) {
   const [credits, setCredits] = useState(initialCredits);
+  // At confirm: spend credits (a gift, a refund) or pay for this class. Credits are the default when there are enough.
+  const [useCredits, setUseCredits] = useState(true);
+  const [extraPayment, setExtraPayment] = useState<{ id: string; status: ZellePaymentStatus; amountCents: number; when: string } | null>(null);
+  const [payBusy, setPayBusy] = useState(false);
   const [bookings, setBookings] = useState(initialBookings);
   const [rows, setRows] = useState(occurrences);
 
@@ -396,7 +405,7 @@ export function ClassBookingClient({
   const [multiSelect, setMultiSelect] = useState(false);
   const timesRef = useRef<HTMLDivElement>(null);
   // Which panel of the small tab slider is open (credits, who the class is for, upcoming, past).
-  const [panel, setPanel] = useState<PanelId>("credits");
+  const [panel, setPanel] = useState<PanelId>("upcoming");
   const [bundleSubmitting, setBundleSubmitting] = useState(false);
 
   // Family booking: which occurrence, and the list of attendee emails being
@@ -442,8 +451,7 @@ export function ClassBookingClient({
   );
   const selectedExceedsBalance = selectedCreditTotal > credits;
   const pendingRow = rows.find((r) => `${r.scheduleId}:${r.occurrenceDateMs}:${r.chunkIndex}` === pendingKey && !r.isBooked) ?? null;
-  const cheapestClass = rows.reduce((min, r) => Math.min(min, Math.min(r.creditCost, soloMaxCredits)), Infinity);
-  const hasNoCredits = credits < (Number.isFinite(cheapestClass) ? cheapestClass : 1);
+  const canUseCredits = pendingRow ? credits >= creditsFor(pendingRow) : false;
 
   function toggleSelected(row: OccurrenceRow) {
     const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
@@ -878,11 +886,7 @@ export function ClassBookingClient({
                 {formatOccurrenceTime(pendingRow.scheduledAt)} to {formatEndTime(pendingRow.scheduledAt, creditsFor(pendingRow))}
               </p>
               <ul className="mt-3 space-y-1 text-small text-slate-400">
-                <li>
-                  {lengthLabel(creditsFor(pendingRow))} · 1 class, you&apos;ll have{" "}
-                  {classCount(credits - creditsFor(pendingRow))} left
-                </li>
-                <li>Live on Discord</li>
+                <li>{lengthLabel(creditsFor(pendingRow))} · Live on Discord</li>
                 <li>
                   Free to cancel until{" "}
                   {new Date(new Date(pendingRow.scheduledAt).getTime() - cancellationCutoffHours * 3_600_000).toLocaleString(undefined, {
@@ -892,28 +896,83 @@ export function ClassBookingClient({
                   })}
                 </li>
               </ul>
-              <div className="mt-4 flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await handleBook(pendingRow);
-                    setPendingKey(null);
-                  }}
-                  disabled={bookingKey !== null || credits < creditsFor(pendingRow)}
-                  className="tap cta-sheen cta-fill flex min-h-11 flex-1 items-center justify-center rounded-xl px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {bookingKey !== null && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                  {bookingKey !== null ? "Booking…" : "Book this class"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPendingKey(null)}
-                  disabled={bookingKey !== null}
-                  className="tap rounded-lg px-4 py-2 text-small font-medium text-slate-400 transition hover:text-slate-200 disabled:opacity-50"
-                >
-                  Change
-                </button>
-              </div>
+
+              {extraPayment ? (
+                <div className="mt-4">
+                  <ZelleUnlockGate
+                    status={extraPayment.status}
+                    rejectionReason={null}
+                    scaleCode="Extra class"
+                    scaleTitle={extraPayment.when}
+                    eyebrowLabel="Pay"
+                    amountCents={extraPayment.amountCents}
+                    zelleHandle={zelleHandle}
+                    onSubmitPayment={submitClassCreditsPaymentAction.bind(null, extraPayment.id)}
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-neu-base px-4 py-3 shadow-pressed-low">
+                    <p className="text-body font-semibold text-slate-50">${(EXTRA_CLASS_PRICE_CENTS / 100).toFixed(0)}</p>
+                    {canUseCredits && (
+                      <label className="flex cursor-pointer items-center gap-2 text-small text-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={useCredits}
+                          onChange={(e) => setUseCredits(e.target.checked)}
+                          className="h-5 w-5 shrink-0 cursor-pointer accent-[rgb(var(--signal))]"
+                        />
+                        Use credits
+                        <span className="text-small tabular-nums text-slate-500">({classCount(credits)})</span>
+                      </label>
+                    )}
+                  </div>
+                  <div className="mt-4 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (canUseCredits && useCredits) {
+                          await handleBook(pendingRow);
+                          setPendingKey(null);
+                          return;
+                        }
+                        setPayBusy(true);
+                        setError(null);
+                        try {
+                          const result = await createExtraClassPaymentAction(pendingRow.scheduleId, pendingRow.occurrenceDateMs, pendingRow.chunkIndex);
+                          if (!result.ok || !result.id || !result.status || result.amountCents === null) {
+                            setError(result.error ?? "Something went wrong. Please try again.");
+                            return;
+                          }
+                          setExtraPayment({
+                            id: result.id,
+                            status: result.status as ZellePaymentStatus,
+                            amountCents: result.amountCents,
+                            when: `${formatOccurrenceDay(pendingRow.scheduledAt)}, ${formatOccurrenceTime(pendingRow.scheduledAt)}`,
+                          });
+                        } catch {
+                          setError(NETWORK_ERROR);
+                        } finally {
+                          setPayBusy(false);
+                        }
+                      }}
+                      disabled={bookingKey !== null || payBusy}
+                      className="tap cta-sheen cta-fill flex min-h-11 flex-1 items-center justify-center rounded-xl px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {(bookingKey !== null || payBusy) && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                      {bookingKey !== null || payBusy ? "One moment…" : canUseCredits && useCredits ? "Book this class" : `Pay $${(EXTRA_CLASS_PRICE_CENTS / 100).toFixed(0)}`}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPendingKey(null)}
+                      disabled={bookingKey !== null || payBusy}
+                      className="tap rounded-lg px-4 py-2 text-small font-medium text-slate-400 transition hover:text-slate-200 disabled:opacity-50"
+                    >
+                      Change
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -937,7 +996,7 @@ export function ClassBookingClient({
                     Clear day
                   </button>
                 )}
-                {mode === "SOLO" && !reschedulingBooking && (
+                {mode === "SOLO" && !reschedulingBooking && credits >= CREDITS_PER_CLASS * 2 && (
                   <button
                     type="button"
                     aria-pressed={multiSelect}
@@ -976,7 +1035,7 @@ export function ClassBookingClient({
                           reschedulingBooking !== null && row.scheduledAt === reschedulingBooking.scheduledAt;
                         const disabled = reschedulingBooking
                           ? row.isBooked || insufficientCredits || reschedulingKey !== null
-                          : row.isBooked || insufficientCredits || bookingKey !== null || bundleSubmitting;
+                          : row.isBooked || bookingKey !== null || bundleSubmitting;
                         const isSelected = selectedKeys.has(key);
                         const isPending = pendingKey === key;
                         const actionClass =
@@ -1013,11 +1072,7 @@ export function ClassBookingClient({
                                 {reschedulingKey === key ? "Moving…" : isCurrentRescheduleSlot ? "Current" : insufficientCredits ? "Not enough classes" : "Move here"}
                               </button>
                             ) : mode === "SOLO" ? (
-                              multiSelect ? null : row.isBooked ? null : insufficientCredits ? (
-                                <Link href="/billing/credits" className={actionClass}>
-                                  Buy classes
-                                </Link>
-                              ) : (
+                              multiSelect ? null : row.isBooked ? null : (
                                 <button
                                   type="button"
                                   onClick={() => setPendingKey(isPending ? null : key)}
@@ -1052,41 +1107,11 @@ export function ClassBookingClient({
             value={panel}
             onChange={setPanel}
             items={[
-              { id: "credits", label: "Classes" },
               { id: "for", label: "Booking for" },
               { id: "upcoming", label: "Upcoming", count: upcoming.length || undefined },
               { id: "past", label: "Past", count: history.length || undefined },
             ]}
           />
-
-          {panel === "credits" && (
-            <div className="glass-surface p-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-small uppercase tracking-wide text-slate-500">Extra classes</p>
-                  <p className="mt-1 text-body font-semibold text-slate-50">
-                    {classCount(credits)} {classWord(classCount(credits))}
-                  </p>
-                  <p className="mt-0.5 text-small text-slate-500">$55 per 45-minute class</p>
-                </div>
-                <Link
-                  href="/billing/credits"
-                  className={`tap inline-flex items-center rounded-lg px-4 py-2 text-small font-semibold transition ${
-                    hasNoCredits
-                      ? "cta-sheen cta-fill"
-                      : "text-slate-200 hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-                  }`}
-                >
-                  Buy classes
-                </Link>
-              </div>
-              {hasNoCredits && (
-                <p className="mt-3 rounded-xl bg-neu-base px-3 py-2 text-small text-slate-300 shadow-pressed-low">
-                  No extra classes left.
-                </p>
-              )}
-            </div>
-          )}
 
           {panel === "for" && <div className="glass-surface p-5">
           {/* Who is the class for. Two plain choices; "Group" is left out until it exists. */}

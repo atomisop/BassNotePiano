@@ -6,6 +6,7 @@ import {
   getSupportThreads,
   getSupportThread,
   postAdminReply,
+  setSupportTyping,
   resolveSupportThread,
   deleteSupportThread,
   AssistantEscalationError,
@@ -40,6 +41,12 @@ export async function sendSupportReplyAction(escalationId: string, body: string)
   } catch (err) {
     return { ok: false as const, error: err instanceof AssistantEscalationError ? err.message : "Something went wrong." };
   }
+}
+
+/** The team is writing a reply: the customer sees "Support is typing". */
+export async function setSupportTypingAction(escalationId: string, typing = true): Promise<void> {
+  await requireAdminId();
+  await setSupportTyping(escalationId, "SUPPORT", typing);
 }
 
 export async function resolveSupportThreadAction(escalationId: string): Promise<void> {

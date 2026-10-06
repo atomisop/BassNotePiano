@@ -8,7 +8,7 @@ import {
   submitZellePaymentReference,
   checkFamilyBundleRecipients,
   createFamilyBundlePayment,
-  createExtraClassesPayment,
+  createExtraClassPayment,
   ExtraCreditsError,
   FamilyBundleError,
   type ZelleReferenceSubmission,
@@ -102,10 +102,10 @@ export async function createFamilyBundlePaymentAction(
 }
 
 // ---------------------------------------------------------------------------
-// Extra classes ($55 each), on top of a weekly class
+// One extra class, paid for directly ($55 each)
 // ---------------------------------------------------------------------------
 
-export interface ExtraCreditsPaymentResult {
+export interface ExtraClassPaymentResult {
   ok: boolean;
   id: string | null;
   status: string | null;
@@ -113,14 +113,18 @@ export interface ExtraCreditsPaymentResult {
   error: string | null;
 }
 
-export async function createExtraClassesPaymentAction(quantity: number): Promise<ExtraCreditsPaymentResult> {
+export async function createExtraClassPaymentAction(
+  scheduleId: string,
+  occurrenceDateMs: number,
+  chunkIndex: number,
+): Promise<ExtraClassPaymentResult> {
   const session = await getServerAuthSession();
-  if (!session?.user) redirect("/login?callbackUrl=/billing/credits");
+  if (!session?.user) redirect("/login?callbackUrl=/lessons");
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
   try {
-    const payment = await createExtraClassesPayment(session.user.id, quantity, zelleHandle);
-    revalidatePath("/billing/credits");
+    const payment = await createExtraClassPayment(session.user.id, scheduleId, occurrenceDateMs, chunkIndex, zelleHandle);
+    revalidatePath("/lessons");
     return { ok: true, id: payment.id, status: payment.status, amountCents: payment.amountCents, error: null };
   } catch (err) {
     if (err instanceof ExtraCreditsError) return { ok: false, id: null, status: null, amountCents: null, error: err.message };

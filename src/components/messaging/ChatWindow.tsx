@@ -38,7 +38,7 @@ export interface MessageRow {
 // there's no matching "stopped typing" call to send.
 const TYPING_PING_THROTTLE_MS = 1_500;
 // While the composer stays focused, re-ping a little inside the server's 4s staleness window.
-const TYPING_REFRESH_MS = 2_500;
+const TYPING_REFRESH_MS = 2_000;
 
 // A compose box taller than this scrolls internally instead of growing
 // further, about six lines at text-body, generous for a real message
@@ -60,7 +60,7 @@ export function ChatWindow({
   onSend: (body: string, replyToId?: string) => Promise<boolean>;
   onMinimize: () => void;
   /** Called (throttled below) as the user types — caller wires this to its own setTypingAction. */
-  onTyping: (friendId: string) => void;
+  onTyping: (friendId: string, typing: boolean) => void;
   onReact: (messageId: string, emoji: string) => void;
 }) {
   const [draft, setDraft] = useState("");
@@ -103,11 +103,15 @@ export function ChatWindow({
     const ping = () => {
       if (document.visibilityState !== "visible") return;
       lastTypingPingRef.current = Date.now();
-      onTyping(conversation.friendId);
+      onTyping(conversation.friendId, true);
     };
     ping();
     const timer = window.setInterval(ping, TYPING_REFRESH_MS);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+      // Keyboard closed, box unfocused or chat switched: stop showing it at once.
+      onTyping(conversation.friendId, false);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [composerFocused, conversation.friendId]);
 
@@ -116,7 +120,7 @@ export function ChatWindow({
     const now = Date.now();
     if (now - lastTypingPingRef.current > TYPING_PING_THROTTLE_MS) {
       lastTypingPingRef.current = now;
-      onTyping(conversation.friendId);
+      onTyping(conversation.friendId, true);
     }
   }
 

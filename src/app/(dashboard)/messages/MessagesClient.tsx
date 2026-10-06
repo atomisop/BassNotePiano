@@ -301,7 +301,7 @@ function MessagesInner({
               currentUserId={session?.user?.id ?? ""}
               onSend={handleSend}
               onMinimize={handleMinimize}
-              onTyping={(friendId) => void setTypingAction(friendId)}
+              onTyping={(friendId, typing) => void setTypingAction(friendId, typing)}
               onReact={handleReact}
             />
           ) : activeGroup ? (
@@ -315,7 +315,7 @@ function MessagesInner({
               onLeave={handleLeaveGroup}
               onReact={handleReactGroup}
               typingNames={groupTypers}
-              onTyping={(groupId) => void setGroupTypingAction(groupId)}
+              onTyping={(groupId, typing) => void setGroupTypingAction(groupId, typing)}
             />
           ) : (
             <EmptyState />

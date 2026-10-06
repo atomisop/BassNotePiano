@@ -93,9 +93,9 @@ export async function togglePinAction(friendId: string) {
   }
 }
 
-export async function setTypingAction(friendId: string): Promise<void> {
+export async function setTypingAction(friendId: string, typing = true): Promise<void> {
   const userId = await requireUserId();
-  await setTyping(userId, friendId);
+  await setTyping(userId, friendId, typing);
 }
 
 export interface GroupMessageReplyPreview {
@@ -182,10 +182,10 @@ export async function reactToGroupMessageAction(messageId: string, emoji: string
   }
 }
 
-export async function setGroupTypingAction(groupId: string): Promise<void> {
+export async function setGroupTypingAction(groupId: string, typing = true): Promise<void> {
   const userId = await requireUserId();
   try {
-    await setGroupTyping(userId, groupId);
+    await setGroupTyping(userId, groupId, typing);
   } catch {
     // Not a member (or the group is gone): nothing to record.
   }

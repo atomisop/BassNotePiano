@@ -1100,6 +1100,7 @@ model AssistantEscalation {
   createdAt       DateTime                  @default(now())
 
   messages SupportMessage[]
+  typing   SupportTypingStatus[]
 
   @@index([status, createdAt])
   @@index([identifier, createdAt])
@@ -1635,4 +1636,17 @@ model MailMessage {
 
   @@index([userId, createdAt])
   @@index([userId, readAt])
+}
+
+// Who is typing in a Support Chat thread right now: one row per side (the
+// customer or the team), refreshed while they type. Recency is the whole
+// signal, same as direct-message typing, so a row older than a few seconds
+// simply means "not typing".
+model SupportTypingStatus {
+  escalationId String
+  escalation   AssistantEscalation @relation(fields: [escalationId], references: [id], onDelete: Cascade)
+  side         SupportMessageSender
+  updatedAt    DateTime             @updatedAt
+
+  @@id([escalationId, side])
 }

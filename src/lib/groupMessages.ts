@@ -248,14 +248,19 @@ export async function getGroupReadReceipts(userId: string, groupId: string): Pro
 }
 
 // Same staleness window as 1-on-1 typing (TYPING_STALE_MS in messages.ts).
-const GROUP_TYPING_STALE_MS = 4_000;
+const GROUP_TYPING_STALE_MS = 8_000;
 
 /** Upserted while the composer is focused or typed in; recency is the signal. Members only. */
-export async function setGroupTyping(userId: string, groupId: string): Promise<void> {
+export async function setGroupTyping(userId: string, groupId: string, typing = true): Promise<void> {
   await requireMembership(userId, groupId);
+  if (!typing) {
+    await prisma.groupTypingStatus.deleteMany({ where: { conversationId: groupId, userId } });
+    return;
+  }
   await prisma.groupTypingStatus.upsert({
     where: { conversationId_userId: { conversationId: groupId, userId } },
-    update: {},
+    // Explicit: an empty update does not touch the @updatedAt column, and recency is the whole signal here.
+    update: { updatedAt: new Date() },
     create: { conversationId: groupId, userId },
   });
 }

@@ -32,7 +32,7 @@ const MAX_COMPOSE_HEIGHT_PX = 140;
 // Same cadence as ChatWindow: ping at most every 1.5s while typing, and re-ping
 // every 2.5s while the box stays focused, inside the server's 4s window.
 const TYPING_PING_THROTTLE_MS = 1_500;
-const TYPING_REFRESH_MS = 2_500;
+const TYPING_REFRESH_MS = 2_000;
 
 export function GroupChatWindow({
   group,
@@ -55,7 +55,7 @@ export function GroupChatWindow({
   /** Other members typing right now, as reported by the server. */
   typingNames: string[];
   /** Tell the server this person is typing in this group (caller wires setGroupTypingAction). */
-  onTyping: (groupId: string) => void;
+  onTyping: (groupId: string, typing: boolean) => void;
 }) {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -122,11 +122,15 @@ export function GroupChatWindow({
     const ping = () => {
       if (document.visibilityState !== "visible") return;
       lastTypingPingRef.current = Date.now();
-      onTyping(group.id);
+      onTyping(group.id, true);
     };
     ping();
     const timer = window.setInterval(ping, TYPING_REFRESH_MS);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+      // Keyboard closed, box unfocused or chat switched: stop showing it at once.
+      onTyping(group.id, false);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [composerFocused, group.id]);
 
@@ -134,7 +138,7 @@ export function GroupChatWindow({
     setDraft(value);
     if (Date.now() - lastTypingPingRef.current > TYPING_PING_THROTTLE_MS) {
       lastTypingPingRef.current = Date.now();
-      onTyping(group.id);
+      onTyping(group.id, true);
     }
   }
 

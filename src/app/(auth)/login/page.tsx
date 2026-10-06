@@ -1,9 +1,12 @@
 "use client";
 
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { safeCallbackPath } from "@/lib/safeRedirect";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -13,6 +16,16 @@ const cardVariants = {
 function LoginCard() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const router = useRouter();
+  const { status } = useSession();
+
+  // Already signed in: this screen has nothing for you, go straight into the app. Checked
+  // against the server's own view of the session, so a stale cookie cannot cause a loop.
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    const safe = safeCallbackPath(callbackUrl);
+    router.replace(safe === "/" ? "/dashboard" : safe);
+  }, [status, callbackUrl, router]);
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="visible" className="w-full glass-surface-elevated p-7">

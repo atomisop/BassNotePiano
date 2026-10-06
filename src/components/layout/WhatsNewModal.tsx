@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ChangelogEntry } from "@/lib/changelog";
-import { markPatchNotesSeenAction } from "@/app/(dashboard)/about/actions";
 import { CheckIcon } from "@/components/ui/icons";
 
 const backdropVariants = {
@@ -28,20 +27,35 @@ const panelVariants = {
   },
 };
 
-/** Shown once per new changelog entry (server-computed in (dashboard)/layout.tsx) — dismissing it marks lastSeenPatchNotesAt. */
-export function WhatsNewModal({ show, entry }: { show: boolean; entry: ChangelogEntry }) {
-  const [open, setOpen] = useState(show);
+const SEEN_KEY = "bnp-whats-new-seen";
 
-  async function handleClose() {
+/** Shown once per device for each new changelog version: this browser remembers the last version it showed. */
+export function WhatsNewModal({ suppress, entry }: { suppress: boolean; entry: ChangelogEntry }) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (suppress) return;
+    try {
+      if (window.localStorage.getItem(SEEN_KEY) !== entry.version) setOpen(true);
+    } catch {
+      // Storage blocked: stay quiet rather than show it on every visit.
+    }
+  }, [suppress, entry.version]);
+
+  function handleClose() {
     setOpen(false);
-    await markPatchNotesSeenAction();
+    try {
+      window.localStorage.setItem(SEEN_KEY, entry.version);
+    } catch {
+      // Nothing to remember it with; it just won't come back this session.
+    }
   }
 
   return (
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
           initial="hidden"
           animate="visible"
           exit="hidden"
@@ -61,7 +75,7 @@ export function WhatsNewModal({ show, entry }: { show: boolean; entry: Changelog
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="glass-surface-modal relative w-full max-w-sm overflow-hidden p-6"
+            className="glass-surface-modal relative max-h-[88dvh] w-full max-w-sm overflow-y-auto overscroll-contain p-6"
           >
             <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">What&apos;s new · v{entry.version}</p>
             <h2 id="whats-new-title" className="mt-1.5 text-body text-slate-50 font-semibold">
