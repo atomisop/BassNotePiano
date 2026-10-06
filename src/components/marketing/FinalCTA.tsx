@@ -1,47 +1,22 @@
 "use client";
 
-import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { LoopingLine } from "@/components/marketing/loops";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
+import { WordsPullUp } from "@/components/ui/words-pull-up";
+import { PillCTA } from "@/components/ui/pill-cta";
 
-// Matches Hero.tsx's own local copy — no shared `@/lib/format` module
-// exists in this codebase to import instead (checked before adding this).
-/**
- * HOMEPAGE REPLACEMENT — 07 FINAL CTA.
- *
- * Kept the file (it's a small, real, working closing beat).
- *
- * REDESIGN: no glass-surface card. A closing headline and one button is
- * already the simplest possible content on the page; a card around it adds
- * a boundary the content does nothing to earn. Keeps the scroll-triggered
- * reveal (ScrollReveal, the animation half of what ScrollGlassCard used to
- * do here), just without the box.
- */
 export function FinalCTA() {
   const { data: session } = useSession();
   const isLoggedIn = Boolean(session?.user);
 
   return (
-    <section className="mx-auto max-w-2xl px-6 py-[var(--space-6)] text-center md:py-[var(--space-8)]">
-      <ScrollReveal>
-        <LoopingLine className="display-2 text-balance text-[rgb(var(--c-s-50))]" lines={["You already knew the sound.", "Now you can play it."]} />
-
-        <Link href={isLoggedIn ? "/dashboard" : "/register"} className="btn btn-primary group mt-8 inline-flex">
-          {isLoggedIn ? "Go to dashboard" : "Get started"}
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden
-            className="ml-1 transition-transform duration-300 group-hover:translate-x-1"
-          >
-            <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </Link>
+    <section className="mx-auto w-full max-w-6xl px-6 py-24 md:py-40">
+      <WordsPullUp
+        text="You already knew the sound. Now you can play it."
+        className="text-[clamp(2.75rem,8vw,7rem)] font-medium leading-[0.9] tracking-[-0.06em] text-[#E1E0CC]"
+      />
+      <ScrollReveal className="mt-10">
+        <PillCTA href={isLoggedIn ? "/dashboard" : "/register"}>{isLoggedIn ? "Go to dashboard" : "Get started"}</PillCTA>
       </ScrollReveal>
     </section>
   );
