@@ -880,3 +880,20 @@ export async function bookMissingReservedWindows(): Promise<void> {
   }
 }
 
+/**
+ * Admin cancels a subscription that has not been paid yet: closes its unpaid
+ * bill and cancels the plan so the weekly time opens up again. Refuses once a
+ * payment is in review or any installment was paid (cancel those from Payment
+ * Plans, where the money side is visible).
+ */
+export async function cancelUnpaidSubscription(planId: string, adminId: string): Promise<void> {
+  const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, select: { status: true, installmentsPaid: true } });
+  if (!plan || plan.status !== "ACTIVE") throw new PaymentPlanError("That subscription isn't active.");
+  if (plan.installmentsPaid > 0) throw new PaymentPlanError("This subscription has been paid. Cancel it from Payment Plans.");
+  const inReview = await prisma.zellePayment.findFirst({ where: { paymentPlanId: planId, status: "PENDING_REVIEW" }, select: { id: true } });
+  if (inReview) throw new PaymentPlanError("A payment for this subscription is waiting for review. Approve or reject it first.");
+
+  await prisma.zellePayment.updateMany({ where: { paymentPlanId: planId, status: "AWAITING_TRANSFER" }, data: { status: "EXPIRED" } });
+  await cancelPaymentPlan(planId, adminId, "Canceled before the first payment.");
+}
+
