@@ -15,6 +15,9 @@ const EMAIL_FROM = process.env.EMAIL_FROM ?? "Bass Note Piano <noreply@noreply.b
 // write back" gap in the meantime.
 const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO ?? "music@bassnotepiano.com";
 // The physical mailing address CAN-SPAM asks for. Set MAILING_ADDRESS in the environment and it shows in every email footer.
+// Messages typed by a person (announcements, direct messages) come from an address people can answer.
+// A normal-looking, reply-able sender is far less likely to be filed under Promotions than a noreply one.
+const PERSONAL_FROM = process.env.PERSONAL_EMAIL_FROM ?? "Bass Note Piano <music@bassnotepiano.com>";
 const MAILING_ADDRESS = process.env.MAILING_ADDRESS?.trim() ?? "";
 
 /** Builds an absolute in-app URL for an email link — NEXTAUTH_URL has no trailing slash (matches every other usage of it in this codebase). */
@@ -36,6 +39,8 @@ interface SendEmailParams {
   html: string;
   /** Plain-text fallback shown in dev-mode console logging and passed to Resend. */
   text: string;
+  /** Overrides the sender. Messages from a person use a reply-able address, see sendPersonalEmail. */
+  from?: string;
 }
 
 /**
@@ -44,7 +49,7 @@ interface SendEmailParams {
  * logs the email to the server console instead of sending — the whole
  * verification/2FA/reset flow is fully testable without real credentials.
  */
-async function sendEmail({ to, subject, html, text }: SendEmailParams): Promise<void> {
+async function sendEmail({ to, subject, html, text, from }: SendEmailParams): Promise<void> {
   const client = getResendClient();
 
   if (!client) {
@@ -70,7 +75,13 @@ async function sendEmail({ to, subject, html, text }: SendEmailParams): Promise<
     return;
   }
 
-  const result = await client.emails.send({ from: EMAIL_FROM, to, subject, html, text, replyTo: EMAIL_REPLY_TO });
+  let result = await client.emails.send({ from: from ?? EMAIL_FROM, to, subject, html, text, replyTo: EMAIL_REPLY_TO });
+  // A custom sender needs its domain verified in Resend. Until it is, fall back to the standard sender
+  // so the message still goes out instead of failing.
+  if (result.error && from && from !== EMAIL_FROM) {
+    console.error(`Sending from ${from} failed (${result.error.message}), using the standard sender instead.`);
+    result = await client.emails.send({ from: EMAIL_FROM, to, subject, html, text, replyTo: EMAIL_REPLY_TO });
+  }
   if (result.error) {
     throw new Error(`Resend failed to send to ${to}: ${result.error.message}`);
   }
@@ -245,7 +256,7 @@ ${paragraphs.map((p) => `<p style="margin:0 0 14px;">${escapeHtml(p).replace(/\n
 ${linkHtml}<p style="margin:0;">Bass Note Piano</p>
 </div>`;
   const text = [greeting, "", ...paragraphs.flatMap((p) => [p, ""]), ...(options.link ? [`${options.link.label}: ${options.link.url}`, ""] : []), "Bass Note Piano"].join("\n");
-  await sendEmail({ to, subject, html, text });
+  await sendEmail({ to, subject, html, text, from: PERSONAL_FROM });
 }
 
 function ctaButtonHtml(cta: { label: string; url: string }): string {
