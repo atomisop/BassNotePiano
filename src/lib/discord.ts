@@ -4,7 +4,7 @@
  * callout, and the dismissible notification card). Change it once here
  * if the invite is ever regenerated.
  */
-export const DISCORD_INVITE_URL = "https://discord.gg/bGKxhAN6U";
+export const DISCORD_INVITE_URL = "https://discord.gg/A6Qhk8guyj";
 
 /** The Discord application and server the class-call bot works in. None of these are secret. */
 export const DISCORD_CLIENT_ID = "1557088325414690846";

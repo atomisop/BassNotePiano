@@ -4,7 +4,8 @@ import { DiscordIcon } from "@/components/ui/icons";
 import { unlinkDiscordAction } from "@/app/(dashboard)/lessons/discordActions";
 
 const MESSAGES: Record<string, { text: string; good: boolean }> = {
-  linked: { text: "Discord connected. Your private class call will appear before each class.", good: true },
+  linked: { text: "Discord connected, and you are in the server. Your private class call opens a few minutes before each class.", good: true },
+  "linked-nojoin": { text: "Discord connected. Tap Join the server to come in, then your class call will appear before each class.", good: true },
   taken: { text: "That Discord account is already connected to someone else.", good: false },
   denied: { text: "Discord was not connected. You can try again.", good: false },
   error: { text: "Something went wrong connecting Discord. Please try again.", good: false },

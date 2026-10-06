@@ -141,3 +141,18 @@ export async function checkBotSetup(ownerDiscordId: string | null): Promise<Setu
   }
   return checks;
 }
+
+/**
+ * Adds a person to the server right after they connect their Discord, using the
+ * short-lived token Discord gave us at sign-in. The token is used once and never
+ * stored. Needs the bot to have the Create Instant Invite permission.
+ */
+export async function addToGuild(discordId: string, accessToken: string): Promise<"added" | "already" | "failed"> {
+  const res = await discordFetch(`/guilds/${DISCORD_GUILD_ID}/members/${discordId}`, {
+    method: "PUT",
+    body: JSON.stringify({ access_token: accessToken }),
+  });
+  if (res.status === 201) return "added";
+  if (res.status === 204) return "already";
+  return "failed";
+}

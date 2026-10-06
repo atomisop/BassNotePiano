@@ -43,15 +43,16 @@ export function authorizeUrl(state: string): string {
     client_id: DISCORD_CLIENT_ID,
     redirect_uri: redirectUri(),
     response_type: "code",
-    scope: "identify",
+    // identify: who they are. guilds.join: lets us add them to the server right after, so no invite link is needed.
+    scope: "identify guilds.join",
     state,
     prompt: "none",
   });
   return `https://discord.com/oauth2/authorize?${params}`;
 }
 
-/** Trades the sign-in code for the person's Discord id and name. */
-export async function fetchDiscordIdentity(code: string): Promise<{ id: string; username: string }> {
+/** Trades the sign-in code for the person's Discord id and name, plus a short-lived token used once to add them to the server. */
+export async function fetchDiscordIdentity(code: string): Promise<{ id: string; username: string; accessToken: string }> {
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
   if (!clientSecret) throw new Error("DISCORD_CLIENT_SECRET is not set");
   const tokenRes = await fetch("https://discord.com/api/v10/oauth2/token", {
@@ -70,5 +71,5 @@ export async function fetchDiscordIdentity(code: string): Promise<{ id: string; 
   const meRes = await fetch("https://discord.com/api/v10/users/@me", { headers: { Authorization: `Bearer ${access_token}` } });
   if (!meRes.ok) throw new Error(`Discord identity lookup failed (${meRes.status})`);
   const me = (await meRes.json()) as { id: string; username: string; global_name?: string | null };
-  return { id: me.id, username: me.global_name ?? me.username };
+  return { id: me.id, username: me.global_name ?? me.username, accessToken: access_token };
 }

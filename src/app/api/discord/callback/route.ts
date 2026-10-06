@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { addToGuild } from "@/lib/discordApi";
 import { checkState, DISCORD_STATE_COOKIE, fetchDiscordIdentity } from "@/lib/discordLink";
 
 // Where Discord sends the student back after they connect.
@@ -28,7 +29,9 @@ export async function GET(req: Request) {
     const taken = await prisma.user.findFirst({ where: { discordId: identity.id, id: { not: session.user.id } }, select: { id: true } });
     if (taken) return back("taken");
     await prisma.user.update({ where: { id: session.user.id }, data: { discordId: identity.id, discordUsername: identity.username } });
-    return back("linked");
+    // Put them in the server too, so they never need an invite. If that cannot be done they can still use the Join button.
+    const joined = await addToGuild(identity.id, identity.accessToken).catch(() => "failed" as const);
+    return back(joined === "failed" ? "linked-nojoin" : "linked");
   } catch (err) {
     console.error("Discord connect failed:", err);
     return back("error");
