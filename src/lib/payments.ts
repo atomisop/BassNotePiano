@@ -840,7 +840,12 @@ export async function refundZellePayment(
   });
   if (payment.status !== "VERIFIED") throw new Error("Only a verified payment can be refunded.");
 
-  await prisma.zellePayment.update({ where: { id: paymentId }, data: { status: "REFUNDED", refundedAt: new Date(), refundNote: note } });
+  // Guarded on the status, so a double tap or two windows cannot refund (and take credits back) twice.
+  const flipped = await prisma.zellePayment.updateMany({
+    where: { id: paymentId, status: "VERIFIED" },
+    data: { status: "REFUNDED", refundedAt: new Date(), refundNote: note },
+  });
+  if (flipped.count === 0) throw new Error("Only a verified payment can be refunded.");
 
   if (opts.removeCredits && payment.lessonQuantity) {
     const take = Math.min(payment.user.classCredits, payment.lessonQuantity);
