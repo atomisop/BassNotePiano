@@ -41,6 +41,7 @@ const TAB_ICONS = {
   appearance:
     "M12 3a9 9 0 000 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1-.24-.27-.39-.62-.39-1 0-.83.67-1.5 1.5-1.5H16a5 5 0 005-5c0-4.42-4.03-8-9-8zM7.5 11a1 1 0 100-2 1 1 0 000 2zm3-3a1 1 0 100-2 1 1 0 000 2zm5 0a1 1 0 100-2 1 1 0 000 2z",
   chevron: "M9 18l6-6-6-6",
+  shop: "M6 7h12l-1 12a1 1 0 01-1 1H8a1 1 0 01-1-1L6 7zM9 7a3 3 0 016 0",
   about: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 7.5h.01",
   logout: "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9",
   danger: "M4 7h16M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m3 0-1 12a2 2 0 01-2 2H8a2 2 0 01-2-2L5 7h14z",
@@ -103,6 +104,18 @@ function SectionCard({ title, children }: { title: string; children: React.React
 // existing `/about` page, which is its own substantial tabbed page
 // (About/Update notes/Terms). Styled to match the tab buttons above it so
 // it reads as part of the same list.
+function ShopLink({ back }: { back: string }) {
+  return (
+    <Link
+      href={`/shop?back=${encodeURIComponent(back)}`}
+      className="flex items-center gap-2.5 tap rounded-xl border border-transparent px-3 py-2.5 text-left text-small text-slate-400 transition hover:text-slate-200 hover:shadow-raised-low active:shadow-pressed-low"
+    >
+      <TabIcon path={TAB_ICONS.shop} />
+      Shop
+    </Link>
+  );
+}
+
 function AboutLink() {
   return (
     <Link
@@ -174,7 +187,12 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
                 {tab.label}
               </button>
             ))}
-            {group.category === "Help" && <AboutLink />}
+            {group.category === "Help" && (
+              <>
+                <ShopLink back={`/account?tab=${activeTab}`} />
+                <AboutLink />
+              </>
+            )}
           </div>
         </div>
       ))}
@@ -214,6 +232,15 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
                 <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
               </button>
             ))}
+            {group.category === "Help" && (
+              <Link href={`/shop?back=${encodeURIComponent("/account")}`} className={row}>
+                <span className={well}>
+                  <TabIcon path={TAB_ICONS.shop} />
+                </span>
+                <span className="flex-1 text-small text-slate-100">Shop</span>
+                <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
+              </Link>
+            )}
             {group.category === "Help" && (
               <Link href="/about" className={row}>
                 <span className={well}>

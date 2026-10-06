@@ -123,16 +123,18 @@ export function PaymentPlanTierGrid() {
               ];
 
           return (
-            <motion.div key={option.value} variants={cardItem} className={`relative flex flex-col ${featured ? "z-10 lg:scale-[1.02]" : ""}`}>
+            <motion.div key={option.value} variants={cardItem} className={`relative flex flex-col ${featured ? "z-10 lg:-my-3 lg:scale-[1.05]" : ""}`}>
               <div
                 className={`relative flex flex-1 flex-col gap-7 rounded-2xl p-7 sm:p-8 ${
-                  featured ? "bg-neu-base shadow-raised-high" : "glass-surface transition hover:shadow-raised-high"
+                  featured
+                    ? "bg-neu-base shadow-raised-high ring-2 ring-[rgb(var(--c-a-400))] shadow-[0_0_48px_-8px_rgb(var(--c-a-400)/0.55)]"
+                    : "glass-surface opacity-90 transition hover:opacity-100 hover:shadow-raised-high"
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-serif text-body text-slate-50">{option.label}</p>
                   {featured ? (
-                    <span className="rounded-full bg-[rgb(var(--c-s-50))] px-3 py-1 text-small font-semibold text-slate-950">Best value</span>
+                    <span className="rounded-full bg-[rgb(var(--c-a-400))] px-3 py-1 text-small font-bold text-black">Best value</span>
                   ) : isMonthly && !isFamily ? (
                     <span className="rounded-full bg-slate-800 px-3 py-1 text-small font-medium text-slate-400">No commitment</span>
                   ) : null}
@@ -153,7 +155,7 @@ export function PaymentPlanTierGrid() {
                     )}
                   </p>
                   <p className="mt-1 flex items-baseline gap-1.5">
-                    <span className="font-serif text-hero tabular-nums text-slate-50">
+                    <span className={`font-serif text-hero tabular-nums ${featured ? "text-[rgb(var(--c-a-400))]" : "text-slate-50"}`}>
                       <NumberTicker value={perStudentCents} format={formatUsd} />
                     </span>
                     <span className="text-small text-slate-400">{isFamily ? "/student/mo" : "/month"}</span>
@@ -166,7 +168,7 @@ export function PaymentPlanTierGrid() {
                   {features.map((feature, i) => (
                     <li key={i} className="flex items-start gap-3 text-small text-slate-300">
                       <CheckIcon size={16} className="mt-0.5 shrink-0 text-[rgb(var(--c-s-50))]" />
-                      {feature}
+                      <span className="min-w-0">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -175,7 +177,7 @@ export function PaymentPlanTierGrid() {
                   href={isFamily ? "/billing/lessons" : `/billing/plans?cadence=${cadence}&term=${option.value}`}
                   className={`flex h-12 items-center justify-center rounded-xl text-small font-semibold transition ${
                     featured
-                      ? "cta-sheen cta-fill"
+                      ? "bg-[rgb(var(--c-a-400))] text-black shadow-raised-mid hover:brightness-110 active:shadow-pressed-low"
                       : "bg-neu-base text-slate-100 shadow-raised-low active:shadow-pressed-low hover:text-[rgb(var(--c-s-50))]"
                   }`}
                 >
