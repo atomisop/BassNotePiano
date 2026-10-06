@@ -6,7 +6,7 @@ import { classChannelName, createClassChannel, deleteChannel, isGuildMember } fr
 
 const MINUTE_MS = 60_000;
 const OPEN_BEFORE_MIN = 120; // a private channel appears two hours before the class
-const CLOSE_AFTER_MIN = 20; // and goes away twenty minutes after it ends
+const CLOSE_AFTER_MIN = 60; // and goes away an hour after it ends
 const CLASS_MINUTES = 45;
 
 // Every 10 minutes. Does nothing until the bot token is set, so it is safe to
