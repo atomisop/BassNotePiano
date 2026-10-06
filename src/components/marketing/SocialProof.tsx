@@ -29,7 +29,7 @@ export function SocialProof() {
         {PROOF_POINTS.map((point, i) => (
           <div key={point.label} className="rounded-2xl bg-black p-6 md:p-8">
             <p className="font-mono text-small text-[rgb(var(--c-a-400))]">0{i + 1}</p>
-            <p className="mt-10 text-title font-medium tracking-[-0.02em] text-[#E1E0CC]">{point.label}</p>
+            <p className="mt-10 text-xl font-medium tracking-[-0.02em] text-[#E1E0CC]">{point.label}</p>
             <p className="mt-2 text-small leading-relaxed text-[#E1E0CC]/60">{point.body}</p>
           </div>
         ))}

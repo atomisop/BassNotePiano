@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import Image from "next/image";
+import { ArrowLeft } from "lucide-react";
 import { pageMetadata } from "@/lib/site";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
+import { WordsPullUp } from "@/components/ui/words-pull-up";
+import { PillCTA } from "@/components/ui/pill-cta";
 import { SHOP_PRODUCTS, type ShopProduct } from "@/lib/shopProducts";
 
 export const metadata: Metadata = pageMetadata({
@@ -16,18 +20,17 @@ function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
-function ExternalArrow() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path d="M7 17L17 7M17 7H8M17 7V16" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
+/** Only same-site paths are accepted for the back link, so it can't be pointed at another site. */
+function safeBackPath(value: string | string[] | undefined): string | null {
+  if (typeof value !== "string") return null;
+  if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return null;
+  return value;
 }
 
 function ProductCard({ product }: { product: ShopProduct }) {
   return (
-    <div className="glass-surface flex flex-col overflow-hidden">
-      <div className="relative aspect-square w-full bg-slate-50">
+    <div className="flex flex-col overflow-hidden rounded-2xl bg-black p-3">
+      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-white">
         <Image
           src={product.image}
           alt={`${product.brand} ${product.name}`}
@@ -36,20 +39,15 @@ function ProductCard({ product }: { product: ShopProduct }) {
           className="object-contain p-6"
         />
       </div>
-      <div className="flex flex-1 flex-col gap-2 p-5">
-        <p className="text-small font-medium uppercase tracking-[0.15em] text-[rgb(var(--c-s-50))]">{product.brand}</p>
-        <h3 className="text-balance font-serif text-body leading-snug text-slate-50">{product.name}</h3>
-        <p className="text-small text-slate-400">{product.blurb}</p>
-        <div className="mt-auto flex items-center justify-between gap-3 pt-4">
-          <span className="text-body font-semibold text-slate-50">{formatUsd(product.priceCents)}</span>
-          <a
-            href={product.amazonUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-secondary !h-10 !px-4 !text-small"
-          >
-            View on Amazon <ExternalArrow />
-          </a>
+      <div className="flex flex-1 flex-col gap-2 p-3 pt-5">
+        <p className="text-small uppercase tracking-[0.18em] text-[#E1E0CC]/50">{product.brand}</p>
+        <h3 className="text-balance text-body font-medium leading-snug tracking-[-0.01em] text-[#E1E0CC]">{product.name}</h3>
+        <p className="text-small leading-relaxed text-[#E1E0CC]/60">{product.blurb}</p>
+        <div className="mt-auto flex items-center justify-between gap-3 pt-5">
+          <span className="text-xl font-medium tracking-[-0.02em] text-[#E1E0CC]">{formatUsd(product.priceCents)}</span>
+          <PillCTA href={product.amazonUrl} external>
+            View on Amazon
+          </PillCTA>
         </div>
       </div>
     </div>
@@ -59,9 +57,9 @@ function ProductCard({ product }: { product: ShopProduct }) {
 function ProductSection({ title, products }: { title: string; products: ShopProduct[] }) {
   if (products.length === 0) return null;
   return (
-    <div className="mt-14 first:mt-0">
-      <h2 className="font-serif text-body text-slate-50">{title}</h2>
-      <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="mt-16 first:mt-0">
+      <WordsPullUp text={title} className="text-[clamp(2rem,4.5vw,3.5rem)] font-medium leading-[0.95] tracking-[-0.05em] text-[#E1E0CC]" />
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {products.map((product) => (
           <ProductCard key={product.slug} product={product} />
         ))}
@@ -70,26 +68,42 @@ function ProductSection({ title, products }: { title: string; products: ShopProd
   );
 }
 
-export default function ShopPage() {
+export default function ShopPage({ searchParams }: { searchParams: { back?: string | string[] } }) {
   const keyboards = SHOP_PRODUCTS.filter((p) => p.category === "keyboard");
   const guitars = SHOP_PRODUCTS.filter((p) => p.category === "guitar");
+  const back = safeBackPath(searchParams.back);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
       <MarketingNav />
 
       <main id="main-content" tabIndex={-1} className="outline-none">
-        <section className="relative mx-auto max-w-3xl px-6 pb-4 pt-28 text-center">
-          <h1 className="text-balance font-serif text-hero leading-tight tracking-[-0.02em] text-slate-50 sm:text-hero">
-            Gear that works for beginners
+        <section className="relative mx-auto max-w-6xl px-6 pb-6 pt-28 md:pt-36">
+          {back && (
+            <Link
+              href={back}
+              className="tap mb-8 inline-flex items-center gap-2 rounded-full bg-black py-2 pl-3 pr-5 text-small font-medium text-[#E1E0CC] transition hover:opacity-80"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Link>
+          )}
+          <h1>
+            <WordsPullUp
+              text="Gear that works for beginners"
+              className="max-w-[14ch] text-[clamp(2.75rem,9vw,8rem)] font-medium leading-[0.88] tracking-[-0.06em] text-[#E1E0CC]"
+            />
           </h1>
+          <p className="mt-6 max-w-md text-body leading-relaxed text-[#E1E0CC]/60">
+            Plain links to listings we think are reasonable for a first instrument. Nothing is bought here.
+          </p>
         </section>
 
         <section className="relative mx-auto max-w-6xl px-6 pb-24 pt-10">
           <ProductSection title="Keyboards" products={keyboards} />
           <ProductSection title="Guitars" products={guitars} />
-          <p className="mt-10 text-center text-small text-slate-500">
-            Plain links to Amazon. We&apos;re not affiliated with Amazon and earn nothing from them.
+          <p className="mt-12 text-small text-slate-500">
+            We&apos;re not affiliated with Amazon and earn nothing from them.
           </p>
         </section>
       </main>

@@ -75,7 +75,7 @@ export function Hero() {
                 transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 className="text-sm leading-[1.2] text-[#E1E0CC]/70 md:text-base"
               >
-                Live piano, guitar and bass lessons with a real teacher, and a curriculum that opens one scale at a time.
+                Ethiopian music, taught live. Piano, guitar and bass lessons with a real teacher, and a curriculum that opens one scale at a time.
               </motion.p>
 
               <motion.div
