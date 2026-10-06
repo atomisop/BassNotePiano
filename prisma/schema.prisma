@@ -359,6 +359,13 @@ enum BadgeCode {
   STREAK_3_DAY
   STREAK_7_DAY
   STREAK_30_DAY
+  FINGER_LEVEL_1
+  FINGER_LEVEL_2
+  FINGER_LEVEL_3
+  FINGER_LEVEL_4
+  FINGER_LEVEL_5
+  FINGER_LEVEL_6
+  FINGER_LEVEL_7
 }
 
 model UserBadge {
@@ -832,6 +839,7 @@ model User {
   verificationCodes VerificationCode[]
   loginEvents       LoginEvent[]
   badges            UserBadge[]
+  fingerPracticeDays FingerPracticeDay[]
 
   assistantFeedback            AssistantFeedback[]
   assistantEscalations         AssistantEscalation[]          @relation("AssistantEscalationSubmitter")
@@ -1577,4 +1585,20 @@ model ForwardedMail {
   id        String   @id @default(cuid())
   messageId String   @unique
   createdAt DateTime @default(now())
+}
+
+// One row per student per day (ET) of the daily 10-minute finger exercises.
+// seconds only grows through recordPracticeBeat, which adds the time the
+// server itself saw pass between heartbeats, never a number the browser sends.
+model FingerPracticeDay {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day         String // YYYY-MM-DD in America/New_York
+  seconds     Int       @default(0)
+  lastBeatAt  DateTime?
+  completedAt DateTime? // set once seconds reaches the daily goal
+
+  @@unique([userId, day])
+  @@index([userId, completedAt])
 }

@@ -8,9 +8,10 @@ const CATEGORY_LABELS: Record<BadgeCategory, string> = {
   COURSE: "Course completion",
   SOCIAL: "Social",
   STREAK: "Practice streaks",
+  FINGER: "Daily finger exercises",
 };
 
-const CATEGORY_ORDER: BadgeCategory[] = ["COURSE", "STREAK", "SOCIAL"];
+const CATEGORY_ORDER: BadgeCategory[] = ["FINGER", "COURSE", "STREAK", "SOCIAL"];
 
 interface BadgeGridProps {
   earnedCodes: Set<BadgeCode>;

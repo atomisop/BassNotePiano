@@ -1,7 +1,7 @@
 import type { BadgeCode } from "@prisma/client";
 import { SCALE_GROUPS } from "@/lib/curriculum";
 
-export type BadgeCategory = "COURSE" | "SOCIAL" | "STREAK";
+export type BadgeCategory = "COURSE" | "SOCIAL" | "STREAK" | "FINGER";
 
 export interface BadgeDefinition {
   code: BadgeCode;
@@ -82,5 +82,47 @@ export const BADGES: BadgeDefinition[] = [
     label: "30-Day Streak",
     description: "Practice 30 days in a row.",
     category: "STREAK",
+  },
+  {
+    code: "FINGER_LEVEL_1",
+    label: "Finger Level 1: Warm-up",
+    description: "Finish the daily 10 minutes of finger exercises 7 days in a row.",
+    category: "FINGER",
+  },
+  {
+    code: "FINGER_LEVEL_2",
+    label: "Finger Level 2: Steady Hands",
+    description: "Finish the daily 10 minutes of finger exercises 21 days in a row.",
+    category: "FINGER",
+  },
+  {
+    code: "FINGER_LEVEL_3",
+    label: "Finger Level 3: Dedicated",
+    description: "Finish the daily 10 minutes of finger exercises 50 days in a row.",
+    category: "FINGER",
+  },
+  {
+    code: "FINGER_LEVEL_4",
+    label: "Finger Level 4: Committed",
+    description: "Finish the daily 10 minutes of finger exercises 100 days in a row.",
+    category: "FINGER",
+  },
+  {
+    code: "FINGER_LEVEL_5",
+    label: "Finger Level 5: Disciplined",
+    description: "Finish the daily 10 minutes of finger exercises 200 days in a row.",
+    category: "FINGER",
+  },
+  {
+    code: "FINGER_LEVEL_6",
+    label: "Finger Level 6: Year of Fingers",
+    description: "Finish the daily 10 minutes of finger exercises 365 days in a row.",
+    category: "FINGER",
+  },
+  {
+    code: "FINGER_LEVEL_7",
+    label: "Finger Level 7: Virtuoso",
+    description: "Finish the daily 10 minutes of finger exercises 730 days in a row.",
+    category: "FINGER",
   },
 ];
