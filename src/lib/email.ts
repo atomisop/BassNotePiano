@@ -286,13 +286,13 @@ export interface PaymentPlanInvoiceDetails {
 export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPlanInvoiceDetails): Promise<void> {
   const isOverdue = typeof details.overdueDays === "number";
   const heading = isOverdue ? "Installment overdue" : "Installment due";
-  const dueDateLabel = details.dueDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const dueDateLabel = details.dueDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" });
   const intro = isOverdue
     ? `This installment is now ${details.overdueDays} day${details.overdueDays === 1 ? "" : "s"} overdue. Please send it as soon as you can.`
     : "Here's your next installment.";
 
   const rowBorder = "border-top:1px solid rgba(255,255,255,0.08);";
-  const cycleEndsAtLabel = details.cycleEndsAt?.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const cycleEndsAtLabel = details.cycleEndsAt?.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" });
   const summaryHtml = `
     <table role="presentation" width="100%" style="margin:4px 0 20px;border-collapse:collapse;">
       <tr>

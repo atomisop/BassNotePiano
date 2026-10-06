@@ -1,5 +1,5 @@
 import { getAdminRecipients } from "@/lib/adminNotifications";
-import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
+import { addMinutesToHHmm, formatEtDateTime } from "@/lib/classScheduleLabels";
 import type { AttendanceStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
@@ -1252,7 +1252,7 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
     userId: studentId,
     type: "LESSON_BOOKING_CANCELED",
     title: "Class canceled",
-    body: `Your ${booking.scheduledAt.toLocaleString()} class was canceled. No credits were charged.`,
+    body: `Your ${formatEtDateTime(booking.scheduledAt)} class was canceled. No credits were charged.`,
     emailCategory: "social",
   });
 
@@ -1430,7 +1430,7 @@ export async function rescheduleClassBooking(
     userId: studentId,
     type: "LESSON_BOOKING_CANCELED",
     title: "Class rescheduled",
-    body: `Your class moved to ${newScheduledAt.toLocaleString()}. No credits were charged for the change.`,
+    body: `Your class moved to ${formatEtDateTime(newScheduledAt)}. No credits were charged for the change.`,
     emailCategory: "social",
   });
   notifyAdminsOfBooking(studentId, newSchedule, newScheduledAt, credits).catch((err) =>
@@ -1770,8 +1770,8 @@ export async function adminCancelClassBooking(bookingId: string, reason?: string
     type: "LESSON_BOOKING_CANCELED",
     title: "Class canceled",
     body: trimmedReason
-      ? `Your ${booking.scheduledAt.toLocaleString()} class was canceled by the studio (${trimmedReason}). No credits were charged.`
-      : `Your ${booking.scheduledAt.toLocaleString()} class was canceled by the studio. No credits were charged.`,
+      ? `Your ${formatEtDateTime(booking.scheduledAt)} class was canceled by the studio (${trimmedReason}). No credits were charged.`
+      : `Your ${formatEtDateTime(booking.scheduledAt)} class was canceled by the studio. No credits were charged.`,
     emailCategory: "social",
   });
 }
