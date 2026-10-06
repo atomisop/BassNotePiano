@@ -5,7 +5,16 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import type { SetupCheck } from "@/lib/discordApi";
 
 /** Owner-only: runs the bot through every step and shows which one fails. */
-export function DiscordBotTest({ onRun }: { onRun: () => Promise<{ ok: boolean; checks: SetupCheck[] }> }) {
+export function DiscordBotTest({
+  onRun,
+  onVisible,
+}: {
+  onRun: () => Promise<{ ok: boolean; checks: SetupCheck[] }>;
+  onVisible: () => Promise<{ ok: boolean; message: string; url: string | null }>;
+}) {
+  const [visible, setVisible] = useState<{ ok: boolean; message: string; url: string | null } | null>(null);
+  const [making, setMaking] = useState(false);
+
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; checks: SetupCheck[] } | null>(null);
 
@@ -26,12 +35,37 @@ export function DiscordBotTest({ onRun }: { onRun: () => Promise<{ ok: boolean; 
           <a href="/api/discord/connect" className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
             Connect my Discord
           </a>
+          <button
+            type="button"
+            onClick={async () => {
+              setMaking(true);
+              try {
+                setVisible(await onVisible());
+              } finally {
+                setMaking(false);
+              }
+            }}
+            disabled={making}
+            className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium"
+          >
+            {making ? "Creating…" : "Make a test call I can see"}
+          </button>
           <button type="button" onClick={run} disabled={running} className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
             {running && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {running ? "Testing…" : "Test the bot"}
           </button>
         </div>
       </div>
+      {visible && (
+        <p className={`mt-3 text-small ${visible.ok ? "text-slate-300" : "text-red-300"}`}>
+          {visible.message}{" "}
+          {visible.url && (
+            <a href={visible.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+              Open it
+            </a>
+          )}
+        </p>
+      )}
       {result && (
         <ul className="mt-3 space-y-1.5">
           {result.checks.map((c) => (

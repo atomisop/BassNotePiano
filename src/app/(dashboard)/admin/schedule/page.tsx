@@ -19,6 +19,7 @@ import {
   searchStudentsForBookingAction,
   adminBookClassAction,
   testDiscordBotAction,
+  createVisibleTestChannelAction,
 } from "./actions";
 
 type ViewValue = "WINDOWS" | "BOOKINGS" | "ATTENDANCE";
@@ -149,7 +150,7 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
         </a>
       )}
 
-      {isOwner && <DiscordBotTest onRun={testDiscordBotAction} />}
+      {isOwner && <DiscordBotTest onRun={testDiscordBotAction} onVisible={createVisibleTestChannelAction} />}
 
       <div className="mt-6">
         <AdminScheduleManager
