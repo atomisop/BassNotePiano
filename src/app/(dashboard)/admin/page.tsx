@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { getOverviewStats, getOverviewTrends } from "@/lib/admin";
+import { getOverviewStats, getOverviewTrends, getSubscriptionStats } from "@/lib/admin";
 import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { listAudit } from "@/lib/audit";
@@ -17,7 +17,7 @@ function formatUsd(cents: number) {
 }
 
 export default async function AdminOverviewPage() {
-  const [stats, trends, session] = await Promise.all([getOverviewStats(), getOverviewTrends(6), getServerAuthSession()]);
+  const [stats, trends, session, subs] = await Promise.all([getOverviewStats(), getOverviewTrends(6), getServerAuthSession(), getSubscriptionStats()]);
   const isOwner = isOwnerEmail(session?.user?.email);
   const [activity, jobs] = isOwner
     ? await Promise.all([
@@ -55,6 +55,20 @@ export default async function AdminOverviewPage() {
           variant="area"
           tone="success"
         />
+      </div>
+
+      <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { label: "Subscribers", value: String(subs.active) },
+          { label: "Per month", value: formatUsd(subs.monthlyCents) },
+          { label: "Due this week", value: `${subs.dueSoon} · ${formatUsd(subs.dueSoonCents)}` },
+          { label: "Overdue", value: String(subs.overdue), warn: subs.overdue > 0 },
+        ].map((tile) => (
+          <div key={tile.label} className="rounded-xl bg-neu-base p-4 shadow-raised-low">
+            <p className="text-small text-slate-500">{tile.label}</p>
+            <p className={`mt-1 text-body font-semibold ${tile.warn ? "text-red-300" : "text-slate-50"}`}>{tile.value}</p>
+          </div>
+        ))}
       </div>
 
       {isOwner && (

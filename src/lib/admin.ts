@@ -439,3 +439,31 @@ export async function revokeEmployee(targetUserId: string, actingAdminId: string
   if (admins.length <= 1) throw new Error("There must always be one admin.");
   await setUserRole(targetUserId, "STUDENT");
 }
+
+export interface SubscriptionStats {
+  active: number;
+  /** What active plans bring in per month: every installment is monthly. */
+  monthlyCents: number;
+  overdue: number;
+  dueSoon: number;
+  dueSoonCents: number;
+  refundedCents: number;
+}
+
+export async function getSubscriptionStats(): Promise<SubscriptionStats> {
+  const now = new Date();
+  const week = new Date(now.getTime() + 7 * 86_400_000);
+  const [plans, refunded] = await Promise.all([
+    prisma.paymentPlan.findMany({ where: { status: "ACTIVE", installmentsPaid: { gte: 1 } }, select: { installmentAmountCents: true, nextDueDate: true } }),
+    prisma.zellePayment.aggregate({ where: { status: "REFUNDED" }, _sum: { amountCents: true } }),
+  ]);
+  const soon = plans.filter((p) => p.nextDueDate >= now && p.nextDueDate <= week);
+  return {
+    active: plans.length,
+    monthlyCents: plans.reduce((sum, p) => sum + p.installmentAmountCents, 0),
+    overdue: plans.filter((p) => p.nextDueDate < now).length,
+    dueSoon: soon.length,
+    dueSoonCents: soon.reduce((sum, p) => sum + p.installmentAmountCents, 0),
+    refundedCents: refunded._sum.amountCents ?? 0,
+  };
+}
