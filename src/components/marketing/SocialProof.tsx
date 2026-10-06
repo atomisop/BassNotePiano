@@ -1,5 +1,7 @@
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
+import { BookOpen, Video } from "lucide-react";
 import { DiscordIcon } from "@/components/ui/icons";
+import { ProofLoops } from "@/components/marketing/loops";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
@@ -39,16 +41,6 @@ import { EDGE_FADE_STYLE } from "./edgeFade";
  * "mobile is cooked", and this is what that actually was. `col-span-12`
  * added as the base so both stack full-width until md: takes over.
  */
-const PROOF_POINTS = [
-  {
-    label: "The source",
-    body: "Built from a real, published method book.",
-  },
-  {
-    label: "The teacher",
-    body: "Live lessons with a real teacher over Discord.",
-  },
-];
 
 export function SocialProof() {
   return (
@@ -70,17 +62,16 @@ export function SocialProof() {
         </div>
       </div>
       <ScrollReveal className="editorial-grid items-start">
-        <h2 className="display-2 col-span-12 text-balance md:col-span-5">Nothing here asks you to take our word for it.</h2>
+        <h2 className="display-2 col-span-12 text-balance md:col-span-5">The real thing.</h2>
 
         <div className="col-span-12 md:col-span-6 md:col-start-7">
-          <ul className="flex flex-col gap-8">
-            {PROOF_POINTS.map((point) => (
-              <li key={point.label} className="body-copy max-w-[52ch]">
-                <span className="font-semibold text-slate-50">{point.label}. </span>
-                {point.body}
-              </li>
-            ))}
-          </ul>
+          <ProofLoops
+            items={[
+              { icon: <BookOpen className="h-7 w-7" strokeWidth={1.5} />, caption: "A real book" },
+              { icon: <Video className="h-7 w-7" strokeWidth={1.5} />, caption: "A real teacher" },
+              { icon: <DiscordIcon size={28} className="text-[#5865F2]" />, caption: "Real community" },
+            ]}
+          />
 
           <a
             href={DISCORD_INVITE_URL}

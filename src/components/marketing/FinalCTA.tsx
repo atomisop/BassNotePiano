@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import { LoopingLine } from "@/components/marketing/loops";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 
 // Matches Hero.tsx's own local copy — no shared `@/lib/format` module
@@ -24,11 +25,7 @@ export function FinalCTA() {
   return (
     <section className="mx-auto max-w-2xl px-6 py-[var(--space-6)] text-center md:py-[var(--space-8)]">
       <ScrollReveal>
-        <p className="display-2 text-balance text-[rgb(var(--c-s-50))]">
-          You already knew the sound.
-          <br />
-          Now you can play it.
-        </p>
+        <LoopingLine className="display-2 text-balance text-[rgb(var(--c-s-50))]" lines={["You already knew the sound.", "Now you can play it."]} />
 
         <Link href={isLoggedIn ? "/dashboard" : "/register"} className="btn btn-primary group mt-8 inline-flex">
           {isLoggedIn ? "Go to dashboard" : "Get started"}

@@ -1,8 +1,8 @@
 import { CLASS_MINUTES } from "@/lib/classCreditPricing";
 import { SOLO_MAX_CREDITS } from "@/lib/classSchedule";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { SolutionScreenshotTabs } from "@/components/marketing/SolutionScreenshotTabs";
+import { FeatureLoops } from "@/components/marketing/loops";
 
 /**
  * HOMEPAGE REDESIGN.
@@ -34,11 +34,6 @@ import { SolutionScreenshotTabs } from "@/components/marketing/SolutionScreensho
  * the screenshot panel into one sliver-width column each below md instead
  * of stacking full-width, reported as "mobile is cooked".
  */
-const FEATURES = [
-  { title: "Chords built in", body: "Each scale's chords come from its own notes. No extra theory." },
-  { title: "Quiz-gated progression", body: "Pass a scale's quiz to open the next one." },
-  { title: `Live lessons, ${CLASS_MINUTES} minutes`, body: "One-on-one with your teacher over Discord, or a family session." },
-];
 
 // Real captures from inside the app (the demo student "Alex"), retaken for the
 // current look. Order tells the story: where you are, how you learn, the three
@@ -58,16 +53,9 @@ export function Solution() {
         <div className="col-span-12 md:col-span-6">
           <h2 className="display-2 max-w-[18ch] text-balance">Everything in one place.</h2>
 
-          <Accordion type="single" collapsible className="mt-8" defaultValue="feature-0">
-            {FEATURES.map((feature, i) => (
-              <AccordionItem key={feature.title} value={`feature-${i}`} className="border-ink/10">
-                <AccordionTrigger className="text-left font-serif text-body text-slate-50 no-underline hover:no-underline sm:text-body">
-                  {feature.title}
-                </AccordionTrigger>
-                <AccordionContent className="text-small leading-relaxed text-slate-400">{feature.body}</AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+          <div className="mt-8">
+            <FeatureLoops />
+          </div>
         </div>
 
         {/* The one bounded surface in this section, by design: this is

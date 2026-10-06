@@ -1,6 +1,5 @@
-import { QUIZ_PASS_THRESHOLD } from "@/lib/access";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
-import { Timeline } from "@/components/ui/Timeline";
+import { StepsLoop } from "@/components/marketing/loops";
 import { BACKDROPS } from "@/lib/backdrops";
 import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
 import { EDGE_FADE_STYLE } from "./edgeFade";
@@ -35,11 +34,6 @@ import { EDGE_FADE_STYLE } from "./edgeFade";
  * mirror of how SocialProof blurred the guitar photo back out after
  * InstrumentPicker.
  */
-const STEPS = [
-  { marker: "01", title: "Start live classes", description: "The curriculum comes with them, opened one scale at a time." },
-  { marker: "02", title: "Practice, then pass the quiz", description: `Score ${Math.round(QUIZ_PASS_THRESHOLD * 100)}% to open the next scale.` },
-  { marker: "03", title: "Watch it add up", description: "Streaks, badges and a roadmap that remembers where you stopped." },
-];
 
 export function HowItWorks() {
   return (
@@ -65,7 +59,7 @@ export function HowItWorks() {
         <h2 className="display-2 mt-4 max-w-[22ch] text-balance">Three steps.</h2>
 
         <div className="mt-12">
-          <Timeline entries={STEPS} />
+          <StepsLoop />
         </div>
       </ScrollReveal>
     </section>
