@@ -1,6 +1,6 @@
 import type { MailKind, NotificationType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getAppUrl, sendNotificationEmail, sendNotificationEmailWithCta } from "@/lib/email";
+import { getAppUrl, sendPersonalEmail } from "@/lib/email";
 
 export class MailError extends Error {}
 
@@ -77,7 +77,7 @@ export async function sendAdminMessage(
 
   const recipient = await prisma.user.findUnique({
     where: { id: recipientId },
-    select: { id: true, email: true, notifyEmailSocial: true },
+    select: { id: true, email: true, name: true, notifyEmailSocial: true },
   });
   if (!recipient) throw new MailError("That person doesn't exist.");
 
@@ -99,11 +99,11 @@ export async function sendAdminMessage(
       email = "opted-out";
     } else {
       try {
-        if (options.supportCta) {
-          await sendNotificationEmailWithCta(recipient.email, title, body, { label: "Click here to contact support", url: getAppUrl(`/mail/${mail.id}`) });
-        } else {
-          await sendNotificationEmail(recipient.email, title, body);
-        }
+        const firstName = recipient.name?.trim().split(/\s+/)[0];
+        await sendPersonalEmail(recipient.email, title, body, {
+          firstName,
+          link: options.supportCta ? { label: "Click here to contact support", url: getAppUrl(`/mail/${mail.id}`) } : undefined,
+        });
         email = "sent";
       } catch (err) {
         console.error("Admin message email failed (non-blocking):", err);

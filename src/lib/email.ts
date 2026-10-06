@@ -153,37 +153,37 @@ function codeBlockHtml(code: string): string {
 
 const PURPOSE_COPY: Record<VerificationPurpose, { subject: string; heading: string; intro: string }> = {
   EMAIL_VERIFY: {
-    subject: "Verify your email | Bass Note Piano",
+    subject: "Verify your email",
     heading: "Confirm your email",
     intro: "Welcome to Bass Note Piano. Enter this code to verify your email and finish creating your account.",
   },
   LOGIN_2FA: {
-    subject: "Your login code | Bass Note Piano",
+    subject: "Your login code",
     heading: "Confirm it's you",
     intro: "Enter this code to finish logging in.",
   },
   PASSWORD_RESET: {
-    subject: "Reset your password | Bass Note Piano",
+    subject: "Reset your password",
     heading: "Reset your password",
     intro: "Enter this code to choose a new password.",
   },
   CHANGE_PASSWORD: {
-    subject: "Confirm your password change | Bass Note Piano",
+    subject: "Confirm your password change",
     heading: "Confirm password change",
     intro: "Enter this code to confirm you'd like to change your account password.",
   },
   CHANGE_NAME: {
-    subject: "Confirm your name change | Bass Note Piano",
+    subject: "Confirm your name change",
     heading: "Confirm name change",
     intro: "Enter this code to confirm your new display name.",
   },
   CHANGE_AVATAR: {
-    subject: "Confirm your profile photo change | Bass Note Piano",
+    subject: "Confirm your profile photo change",
     heading: "Confirm photo change",
     intro: "Enter this code to confirm your new profile photo.",
   },
   DELETE_ACCOUNT: {
-    subject: "Confirm account deletion | Bass Note Piano",
+    subject: "Confirm account deletion",
     heading: "Confirm account deletion",
     intro:
       "Enter this code to permanently delete your account. This can't be undone. If you didn't request this, do not share this code with anyone.",
@@ -216,7 +216,36 @@ function escapeHtml(text: string): string {
 export async function sendNotificationEmail(to: string, title: string, body: string, kind: "default" | "notice" = "default") {
   const html = emailShell(title, `<p style="margin:0;">${escapeHtml(body)}</p>`, { kind });
   const text = body;
-  await sendEmail({ to, subject: `${title} | Bass Note Piano`, html, text });
+  await sendEmail({ to, subject: title, html, text });
+}
+
+/**
+ * A message from a person, not a template. Used for announcements and for the
+ * messages the owner types to students: plain paragraphs, a greeting by name,
+ * one plain link at most, no logo, colours or buttons. Gmail files heavily
+ * designed bulk-looking mail under Promotions, and mail that reads like a
+ * note from someone lands in the inbox far more often.
+ */
+export async function sendPersonalEmail(
+  to: string,
+  subject: string,
+  body: string,
+  options: { firstName?: string | null; link?: { label: string; url: string } } = {},
+) {
+  const greeting = options.firstName?.trim() ? `Hi ${options.firstName.trim()},` : "Hi,";
+  const paragraphs = body
+    .trim()
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const linkHtml = options.link ? `<p style="margin:0 0 14px;"><a href="${options.link.url}">${escapeHtml(options.link.label)}</a></p>` : "";
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#222222;">
+<p style="margin:0 0 14px;">${escapeHtml(greeting)}</p>
+${paragraphs.map((p) => `<p style="margin:0 0 14px;">${escapeHtml(p).replace(/\n/g, "<br>")}</p>`).join("\n")}
+${linkHtml}<p style="margin:0;">Bass Note Piano</p>
+</div>`;
+  const text = [greeting, "", ...paragraphs.flatMap((p) => [p, ""]), ...(options.link ? [`${options.link.label}: ${options.link.url}`, ""] : []), "Bass Note Piano"].join("\n");
+  await sendEmail({ to, subject, html, text });
 }
 
 function ctaButtonHtml(cta: { label: string; url: string }): string {
@@ -246,7 +275,7 @@ export async function sendNotificationEmailWithCta(
 ) {
   const html = emailShell(title, `<p style="margin:0 0 20px;">${escapeHtml(body)}</p>${ctaButtonHtml(cta)}`, { kind });
   const text = `${body}\n\n${cta.label}: ${cta.url}`;
-  await sendEmail({ to, subject: `${title} | Bass Note Piano`, html, text });
+  await sendEmail({ to, subject: title, html, text });
 }
 
 function formatUsdCents(cents: number): string {
@@ -354,7 +383,7 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
 
   await sendEmail({
     to,
-    subject: isOverdue ? `Overdue: ${amountLabel} bill | Bass Note Piano` : `Bill: ${amountLabel} due ${dueShort} | Bass Note Piano`,
+    subject: isOverdue ? `Overdue: ${amountLabel} bill` : `Bill: ${amountLabel} due ${dueShort}`,
     html,
     text,
   });
