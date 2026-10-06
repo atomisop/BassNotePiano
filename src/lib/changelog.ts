@@ -6,7 +6,7 @@ export interface ChangelogEntry {
 }
 
 // Newest first. The "What's new" popup always shows entries[0], once per
-// device: the browser remembers the version it has shown, so a new top entry
+// account: the account remembers the version it has shown, so a new top entry
 // with a new version number is what makes it appear again for everyone.
 export const CHANGELOG: ChangelogEntry[] = [
   {

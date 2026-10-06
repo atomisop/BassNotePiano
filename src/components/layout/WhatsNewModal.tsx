@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ChangelogEntry } from "@/lib/changelog";
 import { CheckIcon } from "@/components/ui/icons";
@@ -27,29 +26,9 @@ const panelVariants = {
   },
 };
 
-const SEEN_KEY = "bnp-whats-new-seen";
-
-/** Shown once per device for each new changelog version: this browser remembers the last version it showed. */
-export function WhatsNewModal({ suppress, entry }: { suppress: boolean; entry: ChangelogEntry }) {
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (suppress) return;
-    try {
-      if (window.localStorage.getItem(SEEN_KEY) !== entry.version) setOpen(true);
-    } catch {
-      // Storage blocked: stay quiet rather than show it on every visit.
-    }
-  }, [suppress, entry.version]);
-
-  function handleClose() {
-    setOpen(false);
-    try {
-      window.localStorage.setItem(SEEN_KEY, entry.version);
-    } catch {
-      // Nothing to remember it with; it just won't come back this session.
-    }
-  }
+/** The What's new card. Opened by the provider: automatically once per account for each new version, and any time from the bulb in the top bar. */
+export function WhatsNewModal({ open, onClose, entry }: { open: boolean; onClose: () => void; entry: ChangelogEntry }) {
+  const handleClose = onClose;
 
   return (
     <AnimatePresence>

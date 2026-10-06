@@ -206,6 +206,7 @@ export function PaymentPlanEnrollmentFlow({
             eyebrowLabel="Payment Plan"
             amountCents={installment.amountCents}
             zelleHandle={zelleHandle}
+            paymentId={installment.id}
             onSubmitPayment={submitPlanInstallmentPaymentAction.bind(null, installment.id)}
           />
         ) : (

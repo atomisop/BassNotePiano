@@ -1576,11 +1576,17 @@ export async function getBookingFeed(limit = 300): Promise<BookingFeedRow[]> {
     creditsSpent: b.creditsSpent,
   }));
 
-  // New subscriptions show up the moment they are chosen, as the first class of
-  // the weekly time they committed to. The real weekly bookings replace this row
-  // as soon as the first payment is approved.
+  // A new subscription shows up here once its student says they have paid (the
+  // payment is waiting for review), as the first class of the weekly time they
+  // chose. Someone who started and never finished paying does not appear. The real
+  // weekly bookings replace this row as soon as the payment is approved.
   const waiting = await prisma.paymentPlan.findMany({
-    where: { status: "ACTIVE", installmentsPaid: 0, reservedScheduleId: { not: null } },
+    where: {
+      status: "ACTIVE",
+      installmentsPaid: 0,
+      reservedScheduleId: { not: null },
+      installmentPayments: { some: { status: "PENDING_REVIEW" } },
+    },
     include: { user: { select: { name: true, email: true } }, reservedSchedule: true },
   });
   for (const plan of waiting) {

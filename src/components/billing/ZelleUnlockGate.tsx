@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { getPaymentStatusAction } from "@/app/(dashboard)/billing/lessons/actions";
 import { useRouter } from "next/navigation";
 import type { ZellePaymentStatus } from "@prisma/client";
 import { ZellePaymentModal } from "@/components/progression/ZellePaymentModal";
@@ -14,6 +15,8 @@ export interface ZelleUnlockGateProps {
   eyebrowLabel: string;
   amountCents: number;
   zelleHandle: string;
+  /** Lets the screen notice the payment clearing on its own. */
+  paymentId: string;
   onSubmitPayment: (payload: ZelleReferenceSubmission) => Promise<void>;
 }
 
@@ -25,10 +28,23 @@ export function ZelleUnlockGate({
   eyebrowLabel,
   amountCents,
   zelleHandle,
+  paymentId,
   onSubmitPayment,
 }: ZelleUnlockGateProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(status === "AWAITING_TRANSFER" || status === "REJECTED");
+
+  const checkStatus = useCallback(() => getPaymentStatusAction(paymentId), [paymentId]);
+
+  // A payment that was submitted and is waiting for review also clears by itself when the bank email arrives.
+  useEffect(() => {
+    if (status !== "PENDING_REVIEW") return;
+    const timer = window.setInterval(async () => {
+      if (document.visibilityState !== "visible") return;
+      if ((await checkStatus().catch(() => null)) === "VERIFIED") router.refresh();
+    }, 8_000);
+    return () => window.clearInterval(timer);
+  }, [status, checkStatus, router]);
 
   async function handleSubmit(payload: ZelleReferenceSubmission) {
     await onSubmitPayment(payload);
@@ -71,6 +87,8 @@ export function ZelleUnlockGate({
         amountCents={amountCents}
         zelleHandle={zelleHandle}
         onSubmit={handleSubmit}
+        checkStatus={checkStatus}
+        onVerified={() => router.refresh()}
       />
     </>
   );

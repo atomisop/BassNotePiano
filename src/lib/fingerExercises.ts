@@ -1,10 +1,9 @@
 /**
  * The daily finger exercises. All of these are standard, widely taught
  * patterns (five-finger positions, the C major scale fingering, the first
- * Hanon exercise, the guitar "spider" and its variations, fingerstyle p-i-m-a).
+ * Hanon exercise, the guitar "spider" and its variations).
  * Fingering conventions: piano 1 = thumb through 5 = little finger; guitar
- * fretting hand 1 = index through 4 = little finger; guitar picking hand
- * p = thumb, i = index, m = middle, a = ring.
+ * fretting hand 1 = index through 4 = little finger.
  */
 
 export type Hand = "L" | "R";
@@ -118,7 +117,6 @@ export const PIANO_EXERCISES: PianoExercise[] = [
   },
 ];
 
-export type PickFinger = "p" | "i" | "m" | "a";
 
 export interface GuitarStep {
   /** 1 = thinnest string, 6 = thickest. */
@@ -128,8 +126,6 @@ export interface GuitarStep {
   finger: 0 | 1 | 2 | 3 | 4;
   /** Pick direction: D = down, U = up. */
   pick?: "D" | "U";
-  /** Picking-hand finger for fingerstyle. */
-  pickFinger?: PickFinger;
 }
 
 export interface GuitarExercise {
@@ -151,7 +147,7 @@ export const GUITAR_EXERCISES: GuitarExercise[] = [
     title: "Spider 1-2-3-4",
     summary: "One finger per fret across four frets. Repeat on every string.",
     how: [
-      "Index on fret 5, middle on 6, ring on 7, little on 8, played one after another.",
+      "Index on fret 5, middle on 6, ring on 7, pinky on 8, played one after another.",
       "Alternate pick: down, up, down, up. Then move to the next string and repeat the same shape.",
       "Keep each finger close to the fret wire and the wrist straight. Use a steady tempo.",
     ],
@@ -202,26 +198,6 @@ export const GUITAR_EXERCISES: GuitarExercise[] = [
     bpm: 72,
     strings: 6,
     steps: [6, 5, 4, 3, 2, 1].flatMap((str) => [g(str, 0, 0, { pick: "D" }), g(str, 0, 0, { pick: "U" })]),
-  },
-  {
-    id: "pima",
-    title: "Fingerstyle p-i-m-a",
-    summary: "Thumb, index, middle, ring on separate strings.",
-    how: [
-      "Thumb (p) plays the 5th string, index (i) the 3rd, middle (m) the 2nd, ring (a) the 1st.",
-      "Rest the fingers on their strings first, then pluck and let each finger come back to rest.",
-      "Go up p-i-m-a, then back down a-m-i-p. Keep the hand still and the notes even.",
-    ],
-    bpm: 60,
-    strings: 6,
-    steps: [
-      g(5, 0, 0, { pickFinger: "p" }),
-      g(3, 0, 0, { pickFinger: "i" }),
-      g(2, 0, 0, { pickFinger: "m" }),
-      g(1, 0, 0, { pickFinger: "a" }),
-      g(2, 0, 0, { pickFinger: "m" }),
-      g(3, 0, 0, { pickFinger: "i" }),
-    ],
   },
 ];
 

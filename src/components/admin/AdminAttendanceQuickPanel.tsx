@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Check, ChevronDown, ClipboardCheck, X as XIcon } from "lucide-react";
-import { adminCancelBookingAction, adminCancelWaitingSubscriptionAction, getBookingFeedAction, markAttendanceAction } from "@/app/(dashboard)/admin/schedule/actions";
+import { adminCancelBookingAction, getBookingFeedAction, markAttendanceAction } from "@/app/(dashboard)/admin/schedule/actions";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
 const POLL_INTERVAL_MS = 30_000;
@@ -194,25 +194,6 @@ export function AdminAttendanceQuickPanel() {
     }
   }
 
-  async function handleCancelWaiting(rowId: string) {
-    setBusyId(rowId);
-    setError(null);
-    try {
-      const result = await adminCancelWaitingSubscriptionAction(rowId.replace(/^plan:/, ""));
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      removedRef.current.set(rowId, Date.now());
-      setRows((prev) => prev.filter((r) => r.bookingId !== rowId));
-      setConfirmCancelId(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-    } finally {
-      setBusyId(null);
-    }
-  }
-
   const gatedClass =
     "tap flex min-h-9 items-center justify-center gap-1 rounded-lg px-2.5 py-1.5 text-small font-medium transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-pressed-low disabled:hover:shadow-pressed-low";
 
@@ -311,56 +292,22 @@ export function AdminAttendanceQuickPanel() {
                         <div className="mt-1.5 space-y-1.5 rounded-xl bg-neu-base p-1.5 shadow-pressed-low">
                           {group.rows.map((r) => {
                             if (r.awaitingPayment) {
-                              const waitingBusy = busyId === r.bookingId;
-                              const waitingConfirming = confirmCancelId === r.bookingId;
                               return (
-                                <div key={r.bookingId} className="rounded-lg bg-neu-base p-2.5 shadow-raised-low">
-                                  <div className="flex items-center gap-2">
-                                    <div className="min-w-0 flex-1">
-                                      <p className="truncate text-small font-medium text-slate-100">{r.studentName ?? r.studentEmail}</p>
-                                      <p className="truncate text-small text-slate-500">
-                                        {timeOf(r.scheduledAt)}
-                                        {r.scheduleLabel ? ` · ${r.scheduleLabel}` : ""} · every week
-                                      </p>
-                                    </div>
-                                    <span className="shrink-0 rounded-full bg-neu-base px-2.5 py-1 text-small font-medium text-slate-300 shadow-pressed-low">
-                                      Waiting for payment
-                                    </span>
-                                    <button
-                                      type="button"
-                                      disabled={waitingBusy}
-                                      onClick={() => setConfirmCancelId(waitingConfirming ? null : r.bookingId)}
-                                      aria-label={`Cancel subscription for ${r.studentName ?? r.studentEmail}`}
-                                      title="Cancel this subscription"
-                                      className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500 text-white shadow-raised-low transition hover:bg-red-400 active:shadow-pressed-low disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                      <XIcon className="h-4 w-4" strokeWidth={2.5} />
-                                    </button>
+                                <div key={r.bookingId} className="flex items-center gap-2 rounded-lg bg-neu-base p-2.5 shadow-raised-low">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-small font-medium text-slate-100">{r.studentName ?? r.studentEmail}</p>
+                                    <p className="truncate text-small text-slate-500">
+                                      {timeOf(r.scheduledAt)}
+                                      {r.scheduleLabel ? ` · ${r.scheduleLabel}` : ""} · every week
+                                    </p>
                                   </div>
-                                  {waitingConfirming && (
-                                    <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-neu-base px-2.5 py-2 shadow-pressed-low">
-                                      <p className="text-small text-slate-300">Cancel this subscription? The student is told and the time opens up.</p>
-                                      <div className="flex shrink-0 gap-1.5">
-                                        <button
-                                          type="button"
-                                          onClick={() => setConfirmCancelId(null)}
-                                          disabled={waitingBusy}
-                                          className="tap rounded-lg px-2.5 py-1.5 text-small font-medium text-slate-300 bg-neu-base shadow-raised-low active:shadow-pressed-low disabled:opacity-50"
-                                        >
-                                          Keep
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => handleCancelWaiting(r.bookingId)}
-                                          disabled={waitingBusy}
-                                          className="tap flex items-center gap-1 rounded-lg bg-red-500 px-2.5 py-1.5 text-small font-semibold text-white shadow-raised-low hover:bg-red-400 disabled:opacity-50"
-                                        >
-                                          {waitingBusy && <MorphingSquare size={11} />}
-                                          Cancel subscription
-                                        </button>
-                                      </div>
-                                    </div>
-                                  )}
+                                  <Link
+                                    href="/admin/payments"
+                                    onClick={() => setOpen(false)}
+                                    className="tap shrink-0 rounded-lg bg-neu-base px-3 py-1.5 text-small font-medium text-[rgb(var(--signal))] shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
+                                  >
+                                    Review payment
+                                  </Link>
                                 </div>
                               );
                             }

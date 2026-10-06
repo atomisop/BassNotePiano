@@ -907,6 +907,7 @@ export function ClassBookingClient({
                     eyebrowLabel="Pay"
                     amountCents={extraPayment.amountCents}
                     zelleHandle={zelleHandle}
+                    paymentId={extraPayment.id}
                     onSubmitPayment={submitClassCreditsPaymentAction.bind(null, extraPayment.id)}
                   />
                 </div>
