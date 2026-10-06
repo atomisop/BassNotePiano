@@ -355,7 +355,8 @@ export async function setTyping(senderId: string, recipientId: string): Promise<
   if (!(await canConverse(senderId, recipientId))) return;
   await prisma.typingStatus.upsert({
     where: { senderId_recipientId: { senderId, recipientId } },
-    update: {},
+    // Explicit: an empty update does not touch the @updatedAt column, and recency is the whole signal here.
+    update: { updatedAt: new Date() },
     create: { senderId, recipientId },
   });
 }

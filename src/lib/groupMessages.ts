@@ -255,7 +255,8 @@ export async function setGroupTyping(userId: string, groupId: string): Promise<v
   await requireMembership(userId, groupId);
   await prisma.groupTypingStatus.upsert({
     where: { conversationId_userId: { conversationId: groupId, userId } },
-    update: {},
+    // Explicit: an empty update does not touch the @updatedAt column, and recency is the whole signal here.
+    update: { updatedAt: new Date() },
     create: { conversationId: groupId, userId },
   });
 }
