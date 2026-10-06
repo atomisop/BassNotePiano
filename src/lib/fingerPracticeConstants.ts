@@ -23,8 +23,5 @@ export interface FingerPracticeStatus {
   todaySeconds: number;
   completedToday: boolean;
   streak: number;
-  /** Highest level earned so far (0 when none). */
-  level: number;
-  next: { level: number; label: string; days: number; daysToGo: number } | null;
 }
 
