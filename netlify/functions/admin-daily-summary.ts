@@ -1,5 +1,5 @@
 import { schedule } from "@netlify/functions";
-import { runJob } from "../../src/lib/jobRun";
+import { findStoppedJobs, runJob } from "../../src/lib/jobRun";
 import { prisma } from "../../src/lib/prisma";
 import { OWNER_EMAIL } from "../../src/lib/adminNotifications";
 import { todayBoundsEt } from "../../src/lib/classSchedule";
@@ -20,7 +20,7 @@ export const handler = schedule("0 12 * * *", async () =>
   runJob("admin-daily-summary", async () => {
   const now = Date.now();
   const today = todayBoundsEt();
-  const [pendingPayments, uncheckedAuto, unmatchedEmails, applications, openChats, classesToday] = await Promise.all([
+  const [pendingPayments, uncheckedAuto, unmatchedEmails, applications, openChats, classesToday, unmarked, stoppedJobs, lastBankEmail, stalePayments] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
     prisma.zellePayment.count({ where: { autoApproved: true, checkedAt: null, status: "VERIFIED" } }),
     // A payment email that matched nobody an hour later, from the last week.
@@ -34,7 +34,16 @@ export const handler = schedule("0 12 * * *", async () =>
       orderBy: { scheduledAt: "asc" },
       select: { scheduledAt: true, student: { select: { name: true, email: true } } },
     }),
+    // Classes already over that have no attendance marked.
+    prisma.classBooking.count({ where: { status: "SCHEDULED", scheduledAt: { lt: new Date(now - 3 * HOUR_MS) } } }),
+    findStoppedJobs(new Date(now)),
+    prisma.processedPaymentEmail.findFirst({ orderBy: { createdAt: "desc" }, select: { createdAt: true } }),
+    // Payments sitting open for over a day.
+    prisma.zellePayment.count({ where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, createdAt: { lt: new Date(now - DAY_MS) } } }),
   ]);
+
+  // Open payments, yet no bank email has arrived for a week: the Gmail script has probably stopped.
+  const pipelineQuiet = stalePayments > 0 && (!lastBankEmail || now - lastBankEmail.createdAt.getTime() > 7 * DAY_MS);
 
   const classLine = classesToday.length
     ? `Teaching today: ${classesToday
@@ -51,6 +60,9 @@ export const handler = schedule("0 12 * * *", async () =>
     count(unmatchedEmails, "payment email that matched no one", "payment emails that matched no one"),
     count(applications, "class application to review", "class applications to review"),
     count(openChats, "open support chat", "open support chats"),
+    count(unmarked, "finished class with no attendance marked", "finished classes with no attendance marked"),
+    stoppedJobs.length ? `Scheduled ${stoppedJobs.length === 1 ? "job has" : "jobs have"} stopped: ${stoppedJobs.join(", ")}` : null,
+    pipelineQuiet ? "No bank or Venmo email has arrived in a week while payments are waiting, check the Gmail script" : null,
   ].filter((p): p is string => p !== null);
 
   if (parts.length === 0 && !classLine) {
