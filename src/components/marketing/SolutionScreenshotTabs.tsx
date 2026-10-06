@@ -49,19 +49,15 @@ export function SolutionScreenshotTabs({ screens, defaultKey }: { screens: Solut
           <motion.div
             key={screen.key}
             className="absolute inset-0"
-            initial={reduced ? false : { y: "6%", opacity: 0 }}
+            initial={reduced ? false : { y: "5%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={reduced ? undefined : { opacity: 0 }}
-            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+            // The old screen stays fully visible underneath until the new one has faded in, so the phone never goes dark in between.
+            exit={reduced ? undefined : { opacity: 1, transition: { duration: 0.6 } }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           >
             <Image src={screen.src} alt={screen.alt} fill sizes="(min-width: 1024px) 300px, 80vw" className="object-cover object-top" priority={active === 0} />
           </motion.div>
         </AnimatePresence>
-        {!reduced && (
-          <span aria-hidden className="absolute left-[7%] top-[2.1%] z-20 flex items-center gap-1 rounded-full bg-[#ff3b30] px-1.5 py-0.5">
-            <span className="h-1 w-1 animate-pulse rounded-full bg-white" />
-          </span>
-        )}
       </PhoneFrame>
 
       <p className="mt-6 text-center text-small text-[#E1E0CC]/60" aria-live="off">

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** A drawn iPhone: titanium rim, side buttons, dynamic island. Pure CSS, so it stays sharp at any size. */
+/** A drawn iPhone: titanium rim and side buttons. Pure CSS, so it stays sharp at any size. */
 export function PhoneFrame({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div className={cn("relative mx-auto w-full max-w-[300px]", className)}>
@@ -15,7 +15,6 @@ export function PhoneFrame({ children, className }: { children: ReactNode; class
         <div className="rounded-[2.75rem] bg-black p-[7px]">
           <div className="relative aspect-[856/1852] w-full overflow-hidden rounded-[2.2rem] bg-black">
             {children}
-            <span aria-hidden className="absolute left-1/2 top-[1.6%] z-20 h-[3.1%] w-[30%] -translate-x-1/2 rounded-full bg-black" />
           </div>
         </div>
       </div>
