@@ -22,10 +22,13 @@ export function AdminFilterTabs({
   items,
   label,
   mobile = "scroll",
+  desktop = "pills",
 }: {
   items: AdminFilterItem[];
   label: string;
   mobile?: "select" | "scroll";
+  /** "select" keeps one dropdown at every width, for long lists where a pill row is a wall of buttons. */
+  desktop?: "pills" | "select";
 }) {
   const router = useRouter();
   const current = items.find((i) => i.active) ?? items[0];
@@ -45,12 +48,12 @@ export function AdminFilterTabs({
 
   return (
     <>
-      {mobile === "select" ? (
+      {mobile === "select" || desktop === "select" ? (
         <select
           value={current.href}
           onChange={(e) => router.push(e.target.value)}
           aria-label={label}
-          className="glass-surface-subtle w-full rounded-xl px-3 py-2.5 text-body font-medium text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] sm:hidden"
+          className={`glass-surface-subtle w-full rounded-xl px-3 py-2.5 text-body font-medium text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] ${desktop === "select" ? "sm:max-w-sm" : "sm:hidden"}`}
         >
           {items.map((item) => (
             <option key={item.href} value={item.href}>
@@ -66,9 +69,11 @@ export function AdminFilterTabs({
           <div className="flex w-max gap-1 rounded-full bg-neu-base p-1 shadow-pressed-low">{pills}</div>
         </nav>
       )}
-      <nav aria-label={label} className="hidden w-fit flex-wrap gap-1.5 rounded-full bg-neu-base p-1 shadow-pressed-low sm:flex">
-        {pills}
-      </nav>
+      {desktop === "pills" && (
+        <nav aria-label={label} className="hidden w-fit flex-wrap gap-1.5 rounded-full bg-neu-base p-1 shadow-pressed-low sm:flex">
+          {pills}
+        </nav>
+      )}
     </>
   );
 }

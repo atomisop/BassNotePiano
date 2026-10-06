@@ -3,7 +3,8 @@
  * patterns (five-finger positions, the C major scale fingering, the first
  * Hanon exercise, the guitar "spider" and its variations).
  * Fingering conventions: piano 1 = thumb through 5 = little finger; guitar
- * fretting hand 1 = index through 4 = little finger.
+ * fretting hand 1 = index through 4 = little finger; guitar picking hand
+ * T = thumb, I = index, M = middle, R = ring.
  */
 
 export type Hand = "L" | "R";
@@ -126,6 +127,8 @@ export interface GuitarStep {
   finger: 0 | 1 | 2 | 3 | 4;
   /** Pick direction: D = down, U = up. */
   pick?: "D" | "U";
+  /** Picking-hand finger for fingerstyle: T thumb, I index, M middle, R ring. */
+  pickFinger?: "T" | "I" | "M" | "R";
 }
 
 export interface GuitarExercise {
@@ -199,11 +202,24 @@ export const GUITAR_EXERCISES: GuitarExercise[] = [
     strings: 6,
     steps: [6, 5, 4, 3, 2, 1].flatMap((str) => [g(str, 0, 0, { pick: "D" }), g(str, 0, 0, { pick: "U" })]),
   },
-];
-
-export const FINGER_SOURCES: { label: string; url: string }[] = [
-  { label: "C major scale fingering (Piano Basics, Baylor Libraries)", url: "https://openbooks.library.baylor.edu/pianobasics/?p=59" },
-  { label: "Hanon, The Virtuoso Pianist, Part I (IMSLP, public domain)", url: "https://imslp.org/wiki/The_Virtuoso_Pianist_(Hanon,_Charles-Louis)" },
-  { label: "The spider exercise (Guitar World)", url: "https://guitarworld.com/lessons/spider-exercise" },
-  { label: "Spider exercises (Applied Guitar Theory)", url: "https://appliedguitartheory.com/lessons/spider-exercises/" },
+  {
+    id: "pima",
+    title: "Fingerstyle T-I-M-R",
+    summary: "Thumb, index, middle, ring on separate strings.",
+    how: [
+      "Thumb (T) plays the 5th string, index (I) the 3rd, middle (M) the 2nd, ring (R) the 1st.",
+      "Rest the fingers on their strings first, then pluck and let each finger come back to rest.",
+      "Go up T-I-M-R, then back down R-M-I-T. Keep the hand still and the notes even.",
+    ],
+    bpm: 60,
+    strings: 6,
+    steps: [
+      g(5, 0, 0, { pickFinger: "T" }),
+      g(3, 0, 0, { pickFinger: "I" }),
+      g(2, 0, 0, { pickFinger: "M" }),
+      g(1, 0, 0, { pickFinger: "R" }),
+      g(2, 0, 0, { pickFinger: "M" }),
+      g(3, 0, 0, { pickFinger: "I" }),
+    ],
+  },
 ];

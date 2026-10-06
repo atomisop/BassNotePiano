@@ -113,15 +113,18 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
               </button>
             </div>
           ) : (
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search a name or email"
-                className="w-full glass-surface-subtle py-2 pl-9 pr-3 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
-              />
+            <div>
+              {/* The icon is centered on the input alone, so it stays in the bar when results open below. */}
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search a name or email"
+                  className="w-full glass-surface-subtle py-2 pl-9 pr-3 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                />
+              </div>
               {query.trim().length >= 2 && (
                 <div className="mt-2 space-y-1.5">
                   {searching && results.length === 0 ? (

@@ -7,7 +7,6 @@ import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Tabs } from "@/components/ui/Tabs";
 import { useMetronome, METRONOME_MAX_BPM, METRONOME_MIN_BPM } from "@/components/scales/useMetronome";
 import {
-  FINGER_SOURCES,
   GUITAR_EXERCISES,
   PIANO_EXERCISES,
   type GuitarExercise,
@@ -118,7 +117,10 @@ function GuitarTab({ exercise, activeStep }: { exercise: GuitarExercise; activeS
   const lit = activeStep === null ? null : activeStep % exercise.steps.length;
   const names = ["e", "B", "G", "D", "A", "E"];
 
-  const legend = [["1", "index"], ["2", "middle"], ["3", "ring"], ["4", "pinky"]];
+  const fingerstyle = exercise.steps.some((st) => st.pickFinger);
+  const legend = fingerstyle
+    ? [["T", "thumb"], ["I", "index"], ["M", "middle"], ["R", "ring"]]
+    : [["1", "index"], ["2", "middle"], ["3", "ring"], ["4", "pinky"]];
 
   return (
     <div className="rounded-2xl bg-neu-base p-3 shadow-raised-low sm:p-5">
@@ -143,7 +145,7 @@ function GuitarTab({ exercise, activeStep }: { exercise: GuitarExercise; activeS
           {exercise.steps.map((step, i) => (
             <div key={i} className="flex min-w-[2.75rem] flex-1 flex-col items-center">
               <span className="flex h-7 items-center text-body font-bold text-slate-400">
-                {step.pick === "D" ? "\u2193" : step.pick === "U" ? "\u2191" : ""}
+                {step.pick === "D" ? "\u2193" : step.pick === "U" ? "\u2191" : step.pickFinger ?? ""}
               </span>
               {[1, 2, 3, 4, 5, 6].map((str) => (
                 <div key={str} className="relative flex h-10 w-full items-center justify-center">
@@ -160,7 +162,7 @@ function GuitarTab({ exercise, activeStep }: { exercise: GuitarExercise; activeS
                 </div>
               ))}
               <span className="mt-1 flex h-7 items-center text-small font-bold text-[rgb(var(--signal))]">
-                {step.finger === 0 ? "open" : step.finger}
+                {step.finger === 0 ? (step.pickFinger ? "" : "open") : step.finger}
               </span>
             </div>
           ))}
@@ -357,17 +359,6 @@ export function PracticeClient({
                 </li>
               ))}
             </ol>
-            <p className="mt-4 text-small text-slate-600">
-              Sources:{" "}
-              {FINGER_SOURCES.map((src, i) => (
-                <span key={src.url}>
-                  {i > 0 && " · "}
-                  <a href={src.url} target="_blank" rel="noopener noreferrer" className="underline-offset-4 hover:underline">
-                    {src.label}
-                  </a>
-                </span>
-              ))}
-            </p>
           </div>
         </details>
       </div>

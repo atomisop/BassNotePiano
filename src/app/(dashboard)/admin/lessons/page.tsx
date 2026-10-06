@@ -29,6 +29,7 @@ export default async function AdminLessonsPage({ searchParams }: { searchParams:
         <AdminFilterTabs
           label="Scale"
           mobile="select"
+          desktop="select"
           items={SCALE_GROUPS.map((scale) => ({
             label: scale.code,
             selectLabel: `${scale.code} · ${scale.title}`,

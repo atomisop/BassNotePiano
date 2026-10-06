@@ -16,7 +16,7 @@ import Link from "next/link";
 // queue, standing installment plans plus their own cancellation-feedback
 // tab, manual credit corrections). Students is every page about a
 // specific person's account (the registration queue, full account
-// management, per-scale progress). Operations is everything else that
+// management, who is ready for their next scale). Operations is everything else that
 // keeps the actual teaching running (the weekly schedule plus its own
 // booking/attendance tab, uploaded lesson content, live support, and
 // broadcast announcements) — the one deliberately mixed bucket, since
@@ -47,8 +47,7 @@ const NAV_GROUPS: AdminNavGroup[] = [
     leaves: [
       { href: "/admin/students", label: "Students" },
       { href: "/admin/employees", label: "Employees" },
-      { href: "/admin/users", label: "Users" },
-      { href: "/admin/progress", label: "Progress" },
+      { href: "/admin/users", label: "People" },
     ],
   },
   {
@@ -57,7 +56,6 @@ const NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/schedule", label: "Schedule" },
       { href: "/admin/lessons", label: "Lessons" },
       { href: "/admin/support", label: "Support Chat" },
-      { href: "/admin/announcements", label: "Announcements" },
       { href: "/admin/messages", label: "Messages" },
     ],
   },
