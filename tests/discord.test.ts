@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { classChannelName, createClassChannel, deleteChannel, isGuildMember, CLASS_MEMBER_PERMISSIONS } from "@/lib/discordApi";
-import { DISCORD_CLASS_CATEGORY_ID, DISCORD_GUILD_ID } from "@/lib/discord";
+import { DISCORD_CLASS_CATEGORY_ID, DISCORD_CLIENT_ID, DISCORD_GUILD_ID } from "@/lib/discord";
 import { checkState, makeState } from "@/lib/discordLink";
 
 beforeAll(() => {
@@ -28,7 +28,12 @@ describe("createClassChannel", () => {
     expect(body.parent_id).toBe(DISCORD_CLASS_CATEGORY_ID);
     // @everyone cannot see it, and each person is allowed in.
     expect(body.permission_overwrites[0]).toMatchObject({ id: DISCORD_GUILD_ID, type: 0, deny: String(1 << 10) });
-    expect(body.permission_overwrites.slice(1).map((o: { id: string; allow: string }) => [o.id, o.allow])).toEqual([
+    // The bot keeps its own access, so it can still remove the channel afterwards.
+    const bot = body.permission_overwrites[1];
+    expect(bot).toMatchObject({ id: DISCORD_CLIENT_ID, type: 1 });
+    expect(Number(bot.allow) & (1 << 4)).toBeTruthy(); // Manage Channels
+    expect(Number(bot.allow) & (1 << 10)).toBeTruthy(); // View Channel
+    expect(body.permission_overwrites.slice(2).map((o: { id: string; allow: string }) => [o.id, o.allow])).toEqual([
       ["111", CLASS_MEMBER_PERMISSIONS],
       ["222", CLASS_MEMBER_PERMISSIONS],
     ]);
