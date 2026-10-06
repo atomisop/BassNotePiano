@@ -5,7 +5,7 @@ import { BADGES } from "@/lib/badges";
 import { createNotification } from "@/lib/notifications";
 
 /** Idempotent — the unique (userId, code) constraint makes a re-award a no-op. */
-async function awardBadge(userId: string, code: BadgeCode) {
+export async function awardBadge(userId: string, code: BadgeCode) {
   const existing = await prisma.userBadge.findUnique({ where: { userId_code: { userId, code } }, select: { id: true } });
   if (existing) return;
   try {

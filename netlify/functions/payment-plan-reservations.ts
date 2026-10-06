@@ -2,8 +2,9 @@ import type { Prisma } from "@prisma/client";
 import { schedule } from "@netlify/functions";
 import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
+import { notifyAdmins } from "../../src/lib/adminNotifications";
 import { PLAN_CADENCE_CREDITS_PER_WEEK } from "../../src/lib/classCreditPricing";
-import { addCalendarMonthsClamped } from "../../src/lib/paymentPlans";
+import { addCalendarMonthsClamped, classesLeftInPaidMonth } from "../../src/lib/paymentPlans";
 import {
   OCCURRENCES_PER_SLOT,
   chunksForSchedule,
@@ -64,7 +65,21 @@ export const handler = schedule("30 9 * * *", async () => {
     }
 
     const chunk = chunksForSchedule(reservedSchedule)[plan.reservedChunkIndex];
-    if (!chunk) continue; // the reserved chunk no longer exists on this schedule; shouldn't happen given updateClassSchedule's guard, defensive only
+    if (!chunk) {
+      // The reserved time no longer exists (for example a short leftover slot dropped when classes became 45 minutes).
+      // Tell the admins once, instead of silently never booking this student.
+      if (!plan.reservedSlotInactiveNotifiedAt) {
+        const student = await prisma.user.findUnique({ where: { id: plan.userId }, select: { name: true, email: true } });
+        await notifyAdmins("SLOT_PROBLEM", {
+          type: "ADMIN_ALERT",
+          title: "A weekly time no longer exists",
+          body: `${student?.name ?? student?.email ?? "A subscriber"} has a weekly time that is gone, so their classes are not being booked. Pick them a new time.`,
+          emailCategory: "social",
+        });
+        await prisma.paymentPlan.update({ where: { id: plan.id }, data: { reservedSlotInactiveNotifiedAt: new Date() } });
+      }
+      continue;
+    }
 
     // What the plan itself pays for each week: 1 credit for a 30-minute plan,
     // 2 for a 60-minute one. NOT chunk.creditCost, which is the whole time
@@ -95,6 +110,9 @@ export const handler = schedule("30 9 * * *", async () => {
       // Without this, credits a student bought for extra sessions could be used
       // up by this job to book their weekly slot for weeks not yet paid for.
       if (scheduledAt.getTime() >= paidUntil.getTime()) continue;
+
+      // A paid month is 4 classes even when it holds five of this weekday.
+      if ((await classesLeftInPaidMonth(plan)) <= 0) break;
 
       const available = await getEffectiveClassCredits(plan.userId);
       if (available < creditsPerClass) {

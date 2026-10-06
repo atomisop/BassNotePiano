@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { AttendanceStatus } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
-import { bookMissingReservedWindows } from "@/lib/paymentPlans";
+import { bookMissingReservedWindows, cancelUnpaidSubscription, PaymentPlanError } from "@/lib/paymentPlans";
 import {
   createClassSchedule,
   updateClassSchedule,
@@ -87,23 +87,24 @@ export async function undoAttendanceAction(bookingId: string) {
   }
 }
 
-/**
- * Feeds the TopBar's own quick-attendance panel (AdminAttendanceQuickPanel)
- * — by direct instruction, marking a class Present/No-show shouldn't
- * require navigating into the full admin Schedule page first. Same
- * markAttendanceAction above does the actual write; this just supplies the
- * short list of "needs a call right now" bookings the panel polls for.
- */
-export async function getPendingAttendanceBookingsAction(): Promise<PendingAttendanceRow[]> {
-  await requireAdmin();
-  return getPendingAttendanceBookings();
-}
-
 /** Feeds the TopBar's class-bookings panel: every active booking, soonest first. */
 export async function getBookingFeedAction(): Promise<BookingFeedRow[]> {
   await requireAdmin();
   await bookMissingReservedWindows();
   return getBookingFeed();
+}
+
+/** Cancels a subscription that is still waiting for its first payment (the "Waiting for payment" row in the Attendance panel). */
+export async function adminCancelWaitingSubscriptionAction(planId: string) {
+  const admin = await requireAdmin();
+  try {
+    await cancelUnpaidSubscription(planId, admin.id);
+    revalidatePath("/admin/schedule");
+    revalidatePath("/admin/payment-plans");
+    return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof PaymentPlanError ? err.message : "Something went wrong." };
+  }
 }
 
 export async function adminCancelBookingAction(bookingId: string, reason?: string) {

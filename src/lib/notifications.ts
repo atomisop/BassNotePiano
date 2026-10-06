@@ -1,5 +1,6 @@
 import type { NotificationType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { MAIL_ROUTED_TYPES, createMailMessage } from "@/lib/mail";
 import { sendNotificationEmail, sendNotificationEmailWithCta, getAppUrl } from "@/lib/email";
 
 type EmailCategory = "payments" | "roleUpdates" | "social" | "reminders";
@@ -29,6 +30,7 @@ interface NotificationCta {
 // senderId is actually known.
 const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   ADMIN_ALERT: { label: "Open admin", url: getAppUrl("/admin"), kind: "default" },
+  MAIL_MESSAGE: { label: "Open message", url: getAppUrl("/mail"), kind: "default" },
   PAYMENT_SUBMITTED: { label: "Review payment", url: getAppUrl("/admin/payments"), kind: "default" },
   PAYMENT_APPROVED: { label: "View your purchase", url: getAppUrl("/billing/history"), kind: "default" },
   PAYMENT_REJECTED: { label: "Review & resubmit", url: getAppUrl("/billing/history"), kind: "notice" },
@@ -67,6 +69,16 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   CURRICULUM_ACCESS_REVOKED: { label: "See class plans", url: getAppUrl("/billing/plans"), kind: "notice" },
 };
 
+/** The in-app path of a full link, or null if it can't be read (a notice must never fail over its link). */
+function pathOf(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    return parsed.pathname + parsed.search;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Always writes the in-app notification (that's the source of truth the
  * bell/inbox reads from) and, if emailCategory is given, checks the user's
@@ -74,12 +86,25 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
  * here should never be allowed to look like the notification itself failed.
  */
 export async function createNotification(params: CreateNotificationParams) {
-  const notification = await prisma.notification.create({
-    data: { userId: params.userId, type: params.type, title: params.title, body: params.body },
-  });
+  // Payment and billing notices go to the person's Mail, not the bell, so they
+  // are not lost among everyday notifications. The email (if their preference
+  // allows) is unchanged.
+  const mailKind = MAIL_ROUTED_TYPES[params.type];
+  const cta = NOTIFICATION_CTA[params.type];
+  const notification = mailKind
+    ? await createMailMessage({
+        userId: params.userId,
+        kind: mailKind,
+        title: params.title,
+        body: params.body ?? "",
+        actionLabel: cta?.label ?? null,
+        actionHref: cta ? pathOf(cta.url) : null,
+      })
+    : await prisma.notification.create({
+        data: { userId: params.userId, type: params.type, title: params.title, body: params.body },
+      });
 
   if (params.emailCategory) {
-    const cta = NOTIFICATION_CTA[params.type];
     await maybeSendEmail(params.userId, params.emailCategory, params.title, params.body, cta).catch((err) =>
       console.error("Notification email failed (non-blocking):", err),
     );

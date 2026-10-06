@@ -158,7 +158,14 @@ export function PaymentPlanEnrollmentFlow({
     if (!selectedSlot) return;
     setLoading(true);
     setError(null);
-    const result = await enrollInPaymentPlanAction(cadence, term, selectedSlot.scheduleId, selectedSlot.chunkIndex);
+    let result: Awaited<ReturnType<typeof enrollInPaymentPlanAction>>;
+    try {
+      result = await enrollInPaymentPlanAction(cadence, term, selectedSlot.scheduleId, selectedSlot.chunkIndex);
+    } catch {
+      setLoading(false);
+      setError("Something went wrong starting your plan. Please try again.");
+      return;
+    }
     setLoading(false);
     if (!result.ok || !result.planId || !result.installmentPaymentId || result.amountCents === null) {
       setError(result.error ?? "Something went wrong starting your plan.");

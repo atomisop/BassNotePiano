@@ -44,6 +44,8 @@ function notificationHref(type: string): string | null {
       return "/billing/history";
     case "ROLE_UPDATED":
       return "/admin";
+    case "MAIL_MESSAGE":
+      return "/mail";
     case "PRACTICE_REMINDER":
     case "CURRICULUM_ACCESS_GRANTED":
       return "/dashboard";

@@ -73,7 +73,7 @@ export function Tabs<const T extends string>({
   return (
     <div
       ref={containerRef}
-      role="tablist"
+      role="group"
       aria-label={label}
       className={cn(
         "relative inline-flex max-w-full gap-1 overflow-x-auto rounded-full bg-neu-base p-1 shadow-pressed-low",
@@ -96,10 +96,8 @@ export function Tabs<const T extends string>({
               refs.current[i] = el;
             }}
             type="button"
-            role="tab"
             id={`${baseId}-tab-${item.id}`}
-            aria-selected={active}
-            tabIndex={active ? 0 : -1}
+            aria-pressed={active}
             onClick={() => onChange(item.id)}
             onKeyDown={(e) => onKeyDown(e, i)}
             className={cn(

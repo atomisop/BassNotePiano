@@ -14,6 +14,7 @@ import {
   unblockUserAction,
 } from "./actions";
 import { TwoPaneLayout, WideLayout } from "@/components/layout/PageLayouts";
+import { OwnerStarBadge, useIsOwner } from "@/components/ui/OwnerStar";
 
 interface PublicProfile {
   id: string;
@@ -31,16 +32,20 @@ interface FriendsClientProps {
 }
 
 function Avatar({ profile }: { profile: PublicProfile }) {
+  const isOwner = useIsOwner(profile.id);
   return (
-    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-neu-base shadow-raised-low">
-      {profile.image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={profile.image} alt="" className="h-full w-full object-cover" />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-small text-slate-500">
-          {(profile.name ?? profile.username ?? "?").charAt(0).toUpperCase()}
-        </div>
-      )}
+    <div className="relative shrink-0">
+      <div className="h-9 w-9 overflow-hidden rounded-full bg-neu-base shadow-raised-low">
+        {profile.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={profile.image} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-small text-slate-500">
+            {(profile.name ?? profile.username ?? "?").charAt(0).toUpperCase()}
+          </div>
+        )}
+      </div>
+      {isOwner && <OwnerStarBadge />}
     </div>
   );
 }

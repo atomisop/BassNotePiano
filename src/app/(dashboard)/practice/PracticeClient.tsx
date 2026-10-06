@@ -1,0 +1,455 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Minus, Pause, Play, Plus } from "lucide-react";
+import { Card, Eyebrow } from "@/components/ui/Card";
+import { ProgressRing } from "@/components/ui/ProgressRing";
+import { Tabs } from "@/components/ui/Tabs";
+import { useMetronome, METRONOME_MAX_BPM, METRONOME_MIN_BPM } from "@/components/scales/useMetronome";
+import {
+  FINGER_SOURCES,
+  GUITAR_EXERCISES,
+  PIANO_EXERCISES,
+  type GuitarExercise,
+  type PianoExercise,
+  type PianoSection,
+} from "@/lib/fingerExercises";
+import { DAILY_GOAL_SECONDS, FINGER_LEVELS, type FingerPracticeStatus } from "@/lib/fingerPracticeConstants";
+
+type Instrument = "PIANO" | "GUITAR";
+
+const HEARTBEAT_MS = 15_000;
+
+function mmss(totalSeconds: number): string {
+  const m = Math.floor(totalSeconds / 60);
+  const s = Math.floor(totalSeconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+const raisedKey =
+  "tap inline-flex items-center justify-center gap-2 rounded-xl bg-neu-base px-4 py-2.5 text-small font-semibold text-slate-100 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50";
+
+// ---------------------------------------------------------------------------
+// Piano: a mini keyboard with finger numbers, and the step chips
+// ---------------------------------------------------------------------------
+
+const WHITE_INDEX: Record<string, number> = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
+const KEY_COUNT = 15; // C to C to C
+
+/** Each step's key on a two-octave strip: the occurrence of that letter nearest the previous step. */
+function keyPositions(section: PianoSection): number[] {
+  const out: number[] = [];
+  let previous = 0;
+  for (const step of section.steps) {
+    const base = WHITE_INDEX[step.note];
+    const options = [base, base + 7, base + 14].filter((n) => n < KEY_COUNT);
+    const best = options.reduce((a, b) => (Math.abs(b - previous) < Math.abs(a - previous) ? b : a));
+    out.push(best);
+    previous = best;
+  }
+  return out;
+}
+
+function HandBadge({ hand }: { hand: "L" | "R" }) {
+  return (
+    <span className="inline-flex h-7 min-w-[7.5rem] items-center justify-center rounded-full bg-neu-base px-3 text-small font-semibold text-slate-100 shadow-pressed-low">
+      {hand === "R" ? "Right hand" : "Left hand"}
+    </span>
+  );
+}
+
+function PianoSectionView({ section, activeStep }: { section: PianoSection; activeStep: number | null }) {
+  const positions = useMemo(() => keyPositions(section), [section]);
+  const lit = activeStep === null ? null : activeStep % section.steps.length;
+  const litKey = lit === null ? null : positions[lit];
+  const litFinger = lit === null ? null : section.steps[lit].finger;
+
+  return (
+    <div className="rounded-2xl bg-neu-base p-4 shadow-raised-low">
+      <div className="flex items-center gap-3">
+        <HandBadge hand={section.hand} />
+        <p className="text-small text-slate-400">{section.label}</p>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-1.5">
+        {section.steps.map((step, i) => (
+          <span
+            key={i}
+            className={`flex h-12 w-10 flex-col items-center justify-center rounded-lg bg-neu-base text-slate-100 transition ${
+              lit === i ? "shadow-pressed-low ring-1 ring-signal" : "shadow-raised-low"
+            }`}
+          >
+            <span className="text-small font-semibold leading-none">{step.note}</span>
+            <span className="mt-1 text-small font-bold leading-none text-[rgb(var(--signal))]">{step.finger}</span>
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-4 flex h-20 gap-[3px]" aria-hidden>
+        {Array.from({ length: KEY_COUNT }).map((_, i) => (
+          <div
+            key={i}
+            className={`relative flex flex-1 items-end justify-center rounded-b-md pb-1 text-small font-bold transition ${
+              litKey === i ? "bg-[rgb(var(--signal))] text-[rgb(var(--signal-ink))]" : "bg-slate-200/90 text-slate-500"
+            }`}
+          >
+            {litKey === i ? litFinger : "CDEFGAB"[i % 7]}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PianoExerciseView({ exercise, activeStep }: { exercise: PianoExercise; activeStep: number | null }) {
+  return (
+    <div className="space-y-3">
+      {exercise.sections.map((section) => (
+        <PianoSectionView key={section.hand + section.label} section={section} activeStep={activeStep} />
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Guitar: a tab strip with fret numbers, the finger under each, pick direction above
+// ---------------------------------------------------------------------------
+
+function GuitarTab({ exercise, activeStep }: { exercise: GuitarExercise; activeStep: number | null }) {
+  const lit = activeStep === null ? null : activeStep % exercise.steps.length;
+  const fingerstyle = exercise.steps.some((s) => s.pickFinger);
+  const names = ["e", "B", "G", "D", "A", "E"];
+
+  return (
+    <div className="rounded-2xl bg-neu-base p-4 shadow-raised-low">
+      <p className="text-small font-semibold text-slate-100">
+        {fingerstyle ? "Picking hand: p thumb, i index, m middle, a ring" : "Fretting hand: 1 index, 2 middle, 3 ring, 4 little"}
+      </p>
+
+      <div className="mt-4 overflow-x-auto pb-1">
+        <div className="inline-flex min-w-full gap-0">
+          <div className="flex shrink-0 flex-col pt-6">
+            {names.map((n) => (
+              <span key={n} className="flex h-8 w-6 items-center justify-center text-small font-semibold text-slate-500">
+                {n}
+              </span>
+            ))}
+          </div>
+          {exercise.steps.map((step, i) => (
+            <div key={i} className="flex w-11 shrink-0 flex-col items-center">
+              <span className="flex h-6 items-center text-small font-bold text-slate-400">
+                {step.pick === "D" ? "↓" : step.pick === "U" ? "↑" : step.pickFinger ?? ""}
+              </span>
+              {[1, 2, 3, 4, 5, 6].map((str) => (
+                <div key={str} className="relative flex h-8 w-full items-center justify-center">
+                  <span className="absolute inset-x-0 top-1/2 h-px bg-slate-500/50" />
+                  {step.string === str && (
+                    <span
+                      className={`relative z-10 flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-small font-bold ${
+                        lit === i ? "bg-[rgb(var(--signal))] text-[rgb(var(--signal-ink))]" : "bg-neu-base text-slate-100 shadow-raised-low"
+                      }`}
+                    >
+                      {step.fret}
+                    </span>
+                  )}
+                </div>
+              ))}
+              <span className="mt-1 flex h-6 items-center text-small font-bold text-[rgb(var(--signal))]">
+                {step.finger === 0 ? (step.pickFinger ? "" : "open") : step.finger}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+
+export function PracticeClient({
+  initialStatus,
+  defaultInstrument,
+  onBeat,
+}: {
+  initialStatus: FingerPracticeStatus;
+  defaultInstrument: Instrument;
+  onBeat: () => Promise<FingerPracticeStatus & { justCompleted: boolean }>;
+}) {
+  const [status, setStatus] = useState<FingerPracticeStatus>(initialStatus);
+  const [instrument, setInstrument] = useState<Instrument>(defaultInstrument);
+  const [exerciseId, setExerciseId] = useState<string>(
+    defaultInstrument === "GUITAR" ? GUITAR_EXERCISES[0].id : PIANO_EXERCISES[0].id,
+  );
+  const [running, setRunning] = useState(false);
+  const [justCompleted, setJustCompleted] = useState(false);
+  const [localExtra, setLocalExtra] = useState(0);
+  const [activeStep, setActiveStep] = useState<number | null>(null);
+  const lastBeatRef = useRef<number>(0);
+  const metronome = useMetronome();
+
+  const pianoExercise = PIANO_EXERCISES.find((e) => e.id === exerciseId) ?? PIANO_EXERCISES[0];
+  const guitarExercise = GUITAR_EXERCISES.find((e) => e.id === exerciseId) ?? GUITAR_EXERCISES[0];
+  const exercise = instrument === "PIANO" ? pianoExercise : guitarExercise;
+  const stepCount = instrument === "PIANO" ? Math.max(...pianoExercise.sections.map((s) => s.steps.length)) : guitarExercise.steps.length;
+
+  function chooseInstrument(next: Instrument) {
+    setInstrument(next);
+    setExerciseId(next === "GUITAR" ? GUITAR_EXERCISES[0].id : PIANO_EXERCISES[0].id);
+    setActiveStep(null);
+  }
+
+  function chooseExercise(id: string, bpm: number) {
+    setExerciseId(id);
+    setActiveStep(null);
+    metronome.setBpm(bpm);
+  }
+
+  const beat = useCallback(async () => {
+    try {
+      const next = await onBeat();
+      setStatus(next);
+      setLocalExtra(0);
+      lastBeatRef.current = Date.now();
+      if (next.justCompleted) setJustCompleted(true);
+    } catch (err) {
+      console.error("Practice heartbeat failed (will retry):", err);
+    }
+  }, [onBeat]);
+
+  // Heartbeats only while the timer runs and the tab is in view.
+  useEffect(() => {
+    if (!running) return;
+    lastBeatRef.current = Date.now();
+    beat();
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") beat();
+    }, HEARTBEAT_MS);
+    const clock = setInterval(() => {
+      if (document.visibilityState === "visible") setLocalExtra(Math.min(20, Math.floor((Date.now() - lastBeatRef.current) / 1000)));
+    }, 1000);
+    return () => {
+      clearInterval(interval);
+      clearInterval(clock);
+    };
+  }, [running, beat]);
+
+  // Follow-along: the highlighted step advances once per beat while practicing.
+  useEffect(() => {
+    if (!running) return;
+    setActiveStep(0);
+    const ms = 60_000 / metronome.bpm;
+    const interval = setInterval(() => setActiveStep((s) => ((s ?? -1) + 1) % stepCount), ms);
+    return () => clearInterval(interval);
+  }, [running, metronome.bpm, stepCount, exerciseId]);
+
+  function toggle() {
+    if (running) {
+      setRunning(false);
+      metronome.stop();
+      setActiveStep(null);
+    } else {
+      setJustCompleted(false);
+      setRunning(true);
+      metronome.setBpm(exercise.bpm);
+      metronome.start();
+    }
+  }
+
+  const shownSeconds = status.completedToday ? DAILY_GOAL_SECONDS : Math.min(DAILY_GOAL_SECONDS, status.todaySeconds + (running ? localExtra : 0));
+  const exercises = instrument === "PIANO" ? PIANO_EXERCISES : GUITAR_EXERCISES;
+
+  return (
+    <div className="grid gap-(--space-group)">
+      <div className="pt-2">
+        <Eyebrow>Daily practice</Eyebrow>
+        <h1 className="mt-1.5 font-hero text-hero font-bold text-balance text-slate-50">Finger exercises</h1>
+      </div>
+
+      {/* ---- Today ---- */}
+      <Card>
+        <div className="flex flex-wrap items-center gap-6">
+          <ProgressRing
+            value={shownSeconds}
+            max={DAILY_GOAL_SECONDS}
+            size={112}
+            strokeWidth={9}
+            label={`Practice today: ${mmss(shownSeconds)} of ${mmss(DAILY_GOAL_SECONDS)}`}
+            caption={`${mmss(shownSeconds)} / ${mmss(DAILY_GOAL_SECONDS)}`}
+          />
+          <div className="min-w-0 flex-1">
+            <p className="text-body font-semibold text-slate-50">
+              {status.completedToday ? "Done for today" : running ? "Practicing" : "10 minutes to go"}
+            </p>
+            <p className="mt-1 text-small text-slate-400">
+              {status.completedToday ? "Your scales are unlocked." : "Scales unlock when the ring is full."}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button type="button" onClick={toggle} className={raisedKey}>
+                {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                {running ? "Pause" : status.completedToday ? "Practice more" : "Start"}
+              </button>
+              {status.completedToday && (
+                <a href="/dashboard" className={raisedKey}>
+                  Go to scales
+                </a>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+            <div>
+              <p className="text-body font-semibold tabular-nums text-slate-50">{status.streak}</p>
+              <p className="text-small text-slate-400">Day streak</p>
+            </div>
+            <div>
+              <p className="text-body font-semibold tabular-nums text-slate-50">{status.level}/7</p>
+              <p className="text-small text-slate-400">Level</p>
+            </div>
+          </div>
+        </div>
+        {justCompleted && (
+          <p className="mt-4 rounded-xl bg-neu-base px-4 py-3 text-small font-semibold text-slate-50 shadow-pressed-low">
+            10 minutes done. {"\u{1F389}"}
+          </p>
+        )}
+      </Card>
+
+      {/* ---- Exercises ---- */}
+      <div className="space-y-4">
+        <Tabs<Instrument>
+          label="Instrument"
+          value={instrument}
+          onChange={chooseInstrument}
+          items={[
+            { id: "PIANO", label: "Piano" },
+            { id: "GUITAR", label: "Guitar and bass" },
+          ]}
+        />
+
+        <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {exercises.map((e) => (
+            <button
+              key={e.id}
+              type="button"
+              onClick={() => chooseExercise(e.id, e.bpm)}
+              aria-pressed={e.id === exerciseId}
+              className={`tap shrink-0 rounded-xl bg-neu-base px-4 py-2.5 text-small font-semibold transition ${
+                e.id === exerciseId ? "text-[rgb(var(--signal))] shadow-pressed-low" : "text-slate-300 shadow-raised-low hover:shadow-raised-mid"
+              }`}
+            >
+              {e.title}
+            </button>
+          ))}
+        </div>
+
+        <Card>
+          <h2 className="text-body font-semibold text-slate-50">{exercise.title}</h2>
+          <p className="mt-1 text-small text-slate-400">{exercise.summary}</p>
+          <ol className="mt-4 space-y-2 text-small text-slate-300">
+            {exercise.how.map((line, i) => (
+              <li key={i} className="flex gap-2.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-neu-base text-small font-bold text-[rgb(var(--signal))] shadow-pressed-low">
+                  {i + 1}
+                </span>
+                {line}
+              </li>
+            ))}
+          </ol>
+        </Card>
+
+        {instrument === "PIANO" ? (
+          <PianoExerciseView exercise={pianoExercise} activeStep={activeStep} />
+        ) : (
+          <GuitarTab exercise={guitarExercise} activeStep={activeStep} />
+        )}
+      </div>
+
+      {/* ---- Metronome ---- */}
+      <Card>
+        <Eyebrow>Metronome</Eyebrow>
+        <div className="mt-3 flex flex-wrap items-center gap-4">
+          <button
+            type="button"
+            onClick={() => (metronome.running ? metronome.stop() : metronome.start())}
+            disabled={!metronome.supported}
+            className={raisedKey}
+          >
+            {metronome.running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            {metronome.running ? "Stop" : "Start"}
+          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Slower"
+              onClick={() => metronome.setBpm(Math.max(METRONOME_MIN_BPM, metronome.bpm - 4))}
+              className={`${raisedKey} h-11 w-11 !px-0`}
+            >
+              <Minus className="h-4 w-4" />
+            </button>
+            <div className="w-24 rounded-xl bg-neu-base py-2 text-center shadow-pressed-low">
+              <p className="text-body font-semibold tabular-nums text-slate-50">{metronome.bpm}</p>
+              <p className="text-small text-slate-500">BPM</p>
+            </div>
+            <button
+              type="button"
+              aria-label="Faster"
+              onClick={() => metronome.setBpm(Math.min(METRONOME_MAX_BPM, metronome.bpm + 4))}
+              className={`${raisedKey} h-11 w-11 !px-0`}
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="flex items-center gap-1.5" aria-hidden>
+            {Array.from({ length: metronome.beatsPerBar }).map((_, i) => (
+              <span
+                key={i}
+                className={`h-3 w-3 rounded-full transition ${metronome.running && metronome.beat === i ? "bg-[rgb(var(--signal))]" : "bg-neu-base shadow-pressed-low"}`}
+              />
+            ))}
+          </div>
+        </div>
+      </Card>
+
+      {/* ---- Levels ---- */}
+      <Card>
+        <Eyebrow>Levels</Eyebrow>
+        <p className="mt-2 text-small text-slate-300">
+          {status.next ? `${status.next.daysToGo} more day${status.next.daysToGo === 1 ? "" : "s"} to Level ${status.next.level}, ${status.next.label}` : "Every level earned"}
+        </p>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {FINGER_LEVELS.map((l) => {
+            const earned = status.level >= l.level;
+            return (
+              <div
+                key={l.level}
+                className={`flex items-center justify-between rounded-xl bg-neu-base px-4 py-3 ${earned ? "shadow-pressed-low" : "shadow-raised-low"}`}
+              >
+                <div>
+                  <p className={`text-small font-semibold ${earned ? "text-[rgb(var(--signal))]" : "text-slate-200"}`}>
+                    Level {l.level}: {l.label}
+                  </p>
+                  <p className="text-small text-slate-500">{l.days} days in a row</p>
+                </div>
+                <span className="text-small font-semibold text-slate-400">{earned ? "Earned" : `${Math.min(status.streak, l.days)}/${l.days}`}</span>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+
+      <p className="text-small text-slate-600">
+        Sources:{" "}
+        {FINGER_SOURCES.map((s, i) => (
+          <span key={s.url}>
+            {i > 0 && " · "}
+            <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline-offset-4 hover:underline">
+              {s.label}
+            </a>
+          </span>
+        ))}
+      </p>
+    </div>
+  );
+}

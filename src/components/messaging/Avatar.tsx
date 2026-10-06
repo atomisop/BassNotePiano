@@ -1,12 +1,31 @@
-export function Avatar({ image, label, className = "h-9 w-9" }: { image: string | null; label: string; className?: string }) {
+"use client";
+
+import { OwnerStarBadge, useIsOwner } from "@/components/ui/OwnerStar";
+
+export function Avatar({
+  image,
+  label,
+  className = "h-9 w-9",
+  userId,
+}: {
+  image: string | null;
+  label: string;
+  className?: string;
+  /** Whose avatar this is, so the owner's gets its gold star. */
+  userId?: string;
+}) {
+  const isOwner = useIsOwner(userId);
   return (
-    <div className={`shrink-0 overflow-hidden rounded-full bg-neu-base shadow-raised-low ${className}`}>
-      {image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt="" className="h-full w-full object-cover" />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-slate-500">{label.charAt(0).toUpperCase()}</div>
-      )}
+    <div className="relative shrink-0">
+      <div className={`overflow-hidden rounded-full bg-neu-base shadow-raised-low ${className}`}>
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={image} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-slate-500">{label.charAt(0).toUpperCase()}</div>
+        )}
+      </div>
+      {isOwner && <OwnerStarBadge />}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import { OwnerStarBadge } from "@/components/ui/OwnerStar";
 
 // Same glyph AccountSettings.tsx's own "Sign out" row uses (TAB_ICONS.logout)
 // — one logout icon across the app, not a second one invented here.
@@ -13,6 +14,8 @@ export interface ProfileMenuProps {
   username: string | null;
   email: string | null;
   image: string | null;
+  /** The studio owner's avatar carries a small gold star. */
+  isOwner?: boolean;
   /** Appended after the trigger's base sizing classes so a caller in a
       different-sized row (e.g. MarketingNav's h-9 pills) can fit in with
       its neighbors — `!`-prefixed the same way MarketingNav's own primary
@@ -31,7 +34,7 @@ export interface ProfileMenuProps {
  * TopBar's ProfileAvatarLink) since `image` is deliberately kept out of the
  * JWT/session.
  */
-export function ProfileMenu({ name, username, email, image, triggerClassName }: ProfileMenuProps) {
+export function ProfileMenu({ name, username, email, image, isOwner = false, triggerClassName }: ProfileMenuProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -71,7 +74,7 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
         aria-expanded={open}
         data-tour="nav-profile"
         onClick={() => setOpen((v) => !v)}
-        className={`tap flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neu-base p-[3px] transition ${
+        className={`tap relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neu-base p-[3px] transition ${
           open ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
         } ${triggerClassName ?? ""}`}
       >
@@ -83,6 +86,7 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
             <span className="flex h-full w-full items-center justify-center text-small text-[rgb(var(--c-s-50))]">{initial}</span>
           )}
         </span>
+        {isOwner && <OwnerStarBadge />}
       </button>
 
       {open && (
@@ -116,13 +120,6 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
 
           <div className="my-1.5 border-t border-ink/10" />
 
-          <Link
-            href="/"
-            onClick={() => setOpen(false)}
-            className="tap block rounded-lg px-2.5 py-2 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:bg-slate-800/60"
-          >
-            Website
-          </Link>
           <Link
             href="/dashboard"
             onClick={() => setOpen(false)}

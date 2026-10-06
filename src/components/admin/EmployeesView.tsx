@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { EmployeeRow } from "@/lib/admin";
 import type { AdminNotificationKind } from "@/lib/adminNotifications";
 import { EmployeeList } from "@/components/admin/EmployeeList";
@@ -28,6 +28,13 @@ export function EmployeesView({ employees, currentUserId, onRevoke, notification
     Object.fromEntries((notifications ?? []).map((row) => [row.kind, row.enabled])),
   );
   const [error, setError] = useState<string | null>(null);
+
+  // Pick up changes made elsewhere (another tab, another device) when the page data refreshes.
+  const signature = (notifications ?? []).map((row) => `${row.kind}:${row.enabled}`).join(",");
+  useEffect(() => {
+    setValues(Object.fromEntries((notifications ?? []).map((row) => [row.kind, row.enabled])));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signature]);
 
   async function handleToggle(kind: AdminNotificationKind, enabled: boolean) {
     setValues((current) => ({ ...current, [kind]: enabled }));

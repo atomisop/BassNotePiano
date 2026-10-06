@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { pitchClassOf } from "@/lib/music-theory";
 
 /**
@@ -109,6 +109,11 @@ export function Fretboard({
   // The string and fret the player last pressed, so a tapped spot lights
   // itself even where the same pitch also sits on another string.
   const [pressed, setPressed] = useState<{ stringIndex: number; fret: number; midi: number } | null>(null);
+
+  // A tapped spot only stays lit while its note is the one sounding.
+  useEffect(() => {
+    if (pressed && pressed.midi !== activeMidi) setPressed(null);
+  }, [activeMidi, pressed]);
 
   // The one spot lit while a scale plays: the same pitch can sit on two or
   // three strings, so pick the lowest fret (a pressed spot wins when it is

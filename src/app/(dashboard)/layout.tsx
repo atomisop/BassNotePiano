@@ -14,6 +14,8 @@ import { WhatsNewModal } from "@/components/layout/WhatsNewModal";
 import { AnnouncementBanner } from "@/components/layout/AnnouncementBanner";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { CommandMenu } from "@/components/layout/CommandMenu";
+import { OwnerStarProvider } from "@/components/ui/OwnerStar";
+import { isOwnerEmail, OWNER_EMAIL } from "@/lib/adminNotifications";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerAuthSession();
@@ -41,8 +43,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const shouldShowWhatsNew =
     !shouldShowTour && (!user?.lastSeenPatchNotesAt || user.lastSeenPatchNotesAt < new Date(LATEST_ENTRY.date));
   const isAdmin = session.user.role === "ADMIN";
+  const isOwner = isAdmin && isOwnerEmail(session.user.email);
+  const owner = await prisma.user.findUnique({ where: { email: OWNER_EMAIL }, select: { id: true } });
 
   return (
+    <OwnerStarProvider ownerId={owner?.id ?? null}>
     <div data-surface="app" className="fixed inset-0 flex overflow-hidden bg-neu-base">
       {/* No photographic backdrop behind the app shell, deliberately. The
           previous system wallpapered every authenticated page with a piano
@@ -67,7 +72,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           64px so AnnouncementBanner/main start right below it instead of
           rendering underneath it. */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden pt-16">
-        <TopBar isAdmin={isAdmin} />
+        <TopBar isAdmin={isAdmin} isOwner={isOwner} />
         <AnnouncementBanner announcement={activeAnnouncement} />
         {/* pb-28 at every width, not just md: — the floating AppDock now
             covers phone widths too (fixed, not in flow), so this reserved
@@ -86,5 +91,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <OnboardingTour autoShow={shouldShowTour} />
       </Suspense>
     </div>
+    </OwnerStarProvider>
   );
 }

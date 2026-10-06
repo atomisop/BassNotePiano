@@ -5,6 +5,19 @@
 
 import { CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
 
+/** "Thursday, Oct 15, 11:00 AM ET": class times in notices and emails always read in Eastern time, wherever the server runs. */
+export function formatEtDateTime(date: Date): string {
+  const text = date.toLocaleString("en-US", {
+    timeZone: "America/New_York",
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return `${text} ET`;
+}
+
 export function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }

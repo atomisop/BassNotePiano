@@ -1217,8 +1217,29 @@
 .ai-orbit {
   animation: ai-orbit 10s linear infinite;
 }
-@media (prefers-reduced-motion: reduce) {
+/* On a computer the arc rests until the pointer is over the button, then orbits for as long as it stays. Phones keep the 10-second cycle above. */
+@keyframes ai-orbit-hover {
+  from {
+    transform: rotate(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: rotate(360deg);
+    opacity: 1;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
   .ai-orbit {
+    animation: none;
+    opacity: 0;
+  }
+  .ai-orbit-host:hover .ai-orbit {
+    animation: ai-orbit-hover 2.5s linear infinite;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-orbit,
+  .ai-orbit-host:hover .ai-orbit {
     animation: none;
     opacity: 0;
   }

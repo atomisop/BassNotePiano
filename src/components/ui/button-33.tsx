@@ -94,7 +94,7 @@ const GenerateAIButton = ({
             }
           : undefined
       }
-      className={`relative h-10 gap-2 overflow-hidden rounded-full border-transparent px-6 text-primary cursor-pointer ${className}`}
+      className={`relative h-10 gap-2 overflow-hidden rounded-full border-transparent px-6 text-primary cursor-pointer ${calm ? "ai-orbit-host" : ""} ${className}`}
     >
       {/* Continuously animated gradient border */}
       <AiBorder spin={spin} surface={surface} glow={glow} plain={plain} calm={calm} />

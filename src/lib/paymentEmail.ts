@@ -132,9 +132,15 @@ async function approveFromReceipt(paymentId: string, receipt: { id: string; send
     await notifyAutoApproved(paymentId);
     return true;
   } catch (err) {
-    console.error("Email approval failed, releasing the receipt", err);
-    await prisma.processedPaymentEmail.updateMany({ where: { id: receipt.id, paymentId }, data: { paymentId: null } });
-    return false;
+    console.error("Email approval step failed", err);
+    // Only give the receipt back if the payment was NOT approved: once it is VERIFIED the
+    // receipt is spent, and releasing it could approve a second payment with the same email.
+    const state = await prisma.zellePayment.findUnique({ where: { id: paymentId }, select: { status: true } });
+    if (state?.status !== "VERIFIED") {
+      await prisma.processedPaymentEmail.updateMany({ where: { id: receipt.id, paymentId }, data: { paymentId: null } });
+      return false;
+    }
+    return true;
   }
 }
 

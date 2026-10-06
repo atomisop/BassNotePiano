@@ -24,7 +24,7 @@ import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
  * their locked-in time: it is paid by the plan and auto-booked, so there is
  * nothing to buy or book, only a way to move or cancel a single class up to 24
  * hours ahead. "Extra sessions" is the booking calendar, for extra time with the
- * teacher on top of that, paid with credits at $40 each. Everyone else (no
+ * teacher on top of that, paid with credits at $55 each. Everyone else (no
  * active plan, between plans) goes straight to the booking calendar.
  */
 export default async function LessonsPage({ searchParams }: { searchParams: { tab?: string } }) {

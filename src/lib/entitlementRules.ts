@@ -58,13 +58,6 @@ export function resolveEntitlement(input: EntitlementInputs, now: Date = new Dat
   return { kind: "NONE", until: null };
 }
 
-/** Same check middleware runs against the JWT's cached copy, where `until` is epoch ms. */
-export function isEntitlementActive(kind: CurriculumAccessKind | undefined, untilMs: number | null | undefined, nowMs: number): boolean {
-  if (!kind || kind === "NONE") return false;
-  if (kind === "ADMIN" || kind === "COMPED") return true;
-  return typeof untilMs === "number" && untilMs > nowMs;
-}
-
 /** Full (drip-gated) curriculum access, as opposed to the trial's fixed slice. */
 export function isFullAccess(kind: CurriculumAccessKind): boolean {
   return kind === "ADMIN" || kind === "PAID" || kind === "COMPED";

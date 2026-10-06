@@ -1,5 +1,5 @@
 import { getAdminRecipients } from "@/lib/adminNotifications";
-import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
+import { addMinutesToHHmm, formatEtDateTime } from "@/lib/classScheduleLabels";
 import type { AttendanceStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
@@ -92,6 +92,14 @@ function todayInEt(): { year: number; month: number; day: number } {
   }).formatToParts(new Date());
   const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
   return { year: get("year"), month: get("month"), day: get("day") };
+}
+
+/** The instant this week ends: next Monday 00:00 in ET. The admin Attendance icon only lists classes before it, so it rolls to the new week on its own. */
+export function endOfThisWeekEt(): Date {
+  const { year, month, day } = todayInEt();
+  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay(); // 0 = Sunday
+  const daysUntilMonday = ((8 - weekday) % 7) || 7;
+  return etWallTimeToUtc(year, month, day + daysUntilMonday, 0, 0);
 }
 
 function parseStartTime(startTime: string): { hour: number; minute: number } {
@@ -1027,8 +1035,16 @@ export async function createReservedBookingIfAbsent(
     where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId, occurrenceDate } },
   });
   if (existing?.status === "SCHEDULED") return null;
-  // The student cancelled this one on purpose (24+ hours ahead): do not book it again.
-  if (existing?.status === "CANCELED" && existing.canceledReason === SKIPPED_BY_STUDENT) return null;
+  // Canceled on purpose, by the student (24+ hours ahead) or by the studio: do not book it again.
+  // A plan-wide cancel leaves no reason, so those can still be booked by a new plan.
+  if (existing?.status === "CANCELED" && existing.canceledReason !== null) return null;
+
+  // One class a day: another SCHEDULED class the same day wins over the weekly slot.
+  const sameDay = await db.classBooking.findFirst({
+    where: { studentId, occurrenceDate, status: "SCHEDULED", NOT: { scheduleId } },
+    select: { id: true },
+  });
+  if (sameDay) return null;
 
   // Defense-in-depth against a different student somehow already holding
   // this exact instant despite the enrollment-time conflict check
@@ -1132,11 +1148,6 @@ export async function bookExtraSessionOccurrence(
     await db.classBooking.create({ data: { studentId, scheduleId, occurrenceDate, ...data } });
   }
   return true;
-}
-
-export async function getClassCreditBalance(userId: string): Promise<number> {
-  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { classCredits: true } });
-  return user.classCredits;
 }
 
 /** Called from approveZellePayment once a CLASS_CREDITS payment verifies.
@@ -1244,7 +1255,7 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
     userId: studentId,
     type: "LESSON_BOOKING_CANCELED",
     title: "Class canceled",
-    body: `Your ${booking.scheduledAt.toLocaleString()} class was canceled. No credits were charged.`,
+    body: `Your ${formatEtDateTime(booking.scheduledAt)} class was canceled. No credits were charged.`,
     emailCategory: "social",
   });
 
@@ -1422,7 +1433,7 @@ export async function rescheduleClassBooking(
     userId: studentId,
     type: "LESSON_BOOKING_CANCELED",
     title: "Class rescheduled",
-    body: `Your class moved to ${newScheduledAt.toLocaleString()}. No credits were charged for the change.`,
+    body: `Your class moved to ${formatEtDateTime(newScheduledAt)}. No credits were charged for the change.`,
     emailCategory: "social",
   });
   notifyAdminsOfBooking(studentId, newSchedule, newScheduledAt, credits).catch((err) =>
@@ -1553,7 +1564,10 @@ export async function getBookingFeed(limit = 300): Promise<BookingFeedRow[]> {
     orderBy: { scheduledAt: "asc" },
     take: limit,
   });
-  const rows: BookingFeedRow[] = bookings.map((b) => ({
+  const weekEnd = endOfThisWeekEt().getTime();
+  const rows: BookingFeedRow[] = bookings
+    .filter((b) => b.scheduledAt.getTime() < weekEnd) // this week, plus any past class still waiting for an attendance call
+    .map((b) => ({
     bookingId: b.id,
     studentName: b.student.name,
     studentEmail: b.student.email,
@@ -1645,7 +1659,12 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
     });
   }
 
-  return Array.from(groups.values());
+  // Soonest first: what is coming up leads, then the recent past, newest first.
+  const all = Array.from(groups.values());
+  const now = Date.now();
+  const upcoming = all.filter((g) => g.scheduledAt.getTime() >= now).sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
+  const past = all.filter((g) => g.scheduledAt.getTime() < now).sort((a, b) => b.scheduledAt.getTime() - a.scheduledAt.getTime());
+  return [...upcoming, ...past];
 }
 
 /**
@@ -1746,7 +1765,8 @@ export async function adminCancelClassBooking(bookingId: string, reason?: string
 
   await prisma.classBooking.update({
     where: { id: bookingId },
-    data: { status: "CANCELED", refunded: true, canceledReason: trimmedReason },
+    // Always a reason, so a weekly-slot job never brings a class the studio canceled back.
+    data: { status: "CANCELED", refunded: true, canceledReason: trimmedReason ?? "Canceled by the studio" },
   });
 
   await createNotification({
@@ -1754,8 +1774,8 @@ export async function adminCancelClassBooking(bookingId: string, reason?: string
     type: "LESSON_BOOKING_CANCELED",
     title: "Class canceled",
     body: trimmedReason
-      ? `Your ${booking.scheduledAt.toLocaleString()} class was canceled by the studio (${trimmedReason}). No credits were charged.`
-      : `Your ${booking.scheduledAt.toLocaleString()} class was canceled by the studio. No credits were charged.`,
+      ? `Your ${formatEtDateTime(booking.scheduledAt)} class was canceled by the studio (${trimmedReason}). No credits were charged.`
+      : `Your ${formatEtDateTime(booking.scheduledAt)} class was canceled by the studio. No credits were charged.`,
     emailCategory: "social",
   });
 }

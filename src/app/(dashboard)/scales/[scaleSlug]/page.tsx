@@ -8,6 +8,8 @@ import { TRIAL_LESSON_COUNT } from "@/lib/entitlementRules";
 import { LESSON_VARIANTS, SCALE_CONTENT } from "@/lib/scale-content";
 import { generateScaleQuiz, stripAnswers } from "@/lib/quiz";
 import { ScaleWorkspace } from "./components/ScaleWorkspace";
+import { FingerPracticeGate } from "./components/FingerPracticeGate";
+import { DAILY_GOAL_SECONDS, getFingerPracticeStatus, hasCompletedFingerPracticeToday } from "@/lib/fingerPractice";
 import { markLessonCompleteAction, markPracticeCompletedAction, saveScaleNoteAction, submitQuizAction } from "./actions";
 
 export default async function ScalePage({ params }: { params: { scaleSlug: string } }) {
@@ -21,6 +23,12 @@ export default async function ScalePage({ params }: { params: { scaleSlug: strin
     // No plan: the way forward is a class plan. A paying student whose
     // teacher hasn't released this scale yet just goes back to the roadmap.
     redirect(access.lockedBecause === "not-yet-approved" ? "/dashboard" : "/billing/plans");
+  }
+
+  // Lessons open only after today's 10 minutes of finger exercises. Admins are exempt.
+  if (session.user.role !== "ADMIN" && !(await hasCompletedFingerPracticeToday(session.user.id))) {
+    const status = await getFingerPracticeStatus(session.user.id);
+    return <FingerPracticeGate todaySeconds={status.todaySeconds} goalSeconds={DAILY_GOAL_SECONDS} />;
   }
 
   const { scaleGroup } = access;

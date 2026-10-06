@@ -155,14 +155,6 @@ export function spellScale(root: string, formula: string): SpelledScale {
 export const CHROMATIC_FORMULA = "1-b2-2-b3-3-4-b5-5-b6-6-b7-7";
 /** Ascending chromatic notes use sharps; descending uses flats (lesson PDF). */
 const CHROMATIC_ASCENDING_DEGREES = ["1", "#1", "2", "#2", "3", "4", "#4", "5", "#5", "6", "#6", "7"];
-export const CHROMATIC_DESCENDING_DEGREES = ["1", "7", "b7", "6", "b6", "5", "b5", "4", "3", "b3", "2", "b2"];
-
-/** Spells a formula across all 12 curriculum keys — powers the Transposition Dashboard. */
-export function getScaleInAllKeys(formula: string): Record<RootKey, string[]> {
-  return Object.fromEntries(
-    ROOT_KEYS.map((root) => [root, spellScale(root, formula).notes]),
-  ) as Record<RootKey, string[]>;
-}
 
 // ---------------------------------------------------------------------------
 // Chords — native triads/sevenths built on a scale degree
@@ -223,31 +215,6 @@ export function buildChordOnDegree(
   return { degree: degreeToken, quality, rootNote, symbol: `${rootNote}${symbol}`, notes };
 }
 
-/** Builds the same native chord across all 12 curriculum keys. */
-export function getChordInAllKeys(
-  degreeToken: string,
-  quality: ChordQualityKey,
-): Record<RootKey, NativeChord> {
-  return Object.fromEntries(
-    ROOT_KEYS.map((root) => [root, buildChordOnDegree(root, degreeToken, quality)]),
-  ) as Record<RootKey, NativeChord>;
-}
-
 // ---------------------------------------------------------------------------
 // Chromatic scale — curated reference data (see file header)
 // ---------------------------------------------------------------------------
-
-export const CHROMATIC_SCALES: Record<RootKey, string[]> = {
-  C: ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
-  G: ["G", "G#", "A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#"],
-  D: ["D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "C#"],
-  A: ["A", "A#", "B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#"],
-  E: ["E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "C#", "D", "D#"],
-  B: ["B", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#"],
-  "F#": ["F#", "G", "G#", "A", "A#", "B", "C", "C#", "D", "D#", "E", "F"],
-  Db: ["Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B", "C"],
-  Ab: ["Ab", "A", "Bb", "B", "C", "Db", "D", "Eb", "E", "F", "Gb", "G"],
-  Eb: ["Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B", "C", "Db", "D"],
-  Bb: ["Bb", "B", "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A"],
-  F: ["F", "Gb", "G", "Ab", "A", "Bb", "B", "C", "Db", "D", "Eb", "E"],
-};

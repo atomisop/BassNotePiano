@@ -314,11 +314,3 @@ export async function lockScaleForUser(userId: string, scaleSlug: string) {
     data: { unlockedAt: null, status: "LOCKED" },
   });
 }
-
-/** Admin-only counterpart to grantCurriculumAccess — revokes lifetime access. */
-export async function revokeCurriculumAccess(userId: string) {
-  return prisma.user.update({
-    where: { id: userId },
-    data: { hasCurriculumAccess: false, curriculumUnlockedAt: null },
-  });
-}

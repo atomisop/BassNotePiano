@@ -13,7 +13,7 @@ import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
 import { readConsent, CONSENT_DECIDED_EVENT } from "@/lib/cookieConsent";
 import { FULLSCREEN_NAV_EVENT } from "@/lib/overlayNav";
-import { ATOM_TRIGGER_EVENT, OPEN_ATOM_EVENT, isAtomTriggerPresent } from "@/lib/atomTrigger";
+import { ATOM_TRIGGER_EVENT, OPEN_ATOM_CASE_EVENT, OPEN_ATOM_EVENT, isAtomTriggerPresent } from "@/lib/atomTrigger";
 
 /**
  * Atom — the "ask me anything" assistant, floating on every page (mounted
@@ -430,6 +430,18 @@ export function AssistantWidget() {
     };
   }, []);
   const openPanelRef = useRef<() => void>(() => {});
+
+  // A support case opened from Mail: switch to that live thread and show the panel.
+  useEffect(() => {
+    function onCase(e: Event) {
+      const id = (e as CustomEvent<string>).detail;
+      if (typeof id !== "string" || !id) return;
+      setActiveEscalationId(id);
+      openPanelRef.current();
+    }
+    window.addEventListener(OPEN_ATOM_CASE_EVENT, onCase);
+    return () => window.removeEventListener(OPEN_ATOM_CASE_EVENT, onCase);
+  }, []);
 
   // Where the top-bar Ask AI button sits, so the greeting bubble can hang right
   // under it like a thought. Re-measured on resize and whenever the bubble is

@@ -132,26 +132,6 @@ export async function getGroupsAction(): Promise<GroupSummary[]> {
   return getGroups(userId);
 }
 
-export async function getGroupDetailAction(groupId: string) {
-  const userId = await requireUserId();
-  try {
-    const group = await getGroupDetail(userId, groupId);
-    return {
-      ok: true as const,
-      id: group.id,
-      name: group.name,
-      members: group.members.map((m) => ({
-        userId: m.userId,
-        name: m.user.name,
-        username: m.user.username,
-        image: m.user.image,
-      })),
-    };
-  } catch (err) {
-    return { ok: false as const, error: err instanceof SocialError || err instanceof RateLimitError ? err.message : "Something went wrong." };
-  }
-}
-
 export async function getGroupMessagesAction(groupId: string): Promise<GroupMessageRow[]> {
   const userId = await requireUserId();
   try {

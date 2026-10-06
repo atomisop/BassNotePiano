@@ -43,7 +43,14 @@ export function BuyCreditsFlow({ zelleHandle }: { zelleHandle: string }) {
   async function handleContinue() {
     setLoading(true);
     setError(null);
-    const result = await createExtraClassesPaymentAction(quantity);
+    let result: Awaited<ReturnType<typeof createExtraClassesPaymentAction>>;
+    try {
+      result = await createExtraClassesPaymentAction(quantity);
+    } catch {
+      setLoading(false);
+      setError("Something went wrong. Please try again.");
+      return;
+    }
     setLoading(false);
     if (!result.ok || !result.id || !result.status || result.amountCents === null) {
       setError(result.error ?? "Something went wrong. Please try again.");

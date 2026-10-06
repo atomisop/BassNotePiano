@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Check, ChevronDown, ClipboardCheck, X as XIcon } from "lucide-react";
-import { adminCancelBookingAction, getBookingFeedAction, markAttendanceAction } from "@/app/(dashboard)/admin/schedule/actions";
+import { adminCancelBookingAction, adminCancelWaitingSubscriptionAction, getBookingFeedAction, markAttendanceAction } from "@/app/(dashboard)/admin/schedule/actions";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
 const POLL_INTERVAL_MS = 30_000;
@@ -72,6 +72,9 @@ export function AdminAttendanceQuickPanel() {
   const [toggled, setToggled] = useState<Record<string, boolean>>({});
   // Ticks so the greyed-out buttons light up on their own as a class nears.
   const [now, setNow] = useState(() => Date.now());
+  // Rows just marked or canceled stay hidden for a minute, so a refresh that was already
+  // in flight (it still lists them) cannot bring them back.
+  const removedRef = useRef<Map<string, number>>(new Map());
   const wrapperRef = useRef<HTMLDivElement>(null);
   // The panel is portaled to document.body, so it is never a DOM descendant of
   // wrapperRef; the outside-click handler has to check both.
@@ -82,7 +85,15 @@ export function AdminAttendanceQuickPanel() {
   async function refresh() {
     try {
       const found = await getBookingFeedAction();
-      setRows(found.map((r) => ({ ...r, scheduledAt: new Date(r.scheduledAt).toISOString() })));
+      const cutoff = Date.now() - 60_000;
+      removedRef.current.forEach((at, id) => {
+        if (at < cutoff) removedRef.current.delete(id);
+      });
+      setRows(
+        found
+          .filter((r) => !removedRef.current.has(r.bookingId))
+          .map((r) => ({ ...r, scheduledAt: new Date(r.scheduledAt).toISOString() })),
+      );
     } catch (err) {
       console.error("Class bookings refresh failed (non-blocking, will retry):", err);
     }
@@ -146,13 +157,16 @@ export function AdminAttendanceQuickPanel() {
       map.set(key, group);
     }
     return Array.from(map.values());
-  }, [rows]);
+    // The clock's day is a dependency so "Today" and "Tomorrow" roll over at midnight on their own.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, dayKeyOf(new Date(now).toISOString())]);
 
   async function handleMark(bookingId: string, attendance: "PRESENT" | "NO_SHOW") {
     setBusyId(bookingId);
     setError(null);
     try {
       await markAttendanceAction(bookingId, attendance);
+      removedRef.current.set(bookingId, Date.now());
       setRows((prev) => prev.filter((r) => r.bookingId !== bookingId));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -170,7 +184,27 @@ export function AdminAttendanceQuickPanel() {
         setError(result.error);
         return;
       }
+      removedRef.current.set(bookingId, Date.now());
       setRows((prev) => prev.filter((r) => r.bookingId !== bookingId));
+      setConfirmCancelId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleCancelWaiting(rowId: string) {
+    setBusyId(rowId);
+    setError(null);
+    try {
+      const result = await adminCancelWaitingSubscriptionAction(rowId.replace(/^plan:/, ""));
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      removedRef.current.set(rowId, Date.now());
+      setRows((prev) => prev.filter((r) => r.bookingId !== rowId));
       setConfirmCancelId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -223,7 +257,7 @@ export function AdminAttendanceQuickPanel() {
           >
             <div className="flex items-start justify-between gap-3 px-1">
               <div>
-                <p className="text-body font-semibold text-slate-100">Class bookings</p>
+                <p className="text-body font-semibold text-slate-100">Class bookings this week</p>
                 <p className="text-small text-slate-500">
                   {rows.length} booking{rows.length === 1 ? "" : "s"}
                   {readyCount > 0 ? ` · ${readyCount} ready` : ""}
@@ -243,7 +277,7 @@ export function AdminAttendanceQuickPanel() {
             {loading && rows.length === 0 ? (
               <p className="mt-3 px-1 text-small text-slate-500">Loading…</p>
             ) : groups.length === 0 ? (
-              <p className="mt-3 px-1 text-small text-slate-500">No bookings coming up.</p>
+              <p className="mt-3 px-1 text-small text-slate-500">No bookings left this week.</p>
             ) : (
               <div className="mt-3 space-y-2.5">
                 {groups.map((group) => {
@@ -280,18 +314,56 @@ export function AdminAttendanceQuickPanel() {
                         <div className="mt-1.5 space-y-1.5 rounded-xl bg-neu-base p-1.5 shadow-pressed-low">
                           {group.rows.map((r) => {
                             if (r.awaitingPayment) {
+                              const waitingBusy = busyId === r.bookingId;
+                              const waitingConfirming = confirmCancelId === r.bookingId;
                               return (
-                                <div key={r.bookingId} className="flex items-center gap-2 rounded-lg bg-neu-base p-2.5 shadow-raised-low">
-                                  <div className="min-w-0 flex-1">
-                                    <p className="truncate text-small font-medium text-slate-100">{r.studentName ?? r.studentEmail}</p>
-                                    <p className="truncate text-small text-slate-500">
-                                      {timeOf(r.scheduledAt)}
-                                      {r.scheduleLabel ? ` · ${r.scheduleLabel}` : ""} · every week
-                                    </p>
+                                <div key={r.bookingId} className="rounded-lg bg-neu-base p-2.5 shadow-raised-low">
+                                  <div className="flex items-center gap-2">
+                                    <div className="min-w-0 flex-1">
+                                      <p className="truncate text-small font-medium text-slate-100">{r.studentName ?? r.studentEmail}</p>
+                                      <p className="truncate text-small text-slate-500">
+                                        {timeOf(r.scheduledAt)}
+                                        {r.scheduleLabel ? ` · ${r.scheduleLabel}` : ""} · every week
+                                      </p>
+                                    </div>
+                                    <span className="shrink-0 rounded-full bg-neu-base px-2.5 py-1 text-small font-medium text-slate-300 shadow-pressed-low">
+                                      Waiting for payment
+                                    </span>
+                                    <button
+                                      type="button"
+                                      disabled={waitingBusy}
+                                      onClick={() => setConfirmCancelId(waitingConfirming ? null : r.bookingId)}
+                                      aria-label={`Cancel subscription for ${r.studentName ?? r.studentEmail}`}
+                                      title="Cancel this subscription"
+                                      className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500 text-white shadow-raised-low transition hover:bg-red-400 active:shadow-pressed-low disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      <XIcon className="h-4 w-4" strokeWidth={2.5} />
+                                    </button>
                                   </div>
-                                  <span className="shrink-0 rounded-full bg-neu-base px-2.5 py-1 text-small font-medium text-slate-300 shadow-pressed-low">
-                                    Waiting for payment
-                                  </span>
+                                  {waitingConfirming && (
+                                    <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-neu-base px-2.5 py-2 shadow-pressed-low">
+                                      <p className="text-small text-slate-300">Cancel this subscription? The student is told and the time opens up.</p>
+                                      <div className="flex shrink-0 gap-1.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => setConfirmCancelId(null)}
+                                          disabled={waitingBusy}
+                                          className="tap rounded-lg px-2.5 py-1.5 text-small font-medium text-slate-300 bg-neu-base shadow-raised-low active:shadow-pressed-low disabled:opacity-50"
+                                        >
+                                          Keep
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleCancelWaiting(r.bookingId)}
+                                          disabled={waitingBusy}
+                                          className="tap flex items-center gap-1 rounded-lg bg-red-500 px-2.5 py-1.5 text-small font-semibold text-white shadow-raised-low hover:bg-red-400 disabled:opacity-50"
+                                        >
+                                          {waitingBusy && <MorphingSquare size={11} />}
+                                          Cancel subscription
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               );
                             }
