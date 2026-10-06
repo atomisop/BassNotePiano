@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import type { VerificationPurpose } from "@prisma/client";
+import { SCALE_GROUPS } from "@/lib/curriculum";
 
 // Falls back to the actual verified Resend sending domain (a subdomain, not
 // the root domain; see the deployment notes) so a missing env var fails
@@ -350,11 +351,51 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
 export async function sendWelcomeEmail(to: string, name: string | null) {
   const firstName = name?.trim().split(" ")[0];
   const greeting = firstName ? `Welcome, ${escapeHtml(firstName)}!` : "Welcome!";
-  const body =
-    "Your account is verified and ready to go. Explore the six-scale Ethiopian curriculum, book a live Discord class, or just look around. Here's a quick tour of what's here.";
-  const html = emailShell(greeting, `<p style="margin:0 0 20px;">${body}</p>${ctaButtonHtml({ label: "Learn more about Bass Note Piano", url: getAppUrl("/about") })}`);
-  const text = `${greeting}\n\n${body}\n\nLearn more: ${getAppUrl("/about")}`;
-  await sendEmail({ to, subject: "Welcome to Bass Note Piano 🎹", html, text });
+  const scaleCount = SCALE_GROUPS.length;
+
+  const things = [
+    `${scaleCount} Ethiopian scales, spelled correctly in every key`,
+    "Live one-on-one classes with your teacher on Discord",
+    "A virtual piano, guitar and bass that play every scale for you",
+    "Ten minutes of daily finger exercises, with streak badges to earn",
+    "Friends, messages, and Atom, our assistant, for quick questions",
+  ];
+  const steps = [
+    { label: "Finish your profile", detail: "Add a photo and a username so friends can find you.", url: getAppUrl("/profile") },
+    { label: "Pick a class plan and a weekly time", detail: "Your curriculum opens with your live classes, one scale at a time.", url: getAppUrl("/billing/plans") },
+    { label: "Try today's finger exercises", detail: "Ten minutes is all it takes to unlock your lessons for the day.", url: getAppUrl("/practice") },
+    { label: "Say hi to Atom", detail: "Ask anything about classes, pricing or how things work.", url: getAppUrl("/dashboard") },
+  ];
+
+  const listStyle = "margin:0 0 20px;padding-left:20px;color:#e5e5e5;line-height:1.7;";
+  const bodyHtml = `
+    <p style="margin:0 0 16px;">Your email is verified and your account is ready. We're so glad you're here.</p>
+    <p style="margin:0 0 8px;font-weight:bold;color:#f5f5f5;">What you get</p>
+    <ul style="${listStyle}">${things.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ul>
+    <p style="margin:0 0 8px;font-weight:bold;color:#f5f5f5;">A few good next steps</p>
+    <ol style="${listStyle}">${steps
+      .map((st) => `<li><a href="${st.url}" style="color:#fb8a5c;text-decoration:none;font-weight:bold;">${escapeHtml(st.label)}</a><br /><span style="color:#a3a3a3;">${escapeHtml(st.detail)}</span></li>`)
+      .join("")}</ol>
+    <p style="margin:0 0 20px;">Take it one scale at a time. There's no rush, and we're here whenever you need us.</p>
+    ${ctaButtonHtml({ label: "Open Bass Note Piano", url: getAppUrl("/dashboard") })}
+  `;
+  const html = emailShell(greeting, bodyHtml);
+  const text = [
+    greeting.replace(/&[a-z#0-9]+;/gi, ""),
+    "",
+    "Your email is verified and your account is ready. We're so glad you're here.",
+    "",
+    "What you get:",
+    ...things.map((t) => `- ${t}`),
+    "",
+    "A few good next steps:",
+    ...steps.map((st, i) => `${i + 1}. ${st.label}: ${st.detail} ${st.url}`),
+    "",
+    "Take it one scale at a time. There's no rush, and we're here whenever you need us.",
+    "",
+    `Open Bass Note Piano: ${getAppUrl("/dashboard")}`,
+  ].join("\n");
+  await sendEmail({ to, subject: "Welcome to Bass Note Piano \u{1F389}", html, text });
 }
 
 /**
