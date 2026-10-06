@@ -13,6 +13,7 @@ import {
   EXTRA_CLASS_PRICE_CENTS,
   CREDITS_PER_CLASS,
   MIN_FAMILY_BUNDLE_RECIPIENTS,
+  describePaymentPlan,
 } from "@/lib/classCreditPricing";
 import { addCalendarMonthsClamped, bookReservedWindowForPlan, describeReservedSlot } from "@/lib/paymentPlans";
 import { createNotification } from "@/lib/notifications";
@@ -679,6 +680,25 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
   // (and into the admin's Attendance list) right now, not at tomorrow's job.
   if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId) {
     await bookReservedWindowForPlan(payment.paymentPlanId);
+
+    // A first payment going through is the moment someone becomes a subscriber: tell the admins who and when.
+    if (payment.installmentNumber === 1) {
+      try {
+        const [plan, student, slot] = await Promise.all([
+          prisma.paymentPlan.findUnique({ where: { id: payment.paymentPlanId }, select: { cadence: true, term: true } }),
+          prisma.user.findUnique({ where: { id: payment.userId }, select: { name: true, email: true } }),
+          describeReservedSlot(payment.paymentPlanId),
+        ]);
+        await notifyAdmins("NEW_SUBSCRIPTION", {
+          type: "ADMIN_ALERT",
+          title: "New subscriber",
+          body: `${student?.name ?? student?.email ?? "A student"} is on the ${plan ? describePaymentPlan(plan.cadence, plan.term) : "plan"}${slot ? `, ${slot}` : ""}.`,
+          emailCategory: "social",
+        });
+      } catch (err) {
+        console.error("New subscriber notification failed (non-blocking):", err);
+      }
+    }
   }
 
   let notificationBody = "Your payment was verified.";
@@ -795,3 +815,10 @@ export async function rejectZellePayment(paymentId: string, reviewerId: string, 
     emailCategory: "payments",
   });
 }
+
+/** The status of one of the caller's own payments, for the pay screen that waits for it to clear. */
+export async function getOwnPaymentStatus(userId: string, paymentId: string): Promise<ZellePaymentStatus | null> {
+  const payment = await prisma.zellePayment.findFirst({ where: { id: paymentId, userId }, select: { status: true } });
+  return payment?.status ?? null;
+}
+

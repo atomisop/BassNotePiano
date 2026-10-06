@@ -9,6 +9,7 @@ import {
   checkFamilyBundleRecipients,
   createFamilyBundlePayment,
   createExtraClassPayment,
+  getOwnPaymentStatus,
   ExtraCreditsError,
   FamilyBundleError,
   type ZelleReferenceSubmission,
@@ -131,3 +132,11 @@ export async function createExtraClassPaymentAction(
     throw err;
   }
 }
+
+/** Polled by the pay screen: has this payment been verified yet (by the bank email or by an admin)? */
+export async function getPaymentStatusAction(paymentId: string): Promise<string | null> {
+  const session = await getServerAuthSession();
+  if (!session?.user) return null;
+  return getOwnPaymentStatus(session.user.id, paymentId);
+}
+

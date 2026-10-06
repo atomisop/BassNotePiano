@@ -203,6 +203,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           eyebrowLabel="Family Bundle"
           amountCents={payment.amountCents}
           zelleHandle={zelleHandle}
+          paymentId={payment.id}
           onSubmitPayment={submitClassCreditsPaymentAction.bind(null, payment.id)}
         />
       </div>

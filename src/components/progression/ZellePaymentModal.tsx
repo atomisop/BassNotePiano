@@ -20,6 +20,9 @@ export interface ZellePaymentModalProps {
   amountCents: number;
   /** Platform's Zelle-registered email or phone handle. */
   zelleHandle: string;
+  /** Polled while the sheet is open: resolves to the payment's status, so it can notice the bank email clearing it. */
+  checkStatus?: () => Promise<string | null>;
+  onVerified?: () => void;
   onSubmit: (payload: {
     senderName: string;
     note?: string;
@@ -27,7 +30,7 @@ export interface ZellePaymentModalProps {
   }) => Promise<void>;
 }
 
-type Step = "instructions" | "confirming" | "pending";
+type Step = "instructions" | "confirming" | "pending" | "verified";
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -82,6 +85,8 @@ export function ZellePaymentModal({
   eyebrowLabel,
   amountCents,
   zelleHandle,
+  checkStatus,
+  onVerified,
   onSubmit,
 }: ZellePaymentModalProps) {
   const [step, setStep] = useState<Step>("instructions");
@@ -96,7 +101,30 @@ export function ZellePaymentModal({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  // The manual "tell us" button only appears once the automatic check has had a fair chance.
+  const [waitedLong, setWaitedLong] = useState(false);
+
+  // The system watches for the payment itself: the bank or Venmo email clears it with no tap from the student.
+  useEffect(() => {
+    if (!isOpen || (step !== "instructions" && step !== "confirming")) return;
+    const longTimer = window.setTimeout(() => setWaitedLong(true), 90_000);
+    const poll = window.setInterval(async () => {
+      if (!checkStatus || document.visibilityState !== "visible") return;
+      const result = await checkStatus().catch(() => null);
+      if (result === "VERIFIED") {
+        setStep("verified");
+        onVerified?.();
+      }
+    }, 5_000);
+    return () => {
+      window.clearTimeout(longTimer);
+      window.clearInterval(poll);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, step]);
+
   function reset() {
+    setWaitedLong(false);
     setStep("instructions");
     setMethod("ZELLE");
     setSenderName("");
@@ -243,13 +271,19 @@ export function ZellePaymentModal({
                       </li>
                     </ol>
 
-                    <button
-                      type="button"
-                      onClick={() => setStep("confirming")}
-                      className="cta-sheen cta-fill mt-6 w-full rounded-xl py-2.5 text-small font-semibold"
-                    >
-                      I&apos;ve sent the payment
-                    </button>
+                    <div className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-neu-base px-4 py-3 text-small font-medium text-slate-200 shadow-pressed-low" role="status">
+                      <MorphingSquare size={13} className="shrink-0" />
+                      Waiting for your payment
+                    </div>
+                    {waitedLong && (
+                      <button
+                        type="button"
+                        onClick={() => setStep("confirming")}
+                        className="tap mt-3 w-full text-center text-small font-medium text-slate-400 transition hover:text-slate-200"
+                      >
+                        Paid and not unlocked? Tell us
+                      </button>
+                    )}
                   </motion.div>
                 )}
 
@@ -299,6 +333,29 @@ export function ZellePaymentModal({
                         </button>
                       </div>
                     </div>
+                  </motion.div>
+                )}
+
+                {step === "verified" && (
+                  <motion.div key="verified" variants={stepVariants} initial="enter" animate="center" exit="exit" className="py-2 text-center">
+                    <motion.div
+                      initial={{ scale: 0.6, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", bounce: 0.35, duration: 0.5, delay: 0.05 }}
+                      className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.1)]"
+                    >
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[rgb(var(--c-s-50))]" aria-hidden>
+                        <path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </motion.div>
+                    <h3 className="text-body text-slate-50">Payment received</h3>
+                    <button
+                      type="button"
+                      onClick={handleClose}
+                      className="mt-6 w-full rounded-xl py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    >
+                      Done
+                    </button>
                   </motion.div>
                 )}
 
