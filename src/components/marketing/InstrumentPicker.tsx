@@ -48,9 +48,9 @@ import { EDGE_FADE_STYLE } from "./edgeFade";
 const BACKDROP_SRC = BACKDROPS.guitar;
 
 const INSTRUMENTS = [
-  { name: "Piano", note: "The full curriculum, voiced for two hands." },
-  { name: "Guitar", note: "The full curriculum, voiced for six strings." },
-  { name: "Bass", note: "The full curriculum, voiced for four strings." },
+  { name: "Piano", note: "" },
+  { name: "Guitar", note: "" },
+  { name: "Bass", note: "" },
 ];
 
 export function InstrumentPicker() {
@@ -73,7 +73,7 @@ export function InstrumentPicker() {
                 >
                   <div className="flex items-baseline gap-6 sm:gap-10">
                     <h3 className="font-serif text-body text-slate-50 sm:text-body">{instrument.name}</h3>
-                    <p className="max-w-[38ch] text-small leading-relaxed text-slate-400">{instrument.note}</p>
+                    
                   </div>
                   <svg
                     width="18"

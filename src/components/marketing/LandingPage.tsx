@@ -2,7 +2,6 @@ import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { Hero } from "@/components/marketing/Hero";
 import { InstrumentPicker } from "@/components/marketing/InstrumentPicker";
 import { SocialProof } from "@/components/marketing/SocialProof";
-import { ProblemStatement } from "@/components/marketing/ProblemStatement";
 import { Solution } from "@/components/marketing/Solution";
 import { HowItWorks } from "@/components/marketing/HowItWorks";
 import { FAQ } from "@/components/marketing/FAQ";
@@ -133,7 +132,6 @@ export function LandingPage() {
         <SocialProof />
         <Solution />
         <HowItWorks />
-        <ProblemStatement />
         <FAQ />
         <FinalCTA />
       </main>

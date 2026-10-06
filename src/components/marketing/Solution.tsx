@@ -35,48 +35,21 @@ import { SolutionScreenshotTabs } from "@/components/marketing/SolutionScreensho
  * of stacking full-width, reported as "mobile is cooked".
  */
 const FEATURES = [
-  {
-    title: "15 scales, all twelve keys",
-    body: "Tizita, Bati, Anchihoye, Ambassel, and more, spelled correctly wherever a singer needs them, not just the easy keys.",
-  },
-  {
-    title: "Chords built in, not bolted on",
-    body: "Each scale's native chords come from its own five notes. There's no separate chord theory to memorize on top of the scale.",
-  },
-  {
-    title: "Piano, guitar, and bass",
-    body: "The same curriculum, correctly voiced for your instrument, switchable any time from inside a lesson.",
-  },
-  {
-    title: "Quiz-gated progression",
-    body: "Each scale unlocks the next only after you've actually practiced it and passed its quiz, not just clicked through.",
-  },
-  {
-    title: `Live lessons, ${CLASS_MINUTES} minutes one-on-one`,
-    body: "One-on-one with your teacher, or a family session if siblings are learning together, booked on your own schedule over Discord.",
-  },
-  {
-    title: "A reserved weekly slot",
-    body: "Enroll in a plan and that day and time is yours, every week. Nothing is charged until the lesson actually happens.",
-  },
+  { title: "15 scales, all twelve keys", body: "Tizita, Bati, Anchihoye, Ambassel and more, spelled correctly in every key." },
+  { title: "Chords built in", body: "Each scale's chords come from its own notes. No extra theory." },
+  { title: "Quiz-gated progression", body: "Pass a scale's quiz to open the next one." },
+  { title: `Live lessons, ${CLASS_MINUTES} minutes`, body: "One-on-one with your teacher over Discord, or a family session." },
 ];
 
 // Real captures from inside the app (the demo student "Alex"), retaken for the
 // current look. Order tells the story: where you are, how you learn, the three
 // virtual instruments and their tools, then classes, progress and settings.
 const SCREENS = [
-  { key: "roadmap", label: "Roadmap", src: "/screenshots/roadmap.webp", title: "Your roadmap", caption: "Your next step, weekly streak, progress and badges on one screen.", alt: "Roadmap showing the next step, a four day streak, progress and badges" },
-  { key: "path", label: "Path", src: "/screenshots/path.webp", title: "Scale by scale", caption: "Fourteen scales, each one unlocked by your teacher as you finish the last.", alt: "List of scales with the current scale's module, practice and quiz progress" },
-  { key: "lesson", label: "Lessons", src: "/screenshots/lesson.webp", title: "Video lessons", caption: "Watch the lesson, then practice on the instrument right below it.", alt: "A video lesson with playback controls and a virtual piano underneath" },
-  { key: "piano", label: "Piano", src: "/screenshots/piano.webp", title: "Virtual piano", caption: "Tap any key to hear it. The scale lights up in whichever key you choose.", alt: "Virtual piano with the C major scale highlighted" },
-  { key: "guitar", label: "Guitar", src: "/screenshots/guitar.webp", title: "Virtual guitar", caption: "The same scale mapped across the fretboard, ready to play along.", alt: "Virtual guitar fretboard showing the scale notes" },
-  { key: "bass", label: "Bass", src: "/screenshots/bass.webp", title: "Virtual bass", caption: "Four strings, every note of the scale, one tap to hear it.", alt: "Virtual bass fretboard showing the scale notes" },
-  { key: "chords", label: "Chords", src: "/screenshots/chords.webp", title: "Native chords", caption: "Every chord that belongs to the scale, with a play button on each.", alt: "List of the scale's chords with play buttons" },
-  { key: "metronome", label: "Metronome", src: "/screenshots/metronome.webp", title: "Built-in metronome", caption: "Set your tempo and time signature without leaving the lesson.", alt: "Metronome with tempo slider and time signature options" },
-  { key: "classes", label: "Classes", src: "/screenshots/classes.webp", title: "Live classes", caption: "Book one-on-one time with your teacher, live over Discord.", alt: "Calendar of available live class times with Book buttons" },
-  { key: "profile", label: "Profile", src: "/screenshots/profile.webp", title: "Streaks and badges", caption: "Practice daily, earn badges, and watch your streak grow.", alt: "Profile page with the weekly streak and earned badges" },
-  { key: "settings", label: "Settings", src: "/screenshots/settings.webp", title: "Your settings", caption: "Notifications, themes, billing and privacy, all in one place.", alt: "Account settings menu" },
-  { key: "light", label: "Light mode", src: "/screenshots/light.webp", title: "Light or dark", caption: "Pick the look that suits the room you practice in.", alt: "Roadmap shown in the light theme" },
+  { key: "roadmap", label: "Roadmap", src: "/screenshots/roadmap.webp", title: "Your roadmap", caption: "Your next step, streak and badges.", alt: "Roadmap showing the next step, a four day streak, progress and badges" },
+  { key: "lesson", label: "Lessons", src: "/screenshots/lesson.webp", title: "Video lessons", caption: "Watch, then practice right below.", alt: "A video lesson with playback controls and a virtual piano underneath" },
+  { key: "piano", label: "Piano", src: "/screenshots/piano.webp", title: "Virtual piano", caption: "Tap a key to hear it.", alt: "Virtual piano with the C major scale highlighted" },
+  { key: "classes", label: "Classes", src: "/screenshots/classes.webp", title: "Live classes", caption: "Book time with your teacher.", alt: "Calendar of available live class times with Book buttons" },
+  { key: "profile", label: "Profile", src: "/screenshots/profile.webp", title: "Streaks and badges", caption: "Practice daily, earn badges.", alt: "Profile page with the weekly streak and earned badges" },
 ];
 
 export function Solution() {

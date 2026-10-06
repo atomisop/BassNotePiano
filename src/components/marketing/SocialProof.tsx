@@ -42,15 +42,15 @@ import { EDGE_FADE_STYLE } from "./edgeFade";
 const PROOF_POINTS = [
   {
     label: "The source",
-    body: "Built from a real, published method book, Ethiopian Scales, Rhythm & Chords, not assembled from scattered tab sites.",
+    body: "Built from a real, published method book.",
   },
   {
     label: "The teacher",
-    body: "Live one-on-one and family lessons with an actual teacher over Discord, not a pre-recorded course.",
+    body: "Live lessons with a real teacher over Discord.",
   },
   {
     label: "The coverage",
-    body: "Every scale spelled correctly in all twelve keys, a claim you can check against the curriculum yourself.",
+    body: "Every scale spelled correctly in all twelve keys.",
   },
 ];
 
