@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
-import { sendNotificationEmail } from "@/lib/email";
+import { sendPersonalEmail } from "@/lib/email";
 
 export class AnnouncementError extends Error {}
 
@@ -41,7 +41,7 @@ export async function createAnnouncement(adminId: string, title: string, body: s
     data: { title: trimmedTitle, body: trimmedBody, createdBy: adminId },
   });
 
-  const users = await prisma.user.findMany({ select: { id: true, email: true } });
+  const users = await prisma.user.findMany({ select: { id: true, email: true, name: true } });
   await Promise.all(
     users.map((u) =>
       createNotification({ userId: u.id, type: "ANNOUNCEMENT", title: trimmedTitle, body: trimmedBody }).catch((err) =>
@@ -58,7 +58,7 @@ export async function createAnnouncement(adminId: string, title: string, body: s
   if (sendEmail) {
     for (const u of users) {
       try {
-        await sendNotificationEmail(u.email, trimmedTitle, trimmedBody);
+        await sendPersonalEmail(u.email, trimmedTitle, trimmedBody, { firstName: u.name?.trim().split(/\s+/)[0] });
       } catch (err) {
         console.error(`Failed to email user ${u.id} of announcement ${announcement.id}:`, err);
       }
