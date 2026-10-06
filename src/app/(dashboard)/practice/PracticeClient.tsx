@@ -118,7 +118,7 @@ function GuitarTab({ exercise, activeStep }: { exercise: GuitarExercise; activeS
   const lit = activeStep === null ? null : activeStep % exercise.steps.length;
   const names = ["e", "B", "G", "D", "A", "E"];
 
-  const legend = [["1", "index"], ["2", "middle"], ["3", "ring"], ["4", "little"]];
+  const legend = [["1", "index"], ["2", "middle"], ["3", "ring"], ["4", "pinky"]];
 
   return (
     <div className="rounded-2xl bg-neu-base p-3 shadow-raised-low sm:p-5">

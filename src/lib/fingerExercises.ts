@@ -147,7 +147,7 @@ export const GUITAR_EXERCISES: GuitarExercise[] = [
     title: "Spider 1-2-3-4",
     summary: "One finger per fret across four frets. Repeat on every string.",
     how: [
-      "Index on fret 5, middle on 6, ring on 7, little on 8, played one after another.",
+      "Index on fret 5, middle on 6, ring on 7, pinky on 8, played one after another.",
       "Alternate pick: down, up, down, up. Then move to the next string and repeat the same shape.",
       "Keep each finger close to the fret wire and the wrist straight. Use a steady tempo.",
     ],
