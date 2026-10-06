@@ -156,3 +156,17 @@ export async function addToGuild(discordId: string, accessToken: string): Promis
   if (res.status === 204) return "already";
   return "failed";
 }
+
+export const TEST_CHANNEL_KEY = "discord_test_channel";
+const TEST_CHANNEL_MINUTES = 10;
+
+/**
+ * Makes a visible test call for the owner and leaves it for a few minutes, so
+ * the owner can see it in Discord. The channel id is remembered in AppSetting
+ * and the class-channel job removes it after the time is up.
+ */
+export async function createLingeringTestChannel(ownerDiscordId: string, remember: (value: string) => Promise<void>): Promise<string> {
+  const id = await createClassChannel("Test call (removed in 10 minutes)", [ownerDiscordId]);
+  await remember(`${id}|${Date.now() + TEST_CHANNEL_MINUTES * 60_000}`);
+  return id;
+}

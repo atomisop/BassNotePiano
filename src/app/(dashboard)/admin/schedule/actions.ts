@@ -6,7 +6,8 @@ import type { AttendanceStatus } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { bookMissingReservedWindows } from "@/lib/paymentPlans";
 import { isOwnerEmail } from "@/lib/adminNotifications";
-import { checkBotSetup, type SetupCheck } from "@/lib/discordApi";
+import { checkBotSetup, createLingeringTestChannel, isGuildMember, TEST_CHANNEL_KEY, type SetupCheck } from "@/lib/discordApi";
+import { discordChannelUrl } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import {
   createClassSchedule,
@@ -139,4 +140,23 @@ export async function testDiscordBotAction(): Promise<{ ok: boolean; checks: Set
   const me = await prisma.user.findUnique({ where: { id: session.user.id }, select: { discordId: true } });
   const checks = await checkBotSetup(me?.discordId ?? null);
   return { ok: checks.every((c) => c.ok), checks };
+}
+
+/** Owner only: makes a private test call that stays for ten minutes, so it can be seen in Discord. */
+export async function createVisibleTestChannelAction(): Promise<{ ok: boolean; message: string; url: string | null }> {
+  const session = await getServerAuthSession();
+  if (!session?.user || session.user.role !== "ADMIN" || !isOwnerEmail(session.user.email)) {
+    return { ok: false, message: "Only the owner can run this.", url: null };
+  }
+  const me = await prisma.user.findUnique({ where: { id: session.user.id }, select: { discordId: true } });
+  if (!me?.discordId) return { ok: false, message: "Connect your Discord first.", url: null };
+  try {
+    if (!(await isGuildMember(me.discordId))) return { ok: false, message: "Your connected Discord account is not in the server.", url: null };
+    const id = await createLingeringTestChannel(me.discordId, async (value) => {
+      await prisma.appSetting.upsert({ where: { key: TEST_CHANNEL_KEY }, update: { value }, create: { key: TEST_CHANNEL_KEY, value } });
+    });
+    return { ok: true, message: "Created. Look in the Live Classes category in Discord. It is removed in 10 minutes.", url: discordChannelUrl(id) };
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message.slice(0, 200) : "Something went wrong.", url: null };
+  }
 }

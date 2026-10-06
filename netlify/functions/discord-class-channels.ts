@@ -4,7 +4,7 @@ import { runJob } from "../../src/lib/jobRun";
 import { OWNER_EMAIL } from "../../src/lib/adminNotifications";
 import { createNotification } from "../../src/lib/notifications";
 import { discordChannelUrl } from "../../src/lib/discord";
-import { classChannelName, createClassChannel, deleteChannel, isGuildMember } from "../../src/lib/discordApi";
+import { classChannelName, createClassChannel, deleteChannel, isGuildMember, TEST_CHANNEL_KEY } from "../../src/lib/discordApi";
 
 const MINUTE_MS = 60_000;
 const OPEN_BEFORE_MIN = 5; // a private channel appears five minutes before the class
@@ -103,6 +103,21 @@ export const handler = schedule("*/2 * * * *", async () =>
         removed++;
       } catch (err) {
         console.error("Discord class channel removal failed (non-blocking):", err);
+      }
+    }
+
+    // The owner's visible test call, once its ten minutes are up.
+    const test = await prisma.appSetting.findUnique({ where: { key: TEST_CHANNEL_KEY } });
+    if (test) {
+      const [channelId, expiresAt] = test.value.split("|");
+      if (!expiresAt || Number(expiresAt) < now) {
+        try {
+          await deleteChannel(channelId);
+          await prisma.appSetting.delete({ where: { key: TEST_CHANNEL_KEY } });
+          removed++;
+        } catch (err) {
+          console.error("Discord test channel removal failed (non-blocking):", err);
+        }
       }
     }
 
