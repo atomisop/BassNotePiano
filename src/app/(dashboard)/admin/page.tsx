@@ -19,7 +19,7 @@ function formatUsd(cents: number) {
 export default async function AdminOverviewPage() {
   const [stats, trends, session, subs] = await Promise.all([getOverviewStats(), getOverviewTrends(6), getServerAuthSession(), getSubscriptionStats()]);
   const isOwner = isOwnerEmail(session?.user?.email);
-  const [activity, jobs] = isOwner
+  const [activity, jobs, visits] = isOwner
     ? await Promise.all([
         listAudit(20),
         Promise.all(
@@ -28,8 +28,9 @@ export default async function AdminOverviewPage() {
             last: await prisma.jobRun.findFirst({ where: { name }, orderBy: { ranAt: "desc" }, select: { ranAt: true, ok: true } }),
           })),
         ),
+        prisma.pageHit.groupBy({ by: ["path"], where: { day: { gte: new Date(Date.now() - 7 * 86_400_000) } }, _sum: { count: true }, orderBy: { _sum: { count: "desc" } } }),
       ])
-    : [[], []];
+    : [[], [], []];
 
   return (
     <div>
@@ -88,6 +89,21 @@ export default async function AdminOverviewPage() {
                     <p className="mt-0.5 text-slate-500">
                       {row.actorEmail ?? "System"} · {new Date(row.createdAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                     </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+          <section className="glass-surface p-5">
+            <h2 className="text-body font-semibold text-slate-50">Page views, last 7 days</h2>
+            {visits.length === 0 ? (
+              <p className="mt-3 text-small text-slate-500">No views yet.</p>
+            ) : (
+              <ul className="mt-3 divide-y divide-slate-50/10">
+                {visits.map((v) => (
+                  <li key={v.path} className="flex items-center justify-between gap-3 py-2.5 text-small">
+                    <span className="text-slate-200">{v.path}</span>
+                    <span className="tabular-nums text-slate-400">{v._sum.count ?? 0}</span>
                   </li>
                 ))}
               </ul>
