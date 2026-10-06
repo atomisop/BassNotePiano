@@ -1,4 +1,5 @@
 import { schedule } from "@netlify/functions";
+import { runJob } from "../../src/lib/jobRun";
 import { prisma } from "../../src/lib/prisma";
 import { OWNER_EMAIL } from "../../src/lib/adminNotifications";
 import { todayBoundsEt } from "../../src/lib/classSchedule";
@@ -15,7 +16,8 @@ function count(n: number, one: string, many: string): string | null {
 // Runs once daily at 12:00 UTC (8am Eastern). Plain queries on purpose: this
 // runs outside Next, so it must not pull in anything that needs the request
 // cache (see the other scheduled functions).
-export const handler = schedule("0 12 * * *", async () => {
+export const handler = schedule("0 12 * * *", async () =>
+  runJob("admin-daily-summary", async () => {
   const now = Date.now();
   const today = todayBoundsEt();
   const [pendingPayments, uncheckedAuto, unmatchedEmails, applications, openChats, classesToday] = await Promise.all([
@@ -64,4 +66,4 @@ export const handler = schedule("0 12 * * *", async () => {
   );
   console.log(`Admin daily summary: sent (${parts.length} items, ${classesToday.length} classes)`);
   return { statusCode: 200 };
-});
+}));

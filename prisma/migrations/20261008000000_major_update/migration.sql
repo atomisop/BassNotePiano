@@ -1,6 +1,9 @@
 -- AlterEnum
 ALTER TYPE "ZellePaymentStatus" ADD VALUE 'REFUNDED';
 
+-- AlterEnum
+ALTER TYPE "NotificationType" ADD VALUE 'CLASS_REMINDER';
+
 -- AlterTable
 ALTER TABLE "ClassBooking" ADD COLUMN "reminder24At" TIMESTAMP(3),
 ADD COLUMN "reminder1hAt" TIMESTAMP(3);

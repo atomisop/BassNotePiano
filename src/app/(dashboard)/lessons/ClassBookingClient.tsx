@@ -19,6 +19,7 @@ import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { createExtraClassPaymentAction, submitClassCreditsPaymentAction } from "../billing/lessons/actions";
 import type { ZellePaymentStatus } from "@prisma/client";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { Tabs } from "@/components/ui/Tabs";
 
@@ -177,7 +178,25 @@ function BookingCard({
         )}
         {b.status === "CANCELED" && <p className="mt-0.5 text-small text-slate-50">Canceled</p>}
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
+        {b.status === "SCHEDULED" && hoursUntil > -1 && hoursUntil <= 0.5 && (
+          <a
+            href={DISCORD_INVITE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="tap cta-sheen cta-fill inline-flex items-center rounded-lg px-3 py-1.5 text-small font-semibold"
+          >
+            Join on Discord
+          </a>
+        )}
+        {b.status === "SCHEDULED" && hoursUntil > 0 && (
+          <a
+            href={`/api/calendar/class?s=${encodeURIComponent(b.scheduledAt)}&m=${45 * classCount(b.creditsSpent)}`}
+            className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium"
+          >
+            Add to calendar
+          </a>
+        )}
         {cancelEligible && !b.reserved && (
           <button
             type="button"

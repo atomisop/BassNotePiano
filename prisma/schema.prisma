@@ -414,6 +414,7 @@ enum NotificationType {
   PLAN_CANCELLATION_FEEDBACK // to admins, when a student self-cancels their Payment Plan and leaves a reason, see /admin/feedback
   CURRICULUM_ACCESS_GRANTED // to a curriculum family bundle recipient who wasn't the buyer. PAYMENT_APPROVED's own CTA points at /billing/history, empty for a recipient who never paid, this points at the roadmap they can now actually use
   RESERVED_SLOT_CHANGED // to the student, when they self-serve move their Payment Plan's standing weekly slot to a different day/time
+  CLASS_REMINDER // to the student, a day before and shortly before a booked live class
   CURRICULUM_ACCESS_REVOKED // to the student, when an admin manually removes curriculum access outside the normal payment flow
 }
 

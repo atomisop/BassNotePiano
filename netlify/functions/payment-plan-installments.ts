@@ -1,5 +1,6 @@
 import type { PaymentPlan, ZellePayment } from "@prisma/client";
 import { schedule } from "@netlify/functions";
+import { runJob } from "../../src/lib/jobRun";
 import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
 import { sendPaymentPlanInvoiceEmail, getAppUrl } from "../../src/lib/email";
@@ -85,7 +86,8 @@ async function notifyInstallment(
 //      because the row from (a) already exists by the time this can ever
 //      match; a missed escalation day just means one fewer nudge, not a
 //      never-created invoice.
-export const handler = schedule("0 16 * * *", async () => {
+export const handler = schedule("0 16 * * *", async () =>
+  runJob("payment-plan-installments", async () => {
   const now = new Date();
   const leadWindowEnd = new Date(now.getTime() + INSTALLMENT_OPEN_LEAD_DAYS * 24 * 60 * 60 * 1000);
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
@@ -142,4 +144,4 @@ export const handler = schedule("0 16 * * *", async () => {
     `Payment plan installments: lapsed ${lapsed}, opened ${opened} of ${duePlans.length} due plans, escalated ${escalated} of ${overduePayments.length} overdue installments`,
   );
   return { statusCode: 200 };
-});
+}));

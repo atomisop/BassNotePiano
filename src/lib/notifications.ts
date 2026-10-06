@@ -14,7 +14,7 @@ export interface CreateNotificationParams {
   /** If set, also emails the user provided their matching notifyEmail* preference is on. */
   emailCategory?: EmailCategory;
   /** Overrides the default button for this type, e.g. a deep link to the exact page. `path` is an in-app path. */
-  cta?: { label: string; path: string };
+  cta?: { label: string; path?: string; url?: string };
 }
 
 interface NotificationCta {
@@ -60,6 +60,7 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   // Points to /lessons, not /billing/plans like its CREDITS_EXPIRED sibling
   // — this fires while there's still time to act, and the actual action is
   // booking a makeup class, not reviewing plan/payment status.
+  CLASS_REMINDER: { label: "See my classes", url: getAppUrl("/lessons"), kind: "default" },
   CREDITS_EXPIRING_SOON: { label: "Book a class", url: getAppUrl("/lessons"), kind: "notice" },
   RESERVED_SLOT_UNAVAILABLE: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "notice" },
   PLAN_CANCELLATION_FEEDBACK: { label: "Read feedback", url: getAppUrl("/admin/payment-plans?status=FEEDBACK"), kind: "default" },
@@ -93,7 +94,7 @@ export async function createNotification(params: CreateNotificationParams) {
   // allows) is unchanged.
   const mailKind = MAIL_ROUTED_TYPES[params.type];
   const cta: NotificationCta | undefined = params.cta
-    ? { label: params.cta.label, url: getAppUrl(params.cta.path), kind: "default" }
+    ? { label: params.cta.label, url: params.cta.url ?? getAppUrl(params.cta.path ?? "/"), kind: "default" }
     : NOTIFICATION_CTA[params.type];
   const notification = mailKind
     ? await createMailMessage({

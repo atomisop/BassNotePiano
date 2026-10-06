@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { schedule } from "@netlify/functions";
+import { runJob } from "../../src/lib/jobRun";
 import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
 import { notifyAdmins } from "../../src/lib/adminNotifications";
@@ -23,7 +24,8 @@ import {
 // it is ever stranger-bookable. Existence-based per occurrence (checked via
 // createReservedBookingIfAbsent), so a missed run just means the window
 // catches back up on the next one, nothing is lost.
-export const handler = schedule("30 9 * * *", async () => {
+export const handler = schedule("30 9 * * *", async () =>
+  runJob("payment-plan-reservations", async () => {
   const plans = await prisma.paymentPlan.findMany({
     where: { reservedScheduleId: { not: null }, OR: livePaymentPlanConditions() },
     include: { reservedSchedule: true },
@@ -149,4 +151,4 @@ export const handler = schedule("30 9 * * *", async () => {
     `Payment plan reservations: processed ${plans.length} plan(s), booked ${booked} occurrence(s), skipped ${skippedInsufficientCredits} for insufficient credits, notified ${notifiedInactive} inactive-schedule plan(s).`,
   );
   return { statusCode: 200 };
-});
+}));

@@ -1,4 +1,5 @@
 import { schedule } from "@netlify/functions";
+import { runJob } from "../../src/lib/jobRun";
 import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
 
@@ -25,7 +26,8 @@ function daysSince(date: Date, now: Date): number {
 // onboarding and have practiced at least once — someone who signed up and
 // never started doesn't need a "come back" nudge, they need an onboarding
 // flow (already handled separately).
-export const handler = schedule("0 15 * * *", async () => {
+export const handler = schedule("0 15 * * *", async () =>
+  runJob("practice-reminders", async () => {
   const now = new Date();
   const users = await prisma.user.findMany({
     where: { onboardedAt: { not: null }, lastActivityDate: { not: null }, notifyEmailReminders: true },
@@ -50,4 +52,4 @@ export const handler = schedule("0 15 * * *", async () => {
 
   console.log(`Practice reminders: sent ${sent} of ${users.length} eligible users`);
   return { statusCode: 200 };
-});
+}));
