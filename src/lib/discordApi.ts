@@ -1,4 +1,4 @@
-import { DISCORD_CLASS_CATEGORY_ID, DISCORD_GUILD_ID } from "@/lib/discord";
+import { DISCORD_CLASS_CATEGORY_ID, DISCORD_CLIENT_ID, DISCORD_GUILD_ID } from "@/lib/discord";
 
 // The few Discord calls the class-call bot needs. The bot token is read from
 // the environment (DISCORD_BOT_TOKEN) and never logged.
@@ -13,6 +13,16 @@ const VIDEO = 1 << 9;
 const USE_VOICE_ACTIVITY = 1 << 25;
 const SEND_MESSAGES = 1 << 11;
 const READ_MESSAGE_HISTORY = 1 << 16;
+const MANAGE_CHANNELS = 1 << 4;
+const MANAGE_ROLES = 1 << 28;
+
+/**
+ * What the bot keeps on its own channels. Hiding a channel from @everyone also
+ * hides it from the bot, unless the bot has its own entry, so without this it
+ * could create a class call but never see or remove it. A bot user has the same
+ * id as its application.
+ */
+const BOT_CHANNEL_PERMISSIONS = String(VIEW_CHANNEL | CONNECT | SPEAK | MANAGE_CHANNELS | MANAGE_ROLES | SEND_MESSAGES | READ_MESSAGE_HISTORY);
 
 /** What a student or the teacher may do inside their class call. */
 export const CLASS_MEMBER_PERMISSIONS = String(VIEW_CHANNEL | CONNECT | SPEAK | VIDEO | USE_VOICE_ACTIVITY | SEND_MESSAGES | READ_MESSAGE_HISTORY);
@@ -66,6 +76,7 @@ export async function createClassChannel(name: string, memberDiscordIds: string[
       permission_overwrites: [
         // @everyone has the same id as the server, and cannot even see the channel.
         { id: DISCORD_GUILD_ID, type: 0, allow: "0", deny: String(VIEW_CHANNEL) },
+        { id: DISCORD_CLIENT_ID, type: 1, allow: BOT_CHANNEL_PERMISSIONS, deny: "0" },
         ...memberDiscordIds.map((id) => ({ id, type: 1, allow: CLASS_MEMBER_PERMISSIONS, deny: "0" })),
       ],
     }),
