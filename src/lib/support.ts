@@ -335,10 +335,14 @@ export async function deleteSupportThread(escalationId: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 // Same staleness window as direct-message typing: the composer re-pings a little inside it.
-const SUPPORT_TYPING_STALE_MS = 6_000;
+const SUPPORT_TYPING_STALE_MS = 8_000;
 
 /** Called while someone writes in a thread. The customer is VISITOR, the team is SUPPORT. */
-export async function setSupportTyping(escalationId: string, side: "VISITOR" | "SUPPORT"): Promise<void> {
+export async function setSupportTyping(escalationId: string, side: "VISITOR" | "SUPPORT", typing = true): Promise<void> {
+  if (!typing) {
+    await clearSupportTyping(escalationId, side);
+    return;
+  }
   const exists = await prisma.assistantEscalation.findUnique({ where: { id: escalationId }, select: { id: true } });
   if (!exists) return;
   await prisma.supportTypingStatus.upsert({

@@ -44,9 +44,9 @@ export async function sendSupportReplyAction(escalationId: string, body: string)
 }
 
 /** The team is writing a reply: the customer sees "Support is typing". */
-export async function setSupportTypingAction(escalationId: string): Promise<void> {
+export async function setSupportTypingAction(escalationId: string, typing = true): Promise<void> {
   await requireAdminId();
-  await setSupportTyping(escalationId, "SUPPORT");
+  await setSupportTyping(escalationId, "SUPPORT", typing);
 }
 
 export async function resolveSupportThreadAction(escalationId: string): Promise<void> {

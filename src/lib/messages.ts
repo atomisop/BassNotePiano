@@ -12,7 +12,7 @@ const MAX_MESSAGE_LENGTH = 2000;
 // typing — there's no explicit "stopped typing" write, so recency is the
 // only signal. Comfortably longer than the 2.5s active-thread poll interval
 // so a normal typing cadence never flickers off between polls.
-const TYPING_STALE_MS = 4_000;
+const TYPING_STALE_MS = 8_000;
 
 async function isBlockedEitherWay(userIdA: string, userIdB: string): Promise<boolean> {
   const block = await prisma.block.findFirst({
@@ -351,7 +351,12 @@ export async function togglePin(userId: string, friendId: string): Promise<{ isP
 }
 
 /** Upserted on a debounced keystroke in the composer; recency is the signal, not a boolean. */
-export async function setTyping(senderId: string, recipientId: string): Promise<void> {
+export async function setTyping(senderId: string, recipientId: string, typing = true): Promise<void> {
+  if (!typing) {
+    // The composer closed or lost focus: stop showing it straight away.
+    await prisma.typingStatus.deleteMany({ where: { senderId, recipientId } });
+    return;
+  }
   if (!(await canConverse(senderId, recipientId))) return;
   await prisma.typingStatus.upsert({
     where: { senderId_recipientId: { senderId, recipientId } },

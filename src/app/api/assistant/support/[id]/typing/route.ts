@@ -10,7 +10,8 @@ import { setSupportTyping } from "@/lib/support";
 export async function POST(req: Request, { params }: { params: { id: string } }) {
   if (!isSameOriginJsonPost(req)) return NextResponse.json({ error: "Bad request." }, { status: 403 });
   try {
-    await setSupportTyping(params.id, "VISITOR");
+    const body = await req.json().catch(() => null);
+    await setSupportTyping(params.id, "VISITOR", body?.typing !== false);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("POST /api/assistant/support/[id]/typing failed:", err);

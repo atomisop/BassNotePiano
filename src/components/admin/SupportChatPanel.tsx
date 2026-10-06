@@ -132,7 +132,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
   const [threadStatus, setThreadStatus] = useState<AssistantEscalationStatus | null>(null);
   const [reply, setReply] = useState("");
   const [visitorTyping, setVisitorTyping] = useState(false);
-  const lastTypingPingRef = useRef(0);
+  const [replyFocused, setReplyFocused] = useState(false);
   const [sending, setSending] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -197,6 +197,20 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
     ACTIVE_THREAD_POLL_MS,
     { enabled: Boolean(activeId), resetKey: activeId },
   );
+
+  // The customer sees "Support is typing" for as long as the reply box is focused:
+  // refreshed every 2 seconds, and stopped at once when it loses focus or the thread changes.
+  useEffect(() => {
+    if (!activeId || !replyFocused) return;
+    void setSupportTypingAction(activeId, true);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void setSupportTypingAction(activeId, true);
+    }, 2_000);
+    return () => {
+      window.clearInterval(timer);
+      void setSupportTypingAction(activeId, false);
+    };
+  }, [activeId, replyFocused]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -392,15 +406,9 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
               <input
                 type="text"
                 value={reply}
-                onChange={(e) => {
-                  setReply(e.target.value);
-                  // At most one ping every 1.5s while the team is writing.
-                  const now = Date.now();
-                  if (activeId && now - lastTypingPingRef.current > 1_500) {
-                    lastTypingPingRef.current = now;
-                    void setSupportTypingAction(activeId);
-                  }
-                }}
+                onChange={(e) => setReply(e.target.value)}
+                onFocus={() => setReplyFocused(true)}
+                onBlur={() => setReplyFocused(false)}
                 placeholder="Reply as Support…"
                 maxLength={2000}
                 disabled={sending}

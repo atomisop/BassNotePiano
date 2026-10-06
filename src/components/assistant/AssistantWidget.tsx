@@ -398,7 +398,7 @@ export function AssistantWidget() {
   const [threadMessages, setThreadMessages] = useState<ThreadMessage[]>([]);
   const [threadStatus, setThreadStatus] = useState<ThreadStatus | null>(null);
   const [supportTyping, setSupportTyping] = useState(false);
-  const lastTypingPingRef = useRef(0);
+  const [inputFocused, setInputFocused] = useState(false);
 
   // See lib/overlayNav.ts — true while MarketingNav's mobile menu or the
   // dashboard's MoreSheet is open, so the launcher steps aside instead of
@@ -523,6 +523,26 @@ export function AssistantWidget() {
       cancelled = true;
     };
   }, [mounted, session?.user?.id, activeEscalationId]);
+
+  // In a live thread the team sees "Customer is typing" for as long as the box is focused:
+  // refreshed every 2 seconds, and stopped at once when it loses focus or the panel closes.
+  useEffect(() => {
+    if (!activeEscalationId || !inputFocused || !open) return;
+    const send = (typing: boolean) =>
+      void fetch(`/api/assistant/support/${activeEscalationId}/typing`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ typing }),
+      }).catch(() => {});
+    send(true);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") send(true);
+    }, 2_000);
+    return () => {
+      window.clearInterval(timer);
+      send(false);
+    };
+  }, [activeEscalationId, inputFocused, open]);
 
   // Polls the live thread while it's open on screen — no point spending
   // requests on a panel the visitor isn't looking at.
@@ -1124,19 +1144,9 @@ export function AssistantWidget() {
                   ref={inputRef}
                   type="text"
                   value={input}
-                  onChange={(e) => {
-                    setInput(e.target.value);
-                    // In a live thread the team sees "Customer is typing": at most one ping every 1.5s.
-                    const now = Date.now();
-                    if (activeEscalationId && now - lastTypingPingRef.current > 1_500) {
-                      lastTypingPingRef.current = now;
-                      void fetch(`/api/assistant/support/${activeEscalationId}/typing`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: "{}",
-                      }).catch(() => {});
-                    }
-                  }}
+                  onChange={(e) => setInput(e.target.value)}
+                  onFocus={() => setInputFocused(true)}
+                  onBlur={() => setInputFocused(false)}
                   placeholder={isResolved ? "This conversation is closed" : inSupportMode ? "Message support…" : "Ask Atom anything…"}
                   maxLength={2000}
                   disabled={loading || isResolved}
