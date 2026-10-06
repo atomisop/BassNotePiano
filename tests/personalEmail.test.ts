@@ -29,4 +29,15 @@ describe("sendPersonalEmail", () => {
     expect(send.mock.calls[0][0].from).toContain("music@bassnotepiano.com");
     expect(send.mock.calls[1][0].from).toContain("noreply");
   });
+
+  it("tries the root-domain sender last, so mail still goes out when only that domain is verified", async () => {
+    send
+      .mockResolvedValueOnce({ data: null, error: { message: "domain not verified" } })
+      .mockResolvedValueOnce({ data: null, error: { message: "domain not verified" } })
+      .mockResolvedValueOnce({ data: { id: "3" }, error: null });
+    const { sendPersonalEmail } = await import("@/lib/email");
+    await sendPersonalEmail("a@b.com", "Hello", "Body");
+    expect(send).toHaveBeenCalledTimes(3);
+    expect(send.mock.calls[2][0].from).toBe("Bass Note Piano <noreply@bassnotepiano.com>");
+  });
 });
