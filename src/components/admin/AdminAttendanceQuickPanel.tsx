@@ -233,15 +233,12 @@ export function AdminAttendanceQuickPanel() {
         <ClipboardCheck className="h-[18px] w-[18px]" strokeWidth={1.5} />
         {rows.length > 0 && (
           // Total active bookings, from the moment each is made until it is
-          // marked present, absent or canceled. Orange while any class is ready
-          // for attendance, neutral otherwise.
+          // marked present, absent or canceled. Always orange, 9+ past nine.
           <span
-            className={`absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-small font-bold ${
-              readyCount > 0 ? "bg-signal text-slate-950" : "bg-slate-600 text-white"
-            }`}
+            className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950"
             aria-label={`${rows.length} active booking${rows.length === 1 ? "" : "s"}${readyCount > 0 ? `, ${readyCount} ready for attendance` : ""}`}
           >
-            {rows.length > 99 ? "99+" : rows.length}
+            {rows.length > 9 ? "9+" : rows.length}
           </span>
         )}
       </button>
