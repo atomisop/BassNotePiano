@@ -164,6 +164,9 @@ export function CustomerProfile({
                   Joined {formatDate(user.createdAt)} · {user.emailVerified ? "Email verified" : "Email not verified"}
                 </p>
                 <p className="mt-1 text-small text-slate-600">
+                  {user.passwordChangedAt ? `Password changed ${formatDate(user.passwordChangedAt)}` : "Password never changed"}
+                </p>
+                <p className="mt-1 text-small text-slate-600">
                   {user.lastActivityAt ? `Last active ${formatDate(user.lastActivityAt)}` : "No recorded activity"} ·{" "}
                   {user.currentStreak}-day streak
                 </p>

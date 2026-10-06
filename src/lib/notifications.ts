@@ -13,6 +13,8 @@ export interface CreateNotificationParams {
   body?: string;
   /** If set, also emails the user provided their matching notifyEmail* preference is on. */
   emailCategory?: EmailCategory;
+  /** Overrides the default button for this type, e.g. a deep link to the exact page. `path` is an in-app path. */
+  cta?: { label: string; path: string };
 }
 
 interface NotificationCta {
@@ -90,7 +92,9 @@ export async function createNotification(params: CreateNotificationParams) {
   // are not lost among everyday notifications. The email (if their preference
   // allows) is unchanged.
   const mailKind = MAIL_ROUTED_TYPES[params.type];
-  const cta = NOTIFICATION_CTA[params.type];
+  const cta: NotificationCta | undefined = params.cta
+    ? { label: params.cta.label, url: getAppUrl(params.cta.path), kind: "default" }
+    : NOTIFICATION_CTA[params.type];
   const notification = mailKind
     ? await createMailMessage({
         userId: params.userId,

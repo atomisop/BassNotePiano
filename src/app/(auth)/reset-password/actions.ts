@@ -35,7 +35,7 @@ export async function resetPasswordAction(email: string, code: string, newPasswo
       // Bumping sessionVersion signs out every device holding an older
       // token: the point of resetting a password is often "someone else
       // may have my account", and a stolen session must not survive it.
-      data: { passwordHash, sessionVersion: { increment: 1 } },
+      data: { passwordHash, passwordChangedAt: new Date(), sessionVersion: { increment: 1 } },
       select: { id: true, email: true },
     });
     return updated;

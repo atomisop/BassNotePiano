@@ -24,7 +24,7 @@ export default async function AdminEmployeesPage() {
           onRevoke={revokeEmployeeAction}
           notifications={
             isOwner && settings
-              ? ADMIN_NOTIFICATION_KINDS.map(({ kind, label }) => ({ kind, label, enabled: settings[kind] }))
+              ? ADMIN_NOTIFICATION_KINDS.map(({ kind, label, group, ownerOnly }) => ({ kind, label, group, ownerOnly, owner: settings[kind].owner, employees: settings[kind].employees }))
               : null
           }
           onToggleNotification={setEmployeeNotificationAction}

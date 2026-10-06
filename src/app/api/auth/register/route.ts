@@ -1,4 +1,5 @@
 import { canonicalEmail } from "@/lib/canonicalEmail";
+import { notifyAdmins } from "@/lib/adminNotifications";
 import { hasApprovedRegistration, startTrialForEmail } from "@/lib/entitlement";
 import { NextResponse, type NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
@@ -75,6 +76,14 @@ export async function POST(req: NextRequest) {
     if (await hasApprovedRegistration(user.email).catch(() => false)) {
       await startTrialForEmail(user.email).catch((err) => console.error("Starting the free trial failed (non-blocking):", err));
     }
+    // Owner only (see ADMIN_NOTIFICATION_KINDS): who signed up, still unverified.
+    await notifyAdmins("NEW_ACCOUNT", {
+      type: "ADMIN_ALERT",
+      title: "New account, not verified yet",
+      body: `${name} (${user.email}) just created an account and has not verified their email yet. You will get another email when they do.`,
+      emailCategory: "social",
+      cta: { label: "View account", path: `/admin/users/${user.id}` },
+    });
     await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
     return NextResponse.json(user, { status: 201 });
   } catch (err) {

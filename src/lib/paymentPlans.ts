@@ -730,6 +730,7 @@ export async function lapsePlanForNonPayment(planId: string): Promise<boolean> {
     title: "Plan canceled for non-payment",
     body: `${student?.name ?? student?.email ?? "A student"} went a week past due, so their plan was canceled.`,
     emailCategory: "social",
+    cta: { label: "See the plan", path: "/admin/payment-plans?status=CANCELED" },
   });
   return true;
 }
