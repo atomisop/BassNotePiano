@@ -10,12 +10,15 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { getReservableSlotsForChangeAction, changeReservedSlotAction, cancelClassBookingAction } from "../lessons/actions";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { WideLayout } from "@/components/layout/PageLayouts";
+import { DISCORD_INVITE_URL } from "@/lib/discord";
 
 interface UpcomingBooking {
   id: string;
   label: string | null;
   scheduledAt: string;
   creditsSpent: number;
+  /** The private Discord call for this class, once it exists. */
+  discordUrl?: string | null;
 }
 
 // "HH:mm" -> "2:00 PM", shown as the raw ET wall-clock digits with no
@@ -174,6 +177,26 @@ export function ScheduleClient({
                       </p>
                     </div>
                     <span className="shrink-0 text-small text-slate-500">{Math.round((booking.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES)} min</span>
+                  </div>
+                  <div className="mt-2.5 flex flex-wrap gap-2">
+                    {hoursUntil <= 0.5 && hoursUntil > -1 && (
+                      <a
+                        href={booking.discordUrl ?? DISCORD_INVITE_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="tap cta-sheen cta-fill inline-flex items-center rounded-lg px-3 py-1.5 text-small font-semibold"
+                      >
+                        Join on Discord
+                      </a>
+                    )}
+                    {hoursUntil > 0 && (
+                      <a
+                        href={`/api/calendar/class?s=${encodeURIComponent(booking.scheduledAt)}&m=${Math.round((booking.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES)}`}
+                        className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium"
+                      >
+                        Add to calendar
+                      </a>
+                    )}
                   </div>
                   {canChange ? (
                     confirming ? (

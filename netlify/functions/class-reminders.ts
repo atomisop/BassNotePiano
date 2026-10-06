@@ -2,7 +2,7 @@ import { schedule } from "@netlify/functions";
 import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
 import { runJob } from "../../src/lib/jobRun";
-import { DISCORD_INVITE_URL } from "../../src/lib/discord";
+import { DISCORD_INVITE_URL, discordChannelUrl } from "../../src/lib/discord";
 import { formatEtDateTime } from "../../src/lib/classScheduleLabels";
 
 const HOUR_MS = 3_600_000;
@@ -43,7 +43,7 @@ export const handler = schedule("*/15 * * * *", async () =>
         reminder1hAt: null,
         scheduledAt: { gt: now, lte: new Date(now.getTime() + HOUR_MS) },
       },
-      select: { id: true, studentId: true, scheduledAt: true },
+      select: { id: true, studentId: true, scheduledAt: true, discordChannelId: true },
     });
 
     for (const booking of soon) {
@@ -55,7 +55,7 @@ export const handler = schedule("*/15 * * * *", async () =>
         title: "Your class starts soon",
         body: `Starting in about ${minutes} minute${minutes === 1 ? "" : "s"}. Join your teacher on Discord.`,
         emailCategory: "reminders",
-        cta: { label: "Join on Discord", url: DISCORD_INVITE_URL },
+        cta: { label: "Join on Discord", url: booking.discordChannelId ? discordChannelUrl(booking.discordChannelId) : DISCORD_INVITE_URL },
       }).catch((err) => console.error("Class reminder (starting soon) failed (non-blocking):", err));
     }
 

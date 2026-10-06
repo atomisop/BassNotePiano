@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import type { AttendanceStatus } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { bookMissingReservedWindows } from "@/lib/paymentPlans";
+import { isOwnerEmail } from "@/lib/adminNotifications";
+import { checkBotSetup, type SetupCheck } from "@/lib/discordApi";
+import { prisma } from "@/lib/prisma";
 import {
   createClassSchedule,
   updateClassSchedule,
@@ -125,4 +128,15 @@ export async function adminBookClassAction(
   } catch (err) {
     return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
   }
+}
+
+/** Owner only: checks every step the Discord bot needs, and makes then removes a test channel. */
+export async function testDiscordBotAction(): Promise<{ ok: boolean; checks: SetupCheck[] }> {
+  const session = await getServerAuthSession();
+  if (!session?.user || session.user.role !== "ADMIN" || !isOwnerEmail(session.user.email)) {
+    return { ok: false, checks: [{ step: "Access", ok: false, detail: "Only the owner can run this." }] };
+  }
+  const me = await prisma.user.findUnique({ where: { id: session.user.id }, select: { discordId: true } });
+  const checks = await checkBotSetup(me?.discordId ?? null);
+  return { ok: checks.every((c) => c.ok), checks };
 }
