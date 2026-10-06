@@ -2,7 +2,9 @@ import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 import type { ZellePaymentStatus } from "@prisma/client";
 import { getAdminPayments } from "@/lib/payments";
 import { PaymentQueue } from "@/components/admin/PaymentQueue";
-import { approvePaymentAction, checkPaymentAction, rejectPaymentAction } from "./actions";
+import { getServerAuthSession } from "@/lib/auth";
+import { isOwnerEmail } from "@/lib/adminNotifications";
+import { approvePaymentAction, checkPaymentAction, deletePaymentAction, rejectPaymentAction } from "./actions";
 
 const FILTERS: { label: string; value: ZellePaymentStatus | "ALL" | "UNCHECKED" }[] = [
   { label: "Pending", value: "PENDING_REVIEW" },
@@ -18,6 +20,8 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
   const requested = searchParams.status?.toUpperCase();
   const activeFilter = FILTERS.find((f) => f.value === requested)?.value ?? "PENDING_REVIEW";
   const payments = await getAdminPayments(activeFilter === "ALL" ? undefined : activeFilter);
+  const session = await getServerAuthSession();
+  const isOwner = isOwnerEmail(session?.user?.email);
   const activeLabel = FILTERS.find((f) => f.value === activeFilter)!.label;
 
   return (
@@ -46,6 +50,7 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
           onApprove={approvePaymentAction}
           onReject={rejectPaymentAction}
           onCheck={checkPaymentAction}
+          onDelete={isOwner ? deletePaymentAction : undefined}
           emptyMessage={
             activeFilter === "PENDING_REVIEW" ? "Nothing pending review." : `No ${activeLabel.toLowerCase()} payments.`
           }

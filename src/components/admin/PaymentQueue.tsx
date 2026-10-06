@@ -14,6 +14,8 @@ export interface PaymentQueueProps {
   onApprove: (paymentId: string) => Promise<void>;
   onReject: (paymentId: string, reason: string) => Promise<void>;
   onCheck?: (paymentId: string) => Promise<void>;
+  /** Owner only. Permanently removes the payment record. */
+  onDelete?: (paymentId: string) => Promise<void>;
   emptyMessage?: string;
 }
 
@@ -95,6 +97,7 @@ export function PaymentQueue({
   onApprove,
   onReject,
   onCheck,
+  onDelete,
   emptyMessage = "Nothing to review right now.",
 }: PaymentQueueProps) {
   const [query, setQuery] = useState("");
@@ -109,6 +112,7 @@ export function PaymentQueue({
   // to trigger by mistake in a list of several pending rows. Now mirrors
   // Reject's own two-step shape instead of a new, different pattern.
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function handleApprove(id: string) {
     setBusyId(id);
@@ -116,6 +120,18 @@ export function PaymentQueue({
       await onApprove(id);
       router.refresh();
       setApprovingId(null);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!onDelete) return;
+    setBusyId(id);
+    try {
+      await onDelete(id);
+      router.refresh();
+      setDeletingId(null);
     } finally {
       setBusyId(null);
     }
@@ -300,6 +316,43 @@ export function PaymentQueue({
               </button>
             </div>
           )}
+
+          {onDelete &&
+            (deletingId === payment.id ? (
+              <div className="mt-4 space-y-2 border-t border-slate-50/10 pt-3">
+                <p className="text-small text-slate-400">
+                  Delete this record for good? It does not undo any plan, credits or classes it already gave.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDeletingId(null)}
+                    disabled={busyId === payment.id}
+                    className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  >
+                    Keep
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(payment.id)}
+                    disabled={busyId === payment.id}
+                    className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
+                    {busyId === payment.id ? "Deleting…" : "Delete payment"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setDeletingId(payment.id)}
+                disabled={busyId === payment.id}
+                className="tap mt-3 inline-flex items-center text-small font-medium text-slate-500 transition hover:text-red-300 disabled:opacity-50"
+              >
+                Delete
+              </button>
+            ))}
         </div>
         );
       })}
