@@ -48,6 +48,8 @@ interface BookingRow {
   canceledReason: string | null;
   /** Booked by the student's payment plan (their weekly class). It can be skipped, not rescheduled here. */
   reserved?: boolean;
+  /** The private Discord call for this class, once it exists. */
+  discordUrl?: string | null;
 }
 
 type BookingMode = "SOLO" | "FAMILY";
@@ -181,7 +183,7 @@ function BookingCard({
       <div className="flex shrink-0 flex-wrap items-center gap-2">
         {b.status === "SCHEDULED" && hoursUntil > -1 && hoursUntil <= 0.5 && (
           <a
-            href={DISCORD_INVITE_URL}
+            href={b.discordUrl ?? DISCORD_INVITE_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="tap cta-sheen cta-fill inline-flex items-center rounded-lg px-3 py-1.5 text-small font-semibold"

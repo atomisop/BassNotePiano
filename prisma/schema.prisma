@@ -796,6 +796,8 @@ model User {
   lastSeenPatchNotesAt DateTime?
   lastSeenPatchVersion String? // the last What's new version this account has been shown
   passwordChangedAt DateTime? // when they last changed or reset their password, null if never
+  discordId       String?   @unique // the Discord account they connected, used to give them access to their private class call
+  discordUsername String?
 
   // Drives the interactive spotlight walkthrough — shown automatically
   // exactly once (right after onboarding wizard + first login), never
@@ -1522,6 +1524,8 @@ model ClassBooking {
   // When the student was last reminded about this class, so each reminder goes out once.
   reminder24At   DateTime?
   reminder1hAt   DateTime?
+  // The private Discord voice channel made for this class, until it is removed after the class.
+  discordChannelId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -18,6 +18,8 @@ import { ClassBookingClient } from "./ClassBookingClient";
 import { ScheduleClient } from "../schedule/ScheduleClient";
 import { LessonsHub } from "./LessonsHub";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
+import { discordChannelUrl } from "@/lib/discord";
+import { DiscordConnectCard } from "@/components/lessons/DiscordConnectCard";
 
 /**
  * A student on an active Payment Plan sees two tabs here. "My weekly class" is
@@ -27,7 +29,7 @@ import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
  * teacher on top of that, paid with credits at $55 each. Everyone else (no
  * active plan, between plans) goes straight to the booking calendar.
  */
-export default async function LessonsPage({ searchParams }: { searchParams: { tab?: string } }) {
+export default async function LessonsPage({ searchParams }: { searchParams: { tab?: string; discord?: string } }) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
   // Booking a class requires curriculum access first — credits themselves
@@ -77,11 +79,21 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
         attendance: b.attendance,
         canceledReason: b.canceledReason,
         reserved: Boolean(b.reservedByPlanId),
+        discordUrl: b.discordChannelId ? discordChannelUrl(b.discordChannelId) : null,
       }))}
     />
   );
 
-  if (!activePlan) return bookingClient;
+  const me = await prisma.user.findUnique({ where: { id: session.user.id }, select: { discordUsername: true } });
+  const card = <DiscordConnectCard discordUsername={me?.discordUsername ?? null} flag={searchParams.discord} />;
+
+  if (!activePlan)
+    return (
+      <>
+        {card}
+        {bookingClient}
+      </>
+    );
 
   const [weeklyUsage, reservedSchedule] = await Promise.all([
     getWeeklyCreditUsage(session.user.id),
@@ -96,6 +108,8 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
     .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
 
   return (
+    <>
+      {card}
     <LessonsHub
       initialTab={searchParams.tab === "extra" ? "extra" : "weekly"}
       weekly={
@@ -120,10 +134,12 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
             label: b.schedule.label,
             scheduledAt: b.scheduledAt.toISOString(),
             creditsSpent: b.creditsSpent,
+            discordUrl: b.discordChannelId ? discordChannelUrl(b.discordChannelId) : null,
           }))}
         />
       }
       extras={bookingClient}
     />
+    </>
   );
 }

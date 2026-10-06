@@ -23,6 +23,7 @@ export const JOB_MAX_SILENCE_HOURS: Record<string, number> = {
   "admin-daily-summary": 30,
   "class-reminders": 2,
   "auto-approvals": 30,
+  "discord-class-channels": 2,
 };
 
 /** Jobs that have not run (or last failed) within their allowed window. */
