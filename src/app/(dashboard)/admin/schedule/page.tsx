@@ -4,6 +4,7 @@ import { AdminScheduleManager } from "@/components/admin/AdminScheduleManager";
 import { AdminAttendanceRoster } from "@/components/admin/AdminAttendanceRoster";
 import { AdminAttendanceByStudent } from "@/components/admin/AdminAttendanceByStudent";
 import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
+import { teacherCalendarToken } from "@/lib/teacherCalendar";
 import { AdminManualBooking } from "@/components/admin/AdminManualBooking";
 import {
   createClassScheduleAction,
@@ -126,6 +127,8 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
   }
 
   const schedules = await getAllClassSchedules();
+  const calendarHost = (process.env.NEXTAUTH_URL ?? "").replace(/^https?:\/\//, "");
+  const calendarLink = calendarHost ? `webcal://${calendarHost}/api/calendar/teacher?t=${teacherCalendarToken()}` : null;
 
   return (
     <div>
@@ -133,6 +136,12 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Weekly schedule</h1>
 
       {viewSwitcher}
+
+      {calendarLink && (
+        <a href={calendarLink} className="tap neu-btn mt-6 inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
+          Add my classes to my calendar
+        </a>
+      )}
 
       <div className="mt-6">
         <AdminScheduleManager
