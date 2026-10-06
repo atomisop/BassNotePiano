@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getAllClassSchedules, getAdminOccurrences, getUpcomingOccurrences } from "@/lib/classSchedule";
 import { AdminScheduleManager } from "@/components/admin/AdminScheduleManager";
 import { AdminAttendanceRoster } from "@/components/admin/AdminAttendanceRoster";
+import { AdminAttendanceByStudent } from "@/components/admin/AdminAttendanceByStudent";
+import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 import { AdminManualBooking } from "@/components/admin/AdminManualBooking";
 import {
   createClassScheduleAction,
@@ -28,7 +30,7 @@ const VIEWS: { label: string; value: ViewValue }[] = [
   { label: "Attendance", value: "ATTENDANCE" },
 ];
 
-export default async function AdminSchedulePage({ searchParams }: { searchParams: { view?: string } }) {
+export default async function AdminSchedulePage({ searchParams }: { searchParams: { view?: string; group?: string } }) {
   const requested = searchParams.view?.toUpperCase();
   const activeView = VIEWS.find((v) => v.value === requested)?.value ?? "WINDOWS";
 
@@ -79,6 +81,7 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
 
   if (activeView === "ATTENDANCE") {
     const occurrences = await getAdminOccurrences();
+    const byStudent = searchParams.group === "student";
 
     return (
       <div>
@@ -87,7 +90,22 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
 
         {viewSwitcher}
 
+        <div className="mt-4">
+          <AdminFilterTabs
+            label="Group attendance by"
+            items={[
+              { label: "By class", href: "/admin/schedule?view=ATTENDANCE", active: !byStudent },
+              { label: "By student", href: "/admin/schedule?view=ATTENDANCE&group=student", active: byStudent },
+            ]}
+          />
+        </div>
+
         <div className="mt-6">
+          {byStudent ? (
+            <AdminAttendanceByStudent
+              occurrences={occurrences.map((o) => ({ scheduleId: o.scheduleId, label: o.label, scheduledAt: o.scheduledAt.toISOString(), roster: o.roster }))}
+            />
+          ) : (
           <AdminAttendanceRoster
             occurrences={occurrences.map((o) => ({
               scheduleId: o.scheduleId,
@@ -101,6 +119,7 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
             onCancelBooking={adminCancelBookingAction}
             onUndoAttendance={undoAttendanceAction}
           />
+          )}
         </div>
       </div>
     );

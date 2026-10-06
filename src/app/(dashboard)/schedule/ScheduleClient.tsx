@@ -208,7 +208,7 @@ export function ScheduleClient({
                           setSkipError(null);
                           setConfirmSkipId(booking.id);
                         }}
-                        className="tap mt-2 text-small font-medium text-slate-400 transition hover:text-red-300"
+                        className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-2"
                       >
                         Skip this class
                       </button>
@@ -250,7 +250,7 @@ export function ScheduleClient({
               <button
                 type="button"
                 onClick={() => setChangingTime(false)}
-                className="text-small font-medium text-slate-500 transition hover:text-slate-300"
+                className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
               >
                 Cancel
               </button>

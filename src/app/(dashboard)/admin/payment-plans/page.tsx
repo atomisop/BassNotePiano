@@ -3,7 +3,9 @@ import type { PaymentPlanStatus } from "@prisma/client";
 import { getAdminPaymentPlans, getPlanCancellationFeedback } from "@/lib/paymentPlans";
 import { PaymentPlanList } from "@/components/admin/PaymentPlanList";
 import { PlanCancellationFeedbackList } from "@/components/admin/PlanCancellationFeedbackList";
-import { cancelPaymentPlanAction } from "./actions";
+import { getServerAuthSession } from "@/lib/auth";
+import { isOwnerEmail } from "@/lib/adminNotifications";
+import { cancelPaymentPlanAction, recordPlanPaymentAction } from "./actions";
 
 // "Overdue" isn't a real PaymentPlanStatus — it's derived (ACTIVE && past its
 // nextDueDate) in getAdminPaymentPlans, never stored. This filter just
@@ -56,6 +58,8 @@ export default async function AdminPaymentPlansPage({ searchParams }: { searchPa
     );
   }
 
+  const session = await getServerAuthSession();
+  const isOwner = isOwnerEmail(session?.user?.email);
   const statusParam = activeFilter === "ALL" || activeFilter === "OVERDUE" ? undefined : activeFilter;
   const fetched = await getAdminPaymentPlans(statusParam);
   const plans = activeFilter === "OVERDUE" ? fetched.filter((plan) => plan.isOverdue) : fetched;
@@ -84,6 +88,7 @@ export default async function AdminPaymentPlansPage({ searchParams }: { searchPa
         <PaymentPlanList
           plans={plans}
           onCancel={cancelPaymentPlanAction}
+          onRecordPayment={isOwner ? recordPlanPaymentAction : undefined}
           emptyMessage={activeFilter === "ACTIVE" ? "No active plans." : `No ${activeLabel.toLowerCase()} plans.`}
         />
       </div>

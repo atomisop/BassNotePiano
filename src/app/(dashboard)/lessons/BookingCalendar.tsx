@@ -119,7 +119,7 @@ export function BookingCalendar({
             onClick={() => shiftMonth(-1)}
             disabled={atMinMonth}
             aria-label="Previous month"
-            className="tap flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-ink/5 hover:text-[rgb(var(--c-s-50))] disabled:pointer-events-none disabled:opacity-30"
+            className="tap flex h-7 w-7 items-center justify-center transition disabled:pointer-events-none disabled:opacity-30 neu-btn rounded-lg"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
               <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
@@ -130,7 +130,7 @@ export function BookingCalendar({
             onClick={() => shiftMonth(1)}
             disabled={atMaxMonth}
             aria-label="Next month"
-            className="tap flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-ink/5 hover:text-[rgb(var(--c-s-50))] disabled:pointer-events-none disabled:opacity-30"
+            className="tap flex h-7 w-7 items-center justify-center transition disabled:pointer-events-none disabled:opacity-30 neu-btn rounded-lg"
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
               <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
@@ -197,7 +197,7 @@ export function BookingCalendar({
           <button
             type="button"
             onClick={() => onSelectDate(null)}
-            className="text-small font-medium text-[rgb(var(--c-s-50))] transition hover:opacity-70"
+            className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
           >
             Show all
           </button>

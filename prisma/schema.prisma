@@ -793,6 +793,7 @@ model User {
   // every login. Null means "never seen one," which also shows it.
   lastSeenPatchNotesAt DateTime?
   lastSeenPatchVersion String? // the last What's new version this account has been shown
+  passwordChangedAt DateTime? // when they last changed or reset their password, null if never
 
   // Drives the interactive spotlight walkthrough — shown automatically
   // exactly once (right after onboarding wizard + first login), never
@@ -1583,6 +1584,8 @@ model ProcessedPaymentEmail {
 model AdminNotificationSetting {
   kind             String   @id
   employeesEnabled Boolean
+  // The owner can switch an alert off for themselves too.
+  ownerEnabled     Boolean  @default(true)
   updatedAt        DateTime @updatedAt
 }
 

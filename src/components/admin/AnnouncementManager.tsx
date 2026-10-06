@@ -214,7 +214,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
               type="button"
               onClick={handleDelete}
               disabled={busy}
-              className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
             >
               {busy && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
               {busy ? "Deleting…" : "Confirm delete"}
@@ -235,7 +235,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
             type="button"
             onClick={() => setDeleting(true)}
             disabled={busy}
-            className="tap rounded-lg border border-red-400/20 px-3 py-1.5 text-small font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="tap rounded-lg border border-red-400/20 px-3 py-1.5 text-small font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
           >
             Delete
           </button>

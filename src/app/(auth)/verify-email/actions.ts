@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyCode, createAndSendCode, createSilentCode, RateLimitError, type VerifyCodeResult } from "@/lib/verification";
 import { sendWelcomeEmail } from "@/lib/email";
+import { notifyAdmins } from "@/lib/adminNotifications";
 import { withTimingFloor } from "@/lib/timingSafe";
 
 const REASON_MESSAGES: Record<string, string> = {
@@ -25,6 +26,15 @@ export async function verifyEmailAction(email: string, code: string) {
     where: { id: result.userId },
     data: { emailVerified: new Date() },
     select: { id: true, email: true, name: true },
+  });
+
+  // Owner only: the account they were told about as "not verified yet" now is.
+  await notifyAdmins("ACCOUNT_VERIFIED", {
+    type: "ADMIN_ALERT",
+    title: "New user verified their account",
+    body: `${user.name ?? user.email} (${user.email}) verified their email.`,
+    emailCategory: "social",
+    cta: { label: "View account", path: `/admin/users/${user.id}` },
   });
 
   // First real proof the account is fully created — a one-time welcome

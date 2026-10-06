@@ -28,12 +28,12 @@ export async function revokeEmployeeAction(targetUserId: string): Promise<{ ok: 
   return { ok: true, error: null };
 }
 
-/** Owner only: decides whether employees get one kind of admin notification. */
-export async function setEmployeeNotificationAction(kind: AdminNotificationKind, enabled: boolean): Promise<{ ok: boolean; error: string | null }> {
+/** Owner only: decides whether the owner or employees get one kind of admin notification. */
+export async function setEmployeeNotificationAction(kind: AdminNotificationKind, who: "owner" | "employees", enabled: boolean): Promise<{ ok: boolean; error: string | null }> {
   const admin = await requireAdmin();
   if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can change this." };
   try {
-    await setAdminNotificationSetting(kind, enabled);
+    await setAdminNotificationSetting(kind, who === "owner" ? "owner" : "employees", enabled);
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Could not save." };
   }

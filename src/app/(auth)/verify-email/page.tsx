@@ -146,7 +146,7 @@ function VerifyEmailForm() {
       <button
         type="button"
         onClick={handleResend}
-        className="mt-4 w-full text-center text-small text-slate-500 transition hover:text-[rgb(var(--c-s-50))]"
+        className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-4 w-full"
       >
         Didn&apos;t get a code? Resend
       </button>

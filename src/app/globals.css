@@ -148,6 +148,13 @@
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-fade-up: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-fade-in: fade-in 0.5s ease-out forwards;
+  --animate-border-beam: border-beam calc(var(--duration) * 1s) infinite linear;
+
+  @keyframes border-beam {
+    100% {
+      offset-distance: 100%;
+    }
+  }
 
   @keyframes accordion-down {
     from {
@@ -281,6 +288,12 @@
   border: 1px solid var(--elev-border);
   border-radius: var(--surface-radius);
   box-shadow: var(--elev-shadow);
+}
+
+/* The one neumorphic button. Raised at rest, deeper on hover, pressed in on
+   tap. Callers add their own padding and size. */
+@utility neu-btn {
+  @apply bg-neu-base text-slate-300 shadow-raised-low transition hover:text-slate-100 hover:shadow-raised-mid active:shadow-pressed-low disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 @utility glass-pill {

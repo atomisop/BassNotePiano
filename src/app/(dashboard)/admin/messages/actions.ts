@@ -31,18 +31,41 @@ export async function searchRecipientsAction(query: string): Promise<MessageReci
   });
 }
 
+const MAX_RECIPIENTS = 50;
+
+export interface SendSummary {
+  sent: number;
+  emailed: number;
+  failed: number;
+}
+
 export async function sendMessageAction(
-  recipientId: string,
+  recipientIds: string[],
   title: string,
   body: string,
   sendEmail: boolean,
   supportCta: boolean,
-): Promise<{ ok: true; result: SendAdminMessageResult } | { ok: false; error: string }> {
+): Promise<{ ok: true; summary: SendSummary } | { ok: false; error: string }> {
   try {
     const adminId = await requireAdminId();
-    const result = await sendAdminMessage(adminId, recipientId, title, body, { sendEmail, supportCta });
+    const ids = Array.from(new Set(recipientIds));
+    if (ids.length === 0) throw new MailError("Choose at least one person.");
+    if (ids.length > MAX_RECIPIENTS) throw new MailError(`Send to ${MAX_RECIPIENTS} people at most at a time.`);
+    // One message per person, so each has their own Mail entry and read receipt.
+    const summary: SendSummary = { sent: 0, emailed: 0, failed: 0 };
+    for (const id of ids) {
+      try {
+        const result: SendAdminMessageResult = await sendAdminMessage(adminId, id, title, body, { sendEmail, supportCta });
+        summary.sent++;
+        if (result.email === "sent") summary.emailed++;
+      } catch (err) {
+        // A bad title or body fails the same way for everyone, so surface it instead of counting it.
+        if (summary.sent === 0 && summary.failed === 0 && err instanceof MailError) throw err;
+        summary.failed++;
+      }
+    }
     revalidatePath("/admin/messages");
-    return { ok: true, result };
+    return { ok: true, summary };
   } catch (err) {
     return { ok: false, error: err instanceof MailError ? err.message : "Something went wrong." };
   }

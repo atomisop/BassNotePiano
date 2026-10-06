@@ -471,6 +471,7 @@ export async function notifyAutoApproved(paymentId: string) {
     title: "Payment approved automatically",
     body: `${payment.user.name ?? payment.user.email} paid ${amount} by ${payment.method === "VENMO" ? "Venmo" : "Zelle"}.`,
     emailCategory: "payments",
+    cta: { label: "Check the payment", path: "/admin/payments?status=VERIFIED" },
   });
 }
 
@@ -694,6 +695,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
           title: "New subscriber",
           body: `${student?.name ?? student?.email ?? "A student"} is on the ${plan ? describePaymentPlan(plan.cadence, plan.term) : "plan"}${slot ? `, ${slot}` : ""}.`,
           emailCategory: "social",
+          cta: { label: "See the subscriber", path: "/admin/payment-plans" },
         });
       } catch (err) {
         console.error("New subscriber notification failed (non-blocking):", err);

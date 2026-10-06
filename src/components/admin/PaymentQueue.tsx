@@ -261,7 +261,7 @@ export function PaymentQueue({
                   type="button"
                   onClick={() => handleReject(payment.id)}
                   disabled={busyId === payment.id || !reason.trim()}
-                  className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                 >
                   {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                   {busyId === payment.id ? "Rejecting…" : "Confirm reject"}
@@ -336,7 +336,7 @@ export function PaymentQueue({
                     type="button"
                     onClick={() => handleDelete(payment.id)}
                     disabled={busyId === payment.id}
-                    className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                   >
                     {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                     {busyId === payment.id ? "Deleting…" : "Delete payment"}
@@ -348,7 +348,7 @@ export function PaymentQueue({
                 type="button"
                 onClick={() => setDeletingId(payment.id)}
                 disabled={busyId === payment.id}
-                className="tap mt-3 inline-flex items-center text-small font-medium text-slate-500 transition hover:text-red-300 disabled:opacity-50"
+                className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-3 inline-flex items-center"
               >
                 Delete
               </button>

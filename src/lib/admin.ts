@@ -16,17 +16,20 @@ export interface OverviewStats {
   pendingPayments: number;
   /** Sum of VERIFIED ZellePayment amounts — the only revenue this platform tracks. */
   totalRevenueCents: number;
+  /** Money submitted but not approved yet, so it is not in the total above. */
+  pendingRevenueCents: number;
 }
 
 export async function getOverviewStats(): Promise<OverviewStats> {
-  const [totalUsers, curriculumUsers, pendingPayments, revenue] = await Promise.all([
+  const [totalUsers, curriculumUsers, pendingPayments, revenue, pendingSum] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({ where: { hasCurriculumAccess: true } }),
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
     prisma.zellePayment.aggregate({ where: { status: "VERIFIED" }, _sum: { amountCents: true } }),
+    prisma.zellePayment.aggregate({ where: { status: "PENDING_REVIEW" }, _sum: { amountCents: true } }),
   ]);
 
-  return { totalUsers, curriculumUsers, pendingPayments, totalRevenueCents: revenue._sum.amountCents ?? 0 };
+  return { totalUsers, curriculumUsers, pendingPayments, totalRevenueCents: revenue._sum.amountCents ?? 0, pendingRevenueCents: pendingSum._sum.amountCents ?? 0 };
 }
 
 // ---------------------------------------------------------------------------

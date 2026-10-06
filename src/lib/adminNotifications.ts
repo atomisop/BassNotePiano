@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { ADMIN_NOTIFICATION_KINDS, type AdminNotificationKind } from "@/lib/adminNotificationKinds";
 import { createNotification, type CreateNotificationParams } from "@/lib/notifications";
 
 /**
@@ -9,59 +10,60 @@ import { createNotification, type CreateNotificationParams } from "@/lib/notific
 
 export const OWNER_EMAIL = (process.env.OWNER_EMAIL ?? "isaacberhanu777@gmail.com").toLowerCase();
 
-export const ADMIN_NOTIFICATION_KINDS = [
-  { kind: "NEW_REGISTRATION", label: "New class registration", defaultOn: true },
-  { kind: "NEW_SUBSCRIPTION", label: "New subscription and weekly time", defaultOn: true },
-  { kind: "NEW_BOOKING", label: "New class booking", defaultOn: true },
-  { kind: "PAYMENT_REVIEW", label: "Payment to review", defaultOn: true },
-  { kind: "PAYMENT_AUTO_APPROVED", label: "Payment approved automatically", defaultOn: false },
-  { kind: "SUPPORT_CHAT", label: "Support Chat handoffs and messages", defaultOn: true },
-  { kind: "PLAN_CANCEL_FEEDBACK", label: "Student canceled their plan", defaultOn: true },
-  { kind: "SLOT_PROBLEM", label: "A subscriber's weekly time no longer exists", defaultOn: true },
-  { kind: "PLAN_LAPSED", label: "Plan canceled for non-payment", defaultOn: false },
-  { kind: "OWNER_MESSAGES", label: "Messages sent to the owner account", defaultOn: false },
-  { kind: "MUSIC_INBOX", label: "Emails sent to music@bassnotepiano.com", defaultOn: true },
-] as const;
-
-export type AdminNotificationKind = (typeof ADMIN_NOTIFICATION_KINDS)[number]["kind"];
+export { ADMIN_NOTIFICATION_GROUPS, ADMIN_NOTIFICATION_KINDS, type AdminNotificationGroup, type AdminNotificationKind } from "@/lib/adminNotificationKinds";
 
 export function isOwnerEmail(email: string | null | undefined): boolean {
   return !!email && email.toLowerCase() === OWNER_EMAIL;
 }
 
-export async function getAdminNotificationSettings(): Promise<Record<AdminNotificationKind, boolean>> {
+export type AdminNotificationSettings = Record<AdminNotificationKind, { owner: boolean; employees: boolean }>;
+
+export async function getAdminNotificationSettings(): Promise<AdminNotificationSettings> {
   const rows = await prisma.adminNotificationSetting.findMany();
-  const stored = new Map(rows.map((row) => [row.kind, row.employeesEnabled]));
+  const stored = new Map(rows.map((row) => [row.kind, row]));
   return Object.fromEntries(
-    ADMIN_NOTIFICATION_KINDS.map(({ kind, defaultOn }) => [kind, stored.get(kind) ?? defaultOn]),
-  ) as Record<AdminNotificationKind, boolean>;
+    ADMIN_NOTIFICATION_KINDS.map(({ kind, defaultOn }) => {
+      const row = stored.get(kind);
+      return [kind, { owner: row?.ownerEnabled ?? true, employees: row?.employeesEnabled ?? defaultOn }];
+    }),
+  ) as AdminNotificationSettings;
 }
 
-export async function setAdminNotificationSetting(kind: AdminNotificationKind, employeesEnabled: boolean) {
-  if (!ADMIN_NOTIFICATION_KINDS.some((k) => k.kind === kind)) throw new Error("Unknown notification.");
+export async function setAdminNotificationSetting(kind: AdminNotificationKind, who: "owner" | "employees", enabled: boolean) {
+  const def = ADMIN_NOTIFICATION_KINDS.find((k) => k.kind === kind);
+  if (!def) throw new Error("Unknown notification.");
+  if (who === "employees" && def.ownerOnly) throw new Error("Employees never get this one.");
   await prisma.adminNotificationSetting.upsert({
     where: { kind },
-    update: { employeesEnabled },
-    create: { kind, employeesEnabled },
+    update: who === "owner" ? { ownerEnabled: enabled } : { employeesEnabled: enabled },
+    create: { kind, employeesEnabled: who === "employees" ? enabled : def.defaultOn, ownerEnabled: who === "owner" ? enabled : true },
   });
 }
 
 /** Admins other than the owner who should get this kind. */
 export async function getEmployeeRecipients(kind: AdminNotificationKind): Promise<{ id: string; email: string }[]> {
+  if (ADMIN_NOTIFICATION_KINDS.find((k) => k.kind === kind)?.ownerOnly) return [];
   const settings = await getAdminNotificationSettings();
-  if (!settings[kind]) return [];
+  if (!settings[kind].employees) return [];
   const admins = await prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true, email: true } });
   return admins.filter((admin) => !isOwnerEmail(admin.email));
 }
 
-/** The owner plus every employee the owner has switched this kind on for. */
+/** The owner (unless they switched it off for themselves) plus every employee the owner has switched this kind on for. */
 export async function getAdminRecipients(kind: AdminNotificationKind): Promise<{ id: string }[]> {
+  const ownerOnly = ADMIN_NOTIFICATION_KINDS.find((k) => k.kind === kind)?.ownerOnly ?? false;
   const [settings, admins] = await Promise.all([
     getAdminNotificationSettings(),
     prisma.user.findMany({ where: { role: "ADMIN" }, select: { id: true, email: true } }),
   ]);
   const hasOwner = admins.some((admin) => isOwnerEmail(admin.email));
-  return admins.filter((admin) => (isOwnerEmail(admin.email) ? true : hasOwner ? settings[kind] : true)).map(({ id }) => ({ id }));
+  return admins
+    .filter((admin) => {
+      if (isOwnerEmail(admin.email)) return settings[kind].owner;
+      if (ownerOnly) return false;
+      return hasOwner ? settings[kind].employees : true;
+    })
+    .map(({ id }) => ({ id }));
 }
 
 /** Sends one notification to every admin who should get this kind. Never throws. */

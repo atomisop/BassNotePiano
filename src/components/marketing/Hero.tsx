@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { ArrowRightIcon } from "@/components/ui/icons";
+import { ScaleJourney } from "@/components/marketing/loops";
 
 // Served from R2 (the same object storage the app already uses for lesson
 // videos/avatars, see lib/storage.ts), not the Next.js public folder: 17MB
@@ -297,11 +298,11 @@ export function Hero() {
           <span aria-hidden="true">
             The <RotatingHeroWord /> way
             <br />
-            to learn Ethiopian music.
+            to learn music.
           </span>
-          <span className="sr-only">The best way to learn Ethiopian music.</span>
+          <span className="sr-only">The best way to learn music.</span>
         </h1>
-        <p className="lead mt-6 max-w-lg text-slate-300">15 scales, spelled correctly in every key.</p>
+        <ScaleJourney className="mt-8" />
 
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <Link href={isLoggedIn ? "/dashboard" : "/register"} className="btn btn-primary">

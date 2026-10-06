@@ -211,7 +211,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                     setUndoConfirmId(null);
                                     setEditingId(entry.bookingId);
                                   }}
-                                  className="text-small font-medium text-slate-500 underline underline-offset-2 transition hover:text-slate-300"
+                                  className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
                                 >
                                   Edit
                                 </button>
@@ -256,7 +256,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => handleMark(entry.bookingId, "NO_SHOW")}
                                       disabled={busyId === entry.bookingId || entry.attendance === "NO_SHOW"}
-                                      className="tap rounded-lg border border-red-400/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                      className="tap rounded-lg border border-red-400/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-40 bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                                     >
                                       No-show
                                     </button>
@@ -271,7 +271,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                     <button
                                       type="button"
                                       onClick={() => setEditingId(null)}
-                                      className="text-small font-medium text-slate-500 underline underline-offset-2 transition hover:text-slate-300"
+                                      className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
                                     >
                                       Done
                                     </button>
@@ -294,7 +294,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => handleMark(entry.bookingId, "NO_SHOW")}
                                       disabled={busyId === entry.bookingId}
-                                      className="tap rounded-lg border border-red-400/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                      className="tap rounded-lg border border-red-400/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-50 bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                                     >
                                       No-show
                                     </button>
@@ -352,7 +352,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                   type="button"
                                   onClick={() => handleCancel(entry.bookingId)}
                                   disabled={busyId === entry.bookingId}
-                                  className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                                 >
                                   {busyId === entry.bookingId && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                                   {busyId === entry.bookingId ? "Canceling…" : "Confirm cancel & refund"}

@@ -59,7 +59,7 @@ export async function updatePasswordAction(currentPassword: string, newPassword:
   // call succeeds, via next-auth's update(), so only other devices drop.
   await prisma.user.update({
     where: { id },
-    data: { passwordHash: newPasswordHash, sessionVersion: { increment: 1 } },
+    data: { passwordHash: newPasswordHash, passwordChangedAt: new Date(), sessionVersion: { increment: 1 } },
   });
 
   return { ok: true as const };

@@ -290,7 +290,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="w-full rounded-xl border border-dashed border-ink/15 py-3 text-small font-medium text-slate-400 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))]"
+          className="w-full rounded-xl border border-dashed border-ink/15 py-3 text-small font-medium text-slate-400 transition hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
         >
           + Add a weekly slot
         </button>

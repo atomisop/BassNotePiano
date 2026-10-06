@@ -164,6 +164,9 @@ export function CustomerProfile({
                   Joined {formatDate(user.createdAt)} · {user.emailVerified ? "Email verified" : "Email not verified"}
                 </p>
                 <p className="mt-1 text-small text-slate-600">
+                  {user.passwordChangedAt ? `Password changed ${formatDate(user.passwordChangedAt)}` : "Password never changed"}
+                </p>
+                <p className="mt-1 text-small text-slate-600">
                   {user.lastActivityAt ? `Last active ${formatDate(user.lastActivityAt)}` : "No recorded activity"} ·{" "}
                   {user.currentStreak}-day streak
                 </p>
@@ -196,12 +199,12 @@ export function CustomerProfile({
                     type="button"
                     disabled={busy}
                     onClick={() => withBusy(() => onSetCurriculumAccess(user.id, !user.hasCurriculumAccess))}
-                    className="inline-flex items-center font-semibold underline underline-offset-2 disabled:opacity-40"
+                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small inline-flex items-center"
                   >
                     {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                     {busy ? "Applying…" : "Confirm"}
                   </button>
-                  <button type="button" onClick={() => setPendingAction(null)} className="text-slate-400 underline underline-offset-2">
+                  <button type="button" onClick={() => setPendingAction(null)} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
                     Never mind
                   </button>
                 </span>
@@ -225,12 +228,12 @@ export function CustomerProfile({
                     type="button"
                     disabled={busy}
                     onClick={() => withBusy(() => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN"))}
-                    className="inline-flex items-center font-semibold underline underline-offset-2 disabled:opacity-40"
+                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small inline-flex items-center"
                   >
                     {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                     {busy ? "Applying…" : "Confirm"}
                   </button>
-                  <button type="button" onClick={() => setPendingAction(null)} className="text-slate-400 underline underline-offset-2">
+                  <button type="button" onClick={() => setPendingAction(null)} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
                     Never mind
                   </button>
                 </span>
@@ -252,12 +255,12 @@ export function CustomerProfile({
                     type="button"
                     disabled={busy}
                     onClick={() => withBusy(() => onClearAssistantHistory(user.id))}
-                    className="inline-flex items-center font-semibold underline underline-offset-2 disabled:opacity-40"
+                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small inline-flex items-center"
                   >
                     {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                     {busy ? "Deleting…" : "Confirm"}
                   </button>
-                  <button type="button" onClick={() => setPendingAction(null)} className="text-slate-400 underline underline-offset-2">
+                  <button type="button" onClick={() => setPendingAction(null)} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
                     Never mind
                   </button>
                 </span>
@@ -277,7 +280,7 @@ export function CustomerProfile({
                   type="button"
                   disabled={busy}
                   onClick={() => setConfirmingSignOut(true)}
-                  className="tap rounded-lg border border-red-400/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-400/10 disabled:opacity-40"
+                  className="tap rounded-lg border border-red-400/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-400/10 disabled:opacity-40 bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                 >
                   Sign out everywhere
                 </button>
@@ -288,11 +291,11 @@ export function CustomerProfile({
                     type="button"
                     disabled={busy}
                     onClick={() => withBusy(() => onForceSignOut(user.id)).then(() => setConfirmingSignOut(false))}
-                    className="font-semibold underline underline-offset-2 disabled:opacity-40"
+                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
                   >
                     Confirm
                   </button>
-                  <button type="button" onClick={() => setConfirmingSignOut(false)} className="text-slate-400 underline underline-offset-2">
+                  <button type="button" onClick={() => setConfirmingSignOut(false)} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
                     Never mind
                   </button>
                 </span>
@@ -389,12 +392,12 @@ export function CustomerProfile({
                   type="button"
                   disabled={busy}
                   onClick={handleConfirmCredits}
-                  className="inline-flex items-center font-semibold underline underline-offset-2 disabled:opacity-40"
+                  className="tap neu-btn rounded-lg px-3 py-1.5 text-small inline-flex items-center"
                 >
                   {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                   {busy ? "Applying…" : "Confirm"}
                 </button>
-                <button type="button" onClick={() => setCreditConfirming(false)} className="text-slate-400 underline underline-offset-2">
+                <button type="button" onClick={() => setCreditConfirming(false)} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
                   Edit
                 </button>
               </div>
@@ -439,7 +442,7 @@ export function CustomerProfile({
                               type="button"
                               disabled={busy}
                               onClick={() => handleCancelBooking(b.id)}
-                              className="tap flex-1 rounded-lg bg-red-500/95 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:opacity-50"
+                              className="tap flex-1 rounded-lg bg-red-500/95 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                             >
                               Confirm cancel & refund
                             </button>
