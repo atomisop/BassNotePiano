@@ -158,16 +158,21 @@ export async function createPaymentPlan(
 
     // Tell the admins what this student just committed to, the moment they
     // commit, not only once the first payment arrives.
-    const [student, slot] = await Promise.all([
-      prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }),
-      describeReservedSlot(created.id),
-    ]);
-    await notifyAdmins("NEW_SUBSCRIPTION", {
-      type: "ADMIN_ALERT",
-      title: "New subscription",
-      body: `${student?.name ?? student?.email ?? "A student"} chose the ${describePaymentPlan(cadence, term)}${slot ? `, ${slot}` : ""}. First payment is waiting.`,
-      emailCategory: "social",
-    });
+    try {
+      const [student, slot] = await Promise.all([
+        prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }),
+        describeReservedSlot(created.id),
+      ]);
+      await notifyAdmins("NEW_SUBSCRIPTION", {
+        type: "ADMIN_ALERT",
+        title: "New subscription",
+        body: `${student?.name ?? student?.email ?? "A student"} chose the ${describePaymentPlan(cadence, term)}${slot ? `, ${slot}` : ""}. First payment is waiting.`,
+        emailCategory: "social",
+      });
+    } catch (err) {
+      // The plan already exists, so a failed heads-up must never look like a failed enrollment.
+      console.error("New subscription notification failed (non-blocking):", err);
+    }
     return created;
   } catch (err) {
     if (err instanceof PaymentPlanError) throw err;
