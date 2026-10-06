@@ -36,9 +36,6 @@ export const MAX_EXTRA_CLASSES_PER_PURCHASE = 10;
 /** Pre-discount per-credit price, kept only so marketing pages can show a struck-through "was" price and a % off badge. */
 export const CREDIT_ORIGINAL_PRICE_CENTS = 5000;
 
-/** Rounded down so the badge never overstates the real discount. */
-export const CREDIT_DISCOUNT_PERCENT = Math.floor((1 - CREDIT_BASE_PRICE_CENTS / CREDIT_ORIGINAL_PRICE_CENTS) * 100);
-
 interface PriceTier {
   minQuantity: number;
   discountRate: number;

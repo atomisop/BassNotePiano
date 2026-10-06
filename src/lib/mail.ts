@@ -21,10 +21,6 @@ export const MAIL_ROUTED_TYPES: Partial<Record<NotificationType, MailKind>> = {
   CREDITS_EXPIRING_SOON: "BILLING",
 };
 
-export function isMailRouted(type: NotificationType): boolean {
-  return type in MAIL_ROUTED_TYPES;
-}
-
 const MAX_TITLE = 120;
 const MAX_BODY = 2000;
 

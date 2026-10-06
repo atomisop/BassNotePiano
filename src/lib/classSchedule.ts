@@ -1150,11 +1150,6 @@ export async function bookExtraSessionOccurrence(
   return true;
 }
 
-export async function getClassCreditBalance(userId: string): Promise<number> {
-  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { classCredits: true } });
-  return user.classCredits;
-}
-
 /** Called from approveZellePayment once a CLASS_CREDITS payment verifies.
  *  `db` defaults to the plain client but accepts a transaction client — see
  *  the STEP 19 comment on unlockScaleForUser/grantCurriculumAccess in

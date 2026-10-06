@@ -87,18 +87,6 @@ export async function undoAttendanceAction(bookingId: string) {
   }
 }
 
-/**
- * Feeds the TopBar's own quick-attendance panel (AdminAttendanceQuickPanel)
- * — by direct instruction, marking a class Present/No-show shouldn't
- * require navigating into the full admin Schedule page first. Same
- * markAttendanceAction above does the actual write; this just supplies the
- * short list of "needs a call right now" bookings the panel polls for.
- */
-export async function getPendingAttendanceBookingsAction(): Promise<PendingAttendanceRow[]> {
-  await requireAdmin();
-  return getPendingAttendanceBookings();
-}
-
 /** Feeds the TopBar's class-bookings panel: every active booking, soonest first. */
 export async function getBookingFeedAction(): Promise<BookingFeedRow[]> {
   await requireAdmin();

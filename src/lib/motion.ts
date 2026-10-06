@@ -23,22 +23,6 @@
 
 import type { Transition } from "framer-motion";
 
-/** Reposition / show / hide. Apple ships damping 1.0, response 0.4. */
-export const springDefault: Transition = { type: "spring", bounce: 0, duration: 0.4 };
-
-/** Same character, quicker — for small or frequently-repeated moves. */
-export const springSnappy: Transition = { type: "spring", bounce: 0, duration: 0.28 };
-
-/**
- * Post-gesture settle. The only place bounce belongs: the user threw this, so
- * a little overshoot reads as the object's own momentum rather than decoration.
- * Apple's rotation/drawer entries sit at damping ~0.8, which is this.
- */
-export const springMomentum: Transition = { type: "spring", bounce: 0.22, duration: 0.4 };
-
-/** Sheets and drawers, which are nearly always gesture-driven. */
-export const springSheet: Transition = { type: "spring", bounce: 0.18, duration: 0.32 };
-
 /**
  * Where a flick will come to rest, so a gesture can be snapped to the target
  * nearest its *projected* endpoint rather than to whatever it happened to be

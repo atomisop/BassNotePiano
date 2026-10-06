@@ -87,10 +87,6 @@ export async function signOutOtherDevicesAction() {
 // resulting small URL, never the image bytes themselves.
 // ---------------------------------------------------------------------------
 
-export async function checkAvatarStorageAction() {
-  return isObjectStorageConfigured();
-}
-
 export async function requestAvatarUploadUrlAction(fileName: string, contentType: string, fileSize: number) {
   const { id } = await requireSession();
   // The real allowlist/size enforcement now lives in createPresignedAvatarUpload
