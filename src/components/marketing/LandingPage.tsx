@@ -1,5 +1,6 @@
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { Hero } from "@/components/marketing/Hero";
+import { Statement } from "@/components/marketing/Statement";
 import { InstrumentPicker } from "@/components/marketing/InstrumentPicker";
 import { SocialProof } from "@/components/marketing/SocialProof";
 import { Solution } from "@/components/marketing/Solution";
@@ -128,10 +129,11 @@ export function LandingPage() {
           instead of actually wrapping the content it pointed at. */}
       <main id="main-content" tabIndex={-1} className="outline-none">
         <Hero />
+        <Statement />
         <InstrumentPicker />
-        <SocialProof />
         <Solution />
         <HowItWorks />
+        <SocialProof />
         <FAQ />
         <FinalCTA />
       </main>

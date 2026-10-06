@@ -3,9 +3,6 @@ import { EXTRA_CLASS_PRICE_CENTS } from "@/lib/classCreditPricing";
 import { CANCELLATION_CUTOFF_HOURS } from "@/lib/classSchedule";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-import { BACKDROPS } from "@/lib/backdrops";
-import { PhotoBackdrop } from "@/components/ui/PhotoBackdrop";
-import { EDGE_FADE_STYLE } from "./edgeFade";
 
 /**
  * HOMEPAGE REBUILD: 06 FAQ.
@@ -54,44 +51,28 @@ const FAQS = [
 
 export function FAQ() {
   return (
-    <section className="relative overflow-hidden py-[var(--space-5)] md:py-[var(--space-8)]">
-      {/* Masked to fully transparent at both edges, on top of the blur and
-          PhotoBackdrop's own scrim, belt and suspenders so this never
-          reads as a hard cut against FinalCTA's blank ground below. Never
-          a bare image-to-image transition anywhere on this page: every
-          image is either at full clarity with a blank section on both
-          sides, or blurred and fading straight to blank, per direct
-          instruction. */}
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 overflow-hidden"
-        style={EDGE_FADE_STYLE}
-      >
-        <div className="absolute -inset-x-10 -inset-y-10 blur-3xl">
-          <PhotoBackdrop src={BACKDROPS.classes} scrim="standard" sizes="100vw" />
-        </div>
-      </div>
-      <ScrollReveal className="mx-auto max-w-2xl px-6">
-        <h2 className="display-2 max-w-[20ch] text-balance">Before you commit to anything.</h2>
+    <section className="mx-auto w-full max-w-6xl px-6 py-24 md:py-40">
+      <ScrollReveal className="grid gap-12 md:grid-cols-[1fr_1.4fr] md:gap-20">
+        <h2 className="text-[clamp(2.25rem,6vw,4.5rem)] font-bold leading-[1.02] tracking-[-0.03em] text-slate-50">Questions.</h2>
 
-        <Accordion type="single" collapsible className="mt-10">
-          {FAQS.map((item, i) => (
-            <AccordionItem key={item.q} value={`item-${i}`} className="border-[rgb(var(--c-s-50)/0.1)]">
-              <AccordionTrigger className="text-left font-serif text-body text-slate-50 no-underline hover:no-underline">
-                {item.q}
-              </AccordionTrigger>
-              <AccordionContent className="text-small leading-relaxed text-slate-400">{item.a}</AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+        <div>
+          <Accordion type="single" collapsible>
+            {FAQS.map((item, i) => (
+              <AccordionItem key={item.q} value={`item-${i}`} className="border-[rgb(var(--c-s-50)/0.1)]">
+                <AccordionTrigger className="text-left font-serif text-body text-slate-50 no-underline hover:no-underline">{item.q}</AccordionTrigger>
+                <AccordionContent className="text-small leading-relaxed text-slate-400">{item.a}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
 
-        <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-1 text-small">
-          <Link href="/pricing" className="tap inline-flex items-center text-[rgb(var(--c-s-50))] transition hover:opacity-70">
-            Full pricing
-          </Link>
-          <Link href="/terms" className="tap inline-flex items-center text-[rgb(var(--c-s-50))] transition hover:opacity-70">
-            Terms &amp; refund policy
-          </Link>
+          <div className="mt-8 flex flex-wrap gap-x-6 gap-y-1 text-small">
+            <Link href="/pricing" className="tap inline-flex items-center text-slate-300 transition hover:text-slate-50">
+              Full pricing
+            </Link>
+            <Link href="/terms" className="tap inline-flex items-center text-slate-300 transition hover:text-slate-50">
+              Terms &amp; refund policy
+            </Link>
+          </div>
         </div>
       </ScrollReveal>
     </section>
