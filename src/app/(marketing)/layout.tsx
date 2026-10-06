@@ -23,8 +23,10 @@ import "./marketing.css";
  * Noting it here so it is not mistaken for a scoping bug later.
  */
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
+  // Always the dark "ink" theme here: the public pages have one look, whatever
+  // light or dark theme a signed-in visitor picked for the app.
   return (
-    <div data-surface="marketing">
+    <div data-surface="marketing" data-theme="ink" data-mode="dark" style={{ colorScheme: "dark" }}>
       {/* STEP 17 — a keyboard user landing on this page otherwise has to tab
           through the full nav, then several long pinned-scroll 3D/SVG
           scenes, before reaching anything else — this jumps straight past
