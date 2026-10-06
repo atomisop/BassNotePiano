@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { CreditUserSearchRow, CreditAdjustmentRow } from "@/lib/creditAdjustments";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { Tabs } from "@/components/ui/Tabs";
 
 interface RecentAdjustmentRow {
   id: string;
@@ -41,6 +42,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
   const [history, setHistory] = useState<CreditAdjustmentRow[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
+  const [mode, setMode] = useState<"grant" | "revoke">("grant");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -96,8 +98,12 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
     setSuccess(null);
 
     const parsed = Number(amount);
-    if (!Number.isInteger(parsed) || parsed === 0) {
-      setError("Enter a non-zero whole number (e.g. 4 or -2).");
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      setError("Enter a whole number above 0.");
+      return;
+    }
+    if (mode === "revoke" && parsed > selected.classCredits) {
+      setError(`They only have ${selected.classCredits} credit${selected.classCredits === 1 ? "" : "s"}.`);
       return;
     }
     if (!reason.trim()) {
@@ -114,7 +120,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
 
   async function handleConfirm() {
     if (!selected) return;
-    const parsed = Number(amount);
+    const parsed = mode === "revoke" ? -Number(amount) : Number(amount);
     setSubmitting(true);
     try {
       const result = await onAdjust(selected.id, parsed, reason.trim());
@@ -194,9 +200,22 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
             </p>
 
             <form onSubmit={handleReview} className="mt-4 space-y-3">
+              <Tabs
+                label="Grant or revoke"
+                value={mode}
+                onChange={(next) => {
+                  setMode(next);
+                  setError(null);
+                  setConfirming(false);
+                }}
+                items={[
+                  { id: "grant", label: "Grant" },
+                  { id: "revoke", label: "Revoke" },
+                ]}
+              />
               <div>
                 <label htmlFor="credit-amount" className="text-small font-medium uppercase tracking-wide text-slate-500">
-                  Amount (+ grants, − deducts)
+                  Credits to {mode}
                 </label>
                 <input
                   id="credit-amount"
@@ -205,9 +224,19 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   disabled={confirming}
-                  placeholder="e.g. 4 or -2"
+                  min={1}
+                  placeholder={mode === "revoke" ? "e.g. 2" : "e.g. 4"}
                   className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
                 />
+                {mode === "revoke" && selected.classCredits > 0 && !confirming && (
+                  <button
+                    type="button"
+                    onClick={() => setAmount(String(selected.classCredits))}
+                    className="tap mt-1.5 inline-flex items-center text-small font-medium text-slate-400 underline transition hover:text-slate-200"
+                  >
+                    Revoke all {selected.classCredits}
+                  </button>
+                )}
               </div>
               <div>
                 <label htmlFor="credit-reason" className="text-small font-medium uppercase tracking-wide text-slate-500">
@@ -234,8 +263,8 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 // part a typo hides right up until this step.
                 <div className="space-y-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] p-3">
                   <p className="text-small text-slate-200">
-                    {Number(amount) > 0 ? "Grant" : "Deduct"} <span className="font-semibold text-slate-50">{Math.abs(Number(amount))} credit{Math.abs(Number(amount)) === 1 ? "" : "s"}</span>{" "}
-                    {Number(amount) > 0 ? "to" : "from"} {selected.name ?? selected.email}?
+                    {mode === "grant" ? "Grant" : "Revoke"} <span className="font-semibold text-slate-50">{Number(amount)} credit{Number(amount) === 1 ? "" : "s"}</span>{" "}
+                    {mode === "grant" ? "to" : "from"} {selected.name ?? selected.email}?
                   </p>
                   <div className="flex gap-2">
                     <button
@@ -262,7 +291,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   type="submit"
                   className="tap cta-sheen cta-fill w-full rounded-lg px-3 py-2 text-small font-medium disabled:opacity-40"
                 >
-                  Review adjustment
+                  {mode === "grant" ? "Review grant" : "Review revoke"}
                 </button>
               )}
             </form>

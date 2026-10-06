@@ -795,6 +795,15 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
   }
 }
 
+/**
+ * Deletes one payment record and nothing else. Anything the payment already
+ * gave (a plan's paid installments, credits, booked classes) stays as it is,
+ * so this is for clearing test or mistaken rows, not for undoing a sale.
+ */
+export async function deleteZellePayment(paymentId: string): Promise<void> {
+  await prisma.zellePayment.delete({ where: { id: paymentId } });
+}
+
 /** Rejects a pending payment with a reason the student sees on the resubmit screen. */
 export async function rejectZellePayment(paymentId: string, reviewerId: string, reason: string) {
   const payment = await prisma.zellePayment.findUniqueOrThrow({ where: { id: paymentId } });

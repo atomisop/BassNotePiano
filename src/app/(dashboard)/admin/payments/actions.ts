@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
-import { approveZellePayment, markPaymentChecked, rejectZellePayment } from "@/lib/payments";
+import { approveZellePayment, deleteZellePayment, markPaymentChecked, rejectZellePayment } from "@/lib/payments";
+import { isOwnerEmail } from "@/lib/adminNotifications";
 
 // The admin layout's redirect only protects rendering — Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
@@ -31,4 +32,14 @@ export async function rejectPaymentAction(paymentId: string, reason: string) {
   const admin = await requireAdmin();
   await rejectZellePayment(paymentId, admin.id, reason);
   revalidatePath("/admin/payments");
+}
+
+// Owner only, not just admin: deleting a payment record is permanent, and
+// employees are admins too.
+export async function deletePaymentAction(paymentId: string) {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) redirect("/admin/payments");
+  await deleteZellePayment(paymentId);
+  revalidatePath("/admin/payments");
+  revalidatePath("/admin");
 }
