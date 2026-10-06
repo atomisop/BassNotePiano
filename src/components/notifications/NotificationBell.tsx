@@ -13,6 +13,7 @@ import {
   ClipboardList,
   CreditCard,
   Headset,
+  Mail,
   Megaphone,
   MessageSquare,
   Settings,
@@ -25,6 +26,8 @@ import {
   markNotificationReadAction,
   type NotificationRow,
 } from "@/app/(dashboard)/notification-actions";
+import { Tabs } from "@/components/ui/Tabs";
+import { markAllMailReadAction } from "@/app/(dashboard)/mail/actions";
 import { playNotificationSound } from "@/lib/notification-sound";
 
 const POLL_INTERVAL_MS = 30_000;
@@ -117,6 +120,7 @@ const CATEGORY_ICONS = {
   // — a hand-rolled SVG path there, swapped to lucide's MessageSquare here
   // to match every other category icon in this restyle.
   feedback: MessageSquare,
+  messages: Mail,
 } as const;
 
 type CategoryKey = keyof typeof CATEGORY_ICONS;
@@ -146,6 +150,10 @@ const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>
   ANNOUNCEMENT: { key: "announcements", label: "Announcements" },
   ASSISTANT_ESCALATION: { key: "support", label: "Support requests" },
   PLAN_CANCELLATION_FEEDBACK: { key: "feedback", label: "Feedback" },
+  // Mail kinds: the Mail tab groups its messages the same way.
+  ADMIN_MESSAGE: { key: "messages", label: "Messages" },
+  PAYMENT: { key: "billing", label: "Payments" },
+  BILLING: { key: "billing", label: "Billing" },
 };
 
 function categoryFor(type: string): { key: CategoryKey; label: string } {
@@ -238,7 +246,7 @@ function NotificationEntry({ notification, onClick }: { notification: Notificati
       </span>
     </>
   );
-  const href = notificationHref(notification.type);
+  const href = notification.href ?? notificationHref(notification.type);
 
   if (href) {
     return (
@@ -350,6 +358,9 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
+  const [mailUnreadCount, setMailUnreadCount] = useState(0);
+  const [mail, setMail] = useState<NotificationRow[]>([]);
+  const [tab, setTab] = useState<"NOTIFICATIONS" | "MAIL">("NOTIFICATIONS");
   const [mounted, setMounted] = useState(false);
   // Which stacked groups are currently expanded, keyed by NotificationCluster.key.
   // Left as-is across polls/reopens rather than reset, so an in-progress poll
@@ -384,13 +395,16 @@ export function NotificationBell() {
       // Only chime when the count goes up from a known previous value.
       // Skips the initial mount (previousUnreadRef still null) and any
       // decrease.
-      if (previousUnreadRef.current !== null && result.unreadCount > previousUnreadRef.current) {
+      const total = result.unreadCount + result.mailUnreadCount;
+      if (previousUnreadRef.current !== null && total > previousUnreadRef.current) {
         playNotificationSound();
       }
-      previousUnreadRef.current = result.unreadCount;
+      previousUnreadRef.current = total;
 
       setUnreadCount(result.unreadCount);
       setNotifications(result.notifications);
+      setMailUnreadCount(result.mailUnreadCount);
+      setMail(result.mail);
     } catch (err) {
       console.error("Notification poll failed (non-blocking, will retry):", err);
     }
@@ -430,15 +444,33 @@ export function NotificationBell() {
   }, [open]);
 
   async function handleMarkAllRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    setUnreadCount(0);
     // Optimistic: if the call fails, resync from the server so the badge
     // doesn't claim everything is read when it isn't.
+    if (tab === "MAIL") {
+      setMail((prev) => prev.map((n) => ({ ...n, read: true })));
+      setMailUnreadCount(0);
+      try {
+        await markAllMailReadAction();
+      } catch {
+        await refresh();
+      }
+      return;
+    }
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setUnreadCount(0);
     try {
       await markAllNotificationsReadAction();
     } catch {
       await refresh();
     }
+  }
+
+  // A mail row opens its own message page, which marks it read on the server.
+  function handleMailClick(message: NotificationRow) {
+    setOpen(false);
+    if (message.read) return;
+    setMail((prev) => prev.map((n) => (n.id === message.id ? { ...n, read: true } : n)));
+    setMailUnreadCount((prev) => Math.max(0, prev - 1));
   }
 
   async function handleNotificationClick(notification: NotificationRow) {
@@ -453,12 +485,15 @@ export function NotificationBell() {
     }
   }
 
+  const shown = tab === "MAIL" ? mail : notifications;
+  const onItem = tab === "MAIL" ? handleMailClick : handleNotificationClick;
+
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Notifications"
+        aria-label={unreadCount + mailUnreadCount > 0 ? `Notifications and mail, ${unreadCount + mailUnreadCount} unread` : "Notifications and mail"}
         aria-expanded={open}
         data-tour="notification-bell"
         className={`tap relative flex h-9 w-9 items-center justify-center rounded-lg bg-neu-base transition ${
@@ -468,9 +503,9 @@ export function NotificationBell() {
         }`}
       >
         <Bell size={18} strokeWidth={1.5} />
-        {unreadCount > 0 && (
+        {unreadCount + mailUnreadCount > 0 && (
           <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950">
-            {unreadCount > 9 ? "9+" : unreadCount}
+            {unreadCount + mailUnreadCount > 9 ? "9+" : unreadCount + mailUnreadCount}
           </span>
         )}
       </button>
@@ -504,7 +539,7 @@ export function NotificationBell() {
                   transition={{ type: "spring", bounce: 0, duration: 0.45 }}
                   role="dialog"
                   aria-modal="true"
-                  aria-label="Notifications"
+                  aria-label="Inbox"
                   style={{ willChange: "transform" }}
                   className="relative flex h-full w-[86%] max-w-md flex-col border-l border-ink/10 bg-surface"
                 >
@@ -517,11 +552,8 @@ export function NotificationBell() {
                   >
                     <ArrowLeft size={18} strokeWidth={1.75} />
                   </button>
-                  <div>
-                    <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--signal)/0.8)]">Inbox</p>
-                    <h1 className="font-hero text-hero font-bold text-balance text-slate-50">Notifications</h1>
-                  </div>
-                  {unreadCount > 0 && (
+                  <h1 className="font-hero text-hero font-bold text-balance text-slate-50">Inbox</h1>
+                  {(tab === "MAIL" ? mailUnreadCount : unreadCount) > 0 && (
                     <button
                       type="button"
                       onClick={handleMarkAllRead}
@@ -533,6 +565,18 @@ export function NotificationBell() {
                   )}
                 </div>
 
+                <div className="border-b border-ink/10 px-6 py-3">
+                  <Tabs<"NOTIFICATIONS" | "MAIL">
+                    label="Inbox"
+                    value={tab}
+                    onChange={setTab}
+                    items={[
+                      { id: "NOTIFICATIONS", label: "Notifications", count: unreadCount },
+                      { id: "MAIL", label: "Mail", count: mailUnreadCount },
+                    ]}
+                  />
+                </div>
+
                 {/* overscroll-contain: same fix as SlideOverPanel's own
                     content div, for the identical reason. This list sits
                     below a static header (Back/Notifications/Mark all
@@ -541,19 +585,21 @@ export function NotificationBell() {
                     here can visibly slide over that header for an instant
                     on the way back from the bottom. */}
                 <div className="mx-auto w-full max-w-xl flex-1 overflow-y-auto overscroll-contain px-6 py-6">
-                  {notifications.length === 0 ? (
+                  {shown.length === 0 ? (
                     <div className="flex flex-col items-center gap-3 pt-20 text-center">
                       <span className="flex h-14 w-14 items-center justify-center rounded-full text-slate-600 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low">
                         <Bell size={24} strokeWidth={1.5} />
                       </span>
-                      <p className="text-small font-medium text-slate-400">No notifications yet.</p>
-                      <Link
-                        href="/account?tab=notifications"
-                        onClick={() => setOpen(false)}
-                        className="text-small text-[rgb(var(--signal))] transition hover:opacity-70"
-                      >
-                        Notification settings
-                      </Link>
+                      <p className="text-small font-medium text-slate-400">{tab === "MAIL" ? "No mail yet." : "No notifications yet."}</p>
+                      {tab === "NOTIFICATIONS" && (
+                        <Link
+                          href="/account?tab=notifications"
+                          onClick={() => setOpen(false)}
+                          className="text-small text-[rgb(var(--signal))] transition hover:opacity-70"
+                        >
+                          Notification settings
+                        </Link>
+                      )}
                     </div>
                   ) : (
                     // No backdrop-blur anywhere below: this list sits inside
@@ -562,20 +608,20 @@ export function NotificationBell() {
                     // cost for zero visible frosting; across a scrolling list
                     // plus expanded stacks, that added up fast.
                     <div className="space-y-5">
-                      {groupNotifications(notifications).map((section) => (
+                      {groupNotifications(shown).map((section) => (
                         <div key={section.label}>
                           <p className="mb-2 px-1 text-small font-medium uppercase tracking-[0.2em] text-slate-600">{section.label}</p>
                           <div className="space-y-2">
                             {section.clusters.map((cluster) =>
                               cluster.items.length === 1 ? (
-                                <NotificationEntry key={cluster.items[0]!.id} notification={cluster.items[0]!} onClick={handleNotificationClick} />
+                                <NotificationEntry key={cluster.items[0]!.id} notification={cluster.items[0]!} onClick={onItem} />
                               ) : (
                                 <NotificationGroup
                                   key={cluster.key}
                                   cluster={cluster}
                                   expanded={expandedGroups.has(cluster.key)}
                                   onToggle={() => toggleGroup(cluster.key)}
-                                  onItemClick={handleNotificationClick}
+                                  onItemClick={onItem}
                                 />
                               ),
                             )}

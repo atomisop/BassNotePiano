@@ -3,6 +3,7 @@
 import { getServerAuthSession } from "@/lib/auth";
 import { getUnreadCount, getRecentNotifications, markAllNotificationsRead, markNotificationRead } from "@/lib/notifications";
 import { dismissAnnouncement } from "@/lib/announcements";
+import { getMailUnreadCount, listMail } from "@/lib/mail";
 import { getTotalUnreadMessageCount } from "@/lib/messages";
 import { getTotalUnreadGroupMessageCount } from "@/lib/groupMessages";
 
@@ -13,19 +14,38 @@ export interface NotificationRow {
   body: string | null;
   read: boolean;
   createdAt: string;
+  /** Where tapping it goes, when it is not decided by the type (mail opens its own message). */
+  href?: string;
 }
 
-export async function fetchNotificationsAction(): Promise<{ unreadCount: number; notifications: NotificationRow[] }> {
+export async function fetchNotificationsAction(): Promise<{
+  unreadCount: number;
+  notifications: NotificationRow[];
+  mailUnreadCount: number;
+  mail: NotificationRow[];
+}> {
   const session = await getServerAuthSession();
-  if (!session?.user) return { unreadCount: 0, notifications: [] };
+  if (!session?.user) return { unreadCount: 0, notifications: [], mailUnreadCount: 0, mail: [] };
 
-  const [unreadCount, rows] = await Promise.all([
+  const [unreadCount, rows, mailUnreadCount, mailRows] = await Promise.all([
     getUnreadCount(session.user.id),
     getRecentNotifications(session.user.id),
+    getMailUnreadCount(session.user.id),
+    listMail(session.user.id, 40),
   ]);
 
   return {
     unreadCount,
+    mailUnreadCount,
+    mail: mailRows.map((m) => ({
+      id: m.id,
+      type: m.kind,
+      title: m.title,
+      body: m.body,
+      read: m.readAt !== null,
+      createdAt: m.createdAt.toISOString(),
+      href: `/mail/${m.id}`,
+    })),
     notifications: rows.map((n) => ({
       id: n.id,
       type: n.type,
