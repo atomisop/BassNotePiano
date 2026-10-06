@@ -182,8 +182,10 @@ export interface SentAdminMessageRow {
   title: string;
   recipientName: string | null;
   recipientEmail: string;
+  body: string;
   supportCta: boolean;
   read: boolean;
+  readAt: Date | null;
   createdAt: Date;
 }
 
@@ -199,7 +201,9 @@ export async function listSentAdminMessages(limit = 30): Promise<SentAdminMessag
     title: r.title,
     recipientName: r.user.name,
     recipientEmail: r.user.email,
+    body: r.body,
     supportCta: r.supportCta,
+    readAt: r.readAt,
     read: !!r.readAt,
     createdAt: r.createdAt,
   }));

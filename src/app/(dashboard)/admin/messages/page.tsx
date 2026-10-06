@@ -30,7 +30,7 @@ export default async function AdminMessagesPage({ searchParams }: { searchParams
 
 async function Direct() {
   const sent = await listSentAdminMessages();
-  return <MessageComposer sent={sent.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))} />;
+  return <MessageComposer sent={sent.map((m) => ({ ...m, createdAt: m.createdAt.toISOString(), readAt: m.readAt ? m.readAt.toISOString() : null }))} />;
 }
 
 async function Announcements() {

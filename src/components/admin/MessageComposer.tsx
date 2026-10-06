@@ -16,8 +16,10 @@ interface SentRow {
   title: string;
   recipientName: string | null;
   recipientEmail: string;
+  body: string;
   supportCta: boolean;
   read: boolean;
+  readAt: string | null;
   createdAt: string;
 }
 
@@ -42,7 +44,8 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<MessageRecipient[]>([]);
   const [searching, setSearching] = useState(false);
-  const [recipient, setRecipient] = useState<MessageRecipient | null>(null);
+  const [recipients, setRecipients] = useState<MessageRecipient[]>([]);
+  const [openId, setOpenId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [sendEmail, setSendEmail] = useState(false);
@@ -53,7 +56,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
   const requestId = useRef(0);
 
   useEffect(() => {
-    if (recipient || query.trim().length < 2) {
+    if (query.trim().length < 2) {
       setResults([]);
       return;
     }
@@ -68,21 +71,38 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
       }
     }, 250);
     return () => clearTimeout(timer);
-  }, [query, recipient]);
+  }, [query]);
+
+  const visibleResults = results.filter((r) => !recipients.some((chosen) => chosen.id === r.id));
+
+  function addRecipients(list: MessageRecipient[]) {
+    setRecipients((current) => [...current, ...list.filter((r) => !current.some((c) => c.id === r.id))]);
+    setQuery("");
+    setResults([]);
+  }
 
   async function send() {
-    if (!recipient) return;
+    if (recipients.length === 0) return;
     setError(null);
     setNotice(null);
     setSubmitting(true);
-    const result = await sendMessageAction(recipient.id, title, body, sendEmail, supportCta);
+    const result = await sendMessageAction(
+      recipients.map((r) => r.id),
+      title,
+      body,
+      sendEmail,
+      supportCta,
+    );
     setSubmitting(false);
     if (!result.ok) {
       setError(result.error);
       return;
     }
-    setNotice(`Sent to ${recipient.name ?? recipient.email}. ${EMAIL_NOTE[result.result.email]}`);
-    setRecipient(null);
+    const { sent, emailed, failed } = result.summary;
+    setNotice(
+      `Sent to ${sent} ${sent === 1 ? "person" : "people"}${sendEmail ? `, ${emailed} by email too` : ""}.${failed ? ` ${failed} could not be sent.` : ""}`,
+    );
+    setRecipients([]);
     setQuery("");
     setTitle("");
     setBody("");
@@ -97,60 +117,69 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
         <h2 className="text-body text-slate-50 font-semibold">New message</h2>
 
         <div className="mt-4 space-y-3">
-          {recipient ? (
-            <div className="flex items-center justify-between gap-3 rounded-lg bg-neu-base px-3 py-2.5 shadow-pressed-low">
-              <div className="min-w-0">
-                <p className="truncate text-small font-medium text-slate-100">{recipient.name ?? recipient.email}</p>
-                {recipient.name && <p className="truncate text-small text-slate-500">{recipient.email}</p>}
-              </div>
-              <button
-                type="button"
-                onClick={() => setRecipient(null)}
-                aria-label="Choose someone else"
-                className="tap flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neu-base text-slate-300 shadow-raised-low active:shadow-pressed-low"
-              >
-                <X className="h-4 w-4" />
-              </button>
+          {recipients.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {recipients.map((r) => (
+                <span key={r.id} className="inline-flex items-center gap-1.5 rounded-full bg-neu-base py-1 pl-3 pr-1 text-small text-slate-100 shadow-pressed-low">
+                  {r.name ?? r.email}
+                  <button
+                    type="button"
+                    onClick={() => setRecipients((current) => current.filter((c) => c.id !== r.id))}
+                    aria-label={`Remove ${r.name ?? r.email}`}
+                    className="tap flex h-6 w-6 items-center justify-center rounded-full text-slate-400 transition hover:text-slate-100"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </span>
+              ))}
             </div>
-          ) : (
-            <div>
-              {/* The icon is centered on the input alone, so it stays in the bar when results open below. */}
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search a name or email"
-                  className="w-full glass-surface-subtle py-2 pl-9 pr-3 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
-                />
-              </div>
-              {query.trim().length >= 2 && (
-                <div className="mt-2 space-y-1.5">
-                  {searching && results.length === 0 ? (
-                    <p className="px-1 text-small text-slate-500">Searching…</p>
-                  ) : results.length === 0 ? (
-                    <p className="px-1 text-small text-slate-500">No one found.</p>
-                  ) : (
-                    results.map((r) => (
+          )}
+
+          <div>
+            {/* The icon is centered on the input alone, so it stays in the bar when results open below. */}
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={recipients.length ? "Add someone else" : "Search a name or email"}
+                className="w-full glass-surface-subtle py-2 pl-9 pr-3 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+              />
+            </div>
+            {query.trim().length >= 2 && (
+              <div className="mt-2 space-y-1.5">
+                {searching && results.length === 0 ? (
+                  <p className="px-1 text-small text-slate-500">Searching…</p>
+                ) : visibleResults.length === 0 ? (
+                  <p className="px-1 text-small text-slate-500">{results.length === 0 ? "No one found." : "Everyone found is already added."}</p>
+                ) : (
+                  <>
+                    {visibleResults.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => addRecipients(visibleResults)}
+                        className="tap inline-flex items-center px-1 text-small font-medium text-slate-300 underline underline-offset-2 transition hover:text-slate-100"
+                      >
+                        Add all {visibleResults.length}
+                      </button>
+                    )}
+                    {visibleResults.map((r) => (
                       <button
                         key={r.id}
                         type="button"
-                        onClick={() => {
-                          setRecipient(r);
-                          setResults([]);
-                        }}
+                        onClick={() => addRecipients([r])}
                         className="tap flex w-full flex-col rounded-lg bg-neu-base px-3 py-2 text-left shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
                       >
                         <span className="truncate text-small font-medium text-slate-100">{r.name ?? r.email}</span>
                         {r.name && <span className="truncate text-small text-slate-500">{r.email}</span>}
                       </button>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
           <input
             type="text"
@@ -187,11 +216,11 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
         <button
           type="button"
           onClick={() => void send()}
-          disabled={submitting || !recipient || !title.trim() || !body.trim()}
+          disabled={submitting || recipients.length === 0 || !title.trim() || !body.trim()}
           className="tap cta-sheen cta-fill mt-4 flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-          {submitting ? "Sending…" : "Send message"}
+          {submitting ? "Sending…" : recipients.length > 1 ? `Send to ${recipients.length} people` : "Send message"}
         </button>
       </div>
 
@@ -201,23 +230,42 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
           {sent.length === 0 ? (
             <p className="text-small text-slate-500">No messages yet.</p>
           ) : (
-            sent.map((m) => (
-              <div key={m.id} className="rounded-xl bg-neu-base p-4 shadow-raised-low">
-                <div className="flex items-start justify-between gap-3">
-                  <p className="truncate text-small font-medium text-slate-100">{m.title}</p>
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-small font-medium ${m.read ? "bg-slate-50/15 text-slate-100" : "bg-slate-700/50 text-slate-400"}`}
+            sent.map((m) => {
+              const open = openId === m.id;
+              return (
+                <div key={m.id} className="rounded-xl bg-neu-base shadow-raised-low">
+                  <button
+                    type="button"
+                    onClick={() => setOpenId(open ? null : m.id)}
+                    aria-expanded={open}
+                    className="tap block w-full rounded-xl p-4 text-left transition hover:shadow-raised-mid active:shadow-pressed-low"
                   >
-                    {m.read ? "Read" : "Unread"}
-                  </span>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="truncate text-small font-medium text-slate-100">{m.title}</p>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-small font-medium ${m.read ? "bg-slate-50/15 text-slate-100" : "bg-slate-700/50 text-slate-400"}`}
+                      >
+                        {m.read ? "Read" : "Unread"}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-small text-slate-400">
+                      To {m.recipientName ?? m.recipientEmail}
+                      {m.supportCta ? " · with contact support" : ""}
+                    </p>
+                    <p className="mt-1 text-small text-slate-600">{relativeTime(m.createdAt)}</p>
+                  </button>
+                  {open && (
+                    <div className="border-t border-slate-50/10 px-4 pb-4 pt-3">
+                      <p className="whitespace-pre-wrap text-small text-slate-200">{m.body}</p>
+                      <p className="mt-3 text-small text-slate-500">
+                        {m.recipientEmail} · sent {new Date(m.createdAt).toLocaleString()}
+                        {m.readAt ? ` · read ${new Date(m.readAt).toLocaleString()}` : ""}
+                      </p>
+                    </div>
+                  )}
                 </div>
-                <p className="mt-1 text-small text-slate-400">
-                  To {m.recipientName ?? m.recipientEmail}
-                  {m.supportCta ? " · with contact support" : ""}
-                </p>
-                <p className="mt-1 text-small text-slate-600">{relativeTime(m.createdAt)}</p>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
