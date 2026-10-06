@@ -45,6 +45,12 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
         />
       </div>
 
+      {isOwner && (
+        <a href="/api/admin/export?type=payments" className="tap neu-btn mt-6 inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
+          Export CSV
+        </a>
+      )}
+
       <div className="mt-6">
         <PaymentQueue
           payments={payments}

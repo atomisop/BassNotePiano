@@ -1,10 +1,14 @@
 import { searchUsers, getAdminProgressOverview } from "@/lib/admin";
 import { UserList, type UserListRow } from "@/components/admin/UserList";
 import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
+import { getServerAuthSession } from "@/lib/auth";
+import { isOwnerEmail } from "@/lib/adminNotifications";
 import { approveNextScaleAction } from "./actions";
 
 export default async function AdminUsersPage({ searchParams }: { searchParams: { q?: string; filter?: string } }) {
   const query = searchParams.q ?? "";
+  const session = await getServerAuthSession();
+  const isOwner = isOwnerEmail(session?.user?.email);
   const needsApproval = searchParams.filter === "approval";
   const [users, progress] = await Promise.all([searchUsers(query), getAdminProgressOverview(query)]);
   const progressById = new Map(progress.map((p) => [p.id, p]));
@@ -40,6 +44,12 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
           ]}
         />
       </div>
+
+      {isOwner && (
+        <a href="/api/admin/export?type=people" className="tap neu-btn mt-6 inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
+          Export CSV
+        </a>
+      )}
 
       <div className="mt-6">
         <UserList rows={rows} initialQuery={query} onApproveNext={approveNextScaleAction} />
