@@ -233,6 +233,19 @@ export async function sendNotificationEmail(to: string, title: string, body: str
   await sendEmail({ to, subject: title, html, text });
 }
 
+/** Security notice after a password change or reset. Sent from the standard noreply sender. */
+export async function sendPasswordChangedEmail(to: string, name: string | null) {
+  const greeting = name ? `Hi ${escapeHtml(name.split(" ")[0])},` : "Hi,";
+  const resetUrl = getAppUrl("/forgot-password");
+  const html = emailShell(
+    "Your password was changed",
+    `<p style="margin:0 0 12px;">${greeting}</p><p style="margin:0 0 12px;">The password on your Bass Note Piano account was just changed, and any other devices were signed out.</p><p style="margin:0;">If this was you, nothing more to do. If it wasn't, <a href="${resetUrl}">reset your password now</a> and reply to the studio so we can look into it.</p>`,
+    { kind: "notice" },
+  );
+  const text = `${name ? `Hi ${name.split(" ")[0]},` : "Hi,"}\n\nThe password on your Bass Note Piano account was just changed, and any other devices were signed out.\n\nIf this was you, nothing more to do. If it wasn't, reset your password now: ${resetUrl}\nand reply to the studio so we can look into it.`;
+  await sendEmail({ to, subject: "Your password was changed", html, text });
+}
+
 /**
  * A message from a person, not a template. Used for announcements and for the
  * messages the owner types to students: plain paragraphs, a greeting by name,

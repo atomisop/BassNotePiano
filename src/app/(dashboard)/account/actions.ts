@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { setUsername, SocialError } from "@/lib/social";
 import { createPresignedAvatarUpload, deleteObject, keyFromPublicUrl, isObjectStorageConfigured } from "@/lib/storage";
 import { createAndSendCode, verifyCode, RateLimitError } from "@/lib/verification";
+import { sendPasswordChangedEmail } from "@/lib/email";
 import { changePaymentPlanTerm, cancelPaymentPlanBySelf, PaymentPlanError } from "@/lib/paymentPlans";
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -37,30 +38,70 @@ export async function updateNameAction(newName: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Password — still requires the current password, just no longer a mailed
-// code on top of it.
+// Password. Two steps: the current password plus the new one are checked and
+// a 6-digit code is emailed to the account's own address, then the change is
+// applied only once that code is confirmed. A "password changed" notice goes
+// out afterwards so a change you didn't make is noticed.
 // ---------------------------------------------------------------------------
 
-export async function updatePasswordAction(currentPassword: string, newPassword: string) {
+async function checkPasswordChange(currentPassword: string, newPassword: string) {
   if (newPassword.length < MIN_PASSWORD_LENGTH) {
     return { ok: false as const, error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` };
   }
-
   const { id } = await requireSession();
-  const user = await prisma.user.findUnique({ where: { id }, select: { passwordHash: true } });
+  const user = await prisma.user.findUnique({ where: { id }, select: { email: true, name: true, passwordHash: true } });
   if (!user?.passwordHash || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
     return { ok: false as const, error: "Current password is incorrect." };
+  }
+  return { ok: true as const, id, email: user.email, name: user.name };
+}
+
+/** Step 1: validates both passwords, then emails a code to the account's own address. */
+export async function requestPasswordChangeCodeAction(currentPassword: string, newPassword: string) {
+  const check = await checkPasswordChange(currentPassword, newPassword);
+  if (!check.ok) return check;
+
+  try {
+    const result = await createAndSendCode({ email: check.email, userId: check.id, purpose: "CHANGE_PASSWORD" });
+    if (!result.ok) return { ok: false as const, error: "Couldn't send a verification code. Try again in a moment." };
+  } catch (err) {
+    if (err instanceof RateLimitError) return { ok: false as const, error: err.message };
+    throw err;
+  }
+  return { ok: true as const };
+}
+
+/** Step 2: re-checks the passwords and the emailed code, then applies the change. */
+export async function updatePasswordAction(currentPassword: string, newPassword: string, code: string) {
+  const check = await checkPasswordChange(currentPassword, newPassword);
+  if (!check.ok) return check;
+
+  const verified = await verifyCode(check.email, "CHANGE_PASSWORD", code.trim());
+  if (!verified.ok) {
+    const REASON_MESSAGE: Record<typeof verified.reason, string> = {
+      not_found: "Request a verification code first.",
+      expired: "That code expired. Request a new one.",
+      too_many_attempts: "Too many incorrect attempts. Request a new code.",
+      incorrect: "Incorrect code.",
+    };
+    return { ok: false as const, error: REASON_MESSAGE[verified.reason] };
   }
 
   const newPasswordHash = await bcrypt.hash(newPassword, 12);
   // sessionVersion increment is what actually makes "signs out any other
-  // devices" (below) true — see the jwt callback in src/lib/auth.ts. The
+  // devices" (below) true, see the jwt callback in src/lib/auth.ts. The
   // client re-syncs its OWN session to the new version right after this
   // call succeeds, via next-auth's update(), so only other devices drop.
   await prisma.user.update({
-    where: { id },
+    where: { id: check.id },
     data: { passwordHash: newPasswordHash, passwordChangedAt: new Date(), sessionVersion: { increment: 1 } },
   });
+
+  try {
+    await sendPasswordChangedEmail(check.email, check.name);
+  } catch (err) {
+    console.error("Failed to send password-changed notice:", err);
+  }
 
   return { ok: true as const };
 }
