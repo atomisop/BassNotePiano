@@ -9,6 +9,7 @@ import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { BookingCalendar } from "../../lessons/BookingCalendar";
+import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { enrollInPaymentPlanAction, getReservableSlotsAction, submitPlanInstallmentPaymentAction } from "./actions";
 
 function formatUsd(cents: number) {
@@ -95,6 +96,7 @@ export function PaymentPlanEnrollmentFlow({
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [selectedSlot, setSelectedSlot] = useState<ReservableSlot | null>(null);
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  const [timesOpen, setTimesOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -273,47 +275,56 @@ export function PaymentPlanEnrollmentFlow({
               occurrences={calendarRows}
               selectedDateKey={selectedDateKey}
               onSelectDate={(key) => {
+                // Tapping the picked day again reopens its times instead of clearing it.
+                if (key === null && selectedDateKey) {
+                  setTimesOpen(true);
+                  return;
+                }
                 setSelectedDateKey(key);
                 setSelectedSlot(null);
+                if (key) setTimesOpen(true);
               }}
             />
-            <div className="mt-4">
-              {!selectedDateKey ? (
-                <p className="text-small text-slate-500">Pick a day.</p>
-              ) : (
-                <>
-                  <p className="mb-2 text-small font-medium text-slate-300">
-                    {new Date(`${selectedDateKey}T00:00:00Z`).toLocaleDateString(undefined, {
+            {!selectedSlot && <p className="mt-4 text-small text-slate-500">Pick a day.</p>}
+            <SlideOverPanel
+              open={timesOpen && !!selectedDateKey}
+              onClose={() => setTimesOpen(false)}
+              title={
+                selectedDateKey
+                  ? new Date(`${selectedDateKey}T00:00:00Z`).toLocaleDateString(undefined, {
                       weekday: "long",
                       month: "long",
                       day: "numeric",
                       timeZone: "UTC",
-                    })}
-                  </p>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {daySlots.map((slot) => {
-                      const active = selectedSlot?.scheduleId === slot.scheduleId && selectedSlot?.chunkIndex === slot.chunkIndex;
-                      return (
-                        <button
-                          key={`${slot.scheduleId}:${slot.chunkIndex}`}
-                          type="button"
-                          onClick={() => setSelectedSlot(slot)}
-                          aria-pressed={active}
-                          className={`tap flex min-h-11 items-center justify-between rounded-xl px-3.5 py-2.5 text-left transition bg-neu-base ${
-                            active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-                          }`}
-                        >
-                          <span className={`text-small font-semibold ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>
-                            {formatTimeRange(slot.startTime, classMinutes)}
-                          </span>
-                          <span className="text-small text-slate-500">{active ? "Selected" : slot.label ?? `${classMinutes} min`}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
+                    })
+                  : "Pick a time"
+              }
+            >
+              <div className="grid grid-cols-2 gap-3 p-4">
+                {daySlots.map((slot) => {
+                  const active = selectedSlot?.scheduleId === slot.scheduleId && selectedSlot?.chunkIndex === slot.chunkIndex;
+                  return (
+                    <button
+                      key={`${slot.scheduleId}:${slot.chunkIndex}`}
+                      type="button"
+                      onClick={() => {
+                        setSelectedSlot(slot);
+                        setTimesOpen(false);
+                      }}
+                      aria-pressed={active}
+                      className={`tap flex min-h-20 flex-col items-center justify-center gap-1 rounded-2xl px-3 py-3 text-center transition bg-neu-base ${
+                        active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      }`}
+                    >
+                      <span className={`text-body font-semibold ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>
+                        {formatTimeRange(slot.startTime, classMinutes)}
+                      </span>
+                      <span className="text-small text-slate-500">{active ? "Selected" : slot.label ?? `${classMinutes} min`}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </SlideOverPanel>
             {selectedSlot && (
               <p className="mt-3 rounded-xl bg-neu-base px-3.5 py-3 text-small text-slate-300 shadow-pressed-low">
                 Locked in every <span className="font-semibold text-slate-50">{DAY_LABELS[selectedSlot.dayOfWeek]}</span> at{" "}

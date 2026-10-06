@@ -33,6 +33,8 @@ export function useScalePlayer(instrument: PrimaryInstrument | null = null) {
   const [isPlaying, setIsPlaying] = useState(false);
   /** Index into the note list currently sounding, or null. Drives highlighting. */
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  /** The exact pitch (MIDI) sounding now. Instruments light only the key or fret of this one note, never every octave of the same letter. */
+  const [activeMidi, setActiveMidi] = useState<number | null>(null);
 
   // Feature detection has to happen after mount: `window` doesn't exist during
   // the server render, and branching on it directly would desync hydration.
@@ -51,6 +53,7 @@ export function useScalePlayer(instrument: PrimaryInstrument | null = null) {
     stopPlayback();
     setIsPlaying(false);
     setActiveIndex(null);
+    setActiveMidi(null);
   }, []);
 
   /**
@@ -77,13 +80,18 @@ export function useScalePlayer(instrument: PrimaryInstrument | null = null) {
 
       const withOctave = [...notes, notes[0]];
       setIsPlaying(true);
-      playSequence(notesToAscendingMidi(withOctave, baseOctave), {
+      const runMidis = notesToAscendingMidi(withOctave, baseOctave);
+      playSequence(runMidis, {
         tempo: 116,
         voice,
-        onStep: (index) => setActiveIndex(index),
+        onStep: (index) => {
+          setActiveIndex(index);
+          setActiveMidi(runMidis[index] ?? null);
+        },
         onEnd: () => {
           setIsPlaying(false);
           setActiveIndex(null);
+          setActiveMidi(null);
         },
       });
     },
@@ -106,7 +114,11 @@ export function useScalePlayer(instrument: PrimaryInstrument | null = null) {
     // Purely a visual pulse on the tapped chip — short, and independent of the
     // note's own (longer) decay.
     setActiveIndex(index);
-    setTimeout(() => setActiveIndex((current) => (current === index ? null : current)), 320);
+    setActiveMidi(midi);
+    setTimeout(() => {
+      setActiveIndex((current) => (current === index ? null : current));
+      setActiveMidi((current) => (current === midi ? null : current));
+    }, 320);
   }, [voice, baseOctave]);
 
   const playChordNotes = useCallback(async (notes: string[]) => {
@@ -135,6 +147,8 @@ export function useScalePlayer(instrument: PrimaryInstrument | null = null) {
     setIsPlaying(false);
     playNote(midi, degreeIndex === null ? 0.45 : 0.55, voice);
 
+    setActiveMidi(midi);
+    setTimeout(() => setActiveMidi((current) => (current === midi ? null : current)), 320);
     if (degreeIndex !== null) {
       setActiveIndex(degreeIndex);
       setTimeout(
@@ -148,6 +162,7 @@ export function useScalePlayer(instrument: PrimaryInstrument | null = null) {
     supported,
     isPlaying,
     activeIndex,
+    activeMidi,
     playScale,
     playDegree,
     playChordNotes,

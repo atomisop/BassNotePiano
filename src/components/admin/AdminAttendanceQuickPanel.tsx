@@ -17,6 +17,7 @@ interface FeedRow {
   studentEmail: string;
   scheduleLabel: string | null;
   scheduledAt: string;
+  awaitingPayment?: boolean;
 }
 
 interface DayGroup {
@@ -134,7 +135,7 @@ export function AdminAttendanceQuickPanel() {
   }, [open]);
 
   const isReady = (iso: string) => new Date(iso).getTime() - ATTENDANCE_OPENS_MIN_BEFORE * 60_000 <= now;
-  const readyCount = rows.filter((r) => isReady(r.scheduledAt)).length;
+  const readyCount = rows.filter((r) => !r.awaitingPayment && isReady(r.scheduledAt)).length;
 
   const groups = useMemo<DayGroup[]>(() => {
     const map = new Map<string, DayGroup>();
@@ -246,7 +247,7 @@ export function AdminAttendanceQuickPanel() {
             ) : (
               <div className="mt-3 space-y-2.5">
                 {groups.map((group) => {
-                  const readyInGroup = group.rows.filter((r) => isReady(r.scheduledAt)).length;
+                  const readyInGroup = group.rows.filter((r) => !r.awaitingPayment && isReady(r.scheduledAt)).length;
                   const defaultOpen = group.isToday || readyInGroup > 0;
                   const expanded = toggled[group.key] ?? defaultOpen;
                   return (
@@ -278,6 +279,22 @@ export function AdminAttendanceQuickPanel() {
                       {expanded && (
                         <div className="mt-1.5 space-y-1.5 rounded-xl bg-neu-base p-1.5 shadow-pressed-low">
                           {group.rows.map((r) => {
+                            if (r.awaitingPayment) {
+                              return (
+                                <div key={r.bookingId} className="flex items-center gap-2 rounded-lg bg-neu-base p-2.5 shadow-raised-low">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-small font-medium text-slate-100">{r.studentName ?? r.studentEmail}</p>
+                                    <p className="truncate text-small text-slate-500">
+                                      {timeOf(r.scheduledAt)}
+                                      {r.scheduleLabel ? ` · ${r.scheduleLabel}` : ""} · every week
+                                    </p>
+                                  </div>
+                                  <span className="shrink-0 rounded-full bg-neu-base px-2.5 py-1 text-small font-medium text-slate-300 shadow-pressed-low">
+                                    Waiting for payment
+                                  </span>
+                                </div>
+                              );
+                            }
                             const ready = isReady(r.scheduledAt);
                             const busy = busyId === r.bookingId;
                             const confirming = confirmCancelId === r.bookingId;

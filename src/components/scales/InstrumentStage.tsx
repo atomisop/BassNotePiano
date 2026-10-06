@@ -152,7 +152,7 @@ function StopIcon() {
  */
 export function InstrumentStage({ variant, root, player, instrument, onInstrumentChange }: InstrumentStageProps) {
   const spelled = useMemo(() => spellScale(root, formulaForRoot(variant, root)), [root, variant]);
-  const { supported, isPlaying, activeIndex, playScale, playKey, stop } = player;
+  const { supported, isPlaying, activeIndex, activeMidi, playScale, playKey, stop } = player;
   const fretted = instrument === "GUITAR" || instrument === "BASS";
 
   return (
@@ -180,6 +180,7 @@ export function InstrumentStage({ variant, root, player, instrument, onInstrumen
             notes={spelled.notes}
             degrees={spelled.degrees}
             activeIndex={activeIndex}
+            activeMidi={activeMidi}
             onPlayKey={playKey}
             disabled={!supported}
             tuning={GUITAR_STANDARD_TUNING}
@@ -190,6 +191,7 @@ export function InstrumentStage({ variant, root, player, instrument, onInstrumen
             notes={spelled.notes}
             degrees={spelled.degrees}
             activeIndex={activeIndex}
+            activeMidi={activeMidi}
             onPlayKey={playKey}
             disabled={!supported}
             tuning={BASS_STANDARD_TUNING}
@@ -200,6 +202,7 @@ export function InstrumentStage({ variant, root, player, instrument, onInstrumen
             notes={spelled.notes}
             degrees={spelled.degrees}
             activeIndex={activeIndex}
+            activeMidi={activeMidi}
             onPlayKey={playKey}
             disabled={!supported}
           />

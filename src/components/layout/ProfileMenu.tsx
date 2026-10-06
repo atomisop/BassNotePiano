@@ -117,6 +117,13 @@ export function ProfileMenu({ name, username, email, image, triggerClassName }: 
           <div className="my-1.5 border-t border-ink/10" />
 
           <Link
+            href="/"
+            onClick={() => setOpen(false)}
+            className="tap block rounded-lg px-2.5 py-2 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:bg-slate-800/60"
+          >
+            Website
+          </Link>
+          <Link
             href="/dashboard"
             onClick={() => setOpen(false)}
             className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"

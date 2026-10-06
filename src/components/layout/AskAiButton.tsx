@@ -18,11 +18,11 @@ export function AskAiButton({ compactOnPhones = false }: { compactOnPhones?: boo
       {compactOnPhones ? (
         // Icon only below md, to leave room for Log in / Get started: the label
         // is still there for screen readers and returns at md and up.
-        <GenerateAIButton ariaLabel="Ask AI" onClick={openAi} className="tap h-9 px-3 md:px-4">
+        <GenerateAIButton calm ariaLabel="Ask AI" onClick={openAi} className="tap h-9 px-3 md:px-4">
           <span className="hidden md:inline">Ask AI</span>
         </GenerateAIButton>
       ) : (
-        <GenerateAIButton label="Ask AI" onClick={openAi} className="tap h-9 px-4" />
+        <GenerateAIButton calm label="Ask AI" onClick={openAi} className="tap h-9 px-4" />
       )}
     </span>
   );

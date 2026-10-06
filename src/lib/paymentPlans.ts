@@ -9,6 +9,7 @@ import {
   nextOccurrenceDates,
   computeScheduledAt,
   createReservedBookingIfAbsent,
+  getEffectiveClassCredits,
   OCCURRENCES_PER_SLOT, CANCELLATION_CUTOFF_HOURS } from "@/lib/classSchedule";
 import { createNotification } from "@/lib/notifications";
 
@@ -78,7 +79,7 @@ export async function createPaymentPlan(
   const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
 
   try {
-    return await prisma.$transaction(
+    const created = await prisma.$transaction(
       async (tx) => {
         const existingPlan = await tx.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
         if (existingPlan) {
@@ -154,6 +155,25 @@ export async function createPaymentPlan(
       },
       { isolationLevel: "Serializable" },
     );
+
+    // Tell the admins what this student just committed to, the moment they
+    // commit, not only once the first payment arrives.
+    try {
+      const [student, slot] = await Promise.all([
+        prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }),
+        describeReservedSlot(created.id),
+      ]);
+      await notifyAdmins("NEW_SUBSCRIPTION", {
+        type: "ADMIN_ALERT",
+        title: "New subscription",
+        body: `${student?.name ?? student?.email ?? "A student"} chose the ${describePaymentPlan(cadence, term)}${slot ? `, ${slot}` : ""}. First payment is waiting.`,
+        emailCategory: "social",
+      });
+    } catch (err) {
+      // The plan already exists, so a failed heads-up must never look like a failed enrollment.
+      console.error("New subscription notification failed (non-blocking):", err);
+    }
+    return created;
   } catch (err) {
     if (err instanceof PaymentPlanError) throw err;
     if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2034") {
@@ -729,4 +749,57 @@ export async function lapsePlanForNonPayment(planId: string): Promise<boolean> {
     emailCategory: "social",
   });
   return true;
+}
+
+const DAY_NAMES = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"];
+
+function formatClock(hhmm: string): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
+}
+
+/** "Mondays 6:30 PM" for a plan's reserved weekly time, or null when it has none. */
+export async function describeReservedSlot(planId: string): Promise<string | null> {
+  const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, include: { reservedSchedule: true } });
+  if (!plan?.reservedSchedule || plan.reservedChunkIndex === null) return null;
+  const chunk = chunksForSchedule(plan.reservedSchedule)[plan.reservedChunkIndex];
+  if (!chunk) return null;
+  return `${DAY_NAMES[plan.reservedSchedule.dayOfWeek]} ${formatClock(addMinutesToHHmm(plan.reservedSchedule.startTime, chunk.offsetMin))}`;
+}
+
+/**
+ * Books the plan's weekly class for every upcoming week it has paid for, now,
+ * instead of waiting for the daily job. Called the moment an installment is
+ * approved so the classes show up in the admin's Attendance list right away.
+ * Same rules as netlify/functions/payment-plan-reservations.ts: only inside
+ * the paid period, only while credits cover the class, skipped classes stay
+ * skipped. Never throws.
+ */
+export async function bookReservedWindowForPlan(planId: string): Promise<void> {
+  try {
+    const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, include: { reservedSchedule: true } });
+    if (!plan || !plan.reservedSchedule || plan.reservedChunkIndex === null || !plan.reservedSchedule.active) return;
+    const chunk = chunksForSchedule(plan.reservedSchedule)[plan.reservedChunkIndex];
+    if (!chunk) return;
+    const creditsPerClass = PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence];
+    const paidUntil = plan.status === "COMPLETED" ? addCalendarMonthsClamped(plan.nextDueDate, 1) : plan.nextDueDate;
+
+    for (const occurrenceDate of nextOccurrenceDates(plan.reservedSchedule.dayOfWeek, OCCURRENCES_PER_SLOT)) {
+      const scheduledAt = computeScheduledAt(plan.reservedSchedule, occurrenceDate, chunk);
+      if (scheduledAt.getTime() <= Date.now() || scheduledAt.getTime() >= paidUntil.getTime()) continue;
+      if ((await getEffectiveClassCredits(plan.userId)) < creditsPerClass) continue;
+      await createReservedBookingIfAbsent({
+        studentId: plan.userId,
+        scheduleId: plan.reservedSchedule.id,
+        occurrenceDate,
+        scheduledAt,
+        creditsSpent: creditsPerClass,
+        planId: plan.id,
+      }).catch((err) => {
+        if ((err as { code?: string })?.code !== "P2002") console.error("Immediate reserved booking failed (non-blocking):", err);
+      });
+    }
+  } catch (err) {
+    console.error("bookReservedWindowForPlan failed (non-blocking):", err);
+  }
 }
