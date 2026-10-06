@@ -1,5 +1,6 @@
 import { schedule } from "@netlify/functions";
 import { runJob } from "../../src/lib/jobRun";
+import { todayBoundsEt } from "../../src/lib/classSchedule";
 import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
 
@@ -34,9 +35,21 @@ export const handler = schedule("0 15 * * *", async () =>
     select: { id: true, lastActivityDate: true },
   });
 
+  // Someone with a live class today does not need a "practice" nudge on top of it.
+  const today = todayBoundsEt();
+  const hasClassToday = new Set(
+    (
+      await prisma.classBooking.findMany({
+        where: { status: "SCHEDULED", scheduledAt: { gte: today.start, lt: today.end } },
+        select: { studentId: true },
+      })
+    ).map((b) => b.studentId),
+  );
+
   let sent = 0;
   for (const user of users) {
     if (!user.lastActivityDate) continue;
+    if (hasClassToday.has(user.id)) continue;
     const gap = daysSince(user.lastActivityDate, now);
     if (!REMINDER_TRIGGER_DAYS.includes(gap)) continue;
 
