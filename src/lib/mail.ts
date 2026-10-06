@@ -1,7 +1,6 @@
 import type { MailKind, NotificationType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getAppUrl, sendNotificationEmail, sendNotificationEmailWithCta } from "@/lib/email";
-import { createAssistantEscalation, AssistantEscalationError } from "@/lib/support";
 
 export class MailError extends Error {}
 
@@ -159,6 +158,10 @@ export async function openSupportCaseFromMail(userId: string, mailId: string): P
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } });
   if (!user) throw new MailError("Account not found.");
 
+  // Loaded here, not at the top: support.ts pulls in the NextAuth session helper, which only
+  // loads inside Next. Importing it at module level would break the scheduled Netlify
+  // functions, since they reach this file through notifications.ts.
+  const { createAssistantEscalation, AssistantEscalationError } = await import("@/lib/support");
   try {
     const escalation = await createAssistantEscalation({
       identifier: `user:${userId}`,

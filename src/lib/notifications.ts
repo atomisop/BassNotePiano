@@ -69,6 +69,16 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   CURRICULUM_ACCESS_REVOKED: { label: "See class plans", url: getAppUrl("/billing/plans"), kind: "notice" },
 };
 
+/** The in-app path of a full link, or null if it can't be read (a notice must never fail over its link). */
+function pathOf(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    return parsed.pathname + parsed.search;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Always writes the in-app notification (that's the source of truth the
  * bell/inbox reads from) and, if emailCategory is given, checks the user's
@@ -88,7 +98,7 @@ export async function createNotification(params: CreateNotificationParams) {
         title: params.title,
         body: params.body ?? "",
         actionLabel: cta?.label ?? null,
-        actionHref: cta ? new URL(cta.url).pathname + new URL(cta.url).search : null,
+        actionHref: cta ? pathOf(cta.url) : null,
       })
     : await prisma.notification.create({
         data: { userId: params.userId, type: params.type, title: params.title, body: params.body },
