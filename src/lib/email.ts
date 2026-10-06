@@ -17,6 +17,7 @@ const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO ?? "music@bassnotepiano.com";
 // The physical mailing address CAN-SPAM asks for. Set MAILING_ADDRESS in the environment and it shows in every email footer.
 // Messages typed by a person (announcements, direct messages) come from an address people can answer.
 // A normal-looking, reply-able sender is far less likely to be filed under Promotions than a noreply one.
+const FALLBACK_FROM = "Bass Note Piano <noreply@bassnotepiano.com>";
 const PERSONAL_FROM = process.env.PERSONAL_EMAIL_FROM ?? "Bass Note Piano <music@bassnotepiano.com>";
 const MAILING_ADDRESS = process.env.MAILING_ADDRESS?.trim() ?? "";
 
@@ -75,12 +76,14 @@ async function sendEmail({ to, subject, html, text, from }: SendEmailParams): Pr
     return;
   }
 
-  let result = await client.emails.send({ from: from ?? EMAIL_FROM, to, subject, html, text, replyTo: EMAIL_REPLY_TO });
-  // A custom sender needs its domain verified in Resend. Until it is, fall back to the standard sender
-  // so the message still goes out instead of failing.
-  if (result.error && from && from !== EMAIL_FROM) {
-    console.error(`Sending from ${from} failed (${result.error.message}), using the standard sender instead.`);
-    result = await client.emails.send({ from: EMAIL_FROM, to, subject, html, text, replyTo: EMAIL_REPLY_TO });
+  // Try the wanted sender first, then the standard one, then the root-domain one. A sender whose domain
+  // is not verified for this Resend key is refused, and the message should still go out.
+  const senders = Array.from(new Set([from ?? EMAIL_FROM, EMAIL_FROM, FALLBACK_FROM]));
+  let result = await client.emails.send({ from: senders[0], to, subject, html, text, replyTo: EMAIL_REPLY_TO });
+  for (const next of senders.slice(1)) {
+    if (!result.error) break;
+    console.error(`Sending from ${senders[0]} failed (${result.error.message}), trying ${next}.`);
+    result = await client.emails.send({ from: next, to, subject, html, text, replyTo: EMAIL_REPLY_TO });
   }
   if (result.error) {
     throw new Error(`Resend failed to send to ${to}: ${result.error.message}`);
