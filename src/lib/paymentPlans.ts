@@ -803,3 +803,31 @@ export async function bookReservedWindowForPlan(planId: string): Promise<void> {
     console.error("bookReservedWindowForPlan failed (non-blocking):", err);
   }
 }
+
+let lastCatchUpAt = 0;
+
+/**
+ * Books the weekly classes of any live plan that has none on the calendar yet,
+ * for example one approved before classes were booked on approval. Cheap and
+ * safe to repeat (bookings are existence-checked), so the admin's Attendance
+ * feed runs it at most once every 2 minutes instead of waiting for the daily job.
+ */
+export async function bookMissingReservedWindows(): Promise<void> {
+  if (Date.now() - lastCatchUpAt < 2 * 60_000) return;
+  lastCatchUpAt = Date.now();
+  try {
+    const plans = await prisma.paymentPlan.findMany({
+      where: {
+        reservedScheduleId: { not: null },
+        installmentsPaid: { gt: 0 },
+        OR: livePaymentPlanConditions(),
+        reservedBookings: { none: { status: "SCHEDULED", scheduledAt: { gt: new Date() } } },
+      },
+      select: { id: true },
+    });
+    for (const plan of plans) await bookReservedWindowForPlan(plan.id);
+  } catch (err) {
+    console.error("bookMissingReservedWindows failed (non-blocking):", err);
+  }
+}
+
