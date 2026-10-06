@@ -14,15 +14,16 @@ const USE_VOICE_ACTIVITY = 1 << 25;
 const SEND_MESSAGES = 1 << 11;
 const READ_MESSAGE_HISTORY = 1 << 16;
 const MANAGE_CHANNELS = 1 << 4;
-const MANAGE_ROLES = 1 << 28;
 
 /**
  * What the bot keeps on its own channels. Hiding a channel from @everyone also
  * hides it from the bot, unless the bot has its own entry, so without this it
  * could create a class call but never see or remove it. A bot user has the same
- * id as its application.
+ * id as its application. Discord only lets a bot hand out permissions it holds
+ * in the server itself, so this asks for the least that works first (see-and-
+ * manage), then for just seeing it, and the caller falls back to neither.
  */
-const BOT_CHANNEL_PERMISSIONS = String(VIEW_CHANNEL | CONNECT | SPEAK | MANAGE_CHANNELS | MANAGE_ROLES | SEND_MESSAGES | READ_MESSAGE_HISTORY);
+const BOT_PERMISSION_TRIES = [String(VIEW_CHANNEL | MANAGE_CHANNELS), String(VIEW_CHANNEL), null] as const;
 
 /** What a student or the teacher may do inside their class call. */
 export const CLASS_MEMBER_PERMISSIONS = String(VIEW_CHANNEL | CONNECT | SPEAK | VIDEO | USE_VOICE_ACTIVITY | SEND_MESSAGES | READ_MESSAGE_HISTORY);
@@ -67,23 +68,28 @@ export async function isGuildMember(discordId: string): Promise<boolean> {
 
 /** Makes a private voice channel under the Live Classes category that only these people can see, and returns its id. */
 export async function createClassChannel(name: string, memberDiscordIds: string[]): Promise<string> {
-  const res = await discordFetch(`/guilds/${DISCORD_GUILD_ID}/channels`, {
-    method: "POST",
-    body: JSON.stringify({
-      name,
-      type: 2,
-      parent_id: DISCORD_CLASS_CATEGORY_ID,
-      permission_overwrites: [
-        // @everyone has the same id as the server, and cannot even see the channel.
-        { id: DISCORD_GUILD_ID, type: 0, allow: "0", deny: String(VIEW_CHANNEL) },
-        { id: DISCORD_CLIENT_ID, type: 1, allow: BOT_CHANNEL_PERMISSIONS, deny: "0" },
-        ...memberDiscordIds.map((id) => ({ id, type: 1, allow: CLASS_MEMBER_PERMISSIONS, deny: "0" })),
-      ],
-    }),
-  });
-  if (!res.ok) throw new Error(`Discord channel create failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
-  const body = (await res.json()) as { id: string };
-  return body.id;
+  let lastError = "";
+  for (const botPermissions of BOT_PERMISSION_TRIES) {
+    const res = await discordFetch(`/guilds/${DISCORD_GUILD_ID}/channels`, {
+      method: "POST",
+      body: JSON.stringify({
+        name,
+        type: 2,
+        parent_id: DISCORD_CLASS_CATEGORY_ID,
+        permission_overwrites: [
+          // @everyone has the same id as the server, and cannot even see the channel.
+          { id: DISCORD_GUILD_ID, type: 0, allow: "0", deny: String(VIEW_CHANNEL) },
+          ...(botPermissions ? [{ id: DISCORD_CLIENT_ID, type: 1, allow: botPermissions, deny: "0" }] : []),
+          ...memberDiscordIds.map((id) => ({ id, type: 1, allow: CLASS_MEMBER_PERMISSIONS, deny: "0" })),
+        ],
+      }),
+    });
+    if (res.ok) return ((await res.json()) as { id: string }).id;
+    lastError = `Discord channel create failed (${res.status}): ${(await res.text()).slice(0, 200)}`;
+    // Missing Permissions (403) means the bot asked to hand out something it does not hold: try a smaller request.
+    if (res.status !== 403) break;
+  }
+  throw new Error(lastError);
 }
 
 /** Removes a class channel. Already gone counts as done. */

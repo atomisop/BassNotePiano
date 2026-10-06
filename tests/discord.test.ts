@@ -33,14 +33,24 @@ describe("createClassChannel", () => {
     expect(bot).toMatchObject({ id: DISCORD_CLIENT_ID, type: 1 });
     expect(Number(bot.allow) & (1 << 4)).toBeTruthy(); // Manage Channels
     expect(Number(bot.allow) & (1 << 10)).toBeTruthy(); // View Channel
+    expect(Number(bot.allow) & (1 << 28)).toBeFalsy(); // never asks to hand out Manage Roles
     expect(body.permission_overwrites.slice(2).map((o: { id: string; allow: string }) => [o.id, o.allow])).toEqual([
       ["111", CLASS_MEMBER_PERMISSIONS],
       ["222", CLASS_MEMBER_PERMISSIONS],
     ]);
     expect((init as RequestInit).headers).toMatchObject({ Authorization: "Bot test-token" });
   });
+  it("asks for less when Discord says the bot cannot hand out a permission", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response("Missing Permissions", { status: 403 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "321" }), { status: 201 }));
+    expect(await createClassChannel("x", ["1"])).toBe("321");
+    const second = JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string);
+    expect(second.permission_overwrites[1].allow).toBe(String(1 << 10));
+  });
   it("raises a clear error when Discord refuses", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("Missing Permissions", { status: 403 }));
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response("Missing Permissions", { status: 403 }));
     await expect(createClassChannel("x", ["1"])).rejects.toThrow(/403/);
   });
 });
