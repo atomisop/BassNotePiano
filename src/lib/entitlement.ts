@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { canonicalEmail } from "@/lib/canonicalEmail";
 import { addCalendarMonthsClamped } from "@/lib/paymentPlans";
 import { resolveEntitlement, TRIAL_DAYS, type CurriculumEntitlement } from "@/lib/entitlementRules";
 
@@ -78,9 +79,16 @@ export async function getCurriculumEntitlements(userIds: string[], db: Db = pris
 export async function startTrialForEmail(email: string, db: Db = prisma): Promise<boolean> {
   const user = await db.user.findFirst({
     where: { email: { equals: email.trim(), mode: "insensitive" }, trialEndsAt: null, role: "STUDENT" },
-    select: { id: true },
+    select: { id: true, email: true, emailCanonical: true },
   });
   if (!user) return false;
+  // One trial per inbox: a Gmail address with other dots or a plus tag is the same person.
+  const canonical = user.emailCanonical ?? canonicalEmail(user.email);
+  const alreadyUsed = await db.user.findFirst({
+    where: { emailCanonical: canonical, trialEndsAt: { not: null }, id: { not: user.id } },
+    select: { id: true },
+  });
+  if (alreadyUsed) return false;
   await db.user.update({ where: { id: user.id }, data: { trialEndsAt: new Date(Date.now() + TRIAL_DAYS * DAY_MS) } });
   return true;
 }

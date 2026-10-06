@@ -717,6 +717,7 @@ model User {
   id            String    @id @default(cuid())
   name          String?
   email         String    @unique
+  emailCanonical String? // the email with Gmail dots and plus tags removed, so one inbox is one person for the free trial
   emailVerified DateTime?
   image         String?
   passwordHash  String? // set only for credentials-based signup
@@ -874,6 +875,8 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([emailCanonical])
 }
 
 model Account {

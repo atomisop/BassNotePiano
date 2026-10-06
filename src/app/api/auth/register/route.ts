@@ -1,3 +1,4 @@
+import { canonicalEmail } from "@/lib/canonicalEmail";
 import { hasApprovedRegistration, startTrialForEmail } from "@/lib/entitlement";
 import { NextResponse, type NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const user = await prisma.user.create({
-      data: { name, email, passwordHash },
+      data: { name, email, emailCanonical: canonicalEmail(email), passwordHash },
       select: { id: true, email: true },
     });
     // Someone approved for classes before they made an account gets their
