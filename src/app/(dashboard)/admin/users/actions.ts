@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { Role } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 import { setUserRole, setCurriculumAccess } from "@/lib/admin";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { prisma } from "@/lib/prisma";
@@ -37,12 +38,14 @@ export async function setUserRoleAction(targetUserId: string, role: Role) {
     throw new Error("Only the owner can change admin access.");
   }
   await setUserRole(targetUserId, role);
+  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "user.role", targetType: "User", targetId: targetUserId, detail: `${target.email} is now ${role}` });
   revalidatePath("/admin/users");
 }
 
 export async function setCurriculumAccessAction(targetUserId: string, hasAccess: boolean) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   await setCurriculumAccess(targetUserId, hasAccess);
+  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: hasAccess ? "access.grant" : "access.revoke", targetType: "User", targetId: targetUserId });
   revalidatePath("/admin/users");
   revalidatePath("/admin");
 }

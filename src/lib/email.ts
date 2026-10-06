@@ -14,6 +14,8 @@ const EMAIL_FROM = process.env.EMAIL_FROM ?? "Bass Note Piano <noreply@noreply.b
 // requires (that's still pending); this just closes the "there's no way to
 // write back" gap in the meantime.
 const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO ?? "music@bassnotepiano.com";
+// The physical mailing address CAN-SPAM asks for. Set MAILING_ADDRESS in the environment and it shows in every email footer.
+const MAILING_ADDRESS = process.env.MAILING_ADDRESS?.trim() ?? "";
 
 /** Builds an absolute in-app URL for an email link — NEXTAUTH_URL has no trailing slash (matches every other usage of it in this codebase). */
 export function getAppUrl(path: string): string {
@@ -128,6 +130,7 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
             <p style="margin:0;font-size:12px;line-height:1.6;color:#999999;">
               Questions? Write to <a href="mailto:${EMAIL_REPLY_TO}" style="color:#f5f5f5;text-decoration:underline;">${EMAIL_REPLY_TO}</a>.
             </p>
+            ${MAILING_ADDRESS ? `<p style="margin:6px 0 0;font-size:12px;line-height:1.6;color:#999999;">${escapeHtml(MAILING_ADDRESS)}</p>` : ""}
           </td>
         </tr>
       </table>

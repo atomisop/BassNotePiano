@@ -13,6 +13,8 @@ export interface PaymentPlanListProps {
   onCancel: (planId: string, note: string) => Promise<void>;
   /** Owner only: records money that was received but is not showing in revenue. */
   onRecordPayment?: (planId: string) => Promise<{ ok: boolean; error: string | null }>;
+  /** Sends the open bill to the student again. */
+  onResendBill?: (planId: string) => Promise<{ ok: boolean; message: string }>;
   emptyMessage?: string;
 }
 
@@ -58,7 +60,7 @@ function formatTimeLabel(hhmm: string): string {
  * payment happens entirely through the existing /admin/payments queue,
  * unchanged — this list is read-mostly by design.
  */
-export function PaymentPlanList({ plans, onCancel, onRecordPayment, emptyMessage = "No plans to show." }: PaymentPlanListProps) {
+export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill, emptyMessage = "No plans to show." }: PaymentPlanListProps) {
   const [query, setQuery] = useState("");
   const shown = plans.filter((item) => matchesQuery(item, query));
   const router = useRouter();
@@ -67,6 +69,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, emptyMessage
   const [note, setNote] = useState("");
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [recordError, setRecordError] = useState<string | null>(null);
+  const [billNote, setBillNote] = useState<{ id: string; text: string; ok: boolean } | null>(null);
 
   async function handleRecord(id: string) {
     if (!onRecordPayment) return;
@@ -80,6 +83,17 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, emptyMessage
       }
       setRecordingId(null);
       router.refresh();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleResend(id: string) {
+    if (!onResendBill) return;
+    setBusyId(id);
+    try {
+      const result = await onResendBill(id);
+      setBillNote({ id, text: result.message, ok: result.ok });
     } finally {
       setBusyId(null);
     }
@@ -238,7 +252,20 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, emptyMessage
                 </div>
               </div>
             ) : (
-              <div className="mt-4">
+              <div className="mt-4 space-y-2">
+                {onResendBill && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleResend(plan.id)}
+                      disabled={busyId === plan.id}
+                      className="tap neu-btn w-full rounded-lg py-2 text-small font-medium"
+                    >
+                      {busyId === plan.id ? "Sending…" : "Resend bill"}
+                    </button>
+                    {billNote?.id === plan.id && <p className={`text-small ${billNote.ok ? "text-slate-300" : "text-red-400"}`}>{billNote.text}</p>}
+                  </>
+                )}
                 <button
                   type="button"
                   onClick={() => setCancelingId(plan.id)}

@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
-import { cancelPaymentPlan, recordPlanPaymentReceived } from "@/lib/paymentPlans";
+import { cancelPaymentPlan, recordPlanPaymentReceived, resendPlanInvoice } from "@/lib/paymentPlans";
 import { isOwnerEmail } from "@/lib/adminNotifications";
+import { logAudit } from "@/lib/audit";
 
 // The admin layout's redirect only protects rendering — Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
@@ -21,6 +22,7 @@ async function requireAdmin() {
 export async function cancelPaymentPlanAction(planId: string, note: string) {
   const admin = await requireAdmin();
   await cancelPaymentPlan(planId, admin.id, note);
+  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "plan.cancel", targetType: "PaymentPlan", targetId: planId, detail: note });
   revalidatePath("/admin/payment-plans");
 }
 
@@ -29,7 +31,8 @@ export async function recordPlanPaymentAction(planId: string): Promise<{ ok: boo
   const admin = await requireAdmin();
   if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can record a payment." };
   try {
-    await recordPlanPaymentReceived(planId, admin.id);
+    const outcome = await recordPlanPaymentReceived(planId, admin.id);
+    await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "plan.record-payment", targetType: "PaymentPlan", targetId: planId, detail: outcome });
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Could not record the payment." };
   }
@@ -37,4 +40,15 @@ export async function recordPlanPaymentAction(planId: string): Promise<{ ok: boo
   revalidatePath("/admin/payments");
   revalidatePath("/admin");
   return { ok: true, error: null };
+}
+
+export async function resendBillAction(planId: string): Promise<{ ok: boolean; message: string }> {
+  const admin = await requireAdmin();
+  try {
+    const result = await resendPlanInvoice(planId);
+    await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "plan.resend-bill", targetType: "PaymentPlan", targetId: planId, detail: result });
+    return { ok: true, message: result === "sent" ? "Bill sent again." : "They turned off payment emails, so nothing was sent." };
+  } catch (err) {
+    return { ok: false, message: err instanceof Error ? err.message : "Could not send." };
+  }
 }

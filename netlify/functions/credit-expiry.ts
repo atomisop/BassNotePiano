@@ -1,4 +1,5 @@
 import { schedule } from "@netlify/functions";
+import { runJob } from "../../src/lib/jobRun";
 import { createNotification } from "../../src/lib/notifications";
 import { expireDueCreditGrants, warnExpiringSoonCreditGrants } from "../../src/lib/creditLedger";
 
@@ -15,7 +16,8 @@ import { expireDueCreditGrants, warnExpiringSoonCreditGrants } from "../../src/l
 // exclusive by construction (a grant's expiresAt is either still in the
 // future, the warning phase's whole domain, or already past, the sweep
 // phase's), so the two never double up on the same grant in one run.
-export const handler = schedule("0 9 * * *", async () => {
+export const handler = schedule("0 9 * * *", async () =>
+  runJob("credit-expiry", async () => {
   // One shared instant for both phases (rather than each defaulting its own
   // `now` independently a few lines apart) — keeps "expiring soon" and
   // "expired" strictly non-overlapping even at the exact millisecond a
@@ -52,4 +54,4 @@ export const handler = schedule("0 9 * * *", async () => {
     `Credit expiry: warned ${warned.length} grant(s) expiring soon, expired ${expired.length} grant(s) totaling ${totalExpired} credit(s).`,
   );
   return { statusCode: 200 };
-});
+}));

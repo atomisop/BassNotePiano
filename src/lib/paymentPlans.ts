@@ -934,3 +934,34 @@ export async function recordPlanPaymentReceived(planId: string, adminId: string)
   await approveZellePayment(created.id, adminId);
   return "approved";
 }
+
+/**
+ * Sends the bill for a plan's open installment again, e.g. when a student says
+ * they never got it. Needs a bill to already be open (they open a few days
+ * before the due date).
+ */
+export async function resendPlanInvoice(planId: string): Promise<"sent" | "opted-out"> {
+  const { sendPaymentPlanInvoiceEmail, getAppUrl } = await import("@/lib/email");
+  const plan = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId }, include: { user: { select: { email: true, notifyEmailPayments: true } } } });
+  if (plan.status !== "ACTIVE") throw new Error("Only an active plan has a bill to send.");
+  const payment = await prisma.zellePayment.findFirst({
+    where: { paymentPlanId: planId, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!payment) throw new Error("No bill is open for this plan yet. It opens a few days before the due date.");
+  if (!plan.user.notifyEmailPayments) return "opted-out";
+
+  const now = Date.now();
+  const overdueDays = plan.nextDueDate.getTime() < now ? Math.max(1, Math.floor((now - plan.nextDueDate.getTime()) / 86_400_000)) : undefined;
+  await sendPaymentPlanInvoiceEmail(plan.user.email, {
+    planLabel: describePaymentPlan(plan.cadence, plan.term),
+    installmentLabel: `Installment ${payment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`,
+    amountCents: payment.amountCents,
+    dueDate: plan.nextDueDate,
+    cycleEndsAt: addCalendarMonthsClamped(plan.nextDueDate, 1),
+    zelleHandle: payment.zelleHandle,
+    cta: { label: "Pay bill", url: getAppUrl("/billing/plans") },
+    overdueDays,
+  });
+  return "sent";
+}

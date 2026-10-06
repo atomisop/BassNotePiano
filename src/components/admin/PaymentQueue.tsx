@@ -14,6 +14,8 @@ export interface PaymentQueueProps {
   onApprove: (paymentId: string) => Promise<void>;
   onReject: (paymentId: string, reason: string) => Promise<void>;
   onCheck?: (paymentId: string) => Promise<void>;
+  /** Owner only. Marks a verified payment refunded, optionally taking back its credits and ending its plan. */
+  onRefund?: (paymentId: string, note: string, removeCredits: boolean, cancelPlan: boolean) => Promise<{ ok: boolean; error: string | null }>;
   /** Owner only. Permanently removes the payment record. */
   onDelete?: (paymentId: string) => Promise<void>;
   emptyMessage?: string;
@@ -82,6 +84,7 @@ const STATUS_LABEL: Record<string, string> = {
   VERIFIED: "Verified",
   REJECTED: "Rejected",
   EXPIRED: "Expired",
+  REFUNDED: "Refunded",
 };
 
 const STATUS_STYLE: Record<string, string> = {
@@ -90,6 +93,7 @@ const STATUS_STYLE: Record<string, string> = {
   VERIFIED: "bg-slate-50/15 text-slate-100",
   REJECTED: "bg-red-400/15 text-red-300",
   EXPIRED: "bg-neu-base shadow-pressed-low text-slate-500",
+  REFUNDED: "bg-amber-400/15 text-amber-300",
 };
 
 export function PaymentQueue({
@@ -98,6 +102,7 @@ export function PaymentQueue({
   onReject,
   onCheck,
   onDelete,
+  onRefund,
   emptyMessage = "Nothing to review right now.",
 }: PaymentQueueProps) {
   const [query, setQuery] = useState("");
@@ -113,6 +118,11 @@ export function PaymentQueue({
   // Reject's own two-step shape instead of a new, different pattern.
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [refundingId, setRefundingId] = useState<string | null>(null);
+  const [refundNote, setRefundNote] = useState("");
+  const [refundCredits, setRefundCredits] = useState(true);
+  const [refundPlan, setRefundPlan] = useState(true);
+  const [refundError, setRefundError] = useState<string | null>(null);
 
   async function handleApprove(id: string) {
     setBusyId(id);
@@ -120,6 +130,24 @@ export function PaymentQueue({
       await onApprove(id);
       router.refresh();
       setApprovingId(null);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleRefund(id: string) {
+    if (!onRefund || !refundNote.trim()) return;
+    setBusyId(id);
+    setRefundError(null);
+    try {
+      const result = await onRefund(id, refundNote.trim(), refundCredits, refundPlan);
+      if (!result.ok) {
+        setRefundError(result.error);
+        return;
+      }
+      setRefundingId(null);
+      setRefundNote("");
+      router.refresh();
     } finally {
       setBusyId(null);
     }
@@ -314,6 +342,66 @@ export function PaymentQueue({
               >
                 Approve
               </button>
+            </div>
+          )}
+
+          {onRefund && payment.status === "VERIFIED" && (
+            <div className="mt-4 border-t border-slate-50/10 pt-3">
+              {refundingId === payment.id ? (
+                <div className="space-y-3">
+                  <p className="text-small text-slate-300">
+                    Mark {formatUsd(payment.amountCents)} as refunded. Send the money back yourself on Zelle or Venmo.
+                  </p>
+                  <input
+                    value={refundNote}
+                    onChange={(e) => setRefundNote(e.target.value)}
+                    placeholder="Reason"
+                    maxLength={200}
+                    className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                  />
+                  <label className="flex items-center gap-2 text-small text-slate-300">
+                    <input type="checkbox" checked={refundCredits} onChange={(e) => setRefundCredits(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--c-s-50))]" />
+                    Take back the credits it gave
+                  </label>
+                  {payment.paymentPlanId && (
+                    <label className="flex items-center gap-2 text-small text-slate-300">
+                      <input type="checkbox" checked={refundPlan} onChange={(e) => setRefundPlan(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--c-s-50))]" />
+                      Cancel the plan too
+                    </label>
+                  )}
+                  {refundError && <p className="text-small text-red-400">{refundError}</p>}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRefundingId(null)}
+                      disabled={busyId === payment.id}
+                      className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRefund(payment.id)}
+                      disabled={busyId === payment.id || !refundNote.trim()}
+                      className="tap flex flex-1 items-center justify-center rounded-lg bg-amber-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-amber-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
+                      {busyId === payment.id ? "Refunding…" : "Mark refunded"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRefundError(null);
+                    setRefundingId(payment.id);
+                  }}
+                  className="tap inline-flex items-center text-small font-medium text-slate-400 transition hover:text-amber-300"
+                >
+                  Refund
+                </button>
+              )}
             </div>
           )}
 

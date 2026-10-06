@@ -17,6 +17,8 @@ import {
 } from "@/lib/classCreditPricing";
 import { addCalendarMonthsClamped, bookReservedWindowForPlan, describeReservedSlot } from "@/lib/paymentPlans";
 import { createNotification } from "@/lib/notifications";
+import { logAudit } from "@/lib/audit";
+import { adjustUserCredits } from "@/lib/creditAdjustments";
 import { assertRateLimit } from "@/lib/rateLimit";
 
 /**
@@ -802,8 +804,74 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
  * gave (a plan's paid installments, credits, booked classes) stays as it is,
  * so this is for clearing test or mistaken rows, not for undoing a sale.
  */
-export async function deleteZellePayment(paymentId: string): Promise<void> {
+export async function deleteZellePayment(paymentId: string, actor?: { id: string; email: string | null }): Promise<void> {
+  const payment = await prisma.zellePayment.findUnique({ where: { id: paymentId }, select: { amountCents: true, status: true, user: { select: { email: true } } } });
   await prisma.zellePayment.delete({ where: { id: paymentId } });
+  await logAudit({
+    actorId: actor?.id,
+    actorEmail: actor?.email,
+    action: "payment.delete",
+    targetType: "ZellePayment",
+    targetId: paymentId,
+    detail: payment ? `${formatUsdCents(payment.amountCents)} from ${payment.user.email}, was ${payment.status}` : "payment removed",
+  });
+}
+
+function formatUsdCents(cents: number): string {
+  return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+}
+
+/**
+ * Marks a verified payment as refunded. The money itself goes back outside the
+ * app (Zelle or Venmo); this keeps the books and the student's account in step:
+ * it leaves revenue, and can also take back the credits it gave and end the
+ * plan it paid for.
+ */
+export async function refundZellePayment(
+  paymentId: string,
+  admin: { id: string; email: string | null },
+  opts: { note: string; removeCredits: boolean; cancelPlan: boolean },
+): Promise<void> {
+  const note = opts.note.trim();
+  if (!note) throw new Error("A reason is required.");
+  const payment = await prisma.zellePayment.findUniqueOrThrow({
+    where: { id: paymentId },
+    include: { user: { select: { id: true, email: true, classCredits: true } } },
+  });
+  if (payment.status !== "VERIFIED") throw new Error("Only a verified payment can be refunded.");
+
+  // Guarded on the status, so a double tap or two windows cannot refund (and take credits back) twice.
+  const flipped = await prisma.zellePayment.updateMany({
+    where: { id: paymentId, status: "VERIFIED" },
+    data: { status: "REFUNDED", refundedAt: new Date(), refundNote: note },
+  });
+  if (flipped.count === 0) throw new Error("Only a verified payment can be refunded.");
+
+  if (opts.removeCredits && payment.lessonQuantity) {
+    const take = Math.min(payment.user.classCredits, payment.lessonQuantity);
+    if (take > 0) await adjustUserCredits(admin.id, payment.userId, -take, `Refund: ${note}`);
+  }
+  if (opts.cancelPlan && payment.paymentPlanId) {
+    const { cancelPaymentPlan } = await import("@/lib/paymentPlans");
+    await cancelPaymentPlan(payment.paymentPlanId, admin.id, `Refund: ${note}`).catch(() => undefined);
+  }
+
+  await createNotification({
+    userId: payment.userId,
+    type: "CREDIT_ADJUSTED",
+    title: "Payment refunded",
+    body: `${formatUsdCents(payment.amountCents)} was refunded. ${note}`,
+    emailCategory: "payments",
+  }).catch((err) => console.error("Refund notification failed (non-blocking):", err));
+
+  await logAudit({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: "payment.refund",
+    targetType: "ZellePayment",
+    targetId: paymentId,
+    detail: `${formatUsdCents(payment.amountCents)} to ${payment.user.email}${opts.removeCredits ? ", credits removed" : ""}${opts.cancelPlan ? ", plan canceled" : ""}. ${note}`,
+  });
 }
 
 /** Rejects a pending payment with a reason the student sees on the resubmit screen. */

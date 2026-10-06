@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
 import {
   searchUsersForCredits,
   adjustUserCredits,
@@ -34,6 +35,7 @@ export async function adjustUserCreditsAction(targetUserId: string, amount: numb
   const admin = await requireAdmin();
   try {
     const result = await adjustUserCredits(admin.id, targetUserId, amount, reasonNote);
+    await logAudit({ actorId: admin.id, actorEmail: admin.email, action: amount > 0 ? "credits.grant" : "credits.revoke", targetType: "User", targetId: targetUserId, detail: `${amount > 0 ? "+" : ""}${amount}. ${reasonNote}` });
     revalidatePath("/admin/credits");
     return { ok: true as const, balance: result.balance };
   } catch (err) {

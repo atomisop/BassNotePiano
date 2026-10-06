@@ -4,13 +4,14 @@ import { getAdminPayments } from "@/lib/payments";
 import { PaymentQueue } from "@/components/admin/PaymentQueue";
 import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
-import { approvePaymentAction, checkPaymentAction, deletePaymentAction, rejectPaymentAction } from "./actions";
+import { approvePaymentAction, checkPaymentAction, deletePaymentAction, refundPaymentAction, rejectPaymentAction } from "./actions";
 
 const FILTERS: { label: string; value: ZellePaymentStatus | "ALL" | "UNCHECKED" }[] = [
   { label: "Pending", value: "PENDING_REVIEW" },
   { label: "Unchecked", value: "UNCHECKED" },
   { label: "Verified", value: "VERIFIED" },
   { label: "Rejected", value: "REJECTED" },
+  { label: "Refunded", value: "REFUNDED" },
   { label: "Awaiting", value: "AWAITING_TRANSFER" },
   { label: "Expired", value: "EXPIRED" },
   { label: "All", value: "ALL" },
@@ -44,6 +45,12 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
         />
       </div>
 
+      {isOwner && (
+        <a href="/api/admin/export?type=payments" className="tap neu-btn mt-6 inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
+          Export CSV
+        </a>
+      )}
+
       <div className="mt-6">
         <PaymentQueue
           payments={payments}
@@ -51,6 +58,7 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
           onReject={rejectPaymentAction}
           onCheck={checkPaymentAction}
           onDelete={isOwner ? deletePaymentAction : undefined}
+          onRefund={isOwner ? refundPaymentAction : undefined}
           emptyMessage={
             activeFilter === "PENDING_REVIEW" ? "Nothing pending review." : `No ${activeLabel.toLowerCase()} payments.`
           }

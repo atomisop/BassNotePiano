@@ -40,7 +40,7 @@ export const SITE_URL = resolveOrigin();
 export const SITE_NAME = "Bass Note Piano";
 
 /** Used as the `title.template` suffix, so pages set only their own name. */
-export const SITE_TAGLINE = "Ethiopian Scales, Rhythm & Chords";
+export const SITE_TAGLINE = "Learn Piano, Guitar & Bass";
 
 /**
  * The default social/meta description. Deliberately concrete about what the
@@ -48,7 +48,7 @@ export const SITE_TAGLINE = "Ethiopian Scales, Rhythm & Chords";
  * thing someone would plausibly search for.
  */
 export const SITE_DESCRIPTION =
-  "An interactive masterclass in the Ethiopian scale system: Tizita, Bati, Anchihoye and Mixolydian pentatonics, spelled correctly in all twelve keys, with the native chords mapped for each one.";
+  "Live one-on-one piano, guitar and bass lessons with a real teacher, and a curriculum that opens one scale at a time.";
 
 /** Absolute URL helper — sitemap entries and canonicals both need one. */
 export function absoluteUrl(path = "/"): string {

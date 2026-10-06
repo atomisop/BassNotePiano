@@ -1,4 +1,6 @@
 import { schedule } from "@netlify/functions";
+import { runJob } from "../../src/lib/jobRun";
+import { todayBoundsEt } from "../../src/lib/classSchedule";
 import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
 
@@ -25,16 +27,29 @@ function daysSince(date: Date, now: Date): number {
 // onboarding and have practiced at least once — someone who signed up and
 // never started doesn't need a "come back" nudge, they need an onboarding
 // flow (already handled separately).
-export const handler = schedule("0 15 * * *", async () => {
+export const handler = schedule("0 15 * * *", async () =>
+  runJob("practice-reminders", async () => {
   const now = new Date();
   const users = await prisma.user.findMany({
     where: { onboardedAt: { not: null }, lastActivityDate: { not: null }, notifyEmailReminders: true },
     select: { id: true, lastActivityDate: true },
   });
 
+  // Someone with a live class today does not need a "practice" nudge on top of it.
+  const today = todayBoundsEt();
+  const hasClassToday = new Set(
+    (
+      await prisma.classBooking.findMany({
+        where: { status: "SCHEDULED", scheduledAt: { gte: today.start, lt: today.end } },
+        select: { studentId: true },
+      })
+    ).map((b) => b.studentId),
+  );
+
   let sent = 0;
   for (const user of users) {
     if (!user.lastActivityDate) continue;
+    if (hasClassToday.has(user.id)) continue;
     const gap = daysSince(user.lastActivityDate, now);
     if (!REMINDER_TRIGGER_DAYS.includes(gap)) continue;
 
@@ -50,4 +65,4 @@ export const handler = schedule("0 15 * * *", async () => {
 
   console.log(`Practice reminders: sent ${sent} of ${users.length} eligible users`);
   return { statusCode: 200 };
-});
+}));

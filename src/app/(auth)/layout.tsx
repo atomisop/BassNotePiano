@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeftIcon } from "@/components/ui/icons";
+import { PageHitBeacon } from "@/components/marketing/PageHitBeacon";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -43,6 +44,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     // the bottom. Now the form scrolls inside its own box, with the content
     // still centered whenever it fits.
     <div data-surface="app" className="fixed inset-0 overflow-y-auto overscroll-contain">
+      <PageHitBeacon />
       <div className="relative flex min-h-full flex-col items-center justify-center px-6 py-6 sm:py-16">
       {/* Login and register are the top of their own flow, with nothing
           else on-page to signal a way out: the brand lockup below is a

@@ -1,3 +1,4 @@
+import { PageHitBeacon } from "@/components/marketing/PageHitBeacon";
 import "./marketing.css";
 
 /**
@@ -36,6 +37,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       <a href="#main-content" className="btn btn-primary sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100]">
         Skip to main content
       </a>
+      <PageHitBeacon />
       {children}
     </div>
   );

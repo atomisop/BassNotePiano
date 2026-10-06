@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { revokeEmployee } from "@/lib/admin";
 import { isOwnerEmail, setAdminNotificationSetting, type AdminNotificationKind } from "@/lib/adminNotifications";
+import { setAutomation } from "@/lib/appSettings";
+import type { AutomationKey } from "@/lib/automationKeys";
+import { logAudit } from "@/lib/audit";
 
 // Server Actions are separate endpoints the admin layout never guards, so
 // this is the real authorization check, same as the other admin actions files.
@@ -37,6 +40,20 @@ export async function setEmployeeNotificationAction(kind: AdminNotificationKind,
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Could not save." };
   }
+  revalidatePath("/admin/employees");
+  return { ok: true, error: null };
+}
+
+/** Owner only: switches one automatic approval on or off. */
+export async function setAutomationAction(key: AutomationKey, enabled: boolean): Promise<{ ok: boolean; error: string | null }> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can change this." };
+  try {
+    await setAutomation(key, enabled);
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Could not save." };
+  }
+  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "automation.set", detail: `${key} ${enabled ? "on" : "off"}` });
   revalidatePath("/admin/employees");
   return { ok: true, error: null };
 }
