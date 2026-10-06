@@ -69,6 +69,13 @@ export function PullToRefreshMain({ className, children }: { className: string; 
     setPull(next);
   }
 
+  // The browser took over the gesture (system swipe, dialog): never a refresh.
+  function onTouchAbort() {
+    startRef.current = null;
+    pullRef.current = 0;
+    setPull(0);
+  }
+
   function onTouchEnd() {
     if (!startRef.current) return;
     startRef.current = null;
@@ -93,7 +100,7 @@ export function PullToRefreshMain({ className, children }: { className: string; 
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      onTouchCancel={onTouchEnd}
+      onTouchCancel={onTouchAbort}
     >
       {pull > 0 && (
         <div

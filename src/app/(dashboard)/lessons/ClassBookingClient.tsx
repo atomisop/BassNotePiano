@@ -697,7 +697,9 @@ export function ClassBookingClient({
     }
   }
 
-  async function checkFamilyEmail(email: string) {
+  async function checkFamilyEmail(rawEmail: string) {
+    // Results are looked up by the lowercase address, so store them under it too.
+    const email = rawEmail.trim().toLowerCase();
     setFamilyChecks((prev) => ({ ...prev, [email]: { checking: true, found: false, verified: false, name: null } }));
     let results: Awaited<ReturnType<typeof checkFamilyClassAttendeesAction>>;
     try {

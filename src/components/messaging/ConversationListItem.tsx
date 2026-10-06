@@ -39,7 +39,7 @@ export function ConversationListItem({
             <p className={`truncate text-body ${c.unreadCount > 0 ? "font-semibold text-slate-50" : "text-slate-100"}`}>
               {c.friendName ?? `@${c.friendUsername}`}
             </p>
-            {stamp && <span className="shrink-0 text-small text-slate-500">{stamp}</span>}
+            {stamp && <span suppressHydrationWarning className="shrink-0 text-small text-slate-500">{stamp}</span>}
           </div>
           <div className="mt-0.5 flex items-center justify-between gap-2">
             <p className="truncate text-small">
