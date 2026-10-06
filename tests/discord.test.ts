@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { classChannelName, createClassChannel, deleteChannel, isGuildMember, CLASS_MEMBER_PERMISSIONS } from "@/lib/discordApi";
+import { addToGuild, classChannelName, createClassChannel, deleteChannel, isGuildMember, CLASS_MEMBER_PERMISSIONS } from "@/lib/discordApi";
 import { DISCORD_CLASS_CATEGORY_ID, DISCORD_CLIENT_ID, DISCORD_GUILD_ID } from "@/lib/discord";
 import { checkState, makeState } from "@/lib/discordLink";
 
@@ -64,6 +64,23 @@ describe("member check and delete", () => {
   it("treats an already-removed channel as done", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 404 }));
     await expect(deleteChannel("5")).resolves.toBeUndefined();
+  });
+});
+
+describe("addToGuild", () => {
+  it("adds a new member with their sign-in token and reports the outcome", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementationOnce(async () => new Response("{}", { status: 201 }))
+      .mockImplementationOnce(async () => new Response(null, { status: 204 }))
+      .mockImplementationOnce(async () => new Response("no", { status: 403 }));
+    expect(await addToGuild("111", "tok")).toBe("added");
+    expect(await addToGuild("111", "tok")).toBe("already");
+    expect(await addToGuild("111", "tok")).toBe("failed");
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toContain(`/guilds/${DISCORD_GUILD_ID}/members/111`);
+    expect((init as RequestInit).method).toBe("PUT");
+    expect(JSON.parse((init as RequestInit).body as string)).toEqual({ access_token: "tok" });
   });
 });
 

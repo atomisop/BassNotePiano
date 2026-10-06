@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { DISCORD_INVITE_URL } from "@/lib/discord";
 
 // "Add to calendar" for a booked live class. Only a start time and a length
 // come from the link, and both are checked, so nothing else can be written
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
     return new NextResponse("Bad request", { status: 400 });
   }
   const end = new Date(start.getTime() + minutes * 60_000);
-  const discord = "https://discord.gg/bGKxhAN6U";
+  const discord = DISCORD_INVITE_URL;
 
   const ics = [
     "BEGIN:VCALENDAR",
