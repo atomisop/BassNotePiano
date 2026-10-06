@@ -287,6 +287,7 @@ export function addCalendarMonthsClamped(date: Date, months: number): Date {
 const adminPaymentPlanInclude = {
   user: { select: { id: true, name: true, email: true } },
   reservedSchedule: { select: { id: true, label: true, dayOfWeek: true, startTime: true, durationMin: true } },
+  installmentPayments: { select: { id: true, status: true, amountCents: true } },
 } satisfies Prisma.PaymentPlanInclude;
 
 export type AdminPaymentPlan = Prisma.PaymentPlanGetPayload<{ include: typeof adminPaymentPlanInclude }> & {
@@ -864,3 +865,72 @@ export async function bookMissingReservedWindows(): Promise<void> {
   }
 }
 
+
+/**
+ * For a subscription whose money the owner already has but the app does not
+ * show. Does the right thing for each state, so revenue, access, credits and
+ * the booked slot all line up afterwards:
+ *  - a payment is already waiting on the plan: approve it (the normal path);
+ *  - the plan was already opened but no payment is on record: add the missing
+ *    verified payment rows, so revenue counts them, and change nothing else;
+ *  - nothing paid at all: log the payment and approve it, which opens access,
+ *    grants the credits and books the weekly slot.
+ */
+export async function recordPlanPaymentReceived(planId: string, adminId: string): Promise<"approved" | "recorded"> {
+  const plan = await prisma.paymentPlan.findUniqueOrThrow({
+    where: { id: planId },
+    include: { installmentPayments: { select: { id: true, status: true } } },
+  });
+  if (plan.status !== "ACTIVE") throw new Error("Only an active plan can have a payment recorded.");
+
+  const verified = plan.installmentPayments.filter((p) => p.status === "VERIFIED").length;
+  const open = plan.installmentPayments.find((p) => p.status === "PENDING_REVIEW" || p.status === "AWAITING_TRANSFER");
+  const { approveZellePayment } = await import("@/lib/payments");
+
+  if (open) {
+    await prisma.zellePayment.updateMany({
+      where: { id: open.id, status: "AWAITING_TRANSFER" },
+      data: { status: "PENDING_REVIEW", submittedAt: new Date() },
+    });
+    await approveZellePayment(open.id, adminId);
+    return "approved";
+  }
+
+  if (plan.installmentsPaid > verified) {
+    for (let n = verified + 1; n <= plan.installmentsPaid; n++) {
+      await prisma.zellePayment.create({
+        data: {
+          userId: plan.userId,
+          purpose: "PAYMENT_PLAN_INSTALLMENT",
+          paymentPlanId: plan.id,
+          installmentNumber: n,
+          amountCents: plan.installmentAmountCents,
+          lessonQuantity: plan.creditsPerInstallment,
+          zelleHandle: "Recorded by owner",
+          status: "VERIFIED",
+          submittedAt: new Date(),
+          reviewedAt: new Date(),
+          reviewedById: adminId,
+          checkedAt: new Date(),
+        },
+      });
+    }
+    return "recorded";
+  }
+
+  const created = await prisma.zellePayment.create({
+    data: {
+      userId: plan.userId,
+      purpose: "PAYMENT_PLAN_INSTALLMENT",
+      paymentPlanId: plan.id,
+      installmentNumber: plan.installmentsPaid + 1,
+      amountCents: plan.installmentAmountCents,
+      lessonQuantity: plan.creditsPerInstallment,
+      zelleHandle: "Recorded by owner",
+      status: "PENDING_REVIEW",
+      submittedAt: new Date(),
+    },
+  });
+  await approveZellePayment(created.id, adminId);
+  return "approved";
+}

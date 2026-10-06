@@ -33,7 +33,7 @@ export default async function AdminOverviewPage() {
         <MetricCard
           label="Verified revenue"
           value={formatUsd(stats.totalRevenueCents)}
-          hint="Last 6 months"
+          hint={stats.pendingRevenueCents > 0 ? `${formatUsd(stats.pendingRevenueCents)} waiting for review, not counted yet` : "Last 6 months"}
           data={trends.revenue}
           variant="area"
           tone="success"

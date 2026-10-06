@@ -11,6 +11,8 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 export interface PaymentPlanListProps {
   plans: AdminPaymentPlan[];
   onCancel: (planId: string, note: string) => Promise<void>;
+  /** Owner only: records money that was received but is not showing in revenue. */
+  onRecordPayment?: (planId: string) => Promise<{ ok: boolean; error: string | null }>;
   emptyMessage?: string;
 }
 
@@ -25,10 +27,20 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_STYLE: Record<string, string> = {
-  ACTIVE: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]",
+  ACTIVE: "bg-emerald-400/15 text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.45)]",
   COMPLETED: "bg-slate-50/15 text-slate-100",
   CANCELED: "bg-neu-base shadow-pressed-low text-slate-500",
 };
+
+function receivedCents(plan: AdminPaymentPlan): number {
+  return plan.installmentPayments.filter((p) => p.status === "VERIFIED").reduce((sum, p) => sum + p.amountCents, 0);
+}
+
+/** Active, but fewer verified payments than the installments it says were paid (or none at all). */
+function needsPaymentRecord(plan: AdminPaymentPlan): boolean {
+  const verified = plan.installmentPayments.filter((p) => p.status === "VERIFIED").length;
+  return verified === 0 || verified < plan.installmentsPaid;
+}
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -46,13 +58,32 @@ function formatTimeLabel(hhmm: string): string {
  * payment happens entirely through the existing /admin/payments queue,
  * unchanged — this list is read-mostly by design.
  */
-export function PaymentPlanList({ plans, onCancel, emptyMessage = "No plans to show." }: PaymentPlanListProps) {
+export function PaymentPlanList({ plans, onCancel, onRecordPayment, emptyMessage = "No plans to show." }: PaymentPlanListProps) {
   const [query, setQuery] = useState("");
   const shown = plans.filter((item) => matchesQuery(item, query));
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  const [recordingId, setRecordingId] = useState<string | null>(null);
+  const [recordError, setRecordError] = useState<string | null>(null);
+
+  async function handleRecord(id: string) {
+    if (!onRecordPayment) return;
+    setBusyId(id);
+    setRecordError(null);
+    try {
+      const result = await onRecordPayment(id);
+      if (!result.ok) {
+        setRecordError(result.error);
+        return;
+      }
+      setRecordingId(null);
+      router.refresh();
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   async function handleCancel(id: string) {
     if (!note.trim()) return;
@@ -75,6 +106,7 @@ export function PaymentPlanList({ plans, onCancel, emptyMessage = "No plans to s
     <div className="space-y-3">
       <AdminListSearch value={query} onChange={setQuery} placeholder="Search student, plan, status" shown={shown.length} total={plans.length} />
       {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
+      {recordError && <p className="text-small text-red-400">{recordError}</p>}
       {shown.map((plan) => (
         <div key={plan.id} className="glass-surface p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -86,6 +118,7 @@ export function PaymentPlanList({ plans, onCancel, emptyMessage = "No plans to s
               <p className="mt-1 text-small text-slate-500">
                 {plan.installmentsPaid} of {plan.termMonths} installments paid · {formatUsd(plan.installmentAmountCents)}/mo
               </p>
+              <p className="mt-1 text-small text-slate-500">Received {formatUsd(receivedCents(plan))}</p>
             </div>
             <div className="flex flex-col items-end gap-1.5 text-right">
               <span
@@ -122,6 +155,52 @@ export function PaymentPlanList({ plans, onCancel, emptyMessage = "No plans to s
 
           {plan.status === "CANCELED" && plan.cancellationNote && (
             <p className="mt-2 text-small text-red-400">Canceled: {plan.cancellationNote}</p>
+          )}
+
+          {onRecordPayment && plan.status === "ACTIVE" && needsPaymentRecord(plan) && (
+            <div className="mt-4 rounded-lg bg-neu-base p-3 shadow-pressed-low">
+              {recordingId === plan.id ? (
+                <div className="space-y-2">
+                  <p className="text-small text-slate-300">
+                    Record {formatUsd(plan.installmentAmountCents)} as received from {plan.user.name ?? plan.user.email}? This counts it in revenue
+                    {plan.installmentsPaid === 0 ? ", opens their access, grants their credits and books their weekly time" : ""}.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRecordingId(null)}
+                      disabled={busyId === plan.id}
+                      className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRecord(plan.id)}
+                      disabled={busyId === plan.id}
+                      className="tap cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-2 text-small font-semibold disabled:opacity-60"
+                    >
+                      {busyId === plan.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
+                      {busyId === plan.id ? "Recording…" : "Confirm"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-small text-slate-300">No payment on record for this plan.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRecordError(null);
+                      setRecordingId(plan.id);
+                    }}
+                    className="tap shrink-0 rounded-lg px-3 py-1.5 text-small font-medium text-slate-200 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  >
+                    Record payment
+                  </button>
+                </div>
+              )}
+            </div>
           )}
 
           {plan.status === "ACTIVE" &&
