@@ -10,6 +10,7 @@ import { formulaForRoot, variantInAllKeys, type ScaleVariant } from "@/lib/scale
 import type { ScalePlayer } from "@/components/scales/useScalePlayer";
 import { PianoKeyboard } from "@/components/scales/PianoKeyboard";
 import { Fretboard, GUITAR_STANDARD_TUNING, BASS_STANDARD_TUNING } from "@/components/scales/Fretboard";
+import { SPRING } from "@/lib/motionTokens";
 
 export interface InstrumentStageProps {
   variant: ScaleVariant;
@@ -230,7 +231,7 @@ export function ScaleChart({ variant, root, player }: { variant: ScaleVariant; r
         key={root + variant.name}
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", bounce: 0, duration: 0.36 }}
+        transition={SPRING.smooth}
         className="mt-4 flex flex-wrap gap-2"
       >
         {spelled.notes.map((note, i) => {

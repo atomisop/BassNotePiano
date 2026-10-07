@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { smoothScrollTo } from "@/components/scroll/SmoothScrollProvider";
+import { SPRING } from "@/lib/motionTokens";
 
 /** Floating "back to top" pill — appears once the visitor has scrolled past
  * roughly one viewport height, since the homepage is a long single-page
@@ -40,7 +41,7 @@ export function ScrollToTopButton() {
           initial={{ opacity: 0, y: 12, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 12, scale: 0.9 }}
-          transition={{ type: "spring", bounce: 0, duration: 0.36 }}
+          transition={SPRING.smooth}
           className="neu-btn fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full !text-slate-200 hover:!text-[rgb(var(--c-s-50))]"
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">

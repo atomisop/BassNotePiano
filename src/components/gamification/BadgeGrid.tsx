@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import type { BadgeCode } from "@prisma/client";
 import { Medal } from "lucide-react";
 import { BADGES, type BadgeCategory } from "@/lib/badges";
+import { SPRING } from "@/lib/motionTokens";
 
 // Each finger level has its own metal or gem, so the seven badges are easy to tell apart at a glance.
 const FINGER_TIERS = [
@@ -57,7 +58,7 @@ function LockIcon() {
 // moment is meant to feel like a reward, not just another item settling in.
 const earnedTileVariants = {
   hidden: { opacity: 0, scale: 0.5 },
-  visible: { opacity: 1, scale: 1, transition: { type: "spring", bounce: 0.35, duration: 0.5 } },
+  visible: { opacity: 1, scale: 1, transition: SPRING.lively },
 };
 
 const lockedTileVariants = {

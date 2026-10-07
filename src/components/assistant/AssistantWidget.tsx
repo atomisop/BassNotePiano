@@ -14,6 +14,7 @@ import { usePoll } from "@/hooks/usePoll";
 import { readConsent, CONSENT_DECIDED_EVENT } from "@/lib/cookieConsent";
 import { FULLSCREEN_NAV_EVENT } from "@/lib/overlayNav";
 import { ATOM_TRIGGER_EVENT, OPEN_ATOM_CASE_EVENT, OPEN_ATOM_EVENT, isAtomTriggerPresent } from "@/lib/atomTrigger";
+import { SPRING } from "@/lib/motionTokens";
 
 /**
  * Atom — the "ask me anything" assistant, floating on every page (mounted
@@ -299,7 +300,7 @@ function MessageBubble({
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+        transition={SPRING.smooth}
         className={`relative max-w-[80%] overflow-hidden rounded-2xl px-3.5 py-2 text-body text-primary ${isMine ? "" : "shadow-raised-low"}`}
         style={isMine ? { boxShadow: `var(--neu-raised-low), ${AI_HALO}` } : undefined}
       >
@@ -323,7 +324,7 @@ function ThreadMessageBubble({ message }: { message: ThreadMessage }) {
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+        transition={SPRING.smooth}
         className={`relative max-w-[80%] overflow-hidden rounded-2xl px-3.5 py-2 text-body text-primary ${isVisitor ? "" : "shadow-raised-low"}`}
         style={isVisitor ? { boxShadow: `var(--neu-raised-low), ${AI_HALO}` } : undefined}
       >
@@ -958,7 +959,7 @@ export function AssistantWidget() {
             initial={{ opacity: 0, y: 16, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.96 }}
-            transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+            transition={SPRING.snappy}
             // No local `--elev-border`/`--elev-bg` override anymore: Atom
             // used to force its own teal/blue material here regardless of
             // the active site theme, specifically so it wouldn't blend into
@@ -1196,7 +1197,7 @@ export function AssistantWidget() {
             initial={{ opacity: 0, y: -8, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.92 }}
-            transition={{ type: "spring", bounce: 0.25, duration: 0.45 }}
+            transition={SPRING.lively}
             style={{
               position: "fixed",
               top: triggerAnchor.top + 26,
@@ -1259,7 +1260,7 @@ export function AssistantWidget() {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+            transition={SPRING.snappy}
             // Same reasoning as the open panel above: no local
             // `--elev-border`/`--elev-bg` override anymore, so this greeting
             // bubble reads the same elevated-glass material every other

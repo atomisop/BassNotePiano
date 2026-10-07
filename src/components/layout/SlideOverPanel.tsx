@@ -4,6 +4,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useDismissDrag } from "@/lib/useDismissDrag";
+import { FADE, SPRING } from "@/lib/motionTokens";
 
 /**
  * Shared "push navigation" panel — full-screen on phones, a right-anchored
@@ -68,7 +69,7 @@ export function SlideOverPanel({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={FADE}
             className="absolute inset-0 bg-scrim/40"
             onClick={onClose}
           />
@@ -77,7 +78,7 @@ export function SlideOverPanel({
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+            transition={SPRING.snappy}
             // Fully opaque white sheet — no backdrop-blur anywhere in the
             // paper system. Blur behind a sliding panel meant re-blurring
             // whatever moved underneath on every frame of the spring, which

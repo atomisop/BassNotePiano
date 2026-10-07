@@ -13,6 +13,7 @@ import { ProfileMenu } from "@/components/layout/ProfileMenu";
 import { setFullscreenNavOpen } from "@/lib/overlayNav";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { EASE_IOS } from "@/lib/motionTokens";
 
 /**
  * The homepage header.
@@ -341,7 +342,7 @@ export function MarketingNav() {
             initial={reduced ? { opacity: 0 } : { opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reduced ? { opacity: 0 } : { opacity: 0, y: -12 }}
-            transition={{ duration: reduced ? 0.15 : 0.4, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: reduced ? 0.15 : 0.4, ease: EASE_IOS }}
             // overflow-y-auto/overscroll-contain: this panel's own link list
             // (Classes/Pricing/Shop, +Profile/Settings/Log out once signed
             // in, +Discord, +the Dashboard/Start-learning button) is taller

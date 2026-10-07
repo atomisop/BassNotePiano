@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
+import { EASE_IOS } from "@/lib/motionTokens";
 
 /**
  * REDESIGN: replaces ScrollGlassCard's animation half. Sections no longer
@@ -48,7 +49,7 @@ export function ScrollReveal({ children, className = "" }: { children: ReactNode
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: "some", margin: "0px 0px 20% 0px" }}
-      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.7, ease: EASE_IOS }}
     >
       {children}
     </motion.div>

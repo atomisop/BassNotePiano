@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { PaymentPlanTierGrid } from "@/components/marketing/PaymentPlanTierGrid";
+import { SPRING } from "@/lib/motionTokens";
 
 const container = {
   hidden: {},
@@ -12,7 +13,7 @@ const container = {
 
 const item = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { type: "spring", bounce: 0, duration: 0.4 } },
+  visible: { opacity: 1, y: 0, transition: SPRING.smooth },
 };
 
 export function PricingPageContent() {
@@ -42,7 +43,7 @@ export function PricingPageContent() {
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "0px 0px 20% 0px" }}
-        transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+        transition={SPRING.smooth}
         id="plans"
         className="relative mx-auto max-w-5xl px-6 pb-32"
       >

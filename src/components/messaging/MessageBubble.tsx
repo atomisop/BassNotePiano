@@ -8,6 +8,7 @@ import { AttachmentButton } from "@/components/ui/attachment-button";
 import { EmojiPicker, EmojiPickerContent, EmojiPickerSearch } from "@/components/ui/emoji-picker";
 import { useSwipeReply } from "@/lib/useSwipeReply";
 import { ReplyArrowIcon, SmileyPlusIcon } from "@/components/ui/icons";
+import { SPRING } from "@/lib/motionTokens";
 
 // Hold time before the reaction row opens, and how far a finger may drift before it counts as a swipe/scroll instead.
 const LONG_PRESS_MS = 420;
@@ -145,7 +146,7 @@ export function MessageBubble({
             if (lastPointerType.current !== "mouse") e.preventDefault();
           }}
           animate={{ x: swipe.dragX }}
-          transition={swipe.dragX === 0 ? { type: "spring", bounce: 0.2, duration: 0.35 } : { duration: 0 }}
+          transition={swipe.dragX === 0 ? SPRING.lively : { duration: 0 }}
           style={{ touchAction: "pan-y" }}
           className={`min-w-0 select-none rounded-2xl px-3.5 py-2 text-body [-webkit-touch-callout:none] md:select-text ${
             isMine

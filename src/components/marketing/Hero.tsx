@@ -8,6 +8,7 @@ import { WordsPullUp } from "@/components/ui/words-pull-up";
 import { PillCTA } from "@/components/ui/pill-cta";
 import { BACKDROPS } from "@/lib/backdrops";
 import { heroVideoAllowed } from "@/lib/heroVideo";
+import { EASE_IOS } from "@/lib/motionTokens";
 
 // Served from R2 (the same object storage the app already uses for lesson
 // videos and avatars, see lib/storage.ts), not the Next.js public folder: 17MB
@@ -104,7 +105,7 @@ export function Hero() {
               <motion.p
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.8, delay: 0.5, ease: EASE_IOS }}
                 className="text-sm leading-[1.2] text-[#E1E0CC]/70 md:text-base"
               >
                 Ethiopian music, taught live. Piano, guitar and bass lessons with a real teacher, and a curriculum that opens one scale at a time.
@@ -113,7 +114,7 @@ export function Hero() {
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.8, delay: 0.7, ease: EASE_IOS }}
               >
                 <PillCTA href={isLoggedIn ? "/dashboard" : "/register"}>{isLoggedIn ? "Go to dashboard" : "Get started"}</PillCTA>
               </motion.div>

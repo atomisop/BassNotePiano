@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { EASE_IOS } from "@/lib/motionTokens";
 
 /**
  * The TopBar wordmark, once logged in — desktop only (`md:` and up), by
@@ -53,7 +54,7 @@ export function BrandMark() {
               initial={reducedMotion ? { opacity: 0 } : { opacity: 0, x: -14, scale: 0.9 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={reducedMotion ? { opacity: 0 } : { opacity: 0, x: -14, scale: 0.85 }}
-              transition={{ duration: reducedMotion ? 0.15 : 0.28, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: reducedMotion ? 0.15 : 0.28, ease: EASE_IOS }}
               className="inline-block whitespace-nowrap text-small font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]"
             >
               Bass Note Piano
