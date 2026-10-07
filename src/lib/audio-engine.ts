@@ -1,5 +1,5 @@
 // ============================================================================
-// Scale Explorer audio — synthesized voices for auditioning the scales and
+// Scale Explorer audio, synthesized voices for auditioning the scales and
 // native chords that src/lib/music-theory.ts spells.
 //
 // Synthesized rather than sampled, for the same reason the notification chime
@@ -11,7 +11,7 @@
 //
 // None of the three voices below is pretending to be a real recording. Each
 // is aiming for "unmistakably a pitched, struck or plucked, decaying
-// instrument, and clearly not the other two" — enough that a guitar or bass
+// instrument, and clearly not the other two", enough that a guitar or bass
 // student hears their own instrument, not the piano voice with a different
 // picture next to it.
 // ============================================================================
@@ -93,7 +93,7 @@ export const DEFAULT_OCTAVE = 4;
 /**
  * Turns a list of spelled note names into ascending MIDI numbers.
  *
- * music-theory.ts returns pitch classes only ("C", "Db", "F", "Gb", "A") — it
+ * music-theory.ts returns pitch classes only ("C", "Db", "F", "Gb", "A"), it
  * has no concept of register. Played literally that would descend whenever the
  * spelling wraps past B, so Anchihoye's 6th would sound *below* its root. This
  * walks the list and lifts the octave every time a pitch class fails to
@@ -119,7 +119,7 @@ export function notesToAscendingMidi(notes: string[], octave = DEFAULT_OCTAVE): 
 
 export type InstrumentVoice = "PIANO" | "GUITAR" | "BASS";
 
-/** `TranspositionDashboard` uses the same GUITAR/BASS/else split for which diagram to show — keeping the mapping here means the sound and the picture can never drift apart. */
+/** `TranspositionDashboard` uses the same GUITAR/BASS/else split for which diagram to show, keeping the mapping here means the sound and the picture can never drift apart. */
 export function voiceForInstrument(instrument: PrimaryInstrument | null): InstrumentVoice {
   if (instrument === "GUITAR") return "GUITAR";
   if (instrument === "BASS") return "BASS";
@@ -129,7 +129,7 @@ export function voiceForInstrument(instrument: PrimaryInstrument | null): Instru
 interface VoiceProfile {
   /** Amplitude of each harmonic partial relative to the fundamental. */
   partials: ReadonlyArray<{ ratio: number; gain: number }>;
-  /** Cents of detune per (ratio - 1) — real strings run sharp on upper partials; how sharp depends on the string's own stiffness. */
+  /** Cents of detune per (ratio - 1), real strings run sharp on upper partials; how sharp depends on the string's own stiffness. */
   detuneCents: number;
   /** Linear attack, in seconds. */
   attack: number;
@@ -143,13 +143,13 @@ interface VoiceProfile {
   filterCloseFloor: number;
   filterCloseAt: number;
   filterQ: number;
-  /** Multiplies every caller's base note duration — a struck piano note is short, a plucked string rings longer. */
+  /** Multiplies every caller's base note duration, a struck piano note is short, a plucked string rings longer. */
   durationScale: number;
 }
 
 const VOICE_PROFILES: Record<InstrumentVoice, VoiceProfile> = {
   // The original voice, unchanged: strong fundamental, thinning upper
-  // partials, brightness decaying faster than loudness — a struck hammer,
+  // partials, brightness decaying faster than loudness, a struck hammer,
   // not an organ tone.
   PIANO: {
     partials: [
@@ -222,7 +222,7 @@ const VOICE_PROFILES: Record<InstrumentVoice, VoiceProfile> = {
 };
 
 /**
- * Schedules one struck or plucked note, per `voice`. Returns nothing — the
+ * Schedules one struck or plucked note, per `voice`. Returns nothing, the
  * caller tracks cancellation through the module-level source list.
  */
 function scheduleVoice(
@@ -265,7 +265,7 @@ function scheduleVoice(
     osc.type = "sine";
     osc.frequency.value = frequency * partial.ratio;
 
-    // Real strings are slightly inharmonic — upper partials run sharp. A few
+    // Real strings are slightly inharmonic, upper partials run sharp. A few
     // cents of stretch stops the stack sounding like a synthetic sawtooth.
     osc.detune.value = (partial.ratio - 1) * profile.detuneCents;
 
@@ -289,7 +289,7 @@ export function stopPlayback() {
     try {
       source.stop();
     } catch {
-      // Already stopped, or never started — nothing to do.
+      // Already stopped, or never started, nothing to do.
     }
   }
   activeSources = [];
@@ -298,7 +298,7 @@ export function stopPlayback() {
 }
 
 export interface SequenceOptions {
-  /** Beats per minute — one note per beat. */
+  /** Beats per minute, one note per beat. */
   tempo?: number;
   /** Fired as each note sounds, for UI highlighting. Index into `midis`. */
   onStep?: (index: number) => void;
@@ -325,11 +325,11 @@ export function playSequence(midis: number[], options: SequenceOptions = {}): vo
   stopPlayback();
 
   const secondsPerNote = 60 / tempo;
-  // Slight overlap so the run sounds connected rather than clipped-and-gapped
-  // — scaled per voice, since a plucked string should ring into the next
+  // Slight overlap so the run sounds connected rather than clipped-and-gapped,
+  // scaled per voice, since a plucked string should ring into the next
   // note more than a struck piano key does.
   const noteDuration = secondsPerNote * 1.6 * VOICE_PROFILES[voice].durationScale;
-  // A small lead-in — scheduling at exactly currentTime can drop the first note.
+  // A small lead-in, scheduling at exactly currentTime can drop the first note.
   const startAt = ctx.currentTime + 0.06;
 
   midis.forEach((midi, index) => {
@@ -347,7 +347,7 @@ export function playSequence(midis: number[], options: SequenceOptions = {}): vo
   }
 }
 
-/** Plays a single note — used for auditioning one scale degree. */
+/** Plays a single note, used for auditioning one scale degree. */
 export function playNote(midi: number, velocity = 0.55, voice: InstrumentVoice = "PIANO"): void {
   const ctx = getContext();
   if (!ctx || !masterGain) return;
@@ -357,7 +357,7 @@ export function playNote(midi: number, velocity = 0.55, voice: InstrumentVoice =
 /**
  * Plays notes together as a block chord.
  *
- * Per-voice gain is scaled down by the voice count — four notes at the level
+ * Per-voice gain is scaled down by the voice count, four notes at the level
  * used for a single note sums past full scale and distorts on the way out.
  */
 export function playChord(midis: number[], options: { duration?: number; voice?: InstrumentVoice } = {}): void {

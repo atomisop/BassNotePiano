@@ -1,4 +1,4 @@
-// Manual admin corrections to a student's classCredits balance — separate
+// Manual admin corrections to a student's classCredits balance, separate
 // from the normal purchase flow (payments.ts's approveZellePayment) and the
 // normal spend/refund flow (classSchedule.ts's booking/cancellation). This
 // is for one-off grants and corrections: "customer paid outside Zelle",
@@ -61,7 +61,7 @@ export async function getUserCreditHistory(userId: string, limit = 25): Promise<
   });
 }
 
-/** Most-recent-first across every student — the global "recent grants" view. */
+/** Most-recent-first across every student, the global "recent grants" view. */
 export async function getRecentCreditAdjustments(limit = 25): Promise<CreditAdjustmentRow[]> {
   return prisma.creditAdjustment.findMany({
     orderBy: { createdAt: "desc" },
@@ -74,7 +74,7 @@ export async function getRecentCreditAdjustments(limit = 25): Promise<CreditAdju
  * Grants (amount > 0) or deducts (amount < 0) class credits, atomically:
  * balance update + audit row happen in one transaction, and a deduction
  * that would take the balance below 0 is rejected outright rather than
- * silently clamped — clamping would hide a reason-mismatched amount (e.g.
+ * silently clamped, clamping would hide a reason-mismatched amount (e.g.
  * meaning to deduct 2 but typing 20) instead of surfacing it to the admin.
  */
 export async function adjustUserCredits(
@@ -107,7 +107,7 @@ export async function adjustUserCredits(
   });
 
   // Best-effort ledger bookkeeping, outside the transaction on purpose (see
-  // creditLedger.ts's file header) — the real, correctness-critical balance
+  // creditLedger.ts's file header), the real, correctness-critical balance
   // change already committed above unchanged. A grant records a
   // non-expiring CreditGrant (an admin adjustment is never the expiring
   // kind); a deduction draws down existing grants the same way a real spend

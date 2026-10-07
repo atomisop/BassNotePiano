@@ -32,7 +32,7 @@ export interface MessageRow {
   reactions: MessageReactionRow[];
 }
 
-// Throttled, not debounced — pings the server at most once per window while
+// Throttled, not debounced, pings the server at most once per window while
 // the user keeps typing, instead of waiting for a pause. TypingStatus rows
 // go stale on their own (see TYPING_STALE_MS in src/lib/messages.ts), so
 // there's no matching "stopped typing" call to send.
@@ -59,7 +59,7 @@ export function ChatWindow({
   currentUserId: string;
   onSend: (body: string, replyToId?: string) => Promise<boolean>;
   onMinimize: () => void;
-  /** Called (throttled below) as the user types — caller wires this to its own setTypingAction. */
+  /** Called (throttled below) as the user types, caller wires this to its own setTypingAction. */
   onTyping: (friendId: string, typing: boolean) => void;
   onReact: (messageId: string, emoji: string) => void;
 }) {

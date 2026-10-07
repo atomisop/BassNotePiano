@@ -12,7 +12,7 @@ import { SCALE_NOTE_MAX_LENGTH } from "@/lib/scaleNotes";
 
 // The quiz itself is regenerated here from scratch (via gradeQuiz ->
 // generateScaleQuiz) rather than trusting anything about correctness from
-// the client — the client only ever received choices, never an answer key.
+// the client, the client only ever received choices, never an answer key.
 // `seed` is whatever QuizModal rolled for this attempt, echoed back here so
 // grading reconstructs the exact same questions/choices the student actually
 // saw. See quiz.ts's own header comment for why trusting a client-supplied
@@ -54,7 +54,7 @@ export async function markPracticeCompletedAction(scaleSlug: string) {
  * Marks one course-content Lesson complete for the current student, then
  * syncs the scale's moduleRead checklist item if every lesson is now done.
  * This is what the course player calls on video-ended / PDF-opened /
- * manual "Mark as complete" — replaces the old manual "Mark module as
+ * manual "Mark as complete", replaces the old manual "Mark module as
  * read" button entirely, since real content now drives that flag.
  */
 export async function markLessonCompleteAction(scaleSlug: string, lessonId: string) {

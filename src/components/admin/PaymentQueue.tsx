@@ -39,7 +39,7 @@ function describePayment(payment: PendingZellePayment): { eyebrow: string; title
   if (payment.purpose === "CLASS_CREDITS" && payment.lessonQuantity) {
     // A lessonType present means this is a historical row from the old
     // 1:1 online/in-person lesson system, pre-dating the CLASS_CREDITS
-    // rename — shown with its original wording rather than relabeled.
+    // rename, shown with its original wording rather than relabeled.
     if (payment.lessonType) {
       const typeLabel = payment.lessonType === "ONLINE" ? "Online" : "In-Person";
       return {

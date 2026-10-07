@@ -37,14 +37,14 @@ export interface QuizQuestion {
   correctIndex: number;
 }
 
-/** What the client actually receives — never the answer key. */
+/** What the client actually receives, never the answer key. */
 export type PublicQuizQuestion = Omit<QuizQuestion, "correctIndex">;
 
 const QUESTIONS_PER_QUIZ = 6;
 const QUIZ_ROOTS_CYCLE: RootKey[] = ["G", "D", "Bb", "F#", "Eb", "A"];
 
 function formatFormula(formula: string): string {
-  return formula.split("-").join(" – ");
+  return formula.split("-").join(" - ");
 }
 
 function slugify(text: string): string {
@@ -103,7 +103,7 @@ function buildDegreeQuestion(variant: ScaleVariant, degreeToken: string, root: R
 /**
  * Builds each variant's full candidate question list (1 formula-recall
  * question, then one degree-spelling question per non-tonic scale degree),
- * then round-robins across variants up to QUESTIONS_PER_QUIZ — so a
+ * then round-robins across variants up to QUESTIONS_PER_QUIZ, so a
  * 3-variant chapter like Bati still gets a short, balanced quiz instead of
  * one variant dominating (or the quiz ballooning to 15 questions).
  *

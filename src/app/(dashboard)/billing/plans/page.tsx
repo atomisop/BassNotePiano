@@ -19,7 +19,7 @@ export default async function BillingPlansPage({
 
   // Lets a specific tile on the marketing pricing page (PaymentPlanTierGrid,
   // ?cadence=X&term=Y) land the picker already on that combination instead
-  // of always defaulting and making the student reselect it — same reasoning
+  // of always defaulting and making the student reselect it, same reasoning
   // the old ?quantity= param on /billing/lessons used to have. Validated
   // against the real enums (query params are just strings) rather than cast.
   const initialCadence = Object.values(PaymentPlanCadence).find((c) => c === searchParams.cadence);

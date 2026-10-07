@@ -6,7 +6,7 @@
   # Pinned to the current Active LTS line (Node 24, "Krypton"). Comfortably
   # covers the currently-installed Next.js 14 (wants Node ^18.17 || >=20.5)
   # and the Next.js 16 requirement (>=20.9) planned in the Step 3 migration
-  # doc — so this shouldn't need touching again when that upgrade lands.
+  # doc, so this shouldn't need touching again when that upgrade lands.
   # Before this, Netlify's build image used its own unpinned default, which
   # could silently drift from whatever a developer's local machine runs.
   NODE_VERSION = "24"

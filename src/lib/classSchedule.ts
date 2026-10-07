@@ -11,7 +11,7 @@ export class ClassBookingError extends Error {}
 
 // Three tiers, by direct instruction:
 //  - Solo (1:1): one student books an occurrence alone, 1-2 credits (up to
-//    an hour) of their own choosing, at their own pace. The default now —
+//    an hour) of their own choosing, at their own pace. The default now,
 //    the whole reason the other two tiers below exist as *separate* things
 //    rather than every booking flowing through one shared path.
 //  - Family: 2+ named, verified accounts sharing one occurrence, always at
@@ -19,8 +19,8 @@ export class ClassBookingError extends Error {}
 //    kids at once is genuinely more work than one regardless of how long
 //    any single kid stays.
 //  - Group: up to GROUP_CAPACITY strangers sharing one occurrence at the
-//    fixed GROUP_CREDITS_PER_STUDENT rate, no early leaving. Not built yet
-//    — these constants exist now so the eventual group-booking function
+//    fixed GROUP_CREDITS_PER_STUDENT rate, no early leaving. Not built yet,
+//    these constants exist now so the eventual group-booking function
 //    has its numbers already agreed on, not so anything reads them today.
 export const SOLO_MAX_CREDITS = 2;
 export const FAMILY_MIN_ATTENDEES = 2;
@@ -29,15 +29,15 @@ export const GROUP_CAPACITY = 10;
 export const GROUP_CREDITS_PER_STUDENT = 2;
 
 export const CANCELLATION_CUTOFF_HOURS = 24;
-// How many upcoming weeks of each weekly slot to surface as bookable —
+// How many upcoming weeks of each weekly slot to surface as bookable,
 // a fixed planning horizon rather than an unbounded "forever" list, since
 // the schedule itself repeats indefinitely. Exported: the reservation-
 // maintenance job (netlify/functions/payment-plan-reservations.ts) keeps
 // this exact same rolling window auto-booked for a Payment Plan's reserved
-// slot, not just "next week" — the same horizon a student sees, kept
+// slot, not just "next week", the same horizon a student sees, kept
 // actually booked rather than just displayed.
 //
-// Raised from 4 to 8 weeks (one month to two) by direct instruction — a
+// Raised from 4 to 8 weeks (one month to two) by direct instruction, a
 // student planning around work/school travel couldn't book more than four
 // weeks out, and a Payment Plan subscriber's own reservation window was
 // exactly as short, both real friction for anyone trying to lock in a
@@ -50,7 +50,7 @@ const ET_ZONE = "America/New_York";
 //
 // The weekly schedule is authored in ET wall-clock time (e.g. "Monday
 // 11:00") and must resolve to the correct UTC instant on any given date,
-// correctly crossing DST (EST is UTC-5, EDT is UTC-4) — a fixed offset
+// correctly crossing DST (EST is UTC-5, EDT is UTC-4), a fixed offset
 // would be wrong for roughly half the year. No date library needed: this
 // uses the standard Intl.DateTimeFormat round-trip trick, which is exact
 // for a fixed IANA zone like America/New_York.
@@ -112,14 +112,14 @@ function parseStartTime(startTime: string): { hour: number; minute: number } {
 }
 
 // ---------------------------------------------------------------------------
-// Occurrence derivation — a specific week's instance of a recurring slot,
+// Occurrence derivation, a specific week's instance of a recurring slot,
 // identified by (scheduleId, occurrenceDate). occurrenceDate is stored as
 // UTC midnight of the ET calendar date; it's a grouping/uniqueness key, not
-// a real instant — scheduledAt is the real instant.
+// a real instant, scheduledAt is the real instant.
 // ---------------------------------------------------------------------------
 
 // A window longer than one appointment (e.g. an admin-defined "11am-1pm"
-// block) doesn't become one all-or-nothing occurrence — it splits into
+// block) doesn't become one all-or-nothing occurrence, it splits into
 // independent CHUNK_MIN-sized appointment slots (11:00 and 12:00), each its
 // own booking party. Taking the 11:00 slot no longer blocks 12:00 the way a
 // single-occurrence-per-window model would; only whichever exact start time
@@ -132,7 +132,7 @@ interface ScheduleChunk {
   chunkIndex: number;
   /** Minutes past the schedule's own startTime this chunk begins. */
   offsetMin: number;
-  /** This chunk's own max credits — CHUNK_MIN's worth, or whatever's left in a window that doesn't divide evenly. */
+  /** This chunk's own max credits, CHUNK_MIN's worth, or whatever's left in a window that doesn't divide evenly. */
   creditCost: number;
 }
 
@@ -153,14 +153,14 @@ export interface ClassOccurrence {
   scheduleId: string;
   label: string | null;
   dayOfWeek: number;
-  /** Which CHUNK_MIN-sized appointment slot within the schedule's own window this is — see chunksForSchedule. */
+  /** Which CHUNK_MIN-sized appointment slot within the schedule's own window this is, see chunksForSchedule. */
   chunkIndex: number;
   durationMin: number;
   /** This chunk's own credit ceiling, not the whole window's. */
   creditCost: number;
   occurrenceDate: Date;
   scheduledAt: Date;
-  /** One booking party per chunk — solo or family, either way this exact
+  /** One booking party per chunk, solo or family, either way this exact
       start time is gone once anyone has claimed it. A different chunk of
       the same window (a different start time) is unaffected. */
   isBooked: boolean;
@@ -168,12 +168,12 @@ export interface ClassOccurrence {
 
 /**
  * The next `count` calendar dates (ET, stored as UTC midnight) that fall on
- * `dayOfWeek`, starting from today — the date-walking half of
+ * `dayOfWeek`, starting from today, the date-walking half of
  * getUpcomingOccurrences's own loop, factored out so the reservation-
  * maintenance job (payment-plan-reservations.ts) can walk one specific
  * schedule's dayOfWeek the exact same way, without a second copy of this
  * logic. Deliberately time-of-day-agnostic (that's chunksForSchedule's
- * concern) — this only matches calendar dates, and always returns up to
+ * concern), this only matches calendar dates, and always returns up to
  * `count` of them regardless of whether the earliest ones are already in
  * the past today (see this function's only caller below for why that's
  * correct: the actual "already passed" filtering happens per-chunk, not
@@ -196,7 +196,7 @@ export function nextOccurrenceDates(dayOfWeek: number, count: number): Date[] {
 
 /**
  * The real UTC instant a specific chunk of a schedule starts on a specific
- * occurrence date — the same etWallTimeToUtc + chunk.offsetMin computation
+ * occurrence date, the same etWallTimeToUtc + chunk.offsetMin computation
  * bookClass/bookFamilyClass/getUpcomingOccurrences each already do inline,
  * factored out here so the reservation-maintenance job
  * (payment-plan-reservations.ts) can compute it for a plan's own reserved
@@ -245,7 +245,7 @@ export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
     }
   }
 
-  // One grouped count query instead of one-per-candidate — grouped by the
+  // One grouped count query instead of one-per-candidate, grouped by the
   // exact instant, not just the day, since that's what actually identifies
   // one chunk now. Any count > 0 means that specific chunk's one booking
   // party (solo or family) is claimed; a sibling chunk in the same window
@@ -285,11 +285,11 @@ export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
 
 /**
  * Matches a PaymentPlan whose weekly reservation (reservedScheduleId/
- * reservedChunkIndex) is still "live" — ACTIVE, or COMPLETED with a
+ * reservedChunkIndex) is still "live", ACTIVE, or COMPLETED with a
  * not-yet-expired CreditGrant against it. The COMPLETED-with-a-live-grant
  * case matters because a plan finishing its final paid installment
  * shouldn't instantly lose its exclusivity and auto-booking the moment that
- * last payment clears — the credits from that last cycle are still good and
+ * last payment clears, the credits from that last cycle are still good and
  * the student is still using the slot. Shared by every reservation-
  * exclusivity check in this file (and by paymentPlans.ts's own enrollment-
  * time check), so "what counts as a live reservation" can't drift between
@@ -304,7 +304,7 @@ export function livePaymentPlanConditions(): Prisma.PaymentPlanWhereInput[] {
  * own SCHEDULED-but-not-yet-attended bookings. The real charge for any of
  * those doesn't land until markAttendance runs (see that function's own
  * comment for why), so User.classCredits alone would overstate what's
- * actually still free to spend — this is what every booking check and every
+ * actually still free to spend, this is what every booking check and every
  * "your balance" display should read instead of the raw column.
  */
 export async function getEffectiveClassCredits(userId: string): Promise<number> {
@@ -391,7 +391,7 @@ async function assertWithinSubscriberWeeklyLimit(
  *
  * Capacity is binary, not counted: an occurrence is claimed by whichever
  * booking (solo or family) lands on it first, and everyone else is locked
- * out of that exact slot for that week — this is an appointment book, not a
+ * out of that exact slot for that week, this is an appointment book, not a
  * shared classroom. Credits are reserved (checked against
  * getEffectiveClassCredits) but not actually deducted from the student's
  * balance yet; that happens once in markAttendance, whether they show up or
@@ -445,7 +445,7 @@ export async function bookClass(
   // knows.)
 
   // STEP 20: a real student booking their week's classes might reasonably
-  // book several in a row — 20/hour covers that comfortably while still
+  // book several in a row, 20/hour covers that comfortably while still
   // stopping a scripted attempt to hammer capacity/credit checks.
   await assertRateLimit(
     prisma.classBooking.count,
@@ -457,7 +457,7 @@ export async function bookClass(
   try {
     booking = await prisma.$transaction(
       async (tx) => {
-        // Keyed on the exact instant, not just the day — a sibling chunk of
+        // Keyed on the exact instant, not just the day, a sibling chunk of
         // the same admin-defined window (a different start time) is a
         // separate appointment slot and shouldn't block this one.
         const takenByAnyone = await tx.classBooking.findFirst({ where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED" } });
@@ -465,14 +465,14 @@ export async function bookClass(
           throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
         }
 
-        // Defense-in-depth against a Payment Plan's own reserved slot —
+        // Defense-in-depth against a Payment Plan's own reserved slot,
         // layer 3 of 3 (see livePaymentPlanConditions's own comment and
         // PaymentPlan.reservedScheduleId's schema comment). In the normal
         // case the daily reservation-maintenance job already makes this
         // slot show up as taken above, once its own ClassBooking rows
         // exist; this covers the gap between an enrollment and that job's
         // next run. The reservation holder booking their own slot is
-        // allowed through — only a *different* student is blocked.
+        // allowed through, only a *different* student is blocked.
         const reservedByOtherPlan = await tx.paymentPlan.findFirst({
           where: { reservedScheduleId: scheduleId, reservedChunkIndex: chunkIndex, userId: { not: studentId }, OR: livePaymentPlanConditions() },
           select: { id: true },
@@ -483,7 +483,7 @@ export async function bookClass(
 
         // (studentId, scheduleId, occurrenceDate) is unique, so a student who
         // previously booked this exact occurrence and then canceled already
-        // has a row here — CANCELED, not absent. A plain create() would hit
+        // has a row here, CANCELED, not absent. A plain create() would hit
         // that unique constraint and fail with a confusing "already booked"
         // error even though the booking is inactive. Reuse that row (flip it
         // back to SCHEDULED) instead of inserting a second one; only a
@@ -549,7 +549,7 @@ export async function bookClass(
 
   // LESSON_BOOKING_RECEIVED already existed as a defined notification type
   // (bell icon, admin CTA to /admin/bookings) but nothing ever actually
-  // triggered it — the teacher had no way to find out a class had been
+  // triggered it, the teacher had no way to find out a class had been
   // booked short of checking the roster themselves. Same pattern
   // classRegistration.ts already uses for new registrations: notify every
   // ADMIN (today, just the one account), non-blocking so a notification
@@ -607,7 +607,7 @@ async function notifyAdminsOfBooking(
     minute: "2-digit",
   });
   // Real labels already read as full names ("Wednesday class", "Monday
-  // evening class") — appending "class" again produced "Wednesday class
+  // evening class"), appending "class" again produced "Wednesday class
   // class".
   const classLabel = schedule.label ?? "class";
 
@@ -691,7 +691,7 @@ export interface BundleBookingSelection {
   scheduleId: string;
   occurrenceDateMs: number;
   chunkIndex: number;
-  /** Same optional meaning as bookClass's own param — omit for the chunk's full length. */
+  /** Same optional meaning as bookClass's own param, omit for the chunk's full length. */
   creditsToBook?: number;
 }
 
@@ -705,19 +705,19 @@ export interface BundleBookingResult extends BundleBookingSelection {
  * Bundle booking: one submit for several occurrences at once (e.g. three
  * classes with the same teacher in one go), instead of repeating the whole
  * single-booking round trip per class. Deliberately NOT one shared
- * transaction across every selection — each occurrence has its own
+ * transaction across every selection, each occurrence has its own
  * capacity and its own failure mode (already full, already booked, not
  * enough credits *at that point in the loop*), and failing selection #3
  * because someone else took the last seat shouldn't undo #1 and #2, which
  * genuinely succeeded. Every selection goes through the exact same
- * `bookClass` a single booking does — same Serializable transaction, same
+ * `bookClass` a single booking does, same Serializable transaction, same
  * capacity/credit/de-dupe checks, same rate limit (counted per class
- * booked, same as if they'd been submitted one at a time) — this just
+ * booked, same as if they'd been submitted one at a time), this just
  * loops it and reports one outcome per selection instead of one for the
  * whole batch.
  *
  * Duplicate selections (the same occurrence picked twice, e.g. a
- * double-click race) collapse to a single attempt — `bookClass` itself
+ * double-click race) collapse to a single attempt, `bookClass` itself
  * would just report the second as "already booked" otherwise, which reads
  * like a real failure for something that was never a real second request.
  */
@@ -748,13 +748,13 @@ export async function bookClassBundle(studentId: string, selections: BundleBooki
 }
 
 // ---------------------------------------------------------------------------
-// Family booking — 2+ named, verified accounts sharing one occurrence.
+// Family booking, 2+ named, verified accounts sharing one occurrence.
 // ---------------------------------------------------------------------------
 
 export interface FamilyAttendeeCheck {
   email: string;
   found: boolean;
-  /** Only set when found and verified — lets the booker visually confirm
+  /** Only set when found and verified, lets the booker visually confirm
       "yes, that's my kid's account" for an email they themselves just
       typed, not a stranger's private data. */
   name: string | null;
@@ -764,13 +764,13 @@ export interface FamilyAttendeeCheck {
 
 /**
  * Live, side-effect-free-beyond-its-own-rate-limit-ledger lookup used while
- * the booker is still filling in attendee emails — same shape and reasoning
+ * the booker is still filling in attendee emails, same shape and reasoning
  * as payments.ts's checkFamilyBundleRecipients (a typo should be caught and
  * fixed before submitting, not surface as a confusing failure at the end),
  * reusing that same rate-limit ledger rather than standing up a second
  * table for what's the same abuse vector (probing account existence by
  * email). The one real difference: a family *booking* requires the account
- * to be email-verified, not just existing — payments.ts's own check never
+ * to be email-verified, not just existing, payments.ts's own check never
  * needed that, since crediting an unverified account for a purchase is a
  * different risk than letting them occupy a live class slot.
  */
@@ -804,15 +804,15 @@ export async function checkFamilyClassAttendees(callerId: string, emails: string
 }
 
 /**
- * Books one occurrence for a named family group — 2+ verified accounts,
+ * Books one occurrence for a named family group, 2+ verified accounts,
  * each charged FAMILY_CREDITS_PER_STUDENT once markAttendance runs, same
  * deferred-charge rule bookClass uses. One ClassBooking row per attendee
  * (so each kid's own credits, attendance, and history stay theirs), all
  * sharing one familyBookingGroupId so the roster can display them as one
- * party and one occurrence slot (capacity is per-occurrence, not per-row —
+ * party and one occurrence slot (capacity is per-occurrence, not per-row,
  * see getUpcomingOccurrences).
  *
- * `initiatorId` is whoever is logged in and clicking the button — used only
+ * `initiatorId` is whoever is logged in and clicking the button, used only
  * for the rate-limit/authorization boundary in the calling Server Action,
  * not assumed to be one of the attendees. Every named email must resolve to
  * a real, verified account; nothing here accepts an arbitrary string as a
@@ -862,7 +862,7 @@ export async function bookFamilyClass(
     { windowMinutes: 60, max: 20, message: "You're booking too fast. Please wait a bit and try again." },
   );
 
-  // Re-verified here, never trusted from whatever the client last showed —
+  // Re-verified here, never trusted from whatever the client last showed,
   // the live check above is a UX convenience, not the actual authorization.
   const attendees = await prisma.user.findMany({
     where: { email: { in: normalizedEmails } },
@@ -905,7 +905,7 @@ export async function bookFamilyClass(
         const takenByAnyone = await tx.classBooking.findFirst({ where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED" } });
         if (takenByAnyone) throw new ClassBookingError("This time was just booked. Pick another slot.");
 
-        // Same defense-in-depth as bookClass's own guard (see its comment) —
+        // Same defense-in-depth as bookClass's own guard (see its comment),
         // a family booking never coincides with a solo Payment Plan
         // reservation on the same chunk, regardless of who's in the family
         // group, since the reservation's own auto-booking is always a solo
@@ -987,7 +987,7 @@ export async function bookFamilyClass(
 }
 
 // ---------------------------------------------------------------------------
-// Reserved recurring slots — a Payment Plan's own weekly day/time, held
+// Reserved recurring slots, a Payment Plan's own weekly day/time, held
 // exclusively for as long as the plan (or its final still-live CreditGrant)
 // stays active. See PaymentPlan.reservedScheduleId's schema comment and
 // paymentPlans.ts's createPaymentPlan for enrollment; the daily
@@ -1002,7 +1002,7 @@ export interface ReservableSlot {
   dayOfWeek: number;
   startTime: string;
   chunkIndex: number;
-  /** This chunk's own credit ceiling — always >= creditsPerWeek, the same meaning ClassOccurrence.creditCost has. */
+  /** This chunk's own credit ceiling, always >= creditsPerWeek, the same meaning ClassOccurrence.creditCost has. */
   creditCost: number;
 }
 
@@ -1012,7 +1012,7 @@ export interface ReservableSlot {
  * livePaymentPlanConditions) and (b) any chunk that isn't reserved by a
  * plan but already has an ordinary self-serve ClassBooking (from bookClass/
  * bookFamilyClass, made before any reservation existed) on one of its own
- * upcoming OCCURRENCES_PER_SLOT occurrences — reserving over that would let
+ * upcoming OCCURRENCES_PER_SLOT occurrences, reserving over that would let
  * the maintenance job silently create a second, conflicting booking for the
  * same instant the next time it runs. Feeds the enrollment slot picker.
  * Unlike getUpcomingOccurrences, this is otherwise not about any specific
@@ -1092,16 +1092,16 @@ export interface ReservedBookingParams {
 
 /**
  * Creates (or reuses a CANCELED row for) one week's booking backing a
- * Payment Plan's reservation — the building block
+ * Payment Plan's reservation, the building block
  * netlify/functions/payment-plan-reservations.ts calls once per plan per
  * occurrence in its rolling window. Same "reuse a CANCELED row for this
  * occurrence instead of hitting the unique constraint" idiom bookClass
  * already uses. No-ops (returns null) if a SCHEDULED row for this exact
- * (studentId, scheduleId, occurrenceDate) already exists — from an earlier
- * run of this same job, or the student booking it themselves — rather than
+ * (studentId, scheduleId, occurrenceDate) already exists, from an earlier
+ * run of this same job, or the student booking it themselves, rather than
  * erroring, since "already booked" is the steady state here most days, not
  * a failure. `db` defaults to the plain client, same convention as
- * addClassCredits — the caller wraps in its own transaction/retry if it
+ * addClassCredits, the caller wraps in its own transaction/retry if it
  * needs one (see the P2002 handling in payment-plan-reservations.ts).
  */
 export async function createReservedBookingIfAbsent(
@@ -1128,7 +1128,7 @@ export async function createReservedBookingIfAbsent(
   // Defense-in-depth against a different student somehow already holding
   // this exact instant despite the enrollment-time conflict check
   // (createPaymentPlan) and bookClass/bookFamilyClass's own reserved-slot
-  // guard — should be unreachable in practice, but this is what stops the
+  // guard, should be unreachable in practice, but this is what stops the
   // maintenance job from ever creating a second, silently conflicting
   // SCHEDULED row instead of just skipping and letting an admin notice.
   const conflict = await db.classBooking.findFirst({
@@ -1230,7 +1230,7 @@ export async function bookExtraSessionOccurrence(
 }
 
 /** Called from approveZellePayment once a CLASS_CREDITS payment verifies.
- *  `db` defaults to the plain client but accepts a transaction client — see
+ *  `db` defaults to the plain client but accepts a transaction client, see
  *  the STEP 19 comment on unlockScaleForUser/grantCurriculumAccess in
  *  access.ts for why. */
 export async function addClassCredits(
@@ -1294,7 +1294,7 @@ export async function getWeeklyCreditUsage(studentId: string): Promise<WeeklyCre
 }
 
 /**
- * Self-serve cancellation — >=24h before the class start only. Always
+ * Self-serve cancellation, >=24h before the class start only. Always
  * refunds the spent credits and frees the seat (there's no other outcome:
  * self-cancel simply isn't offered once inside the window). A student who
  * needs to cancel inside 24h has to message support instead; any refund at
@@ -1322,7 +1322,7 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
 
   // No credit mutation here: the real charge doesn't land until
   // markAttendance runs (see that function's own comment), and a booking
-  // still SCHEDULED at this point has never been attendance-marked — there
+  // still SCHEDULED at this point has never been attendance-marked, there
   // is nothing to refund because nothing was ever actually taken. `refunded`
   // stays true regardless, meaning "this booking never cost you anything."
   await prisma.classBooking.update({
@@ -1344,17 +1344,17 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
 }
 
 /**
- * Self-service reschedule — by direct instruction, the one real gap in
+ * Self-service reschedule, by direct instruction, the one real gap in
  * solo booking: moving a class used to mean cancel, then separately go
  * re-book a different open slot, two round trips with a real risk of
  * losing the old slot's credit hold before the new one is confirmed. This
  * does both atomically: same >=CANCELLATION_CUTOFF_HOURS eligibility as
  * cancelClassBooking (an inside-24h reschedule still isn't self-service,
- * same reasoning — message us instead), then the target slot goes through
+ * same reasoning, message us instead), then the target slot goes through
  * the exact same capacity/reserved-plan/one-class-a-day/credit checks
  * bookClass's own transaction runs, minus the Payment Plan self-book block
  * (a plan subscriber's ad hoc bookings, as opposed to their standing
- * reserved slot — see changeReservedSlot in paymentPlans.ts for that one —
+ * reserved slot, see changeReservedSlot in paymentPlans.ts for that one,
  * are still fair game here) since this is explicitly a *move*, not a new
  * booking layered on top of an existing one.
  *
@@ -1363,7 +1363,7 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
  * sum, same idea as cancelClassBooking never actually charging anything),
  * so a straight swap never requires more balance than the student already
  * had reserved. Both the cancel and the new booking happen inside one
- * Serializable transaction — a partial "old slot freed, new slot never
+ * Serializable transaction, a partial "old slot freed, new slot never
  * claimed" outcome would be strictly worse than the plain two-step flow
  * this replaces.
  */
@@ -1436,7 +1436,7 @@ export async function rescheduleClassBooking(
         }
 
         // Excludes both the target schedule (self-rebook idiom, same as
-        // bookClass) and the old booking being replaced — this is a move,
+        // bookClass) and the old booking being replaced, this is a move,
         // not a second class on the same day.
         const otherBookingSameDay = await tx.classBooking.findFirst({
           where: {
@@ -1476,7 +1476,7 @@ export async function rescheduleClassBooking(
           data: { status: "CANCELED", refunded: true, ...(oldBooking.reservedByPlanId ? { canceledReason: SKIPPED_BY_STUDENT } : {}) },
         });
 
-        // Same reuse-a-CANCELED-row idiom bookClass uses — this also
+        // Same reuse-a-CANCELED-row idiom bookClass uses, this also
         // transparently covers "same schedule, different time," since
         // canceling the old booking above just made this exact
         // (studentId, scheduleId, occurrenceDate) key available to reuse.

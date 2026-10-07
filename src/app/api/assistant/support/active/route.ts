@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 /**
  * Lets a signed-in visitor's widget re-find their own support thread on a
  * fresh page load without needing sessionStorage to have survived (it
- * often won't — sessionStorage clears on tab close). Signed-in only: an
+ * often won't, sessionStorage clears on tab close). Signed-in only: an
  * anonymous visitor has no account to look this up by, and stays scoped to
  * whatever their browser still remembers, same as the rest of the widget's
  * pre-escalation history.
@@ -15,7 +15,7 @@ import { prisma } from "@/lib/prisma";
  * widget's "start a new conversation" reset (which clears activeEscalationId
  * to go back to plain Atom chat) got immediately undone: this endpoint kept
  * finding that same resolved thread and re-attaching it, since it's still
- * "most recent." A resolved thread isn't active by definition — only an
+ * "most recent." A resolved thread isn't active by definition, only an
  * OPEN one should ever be re-offered here.
  */
 export async function GET() {

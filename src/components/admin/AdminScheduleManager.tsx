@@ -36,7 +36,7 @@ export interface AdminScheduleManagerProps {
 
 const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-/** durationMin minutes past "HH:mm" startTime, as its own "HH:mm" — the inverse of what resolveDurationMin computes server-side, needed here to pre-fill an edit form's end-time field from stored start+duration. */
+/** durationMin minutes past "HH:mm" startTime, as its own "HH:mm", the inverse of what resolveDurationMin computes server-side, needed here to pre-fill an edit form's end-time field from stored start+duration. */
 function endTimeFromDuration(startTime: string, durationMin: number): string {
   const [h, m] = startTime.split(":").map(Number);
   const totalMin = h * 60 + m + durationMin;
@@ -239,7 +239,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                   >
                     <div>
                       <p className="text-small text-slate-100">
-                        {formatTimeLabel(row.startTime)}–{formatTimeLabel(endTimeFromDuration(row.startTime, row.durationMin))}
+                        {formatTimeLabel(row.startTime)} to {formatTimeLabel(endTimeFromDuration(row.startTime, row.durationMin))}
                         {row.label && ` · ${row.label}`}
                       </p>
                       <p className="mt-0.5 text-small text-slate-500">

@@ -17,11 +17,11 @@ import { ClassBookingError, chunksForSchedule, computeScheduledAt, endOfThisWeek
 
 export interface RosterFocus {
   /** Curriculum order (0-5) of the scale this student is actually working
-      on right now, or null if they have no curriculum access at all yet —
+      on right now, or null if they have no curriculum access at all yet,
       a distinct bucket from Scale 0, not the same as being new to it. */
   scaleOrder: number | null;
   scaleLabel: string;
-  /** What specifically to help them with — "Take the quiz", "Work through
+  /** What specifically to help them with, "Take the quiz", "Work through
       the module", etc. Same wording the student's own dashboard uses. */
   action: string;
 }
@@ -55,7 +55,7 @@ export interface AdminOccurrenceRosterEntry {
       SOLO_MAX_CREDITS or fewer for a solo booking, always exactly
       FAMILY_CREDITS_PER_STUDENT for a family one. */
   creditsSpent: number;
-  /** Shared by every row from the same family booking — null for solo.
+  /** Shared by every row from the same family booking, null for solo.
       Lets the roster show "these N rows are one family" instead of N
       unrelated-looking students who happen to share a start time. */
   familyBookingGroupId: string | null;
@@ -86,8 +86,8 @@ export interface PendingAttendanceRow {
 }
 
 /**
- * Just the bookings actually needing a Present/No-show call right now —
- * SCHEDULED and already in the past — for the TopBar's own quick-attendance
+ * Just the bookings actually needing a Present/No-show call right now,
+ * SCHEDULED and already in the past, for the TopBar's own quick-attendance
  * panel. Deliberately its own light query rather than reusing
  * getAdminOccurrences below: that one does a full 60-day window plus a
  * per-student roadmap lookup for the whole Schedule page's roster view,
@@ -192,7 +192,7 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
     orderBy: { scheduledAt: "desc" },
   });
 
-  // One roadmap lookup per distinct student, not per booking row — the same
+  // One roadmap lookup per distinct student, not per booking row, the same
   // student can appear across several occurrences inside the window, and
   // their curriculum progress doesn't change from one row to the next.
   const studentIds = Array.from(new Set(bookings.map((b) => b.student.id)));
@@ -202,7 +202,7 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
 
   const groups = new Map<string, AdminOccurrenceGroup>();
   for (const b of bookings) {
-    // Keyed on the exact instant, not just the day — a schedule window that
+    // Keyed on the exact instant, not just the day, a schedule window that
     // splits into several chunks (see chunksForSchedule) can have a
     // different booking party at each start time, and those shouldn't
     // merge into one roster card.
@@ -242,23 +242,23 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
 }
 
 /**
- * Marks attendance and finalizes the booking as COMPLETED — Present and
+ * Marks attendance and finalizes the booking as COMPLETED, Present and
  * No-show both keep the already-spent credit (there's no Discord
  * integration here, so this roster is the sole source of truth for who
  * actually used their credits; a no-show is a forfeit, not a refund).
  */
 /**
- * Marks attendance and finalizes the booking as COMPLETED — and, the first
+ * Marks attendance and finalizes the booking as COMPLETED, and, the first
  * time this runs for a given booking, this is also where the credit charge
  * actually happens. By direct instruction, a student is charged based on
- * whether the admin checks them present or absent, not at booking time —
+ * whether the admin checks them present or absent, not at booking time,
  * booking only *reserves* the credits (see getEffectiveClassCredits), and a
  * no-show is charged exactly the same as an attendance, per the terms
  * students agree to.
  *
  * Guarded against double-charging: this is also how an admin corrects a
  * mis-click (Present when they meant No-show, or back), which re-enters
- * here with the booking already COMPLETED — the second call only updates
+ * here with the booking already COMPLETED, the second call only updates
  * `attendance`, since the one real charge already landed on the first.
  */
 export async function markAttendance(bookingId: string, attendance: AttendanceStatus): Promise<void> {
@@ -273,7 +273,7 @@ export async function markAttendance(bookingId: string, attendance: AttendanceSt
     }
   });
   // Best-effort ledger draw-down, outside the transaction above on purpose
-  // (see drawDownCredits's own comment) — the real charge already landed
+  // (see drawDownCredits's own comment), the real charge already landed
   // unconditionally, this just keeps CreditGrant's bookkeeping roughly in
   // sync with it. Skipped entirely on a re-mark (alreadyCharged): the one
   // real charge, and the one real draw-down, both already happened on the
@@ -284,21 +284,21 @@ export async function markAttendance(bookingId: string, attendance: AttendanceSt
 }
 
 /**
- * Fully reverses a mistaken attendance mark — not just correcting Present
+ * Fully reverses a mistaken attendance mark, not just correcting Present
  * vs. No-show (markAttendance's own re-mark path already handles that,
  * with no credit change either way, since both charge identically), but
  * undoing the charge itself: back to SCHEDULED, attendance cleared, and
  * the credit actually refunded. By direct instruction, after "this costs
- * real credits, I want it to be reversible" — marking attendance was a
+ * real credits, I want it to be reversible", marking attendance was a
  * one-way door before this, with no way back from a wrong call short of a
  * manual admin credit adjustment on the separate Credits page.
  *
- * Only valid from COMPLETED — nothing to undo from any other status. The
+ * Only valid from COMPLETED, nothing to undo from any other status. The
  * refund records a fresh, non-expiring CreditGrant (same ADMIN_ADJUSTMENT
  * source and "never expires" shape adjustUserCredits' own positive-amount
  * path already uses) rather than trying to resurrect whatever grant the
  * original charge drew down from, which drawDownCredits doesn't track
- * precisely enough to reverse — same "best-effort ledger, not a perfect
+ * precisely enough to reverse, same "best-effort ledger, not a perfect
  * mirror of the real balance" trade-off creditLedger.ts's own file header
  * already documents.
  */
@@ -324,12 +324,12 @@ export async function undoAttendance(bookingId: string): Promise<void> {
 }
 
 /**
- * Admin-initiated cancel — unlike the student's self-serve cancelClassBooking,
+ * Admin-initiated cancel, unlike the student's self-serve cancelClassBooking,
  * this has no 24-hour cutoff (an admin can free a slot or fix a mistake any
  * time before the class happens). No credit mutation, same reasoning as
  * cancelClassBooking: the real charge waits for markAttendance, so a
  * booking that's still SCHEDULED was never actually charged in the first
- * place — there's nothing to refund.
+ * place, there's nothing to refund.
  */
 export async function adminCancelClassBooking(bookingId: string, reason?: string): Promise<void> {
   const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });

@@ -6,7 +6,7 @@
 
    ── Why this file exists ────────────────────────────────────────────────
    `LOGGED_OUT_THEME` in src/lib/themes.ts pins every logged-out visitor to
-   "ink" — the same black + Instagram-style accent identity the rest of the
+   "ink", the same black + Instagram-style accent identity the rest of the
    app now uses, so in principle this override isn't compensating for a bad
    theme
    the way it originally was (the old "luxury" daisyUI theme it was built
@@ -14,7 +14,7 @@
    values-only mirror of `[data-theme="ink"]` in themes.css: marketing pages
    are logged-out-only by definition, so pinning their own copy of the ramp
    here is one clean scope boundary instead of a dependency on which global
-   theme happens to be marked "logged-out" — the intent is the same colours,
+   theme happens to be marked "logged-out", the intent is the same colours,
    not a different look.
 
    Everything inside keeps using `text-slate-50` / `bg-amber-400` exactly as
@@ -23,8 +23,8 @@
    ── Where the palette comes from ────────────────────────────────────────
    The same neutral black/white ramp and Instagram-style purple/pink/orange
    accent as the rest of the app (see themes.css's `[data-theme="ink"]` and
-   `[data-mode="dark"]` blocks — this trio is the only accent now, see
-   themes.ts's own comment) — mirrored here in raw values rather than
+   `[data-mode="dark"]` blocks, this trio is the only accent now, see
+   themes.ts's own comment), mirrored here in raw values rather than
    referenced, because
    these are inherited custom properties: re-pointing `--c-a-400` this far
    down the tree only works if it's redeclared at this scope, not aliased to
@@ -33,7 +33,7 @@
 
 [data-surface="marketing"] {
   /* ---- Neutral ramp: ground ↔ text -----------------------------------
-     True neutral grey, matching `[data-theme="ink"]` exactly — no warm or
+     True neutral grey, matching `[data-theme="ink"]` exactly, no warm or
      cool bias. Contrast ratios below are measured against the ground
      (--c-s-950). */
   --c-s-50: 245 245 245;    /* headings            17.9:1 */
@@ -42,14 +42,14 @@
   --c-s-300: 194 194 194;   /* secondary body      10.8:1 */
   --c-s-400: 168 168 168;   /* de-emphasised        7.8:1 */
   --c-s-500: 153 153 153;   /* mono labels          6.5:1 */
-  --c-s-600: 120 120 120;   /* disabled             4.4:1 — non-text, always */
+  --c-s-600: 120 120 120;   /* disabled             4.4:1, non-text, always */
   --c-s-700: 66 66 66;      /* hairlines, rules */
   --c-s-800: 51 51 51;      /* raised surface */
   --c-s-900: 41 41 41;      /* recessed surface */
   --c-s-950: 43 43 45;      /* the ground = the neumorphic base */
 
   /* ---- Accent ramp: signal green, back again -----------------------------
-     Same values as `[data-mode="dark"]` in themes.css — see that file's
+     Same values as `[data-mode="dark"]` in themes.css, see that file's
      own "Accent" comment for the full history (green, then pink/orange,
      then Instagram, then off, then Indigo/Violet, then off again, now
      green again, byte-exact from its own original 229ad8d commit). Live
@@ -65,7 +65,7 @@
   /* ---- The scrim rule -------------------------------------------------
      Ratios above are against the bare ground. The homepage's real backdrop
      is the studio video under a per-scene scrim, which lifts the effective
-     background — so the same token measures differently scene to scene.
+     background, so the same token measures differently scene to scene.
 
      Measured against the video's brightest region, rgb(90 70 50):
 
@@ -79,7 +79,7 @@
        --c-a-400      9.1       8.6         5.7   ✓ everywhere
 
      So: `--c-s-400` and `--c-s-500` are only safe where the scrim is 0.6 or
-     heavier. This table predates the current homepage — it was written
+     heavier. This table predates the current homepage, it was written
      against the old scroll-video background's per-scene scrims, which no
      longer exist (the hero is a shader gradient now, see
      `PageBackground.tsx`), so "in an open scene" no longer names anything
@@ -87,21 +87,21 @@
      enough backdrop wherever a future background choice varies in
      brightness across the page, not as literal current guidance. */
 
-  /* Status colours are inherited from the active theme deliberately —
+  /* Status colours are inherited from the active theme deliberately,
      marketing has no error states worth re-specifying, and a divergent red
      between the marketing form and the app form would be a bug, not a
      style. Only the two ramps above are overridden. */
 
   /* ---- shadcn bridge, re-resolved -------------------------------------
-     globals.css declares the shadcn vocabulary on `:root` as indirections —
+     globals.css declares the shadcn vocabulary on `:root` as indirections,
      `--primary: var(--c-a-400)`. Custom properties resolve at computed-value
      time on the element that DECLARES them, so `--primary` computes against
      <html>'s own ramp and descendants inherit that already-resolved value.
      Re-pointing `--c-a-400` further down the tree therefore does nothing
      for it on its own.
 
-     Every shadcn-derived control on the marketing pages — the navbar's
-     buttons, the class-registration form, the pricing dialogs — goes through
+     Every shadcn-derived control on the marketing pages, the navbar's
+     buttons, the class-registration form, the pricing dialogs, goes through
      these names, so they have to be re-declared here to pick the marketing
      ramp up. Same indirections, evaluated in this scope. */
   --background: var(--c-s-950);
@@ -110,7 +110,7 @@
   --card-foreground: var(--c-s-50);
   --popover: var(--c-s-900);
   --popover-foreground: var(--c-s-50);
-  /* Neutral — same reasoning as globals.css's own `--primary` comment: a
+  /* Neutral, same reasoning as globals.css's own `--primary` comment: a
      green `.btn-primary` was tried and reverted by direct instruction in
      favor of white buttons with green reserved for badges/selection
      states/Atom. */
@@ -138,19 +138,19 @@
      right editorial/luxury pairing; the mono is new and earns its place
      because degree tokens, formulas and eyebrows are a signature element
      here, and system mono renders as SF Mono / Consolas / DejaVu depending
-     on the visitor's OS — three different designs.
+     on the visitor's OS, three different designs.
 
      Sizes are fluid via clamp() rather than stepped at breakpoints. An
      editorial page whose display type snaps between two sizes reads as two
      layouts; one that scales continuously reads as one composition.
 
-     Tracking tightens as size grows — letterforms appear further apart the
+     Tracking tightens as size grows, letterforms appear further apart the
      larger they get, so a single letter-spacing is wrong at one end.
      ========================================================================== */
 
   /* The floor is 2.5rem, not 3.25rem. At 3.25rem a 14-character line no
      longer fits a 375px viewport, so the hero headline broke to four lines
-     with a one-word orphan on the first — which costs far more than the
+     with a one-word orphan on the first, which costs far more than the
      12px of size it was buying. 2.5rem holds the same two lines the desktop
      composition uses. */
   --type-display-1: clamp(2.5rem, 8.5vw, 8.5rem); /* hero, final CTA */
@@ -174,10 +174,10 @@
   --type-body-sm: 0.8125rem;
   --type-body-sm-lh: 1.6;
 
-  --type-label: 0.8125rem; /* 13px — mono, uppercase */
+  --type-label: 0.8125rem; /* 13px, mono, uppercase */
   --type-label-ls: 0.18em;
 
-  --type-micro: 0.8125rem; /* 13px — mono, non-essential only */
+  --type-micro: 0.8125rem; /* 13px, mono, non-essential only */
   --type-micro-ls: 0.2em;
 
   /* ==========================================================================
@@ -193,8 +193,8 @@
   --space-4: 2.5rem;   /* 40  */
   --space-5: 4rem;     /* 64  */
   --space-6: 6rem;     /* 96  */
-  --space-7: 9rem;     /* 144 — within-scene separation */
-  --space-8: 12rem;    /* 192 — scene padding, desktop */
+  --space-7: 9rem;     /* 144, within-scene separation */
+  --space-8: 12rem;    /* 192, scene padding, desktop */
 
   /* ==========================================================================
      SCENE DIMENSIONS
@@ -209,16 +209,16 @@
 
   --scene-01: 100vh; /* the room       */
   /* 240vh, up from the 160vh the storyboard budgeted. What matters for a
-     pinned scene is not its height but its PIN TRAVEL — `height - 100vh` —
+     pinned scene is not its height but its PIN TRAVEL, `height - 100vh`,
      because that is the only scroll distance the choreography actually has.
      At 160vh that is 60vh for three cross-fading beats, or 20vh each, and a
-     single trackpad flick covers 50–100vh: the entire scene went past in one
+     single trackpad flick covers 50-100vh: the entire scene went past in one
      gesture. 240vh gives 140vh of travel, so each beat holds for roughly half
      a screen of scrolling, which is what makes it read as a held moment
      rather than a transition. */
   /* Not currently consumed by PianoScene.tsx (which hardcodes its own
      h-[220vh] md:h-[300vh], matching the pattern KeyboardScene's --scene-03
-     through --scene-05 already established below) — kept here as the
+     through --scene-05 already established below), kept here as the
      documented intent, corrected to the real current value so it doesn't
      describe a component that no longer exists (this used to be
      ApproachScene, retired in Step 9). Reconciling all of these tokens with
@@ -240,7 +240,7 @@
      scene sets its own value; the background layer reads this one property.
      0.25 = the footage is the composition. 0.90 = the footage is a ground.
 
-     Still one global value at this stage — the video layer is `fixed`, a
+     Still one global value at this stage, the video layer is `fixed`, a
      sibling of the content, so a scene cannot inherit a value down to it.
      Driving it per-scene needs the scroll progress signal, which is where
      the next scene lands. 0.5 is the compromise: open enough that the hero
@@ -253,7 +253,7 @@
      --------------------------------------------------------------------------
      Expo-out everywhere. Most of the distance is covered in the first third,
      so an element reads as settling into place rather than starting from
-     rest — the difference between "premium" and "a slide".
+     rest, the difference between "premium" and "a slide".
      ========================================================================== */
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -265,7 +265,7 @@
   --dur-exit: 320ms;    /* exits are faster than entrances, always */
   --stagger: 70ms;
 
-  --travel: 24px;       /* entrance translate — never more */
+  --travel: 24px;       /* entrance translate, never more */
   --blur-enter: 6px;
 }
 
@@ -341,13 +341,13 @@
   font-weight: 500;
   letter-spacing: var(--type-label-ls);
   text-transform: uppercase;
-  /* Neutral, not accent-tinted — same "accent only on true CTAs"
+  /* Neutral, not accent-tinted, same "accent only on true CTAs"
      instruction as globals.css's own `.eyebrow` utility. */
   color: rgb(var(--c-s-300));
 }
 
 /* s-300, not s-500. `label-muted` reads as "the quiet one", and s-500 is what
-   quiet looks like on the bare ground (5.1:1) — but this class's two real
+   quiet looks like on the bare ground (5.1:1), but this class's two real
    users are the nav links and the scroll cue, both of which live at the TOP
    of an open-scrim scene where s-500 measures 3.7:1 and fails AA outright.
    Muted here means neutral-instead-of-accent, not dimmer-than-legible.
@@ -356,7 +356,7 @@
   color: rgb(var(--c-s-300));
 }
 
-/* Data, not prose: note names, degree tokens, chord symbols. Not uppercased —
+/* Data, not prose: note names, degree tokens, chord symbols. Not uppercased,
    `Bb` and `F#` are case-significant. */
 [data-surface="marketing"] .token {
   font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
@@ -400,7 +400,7 @@
   margin: 0;
 }
 
-/* Neutral now, not accent-tinted — a stronger hairline than `.rule-hairline`
+/* Neutral now, not accent-tinted, a stronger hairline than `.rule-hairline`
    above (0.4 vs 0.12 opacity) rather than a different colour, same "accent
    only on true CTAs" instruction as elsewhere in this file. */
 [data-surface="marketing"] .rule-accent {
@@ -413,7 +413,7 @@
 /* ==========================================================================
    BUTTONS
    --------------------------------------------------------------------------
-   Three tiers, one accent. 52px tall on desktop and 56px on mobile — both
+   Three tiers, one accent. 52px tall on desktop and 56px on mobile, both
    clear the 44px touch minimum with room, which matters because the primary
    CTA is the single most important target on the page.
    ========================================================================== */
@@ -464,15 +464,15 @@
 }
 
 /* Same liquid-glass chemistry as the in-app `Button` primitive's `default`
-   variant — solid fill, layered inset highlight + outer shadow,
-   brighten-on-hover — so a primary CTA feels identical whether it's the
+   variant, solid fill, layered inset highlight + outer shadow,
+   brighten-on-hover, so a primary CTA feels identical whether it's the
    React component (dashboard, auth, dialogs) or this CSS-class button
    (marketing's plain `<Link>`/`<a>` tags). Same reasoning as that variant's
    own comment: fill + shadow only, no SVG-turbulence backdrop distortion
    (unsupported in Safari, ruled out earlier in this project's own design
    direction).
 
-   Solid `--primary`, neutral — see globals.css's own `--primary` and
+   Solid `--primary`, neutral, see globals.css's own `--primary` and
    `.cta-fill` comments: green was tried here too and reverted by direct
    instruction, in favor of white buttons with green reserved for
    badges/selection states/Atom. */
@@ -513,7 +513,7 @@
    nowhere rather than a quiet inline link. Reset defensively in case a
    future call site ever combines this with .btn instead of standing
    alone (today nothing does). */
-/* Neutral, not accent-tinted — a plain quiet link leans on the underline
+/* Neutral, not accent-tinted, a plain quiet link leans on the underline
    for its "this is clickable" signal, not colour, same "accent only on
    true CTAs" instruction as elsewhere in this file. */
 [data-surface="marketing"] .btn-quiet {
@@ -533,9 +533,9 @@
   text-decoration-color: rgb(var(--c-s-50));
 }
 
-/* Focus is never removed, only restyled. Neutral, not accent-tinted, now —
+/* Focus is never removed, only restyled. Neutral, not accent-tinted, now,
    a crisp near-white ring rather than colour, the one universal focus
-   indicator (not a call-to-action) — and it still reads on every scene
+   indicator (not a call-to-action), and it still reads on every scene
    because `--c-s-50` is the one colour guaranteed to sit on the ground. */
 [data-surface="marketing"] :is(a, button, [role="button"]):focus-visible {
   outline: 2px solid rgb(var(--c-s-50));
@@ -546,7 +546,7 @@
 /* ==========================================================================
    MOTION RULES
    --------------------------------------------------------------------------
-   Reduced motion is not a degraded variant — it is a complete, static
+   Reduced motion is not a degraded variant, it is a complete, static
    composition. Every scene must be fully readable with zero travel, because
    a scroll-choreographed page that hides content until it animates is
    unreadable to anyone who turns animation off.
@@ -562,7 +562,7 @@
 
   /* Scenes resolve to their end state rather than their start state.
      Descendants are included because the animation is usually applied to the
-     children of the marked container, not the container itself — and because
+     children of the marked container, not the container itself, and because
      `!important` here is what lets a stylesheet win against the inline styles
      a motion library writes. */
   [data-surface="marketing"] [data-scene-content],

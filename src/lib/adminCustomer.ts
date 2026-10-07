@@ -1,5 +1,5 @@
 // ============================================================================
-// The admin "customer profile" page — one consolidated view of a single
+// The admin "customer profile" page, one consolidated view of a single
 // student's account, curriculum progress, payments, credits/bookings, and
 // support history, plus a reconstructed activity timeline across all of it.
 //
@@ -12,7 +12,7 @@
 // slightly different way.
 //
 // Deliberately does NOT surface this student's private Messages with other
-// students — that's a second person's privacy, not just this account's,
+// students, that's a second person's privacy, not just this account's,
 // and reading it isn't something a "look up one student" tool should
 // casually expose. Support/Atom conversations are included: the admin is
 // already a real party to those.
@@ -94,7 +94,7 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
   const [roadmap, scaleProgressRows, payments, bookings, supportThreads, creditHistory] = await Promise.all([
     getRoadmap(userId),
     // getRoadmap's own ScaleAccessState is a processed *current* snapshot
-    // (status/canAccess), not the raw timestamps a timeline needs — pulled
+    // (status/canAccess), not the raw timestamps a timeline needs, pulled
     // separately here rather than added to that shared type, which every
     // other caller (the dashboard, the roadmap page) has no use for.
     prisma.scaleProgress.findMany({ where: { userId }, include: scaleProgressWithGroupInclude }),

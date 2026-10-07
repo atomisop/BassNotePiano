@@ -19,7 +19,7 @@ import {
  * purpose: this mounts in the app shell on every authenticated page, and
  * making it wait on a query would either delay the shell or need its own
  * loading state for a menu that isn't open yet. The list is fixed curriculum
- * content, and the routes it links to enforce their own access rules — an
+ * content, and the routes it links to enforce their own access rules, an
  * unpaid student who picks a locked scale still lands on /billing/plans
  * exactly as if they'd clicked it on the roadmap.
  */

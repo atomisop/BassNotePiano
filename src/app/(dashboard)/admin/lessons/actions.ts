@@ -7,7 +7,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { createPresignedLessonUpload } from "@/lib/storage";
 import { createLesson, deleteLesson, reorderLessons, type CreateLessonInput } from "@/lib/courseContent";
 
-// The admin layout's redirect only protects rendering — Server Actions are
+// The admin layout's redirect only protects rendering, Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
 // authorization check for these mutations, not just a UX nicety. Same
 // pattern as every other admin action in this codebase (e.g.

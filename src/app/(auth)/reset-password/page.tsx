@@ -112,7 +112,7 @@ function ResetPasswordForm() {
 
   return (
     // Padding/gaps below step down on narrow phones (`sm:` restores the
-    // original spacing everywhere else) — this is the tallest auth screen
+    // original spacing everywhere else), this is the tallest auth screen
     // (three fields, each with its own hint line, vs. one or two elsewhere),
     // and the shared (auth)/layout.tsx shell was leaving it just short of
     // fitting one real phone viewport without a scroll. See that layout's
@@ -142,7 +142,7 @@ function ResetPasswordForm() {
           <Label htmlFor="code" className={fieldLabel}>
             Code
           </Label>
-          {/* Same taller mono treatment as /verify-email — both screens ask
+          {/* Same taller mono treatment as /verify-email, both screens ask
               for the identical 6-digit code, so they read identically. */}
           <Input
             id="code"

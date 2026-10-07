@@ -1,5 +1,5 @@
 /**
- * The theme registry — the single source of truth shared by the provider,
+ * The theme registry, the single source of truth shared by the provider,
  * the picker UI, and the no-flash boot script.
  *
  * One choice: light or dark. There used to be two independent axes here:
@@ -66,14 +66,14 @@ export function themeMode(theme: ThemeId): "light" | "dark" {
 }
 
 /**
- * The theme's page ground, as a hex color — reuses the picker's own
+ * The theme's page ground, as a hex color, reuses the picker's own
  * `swatch[0]` rather than a parallel color table, so there's exactly one
  * place (this array, above) that knows what a theme's background actually
  * is. Feeds the `<meta name="theme-color">` tag (see RootLayout's `viewport`
  * export and ThemeProvider's `applyToDocument`), which is what stops iOS
  * Safari's own chrome (the strip around the address bar, and the strip
  * around the bottom toolbar) from rendering in the browser's own default
- * gray instead of the app's actual background — reported as a mismatched
+ * gray instead of the app's actual background, reported as a mismatched
  * band that reads like an unwanted extra frame sitting below the dock.
  */
 export function themeGroundColor(theme: ThemeId): string {
@@ -85,26 +85,26 @@ export function isThemeId(value: unknown): value is ThemeId {
 }
 
 /**
- * Nobody signed in gets a theme picker — not on the storefront (home,
+ * Nobody signed in gets a theme picker, not on the storefront (home,
  * classes, pricing, terms), and not on the road to actually signing in
  * (login, register, forgot/reset password, verify email) either. All nine
  * are locked to Ink: every visitor sees the same look right up until
  * they're actually inside the app, at which point ThemeProvider switches to
  * whatever they picked at Settings → Themes & Appearance. `/onboarding` is
- * deliberately excluded — it's behind `middleware.ts`'s auth check, so
+ * deliberately excluded, it's behind `middleware.ts`'s auth check, so
  * reaching it means a real session already exists; it should look like the
  * app, not like the pitch for it.
  *
  * Locked to Ink (not Paper) so the black + Instagram-style accent identity
- * is what every first-time visitor actually sees — matches `DEFAULT_THEME` below,
+ * is what every first-time visitor actually sees, matches `DEFAULT_THEME` below,
  * one consistent default rather than two different ones. Marketing pages
  * under `(marketing)/` override these tokens with their own scoped ramp
  * anyway (see marketing.css); this mainly governs the functional auth pages
  * (login, register, …), which don't carry that override.
  *
  * `isLoggedOutPath` is an exact-match allow-list (not a prefix check) so a
- * future nested route under one of these — e.g. a dynamic `/classes/[id]`
- * — doesn't silently inherit the lock without a deliberate decision to add
+ * future nested route under one of these, e.g. a dynamic `/classes/[id]`,
+ * doesn't silently inherit the lock without a deliberate decision to add
  * it here.
  */
 export const LOGGED_OUT_THEME: ThemeId = "ink";
@@ -125,7 +125,7 @@ export function isLoggedOutPath(pathname: string | null | undefined): boolean {
 }
 
 /**
- * Runs before first paint, inlined into <head> — see RootLayout.
+ * Runs before first paint, inlined into <head>, see RootLayout.
  *
  * This has to be a string of plain ES5-ish JS rather than an imported
  * function: it executes in a <script> tag ahead of hydration, so it can't

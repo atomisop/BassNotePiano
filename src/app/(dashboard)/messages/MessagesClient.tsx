@@ -59,14 +59,14 @@ function MessagesInner({
   const [groupTypers, setGroupTypers] = useState<string[]>([]);
 
   // activeChatId is a real, intentional null state (no auto-selecting the
-  // first conversation) — that's what makes the empty state and the mobile
+  // first conversation), that's what makes the empty state and the mobile
   // sidebar/chat split meaningful.
   const active = conversations.find((c) => c.friendId === activeFriendId) ?? null;
   const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
   const hasActivePane = Boolean(activeFriendId || activeGroupId);
   // Captured as their own primitives so the two polling effects below can
   // depend on (and reference) only these, never `active`/`activeGroup`
-  // themselves — both are recomputed fresh every render, so depending on
+  // themselves, both are recomputed fresh every render, so depending on
   // the objects would poll on every unrelated re-render instead of only
   // when the active chat/group actually changes.
   const activeConversationId = active?.friendId ?? null;
@@ -220,7 +220,7 @@ function MessagesInner({
     );
     const result = await togglePinAction(friendId);
     if (!result.ok) {
-      // Roll back — the toggle failed server-side.
+      // Roll back, the toggle failed server-side.
       setConversations((prev) =>
         prev.map((c) => (c.friendId === friendId ? { ...c, isPinned: !c.isPinned } : c)),
       );

@@ -19,19 +19,19 @@ export class PaymentPlanError extends Error {}
 // Enrollment
 //
 // A PaymentPlan is the standing commitment only (cadence, term, locked rate,
-// progress) — it never moves money or grants credits itself. Every actual
+// progress), it never moves money or grants credits itself. Every actual
 // installment payment is an ordinary ZellePayment row (purpose
 // PAYMENT_PLAN_INSTALLMENT), going through the exact same
 // AWAITING_TRANSFER -> PENDING_REVIEW -> VERIFIED/REJECTED lifecycle, the
 // exact same ZellePaymentModal/submitZellePaymentReference flow, and the
-// exact same /admin/payments queue, as any other purchase — see
+// exact same /admin/payments queue, as any other purchase, see
 // approveZellePayment's PAYMENT_PLAN_INSTALLMENT branch in payments.ts.
 // ---------------------------------------------------------------------------
 
 /**
  * Starts a new payment plan against a specific reserved weekly slot. One
  * ACTIVE plan per user at a time, and one live reservation per
- * schedule+chunk at a time — both v1 constraints, both enforced here inside
+ * schedule+chunk at a time, both v1 constraints, both enforced here inside
  * a single Serializable transaction (matching bookClass's own pattern in
  * classSchedule.ts for scarce weekly resources), not two separate
  * un-transacted checks: the previous version's "one active plan" check ran
@@ -41,10 +41,10 @@ export class PaymentPlanError extends Error {}
  * inside that transaction, same trick createFamilyBundlePayment
  * (payments.ts) uses for its own nested create.
  *
- * nextDueDate starts at "now" — a plan's first installment isn't a
+ * nextDueDate starts at "now", a plan's first installment isn't a
  * reminder-ahead-of-time situation, it's the thing that actually starts the
- * plan. The reserved slot's first actual booking isn't created here either
- * — that's left to the next run of the daily reservation-maintenance job
+ * plan. The reserved slot's first actual booking isn't created here either,
+ * that's left to the next run of the daily reservation-maintenance job
  * (netlify/functions/payment-plan-reservations.ts), the same single code
  * path that creates every subsequent week's booking too.
  */
@@ -56,7 +56,7 @@ export async function createPaymentPlan(
   reservedScheduleId: string,
   reservedChunkIndex: number,
 ) {
-  // A Server Action's params are only compile-time-typed — a raw request
+  // A Server Action's params are only compile-time-typed, a raw request
   // against the same endpoint could send anything. Validate against the
   // real enum before it ever reaches calculatePaymentPlanRate's lookup
   // tables, same "throw a clean error for bad input" convention
@@ -103,13 +103,13 @@ export async function createPaymentPlan(
         // A chunk with no other PaymentPlan reservation can still have a
         // pre-existing ordinary ClassBooking (from the self-serve bookClass/
         // bookFamilyClass flow, made before this reservation existed) on
-        // one of its own upcoming OCCURRENCES_PER_SLOT occurrences —
+        // one of its own upcoming OCCURRENCES_PER_SLOT occurrences,
         // reserving over that would let the daily maintenance job silently
         // create a second, conflicting booking for that same instant the
         // next time it runs. Checked against the exact same rolling window
         // the job itself maintains; excludes this same student's own
         // pre-existing booking (nothing wrong with reserving over your own
-        // booking — the job's own existing-row check already handles that
+        // booking, the job's own existing-row check already handles that
         // cleanly).
         const occurrenceDates = nextOccurrenceDates(schedule.dayOfWeek, OCCURRENCES_PER_SLOT);
         const conflictingBooking = await tx.classBooking.findFirst({
@@ -170,7 +170,7 @@ export async function getActivePaymentPlan(userId: string) {
   return prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" } });
 }
 
-/** A student's full plan history, newest first — active plus past completed/canceled ones. */
+/** A student's full plan history, newest first, active plus past completed/canceled ones. */
 export async function getUserPaymentPlans(userId: string) {
   return prisma.paymentPlan.findMany({ where: { userId }, orderBy: { createdAt: "desc" } });
 }
@@ -191,7 +191,7 @@ export const INSTALLMENT_OPEN_LEAD_DAYS = 7;
 export interface OpenInstallmentPayment {
   /** Null when the plan has no open installment *and* isn't within INSTALLMENT_OPEN_LEAD_DAYS of its next one yet. See nextDueDate below for when it will be. */
   payment: Prisma.ZellePaymentGetPayload<Record<string, never>> | null;
-  /** True only the instant this row was created by this call — the scheduled reminder function uses this (not a timestamp comparison) to send the "here's your invoice" notice exactly once per installment, regardless of how many times or how close together it runs while the row stays open. */
+  /** True only the instant this row was created by this call, the scheduled reminder function uses this (not a timestamp comparison) to send the "here's your invoice" notice exactly once per installment, regardless of how many times or how close together it runs while the row stays open. */
   wasCreated: boolean;
   /** Set only when payment is null: the plan's own nextDueDate, so the caller can render "your next installment opens on X" instead of silently showing nothing. */
   nextDueDate?: Date;
@@ -213,14 +213,14 @@ export interface OpenInstallmentPayment {
  *
  * Deliberately does NOT reuse getOrCreatePendingZellePayment (payments.ts):
  * that helper's dedup key (userId+purpose+quantity) and its "refresh
- * amountCents on reuse" behavior are both wrong here — two different plans
+ * amountCents on reuse" behavior are both wrong here, two different plans
  * can share a creditsPerInstallment, and an installment's amount must never
  * drift from what was promised at signup. Same reasoning FAMILY_BUNDLE
  * already has its own creation path instead of using that helper.
  *
  * Called from both the student's own billing page and the scheduled
  * reminder function, hence zelleHandle is a plain parameter rather than an
- * env read buried in here — same dependency-injection shape every other
+ * env read buried in here, same dependency-injection shape every other
  * pending-payment creator in this codebase already uses. `now` is likewise a
  * parameter (defaulting to the real clock) purely so a caller (or a future
  * test) can pin it, the same pattern expireDueCreditGrants already uses.
@@ -297,7 +297,7 @@ export type AdminPaymentPlan = Prisma.PaymentPlanGetPayload<{ include: typeof ad
 /**
  * Full admin plan listing, optionally filtered to one status. "Overdue" is
  * derived here (ACTIVE && nextDueDate already passed), never stored on the
- * row itself — nothing has to notice the date passed and flip a flag, so it
+ * row itself, nothing has to notice the date passed and flip a flag, so it
  * can't drift out of sync with reality.
  */
 export async function getAdminPaymentPlans(status?: PaymentPlanStatus): Promise<AdminPaymentPlan[]> {
@@ -375,7 +375,7 @@ export async function cancelPaymentPlan(planId: string, adminId: string, note: s
       data: { status: "CANCELED", canceledAt: new Date(), canceledById: adminId, cancellationNote: trimmedNote },
     });
 
-    // Only the plan's own auto-created future bookings — never a booking
+    // Only the plan's own auto-created future bookings, never a booking
     // the student separately made by hand for something else.
     await tx.classBooking.updateMany({
       where: { reservedByPlanId: planId, status: "SCHEDULED", scheduledAt: { gt: new Date() } },
@@ -478,7 +478,7 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
 
 /**
  * Self-service reschedule of a Payment Plan subscriber's own standing
- * weekly slot — by direct instruction, the one big piece of Payment Plan
+ * weekly slot, by direct instruction, the one big piece of Payment Plan
  * self-service that never existed: bookClass refuses a subscriber's ad hoc
  * self-booking entirely (see its own comment), so up to now the only way to
  * move a standing reservation to a different day/time was messaging support.
@@ -491,11 +491,11 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
  * Effective immediately, not just from the next scheduled-job run: this
  * cancels the student's own still-SCHEDULED future bookings tied to the OLD
  * reserved slot (freeing it for someone else right away, same no-charge
- * shape as cancelClassBooking — nothing was ever actually charged against a
+ * shape as cancelClassBooking, nothing was ever actually charged against a
  * SCHEDULED-but-not-yet-attended booking) and immediately books the NEW
  * slot's own upcoming occurrences via createReservedBookingIfAbsent, the
- * exact same building block payment-plan-reservations.ts's daily job calls
- * — so a student doesn't wait up to 24h to see their new day/time actually
+ * exact same building block payment-plan-reservations.ts's daily job calls,
+ * so a student doesn't wait up to 24h to see their new day/time actually
  * reflected in their upcoming classes.
  */
 export async function changeReservedSlot(userId: string, newScheduleId: string, newChunkIndex: number) {
@@ -557,7 +557,7 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
         );
       }
 
-      // Frees the old slot right away — same no-charge cancellation as
+      // Frees the old slot right away, same no-charge cancellation as
       // cancelClassBooking, just triggered by the reservation moving rather
       // than the student canceling one class at a time.
       await tx.classBooking.updateMany({
@@ -576,7 +576,7 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
   );
 
   // Best-effort, one occurrence at a time, same non-blocking posture as the
-  // daily maintenance job this mirrors — a hiccup on one week doesn't fail
+  // daily maintenance job this mirrors, a hiccup on one week doesn't fail
   // the reschedule itself (the plan's new reservedScheduleId/
   // reservedChunkIndex already committed above); the next day's job run
   // would catch up on whatever this loop missed regardless.

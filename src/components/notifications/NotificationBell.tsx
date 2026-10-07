@@ -33,7 +33,7 @@ import { EASE_IOS, FADE, SPRING } from "@/lib/motionTokens";
 
 const POLL_INTERVAL_MS = 30_000;
 
-// Where clicking a notification should take you — kept close to the
+// Where clicking a notification should take you, kept close to the
 // component since it's purely presentation-layer routing, not shared
 // business logic. Falls back to no link (just marks read) for anything
 // unmapped, e.g. NEW_MESSAGE never reaches here (excluded upstream).
@@ -107,7 +107,7 @@ function relativeTime(iso: string): string {
 // ---------------------------------------------------------------------------
 
 // Same category set as before, restyled onto lucide-react (already this
-// app's icon library — see ScaleViewToggle/LessonVideoPlayer) instead of
+// app's icon library, see ScaleViewToggle/LessonVideoPlayer) instead of
 // hand-rolled inline SVG paths. The category-to-icon MAPPING below
 // (TYPE_CATEGORY) is unchanged; only which icon component renders per key.
 const CATEGORY_ICONS = {
@@ -119,8 +119,8 @@ const CATEGORY_ICONS = {
   bookings: Calendar,
   announcements: Megaphone,
   support: Headset,
-  // Added on main for the admin feedback inbox (PLAN_CANCELLATION_FEEDBACK)
-  // — a hand-rolled SVG path there, swapped to lucide's MessageSquare here
+  // Added on main for the admin feedback inbox (PLAN_CANCELLATION_FEEDBACK),
+  // a hand-rolled SVG path there, swapped to lucide's MessageSquare here
   // to match every other category icon in this restyle.
   feedback: MessageSquare,
   messages: Mail,
@@ -228,7 +228,7 @@ function groupNotifications(notifications: NotificationRow[]): NotificationSecti
 
 /** One notification, however it's reached: a top-level row or expanded out of a stack. Pulled out so both places render it identically. */
 function NotificationEntry({ notification, onClick }: { notification: NotificationRow; onClick: (n: NotificationRow) => void }) {
-  // Cards get their own bg-slate-900 rather than the panel's bg-surface —
+  // Cards get their own bg-slate-900 rather than the panel's bg-surface,
   // the two were identical before, which is exactly why every row read as
   // one uniform gray field with nothing to tell "card" from "page." Unread
   // rows layer a real accent tint plus a colored left edge on top of that
@@ -333,7 +333,7 @@ function NotificationGroup({
         </button>
       </div>
 
-      {/* Was a plain conditional render — instant, no transition at all,
+      {/* Was a plain conditional render, instant, no transition at all,
           which read as a snap/cut rather than something opening. Animates
           height + opacity now so expanding a stack visibly unfolds. */}
       <AnimatePresence initial={false}>
@@ -382,7 +382,7 @@ export function NotificationBell() {
     });
   }
 
-  // Portals need a real document, which only exists client-side — the
+  // Portals need a real document, which only exists client-side, the
   // notification panel would otherwise crash during SSR.
   useEffect(() => setMounted(true), []);
 

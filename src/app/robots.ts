@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/site";
 
 /**
- * The disallow list is not a security boundary — every one of these paths is
+ * The disallow list is not a security boundary, every one of these paths is
  * already enforced server-side by middleware and per-page session checks. It
  * exists so crawlers don't spend their budget on routes that can only ever
  * answer with a redirect to /login, and so the auth screens never surface as

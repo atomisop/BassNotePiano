@@ -7,7 +7,7 @@ import { approveZellePayment, deleteZellePayment, markAllPaymentsChecked, markPa
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { dismissReceipt, matchReceiptToPayment, ReceiptError } from "@/lib/paymentReceipts";
 
-// The admin layout's redirect only protects rendering — Server Actions are
+// The admin layout's redirect only protects rendering, Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
 // authorization check for these mutations, not just a UX nicety.
 async function requireAdmin() {

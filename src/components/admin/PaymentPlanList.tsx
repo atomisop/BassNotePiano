@@ -46,7 +46,7 @@ function needsPaymentRecord(plan: AdminPaymentPlan): boolean {
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-/** Same small "HH:mm" -> "H:MM AM/PM" formatter AdminScheduleManager.tsx already has, duplicated on purpose rather than shared — same convention this codebase already uses for small per-boundary formatting helpers. */
+/** Same small "HH:mm" -> "H:MM AM/PM" formatter AdminScheduleManager.tsx already has, duplicated on purpose rather than shared, same convention this codebase already uses for small per-boundary formatting helpers. */
 function formatTimeLabel(hhmm: string): string {
   const [h, m] = hhmm.split(":").map(Number);
   const period = h >= 12 ? "PM" : "AM";
@@ -58,7 +58,7 @@ function formatTimeLabel(hhmm: string): string {
  * Admin-only visibility + the one manual action this app offers for a plan:
  * canceling it. Approving/rejecting an individual installment's actual
  * payment happens entirely through the existing /admin/payments queue,
- * unchanged — this list is read-mostly by design.
+ * unchanged, this list is read-mostly by design.
  */
 export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill, emptyMessage = "No plans to show." }: PaymentPlanListProps) {
   const [query, setQuery] = useState("");

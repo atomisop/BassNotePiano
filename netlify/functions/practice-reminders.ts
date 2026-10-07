@@ -4,14 +4,14 @@ import { todayBoundsEt } from "../../src/lib/classSchedule";
 import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
 
-// Nudge points, in days since last practice activity — spaced out (not
+// Nudge points, in days since last practice activity, spaced out (not
 // daily) so a lapsed student gets a few gentle reminders rather than one
 // per day forever.
 //
 // Unlike every other notification category (payments, role updates,
 // social), which always create the in-app bell entry and let
 // notifyEmail* only decide whether it's *also* emailed, practice
-// reminders skip the user entirely — no bell entry, no email — when
+// reminders skip the user entirely, no bell entry, no email, when
 // notifyEmailReminders is off. Turning "Practice reminders" off in
 // Settings is meant to mean silence, not "email off, bell still nags."
 const REMINDER_TRIGGER_DAYS = [1, 3, 7, 14, 30];
@@ -24,7 +24,7 @@ function daysSince(date: Date, now: Date): number {
 }
 
 // Runs once daily at 15:00 UTC. Only considers users who've completed
-// onboarding and have practiced at least once — someone who signed up and
+// onboarding and have practiced at least once, someone who signed up and
 // never started doesn't need a "come back" nudge, they need an onboarding
 // flow (already handled separately).
 export const handler = schedule("0 15 * * *", async () =>

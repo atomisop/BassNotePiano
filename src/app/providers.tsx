@@ -25,21 +25,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SessionProvider>
       {/* reducedMotion="user": every framer-motion element site-wide collapses
           spring/tween animations to their end-state under prefers-reduced-motion
-          automatically — a blanket safety net on top of the manual useReducedMotion()
+          automatically, a blanket safety net on top of the manual useReducedMotion()
           checks in components with genuinely different reduced-motion behavior
           (PhotoBackdrop's parallax, TiltGlow's tilt, etc.), not a replacement for them. */}
       <MotionConfig reducedMotion="user">
         <ThemeProvider>
           {children}
           {/* Mounted inside ThemeProvider so toasts inherit the live theme's
-              ramp — they're rendered in a portal, but the CSS variables they
+              ramp, they're rendered in a portal, but the CSS variables they
               resolve against come from <html data-theme>, which this sets. */}
           <Toaster />
           {/* Same reasoning as Toaster: mounted here (not in a single route)
-              so it appears on every page — marketing, auth, and the
-              authenticated app — using whatever theme is active on each. */}
+              so it appears on every page, marketing, auth, and the
+              authenticated app, using whatever theme is active on each. */}
           <CookieConsentBanner />
-          {/* Atom, the assistant widget — same "every page, one mount point"
+          {/* Atom, the assistant widget, same "every page, one mount point"
               reasoning as Toaster/CookieConsentBanner above, except on the
               auth screens (see AtomUnlessAuth). */}
           <AtomUnlessAuth />

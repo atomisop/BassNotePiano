@@ -35,7 +35,7 @@ export function ScaleRoadmap({ roadmap, earnedBadgeCodes }: ScaleRoadmapProps) {
       const stored = localStorage.getItem(SCALE_VIEW_STORAGE_KEY);
       if (stored === "grid" || stored === "list") setView(stored);
     } catch {
-      // Private browsing / blocked storage — just keep the default.
+      // Private browsing / blocked storage, just keep the default.
     }
   }, []);
 
@@ -44,13 +44,13 @@ export function ScaleRoadmap({ roadmap, earnedBadgeCodes }: ScaleRoadmapProps) {
     try {
       localStorage.setItem(SCALE_VIEW_STORAGE_KEY, next);
     } catch {
-      // Nothing to persist to — the toggle still works for this visit.
+      // Nothing to persist to, the toggle still works for this visit.
     }
   }
 
   // "Current" is the same scale the dashboard's next-step card points at: the
   // first reachable, unfinished one. Exactly one card may carry the emphasised
-  // treatment — that is what stops fifteen cards reading as fifteen equal demands.
+  // treatment, that is what stops fifteen cards reading as fifteen equal demands.
   const current = roadmap.find((s) => s.canAccess && s.status !== "COMPLETED");
   const currentSlug = current?.scaleGroup.slug ?? null;
 

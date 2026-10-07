@@ -68,7 +68,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
   function handlePublishClick() {
     // Emailing every account is the one irreversible-feeling part of this
     // form (an in-app banner can be deactivated after the fact; a sent
-    // email can't) — same in-place confirm step this file already uses
+    // email can't), same in-place confirm step this file already uses
     // for Delete below, gated only when the toggle is actually on.
     if (sendEmail) {
       setConfirmingEmail(true);

@@ -1,7 +1,7 @@
 import { SmoothScrollProvider } from "@/components/scroll/SmoothScrollProvider";
 
 /**
- * Fade only — deliberately no transform.
+ * Fade only, deliberately no transform.
  *
  * Every marketing page renders <MarketingNav>, which is `position: fixed`.
  * A transform on this wrapper would make it the containing block for that

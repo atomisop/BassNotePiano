@@ -16,7 +16,7 @@ export const metadata: Metadata = pageMetadata({
   noIndex: true,
 });
 
-// Public and auth-independent on purpose — this is what registration and
+// Public and auth-independent on purpose, this is what registration and
 // both purchase flows link to for their required consent checkbox, so it
 // has to be reachable before a session exists, not just from the
 // signed-in About page's mirrored "Terms & refunds" tab.
@@ -30,7 +30,7 @@ export default function TermsPage() {
       <MarketingNav />
 
       {/* id + tabIndex: the skip link in (marketing)/layout.tsx targets
-          #main-content — axe's "region" check flagged every marketing page
+          #main-content, axe's "region" check flagged every marketing page
           for having real content outside any landmark, since that id used
           to sit on an empty placeholder div rather than an actual <main>. */}
       <main id="main-content" tabIndex={-1} className="outline-none">

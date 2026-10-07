@@ -1,9 +1,9 @@
-// Unlike Next (which auto-loads .env), a standalone tsx script doesn't —
+// Unlike Next (which auto-loads .env), a standalone tsx script doesn't,
 // load it explicitly so DATABASE_URL is set whether this runs via
 // `npm run prisma:seed` or Prisma's own `prisma db seed` hook.
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
-// Relative import, not the "@/*" alias — this script runs standalone via
+// Relative import, not the "@/*" alias, this script runs standalone via
 // tsx, outside Next's compiler, which is the only place that alias is wired up.
 import { SCALE_GROUPS } from "../src/lib/curriculum";
 
@@ -29,7 +29,7 @@ async function main() {
         formula: scale.formula,
       },
     });
-    console.log(`Seeded ${scale.code} — ${scale.title}`);
+    console.log(`Seeded ${scale.code}, ${scale.title}`);
   }
 }
 

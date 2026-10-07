@@ -5,7 +5,7 @@ import { absoluteUrl } from "@/lib/site";
  * Only the indexable public marketing routes belong here.
  *
  * Everything else in the app is behind auth (see src/middleware.ts and the
- * per-page getServerAuthSession guards) — listing those would advertise URLs
+ * per-page getServerAuthSession guards), listing those would advertise URLs
  * that answer every crawler with a redirect to /login, which wastes crawl
  * budget and can be read as soft-404 noise. The auth screens themselves are
  * reachable without a session but have nothing to rank for, so they are

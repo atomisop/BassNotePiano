@@ -9,7 +9,7 @@ import { isValidReaction } from "@/lib/reactions";
 const MAX_MESSAGE_LENGTH = 2000;
 
 // A typing row older than this is treated as stale rather than actively
-// typing — there's no explicit "stopped typing" write, so recency is the
+// typing, there's no explicit "stopped typing" write, so recency is the
 // only signal. Comfortably longer than the 2.5s active-thread poll interval
 // so a normal typing cadence never flickers off between polls.
 const TYPING_STALE_MS = 8_000;
@@ -28,10 +28,10 @@ async function isBlockedEitherWay(userIdA: string, userIdB: string): Promise<boo
 
 /**
  * Friendship gate, extended: an ADMIN can message (and be messaged back by)
- * anyone, no friend request needed — this is what makes the admin
+ * anyone, no friend request needed, this is what makes the admin
  * messaging center work, and lets the recipient reply from their normal
  * Messages inbox. Still respects blocks either way (see isBlockedEitherWay
- * at each call site) — being an admin doesn't override a user's own choice
+ * at each call site), being an admin doesn't override a user's own choice
  * to block that account.
  */
 async function canConverse(userIdA: string, userIdB: string): Promise<boolean> {
@@ -43,7 +43,7 @@ async function canConverse(userIdA: string, userIdB: string): Promise<boolean> {
   return isFriend(userIdA, userIdB);
 }
 
-// 1-on-1 messaging is restricted to friends — unless either party is an
+// 1-on-1 messaging is restricted to friends, unless either party is an
 // admin, in which case it's always allowed (the admin messaging center
 // needs to reach anyone, not just friends). Also gives this a natural
 // spam/safety boundary without a separate moderation layer.
@@ -81,11 +81,11 @@ export async function sendMessage(senderId: string, recipientId: string, body: s
 
   const message = await prisma.message.create({ data: { senderId, recipientId, body: trimmed, replyToId: replyToId ?? null } });
 
-  // A message landing is a much stronger signal than "typing" — clear it
+  // A message landing is a much stronger signal than "typing", clear it
   // immediately rather than waiting out TYPING_STALE_MS.
   await prisma.typingStatus.deleteMany({ where: { senderId, recipientId } });
 
-  // No in-app Notification row here on purpose — messages already have
+  // No in-app Notification row here on purpose, messages already have
   // their own separate unread surface (Messages nav badge + conversation
   // list). Still emails if the recipient opted in, since they might not be
   // on the site at all when it arrives.
@@ -137,15 +137,15 @@ type ConversationPartner = { id: string; username: string | null; name: string |
 /**
  * Conversation partners beyond friends: threads that exist only because an
  * admin bypassed the friend gate (see canConverse above). For an admin
- * caller this is "everyone they've ever exchanged a message with" — the
+ * caller this is "everyone they've ever exchanged a message with", the
  * admin messaging center's own inbox, since the admin typically has no
  * friends of their own. For a regular user it's "any admin who has
  * messaged them," so that conversation shows up in their normal Messages
  * inbox even without a friend request. Derived from actual Message rows
- * rather than a stored relation — there's no other durable record of an
+ * rather than a stored relation, there's no other durable record of an
  * admin-initiated thread.
  */
-// STEP 19: this used to be `findMany` with no `take` at all — for an admin
+// STEP 19: this used to be `findMany` with no `take` at all, for an admin
 // account with years of message history, every single message they've ever
 // sent or received got pulled into memory just to derive a distinct list of
 // partner IDs. 2000 most-recent messages is a generous bound for "who has
@@ -180,7 +180,7 @@ async function getAdminThreadPartners(userId: string): Promise<ConversationPartn
   return Array.from(partners.values());
 }
 
-/** One row per friend (plus any admin-bypassed thread), newest activity first — the conversation list view. */
+/** One row per friend (plus any admin-bypassed thread), newest activity first, the conversation list view. */
 export async function getConversations(userId: string): Promise<ConversationSummary[]> {
   const [friends, adminPartners, pinnedRows, typingRows] = await Promise.all([
     getFriendsList(userId),
@@ -199,11 +199,11 @@ export async function getConversations(userId: string): Promise<ConversationSumm
   const typingFriendIds = new Set(typingRows.map((t) => t.senderId));
 
   // STEP 19: this used to fire 2 queries PER partner (a findFirst for their
-  // last message, a count for unread) inside the map below — a genuine N+1,
+  // last message, a count for unread) inside the map below, a genuine N+1,
   // 2N round trips for a conversation list of N friends. Replaced with
   // exactly 2 queries total, independent of how many partners there are:
   // one findMany covering every partner's messages at once (capped, same
-  // reasoning as ADMIN_THREAD_SCAN_LIMIT above — recent activity is what a
+  // reasoning as ADMIN_THREAD_SCAN_LIMIT above, recent activity is what a
   // conversation list needs), reduced to "first occurrence per partner" in
   // memory since it's already ordered newest-first; and one groupBy that
   // does the unread counting DB-side instead of one COUNT per partner.
@@ -330,7 +330,7 @@ export async function markConversationRead(userId: string, friendId: string): Pr
   });
 }
 
-/** Toggles pin state for a friend on the caller's own sidebar — not mutual. */
+/** Toggles pin state for a friend on the caller's own sidebar, not mutual. */
 export async function togglePin(userId: string, friendId: string): Promise<{ isPinned: boolean }> {
   if (!(await canConverse(userId, friendId))) throw new SocialError("Not friends with this user.");
 
@@ -374,7 +374,7 @@ export interface MessageableUser {
 }
 
 /**
- * Powers the admin messaging center's "start a new conversation" search —
+ * Powers the admin messaging center's "start a new conversation" search,
  * deliberately by name/email, not username, since a user doesn't need one
  * to be messaged this way (username is only required for the peer friend
  * system). Excludes the searching admin themself.

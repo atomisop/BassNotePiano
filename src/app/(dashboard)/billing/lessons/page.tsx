@@ -5,7 +5,7 @@ import { ArrowLeftIcon } from "@/components/ui/icons";
 import { FamilyBundleFlow } from "./FamilyBundleFlow";
 
 // Individual (solo) credit purchasing lived here too, until Payment Plans
-// (/billing/plans) replaced it entirely — Monthly/3/6/12-month terms now
+// (/billing/plans) replaced it entirely, Monthly/3/6/12-month terms now
 // cover every case a single buyer needs, including the old one-off/no-
 // discount purchase. This page is Family bundle only now: buying the same
 // cadence and term at once for 2+ separate, already-existing accounts.

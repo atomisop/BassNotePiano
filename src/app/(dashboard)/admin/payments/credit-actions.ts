@@ -11,7 +11,7 @@ import {
   CreditAdjustmentError,
 } from "@/lib/creditAdjustments";
 
-// Same pattern as every other admin actions.ts this session — the admin
+// Same pattern as every other admin actions.ts this session, the admin
 // layout's redirect only protects rendering, not these Server Actions,
 // so this re-check is the actual authorization boundary.
 async function requireAdmin() {

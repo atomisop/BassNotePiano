@@ -21,7 +21,7 @@ type Entitlements = {
 
 /**
  * Sentinel for "the DB didn't answer in time (or the user row is gone),
- * skip the session-version check this pass" — never a real stored value
+ * skip the session-version check this pass", never a real stored value
  * (the column defaults to 1). Every other field here falls back to a
  * least-privilege default on a timeout, but doing the same for
  * sessionVersion would mean a slow database round trip randomly signs
@@ -31,10 +31,10 @@ type Entitlements = {
 const SESSION_VERSION_UNKNOWN = -1;
 
 // Fallback used only if loadEntitlements() itself doesn't come back in time
-// (see loadEntitlementsBounded below) — least-privilege defaults, since a
+// (see loadEntitlementsBounded below), least-privilege defaults, since a
 // degraded session should never accidentally grant more access than the DB
 // actually confirms. Self-corrects on the next jwt callback run once the DB
-// responds normally again. `onboarded: false` for the same reason — worst
+// responds normally again. `onboarded: false` for the same reason, worst
 // case a briefly-slow DB re-shows the wizard to someone who already
 // finished it, which is harmless; defaulting the other way could let a
 // genuinely new user skip mandatory onboarding entirely on unlucky timing.
@@ -48,7 +48,7 @@ const DEFAULT_ENTITLEMENTS: Entitlements = {
   sessionVersion: SESSION_VERSION_UNKNOWN,
 };
 
-// Single source of truth for "what can this user see" — read by the jwt
+// Single source of truth for "what can this user see", read by the jwt
 // callback below so it can be baked into the session token. Unlock comes
 // from two independent places: a verified legacy per-scale Zelle payment
 // (Pay-As-You-Go, no longer purchasable but still honored for grandfathered
@@ -56,12 +56,12 @@ const DEFAULT_ENTITLEMENTS: Entitlements = {
 // curriculum-access grants and admin overrides, which stamp that field
 // directly rather than creating a ZellePayment).
 //
-// Deliberately does NOT select `image` — that column can hold a multi-KB
+// Deliberately does NOT select `image`, that column can hold a multi-KB
 // base64 data URI (the account settings avatar upload stores photos that
 // way), and JWT session strategy puts everything here directly into a
 // browser cookie. An oversized cookie gets silently dropped by the browser
 // or rejected by an intermediate proxy, which look identical to "login
-// hangs forever" from the client's perspective — this actually happened in
+// hangs forever" from the client's perspective, this actually happened in
 // production. Anywhere that needs the real image fetches it directly from
 // the DB instead (see the /account page), never through the session.
 async function loadEntitlements(userId: string): Promise<Entitlements> {
@@ -107,7 +107,7 @@ async function loadEntitlements(userId: string): Promise<Entitlements> {
 }
 
 // The jwt callback below runs synchronously in the login response path (and
-// on every subsequent session touch) — a slow Postgres round trip here
+// on every subsequent session touch), a slow Postgres round trip here
 // would otherwise block a login that already passed the real credential
 // check, so it gets a hard cap rather than being trusted to always be fast.
 async function loadEntitlementsBounded(userId: string): Promise<Entitlements> {
@@ -121,20 +121,20 @@ async function loadEntitlementsBounded(userId: string): Promise<Entitlements> {
 }
 
 export const authOptions: NextAuthOptions = {
-  // Kept even though Credentials forces JWT sessions — it still owns the
+  // Kept even though Credentials forces JWT sessions, it still owns the
   // Account/Session/VerificationToken tables for any OAuth provider added
   // later (e.g. Google sign-in) alongside email/password.
   adapter: PrismaAdapter(prisma),
   // maxAge (not just the strategy) is deliberate: edge middleware decodes
   // the JWT with next-auth/jwt's getToken(), which never runs the jwt
-  // callback below — so a token that was force-signed-out (sessionVersion
+  // callback below, so a token that was force-signed-out (sessionVersion
   // bumped) or otherwise invalidated keeps being trusted at the edge for as
   // long as the cookie itself is valid, regardless of what the callback
   // would say. NextAuth's own default is 30 days; 7 bounds how long that
   // mismatch window can last for an action like "sign this person out" that
   // should feel close to immediate. updateAge (default 24h) still silently
   // rolls this forward on every active day, so a real, still-signed-in user
-  // never notices — only an idle or force-signed-out session ever hits the
+  // never notices, only an idle or force-signed-out session ever hits the
   // cap. Actually making the edge check DB-fresh would mean every gated
   // request on the whole site pays a database round trip just to cover this
   // rare admin action, a worse trade than a bounded staleness window.
@@ -147,12 +147,12 @@ export const authOptions: NextAuthOptions = {
     // Deliberately password-less: this only ever checks a LOGIN_2FA code,
     // never a password directly. Password verification happens entirely in
     // the loginStepOneAction Server Action (src/app/(auth)/login/actions.ts),
-    // which — on success — silently issues a code server-side (never
+    // which, on success, silently issues a code server-side (never
     // emailed) and hands it straight back to the client, which immediately
     // calls signIn with it. Splitting it this way means this is the *only*
     // path that ever establishes a session, so this can't be bypassed by
     // calling signIn() directly with just a password. The code itself is
-    // invisible to the user (see loginStepOneAction) — this indirection
+    // invisible to the user (see loginStepOneAction), this indirection
     // exists purely to keep a single credential-checking entry point, not to
     // actually require a second factor at login anymore.
     CredentialsProvider({
@@ -203,7 +203,7 @@ export const authOptions: NextAuthOptions = {
     // Runs on sign-in and on every subsequent session touch (useSession()
     // polling, getServerSession(), or an explicit client update() call after
     // a payment gets verified / a quiz gets passed). Edge middleware only
-    // ever decodes the resulting cookie — it can't hit Postgres itself — so
+    // ever decodes the resulting cookie, it can't hit Postgres itself, so
     // this callback is the only place entitlements get re-derived from the
     // DB, and how often it runs is the whole staleness budget for gating.
     async jwt({ token, user, trigger }) {
@@ -221,18 +221,18 @@ export const authOptions: NextAuthOptions = {
       if (entitlements.sessionVersion !== SESSION_VERSION_UNKNOWN) {
         if (user || trigger === "update") {
           // Fresh sign-in, or this exact device just called update()
-          // right after triggering the bump itself — bake in the current
+          // right after triggering the bump itself, bake in the current
           // version so the device that DID the bump doesn't sign itself
           // out too.
           token.sessionVersion = entitlements.sessionVersion;
         } else if (typeof token.sessionVersion !== "number") {
           // A token issued before this field existed. Adopt the current
-          // version rather than treating "never had one" as a mismatch —
+          // version rather than treating "never had one" as a mismatch,
           // otherwise shipping this signs out every already-open session
           // app-wide the moment it deploys.
           token.sessionVersion = entitlements.sessionVersion;
         } else if (token.sessionVersion !== entitlements.sessionVersion) {
-          // Deliberately not a real JWT — the cast is the intentional part.
+          // Deliberately not a real JWT, the cast is the intentional part.
           // getServerAuthSession/useSession/middleware all key off `sub`
           // being present, not off matching this type's shape, so an empty
           // object correctly reads as "no session" everywhere it's checked.
@@ -268,14 +268,14 @@ export const authOptions: NextAuthOptions = {
 /**
  * Server-side session accessor for route handlers, server actions, and RSCs.
  * Wrapped in React's cache() so the (dashboard) layout and the pages it
- * wraps — which each need the session independently — share one lookup per
+ * wraps, which each need the session independently, share one lookup per
  * request instead of re-decoding the JWT repeatedly.
  *
  * Also the one place that guards against a stale session: a browser can
  * hold a valid, signed JWT for a user row that no longer exists (deleted
  * directly in the DB, a wiped test account, etc). loadEntitlements() can't
  * tell that apart from "brand new user with no entitlements yet," so it
- * silently returns defaults — every other caller in the app trusts
+ * silently returns defaults, every other caller in the app trusts
  * `session.user.id` as a real foreign key, which crashes the moment it's
  * used in a write (or a findUniqueOrThrow read). Checking existence here
  * means every existing `if (!session?.user) redirect(...)` guard across the

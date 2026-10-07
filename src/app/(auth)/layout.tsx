@@ -11,14 +11,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     // <body>'s own bg-slate-950, same plain dark surface every other
     // chrome-free area of the app already sits on.
     //
-    // `min-h-[100svh]`, not `min-h-screen` (100vh) — the same mobile-Safari
+    // `min-h-[100svh]`, not `min-h-screen` (100vh), the same mobile-Safari
     // fix as the marketing Hero (see that component's own comment on this):
     // `vh` sizes against the tallest the browser chrome ever gets (address
     // bar collapsed), `svh` against the smallest guaranteed-visible height
     // (address bar showing, the common case on load). `min-h-screen` here
     // claimed more height than was actually visible on a real phone, so
-    // this centered shell — logo header plus a form-heavy card like
-    // /reset-password's, no short content on this route group — needed a
+    // this centered shell, logo header plus a form-heavy card like
+    // /reset-password's, no short content on this route group, needed a
     // scroll to reach the whole thing even though nothing was genuinely
     // overflowing, just the shell itself over-claiming space no phone
     // screen actually had. Reported live as unwanted scroll on the
@@ -26,7 +26,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     // shared the same shell, so the fix applies to all of them at once.
     //
     // `py-16` (64px top+bottom = 128px) was most of the remaining overflow
-    // even after the svh fix above — `min-height` only sets a floor, it
+    // even after the svh fix above, `min-height` only sets a floor, it
     // doesn't shrink content that's genuinely taller than one screen, and
     // this shell's own fixed padding was a big, unconditional chunk of
     // that height on every auth page regardless of how tall its card is.
@@ -57,13 +57,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         className="tap absolute left-4 top-4 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300 sm:left-6 sm:top-6"
       >
         <ArrowLeftIcon size={16} />
-        {/* "to homepage" hidden below `sm` — this link is `absolute`, so it
+        {/* "to homepage" hidden below `sm`, this link is `absolute`, so it
             never claims flow height and can't push a shorter viewport into
             a scroll, but it also can't push anything else out of ITS way:
             at the narrowest real phone widths (an SE-class 320px) the full
             label's own width ran right into the centered logo below it,
             each painted independently with no shared layout to keep them
-            apart. Shortening the label is the fix, not more clearance —
+            apart. Shortening the label is the fix, not more clearance,
             adding vertical space back here would undo the point of trimming
             this shell down to begin with. */}
         Back<span className="hidden sm:inline">&nbsp;to homepage</span>
@@ -81,7 +81,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <p className="text-body font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]">
             Bass Note Piano
           </p>
-          {/* Hidden below `sm` specifically — the one purely decorative line
+          {/* Hidden below `sm` specifically, the one purely decorative line
               here, so it's the first thing to give way on the shortest
               phone screens where the reset-password card's own three
               fields leave the least room to spare. */}

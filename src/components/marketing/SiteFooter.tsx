@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { DiscordIcon } from "@/components/ui/icons";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 
-// Every link here maps to a route that actually exists on this site —
+// Every link here maps to a route that actually exists on this site,
 // no invented Docs/Blog/Careers/Status columns, no email-signup box with
 // nowhere real for it to go. "Account" swaps to a single Dashboard link
 // once signed in, same logic MarketingNav already uses.
@@ -113,7 +113,7 @@ export function SiteFooter() {
         </div>
 
         {/* slate-600 (not used here) is documented in marketing.css as
-            "non-text, always" at 4.4:1 — real body text needs the 4.5:1
+            "non-text, always" at 4.4:1, real body text needs the 4.5:1
             slate-500 sits at instead. Caught by an axe-core pass; this line
             was the one real text-contrast failure on the marketing site. */}
         <div className="border-t border-ink/5 py-6 text-center text-small text-slate-500">

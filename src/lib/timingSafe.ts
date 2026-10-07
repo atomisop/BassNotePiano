@@ -2,7 +2,7 @@
  * A fixed floor under how long an async operation can appear to take. Runs
  * `work` and a plain timer concurrently and waits for both, so the caller
  * sees the same wall-clock time no matter which internal branch `work`
- * took — including a branch that threw.
+ * took, including a branch that threw.
  *
  * Built for the account-existence-adjacent Server Actions in (auth): each
  * one does a fast early-return when a looked-up email has no account, but
@@ -11,7 +11,7 @@
  * TIME alone would tell an attacker whether an email is registered.
  *
  * `Promise.allSettled` (not `Promise.all`) is what makes the floor hold on
- * the error path too — `Promise.all` resolves the instant `work` rejects,
+ * the error path too, `Promise.all` resolves the instant `work` rejects,
  * without waiting out the rest of the timer, reopening the exact gap this
  * exists to close.
  *
@@ -33,9 +33,9 @@ export async function withTimingFloor<T>(work: () => Promise<T>, floorMs: number
 
 /**
  * 600ms. Measured against this repo's real dependencies, not guessed:
- * bcryptjs (the pure-JS implementation this project uses — meaningfully
- * slower than a native bcrypt binding) at cost 12 — the cost this repo
- * hashes with (see resetPasswordAction) — benchmarked at a 303ms median
+ * bcryptjs (the pure-JS implementation this project uses, meaningfully
+ * slower than a native bcrypt binding) at cost 12, the cost this repo
+ * hashes with (see resetPasswordAction), benchmarked at a 303ms median
  * and 321ms max compare time on ordinary dev hardware. A real Resend API
  * round trip typically lands in a similar few-hundred-ms range. 600ms
  * gives roughly 2x headroom over the measured bcrypt max while staying

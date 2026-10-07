@@ -29,7 +29,7 @@ import Lenis from "lenis";
  * Anything that scrolls the page programmatically has to go through Lenis
  * rather than `window.scrollTo`. Lenis holds its own target position and eases
  * toward it every frame, so an external jump gets treated as a conflicting
- * input — measured in the browser, a plain `window.scrollTo` mid-run
+ * input, measured in the browser, a plain `window.scrollTo` mid-run
  * overshot its target by more than a full scene. Native smooth behaviour is
  * dead here too, since Lenis sets `scroll-behavior: auto !important`.
  */
@@ -37,7 +37,7 @@ let activeLenis: Lenis | null = null;
 
 /**
  * Scroll the page, correctly, whether or not smooth scrolling is running.
- * Falls back to the native call when Lenis is absent — reduced-motion
+ * Falls back to the native call when Lenis is absent, reduced-motion
  * visitors, and every route outside the marketing surface.
  */
 export function smoothScrollTo(target: number | string | HTMLElement, immediate = false) {
@@ -53,7 +53,7 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     // Honour the OS setting rather than smoothing anyway at a lower amount.
     // Someone who turns this on is often doing it for vestibular reasons, and
-    // "less inertia" is still inertia — native scroll is the correct answer.
+    // "less inertia" is still inertia, native scroll is the correct answer.
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (reduced.matches) return;
 
@@ -62,7 +62,7 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
       // notch in roughly 0.27s (0.085 took 0.43s and read as input delay).
       lerp: 0.14,
       // Slightly under 1 so a single wheel notch travels a touch less than
-      // native — this is what reads as "weight" rather than as lag.
+      // native, this is what reads as "weight" rather than as lag.
       wheelMultiplier: 0.92,
       // Touch is left at native speed. Damping a finger drag makes the page
       // feel like it's sticking to the glass, which is the one place smooth

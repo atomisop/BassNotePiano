@@ -9,7 +9,7 @@ import { SPRING } from "@/lib/motionTokens";
 const SWIPE_DISMISS_THRESHOLD = 80;
 
 /**
- * Sits between TopBar and <main> in the dashboard shell — a glass card at
+ * Sits between TopBar and <main> in the dashboard shell, a glass card at
  * the top of the content area that's both the "banner" (stays until acted
  * on) and the "popup" (drag/swipe in any direction past the threshold, or
  * the explicit close button, to dismiss). One dismissal is permanent for

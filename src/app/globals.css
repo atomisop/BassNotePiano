@@ -209,10 +209,10 @@
   color utility to any element that depends on these defaults.
 
   `<alpha-value>` (the codemod's own first draft here) is a v3-only, JS-config
-  convention — v3's config compiler textually substituted it when a color was
+  convention, v3's config compiler textually substituted it when a color was
   used inside `theme.colors`, but there's no such processing for a plain CSS
   declaration in v4. Left as literal text, `<alpha-value>` isn't a valid CSS
-  alpha token, so the whole `rgb()` was invalid and silently dropped — every
+  alpha token, so the whole `rgb()` was invalid and silently dropped, every
   bare-bordered element was actually falling through to v4's real default
   (`currentColor`), not this theme's border color. No opacity modifier is
   actually needed here anyway: this shim's only job is a solid themed
@@ -246,12 +246,12 @@
 }
 
 @utility glass-surface-subtle {
-  /* Level 1 of the material system — quieter than `.glass-surface`, for
+  /* Level 1 of the material system, quieter than `.glass-surface`, for
      things that shouldn't compete with real content: nav pills, secondary
      chips, minor inline surfaces. Every theme defines `--subtle-*`, either
      explicitly (paper/ink/glass) or via the ramp-relative fallback on
      `:root` (every daisyUI theme), so this never renders unstyled. No
-     shadow — a shadow reads as "raised", and Level 1 is deliberately the
+     shadow, a shadow reads as "raised", and Level 1 is deliberately the
      opposite of that. */
   background: var(--subtle-bg);
   border: 1px solid var(--subtle-border);
@@ -263,7 +263,7 @@
 
 @utility glass-surface-elevated {
   /* Reserved for the ONE primary element per screen. Distinguished by an
-     accent hairline and a deeper lift, not a different material — using it
+     accent hairline and a deeper lift, not a different material, using it
      twice on a screen stops it meaning "the important one". */
   background: var(--elev-bg);
   border: 1px solid var(--elev-border);
@@ -280,15 +280,15 @@
 }
 
 @utility glass-surface-modal {
-  /* A true modal dialog — floating on a scrim over arbitrary, sometimes
-     text-dense page content (a pricing page, a curriculum overview) —
+  /* A true modal dialog, floating on a scrim over arbitrary, sometimes
+     text-dense page content (a pricing page, a curriculum overview),
      needs to fully obscure whatever's behind it to stay legible.
      `.glass-surface-elevated`'s translucency is tuned for an in-page "one
      important card" sitting over its own section's plain background;
      reused for an actual modal, real page copy read straight through the
      blur (confirmed live on the Zelle payment modal). Same accent
      hairline/lift/radius as `.glass-surface-elevated`, just the fully
-     opaque surface color every theme already defines for exactly this —
+     opaque surface color every theme already defines for exactly this,
      no blur needed once nothing shows through to blur. */
   background: rgb(var(--c-surface-solid));
   border: 1px solid var(--elev-border);
@@ -331,9 +331,9 @@
 }
 
 @utility chip-accent {
-  /* The small token chips — spelled notes, transposition cells, badges.
+  /* The small token chips, spelled notes, transposition cells, badges.
      Accent-tinted again, by direct instruction bringing signal green back
-     as the one accent (see themes.css's own "Accent" comment) — badges
+     as the one accent (see themes.css's own "Accent" comment), badges
      being exactly this utility's own job. Diverged back out from
      `.chip-neutral` below. amber-300 is this ramp's own byte-exact green
      (--c-a-300), safely inside AA even at low opacity. */
@@ -347,9 +347,9 @@
 }
 
 @utility eyebrow {
-  /* The recurring kicker above a heading — centralised so every page gets
+  /* The recurring kicker above a heading, centralised so every page gets
      the same treatment instead of re-declaring the tracking each time.
-     Neutral, not accent-tinted — accent is reserved for true CTAs now. */
+     Neutral, not accent-tinted, accent is reserved for true CTAs now. */
   @apply text-small font-semibold uppercase tracking-[0.16em] text-slate-300;
 }
 
@@ -394,20 +394,20 @@
 }
 
 @utility backdrop-scrim-vignette {
-  /* Two more scrim shapes, additive to the three above — nothing here
+  /* Two more scrim shapes, additive to the three above, nothing here
      changes their tiers or usages.
 
      Both exist because the linear washes are a blanket decision: protect
      the WHOLE frame at one strength, whether or not anything in it actually
-     floats unprotected on the photo. Most sections don't need that — their
+     floats unprotected on the photo. Most sections don't need that, their
      text already sits inside an opaque card, and the flat wash was just
      erasing the photo for no contrast benefit. These two shapes ask "where
      does text actually touch the photo" instead of protecting everything. */
 
   /* For a heading/paragraph that floats directly on the photo (no card under
      it), roughly centered in its section. Full protection in a radial core
-     right behind the text; the rest of the frame — corners, edges, whatever
-     sits beside a centered column — opens up to the photo. Thin opaque bands
+     right behind the text; the rest of the frame, corners, edges, whatever
+     sits beside a centered column, opens up to the photo. Thin opaque bands
      at the very top/bottom are kept so stacked <PhotoBackdrop> sections still
      dissolve into each other instead of hard-cutting. */
   background:
@@ -429,7 +429,7 @@
 
 @utility backdrop-scrim-minimal {
   /* For a section where every line of text already sits inside its own
-     opaque card — the backdrop's only job left is the top/bottom dissolve
+     opaque card, the backdrop's only job left is the top/bottom dissolve
      into whatever's above and below it, so the photo can be almost fully
      visible everywhere in between. */
   background: linear-gradient(
@@ -442,7 +442,7 @@
   );
 }
 
-/* Both glows neutral now, not accent-tinted — a soft white/black ambient
+/* Both glows neutral now, not accent-tinted, a soft white/black ambient
    bloom instead of a colour wash, same "accent only on true CTAs"
    instruction as `.chip-accent`/`.eyebrow` above. */
 @utility backdrop-glow-smoke-top {
@@ -531,11 +531,11 @@
   /* ---- Motion --------------------------------------------------------- */
 
   /* Same liquid-glass chemistry as the `Button` primitive's `default`
-     variant and marketing's `.btn-primary` — solid fill, layered inset
+     variant and marketing's `.btn-primary`, solid fill, layered inset
      highlight + outer shadow, brighten on hover/press. A separate class
      from `.cta-sheen` below (motion only) rather than merged into it,
      because `.cta-sheen` is also applied directly to the shared `<Button>`
-     component in five places (the auth forms' submit buttons) — those
+     component in five places (the auth forms' submit buttons), those
      already get this exact background from Button's own `default` variant,
      so a second background declaration on `.cta-sheen` itself would fight
      the one Button already sets. Raw `<button>`/`<a>`/`<Link>` call sites
@@ -612,8 +612,8 @@
   /* ==========================================================================
    shadcn/ui token bridge
    --------------------------------------------------------------------------
-   shadcn components are written against a fixed vocabulary — `bg-background`,
-   `text-muted-foreground`, `border-input`, `ring-ring` — and the usual setup
+   shadcn components are written against a fixed vocabulary, `bg-background`,
+   `text-muted-foreground`, `border-input`, `ring-ring`, and the usual setup
    hardcodes a light and a dark palette for those names. This app already has
    35 themes, so a second hardcoded palette would mean shadcn components stay
    grey while the rest of the page turns into Dracula or Editorial Paper.
@@ -624,11 +624,11 @@
    `[data-theme="…"]` also matches <html>, `var(--c-s-950)` resolves to
    whichever theme is live at the time.
 
-   The two foreground pairs that sit on colour rather than on the ground —
-   primary and destructive — both resolve to `--c-s-950`, the page ground.
+   The two foreground pairs that sit on colour rather than on the ground,
+   primary and destructive, both resolve to `--c-s-950`, the page ground.
    That reads odd but is exactly right in every theme: the ramp's 950 is
-   always the ground, and `--primary` (now the ramp's own 50 — the opposite
-   end from the ground — rather than the accent; see its own comment below)
+   always the ground, and `--primary` (now the ramp's own 50, the opposite
+   end from the ground, rather than the accent; see its own comment below)
    is always pitched against its own ground either way. So "the ground
    colour" is always the readable text on top of it, in both directions,
    without a light/dark branch here.
@@ -644,7 +644,7 @@
     --popover: var(--c-surface-solid);
     --popover-foreground: var(--c-s-50);
 
-    /* Neutral — tried repointing this straight at the signal-green accent
+    /* Neutral, tried repointing this straight at the signal-green accent
        so every CTA (`.cta-fill`, `.btn-primary`, `Button`'s own `default`
        variant, `Toaster`'s action button) would pick it up too, but by
        direct instruction that's reverted: white buttons plus the green
@@ -658,7 +658,7 @@
     --secondary: var(--c-s-900);
     --secondary-foreground: var(--c-s-50);
 
-    /* 900 is the ramp step just off the ground — subtle enough for a hover
+    /* 900 is the ramp step just off the ground, subtle enough for a hover
      wash, distinct enough to read as one. 500 clears AA on the ground in
      every theme, which is what makes it safe for muted *text*. */
     --muted: var(--c-s-900);
@@ -672,7 +672,7 @@
     --border: var(--c-s-700);
     --input: var(--c-s-700);
     /* The one global focus ring, every focusable control site-wide
-       (`focus-visible:ring-ring`) — a universal interaction indicator, not
+       (`focus-visible:ring-ring`), a universal interaction indicator, not
        a call-to-action, so it's neutral now too: a crisp near-white/near-
        black ring reads as sharp and precise, the "sharp interaction states"
        a premium monochrome UI leans on instead of colour. */
@@ -695,18 +695,18 @@
     /* The missing half of the dashboard shell's "locked top bar and bottom
        dock" fix. `(dashboard)/layout.tsx` already gives its own scrollable
        `<main>` `overscroll-contain` so an iOS rubber-band bounce there can't
-       chain up into an ancestor — but that only stops the bounce from
+       chain up into an ancestor, but that only stops the bounce from
        propagating past `<main>`; it does nothing about the BODY itself
        still being draggable. On a page whose content is short enough (or a
        measurement is off by a hair at `100svh`), iOS Safari can still pull
-       the whole body down and spring it back — which visually drags the
+       the whole body down and spring it back, which visually drags the
        fixed-in-flex-flow TopBar/AppDock along with it before it snaps back,
        reported live as "pulling down reveals the top bar in the admin
        screen" (admin pages are exactly the case with the least extra
        scroll content, on top of them nesting inside `(dashboard)/layout.tsx`
        rather than replacing it). `overscroll-behavior: none` here stops the
-       body itself from ever being pulled, so the shell — top bar, bottom
-       dock, and everything in between — genuinely never moves; only the
+       body itself from ever being pulled, so the shell, top bar, bottom
+       dock, and everything in between, genuinely never moves; only the
        content inside `<main>` scrolls. */
     overscroll-behavior: none;
   }
@@ -726,14 +726,14 @@
     overflow: hidden;
   }
 
-  /* iOS Safari's default tap-highlight — a translucent gray rectangle,
-     shown on every tappable element the instant it's pressed — doesn't
+  /* iOS Safari's default tap-highlight, a translucent gray rectangle,
+     shown on every tappable element the instant it's pressed, doesn't
      follow `border-radius` the way the highlight's own box does, so it was
      visible as a hard, square-cornered gray patch poking out from behind
      every rounded button/link on a real device (reported as "a light gray
      sharp corner on all sides of the smooth corners," worst on the dock's
      own rounded icons and the liquid-glass tab puck, but true of every
-     tappable element site-wide — nothing had ever reset this). `:active`/
+     tappable element site-wide, nothing had ever reset this). `:active`/
      `:focus-visible` styling already exists per-component (the dock's own
      `hover:bg-white/8`, the global focus ring below) to give real feedback
      on press/focus, so removing the browser's own default here trades
@@ -762,7 +762,7 @@
    tracking to hold together, and small text needs a touch of positive to stay
    legible. A single fixed letter-spacing is wrong at one end or the other.
 
-   These sit in @layer base so any explicit `tracking-*` utility still wins —
+   These sit in @layer base so any explicit `tracking-*` utility still wins,
    the eyebrow's `tracking-[0.2em]` is a deliberate style, not an oversight.
    ========================================================================== */
 }
@@ -782,7 +782,7 @@
   .text-xl {
     letter-spacing: -0.008em;
   }
-  /* Body sits at 0 — the default — and only the smallest sizes open up. */
+  /* Body sits at 0, the default, and only the smallest sizes open up. */
   .text-xs,
   .text-\[11px\],
   .text-\[10px\] {
@@ -798,7 +798,7 @@
    why that matters), so it needs the document to stop fighting it: native
    `scroll-behavior: smooth` would apply a second, competing easing on top of
    Lenis's own, and a locked `height` on <html> breaks its distance maths.
-   These are the three rules the library actually requires — nothing else.
+   These are the three rules the library actually requires, nothing else.
    ========================================================================== */
   html.lenis,
   html.lenis body {
@@ -820,7 +820,7 @@
    acknowledge a press is the moment directness "falls off a cliff". `:active`
    fires on press, so this is the cheapest correct version of that.
 
-   Deliberately excludes elements Framer Motion drives — it writes `transform`
+   Deliberately excludes elements Framer Motion drives, it writes `transform`
    inline, which would beat this rule anyway, and those components carry their
    own press states.
    ========================================================================== */
@@ -838,7 +838,7 @@
    --------------------------------------------------------------------------
    Driven by Next's `template.tsx`, which re-mounts on every navigation (a
    layout would not), so the animation replays per route without any
-   AnimatePresence/exit choreography — App Router swaps the route before an
+   AnimatePresence/exit choreography, App Router swaps the route before an
    exit animation could finish, so enter-only is the honest thing to do here.
 
    Two variants, and the difference is not cosmetic: `page-enter-fade` moves
@@ -882,7 +882,7 @@
     }
     /* `animate-fade-up`/`animate-fade-in` (the @theme tokens above) don't
        get the `motion-safe:` treatment at each call site the way framer-
-       motion components do here — gated centrally instead, so any future
+       motion components do here, gated centrally instead, so any future
        use of these two Tailwind-generated classes is reduced-motion-safe
        by default rather than by each caller remembering to add the
        prefix. */
@@ -899,15 +899,15 @@
    Chrome material
    --------------------------------------------------------------------------
    Nav rails, the top bar and the mobile tab bar. Translucency here is a
-   hierarchy signal — chrome floats above content that scrolls underneath it,
+   hierarchy signal, chrome floats above content that scrolls underneath it,
    rather than consuming an opaque strip of the page.
 
    Used to be scoped to one dark theme only, back when that theme's whole
-   premise was a translucent material and the others weren't — blur is
+   premise was a translucent material and the others weren't, blur is
    genuinely expensive on fixed chrome sitting over scrolling content, so
    the cost was paid on just that one theme. Glass is now universal (by
    direct instruction, a deliberate reversal of that original
-   performance-first stance — see themes.css's own header comment), so
+   performance-first stance, see themes.css's own header comment), so
    every theme pays the same real, measurable scroll cost here. */
   /* No backdrop-filter at all on glass surfaces inside the app. Their blur
      radius is already 0px there, but `blur(0px)` still creates a backdrop
@@ -927,7 +927,7 @@
     -webkit-backdrop-filter: blur(20px) saturate(180%);
   }
 
-  /* The bright top edge is light catching the lip of the material — a
+  /* The bright top edge is light catching the lip of the material, a
    theme-aware highlight (`--c-ink` flips dark-on-light/white-on-dark per
    theme) rather than a hardcoded white line, since Editorial Paper's own
    chrome is now translucent too and a literal white edge would vanish

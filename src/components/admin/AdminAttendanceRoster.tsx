@@ -21,13 +21,13 @@ interface RosterEntry {
   attendance: "PRESENT" | "NO_SHOW" | null;
   /** Credits this booking costs once attendance is taken. */
   creditsSpent: number;
-  /** Shared across every row from the same family booking — null for a solo booking. */
+  /** Shared across every row from the same family booking, null for a solo booking. */
   familyBookingGroupId: string | null;
   focus: RosterFocus;
 }
 
 /** Clusters one occurrence's roster by where each student actually is in
-    the curriculum, ascending — a flipped-classroom-style live session
+    the curriculum, ascending, a flipped-classroom-style live session
     means circulating by level instead of teaching one lockstep lesson, so
     "who's here today, grouped by level" is the thing worth seeing at a
     glance. No-curriculum-access sorts last: a real, distinct bucket, not
@@ -88,7 +88,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   // Which already-marked booking is showing its edit controls (re-pick
-  // Present/No-show, or undo the charge entirely) — by direct instruction,
+  // Present/No-show, or undo the charge entirely), by direct instruction,
   // after "this costs real credits, I want it to be reversible." At most
   // one row at a time, same single-thing-open-at-once idiom cancelingId
   // already uses below.

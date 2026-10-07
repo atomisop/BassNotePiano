@@ -1,9 +1,9 @@
-// STEP 21 — OBSERVABILITY. Browser-side init. This exact filename/location
-// is a Next.js convention (not a Sentry-specific one) — the framework loads
+// STEP 21, OBSERVABILITY. Browser-side init. This exact filename/location
+// is a Next.js convention (not a Sentry-specific one), the framework loads
 // it automatically before the app renders, no import needed anywhere. Named
 // `sentry.client.config.ts` at the project root at first; Sentry's own dev
 // server warned that file is deprecated (and stops working entirely under
-// Turbopack), specifically recommending this file instead — moved rather
+// Turbopack), specifically recommending this file instead, moved rather
 // than leaving a known-deprecated path in place.
 //
 // DSN points at GlitchTip (app.glitchtip.com), not sentry.io. GlitchTip
@@ -27,7 +27,7 @@ Sentry.init({
   // GlitchTip project, which burned the quota and caused 429 rate limits.
   enabled: process.env.NODE_ENV === "production",
 
-  // 10% of normal transactions, 100% of ones that hit an error — enough to
+  // 10% of normal transactions, 100% of ones that hit an error, enough to
   // spot real performance regressions without paying to trace every request
   // on a studio-sized app. Errors are always captured regardless of this
   // number; it only governs performance/tracing volume.
@@ -35,7 +35,7 @@ Sentry.init({
   // most of the event volume and are not read anywhere.
   tracesSampleRate: 0,
 
-  // STEP 21 explicitly says "do not log sensitive values" — Sentry's
+  // STEP 21 explicitly says "do not log sensitive values", Sentry's
   // default request-body/breadcrumb capture can otherwise pick up form
   // fields. `beforeSend` strips anything that looks like a credential or
   // payment reference before it ever leaves the browser, as a backstop on

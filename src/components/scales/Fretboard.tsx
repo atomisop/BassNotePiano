@@ -5,7 +5,7 @@ import { pitchClassOf } from "@/lib/music-theory";
 
 /**
  * A playable fretboard showing where a spelled scale physically sits on a
- * standard-tuned fretted string instrument — the guitar/bass equivalent of
+ * standard-tuned fretted string instrument, the guitar/bass equivalent of
  * PianoKeyboard: same props, same underlying MIDI/degree data, a different
  * physical layout for a different instrument.
  *
@@ -21,7 +21,7 @@ import { pitchClassOf } from "@/lib/music-theory";
  * note lives, not just the one octave the piano's linear layout happens to
  * pick.
  *
- * Standard tuning only — drop tunings, 7-string guitar, and 5-string bass
+ * Standard tuning only, drop tunings, 7-string guitar, and 5-string bass
  * are out of scope. This teaches where a scale sits on the instrument the
  * large majority of students who haven't said otherwise are actually
  * holding.
@@ -44,19 +44,19 @@ const GUITAR_STRING_PX = [1.2, 1.6, 2.1, 2.8, 3.5, 4.2];
 const BASS_STRING_PX = [3, 3.8, 4.6, 5.4];
 
 export interface StringInstrumentTuning {
-  /** Open-string MIDI numbers, highest-pitched string first — the row order every printed tab uses. */
+  /** Open-string MIDI numbers, highest-pitched string first, the row order every printed tab uses. */
   openStringMidi: number[];
   /** Open-string note names in the same order, for row labels and screen readers. */
   openStringName: string[];
 }
 
-/** E A D G B E, low to high — MIDI 40/45/50/55/59/64. */
+/** E A D G B E, low to high, MIDI 40/45/50/55/59/64. */
 export const GUITAR_STANDARD_TUNING: StringInstrumentTuning = {
   openStringMidi: [64, 59, 55, 50, 45, 40],
   openStringName: ["E", "B", "G", "D", "A", "E"],
 };
 
-/** E A D G, low to high, one octave under a guitar's same four letter names — MIDI 28/33/38/43. */
+/** E A D G, low to high, one octave under a guitar's same four letter names, MIDI 28/33/38/43. */
 export const BASS_STANDARD_TUNING: StringInstrumentTuning = {
   openStringMidi: [43, 38, 33, 28],
   openStringName: ["G", "D", "A", "E"],
@@ -78,7 +78,7 @@ export interface FretboardProps {
   onPlayKey: (midi: number, degreeIndex: number | null) => void;
   disabled?: boolean;
   tuning: StringInstrumentTuning;
-  /** "Guitar" or "Bass" — used only for this group's own aria-label. */
+  /** "Guitar" or "Bass", used only for this group's own aria-label. */
   instrumentLabel: string;
 }
 

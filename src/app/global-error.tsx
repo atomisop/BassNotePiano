@@ -4,14 +4,14 @@ import { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
 
 /**
- * Last-resort boundary — catches errors thrown by the root layout itself.
+ * Last-resort boundary, catches errors thrown by the root layout itself.
  *
  * Everything here is inline-styled with literal colour values, which is
  * deliberate and the opposite of what the rest of the app does. When this
  * renders, the root layout did not: that means the theme boot script never
  * ran, so every `var(--c-s-*)` the design system is built on is undefined.
  * Tailwind classes here would resolve to transparent-on-transparent and
- * produce an invisible error page — the single worst possible failure mode
+ * produce an invisible error page, the single worst possible failure mode
  * for the component whose entire job is to be visible when nothing else works.
  *
  * It also has to supply its own <html> and <body>, since it replaces the root
@@ -25,7 +25,7 @@ export default function GlobalError({
   useEffect(() => {
     console.error("Root layout error:", error);
     // STEP 21: this specific boundary is the one Sentry's own Next.js docs
-    // call out by name — it's the one place a thrown error DOESN'T reach
+    // call out by name, it's the one place a thrown error DOESN'T reach
     // Sentry's automatic instrumentation, since it replaces the root layout
     // (and everything the SDK normally hooks into) rather than nesting
     // inside it.
@@ -55,7 +55,7 @@ export default function GlobalError({
               fontSize: 12,
               letterSpacing: "0.18em",
               textTransform: "uppercase",
-              // Neutral, not accent — this is a decorative wordmark, not a
+              // Neutral, not accent, this is a decorative wordmark, not a
               // call-to-action. The reload button below is the one real CTA
               // on this page, so it's the one thing here that keeps the
               // accent color.
@@ -84,7 +84,7 @@ export default function GlobalError({
             type="button"
             // Deliberately a real reload, not the `reset` prop Next.js
             // passes here: reset() only retries rendering this same tree,
-            // which is exactly what already failed once — for a root-layout
+            // which is exactly what already failed once, for a root-layout
             // crash (the common real-world case being a browser tab still
             // holding JS chunk references from before the last deploy
             // shipped) nothing about that retry can succeed, so the button
@@ -97,7 +97,7 @@ export default function GlobalError({
               cursor: "pointer",
               border: "none",
               borderRadius: 999,
-              // Neutral, not accent — the "premium black and white" pass
+              // Neutral, not accent, the "premium black and white" pass
               // now covers real CTAs too, so nothing in the app fills a
               // button with the accent gradient anymore.
               background: "#F5F5F5",

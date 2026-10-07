@@ -8,10 +8,10 @@
 # production
 /build
 
-# env files — never commit real secrets, .env.example is the template
+# env files, never commit real secrets, .env.example is the template
 .env
 .env*.local
-# timestamped backups made before editing .env — these contain real secrets and
+# timestamped backups made before editing .env, these contain real secrets and
 # matched none of the patterns above, so they were one `git add -A` from being
 # committed. .env.example stays tracked because it holds only placeholders.
 .env.backup-*
@@ -28,29 +28,29 @@ next-env.d.ts
 # netlify
 /.netlify
 
-# local tool config (Claude Code) — machine-specific, not app code
+# local tool config (Claude Code), machine-specific, not app code
 /.claude
 
-# other local agent/tooling state — same reasoning as /.claude above: these are
+# other local agent/tooling state, same reasoning as /.claude above: these are
 # per-machine scratch directories, not application code
 /.agents
 /.codex
 /.impeccable
 /skills-lock.json
 
-# graphify skill output — a regenerable code-analysis cache (graph.json,
+# graphify skill output, a regenerable code-analysis cache (graph.json,
 # manifest.json with per-file mtimes/hashes), not application code. Found
 # unreferenced by any src/config file during the Step 2 dead-code audit;
 # ignored here so a future `graphify` run never becomes a 3.8MB accidental
 # commit. The existing on-disk copy needs `rm -rf graphify-out` to actually
-# remove it — that command was blocked by the permission classifier.
+# remove it, that command was blocked by the permission classifier.
 /graphify-out
 
-# Homepage scroll-video source assets — ~31MB, served from Cloudflare R2.
+# Homepage scroll-video source assets, ~31MB, served from Cloudflare R2.
 # URLs live in src/lib/media-manifest.ts; re-upload with `npm run upload:media`.
 # Kept locally as a fallback, deliberately never committed.
 /public/video
 
-# 3D piano model (Step 6 feasibility work) — licensing was never confirmed
+# 3D piano model (Step 6 feasibility work), licensing was never confirmed
 # (see Step 1's audit). Local-only until that's resolved; do not commit.
 /public/models

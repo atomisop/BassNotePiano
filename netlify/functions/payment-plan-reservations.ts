@@ -19,7 +19,7 @@ import {
 // Runs daily at 09:30 UTC, shortly after credit-expiry.ts (09:00) so a plan
 // whose last cycle just lapsed is already excluded from "live" by the time
 // this runs. Keeps a rolling OCCURRENCES_PER_SLOT-week window of real
-// ClassBooking rows booked for every Payment Plan's own reserved slot —
+// ClassBooking rows booked for every Payment Plan's own reserved slot,
 // not just "next week": the whole displayed booking horizon, so nothing in
 // it is ever stranger-bookable. Existence-based per occurrence (checked via
 // createReservedBookingIfAbsent), so a missed run just means the window
@@ -36,7 +36,7 @@ export const handler = schedule("30 9 * * *", async () =>
   let notifiedInactive = 0;
 
   // Sequential across plans and across each plan's own occurrences, not
-  // parallel — a later credit-sufficiency check needs to see bookings this
+  // parallel, a later credit-sufficiency check needs to see bookings this
   // same run already made (getEffectiveClassCredits reads real, committed
   // ClassBooking rows). Low volume by construction (one reservation per
   // plan, a handful of plans), so this isn't a performance concern.
@@ -60,7 +60,7 @@ export const handler = schedule("30 9 * * *", async () =>
       continue; // no booking while the underlying schedule is off
     }
 
-    // Reactivated after a prior deactivation — clear the guard so a future
+    // Reactivated after a prior deactivation, clear the guard so a future
     // deactivation can notify again.
     if (plan.reservedSlotInactiveNotifiedAt) {
       await prisma.paymentPlan.update({ where: { id: plan.id }, data: { reservedSlotInactiveNotifiedAt: null } });
@@ -119,7 +119,7 @@ export const handler = schedule("30 9 * * *", async () =>
 
       const available = await getEffectiveClassCredits(plan.userId);
       if (available < creditsPerClass) {
-        // Not enough left for this week yet — skip rather than book, the
+        // Not enough left for this week yet, skip rather than book, the
         // one thing keeping User.classCredits from ever going negative
         // (markAttendance decrements unconditionally, with no floor guard).
         // Also correctly handles a 5-occurrence month when only 4 weeks
@@ -140,7 +140,7 @@ export const handler = schedule("30 9 * * *", async () =>
         if (result) booked++;
       } catch (err) {
         if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2002") {
-          continue; // a manual booking (or a concurrent run) won this exact occurrence first — benign
+          continue; // a manual booking (or a concurrent run) won this exact occurrence first, benign
         }
         console.error(`Reserved booking failed for plan ${plan.id}, occurrence ${occurrenceDate.toISOString()} (non-blocking):`, err);
       }

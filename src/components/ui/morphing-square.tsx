@@ -6,14 +6,14 @@ import { motion, type HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 /**
- * Morphing Square — a 21st.dev community loader ("Molecule UI"). Ported
+ * Morphing Square, a 21st.dev community loader ("Molecule UI"). Ported
  * as-is except for one import: the source uses the `motion` package
  * (Framer Motion's newer unified rebrand, imported as `motion/react`),
  * which isn't installed here and would duplicate `framer-motion`
  * (`^11.3.0`, already a dependency and used throughout this app). Framer
  * Motion 11 exports the same `motion` component and `HTMLMotionProps`
  * type under its own package name, so swapping the import is a drop-in
- * replacement with no behavior change — not worth carrying two animation
+ * replacement with no behavior change, not worth carrying two animation
  * libraries for one component.
  */
 const morphingSquareVariants = cva("flex gap-2 items-center justify-center", {

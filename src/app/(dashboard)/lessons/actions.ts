@@ -24,7 +24,7 @@ import { openBookingSupportCase, openSubjectSupportCase, AssistantEscalationErro
 export async function bookClassAction(scheduleId: string, occurrenceDateMs: number, chunkIndex: number, creditsToBook?: number) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
-  // Mirrors the page-level redirect — re-checked here since this Server
+  // Mirrors the page-level redirect, re-checked here since this Server
   // Action is its own RPC endpoint, not something the page redirect covers.
 
   try {
@@ -36,7 +36,7 @@ export async function bookClassAction(scheduleId: string, occurrenceDateMs: numb
   }
 }
 
-/** Same guards as bookClassAction — this is the bundle-of-several version, see bookClassBundle. */
+/** Same guards as bookClassAction, this is the bundle-of-several version, see bookClassBundle. */
 export async function bookClassBundleAction(selections: BundleBookingSelection[]) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
@@ -48,7 +48,7 @@ export async function bookClassBundleAction(selections: BundleBookingSelection[]
   return { ok: true as const, results };
 }
 
-/** Live check while the booker is still typing attendee emails — see checkFamilyClassAttendees's own comment. */
+/** Live check while the booker is still typing attendee emails, see checkFamilyClassAttendees's own comment. */
 export async function checkFamilyClassAttendeesAction(emails: string[]) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
@@ -100,7 +100,7 @@ export async function rescheduleClassBookingAction(
   }
 }
 
-/** Every open slot the caller's own active plan could move its reservation to — empty if they have no active plan. */
+/** Every open slot the caller's own active plan could move its reservation to, empty if they have no active plan. */
 export async function getReservableSlotsForChangeAction(): Promise<ReservableSlot[]> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
@@ -110,7 +110,7 @@ export async function getReservableSlotsForChangeAction(): Promise<ReservableSlo
   return getReservableSlots(PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
 }
 
-/** Payment Plan subscriber's own self-service move of their standing weekly slot — see changeReservedSlot's own comment. */
+/** Payment Plan subscriber's own self-service move of their standing weekly slot, see changeReservedSlot's own comment. */
 export async function changeReservedSlotAction(newScheduleId: string, newChunkIndex: number) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");

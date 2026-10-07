@@ -23,7 +23,7 @@ import {
  * now.
  *
  * `instrument` picks the synthesized voice (piano/guitar/bass) every play
- * call below uses — passed in rather than read once, so a live instrument
+ * call below uses, passed in rather than read once, so a live instrument
  * switcher (see TranspositionDashboard) changes the sound immediately on the
  * same player, not just on the next page load.
  */
@@ -43,7 +43,7 @@ export function useScalePlayer(instrument: PrimaryInstrument | null = null) {
   }, []);
 
   // A run scheduled against the audio clock keeps going after unmount unless
-  // it's explicitly cancelled — navigating away mid-scale would otherwise
+  // it's explicitly cancelled, navigating away mid-scale would otherwise
   // leave notes sounding over the next page.
   useEffect(() => {
     return () => stopPlayback();
@@ -59,12 +59,12 @@ export function useScalePlayer(instrument: PrimaryInstrument | null = null) {
   /**
    * Plays the scale as a run, ending on the root an octave up.
    *
-   * The extra root is not cosmetic — a pentatonic that stops on its 6th
+   * The extra root is not cosmetic, a pentatonic that stops on its 6th
    * doesn't resolve, and students consistently read that as "the scale sounds
    * wrong" rather than "the run ended early".
    */
   // A real bass sits an octave below where a guitar or piano would play the
-  // same note names — without this, switching to Bass would keep the piano's
+  // same note names, without this, switching to Bass would keep the piano's
   // register and just sound like a piano-range synth with a bass tone
   // applied. Only affects the abstract note-name paths below: a fretboard
   // press already carries its own real physical pitch (BASS_STANDARD_TUNING
@@ -111,7 +111,7 @@ export function useScalePlayer(instrument: PrimaryInstrument | null = null) {
     setIsPlaying(false);
     playNote(midi, 0.55, voice);
 
-    // Purely a visual pulse on the tapped chip — short, and independent of the
+    // Purely a visual pulse on the tapped chip, short, and independent of the
     // note's own (longer) decay.
     setActiveIndex(index);
     setActiveMidi(midi);
@@ -132,7 +132,7 @@ export function useScalePlayer(instrument: PrimaryInstrument | null = null) {
    *
    * The pitch always comes from the key's own MIDI number, never from its
    * scale degree. That distinction is the whole point: a scale's root appears
-   * on the keyboard twice — once at the bottom and once an octave up — and
+   * on the keyboard twice, once at the bottom and once an octave up, and
    * routing both through the degree index made the upper one sound the lower
    * one's pitch. The degree is used only to decide which note chip pulses.
    *
@@ -174,7 +174,7 @@ export function useScalePlayer(instrument: PrimaryInstrument | null = null) {
 /** Shared ref type for components that want to stop playback on key change. */
 export type ScalePlayer = ReturnType<typeof useScalePlayer>;
 
-/** Stops playback whenever `key` changes — e.g. the user picks a new root. */
+/** Stops playback whenever `key` changes, e.g. the user picks a new root. */
 export function useStopOnChange(stop: () => void, key: unknown) {
   const previous = useRef(key);
   useEffect(() => {

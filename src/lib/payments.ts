@@ -23,17 +23,17 @@ import { assertRateLimit } from "@/lib/rateLimit";
 
 /**
  * A student who opens the payment modal but never actually confirms a
- * transfer leaves an AWAITING_TRANSFER row behind forever otherwise —
+ * transfer leaves an AWAITING_TRANSFER row behind forever otherwise,
  * cluttering their own billing page and, at larger scale, the DB. Anything
  * this old with no reference code submitted is safe to consider abandoned.
- * Deliberately does NOT touch PENDING_REVIEW — once a student has submitted
+ * Deliberately does NOT touch PENDING_REVIEW, once a student has submitted
  * a reference code, a slow admin shouldn't cause their payment to vanish.
  */
 const PENDING_PAYMENT_EXPIRY_DAYS = 7;
 
 /**
  * Lazily sweeps stale AWAITING_TRANSFER rows to EXPIRED. There's no cron
- * here — this runs inline wherever it matters (before creating/reusing a
+ * here, this runs inline wherever it matters (before creating/reusing a
  * pending payment, before listing payments for admin) so the expiry is
  * always accurate by the time anything reads it, without needing a
  * scheduled job.
@@ -45,7 +45,7 @@ async function expireStalePendingPayments() {
     // (submitZellePaymentReference only accepts resubmission from
     // AWAITING_TRANSFER/REJECTED), and an installment left unpaid past its
     // due date is exactly the "overdue, keep reminding, let a human decide"
-    // case this app's payment-plan reminders are built around — not
+    // case this app's payment-plan reminders are built around, not
     // something that should silently become unpayable the next time anyone
     // loads a billing page.
     where: { status: "AWAITING_TRANSFER", createdAt: { lt: cutoff }, purpose: { not: "PAYMENT_PLAN_INSTALLMENT" } },
@@ -64,7 +64,7 @@ interface PendingPaymentParams {
 
 /**
  * Finds the in-flight Zelle payment for this user+purpose if one exists, or
- * creates a fresh AWAITING_TRANSFER row. Idempotent by design — the
+ * creates a fresh AWAITING_TRANSFER row. Idempotent by design, the
  * curriculum billing page calls this on every load, and a page refresh
  * shouldn't spawn a new row every time a student revisits before submitting
  * a reference code.
@@ -87,7 +87,7 @@ async function getOrCreatePendingZellePayment({ userId, purpose, amountCents, ze
     orderBy: { createdAt: "desc" },
   });
   // A reused row can predate a price change for this purpose (e.g. the
-  // curriculum price dropping from $99 to $69.99) — the billing page always
+  // curriculum price dropping from $99 to $69.99), the billing page always
   // displays the caller's freshly-computed amountCents, so keep the stored
   // row in sync rather than letting it quietly settle at a stale price the
   // admin queue and payment history would then show instead.
@@ -325,7 +325,7 @@ export interface ZelleReferenceSubmission {
 /**
  * Records the student's "I've sent it" confirmation and moves the payment
  * into PENDING_REVIEW. Allowed from AWAITING_TRANSFER (first submission) or
- * REJECTED (resubmission after a failed match) — anything else means the
+ * REJECTED (resubmission after a failed match), anything else means the
  * payment is already settled or mid-review, so resubmitting is rejected.
  *
  * No reference/confirmation code is collected here on purpose, by direct
@@ -351,7 +351,7 @@ export async function submitZellePaymentReference(
 
   // STEP 20: submission (unlike most other rate-limited actions here)
   // updates an existing row rather than inserting a new one, so this counts
-  // against `submittedAt`, not `createdAt` — see assertRateLimit's
+  // against `submittedAt`, not `createdAt`, see assertRateLimit's
   // `timestampField` option. 10/hour is well above any real "I mistyped my
   // reference code" resubmission rate.
   await assertRateLimit(
@@ -505,7 +505,7 @@ const paymentWithScaleInclude = {
 
 export type UserPaymentRecord = Prisma.ZellePaymentGetPayload<{ include: typeof paymentWithScaleInclude }>;
 
-/** Every payment a student has ever submitted, newest first — their receipts/history view. */
+/** Every payment a student has ever submitted, newest first, their receipts/history view. */
 export async function getUserPaymentHistory(userId: string): Promise<UserPaymentRecord[]> {
   await expireStalePendingPayments();
   return prisma.zellePayment.findMany({
@@ -534,7 +534,7 @@ const pendingPaymentInclude = {
 export type PendingZellePayment = Prisma.ZellePaymentGetPayload<{ include: typeof pendingPaymentInclude }>;
 
 /**
- * Full admin payment listing, optionally filtered to one status — powers
+ * Full admin payment listing, optionally filtered to one status, powers
  * the richer "all payments" view (verified/rejected/expired history), not
  * just the live pending queue.
  */
@@ -561,7 +561,7 @@ export async function getAdminPayments(
 }
 
 /**
- * Approves a pending payment and applies its real-world effect — granting
+ * Approves a pending payment and applies its real-world effect, granting
  * curriculum access, adding lesson credits, or (for a legacy grandfathered
  * row) unlocking the one scale it was for. Both the status flip and the
  * entitlement grant happen here so the two can never drift apart (a
@@ -571,10 +571,10 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
   // STEP 19: the status flip and the entitlement grant used to be two (or
   // three, counting the legacy-scale read) separate, un-transacted writes.
   // The docstring above already says the point is that they "can never
-  // drift apart" — a crash or a thrown error between the update and the
+  // drift apart", a crash or a thrown error between the update and the
   // grant used to be able to produce exactly that: a VERIFIED payment that
   // never actually unlocked anything. Wrapping the read-check through the
-  // entitlement grant in one `$transaction` makes that state unreachable —
+  // entitlement grant in one `$transaction` makes that state unreachable,
   // either the whole thing commits, or none of it does. The notification
   // stays outside: it's a best-effort side effect, not part of what has to
   // be atomic, and a notification failure shouldn't roll back a real grant.
@@ -763,7 +763,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
   });
 
   // A completed plan is a distinct milestone worth its own bell entry, on
-  // top of the ordinary "payment approved" above — same "more than one
+  // top of the ordinary "payment approved" above, same "more than one
   // notification can come out of one approval" shape FAMILY_BUNDLE already
   // uses below for its per-recipient notices.
   if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId) {

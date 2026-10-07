@@ -6,7 +6,7 @@ import { assertRateLimit } from "@/lib/rateLimit";
 import { isValidReaction } from "@/lib/reactions";
 
 const MAX_MESSAGE_LENGTH = 2000;
-// Creator + up to 23 friends — generous headroom over a normal friend-group
+// Creator + up to 23 friends, generous headroom over a normal friend-group
 // size while keeping the member-list UI and per-message email fanout sane.
 const MAX_GROUP_MEMBERS = 24;
 
@@ -17,7 +17,7 @@ export interface CreateGroupInput {
 }
 
 // Membership is friends-only at creation time (same trust boundary as 1-on-1
-// messaging) and fixed after that — there's no post-creation invite/kick,
+// messaging) and fixed after that, there's no post-creation invite/kick,
 // only leaving, which keeps the moderation surface small for a first version.
 export async function createGroup({ creatorId, name, memberUsernames }: CreateGroupInput) {
   const usernames = Array.from(new Set(memberUsernames.map(normalizeUsername))).filter(Boolean);
@@ -32,7 +32,7 @@ export async function createGroup({ creatorId, name, memberUsernames }: CreateGr
   const members = found.filter((u) => u.id !== creatorId);
   if (members.length === 0) throw new SocialError("Add at least one friend to the group.");
 
-  // STEP 20: creating a group is rare for genuine use — 10/hour is
+  // STEP 20: creating a group is rare for genuine use, 10/hour is
   // generous headroom while blocking scripted mass-group creation.
   await assertRateLimit(
     prisma.groupConversation.count,

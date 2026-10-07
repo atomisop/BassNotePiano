@@ -135,7 +135,7 @@ export function ClassRegistrationForm() {
       {/* Every label is tied to its field with htmlFor/id.
           These labels used to be plain siblings with no association, which
           looks identical on screen but leaves a screen reader announcing four
-          unlabelled fields — the placeholder is not a substitute, since it
+          unlabelled fields, the placeholder is not a substitute, since it
           disappears the moment you start typing. It also means tapping the
           label now focuses the field, which is the behaviour people expect on
           a phone where the targets are small. */}

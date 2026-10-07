@@ -13,9 +13,9 @@ declare module "next-auth/jwt" {
     unlockedScaleSlugs: string[];
     /** Slugs where the full read + practice + quiz checklist has been cleared. */
     completedScaleSlugs: string[];
-    /** False until the post-registration onboarding wizard is completed — middleware redirects there until true. */
+    /** False until the post-registration onboarding wizard is completed, middleware redirects there until true. */
     onboarded: boolean;
-    /** The User.sessionVersion this token was issued/refreshed against — see the jwt callback's "sign out other devices" comment. Optional: tokens issued before this field existed won't have it yet. */
+    /** The User.sessionVersion this token was issued/refreshed against, see the jwt callback's "sign out other devices" comment. Optional: tokens issued before this field existed won't have it yet. */
     sessionVersion?: number;
   }
 }

@@ -1,7 +1,7 @@
 import { getAdminRecipients } from "@/lib/adminNotifications";
 // The live support chat behind Atom's "connect me to a person" handoff (see
 // AssistantWidget.tsx). An AssistantEscalation is the thread; SupportMessage
-// rows are its timeline — seeded from the pre-escalation Atom transcript at
+// rows are its timeline, seeded from the pre-escalation Atom transcript at
 // handoff time, then appended to by the visitor and by whichever admin
 // replies from /admin/support. This is the one place an Atom conversation is
 // actually persisted server-side, since an anonymous visitor (the widget
@@ -10,7 +10,7 @@ import { getAdminRecipients } from "@/lib/adminNotifications";
 // Two very different trust boundaries share this file:
 //  - the visitor side (loadThreadForVisitor / postVisitorMessage) is reached
 //    from a public API route with no login required for an anonymous
-//    escalation — the escalation id itself is the bearer credential there,
+//    escalation, the escalation id itself is the bearer credential there,
 //    same trust model as e.g. a presigned URL. A *signed-in* visitor's
 //    escalation is additionally locked to their own session (see
 //    loadThreadForVisitor) so holding the id alone isn't enough once an
@@ -46,14 +46,14 @@ function sanitizeTranscript(messages: AssistantMessage[]) {
 }
 
 // ---------------------------------------------------------------------------
-// Creating a handoff — the pre-escalation Atom transcript is seeded in as
+// Creating a handoff, the pre-escalation Atom transcript is seeded in as
 // SupportMessage rows (VISITOR/ATOM) so the thread is one continuous
 // timeline from the very first message onward, not a static snapshot
 // bolted onto a separate live chat.
 // ---------------------------------------------------------------------------
 
 export interface CreateAssistantEscalationInput {
-  /** Same `user:<id>` / IP convention used across the assistant routes — rate-limiting/abuse trail only. */
+  /** Same `user:<id>` / IP convention used across the assistant routes, rate-limiting/abuse trail only. */
   identifier: string;
   userId: string | null;
   contactName: string | null;
@@ -192,7 +192,7 @@ export async function openBookingSupportCase(userId: string, bookingId: string):
 }
 
 // ---------------------------------------------------------------------------
-// Visitor side — reachable with no login for an anonymous escalation. The
+// Visitor side, reachable with no login for an anonymous escalation. The
 // shape returned deliberately omits sentById: nothing here ever tells the
 // widget which admin (if any) sent a SUPPORT reply.
 // ---------------------------------------------------------------------------
@@ -223,7 +223,7 @@ const THREAD_SELECT = {
  * escalation can only ever be read/posted to by that same signed-in
  * session; an anonymous escalation (no userId) trusts whoever holds the
  * unguessable id, the same way a presigned URL or an invite link would.
- * Returns null for "doesn't exist" and "forbidden" alike — a visitor-facing
+ * Returns null for "doesn't exist" and "forbidden" alike, a visitor-facing
  * 404 either way, so a wrong id can't be used to probe which ones exist.
  */
 async function loadEscalationForVisitor(escalationId: string) {
@@ -262,7 +262,7 @@ export async function postVisitorMessage(
   const escalation = await loadEscalationForVisitor(escalationId);
   if (!escalation) return null;
 
-  // Per direct instruction: once an admin resolves a thread, it's dead —
+  // Per direct instruction: once an admin resolves a thread, it's dead,
   // the history stays (nothing here deletes anything), but the thread no
   // longer accepts new messages from either side and nothing reopens it
   // automatically. A visitor who genuinely needs more help starts a fresh
@@ -306,7 +306,7 @@ export async function postVisitorMessage(
 }
 
 // ---------------------------------------------------------------------------
-// Admin side — every export below assumes the caller (the server actions in
+// Admin side, every export below assumes the caller (the server actions in
 // admin/support/actions.ts) has already verified an ADMIN session. adminId
 // is passed in explicitly rather than re-derived here, so this file never
 // silently trusts a session on its own.
@@ -327,7 +327,7 @@ export interface AdminThreadSummary {
   hasUnread: boolean;
 }
 
-/** `userId` narrows to one account's own threads — used by the admin
+/** `userId` narrows to one account's own threads, used by the admin
     customer-detail page; the plain admin support inbox never passes it. */
 export async function getSupportThreads(
   status?: AssistantEscalationStatus,
@@ -414,7 +414,7 @@ export async function getSupportThread(escalationId: string): Promise<AdminThrea
       orderBy: { createdAt: "asc" },
       select: { id: true, sender: true, body: true, createdAt: true, sentBy: { select: { name: true } } },
     }),
-    // Opening the thread is what clears its unread state — a single shared
+    // Opening the thread is what clears its unread state, a single shared
     // "an admin looked at this" marker, not per-admin.
     prisma.assistantEscalation.update({ where: { id: escalationId }, data: { adminLastReadAt: new Date() } }),
   ]);
@@ -597,7 +597,7 @@ export async function resolveSupportThread(escalationId: string, adminId: string
 // the escalation row itself (contactName/contactEmail) and, via the schema's
 // `onDelete: Cascade` on SupportMessage.escalation, every message body in
 // it. Deliberately does NOT touch the linked User row when the visitor was
-// signed in — that's a real account, out of scope for "delete this chat."
+// signed in, that's a real account, out of scope for "delete this chat."
 // `deleteMany` (not `delete`) so calling this twice, or on an id that's
 // already gone, is a no-op instead of throwing.
 export async function deleteSupportThread(escalationId: string): Promise<void> {
@@ -605,7 +605,7 @@ export async function deleteSupportThread(escalationId: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Inbound email — a message to music@bassnotepiano.com, handed over by the
+// Inbound email, a message to music@bassnotepiano.com, handed over by the
 // Mailgun route (src/app/api/inbound/mailgun/route.ts). Each conversation is
 // one EMAIL thread in the same tables as the chat, shown in the Email tab.
 // ---------------------------------------------------------------------------

@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { smoothScrollTo } from "@/components/scroll/SmoothScrollProvider";
 import { SPRING } from "@/lib/motionTokens";
 
-/** Floating "back to top" pill — appears once the visitor has scrolled past
+/** Floating "back to top" pill, appears once the visitor has scrolled past
  * roughly one viewport height, since the homepage is a long single-page
  * scroller (hero, curriculum, instrument sections, pricing callout).
  * Homepage-only by placement, not a global fixture. */

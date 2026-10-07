@@ -1,10 +1,10 @@
 // Static curriculum metadata mirroring prisma/seed.ts (ScaleGroup rows).
-// Kept as a plain TS module — not a DB call — so it can be imported from
+// Kept as a plain TS module, not a DB call, so it can be imported from
 // edge middleware, server components, and client components alike.
 
 export interface ScaleGroupMeta {
   slug: string; // matches ScaleGroup.slug in the DB
-  order: number; // matches ScaleGroup.order — defines required sequencing
+  order: number; // matches ScaleGroup.order, defines required sequencing
   code: string; // "Scale 0"
   title: string;
   kinitName: string | null;

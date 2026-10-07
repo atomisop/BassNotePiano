@@ -12,20 +12,20 @@ const MAX_MESSAGES = 20; // caps both cost and the prompt's own size
 const MAX_MESSAGE_LENGTH = 2000;
 
 /**
- * A real route handler, not a Server Action — the widget is reachable from
+ * A real route handler, not a Server Action, the widget is reachable from
  * the public marketing pages with no session, and Server Actions always run
  * as POSTs to the current page's own route, which would tie this to
  * whatever page happened to render it. A plain fetchable endpoint is the
  * simpler contract for a client component that has to work identically on
  * every page in the app.
  *
- * Wrapped in one outer try/catch — this route didn't have one, unlike its
+ * Wrapped in one outer try/catch, this route didn't have one, unlike its
  * sibling /api/assistant/escalate (see that route's own comment for the
  * reasoning, which applies just as much here, if not more: this is the
  * everyday chat endpoint, not just the rarer handoff). Without it, anything
  * unexpected below (a transient Gemini API hiccup, a momentary Postgres
  * connection drop, an auth misconfiguration) crashed as a bare, un-JSON'd
- * 500 with no `error` field — which the widget has no way to distinguish
+ * 500 with no `error` field, which the widget has no way to distinguish
  * from "the network dropped," so it fell back to its own generic "Something
  * went wrong" text instead of anything actually informative. Caught live
  * during a manual check of the widget end-to-end.
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
 
     const session = await getServerAuthSession();
 
-    // IP-based limiting only matters for the anonymous case — a signed-in
+    // IP-based limiting only matters for the anonymous case, a signed-in
     // visitor is already keyed by their own account, which is a stronger,
     // more accountable identifier than whatever IP a shared network puts them
     // behind.
@@ -86,7 +86,7 @@ export async function POST(req: Request) {
     });
 
     // Persisted only for a signed-in visitor (see appendPersistedMessages'
-    // own doc comment for why) — the widget already sent its full local
+    // own doc comment for why), the widget already sent its full local
     // transcript above for the model's own context; this is a separate,
     // server-side append of just the one new exchange, not a re-save of
     // everything the client happened to send.

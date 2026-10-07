@@ -1,4 +1,4 @@
-// Single source of truth for the privacy copy — rendered on the public
+// Single source of truth for the privacy copy, rendered on the public
 // /privacy page and linked from registration, the same pattern
 // TermsContent.tsx already uses for the terms/refund policy.
 //

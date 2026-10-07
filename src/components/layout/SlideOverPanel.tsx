@@ -7,7 +7,7 @@ import { useDismissDrag } from "@/lib/useDismissDrag";
 import { FADE, SPRING } from "@/lib/motionTokens";
 
 /**
- * Shared "push navigation" panel — full-screen on phones, a right-anchored
+ * Shared "push navigation" panel, full-screen on phones, a right-anchored
  * drawer on md+ so it never fully covers a spacious screen. Portaled to
  * document.body for the same reason NotificationBell is: a backdrop-blur
  * ancestor creates a CSS containing block that traps position:fixed
@@ -79,14 +79,14 @@ export function SlideOverPanel({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={SPRING.snappy}
-            // Fully opaque white sheet — no backdrop-blur anywhere in the
+            // Fully opaque white sheet, no backdrop-blur anywhere in the
             // paper system. Blur behind a sliding panel meant re-blurring
             // whatever moved underneath on every frame of the spring, which
             // was exactly the "framy when I open something" feel.
             style={{ willChange: "transform" }}
             className="relative h-full w-full md:max-w-md"
           >
-            {/* Enter/exit on the parent, drag offset here — the panel leaves
+            {/* Enter/exit on the parent, drag offset here, the panel leaves
                 the way it arrived, so pushing it right is the same path the
                 close button animates along. */}
             <motion.div

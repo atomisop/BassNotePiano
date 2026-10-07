@@ -8,20 +8,20 @@ import { project, rubberband, velocityFrom, type PointerSample } from "@/lib/mot
  * Drag-to-dismiss for sheets and panels.
  *
  * A sheet that only opens and closes on tap is a dialog wearing a sheet's
- * clothes — the shape promises it can be pushed away, and then it can't. This
+ * clothes, the shape promises it can be pushed away, and then it can't. This
  * gives every sheet the physics the shape implies:
  *
  *   • 1:1 tracking in the dismiss direction while the pointer is down
  *   • resistance in the wrong direction rather than a dead stop, so pulling
  *     against the sheet still feels like touching something
  *   • the decision to dismiss made from where the flick is *going*, not from
- *     how far it happened to get — a short fast flick dismisses, a long slow
+ *     how far it happened to get, a short fast flick dismisses, a long slow
  *     drag that stops halfway springs back
  *   • the closing animation seeded with the pointer's release velocity, so
  *     there's no seam where the finger stops and the animation starts
  *   • grabbable mid-animation: pressing again takes over the live value
  *
- * `axis` is the direction the sheet leaves in — "y" for a bottom sheet,
+ * `axis` is the direction the sheet leaves in, "y" for a bottom sheet,
  * "x" for a right-hand panel. Dismissal is always positive along that axis,
  * which keeps enter and exit on the same path.
  */
@@ -29,7 +29,7 @@ export interface DismissDragOptions {
   axis: "x" | "y";
   /** Called once the sheet has committed to leaving. */
   onDismiss: () => void;
-  /** Size of the sheet along `axis`, in px — used for resistance and the exit distance. */
+  /** Size of the sheet along `axis`, in px, used for resistance and the exit distance. */
   size: number;
   /** Fraction of `size` the projected endpoint must pass to dismiss. */
   threshold?: number;
@@ -115,7 +115,7 @@ export function useDismissDrag({ axis, onDismiss, size, threshold = 0.4 }: Dismi
         animate(offset, size, { type: "spring", bounce: 0, duration: 0.3, velocity });
         onDismiss();
       } else {
-        // Settle back. Bounce is earned — the sheet was thrown and caught.
+        // Settle back. Bounce is earned, the sheet was thrown and caught.
         animate(offset, 0, { type: "spring", bounce: 0.18, duration: 0.4, velocity });
       }
     },

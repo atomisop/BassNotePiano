@@ -7,7 +7,7 @@ import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
 import { SPRING } from "@/lib/motionTokens";
 
 // Same settle-in celebration language as QuizModal's passed state and
-// ZellePaymentModal's confirmation step — reused, not reinvented, per the
+// ZellePaymentModal's confirmation step, reused, not reinvented, per the
 // brief. Spring values match the rest of the app's entrance pattern.
 const panelVariants = {
   hidden: { opacity: 0, y: 24, scale: 0.96 },

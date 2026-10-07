@@ -13,7 +13,7 @@ import { clearPersistedHistory } from "@/lib/assistant";
 import { approveNextScale, ScaleApprovalError } from "@/lib/scaleApproval";
 import { getAdminProgressOverview } from "@/lib/admin";
 
-// Same pattern as admin/payments/actions.ts — the admin layout's redirect
+// Same pattern as admin/payments/actions.ts, the admin layout's redirect
 // only protects rendering, not these Server Actions, so this re-check is
 // the actual authorization boundary.
 async function requireAdmin() {
@@ -26,7 +26,7 @@ async function requireAdmin() {
 export async function setUserRoleAction(targetUserId: string, role: Role) {
   const admin = await requireAdmin();
   if (targetUserId === admin.id && role !== "ADMIN") {
-    // Prevents an easy self-lockout — removing your own admin role has to
+    // Prevents an easy self-lockout, removing your own admin role has to
     // happen from another admin account or directly against the DB.
     throw new Error("You can't remove your own admin role from this panel.");
   }
@@ -106,7 +106,7 @@ export async function approveAllReadyScalesAction(): Promise<{ message: string }
 }
 
 // Per direct instruction: a signed-in visitor's Atom conversation is kept
-// permanently unless the studio chooses to clear it — there's no
+// permanently unless the studio chooses to clear it, there's no
 // self-service "clear my chat" for the student, only this admin action.
 export async function clearAssistantHistoryAction(targetUserId: string) {
   await requireAdmin();

@@ -85,7 +85,7 @@ export function ScheduleClient({
     router.refresh();
   }
 
-  // Self-service move of the standing weekly reservation — by direct
+  // Self-service move of the standing weekly reservation, by direct
   // instruction, replacing the previous "that's not self-service, message
   // support" note entirely. Slots are fetched lazily on expand rather than
   // on page load, same reasoning as PaymentPlanEnrollmentFlow's own
@@ -121,7 +121,7 @@ export function ScheduleClient({
     }
     setChangeSuccess(true);
     setChangingTime(false);
-    setReservableSlots(null); // force a fresh fetch next time — the slot just taken is no longer open
+    setReservableSlots(null); // force a fresh fetch next time, the slot just taken is no longer open
     router.refresh(); // pulls the new weeklyTime/upcomingBookings server props (revalidatePath alone doesn't re-render an already-mounted page)
   }
 
@@ -263,7 +263,7 @@ export function ScheduleClient({
           </div>
         )}
 
-        {/* Self-service move of the standing weekly reservation — by direct
+        {/* Self-service move of the standing weekly reservation, by direct
             instruction, replacing the previous message-support-only note.
             Changing your own recurring day/time used to be the one thing a
             Payment Plan subscriber could never do without contacting

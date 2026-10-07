@@ -19,7 +19,7 @@ export interface OverviewStats {
   totalUsers: number;
   curriculumUsers: number;
   pendingPayments: number;
-  /** Sum of VERIFIED ZellePayment amounts — the only revenue this platform tracks. */
+  /** Sum of VERIFIED ZellePayment amounts, the only revenue this platform tracks. */
   totalRevenueCents: number;
   /** Money submitted but not approved yet, so it is not in the total above. */
   pendingRevenueCents: number;
@@ -42,7 +42,7 @@ export async function getOverviewStats(): Promise<OverviewStats> {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// Trends — real time-series for the overview sparklines
+// Trends, real time-series for the overview sparklines
 // ---------------------------------------------------------------------------
 
 export interface TrendPoint {
@@ -59,8 +59,8 @@ export interface OverviewTrends {
  * Signups and verified revenue bucketed by calendar month, for the last
  * `months` months including the current one.
  *
- * Computed from real rows — User.createdAt and VERIFIED ZellePayment.amountCents
- * — rather than seeded or smoothed. Months with no activity return 0 instead of
+ * Computed from real rows, User.createdAt and VERIFIED ZellePayment.amountCents,
+ * rather than seeded or smoothed. Months with no activity return 0 instead of
  * being dropped, so the sparkline shows a genuine flat stretch rather than
  * silently compressing time and implying steady growth that didn't happen.
  *
@@ -113,7 +113,7 @@ export async function getOverviewTrends(months = 6): Promise<OverviewTrends> {
 }
 
 // Student roster (name/email/curriculum/scales/credits/streak/last-active
-// per student) used to live here as its own /admin/roster page — folded
+// per student) used to live here as its own /admin/roster page, folded
 // into /admin/progress instead (see AdminProgressRow/getAdminProgressOverview
 // below), by direct instruction, since it was the exact same student list
 // with the exact same summary figures, just missing the per-scale detail
@@ -127,7 +127,7 @@ export interface ModuleHealthRow {
   completedCount: number;
 }
 
-/** Per-scale unlock/completion counts across the whole user base — where students drop off. */
+/** Per-scale unlock/completion counts across the whole user base, where students drop off. */
 export async function getModuleHealth(): Promise<ModuleHealthRow[]> {
   const scaleGroups = await prisma.scaleGroup.findMany({ orderBy: { order: "asc" } });
 
@@ -153,9 +153,9 @@ export interface AdminUserRow {
   role: Role;
   hasCurriculumAccess: boolean;
   createdAt: Date;
-  /** One entry per curriculum scale, in order — drives the per-scale unlock chips in the admin UI. */
+  /** One entry per curriculum scale, in order, drives the per-scale unlock chips in the admin UI. */
   scaleUnlocks: { slug: string; unlocked: boolean; completed: boolean }[];
-  /** How many Atom messages this account has stored — 0 means the "Clear Atom history" action has nothing to do. */
+  /** How many Atom messages this account has stored, 0 means the "Clear Atom history" action has nothing to do. */
   assistantMessageCount: number;
 }
 
@@ -219,7 +219,7 @@ export interface AdminProgressRow {
   accessUntil: number | null;
   /** What the teacher would release next and whether the automatic rules allow it yet. */
   nextApproval: NextApproval;
-  /** Folded in from the old, now-removed /admin/roster page — same figures a teacher used to check there, in the same row as the scale-by-scale detail. */
+  /** Folded in from the old, now-removed /admin/roster page, same figures a teacher used to check there, in the same row as the scale-by-scale detail. */
   classCredits: number;
   currentStreak: number;
   lastActivityAt: number | null;
@@ -229,7 +229,7 @@ export interface AdminProgressRow {
 
 /**
  * One row per student with every scale's full checklist state (not just
- * unlocked/completed, like AdminUserRow.scaleUnlocks above) — feeds the
+ * unlocked/completed, like AdminUserRow.scaleUnlocks above), feeds the
  * dedicated /admin/progress matrix, which exists so a teacher can see
  * exactly where a student is stuck (module read but quiz never passed,
  * say) and lock/unlock in the same glance, instead of opening each
@@ -324,7 +324,7 @@ export interface BookableStudent {
  */
 /**
  * Empty query now returns a browsable default list (most recently active
- * first) instead of nothing — by direct instruction, after "finding
+ * first) instead of nothing, by direct instruction, after "finding
  * someone requires remembering their exact name or email" feedback on the
  * manual-booking tool. Same "empty means show something useful, not
  * nothing" convention searchUsersForCredits already uses on the Credits
@@ -371,7 +371,7 @@ export async function setUserRole(userId: string, role: Role) {
 }
 
 /**
- * The account a "Message support" link should open a conversation with —
+ * The account a "Message support" link should open a conversation with,
  * the longest-standing admin account, so it stays stable even if more
  * admins are added later. Returns null in the (shouldn't-happen-in-prod)
  * case of no admin existing yet, so callers can hide the link instead of
@@ -383,12 +383,12 @@ export async function getSupportContactId(): Promise<string | null> {
 }
 
 /**
- * Admin manual grant/revoke of curriculum access — direct from /admin/users
+ * Admin manual grant/revoke of curriculum access, direct from /admin/users
  * or a student's own profile there, entirely separate from the normal paid
  * unlock flow (approveZellePayment's CURRICULUM/CURRICULUM_FAMILY_BUNDLE
  * branches). That flow already notifies (PAYMENT_APPROVED, and
  * CURRICULUM_ACCESS_GRANTED for a family-bundle recipient who never paid
- * themselves) — this manual path had no notification at all until now, so
+ * themselves), this manual path had no notification at all until now, so
  * a student granted access this way had no way to find out short of
  * happening to revisit the dashboard and noticing scales were unlocked.
  * Reuses the same CURRICULUM_ACCESS_GRANTED type the bundle-recipient path

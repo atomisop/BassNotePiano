@@ -55,7 +55,7 @@ function formatDuration(seconds: number | null): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-/** Reads a video file's duration client-side by loading it into a detached <video> element — best-effort, resolves null on any failure rather than blocking the upload. */
+/** Reads a video file's duration client-side by loading it into a detached <video> element, best-effort, resolves null on any failure rather than blocking the upload. */
 function readVideoDuration(file: File): Promise<number | null> {
   return new Promise((resolve) => {
     const url = URL.createObjectURL(file);
@@ -73,7 +73,7 @@ function readVideoDuration(file: File): Promise<number | null> {
   });
 }
 
-/** PUT directly to the presigned URL with upload-progress reporting — fetch() has no upload-progress event, so this needs XHR. */
+/** PUT directly to the presigned URL with upload-progress reporting, fetch() has no upload-progress event, so this needs XHR. */
 function uploadWithProgress(url: string, file: File, contentType: string, onProgress: (pct: number) => void): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -253,7 +253,7 @@ export function AdminLessonManager({
           <div>
             <p className="mb-1 block text-small font-medium text-slate-400">Video or PDF file</p>
             {/* The dropzone owns both the picker and the progress bar, so the
-                separate `{uploading && …}` block below it is gone — one place
+                separate `{uploading && …}` block below it is gone, one place
                 shows what file is queued and how far along it is. */}
             <FileDropzone
               accept="video/*,application/pdf"

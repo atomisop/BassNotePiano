@@ -57,7 +57,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           containing [data-surface="app"], so nothing can pan sideways or
           vertically except <main>. */}
       {/* pt-16: TopBar is `position: fixed` now (see its own comment for
-          why — it used to disappear behind whatever "on-screen stuff" the
+          why, it used to disappear behind whatever "on-screen stuff" the
           visitor was navigating back from, by direct instruction it's now
           pinned and un-hideable instead), so it no longer reserves its own
           64px here by sitting in flow. This padding reserves that same
@@ -66,11 +66,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden pt-16">
         <TopBar isAdmin={isAdmin} isOwner={isOwner} />
         <AnnouncementBanner announcement={activeAnnouncement} />
-        {/* pb-28 at every width, not just md: — the floating AppDock now
+        {/* pb-28 at every width, not just md:, the floating AppDock now
             covers phone widths too (fixed, not in flow), so this reserved
             clearance is no longer a desktop-only concern. overscroll-contain
             stops this scroll area's own momentum/rubber-banding from
-            chaining up to the body once it hits the top/bottom — without
+            chaining up to the body once it hits the top/bottom, without
             it, an iOS overscroll bounce here could visibly tug at the fixed
             shell around it, the same "things move weird" complaint. */}
         <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-6 pb-28 md:px-8 md:py-10">{children}</PullToRefreshMain>

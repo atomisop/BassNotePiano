@@ -9,7 +9,7 @@ import { adminCancelClassBooking } from "@/lib/classScheduleAdmin";
 // ---------------------------------------------------------------------------
 // Admin: weekly schedule management
 //
-// The recurring weekly slots (ClassSchedule rows) had no admin UI at all —
+// The recurring weekly slots (ClassSchedule rows) had no admin UI at all,
 // every existing row was created by hand, directly in the database. These
 // functions back the first real self-serve way to add, edit, and retire a
 // slot without touching the database.
@@ -18,7 +18,7 @@ import { adminCancelClassBooking } from "@/lib/classScheduleAdmin";
 // would either fail (a foreign key from real ClassBooking history) or
 // silently orphan that history. `active: false` is the exact mechanism
 // getUpcomingOccurrences() and bookClass() already use to mean "no longer
-// offered" — this just exposes it through the app instead of a one-off
+// offered", this just exposes it through the app instead of a one-off
 // script.
 // ---------------------------------------------------------------------------
 
@@ -28,9 +28,9 @@ const DAY_NAMES_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", 
 
 export interface ClassScheduleInput {
   dayOfWeek: number;
-  /** "HH:mm", ET wall-clock — same format ClassSchedule.startTime already stores. */
+  /** "HH:mm", ET wall-clock, same format ClassSchedule.startTime already stores. */
   startTime: string;
-  /** "HH:mm", ET wall-clock — end of the window; durationMin/creditCost are derived from (end - start), never entered directly, so they can never drift out of the 1-credit-per-30-min invariant bookClass depends on. */
+  /** "HH:mm", ET wall-clock, end of the window; durationMin/creditCost are derived from (end - start), never entered directly, so they can never drift out of the 1-credit-per-30-min invariant bookClass depends on. */
   endTime: string;
   label: string | null;
 }
@@ -43,7 +43,7 @@ function parseHHMM(value: string): number {
   return hour * 60 + minute;
 }
 
-/** Shared validation for create/update — throws ClassScheduleError with a message meant to be shown as-is. */
+/** Shared validation for create/update, throws ClassScheduleError with a message meant to be shown as-is. */
 function resolveDurationMin(startTime: string, endTime: string): number {
   const startMin = parseHHMM(startTime);
   const endMin = parseHHMM(endTime);
@@ -53,7 +53,7 @@ function resolveDurationMin(startTime: string, endTime: string): number {
   return durationMin;
 }
 
-/** Every schedule row, active or not — unlike getUpcomingOccurrences(), which only ever shows what's currently bookable. */
+/** Every schedule row, active or not, unlike getUpcomingOccurrences(), which only ever shows what's currently bookable. */
 export async function getAllClassSchedules() {
   return prisma.classSchedule.findMany({ orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }] });
 }
@@ -73,11 +73,11 @@ export async function createClassSchedule(input: ClassScheduleInput) {
 
 /**
  * Blocks a day/time/duration edit while any ACTIVE Payment Plan reserves
- * this schedule (any chunk within it) — an edit here would silently move or
+ * this schedule (any chunk within it), an edit here would silently move or
  * shrink a slot a student is actively paying to hold. Deliberately not
  * checked in setClassScheduleActive (deactivation): the daily reservation
  * job's own notify-once-and-skip handling is the intended path for that
- * case, not a blocked action here — see PaymentPlan.reservedSlotInactiveNotifiedAt.
+ * case, not a blocked action here, see PaymentPlan.reservedSlotInactiveNotifiedAt.
  */
 export async function updateClassSchedule(scheduleId: string, input: ClassScheduleInput) {
   const upcoming = await countUpcomingBookingsBySchedule([scheduleId]);

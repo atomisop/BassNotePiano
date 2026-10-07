@@ -6,12 +6,12 @@ import * as SwitchPrimitives from "@radix-ui/react-switch"
 import { cn } from "@/lib/utils"
 
 /**
- * A real toggle-switch primitive — track + animated thumb — on
+ * A real toggle-switch primitive, track + animated thumb, on
  * `@radix-ui/react-switch`, the same family as this project's other
  * primitives (`accordion`, `dialog`, `label`, `navigation-menu`, `sheet`).
  * Researched against 21st.dev's own switch references first (per the design
  * process this app follows): the strongest one used `@base-ui-components/
- * react`, a library not otherwise in this project — adding a second
+ * react`, a library not otherwise in this project, adding a second
  * primitives ecosystem for one component fails the "dependency cost /
  * consistency" test, so this adapts that reference's interaction pattern
  * (track + thumb, translate-x transition, focus ring, disabled state) onto
@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils"
  * The off state goes through the same shadcn token bridge as `Button`/
  * `Input` (`bg-input`), so it retints correctly under every theme
  * automatically. The on/checked state reads the accent ramp directly
- * (`bg-amber-400`) instead of `bg-primary` — a toggle's checked state is
+ * (`bg-amber-400`) instead of `bg-primary`, a toggle's checked state is
  * exactly the "selection state" signal green is back for, by direct
  * instruction, while `--primary` itself stays the neutral every real CTA
  * still reads (see globals.css's own `--primary` comment).

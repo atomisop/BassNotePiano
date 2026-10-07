@@ -14,7 +14,7 @@ export interface ZellePaymentModalProps {
   onClose: () => void;
   /** e.g. "Scale 3", or "Pro" for the lifetime purchase */
   scaleCode: string;
-  /** e.g. "Bati — Major, Minor & Lydian", or "the full curriculum" for the lifetime purchase */
+  /** e.g. "Bati, Major, Minor & Lydian", or "the full curriculum" for the lifetime purchase */
   scaleTitle: string;
   /** Header eyebrow suffix, e.g. "Session Unlock" or "Lifetime Unlock" */
   eyebrowLabel: string;

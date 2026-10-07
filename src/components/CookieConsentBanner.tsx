@@ -8,13 +8,13 @@ import { readConsent, writeConsent } from "@/lib/cookieConsent";
 import { EASE_IOS } from "@/lib/motionTokens";
 
 /**
- * Cookie consent banner — mounted once in `Providers`, so it's present on
+ * Cookie consent banner, mounted once in `Providers`, so it's present on
  * every route (marketing, auth, and the authenticated app alike).
  *
  * Honest about what's actually in this codebase: the only cookie this app
  * sets today is NextAuth's own session cookie, which is strictly necessary
- * (you can't stay signed in without it) and — same as every major consent
- * framework's own rule — never asks permission for that. "Analytics" is
+ * (you can't stay signed in without it) and, same as every major consent
+ * framework's own rule, never asks permission for that. "Analytics" is
  * offered as a real, saveable choice even though nothing here fires an
  * analytics event yet (checked before writing this: no gtag/GA/posthog/
  * mixpanel/hotjar anywhere in `src/`). Anything added later is expected to
@@ -27,7 +27,7 @@ import { EASE_IOS } from "@/lib/motionTokens";
  * make "I didn't actually choose anything" ambiguous with "I chose reject".
  *
  * `mounted` gate: `readConsent()` touches `localStorage`, which doesn't
- * exist during server render — rendering `null` until after mount avoids a
+ * exist during server render, rendering `null` until after mount avoids a
  * hydration mismatch, same pattern the theme boot script exists to avoid
  * for `data-theme`.
  */
@@ -95,7 +95,7 @@ export function CookieConsentBanner() {
         )}
 
         {/* `size="sm"` for the compact padding/text this banner wants, plus an
-            explicit `min-h-11` (44px) override — `sm`'s own height (36px)
+            explicit `min-h-11` (44px) override, `sm`'s own height (36px)
             is fine for dense in-app UI but falls short of the 44px touch
             target minimum, which matters more here than almost anywhere
             else in the app: this is the first interactive thing many

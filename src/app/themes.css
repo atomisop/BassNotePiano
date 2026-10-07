@@ -10,7 +10,7 @@
      --c-a-100 … --c-a-500  the one accent (set separately, by data-mode)
      --c-em-* / --c-rd-*    success / error
      --c-ink                hairlines and subtle tints
-     --c-scrim              modal overlays — dark in EVERY theme
+     --c-scrim              modal overlays, dark in EVERY theme
      --surface- and --elev-  the card material
 
    Channels are space-separated RGB so Tailwind's `/opacity` modifiers work.
@@ -61,7 +61,7 @@
   --surface-radius: 0.75rem;
 
   --elev-bg: rgba(255, 255, 255, 0.7);
-  /* Neutral now, not accent-tinted — `--c-ink` (this theme's own hairline
+  /* Neutral now, not accent-tinted, `--c-ink` (this theme's own hairline
      colour) instead of `--c-a-400`, same "premium black and white, accent
      only on true CTAs" instruction as the rest of the app. Affects every
      `glass-surface-elevated` consumer at once: modals not already on
@@ -72,7 +72,7 @@
   --elev-blur: 20px;
 
   /* Level 1 of the 4-level material system (canvas / subtle / standard /
-     elevated) — nav rails, secondary controls, minor surfaces. */
+     elevated), nav rails, secondary controls, minor surfaces. */
   --subtle-bg: rgba(255, 255, 255, 0.32);
   --subtle-border: rgba(26, 21, 15, 0.08);
   --subtle-blur: 8px;
@@ -94,17 +94,17 @@
    the app's default theme (see DEFAULT_THEME in themes.ts) and the one
    every logged-out visitor sees. */
 [data-theme="ink"] {
-  --c-s-50: 245 245 245; /* 0% 96% — near-white text */
+  --c-s-50: 245 245 245; /* 0% 96%, near-white text */
   --c-s-100: 230 230 230;
   --c-s-200: 212 212 212;
   --c-s-300: 194 194 194;
   --c-s-400: 168 168 168;
-  --c-s-500: 153 153 153; /* 0% 60% — muted-foreground */
+  --c-s-500: 153 153 153; /* 0% 60%, muted-foreground */
   --c-s-600: 120 120 120;
   --c-s-700: 66 66 66;
-  --c-s-800: 51 51 51; /* 0% 20% — border/input */
-  --c-s-900: 41 41 41; /* 0% 16% — muted */
-  --c-s-950: 26 26 26; /* 0% 10% — background/ground */
+  --c-s-800: 51 51 51; /* 0% 20%, border/input */
+  --c-s-900: 41 41 41; /* 0% 16%, muted */
+  --c-s-950: 26 26 26; /* 0% 10%, background/ground */
 
   --c-em-300: 134 239 172;
   --c-em-400: 74 222 128;
@@ -123,7 +123,7 @@
     radial-gradient(circle at 85% 75%, rgba(255, 255, 255, 0.02), transparent 40%);
 
   /* --c-surface-solid at 46 46 46 matches the spec's own `--nav-button`
-     (0 0% 18%) — a distinct, slightly-lighter opaque chrome fill, not the
+     (0 0% 18%), a distinct, slightly-lighter opaque chrome fill, not the
      bare ground. */
   --c-surface-solid: 43 43 45;
   --surface-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
@@ -132,7 +132,7 @@
   --surface-blur: 14px;
   --surface-radius: 0.5rem;
 
-  /* Neutral now, not accent-tinted — plain white at two opacities instead
+  /* Neutral now, not accent-tinted, plain white at two opacities instead
      of a white/accent blend, and `--c-ink` (this theme's own hairline
      colour, white here) instead of `--c-a-400` for the border, same
      "premium black and white, accent only on true CTAs" instruction as the
