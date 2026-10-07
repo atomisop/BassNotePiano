@@ -469,31 +469,32 @@ export async function sendWelcomeEmail(to: string, name: string | null) {
 }
 
 /**
- * A copy of an email that arrived at the studio inbox (music@), sent to an
- * employee. Plain text only, escaped, and replies go to the original sender.
+ * An admin's reply to an email thread in Support Chat's Email tab. Goes out as
+ * music@bassnotepiano.com and plain, like a person wrote it. `messageId`,
+ * `inReplyTo` and `references` keep it in the customer's thread, and their
+ * answer comes back to music@, where the Mailgun route hands it to the site.
+ * Throws when it cannot send, so the thread never shows a reply nobody got.
  */
-export async function sendForwardedStudioMail(to: string, mail: { from: string; subject: string; text: string }) {
-  const body = mail.text.length > 4000 ? `${mail.text.slice(0, 4000)}...` : mail.text;
-  const html = emailShell(
-    mail.subject,
-    `<p style="margin:0 0 12px;color:#9ca3af;font-size:13px;">From ${escapeHtml(mail.from)}</p><p style="margin:0;white-space:pre-wrap;">${escapeHtml(body)}</p>`,
-    { footerNote: "A copy of an email sent to the studio inbox, forwarded to you as an admin." },
-  );
-  const text = `From ${mail.from}\n\n${body}`;
+export async function sendSupportEmailReply(input: {
+  to: string;
+  subject: string;
+  text: string;
+  /** The Message-ID this reply is sent with, kept so the customer's answer can be matched to the thread. */
+  messageId: string;
+  inReplyTo: string | null;
+  references: string[];
+}): Promise<void> {
+  const { to, subject, text, messageId, inReplyTo, references } = input;
   const client = getResendClient();
   if (!client) {
     if (process.env.NODE_ENV === "production") throw new Error("RESEND_API_KEY is not set.");
-    console.log(`[dev] Forwarded studio mail to ${to}: ${mail.subject}`);
+    console.log(`[dev] Support email reply to ${to}: ${subject}\n${text}`);
     return;
   }
-  const replyTo = mail.from.match(/<([^>]+)>/)?.[1] ?? mail.from;
-  const result = await client.emails.send({
-    from: EMAIL_FROM,
-    to,
-    subject: `Studio inbox: ${mail.subject}`.slice(0, 200),
-    html,
-    text,
-    replyTo: /^[^\s@<>]+@[^\s@<>]+$/.test(replyTo) ? replyTo : EMAIL_REPLY_TO,
-  });
-  if (result.error) throw new Error(`Resend failed to forward studio mail: ${result.error.message}`);
+  const html = `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#111;white-space:pre-wrap;">${escapeHtml(text)}</div>`;
+  const headers: Record<string, string> = { "Message-ID": messageId };
+  if (inReplyTo) headers["In-Reply-To"] = inReplyTo;
+  if (references.length > 0) headers["References"] = references.join(" ");
+  const result = await client.emails.send({ from: PERSONAL_FROM, to, subject, html, text, replyTo: EMAIL_REPLY_TO, headers });
+  if (result.error) throw new Error(`Resend failed to send a support reply: ${result.error.message}`);
 }

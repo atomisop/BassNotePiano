@@ -20,10 +20,13 @@ import { getAdminRecipients } from "@/lib/adminNotifications";
 //    caller (src/app/(dashboard)/admin/support/actions.ts) before any of
 //    these run.
 
+import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
-import type { AssistantEscalationStatus, SupportMessageSender } from "@prisma/client";
+import type { AssistantEscalationStatus, SupportMessageSender, SupportThreadSource } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
+import { sendSupportEmailReply } from "@/lib/email";
+import { normalizeSubject, replySubject } from "@/lib/inboundEmail";
 import type { AssistantMessage } from "@/lib/assistant";
 
 export class AssistantEscalationError extends Error {}
@@ -149,7 +152,8 @@ const THREAD_SELECT = {
  */
 async function loadEscalationForVisitor(escalationId: string) {
   const escalation = await prisma.assistantEscalation.findUnique({ where: { id: escalationId } });
-  if (!escalation) return null;
+  // An email thread belongs to the customer's inbox, not the chat widget.
+  if (!escalation || escalation.source !== "CHAT") return null;
 
   if (escalation.userId) {
     const session = await getServerAuthSession();
@@ -235,6 +239,8 @@ export interface AdminThreadSummary {
   contactName: string | null;
   contactEmail: string;
   status: AssistantEscalationStatus;
+  source: SupportThreadSource;
+  subject: string | null;
   createdAt: Date;
   user: { id: string; name: string | null; username: string | null } | null;
   resolvedByName: string | null;
@@ -244,11 +250,16 @@ export interface AdminThreadSummary {
 
 /** `userId` narrows to one account's own threads — used by the admin
     customer-detail page; the plain admin support inbox never passes it. */
-export async function getSupportThreads(status?: AssistantEscalationStatus, userId?: string): Promise<AdminThreadSummary[]> {
+export async function getSupportThreads(
+  status?: AssistantEscalationStatus,
+  userId?: string,
+  source?: SupportThreadSource,
+): Promise<AdminThreadSummary[]> {
   const escalations = await prisma.assistantEscalation.findMany({
     where: {
       ...(status ? { status } : {}),
       ...(userId ? { userId } : {}),
+      ...(source ? { source } : {}),
     },
     orderBy: { createdAt: "desc" },
     take: 100,
@@ -264,6 +275,8 @@ export async function getSupportThreads(status?: AssistantEscalationStatus, user
     contactName: e.contactName,
     contactEmail: e.contactEmail,
     status: e.status,
+    source: e.source,
+    subject: e.subject,
     createdAt: e.createdAt,
     user: e.user,
     resolvedByName: e.resolvedBy?.name ?? null,
@@ -300,7 +313,20 @@ export async function getSupportThread(escalationId: string): Promise<{ status: 
   };
 }
 
+const MAX_EMAIL_REPLY_LENGTH = 5000;
+
 export async function postAdminReply(escalationId: string, adminId: string, body: string): Promise<void> {
+  const escalation = await prisma.assistantEscalation.findUnique({
+    where: { id: escalationId },
+    select: { source: true, contactEmail: true, subject: true },
+  });
+  if (!escalation) throw new AssistantEscalationError("That conversation no longer exists.");
+
+  if (escalation.source === "EMAIL") {
+    await postEmailReply(escalationId, adminId, body, escalation);
+    return;
+  }
+
   const trimmed = body.trim().slice(0, MAX_VISITOR_MESSAGE_LENGTH);
   if (!trimmed) throw new AssistantEscalationError("Message can't be empty.");
 
@@ -309,6 +335,44 @@ export async function postAdminReply(escalationId: string, adminId: string, body
   });
   await clearSupportTyping(escalationId, "SUPPORT");
   // Replying is itself "an admin looked at this."
+  await prisma.assistantEscalation.update({ where: { id: escalationId }, data: { adminLastReadAt: new Date() } });
+}
+
+/** Emails the reply from music@ first and only then records it, so the thread never shows a reply the customer did not get. */
+async function postEmailReply(
+  escalationId: string,
+  adminId: string,
+  body: string,
+  escalation: { contactEmail: string; subject: string | null },
+): Promise<void> {
+  const trimmed = body.trim().slice(0, MAX_EMAIL_REPLY_LENGTH);
+  if (!trimmed) throw new AssistantEscalationError("Message can't be empty.");
+
+  const earlier = await prisma.supportMessage.findMany({
+    where: { escalationId, emailMessageId: { not: null } },
+    orderBy: { createdAt: "asc" },
+    select: { emailMessageId: true },
+  });
+  const references = earlier.map((m) => m.emailMessageId).filter((id): id is string => Boolean(id));
+  const messageId = `<support-${randomUUID()}@bassnotepiano.com>`;
+
+  try {
+    await sendSupportEmailReply({
+      to: escalation.contactEmail,
+      subject: replySubject(escalation.subject),
+      text: trimmed,
+      messageId,
+      inReplyTo: references[references.length - 1] ?? null,
+      references: references.slice(-10),
+    });
+  } catch (err) {
+    console.error("Support email reply failed:", err);
+    throw new AssistantEscalationError("The email could not be sent. Nothing was delivered, so try again in a moment.");
+  }
+
+  await prisma.supportMessage.create({
+    data: { escalationId, sender: "SUPPORT", body: trimmed, sentById: adminId, emailMessageId: messageId },
+  });
   await prisma.assistantEscalation.update({ where: { id: escalationId }, data: { adminLastReadAt: new Date() } });
 }
 
@@ -328,6 +392,131 @@ export async function resolveSupportThread(escalationId: string, adminId: string
 // already gone, is a no-op instead of throwing.
 export async function deleteSupportThread(escalationId: string): Promise<void> {
   await prisma.assistantEscalation.deleteMany({ where: { id: escalationId } });
+}
+
+// ---------------------------------------------------------------------------
+// Inbound email — a message to music@bassnotepiano.com, handed over by the
+// Mailgun route (src/app/api/inbound/mailgun/route.ts). Each conversation is
+// one EMAIL thread in the same tables as the chat, shown in the Email tab.
+// ---------------------------------------------------------------------------
+
+const MAX_EMAIL_BODY_LENGTH = 20_000;
+const MAX_SUBJECT_LENGTH = 200;
+
+export interface InboundEmail {
+  /** The email's own Message-ID header; null only if the sender's mail server left it out. */
+  messageId: string | null;
+  fromEmail: string;
+  fromName: string | null;
+  /** Mailgun says the sender passed DKIM or SPF. Only then is the thread linked to an account with that email. */
+  senderVerified: boolean;
+  subject: string;
+  text: string;
+  /** Message-IDs from In-Reply-To then References, used to find the thread this answers. */
+  parentMessageIds: string[];
+  attachmentCount: number;
+}
+
+export type InboundOutcome = "created" | "appended" | "duplicate";
+
+export async function ingestInboundEmail(mail: InboundEmail): Promise<{ outcome: InboundOutcome; escalationId: string | null }> {
+  const emailMessageId = mail.messageId?.slice(0, 300) || `<inbound-${randomUUID()}@bassnotepiano.com>`;
+
+  const seen = await prisma.supportMessage.findUnique({ where: { emailMessageId }, select: { escalationId: true } });
+  if (seen) return { outcome: "duplicate", escalationId: seen.escalationId };
+
+  const subject = mail.subject.trim().slice(0, MAX_SUBJECT_LENGTH) || "(no subject)";
+  let body = mail.text.trim().slice(0, MAX_EMAIL_BODY_LENGTH) || "(no text)";
+  if (mail.attachmentCount > 0) {
+    body += `\n\n[${mail.attachmentCount} attachment${mail.attachmentCount === 1 ? "" : "s"} not shown here. Open the original in Gmail.]`;
+  }
+  const identifier = `email:${mail.fromEmail}`;
+
+  // 1) Answers one of our own emails or an earlier message: same thread.
+  let threadId: string | null = null;
+  if (mail.parentMessageIds.length > 0) {
+    const parent = await prisma.supportMessage.findFirst({
+      where: { emailMessageId: { in: mail.parentMessageIds }, escalation: { source: "EMAIL" } },
+      select: { escalationId: true },
+    });
+    threadId = parent?.escalationId ?? null;
+  }
+  // 2) Mail clients that drop the reply headers: same sender and same subject.
+  if (!threadId) {
+    const recent = await prisma.assistantEscalation.findMany({
+      where: { source: "EMAIL", contactEmail: mail.fromEmail },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: { id: true, subject: true },
+    });
+    const wanted = normalizeSubject(subject);
+    threadId = recent.find((t) => normalizeSubject(t.subject ?? "") === wanted)?.id ?? null;
+  }
+
+  const whoLabel = mail.fromName ? `${mail.fromName} (${mail.fromEmail})` : mail.fromEmail;
+  let escalationId: string;
+  let outcome: InboundOutcome;
+  let notify = true;
+
+  try {
+    if (threadId) {
+      const previous = await prisma.supportMessage.findFirst({
+        where: { escalationId: threadId },
+        orderBy: { createdAt: "desc" },
+        select: { sender: true },
+      });
+      await prisma.supportMessage.create({
+        data: { escalationId: threadId, sender: "VISITOR", body, identifier, emailMessageId },
+      });
+      // A customer writing again reopens a thread that was marked resolved.
+      await prisma.assistantEscalation.updateMany({
+        where: { id: threadId, status: "RESOLVED" },
+        data: { status: "OPEN", resolvedAt: null, resolvedById: null },
+      });
+      escalationId = threadId;
+      outcome = "appended";
+      notify = previous?.sender !== "VISITOR";
+    } else {
+      // A From address anyone can forge must not attach a thread to a real account.
+      const account = mail.senderVerified
+        ? await prisma.user.findFirst({ where: { email: { equals: mail.fromEmail, mode: "insensitive" } }, select: { id: true } })
+        : null;
+      const created = await prisma.assistantEscalation.create({
+        data: {
+          identifier,
+          userId: account?.id ?? null,
+          contactName: mail.fromName,
+          contactEmail: mail.fromEmail,
+          source: "EMAIL",
+          subject,
+          messages: { create: { sender: "VISITOR", body, identifier, emailMessageId } },
+        },
+      });
+      escalationId = created.id;
+      outcome = "created";
+    }
+  } catch (err) {
+    // The same email delivered twice at once: the unique Message-ID already won.
+    if ((err as { code?: string })?.code === "P2002") return { outcome: "duplicate", escalationId: null };
+    throw err;
+  }
+
+  if (notify) {
+    const admins = await getAdminRecipients("MUSIC_INBOX");
+    await Promise.all(
+      admins.map((admin) =>
+        createNotification({
+          userId: admin.id,
+          type: "ASSISTANT_ESCALATION",
+          title: outcome === "created" ? "New email to music@" : "New reply by email",
+          body: `${whoLabel}: ${subject}`,
+          cta: { label: "Open Email", path: "/admin/support?source=email" },
+        }).catch((err) => console.error("Inbound email notification failed (non-blocking):", err)),
+      ),
+    );
+  }
+
+  return { outcome, escalationId };
 }
 
 // ---------------------------------------------------------------------------
