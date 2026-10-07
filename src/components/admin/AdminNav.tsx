@@ -56,11 +56,28 @@ const NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/lessons", label: "Lessons" },
       { href: "/admin/support", label: "Support Chat" },
       { href: "/admin/messages", label: "Messages" },
+      { href: "/admin/announcements", label: "Announcements" },
     ],
   },
 ];
 
 const ALL_LEAVES = NAV_GROUPS.flatMap((g) => g.leaves);
+
+/** What is waiting, by page address. Pages with nothing waiting have no entry. */
+export type AdminNavBadges = Record<string, number>;
+
+function groupCount(group: AdminNavGroup, badges: AdminNavBadges): number {
+  return group.leaves.reduce((sum, leaf) => sum + (badges[leaf.href] ?? 0), 0);
+}
+
+function Badge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="ml-1.5 rounded-full bg-[rgb(var(--signal)/0.18)] px-1.5 text-small font-semibold tabular-nums text-signal" aria-label={`${count} waiting`}>
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
 
 function isLeafActive(href: string, pathname: string): boolean {
   return href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
@@ -77,7 +94,7 @@ function activeGroup(pathname: string): AdminNavGroup {
  * just visually grouped via <optgroup> so the same four buckets are still
  * legible instead of eleven undifferentiated rows.
  */
-function MobileAdminSelect() {
+function MobileAdminSelect({ badges }: { badges: AdminNavBadges }) {
   const router = useRouter();
   const pathname = usePathname();
   const current = ALL_LEAVES.find((leaf) => isLeafActive(leaf.href, pathname))?.href ?? ALL_LEAVES[0].href;
@@ -93,12 +110,14 @@ function MobileAdminSelect() {
         group.leaves.length === 1 ? (
           <option key={group.leaves[0].href} value={group.leaves[0].href}>
             {group.leaves[0].label}
+            {badges[group.leaves[0].href] ? ` (${badges[group.leaves[0].href]})` : ""}
           </option>
         ) : (
           <optgroup key={group.label} label={group.label}>
             {group.leaves.map((leaf) => (
               <option key={leaf.href} value={leaf.href}>
                 {leaf.label}
+                {badges[leaf.href] ? ` (${badges[leaf.href]})` : ""}
               </option>
             ))}
           </optgroup>
@@ -114,7 +133,7 @@ function MobileAdminSelect() {
  * leaf pills right below. A single-leaf group (just Overview) never grows
  * a second row at all, nothing to switch between.
  */
-function DesktopAdminPills() {
+function DesktopAdminPills({ badges }: { badges: AdminNavBadges }) {
   const pathname = usePathname();
   const group = activeGroup(pathname);
 
@@ -132,6 +151,7 @@ function DesktopAdminPills() {
               }`}
             >
               {g.label}
+              <Badge count={groupCount(g, badges)} />
             </Link>
           );
         })}
@@ -149,6 +169,7 @@ function DesktopAdminPills() {
                 }`}
               >
                 {leaf.label}
+                <Badge count={badges[leaf.href] ?? 0} />
               </Link>
             );
           })}
@@ -158,11 +179,11 @@ function DesktopAdminPills() {
   );
 }
 
-export function AdminNav() {
+export function AdminNav({ badges = {} }: { badges?: AdminNavBadges }) {
   return (
     <>
-      <MobileAdminSelect />
-      <DesktopAdminPills />
+      <MobileAdminSelect badges={badges} />
+      <DesktopAdminPills badges={badges} />
     </>
   );
 }

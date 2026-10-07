@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
-import { approveZellePayment, deleteZellePayment, markPaymentChecked, refundZellePayment, rejectZellePayment } from "@/lib/payments";
+import { approveZellePayment, deleteZellePayment, markAllPaymentsChecked, markPaymentChecked, refundZellePayment, rejectZellePayment } from "@/lib/payments";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { dismissReceipt, matchReceiptToPayment, ReceiptError } from "@/lib/paymentReceipts";
 
@@ -27,6 +27,15 @@ export async function checkPaymentAction(paymentId: string) {
   await requireAdmin();
   await markPaymentChecked(paymentId);
   revalidatePath("/admin/payments");
+}
+
+/** "Mark all as checked" on the Unchecked tab, after the admin has looked through them. */
+export async function checkAllPaymentsAction(): Promise<{ message: string }> {
+  await requireAdmin();
+  const count = await markAllPaymentsChecked();
+  revalidatePath("/admin/payments");
+  revalidatePath("/admin");
+  return { message: count === 1 ? "1 payment marked as checked." : `${count} payments marked as checked.` };
 }
 
 export async function rejectPaymentAction(paymentId: string, reason: string) {

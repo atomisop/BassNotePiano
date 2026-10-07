@@ -3,7 +3,8 @@ import { UserList, type UserListRow } from "@/components/admin/UserList";
 import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
-import { approveNextScaleAction } from "./actions";
+import { approveAllReadyScalesAction, approveNextScaleAction } from "./actions";
+import { BulkConfirmButton } from "@/components/admin/BulkConfirmButton";
 
 export default async function AdminUsersPage({ searchParams }: { searchParams: { q?: string; filter?: string } }) {
   const query = searchParams.q ?? "";
@@ -49,6 +50,17 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
         <a href="/api/admin/export?type=people" className="tap neu-btn mt-6 inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
           Export CSV
         </a>
+      )}
+
+      {needsApproval && rows.length > 1 && (
+        <div className="mt-6">
+          <BulkConfirmButton
+            label={`Approve all ${rows.length} ready`}
+            question={`Release the next scale for all ${rows.length} students who are ready? Each one is told right away. Nobody is forced past a rule.`}
+            confirmLabel="Yes, approve them all"
+            onConfirm={approveAllReadyScalesAction}
+          />
+        </div>
       )}
 
       <div className="mt-6">

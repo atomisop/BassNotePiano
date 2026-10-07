@@ -7,7 +7,9 @@ import { isOwnerEmail } from "@/lib/adminNotifications";
 import { searchUsersForCredits, getRecentCreditAdjustments } from "@/lib/creditAdjustments";
 import { AdminCreditGrantPanel } from "@/components/admin/AdminCreditGrantPanel";
 import { searchUsersForCreditsAction, adjustUserCreditsAction, getUserCreditHistoryAction } from "./credit-actions";
-import { approvePaymentAction, checkPaymentAction, deletePaymentAction, dismissReceiptAction, matchReceiptAction, refundPaymentAction, rejectPaymentAction } from "./actions";
+import { BulkConfirmButton } from "@/components/admin/BulkConfirmButton";
+import Link from "next/link";
+import { approvePaymentAction, checkAllPaymentsAction, checkPaymentAction, deletePaymentAction, dismissReceiptAction, matchReceiptAction, refundPaymentAction, rejectPaymentAction } from "./actions";
 import { countUnmatchedReceipts, getPaymentPipelineHealth } from "@/lib/paymentPipelineStatus";
 import { listUnmatchedReceipts } from "@/lib/paymentReceipts";
 import { PaymentPipelineBanner } from "@/components/admin/PaymentPipelineBanner";
@@ -24,13 +26,13 @@ const FILTERS: { label: string; value: ZellePaymentStatus | "ALL" | "UNCHECKED" 
   { label: "All", value: "ALL" },
 ];
 
-export default async function AdminPaymentsPage({ searchParams }: { searchParams: { status?: string; tab?: string } }) {
+export default async function AdminPaymentsPage({ searchParams }: { searchParams: { status?: string; tab?: string; page?: string } }) {
   if (searchParams.tab === "credits") return <CreditsTab />;
   if (searchParams.tab === "emails") return <EmailsTab />;
   const requested = searchParams.status?.toUpperCase();
   const activeFilter = FILTERS.find((f) => f.value === requested)?.value ?? "PENDING_REVIEW";
-  const [payments, health, unmatched] = await Promise.all([
-    getAdminPayments(activeFilter === "ALL" ? undefined : activeFilter),
+  const [{ payments, total, page, pageCount }, health, unmatched] = await Promise.all([
+    getAdminPayments(activeFilter === "ALL" ? undefined : activeFilter, Number(searchParams.page) || 1),
     getPaymentPipelineHealth(),
     countUnmatchedReceipts(),
   ]);
@@ -45,7 +47,8 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
       <TopTabs active="payments" unmatched={unmatched} />
       <PaymentPipelineBanner health={health} />
       <p className="mt-2 text-small text-slate-500">
-        {payments.length} payment{payments.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
+        {total} payment{total === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
+        {pageCount > 1 ? ` · page ${page} of ${pageCount}` : ""}
       </p>
 
       <div className="mt-6">
@@ -66,6 +69,17 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
         </a>
       )}
 
+      {activeFilter === "UNCHECKED" && total > 0 && (
+        <div className="mt-6">
+          <BulkConfirmButton
+            label={`Mark all ${total} as checked`}
+            question={`Mark all ${total} auto-approved payment${total === 1 ? "" : "s"} as checked? Do this after you have looked through them.`}
+            confirmLabel="Yes, mark them all"
+            onConfirm={checkAllPaymentsAction}
+          />
+        </div>
+      )}
+
       <div className="mt-6">
         <PaymentQueue
           payments={payments}
@@ -79,8 +93,38 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
           }
         />
       </div>
+
+      {pageCount > 1 && (
+        <nav aria-label="Pages" className="mt-6 flex items-center justify-between gap-3 text-small">
+          {page > 1 ? (
+            <Link href={pageHref(activeFilter, page - 1)} className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 font-medium">
+              Newer
+            </Link>
+          ) : (
+            <span />
+          )}
+          <span className="text-slate-500">
+            Page {page} of {pageCount}
+          </span>
+          {page < pageCount ? (
+            <Link href={pageHref(activeFilter, page + 1)} className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 font-medium">
+              Older
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
+      )}
     </div>
   );
+}
+
+function pageHref(filter: string, page: number) {
+  const params = new URLSearchParams();
+  if (filter !== "PENDING_REVIEW") params.set("status", filter);
+  if (page > 1) params.set("page", String(page));
+  const q = params.toString();
+  return q ? `/admin/payments?${q}` : "/admin/payments";
 }
 
 function TopTabs({ active, unmatched }: { active: "payments" | "emails" | "credits"; unmatched: number }) {
