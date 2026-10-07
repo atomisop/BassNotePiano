@@ -2,27 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-const PUBLIC_PATHS = [
-  "/",
-  "/pricing",
-  "/login",
-  "/register",
-  "/reset-password",
-];
-
-function isPublic(pathname: string) {
-  if (pathname.startsWith("/api/auth") || pathname.startsWith("/_next")) return true;
-  return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-}
-
 // Edge middleware can't hit Postgres directly, so it only handles what the
 // NextAuth JWT can answer on its own: signed in, onboarded, admin or not.
 // Curriculum access is checked against the database where the content is
 // served (see the note at the bottom of this function).
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
-  if (isPublic(pathname)) return NextResponse.next();
 
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
@@ -62,6 +47,11 @@ export const config = {
     "/account/:path*",
     "/friends/:path*",
     "/messages/:path*",
+    "/lessons/:path*",
+    "/practice/:path*",
+    "/profile/:path*",
+    "/mail/:path*",
+    "/about",
     "/onboarding",
   ],
 };

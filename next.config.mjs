@@ -17,6 +17,19 @@ const nextConfig = {
     serverComponentsExternalPackages: ["resend"],
   },
 
+  // Old URLs that no longer have a page of their own. Kept as redirects (in
+  // emails and notifications already sent) instead of stub pages.
+  async redirects() {
+    return [
+      { source: "/schedule", destination: "/lessons", permanent: false },
+      { source: "/billing/credits", destination: "/lessons?tab=extra", permanent: false },
+      { source: "/billing/curriculum", destination: "/billing/plans", permanent: false },
+      { source: "/billing/curriculum/family", destination: "/billing/plans", permanent: false },
+      { source: "/admin/progress", destination: "/admin/users?filter=approval", permanent: false },
+      { source: "/admin/announcements", destination: "/admin/messages?tab=announcements", permanent: false },
+    ];
+  },
+
   images: {
     remotePatterns: [
       {

@@ -1,8 +1,8 @@
 import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
 
 /**
- * Covers `/billing/curriculum`, `/billing/history`, and `/billing/lessons`
- * (none of the three defines its own loading.tsx). `BillingLayout` already
+ * Covers `/billing/plans`, `/billing/history`, and `/billing/lessons`
+ * (none of them defines its own loading.tsx). `BillingLayout` already
  * centers its children (`flex min-h-[70vh] items-center justify-center`),
  * so this only needs to be a single centered card, not a full-page shape —
  * matching the benefit-list-plus-price composition `billing/curriculum`
