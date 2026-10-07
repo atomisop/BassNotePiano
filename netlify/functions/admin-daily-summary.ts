@@ -12,7 +12,9 @@ function count(n: number, one: string, many: string): string | null {
   return n > 0 ? `${n} ${n === 1 ? one : many}` : null;
 }
 
-// One short email to the owner, only on days something needs a decision.
+// One short email to the owner on days something needs a decision, and a short
+// "all clear" every Monday, so a quiet inbox means all is well rather than
+// that this job (or the email service) stopped.
 // Runs once daily at 12:00 UTC (8am Eastern). Plain queries on purpose: this
 // runs outside Next, so it must not pull in anything that needs the request
 // cache (see the other scheduled functions).
@@ -61,7 +63,18 @@ export const handler = schedule("0 12 * * *", async () =>
   ].filter((p): p is string => p !== null);
 
   if (parts.length === 0 && !classLine) {
-    console.log("Admin daily summary: nothing needs a decision, no email sent");
+    const isMonday = new Date(now).toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long" }) === "Monday";
+    if (!isMonday) {
+      console.log("Admin daily summary: nothing needs a decision, no email sent");
+      return { statusCode: 200 };
+    }
+    await sendNotificationEmailWithCta(
+      OWNER_EMAIL,
+      "All clear",
+      "Weekly check-in: nothing needs a decision, every scheduled job has run on time, and payment emails are arriving. If you stop getting this on Mondays, something is wrong with the scheduler or the email service.",
+      { label: "Open admin", url: getAppUrl("/admin") },
+    );
+    console.log("Admin daily summary: all clear sent");
     return { statusCode: 200 };
   }
 

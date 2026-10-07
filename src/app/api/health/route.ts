@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { reportError } from "@/lib/reportError";
 
 // STEP 24 — AVAILABILITY/RECOVERY. The one thing an uptime monitor (or a
 // human, mid-incident) should be able to hit to answer "is the app actually
@@ -19,10 +20,10 @@ export async function GET() {
     // No error detail in the response body — this endpoint is meant to be
     // hit by external monitors and isn't authenticated, so it's public by
     // design (same reasoning as Step 4's "no production stack traces"
-    // rule). The real error still goes to the server log / Sentry (Step
-    // 21's instrumentation already captures unhandled route errors), an
-    // operator investigating has that, an anonymous prober doesn't need it.
-    console.error("Health check: database unreachable", err);
+    // rule). The real error still goes to the server log and GlitchTip
+    // (reportError), an operator investigating has that, an anonymous prober
+    // doesn't need it.
+    reportError(err, "Health check: database unreachable");
     return NextResponse.json({ status: "error", database: "unreachable", checkedAt }, { status: 503 });
   }
 }

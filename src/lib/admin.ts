@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { SCALE_SLUGS } from "@/lib/curriculum";
 import { createNotification } from "@/lib/notifications";
 import { countUnmatchedReceipts, getPaymentPipelineHealth } from "@/lib/paymentPipelineStatus";
+import { findStoppedJobs } from "@/lib/jobRun";
 
 // ---------------------------------------------------------------------------
 // Overview metrics
@@ -478,7 +479,7 @@ export interface AttentionItem {
 /** Everything waiting on the owner or staff right now, each with the page that handles it. Items with nothing waiting are left out. */
 export async function getAttentionItems(): Promise<AttentionItem[]> {
   const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000);
-  const [payments, applications, chats, unmarked, progress, uncheckedAuto, unmatchedEmails, pipeline] = await Promise.all([
+  const [payments, applications, chats, unmarked, progress, uncheckedAuto, unmatchedEmails, pipeline, stoppedJobs] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
     prisma.classRegistration.count({ where: { status: "PENDING" } }),
     prisma.assistantEscalation.count({ where: { status: "OPEN" } }),
@@ -488,6 +489,8 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
     prisma.zellePayment.count({ where: { autoApproved: true, checkedAt: null, status: "VERIFIED" } }),
     countUnmatchedReceipts(),
     getPaymentPipelineHealth(),
+    // Employees are admins too and never saw this: the jobs table below is owner only.
+    findStoppedJobs(),
   ]);
   const readyScales = progress.filter((p) => p.hasCurriculumAccess && p.accessKind !== "ADMIN" && p.nextApproval.state === "READY").length;
   const items: AttentionItem[] = [
@@ -495,6 +498,14 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
     { label: uncheckedAuto === 1 ? "Auto-approved payment to check" : "Auto-approved payments to check", count: uncheckedAuto, href: "/admin/payments?status=UNCHECKED" },
     { label: unmatchedEmails === 1 ? "Payment email that matched no one" : "Payment emails that matched no one", count: unmatchedEmails, href: "/admin/payments?tab=emails" },
     { label: "Bank emails have stopped arriving while payments wait", count: pipeline.status === "quiet" ? 1 : 0, href: "/admin/payments" },
+    {
+      label:
+        stoppedJobs.length === 1
+          ? `Scheduled job stopped: ${stoppedJobs[0]}`
+          : `${stoppedJobs.length} scheduled jobs stopped: ${stoppedJobs.slice(0, 3).join(", ")}${stoppedJobs.length > 3 ? ` and ${stoppedJobs.length - 3} more` : ""}`,
+      count: stoppedJobs.length,
+      href: "/admin",
+    },
     { label: applications === 1 ? "Class application" : "Class applications", count: applications, href: "/admin/students" },
     { label: chats === 1 ? "Open support chat" : "Open support chats", count: chats, href: "/admin/support" },
     { label: unmarked === 1 ? "Finished class to mark" : "Finished classes to mark", count: unmarked, href: "/admin/schedule?view=ATTENDANCE" },

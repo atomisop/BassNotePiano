@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { consumeRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { ingestInboundEmail } from "@/lib/support";
+import { reportError } from "@/lib/reportError";
 import {
   isAutomatedMail,
   isSenderAuthenticated,
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
       console.error(`Inbound email over its limit, dropped: ${sender.email}`);
       return NextResponse.json({ outcome: "ignored", reason: "rate limited" });
     }
-    console.error("Inbound email rate limit check failed:", err);
+    reportError(err, "Inbound email rate limit check");
     return NextResponse.json({ error: "Could not process." }, { status: 500 });
   }
 
@@ -86,7 +87,7 @@ export async function POST(req: Request) {
     });
     return NextResponse.json({ outcome: result.outcome });
   } catch (err) {
-    console.error("Inbound email failed:", err);
+    reportError(err, "Inbound email");
     return NextResponse.json({ error: "Could not process." }, { status: 500 });
   }
 }

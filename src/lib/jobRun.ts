@@ -24,16 +24,71 @@ export const JOB_MAX_SILENCE_HOURS: Record<string, number> = {
   "class-reminders": 2,
   "auto-approvals": 30,
   "discord-class-channels": 2,
+  // The watchdog itself runs every 30 minutes; the outside monitor is what notices if it stops.
+  "job-watchdog": 3,
 };
 
-/** Jobs that have not run (or last failed) within their allowed window. */
-export async function findStoppedJobs(now = new Date()): Promise<string[]> {
-  const stopped: string[] = [];
-  for (const [name, hours] of Object.entries(JOB_MAX_SILENCE_HOURS)) {
-    const last = await prisma.jobRun.findFirst({ where: { name }, orderBy: { ranAt: "desc" }, select: { ranAt: true, ok: true } });
-    // Never recorded yet counts as fine for a day, so a fresh deploy does not alarm.
-    if (!last) continue;
-    if (!last.ok || now.getTime() - last.ranAt.getTime() > hours * 3_600_000) stopped.push(name);
+/**
+ * Jobs added after the rest. A job that has never run only counts as stopped
+ * once its window has passed since this moment, so shipping a new job does
+ * not raise a false alarm before its first run.
+ */
+export const JOB_ADDED_AT: Record<string, string> = {
+  "job-watchdog": "2026-10-08T00:00:00Z",
+};
+
+export type JobState = "ok" | "waiting" | "failed" | "late" | "never";
+
+export interface JobStatus {
+  name: string;
+  state: JobState;
+  lastRanAt: Date | null;
+  /** The error from the last run when it failed. */
+  note: string | null;
+  maxSilenceHours: number;
+}
+
+/** Stopped means failed, late, or never run although the system has been recording for longer than the window. */
+export function isStopped(state: JobState): boolean {
+  return state === "failed" || state === "late" || state === "never";
+}
+
+/**
+ * Pure, so it is tested. `trackingSince` is when the oldest job run was
+ * recorded: a job with no run at all is only "never" once the system has been
+ * recording for longer than that job's window (and the job itself existed).
+ */
+export function evaluateJob(input: {
+  name: string;
+  maxSilenceHours: number;
+  last: { ranAt: Date; ok: boolean; note: string | null } | null;
+  trackingSince: Date | null;
+  addedAt?: Date | null;
+  now: Date;
+}): JobStatus {
+  const { name, maxSilenceHours, last, trackingSince, addedAt, now } = input;
+  const windowMs = maxSilenceHours * 3_600_000;
+  if (!last) {
+    const clockStart = Math.max(trackingSince?.getTime() ?? Infinity, addedAt?.getTime() ?? 0);
+    const state: JobState = Number.isFinite(clockStart) && now.getTime() - clockStart > windowMs ? "never" : "waiting";
+    return { name, state, lastRanAt: null, note: null, maxSilenceHours };
   }
-  return stopped;
+  const state: JobState = !last.ok ? "failed" : now.getTime() - last.ranAt.getTime() > windowMs ? "late" : "ok";
+  return { name, state, lastRanAt: last.ranAt, note: last.ok ? null : last.note, maxSilenceHours };
+}
+
+export async function getJobStatuses(now = new Date()): Promise<JobStatus[]> {
+  const oldest = await prisma.jobRun.findFirst({ orderBy: { ranAt: "asc" }, select: { ranAt: true } });
+  return Promise.all(
+    Object.entries(JOB_MAX_SILENCE_HOURS).map(async ([name, maxSilenceHours]) => {
+      const last = await prisma.jobRun.findFirst({ where: { name }, orderBy: { ranAt: "desc" }, select: { ranAt: true, ok: true, note: true } });
+      const added = JOB_ADDED_AT[name];
+      return evaluateJob({ name, maxSilenceHours, last, trackingSince: oldest?.ranAt ?? null, addedAt: added ? new Date(added) : null, now });
+    }),
+  );
+}
+
+/** Names of the jobs that have not run (or last failed) within their allowed window, or never ran at all. */
+export async function findStoppedJobs(now = new Date()): Promise<string[]> {
+  return (await getJobStatuses(now)).filter((s) => isStopped(s.state)).map((s) => s.name);
 }
