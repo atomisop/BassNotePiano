@@ -69,7 +69,7 @@ export function SolutionScreenshotTabs({ screens, defaultKey }: { screens: Solut
                 animation: isActive && !reduced && started ? "phone-screen-in 0.6s ease-out both" : undefined,
               }}
             >
-              <Image src={s.src} alt={isActive ? s.alt : ""} aria-hidden={!isActive} fill sizes="(min-width: 1024px) 300px, 80vw" loading="eager" className="object-cover object-top" />
+              <Image src={s.src} alt={isActive ? s.alt : ""} aria-hidden={!isActive} fill sizes="(min-width: 1024px) 300px, 80vw" loading={i === 0 ? "eager" : "lazy"} className="object-cover object-top" />
             </div>
           );
         })}
