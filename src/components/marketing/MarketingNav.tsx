@@ -61,6 +61,9 @@ const LINKS = [
 export function MarketingNav() {
   const { data: session, status } = useSession();
   const isLoggedIn = Boolean(session?.user);
+  // Until the session answers we do not know which buttons to show. A quiet placeholder of the same size
+  // holds the place, so the bar is never blank and nothing jumps when the answer arrives.
+  const loadingSession = status === "loading";
   const reduced = useReducedMotion();
   const pathname = usePathname();
 
@@ -221,7 +224,8 @@ export function MarketingNav() {
                 </Link>
               );
             })}
-            {secondary && (
+            {loadingSession && <span aria-hidden className="h-9 w-20 animate-pulse !rounded-full bg-neu-base shadow-pressed-low" />}
+            {secondary && !loadingSession && (
               <Link
                 href={secondary.href}
                 onClick={openLogin}
@@ -263,7 +267,8 @@ export function MarketingNav() {
                 FinalCTA/etc. CTAs elsewhere keep their existing solid look. */}
             {/* Signed in, the Dashboard button is gone from the bar: the page already
                 has its own, and the profile menu has a Dashboard link. */}
-            {!isLoggedIn && (
+            {loadingSession && <span aria-hidden className="h-10 w-32 animate-pulse rounded-full bg-neu-base shadow-pressed-low" />}
+            {!isLoggedIn && !loadingSession && (
               <Link
                 href={primary.href}
                 className="tap inline-flex h-10 items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] px-5 text-small font-semibold text-black shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
@@ -282,7 +287,7 @@ export function MarketingNav() {
                 inside it). Get started appears from 360px up; on the narrowest
                 phones the menu still has it. */}
             <div className="flex items-center gap-2 md:hidden">
-              {status === "loading" ? null : isLoggedIn ? (
+              {loadingSession ? <span aria-hidden className="h-9 w-28 animate-pulse rounded-full bg-neu-base shadow-pressed-low" /> : isLoggedIn ? (
                 <>
                   <ProfileMenu
                     name={session?.user?.name ?? null}
