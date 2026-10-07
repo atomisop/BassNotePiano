@@ -404,6 +404,7 @@ enum NotificationType {
   ANNOUNCEMENT // fanned out to every user when an admin publishes an announcement
   CREDIT_ADJUSTED // to the student, when an admin manually grants or deducts class credits
   ASSISTANT_ESCALATION // to admins, when a visitor asks the Atom widget to connect them to a person
+  SUPPORT_TRANSFER // to an admin, when another admin transfers a Support Chat case to them with /name
   PAYMENT_PLAN_INSTALLMENT_DUE // to the student, when the next installment of their PaymentPlan opens for payment
   PAYMENT_PLAN_INSTALLMENT_OVERDUE // to the student, escalating reminder while an installment stays unpaid past its due date
   PAYMENT_PLAN_COMPLETED // to the student, when their final installment is verified and the plan is fully paid off
@@ -853,6 +854,7 @@ model User {
   assistantFeedback            AssistantFeedback[]
   assistantEscalations         AssistantEscalation[]          @relation("AssistantEscalationSubmitter")
   assistantEscalationsResolved AssistantEscalation[]          @relation("AssistantEscalationResolver")
+  assistantEscalationsAssigned AssistantEscalation[]          @relation("AssistantEscalationAssignee")
   supportMessagesSent          SupportMessage[]               @relation("SupportMessageSentBy")
   assistantConversation        AssistantConversationMessage[]
   familyBundlesReceived        FamilyBundleRecipient[]
@@ -1112,6 +1114,9 @@ model AssistantEscalation {
   resolvedAt      DateTime?
   resolvedById    String?
   resolvedBy      User?                     @relation("AssistantEscalationResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  // The admin a case was transferred to with /name in the reply box. Null means nobody in particular.
+  assignedToId    String?
+  assignedTo      User?                     @relation("AssistantEscalationAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   createdAt       DateTime                  @default(now())
 
   messages SupportMessage[]
@@ -1120,6 +1125,7 @@ model AssistantEscalation {
   @@index([status, createdAt])
   @@index([identifier, createdAt])
   @@index([source, status, createdAt])
+  @@index([assignedToId])
 }
 
 enum SupportThreadSource {
@@ -1131,6 +1137,7 @@ enum SupportMessageSender {
   VISITOR // the person who escalated — signed-in user or anonymous visitor
   ATOM // replayed from the pre-escalation AI chat, seeded once at handoff time so the thread is one continuous timeline
   SUPPORT // an admin reply — always shown to the visitor as "Support", never by name (see sentById below)
+  INTERNAL // a note between admins (a transfer, for example). Never sent to or shown to the customer: every visitor-facing read filters it out.
 }
 
 // One row per message in a support thread, from the pre-escalation Atom

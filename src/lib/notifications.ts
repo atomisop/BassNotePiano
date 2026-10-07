@@ -48,6 +48,7 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   ANNOUNCEMENT: { label: "See announcement", url: getAppUrl("/dashboard"), kind: "default" },
   CREDIT_ADJUSTED: { label: "View your credits", url: getAppUrl("/lessons"), kind: "default" },
   ASSISTANT_ESCALATION: { label: "Open Support Chat", url: getAppUrl("/admin/support"), kind: "default" },
+  SUPPORT_TRANSFER: { label: "Open my cases", url: getAppUrl("/admin/support?filter=mine"), kind: "default" },
   // PAYMENT_PLAN_INSTALLMENT_DUE/OVERDUE are deliberately absent here: they
   // never pass emailCategory to createNotification (see the scheduled
   // reminder function in netlify/functions/payment-plan-installments.ts),

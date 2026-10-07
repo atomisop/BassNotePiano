@@ -1,8 +1,7 @@
 import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
 
 /**
- * Mirrors the page's own filter pills plus SupportChatPanel: a thread list
- * on the left, the active conversation on the right.
+ * Mirrors the page's own tabs and filter pills plus the list of conversations.
  */
 export default function AdminSupportLoading() {
   return (
@@ -18,19 +17,14 @@ export default function AdminSupportLoading() {
           ))}
         </div>
 
-        <div className="glass-surface mt-6 flex h-[65vh] overflow-hidden">
-          <div className="flex w-full shrink-0 flex-col gap-1 border-r border-ink/10 p-3 lg:w-72">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-14 w-full rounded-lg" />
-            ))}
-          </div>
-          <div className="hidden flex-1 flex-col p-4 lg:flex">
-            <Skeleton className="h-5 w-36" />
-            <div className="mt-6 flex-1 space-y-3">
-              <Skeleton className="h-10 w-2/3 rounded-2xl" />
-              <Skeleton className="ml-auto h-10 w-1/2 rounded-2xl" />
+        <div className="glass-surface mt-6 divide-y divide-ink/10 overflow-hidden">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="space-y-2 px-4 py-3">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-3 w-3/4" />
+              <Skeleton className="h-3 w-16" />
             </div>
-          </div>
+          ))}
         </div>
       </div>
     </SkeletonScreen>

@@ -27,6 +27,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { createNotification } from "@/lib/notifications";
 import { sendSupportEmailReply } from "@/lib/email";
 import { normalizeSubject, replySubject } from "@/lib/inboundEmail";
+import { adminLabel, matchAdminToken, type MentionableAdmin } from "@/lib/supportCommands";
 import type { AssistantMessage } from "@/lib/assistant";
 
 export class AssistantEscalationError extends Error {}
@@ -167,8 +168,10 @@ export async function getThreadForVisitor(escalationId: string): Promise<ThreadV
   const escalation = await loadEscalationForVisitor(escalationId);
   if (!escalation) return null;
 
+  // INTERNAL notes are between admins. They are filtered here, in the one
+  // read the customer-facing routes use, so no caller can leak one by accident.
   const messages = await prisma.supportMessage.findMany({
-    where: { escalationId },
+    where: { escalationId, sender: { not: "INTERNAL" } },
     orderBy: { createdAt: "asc" },
     select: THREAD_SELECT,
   });
@@ -199,7 +202,7 @@ export async function postVisitorMessage(
   // Only the first message of a burst pings the admins, so a visitor typing
   // three lines in a row doesn't send three emails.
   const previous = await prisma.supportMessage.findFirst({
-    where: { escalationId },
+    where: { escalationId, sender: { not: "INTERNAL" } },
     orderBy: { createdAt: "desc" },
     select: { sender: true },
   });
@@ -243,6 +246,7 @@ export interface AdminThreadSummary {
   subject: string | null;
   createdAt: Date;
   user: { id: string; name: string | null; username: string | null } | null;
+  assignedTo: { id: string; name: string | null } | null;
   resolvedByName: string | null;
   lastMessage: { sender: SupportMessageSender; body: string; createdAt: Date } | null;
   hasUnread: boolean;
@@ -254,19 +258,28 @@ export async function getSupportThreads(
   status?: AssistantEscalationStatus,
   userId?: string,
   source?: SupportThreadSource,
+  assignedToId?: string,
 ): Promise<AdminThreadSummary[]> {
   const escalations = await prisma.assistantEscalation.findMany({
     where: {
       ...(status ? { status } : {}),
       ...(userId ? { userId } : {}),
       ...(source ? { source } : {}),
+      ...(assignedToId ? { assignedToId } : {}),
     },
     orderBy: { createdAt: "desc" },
     take: 100,
     include: {
       user: { select: { id: true, name: true, username: true } },
+      assignedTo: { select: { id: true, name: true } },
       resolvedBy: { select: { name: true } },
-      messages: { orderBy: { createdAt: "desc" }, take: 1, select: { sender: true, body: true, createdAt: true } },
+      // The preview and the unread dot follow the conversation, not the notes between admins.
+      messages: {
+        where: { sender: { not: "INTERNAL" } },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { sender: true, body: true, createdAt: true },
+      },
     },
   });
 
@@ -279,6 +292,7 @@ export async function getSupportThreads(
     subject: e.subject,
     createdAt: e.createdAt,
     user: e.user,
+    assignedTo: e.assignedTo,
     resolvedByName: e.resolvedBy?.name ?? null,
     lastMessage: e.messages[0] ?? null,
     hasUnread: Boolean(
@@ -291,8 +305,32 @@ export interface AdminThreadMessage extends ThreadMessageView {
   sentByName: string | null;
 }
 
-export async function getSupportThread(escalationId: string): Promise<{ status: AssistantEscalationStatus; messages: AdminThreadMessage[]; visitorTyping: boolean } | null> {
-  const escalation = await prisma.assistantEscalation.findUnique({ where: { id: escalationId } });
+export interface AdminThreadMeta {
+  id: string;
+  contactName: string | null;
+  contactEmail: string;
+  source: SupportThreadSource;
+  subject: string | null;
+  status: AssistantEscalationStatus;
+  user: { id: string; name: string | null; username: string | null } | null;
+  assignedTo: { id: string; name: string | null } | null;
+}
+
+export interface AdminThreadDetail {
+  thread: AdminThreadMeta;
+  status: AssistantEscalationStatus;
+  messages: AdminThreadMessage[];
+  visitorTyping: boolean;
+}
+
+export async function getSupportThread(escalationId: string): Promise<AdminThreadDetail | null> {
+  const escalation = await prisma.assistantEscalation.findUnique({
+    where: { id: escalationId },
+    include: {
+      user: { select: { id: true, name: true, username: true } },
+      assignedTo: { select: { id: true, name: true } },
+    },
+  });
   if (!escalation) return null;
 
   const [messages] = await Promise.all([
@@ -307,6 +345,16 @@ export async function getSupportThread(escalationId: string): Promise<{ status: 
   ]);
 
   return {
+    thread: {
+      id: escalation.id,
+      contactName: escalation.contactName,
+      contactEmail: escalation.contactEmail,
+      source: escalation.source,
+      subject: escalation.subject,
+      status: escalation.status,
+      user: escalation.user,
+      assignedTo: escalation.assignedTo,
+    },
     status: escalation.status,
     messages: messages.map((m) => ({ id: m.id, sender: m.sender, body: m.body, createdAt: m.createdAt, sentByName: m.sentBy?.name ?? null })),
     visitorTyping: await isSideTyping(escalationId, "VISITOR"),
@@ -374,6 +422,93 @@ async function postEmailReply(
     data: { escalationId, sender: "SUPPORT", body: trimmed, sentById: adminId, emailMessageId: messageId },
   });
   await prisma.assistantEscalation.update({ where: { id: escalationId }, data: { adminLastReadAt: new Date() } });
+}
+
+export async function listMentionableAdmins(): Promise<MentionableAdmin[]> {
+  return prisma.user.findMany({
+    where: { role: "ADMIN" },
+    select: { id: true, name: true, username: true, email: true },
+    orderBy: [{ name: "asc" }, { email: "asc" }],
+  });
+}
+
+const MAX_TRANSFER_NOTE_LENGTH = 1000;
+
+/**
+ * "/isaac please look" in the reply box. Nothing goes to the customer: it
+ * records an INTERNAL note, assigns the case to that admin (or to nobody for
+ * /admin) and sends the admin a notification. Admin only, like every export
+ * in this section.
+ */
+export async function transferSupportThread(input: {
+  escalationId: string;
+  fromAdminId: string;
+  token: string;
+  note: string;
+}): Promise<{ label: string }> {
+  const { escalationId, fromAdminId, token } = input;
+  const note = input.note.trim().slice(0, MAX_TRANSFER_NOTE_LENGTH);
+
+  const [escalation, admins] = await Promise.all([
+    prisma.assistantEscalation.findUnique({
+      where: { id: escalationId },
+      select: { id: true, contactName: true, contactEmail: true, subject: true, source: true },
+    }),
+    listMentionableAdmins(),
+  ]);
+  if (!escalation) throw new AssistantEscalationError("That conversation no longer exists.");
+  const sender = admins.find((a) => a.id === fromAdminId);
+  if (!sender) throw new AssistantEscalationError("Only admins can transfer a case.");
+
+  const match = matchAdminToken(token, admins);
+  if (match.kind === "none") {
+    throw new AssistantEscalationError(`No admin matches /${token}. Use /admin to notify everyone, or start your reply with a word to send it to the customer.`);
+  }
+  if (match.kind === "ambiguous") {
+    throw new AssistantEscalationError(
+      `More than one admin matches /${token}: ${match.candidates.map(adminLabel).join(", ")}. Type more of the name.`,
+    );
+  }
+
+  let targets: MentionableAdmin[];
+  let assignedToId: string | null;
+  let label: string;
+  if (match.kind === "all") {
+    targets = admins.filter((a) => a.id !== fromAdminId);
+    assignedToId = null;
+    label = "all admins";
+    if (targets.length === 0) throw new AssistantEscalationError("There is no other admin to notify.");
+  } else {
+    if (match.admin.id === fromAdminId) throw new AssistantEscalationError("That's you. Pick another admin.");
+    targets = [match.admin];
+    assignedToId = match.admin.id;
+    label = adminLabel(match.admin);
+  }
+
+  await prisma.supportMessage.create({
+    data: {
+      escalationId,
+      sender: "INTERNAL",
+      body: note ? `Transferred to ${label}: ${note}` : `Transferred to ${label}.`,
+      sentById: fromAdminId,
+    },
+  });
+  // Back to unread, so the case stands out in the list for whoever it was sent to.
+  await prisma.assistantEscalation.update({ where: { id: escalationId }, data: { assignedToId, adminLastReadAt: null } });
+
+  const who = escalation.source === "EMAIL" ? escalation.subject || escalation.contactEmail : escalation.contactName || escalation.contactEmail;
+  await Promise.all(
+    targets.map((admin) =>
+      createNotification({
+        userId: admin.id,
+        type: "SUPPORT_TRANSFER",
+        title: match.kind === "all" ? "Case escalated to all admins" : "A case was transferred to you",
+        body: `${adminLabel(sender)} sent you "${who}".${note ? ` Note: ${note.slice(0, 160)}` : ""}`,
+      }).catch((err) => console.error("Support transfer notification failed (non-blocking):", err)),
+    ),
+  );
+
+  return { label };
 }
 
 export async function resolveSupportThread(escalationId: string, adminId: string): Promise<void> {
@@ -461,7 +596,7 @@ export async function ingestInboundEmail(mail: InboundEmail): Promise<{ outcome:
   try {
     if (threadId) {
       const previous = await prisma.supportMessage.findFirst({
-        where: { escalationId: threadId },
+        where: { escalationId: threadId, sender: { not: "INTERNAL" } },
         orderBy: { createdAt: "desc" },
         select: { sender: true },
       });
