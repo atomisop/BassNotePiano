@@ -8,6 +8,7 @@ import { getRoadmap, type ScaleAccessState } from "@/lib/access";
 import { resolveNextStep } from "@/lib/next-step";
 import { drawDownCredits, recordCreditGrant } from "@/lib/creditLedger";
 import { PLAN_CADENCE_CREDITS_PER_WEEK, CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
+import { SUBSCRIBER_CLASSES_PER_WEEK, weekRangeForOccurrence } from "@/lib/bookingRules";
 
 export class ClassBookingError extends Error {}
 
@@ -343,19 +344,10 @@ async function assertNoOtherBookingSameDay(
   }
 }
 
-/**
- * Classes a subscriber may hold in one week through their credits: one. A
- * subscriber's monthly credits are meant to pay for their weekly class, so
- * having credits left over (after a skip, a cancel, or a bonus grant) must not
- * be a way to book a second class that week. More time that week is bought as
- * an extra session, which is paid separately and never goes through here.
- */
-export const SUBSCRIBER_CLASSES_PER_WEEK = 1;
-
-/** Sunday 00:00 UTC of the week holding an occurrenceDate (a UTC-midnight stand-in for an ET calendar day), and the Sunday after. */
-export function weekRangeForOccurrence(occurrenceDate: Date): { start: Date; end: Date } {
-  const start = new Date(occurrenceDate.getTime() - occurrenceDate.getUTCDay() * 86_400_000);
-  return { start, end: new Date(start.getTime() + 7 * 86_400_000) };
+/** True when the student has a payment plan that is still running, the same test the weekly limit uses. */
+export async function hasLivePaymentPlan(userId: string): Promise<boolean> {
+  const plan = await prisma.paymentPlan.findFirst({ where: { userId, OR: livePaymentPlanConditions() }, select: { id: true } });
+  return Boolean(plan);
 }
 
 /**
@@ -657,7 +649,7 @@ async function notifyAdminsOfSelfChange(
       : `${who} canceled their ${formatEtDateTime(change.from)} class.`;
     await Promise.all(
       admins.map((admin) =>
-        createNotification({ userId: admin.id, type: "LESSON_BOOKING_CANCELED", title, body, emailCategory: "social" }).catch((err) =>
+        createNotification({ userId: admin.id, type: "LESSON_BOOKING_RECEIVED", title, body, emailCategory: "social" }).catch((err) =>
           console.error("Admin self-change notification failed (non-blocking):", err),
         ),
       ),
