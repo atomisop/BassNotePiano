@@ -66,6 +66,8 @@ function notificationHref(type: string): string | null {
       return "/dashboard";
     case "ASSISTANT_ESCALATION":
       return "/admin/support";
+    case "SUPPORT_TRANSFER":
+      return "/admin/support?filter=mine";
     case "PLAN_CANCELLATION_FEEDBACK":
       return "/admin/payment-plans?status=FEEDBACK";
     case "PAYMENT_PLAN_INSTALLMENT_DUE":
@@ -149,6 +151,7 @@ const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>
   LESSON_BOOKING_CANCELED: { key: "bookings", label: "Bookings" },
   ANNOUNCEMENT: { key: "announcements", label: "Announcements" },
   ASSISTANT_ESCALATION: { key: "support", label: "Support requests" },
+  SUPPORT_TRANSFER: { key: "support", label: "Support requests" },
   PLAN_CANCELLATION_FEEDBACK: { key: "feedback", label: "Feedback" },
   // Mail kinds: the Mail tab groups its messages the same way.
   ADMIN_MESSAGE: { key: "messages", label: "Messages" },

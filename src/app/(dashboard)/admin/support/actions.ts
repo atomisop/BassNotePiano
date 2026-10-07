@@ -9,12 +9,16 @@ import {
   setSupportTyping,
   resolveSupportThread,
   deleteSupportThread,
+  transferSupportThread,
+  listMentionableAdmins,
   AssistantEscalationError,
   type AdminThreadSummary,
   type AdminThreadMessage,
+  type AdminThreadDetail,
 } from "@/lib/support";
+import { parseSlashCommand, type MentionableAdmin } from "@/lib/supportCommands";
 
-export type { AdminThreadSummary, AdminThreadMessage };
+export type { AdminThreadSummary, AdminThreadMessage, AdminThreadDetail };
 
 async function requireAdminId(): Promise<string> {
   const session = await getServerAuthSession();
@@ -23,21 +27,45 @@ async function requireAdminId(): Promise<string> {
   return session.user.id;
 }
 
-export async function getSupportThreadsAction(status?: AssistantEscalationStatus, source?: SupportThreadSource): Promise<AdminThreadSummary[]> {
-  await requireAdminId();
+/** `mine` lists the cases transferred to the signed-in admin, across chat and email. */
+export async function getSupportThreadsAction(
+  status?: AssistantEscalationStatus,
+  source?: SupportThreadSource,
+  mine?: boolean,
+): Promise<AdminThreadSummary[]> {
+  const adminId = await requireAdminId();
+  if (mine) return getSupportThreads(undefined, undefined, undefined, adminId);
   return getSupportThreads(status, undefined, source);
 }
 
-export async function getSupportThreadAction(escalationId: string) {
+export async function getSupportThreadAction(escalationId: string): Promise<AdminThreadDetail | null> {
   await requireAdminId();
   return getSupportThread(escalationId);
 }
 
+export async function listMentionableAdminsAction(): Promise<MentionableAdmin[]> {
+  await requireAdminId();
+  return listMentionableAdmins();
+}
+
+/**
+ * The reply box. Text starting with /name is a transfer to that admin, never a
+ * message to the customer, and a leading slash that matches nobody is refused
+ * rather than sent. Anything else is a reply.
+ */
 export async function sendSupportReplyAction(escalationId: string, body: string) {
   try {
     const adminId = await requireAdminId();
+    if (body.trimStart().startsWith("/")) {
+      const command = parseSlashCommand(body);
+      if (!command) {
+        return { ok: false as const, error: "Start your reply with a word. A leading / is for transfers like /isaac or /admin." };
+      }
+      const { label } = await transferSupportThread({ escalationId, fromAdminId: adminId, token: command.token, note: command.rest });
+      return { ok: true as const, transferredTo: label };
+    }
     await postAdminReply(escalationId, adminId, body);
-    return { ok: true as const };
+    return { ok: true as const, transferredTo: null };
   } catch (err) {
     return { ok: false as const, error: err instanceof AssistantEscalationError ? err.message : "Something went wrong." };
   }

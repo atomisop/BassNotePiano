@@ -532,7 +532,7 @@ export function CustomerProfile({
               {profile.supportThreads.map((t) => (
                 <Link
                   key={t.id}
-                  href={`/admin/support?status=ALL&thread=${t.id}`}
+                  href={`/admin/support/${t.id}?filter=all`}
                   className="block rounded-xl p-3 transition bg-neu-base shadow-raised-low"
                 >
                   <div className="flex items-center justify-between gap-2">
