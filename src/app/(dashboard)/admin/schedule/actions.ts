@@ -9,22 +9,9 @@ import { isOwnerEmail } from "@/lib/adminNotifications";
 import { checkBotSetup, createLingeringTestChannel, isGuildMember, TEST_CHANNEL_KEY, type SetupCheck } from "@/lib/discordApi";
 import { discordChannelUrl } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
-import {
-  createClassSchedule,
-  updateClassSchedule,
-  setClassScheduleActive,
-  markAttendance,
-  undoAttendance,
-  adminCancelClassBooking,
-  adminBookClass,
-  getPendingAttendanceBookings,
-  getBookingFeed,
-  ClassScheduleError,
-  ClassBookingError,
-  type ClassScheduleInput,
-  type PendingAttendanceRow,
-  type BookingFeedRow,
-} from "@/lib/classSchedule";
+import { adminBookClass, ClassBookingError } from "@/lib/classSchedule";
+import { markAttendance, undoAttendance, adminCancelClassBooking, getPendingAttendanceBookings, getBookingFeed, type PendingAttendanceRow, type BookingFeedRow } from "@/lib/classScheduleAdmin";
+import { createClassSchedule, updateClassSchedule, setClassScheduleActive, ClassScheduleError, type ClassScheduleInput } from "@/lib/classScheduleManage";
 import { searchStudentsForBooking, type BookableStudent } from "@/lib/admin";
 
 async function requireAdmin() {

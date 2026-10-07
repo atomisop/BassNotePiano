@@ -729,7 +729,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
 
   let notificationBody = "Your payment was verified.";
   if (payment.purpose === "CURRICULUM") {
-    notificationBody = "Your $69.99 curriculum payment was verified. Every scale is unlocked, for good.";
+    notificationBody = "Your curriculum payment was verified. Every scale is unlocked, for good.";
   } else if (payment.purpose === "CLASS_CREDITS" && payment.extraSessionScheduleId) {
     notificationBody = extraSessionBooked
       ? "Your extra session payment was verified and the class is booked. See it on your Schedule."

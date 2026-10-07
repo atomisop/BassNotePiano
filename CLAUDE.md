@@ -23,10 +23,13 @@ and `sentry.*.config.ts` filenames; the DSN just points at GlitchTip's
 self-hosted-compatible endpoint) · Discord (live lessons happen there now,
 **not Zoom** — `src/lib/discord.ts`).
 
-Node 24 pinned (`.nvmrc` / `engines`). A small Vitest suite lives in `tests/`
-(`npm test`, pure logic and the calendar routes, no database) and runs in CI.
-`tsc --noEmit`, `next lint`, `next build` and the tests are the correctness
-gates, plus manual verification against a real Postgres (see below). Every
+Node 24 pinned (`.nvmrc` / `engines`). A Vitest suite lives in `tests/`
+(`npm test`: pure logic and the calendar routes, no database) and runs in CI.
+`tests/db/` holds tests that need a real migrated Postgres (booking rules, support
+cases, payments, login codes, the mail check, backups): `npm run test:db`, which
+refuses to run against anything but a local database, and which CI runs after the
+build has migrated its throwaway Postgres. `tsc --noEmit`, `next lint`, `next build`
+and both test runs are the correctness gates, plus manual verification (see below). Every
 scheduled Netlify function wraps its body in `runJob` (`src/lib/jobRun.ts`) so
 the owner overview and the morning email can show a job that stopped. A job that
 never ran counts as stopped once the system has been recording longer than its
@@ -34,7 +37,7 @@ window. `job-watchdog` (every 30 minutes) checks them all, emails the owner at
 once, and pings the outside monitor in `HEALTHCHECK_PING_URL` (healthchecks.io,
 `/fail` when something is stopped), so a dead scheduler, database or site is
 noticed from outside; the morning email is only a Monday "all clear" on quiet
-days. A daily `mail-chain-probe` job sends a test email to music@ (subject `BNP mail check <token>`); the Mailgun route records its arrival (`src/lib/mailProbe.ts`, rows in `JobRun`), and the watchdog raises a problem naming the links to check if one never arrives. Unhandled server errors reach GlitchTip through `onRequestError` in
+days. A daily `mail-chain-probe` job sends a test email to music@ (subject `BNP mail check <token>`); the Mailgun route records its arrival (`src/lib/mailProbe.ts`, rows in `JobRun`), and the watchdog raises a problem naming the links to check if one never arrives. A nightly `db-backup` job (`netlify/functions/db-backup.ts`) writes an encrypted copy of every table to R2 under `backups/` (key in `BACKUP_ENCRYPTION_KEY`, restore with `scripts/restore-backup.mjs`, see `docs/AVAILABILITY.md`); it is a watched job, so a failure or a stop reaches the owner. Unhandled server errors reach GlitchTip through `onRequestError` in
 `src/instrumentation.ts`; code that catches an error and answers 500 should call
 `reportError` (`src/lib/reportError.ts`) instead of only `console.error`.
 
@@ -51,9 +54,14 @@ days. A daily `mail-chain-probe` job sends a test email to music@ (subject `BNP 
   **Delete Account** danger zone), `/profile`, `/about`.
 - `src/app/(dashboard)/admin` — the sole admin's console. Nav is
   `src/components/admin/AdminNav.tsx` (a `<select>` on mobile, pills on
-  desktop): Overview, Payments, Bookings, **Schedule** (self-service weekly
-  class schedule management), Students, Roster, Lessons, Users, Credits,
-  Messages, **Support Chat**, Announcements.
+  desktop), grouped as Overview / Billing (Payments, Payment Plans) / Students
+  (Students, Employees, People) / Operations (**Schedule**, Lessons, **Support
+  Chat**, Messages, Announcements), with small count badges for what is waiting.
+- Booking code: `src/lib/classSchedule.ts` (booking, cancel, reschedule and the
+  shared time and slot rules), `classScheduleAdmin.ts` (roster, attendance),
+  `classScheduleManage.ts` (adding and retiring weekly slots), `bookingRules.ts`
+  (rules the browser shares, such as the one-credit-class-a-week limit for
+  subscribers).
 - `src/components/assistant/AssistantWidget.tsx` — Atom, the floating
   assistant on every page (mounted once in `providers.tsx`). See "Atom /
   Support Chat" below — this has had several rounds of follow-up fixes
@@ -269,3 +277,11 @@ Don't reintroduce a separate ad-hoc "kill this session" mechanism; bump
    **Don't assume the state you last touched is still current** — `git log
    origin/main` and a targeted `git show origin/main:<path>` for anything
    load-bearing before making a change, the same way this file was written.
+
+## Retired database models
+
+`Account`, `Session` and `VerificationToken` (the NextAuth adapter tables, unused:
+sessions are JWT), `LoginEvent` and `LessonBooking` (historical) are not read or
+written by any code. They stay in the schema on purpose: dropping a table is
+irreversible, so do it only in its own migration, after confirming with the owner
+that nothing in production needs the rows.

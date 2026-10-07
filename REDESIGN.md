@@ -1,3 +1,5 @@
+> **Finished.** This was the brief for the one-off redesign (shipped, see PROGRESS.md). It is kept for history and is not an instruction for new work.
+
 You are a senior product designer and full-stack engineer. Your job is to upgrade my piano learning web app, BassNotePiano, from top to bottom so it looks and feels like a $10,000 custom-built website. Both the user side and the admin side need to be done.
 
 REPO: github.com/atomisop/BassNotePiano (this project folder)

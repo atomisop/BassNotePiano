@@ -1,3 +1,5 @@
+> **Finished.** The redesign checklist below is complete. It is kept for history; current engineering notes live in CLAUDE.md.
+
 # BassNotePiano Redesign Progress
 
 > **Rule:** After finishing each step, update this file and make a git commit with a clear message.
