@@ -5,6 +5,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { getUserPaymentHistory } from "@/lib/payments";
 import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing";
 import { ArrowLeftIcon } from "@/components/ui/icons";
+import { PaymentWaitNotice } from "@/components/billing/PaymentWaitNotice";
 
 const STATUS_LABEL: Record<string, string> = {
   AWAITING_TRANSFER: "Awaiting transfer",
@@ -109,6 +110,9 @@ export default async function BillingHistoryPage() {
                 </div>
               </div>
 
+              {payment.status === "PENDING_REVIEW" && (
+                <PaymentWaitNotice paymentId={payment.id} submittedAt={payment.submittedAt ? new Date(payment.submittedAt).toISOString() : null} compact />
+              )}
               {payment.referenceCode && (
                 <p className="mt-3 font-mono text-small text-slate-500">Ref: {payment.referenceCode}</p>
               )}

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { ZellePaymentStatus } from "@prisma/client";
 import { ZellePaymentModal } from "@/components/progression/ZellePaymentModal";
 import type { ZelleReferenceSubmission } from "@/lib/payments";
+import { PaymentWaitNotice } from "@/components/billing/PaymentWaitNotice";
 
 export interface ZelleUnlockGateProps {
   status: ZellePaymentStatus;
@@ -51,15 +52,7 @@ export function ZelleUnlockGate({
     router.refresh();
   }
 
-  if (status === "PENDING_REVIEW") {
-    return (
-      <div className="rounded-2xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] p-6 text-center">
-        <p className="text-small text-[rgb(var(--c-s-50)/0.8)]">
-          Your payment confirmation is in. We&apos;re verifying it now.
-        </p>
-      </div>
-    );
-  }
+  if (status === "PENDING_REVIEW") return <PaymentWaitNotice paymentId={paymentId} />;
 
   return (
     <>
