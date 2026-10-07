@@ -227,8 +227,9 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
             type="button"
             onClick={handleToggleActive}
             disabled={busy}
-            className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+            className="tap inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
           >
+            {busy && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
             {announcement.active ? "Deactivate" : "Reactivate"}
           </button>
           <button

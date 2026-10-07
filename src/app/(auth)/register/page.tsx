@@ -14,7 +14,6 @@ import { CheckIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
-import { startNavigation } from "@/lib/navigationState";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -83,7 +82,6 @@ function RegisterForm() {
     // Account exists but isn't usable yet — a verification code was just
     // emailed. Signing in happens at the end of that flow, not here.
     const params = new URLSearchParams({ email, callbackUrl });
-    startNavigation();
     router.push(`/verify-email?${params}`);
   }
 

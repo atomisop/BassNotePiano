@@ -259,8 +259,9 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                       type="button"
                       onClick={() => handleResend(plan.id)}
                       disabled={busyId === plan.id}
-                      className="tap neu-btn w-full rounded-lg py-2 text-small font-medium"
+                      className="tap neu-btn inline-flex items-center justify-center w-full rounded-lg py-2 text-small font-medium"
                     >
+                      {busyId === plan.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                       {busyId === plan.id ? "Sending…" : "Resend bill"}
                     </button>
                     {billNote?.id === plan.id && <p className={`text-small ${billNote.ok ? "text-slate-300" : "text-red-400"}`}>{billNote.text}</p>}

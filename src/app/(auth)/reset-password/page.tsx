@@ -15,7 +15,6 @@ import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { resetPasswordAction, resendResetCodeAction } from "./actions";
-import { startNavigation } from "@/lib/navigationState";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -68,7 +67,6 @@ function ResetPasswordForm() {
       return;
     }
 
-    startNavigation();
     router.push("/dashboard");
     router.refresh();
   }

@@ -48,6 +48,7 @@ export function DiscordBotTest({
             disabled={making}
             className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium"
           >
+            {making && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {making ? "Creating…" : "Make a test call I can see"}
           </button>
           <button type="button" onClick={run} disabled={running} className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">

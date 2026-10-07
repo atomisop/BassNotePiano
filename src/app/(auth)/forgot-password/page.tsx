@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fieldLabel } from "@/lib/form-styles";
 import { requestPasswordResetAction } from "./actions";
-import { startNavigation } from "@/lib/navigationState";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -25,7 +24,6 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setSubmitting(true);
     await requestPasswordResetAction(email);
-    startNavigation();
     router.push(`/reset-password?email=${encodeURIComponent(email)}`);
   }
 

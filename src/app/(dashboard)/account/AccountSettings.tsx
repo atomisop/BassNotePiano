@@ -841,10 +841,7 @@ function TutorialsSection() {
     <SectionCard title="Tutorials">
       <button
         type="button"
-        onClick={() => {
-          startNavigation();
-          router.push("/dashboard?tour=1");
-        }}
+        onClick={() => router.push("/dashboard?tour=1")}
         className="tap cta-sheen cta-fill mt-4 rounded-lg px-4 py-2 text-small font-semibold"
       >
         Replay app tour

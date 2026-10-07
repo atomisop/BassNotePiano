@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { AdminListSearch } from "@/components/admin/AdminListSearch";
+import { MorphingSquare } from "@/components/ui/morphing-square";
 
 export interface UserListRow {
   id: string;
@@ -83,8 +84,9 @@ export function UserList({
                   type="button"
                   disabled={busyId === row.id}
                   onClick={() => void approve(row.id)}
-                  className="tap cta-sheen cta-fill shrink-0 rounded-lg px-3 py-1.5 text-small font-semibold disabled:opacity-40"
+                  className="tap cta-sheen cta-fill inline-flex items-center justify-center shrink-0 rounded-lg px-3 py-1.5 text-small font-semibold disabled:opacity-40"
                 >
+                  {busyId === row.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                   {busyId === row.id ? "Releasing…" : `Approve ${row.readyScale}`}
                 </button>
               )}

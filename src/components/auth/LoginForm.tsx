@@ -123,7 +123,6 @@ export function LoginForm({
     if (result.needsEmailVerification) {
       const params = new URLSearchParams({ email, callbackUrl });
       onNavigateAway?.();
-      startNavigation();
       router.push(`/verify-email?${params}`);
       return;
     }
