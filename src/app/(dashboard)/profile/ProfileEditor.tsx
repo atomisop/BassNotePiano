@@ -29,7 +29,7 @@ interface ProfileEditorProps {
   initialMusicProfile: MusicProfile;
 }
 
-// Accepted straight from the file picker — modern phone-camera photos
+// Accepted straight from the file picker, modern phone-camera photos
 // routinely land in the 5-15MB range. What's actually stored is far
 // smaller: resizeAvatarImage below re-encodes to a capped JPEG before
 // anything is uploaded, so this cap is just a sanity ceiling on the
@@ -40,7 +40,7 @@ const AVATAR_JPEG_QUALITY = 0.85;
 
 /**
  * Downscales to AVATAR_MAX_DIMENSION on the longer edge and re-encodes as
- * JPEG — runs entirely in the browser before the upload ever starts, so a
+ * JPEG, runs entirely in the browser before the upload ever starts, so a
  * large source photo never has to pass through the app server (which would
  * hit Netlify's serverless body-size ceiling well before 10MB) and never
  * bloats storage with a full-resolution image nobody needs for an avatar.
@@ -83,7 +83,7 @@ function resizeAvatarImage(file: File): Promise<Blob> {
   });
 }
 
-/** PUT straight to the presigned R2 URL — the app server never sees the image bytes. */
+/** PUT straight to the presigned R2 URL, the app server never sees the image bytes. */
 function uploadToR2(uploadUrl: string, blob: Blob, contentType: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -316,7 +316,7 @@ function AvatarSection({
     setUploading(true);
     try {
       const resized = await resizeAvatarImage(file);
-      // resized.size, not file.size — the presigned URL is signed with an
+      // resized.size, not file.size, the presigned URL is signed with an
       // exact ContentLength (see storage.ts), and it's `resized` that
       // actually gets uploaded a few lines down, not the original file.
       const { uploadUrl, publicUrl } = await requestAvatarUploadUrlAction(file.name, "image/jpeg", resized.size);

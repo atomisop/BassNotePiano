@@ -8,7 +8,7 @@ import { extendTailwindMerge } from "tailwind-merge";
  * resolves Tailwind conflicts so a caller's `className` actually wins over a
  * component's own default (`cn("px-4", "px-6")` → `"px-6"`, not both). Plain
  * string concatenation would leave both classes in the list and let source
- * order in the stylesheet decide — which is why a `className` override on a
+ * order in the stylesheet decide, which is why a `className` override on a
  * shadcn component silently does nothing without this.
  */
 // Teaches twMerge the design system's own token names (globals.css @theme).

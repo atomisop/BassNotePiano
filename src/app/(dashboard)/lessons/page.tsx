@@ -33,7 +33,7 @@ import { DiscordConnectCard } from "@/components/lessons/DiscordConnectCard";
 export default async function LessonsPage({ searchParams }: { searchParams: { tab?: string; discord?: string } }) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
-  // Booking a class requires curriculum access first — credits themselves
+  // Booking a class requires curriculum access first, credits themselves
   // already can't be bought without it (see billing/lessons/page.tsx), but
   // this covers anyone who somehow already holds credits without it too.
 
@@ -42,7 +42,7 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
   const [credits, occurrences, bookings, supportContactId, weeklyLimited] = await Promise.all([
     // Effective, not raw: a credit already reserved by another SCHEDULED
     // booking isn't actually free to spend again, even though the real
-    // charge for it hasn't landed yet — see getEffectiveClassCredits.
+    // charge for it hasn't landed yet, see getEffectiveClassCredits.
     getEffectiveClassCredits(session.user.id),
     getUpcomingOccurrences(),
     getUserClassBookings(session.user.id),

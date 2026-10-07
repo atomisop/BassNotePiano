@@ -6,7 +6,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cn } from "@/lib/utils";
 
 /**
- * #3 — Command primitive (cmdk), re-tokenised.
+ * #3, Command primitive (cmdk), re-tokenised.
  *
  * Uses `bg-surface` (the opaque chrome surface) rather than the ground: this
  * floats over page content, and a translucent or ground-coloured panel would

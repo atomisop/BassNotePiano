@@ -1,4 +1,4 @@
-// Synthesized rather than an audio file — avoids shipping/licensing a sound
+// Synthesized rather than an audio file, avoids shipping/licensing a sound
 // asset for a two-note chime. Browsers block audio before any user gesture
 // on the page, so this is wrapped defensively: a blocked/unsupported
 // AudioContext should never surface as a visible error, just silence.
@@ -38,6 +38,6 @@ export function playNotificationSound() {
     playTone(ctx, 880, now, 0.16); // A5
     playTone(ctx, 1318.5, now + 0.09, 0.2); // E6
   } catch {
-    // Autoplay restrictions or no Web Audio support — fail silently.
+    // Autoplay restrictions or no Web Audio support, fail silently.
   }
 }

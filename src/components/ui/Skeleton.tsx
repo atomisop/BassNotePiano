@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
  * `bg-slate-800` rather than an arbitrary alpha: 800 is the ramp's declared
  * "fills, borders" step, so the placeholder sits at the right tonal distance
  * from the ground in every one of the app's themes without a per-theme
- * override — and it avoids the project's reproducible quirk where some
+ * override, and it avoids the project's reproducible quirk where some
  * arbitrary opacity modifiers compile to nothing.
  *
  * The pulse is `motion-safe:` so a reduced-motion user gets a still block

@@ -27,7 +27,7 @@ import {
 type ViewValue = "WINDOWS" | "BOOKINGS" | "ATTENDANCE";
 
 // Bookings and attendance used to be one combined view here (and, before
-// that, their own top-level /admin/bookings tab) — split into their own
+// that, their own top-level /admin/bookings tab), split into their own
 // views now, by direct instruction: booking a student and marking
 // attendance are two different everyday tasks that happened to share a
 // page, not one task, and scrolling past a growing attendance history to

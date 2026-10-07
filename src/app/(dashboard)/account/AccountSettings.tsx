@@ -49,7 +49,7 @@ const TAB_ICONS = {
   privacy: "M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z",
 } as const;
 
-// Grouped into defined categories rather than one flat list — order here is
+// Grouped into defined categories rather than one flat list, order here is
 // render order, so entries in the same category stay adjacent. "Danger
 // zone" is its own category rather than folded into "Account & security" on
 // purpose: a destructive action should never blend visually into routine
@@ -67,7 +67,7 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 type Category = (typeof TABS)[number]["category"];
 
-/** Groups TABS by category, preserving the array's own order — no re-sort,
+/** Groups TABS by category, preserving the array's own order, no re-sort,
     so category order is controlled entirely by TABS above. */
 function groupedTabs(): { category: Category; tabs: (typeof TABS)[number][] }[] {
   const groups: { category: Category; tabs: (typeof TABS)[number][] }[] = [];
@@ -99,9 +99,9 @@ function SectionCard({ title, children }: { title: string; children: React.React
   );
 }
 
-// lg+ only — a sticky always-visible nav beside the inline content, since
+// lg+ only, a sticky always-visible nav beside the inline content, since
 // there's room for both without it feeling cluttered.
-// Not a tab (nothing appears inline for it) — a real link out to the
+// Not a tab (nothing appears inline for it), a real link out to the
 // existing `/about` page, which is its own substantial tabbed page
 // (About/Update notes/Terms). Styled to match the tab buttons above it so
 // it reads as part of the same list.
@@ -129,7 +129,7 @@ function AboutLink() {
   );
 }
 
-// Same subdued styling the old Sidebar's sign-out button used — an action,
+// Same subdued styling the old Sidebar's sign-out button used, an action,
 // not a destructive-red warning.
 function SignOutButton({ className = "" }: { className?: string }) {
   return (
@@ -147,7 +147,7 @@ function SignOutButton({ className = "" }: { className?: string }) {
   );
 }
 
-// Small uppercase divider between groups — text-slate-500, not -600: -600
+// Small uppercase divider between groups, text-slate-500, not -600: -600
 // fails AA (4.5:1) for real text on this ground (see the accessibility
 // pass's SiteFooter comment), and a category label is real text a sighted
 // user reads to understand the grouping, not decoration.
@@ -163,11 +163,11 @@ function CategoryHeading({ category, isFirst }: { category: Category; isFirst: b
   );
 }
 
-// lg+ only — a sticky always-visible nav beside the inline content, since
+// lg+ only, a sticky always-visible nav beside the inline content, since
 // there's room for both without it feeling cluttered. "About" renders as
 // the last item of the "Help" category group (it's a real link out, not a
 // tab with inline content, but it belongs with Tutorials conceptually, not
-// off on its own). "Sign out" stays below everything, uncategorized — it's
+// off on its own). "Sign out" stays below everything, uncategorized, it's
 // an action, not a setting.
 function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: (tab: TabId) => void }) {
   return (
@@ -206,7 +206,7 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
   );
 }
 
-// Below lg — a plain menu list, grouped under the same category headings as
+// Below lg, a plain menu list, grouped under the same category headings as
 // the desktop nav, no content shown until tapped. Each row pushes a
 // full-screen SlideOverPanel instead of swapping content in place. Sign out
 // stays bottom-pinned, always last, same reasoning as the desktop nav.
@@ -351,7 +351,7 @@ function AccountSettingsInner({
   const [mobileOpenTab, setMobileOpenTab] = useState<TabId | null>(null);
 
   // Deep links (e.g. the notification bell's "Notification settings" link)
-  // land here with ?tab= set — on a narrow screen that should open the
+  // land here with ?tab= set, on a narrow screen that should open the
   // slide-over panel directly instead of silently doing nothing, since the
   // menu list below shows no content on its own.
   useEffect(() => {
@@ -526,7 +526,7 @@ function PasswordSection() {
     setConfirmPassword("");
     setSuccess(true);
     // The password change just bumped sessionVersion so every OTHER open
-    // session gets signed out (see updatePasswordAction) — update() forces
+    // session gets signed out (see updatePasswordAction), update() forces
     // this device's own JWT to re-stamp against the new value right now,
     // rather than waiting for its next natural refresh, so it isn't
     // accidentally caught by the same check.
@@ -633,7 +633,7 @@ function PasswordSection() {
   );
 }
 
-// Standalone, on-demand version of what a password change now also does —
+// Standalone, on-demand version of what a password change now also does,
 // for someone who wants this without changing their password, e.g. after
 // using a shared or public computer.
 function SignOutOtherDevicesCard() {
@@ -669,8 +669,8 @@ function SignOutOtherDevicesCard() {
 }
 
 // Three stages: the button sits alone until clicked (nothing pre-filled,
-// nothing pre-triggered), then a password field + "send code" button, then
-// — once a code has actually been emailed — the code field, the explicit
+// nothing pre-triggered), then a password field + "send code" button, then,
+// once a code has actually been emailed, the code field, the explicit
 // confirmation checkbox, and the real delete button. Password and code are
 // both re-checked server-side on the final submit regardless of what this
 // component thinks already happened (see confirmAccountDeletionAction).
@@ -718,7 +718,7 @@ function DangerZoneSection() {
       setError(result.error);
       return;
     }
-    // The account row is already gone server-side — this just clears the
+    // The account row is already gone server-side, this just clears the
     // browser's session cookie and leaves. Not setDeleting(false): there's
     // nothing left to re-enable a form for.
     startNavigation();

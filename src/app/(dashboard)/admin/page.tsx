@@ -53,7 +53,7 @@ export default async function AdminOverviewPage() {
 
       {/* Two trend cards over the last six months, both from real rows
           (User.createdAt and VERIFIED payments). Flat stretches are real
-          flat stretches — no smoothing, no seeded history. */}
+          flat stretches, no smoothing, no seeded history. */}
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <MetricCard
           label="Signups"

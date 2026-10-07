@@ -4,7 +4,7 @@
 // Two distinct sources of truth, deliberately kept separate:
 //
 //  1. Scale/chord degree spelling (spellDegree, spellScale, buildChordOnDegree)
-//     is fully algorithmic — it implements the book's own stated rule
+//     is fully algorithmic, it implements the book's own stated rule
 //     ("a b3/b5/b7/b9 is always written as a flatted letter, never its sharp
 //     enharmonic twin; a #4/#5/#9 is always written sharp"). This is what
 //     drives every scale table and chord table in the book (Scale 1-5
@@ -12,7 +12,7 @@
 //     generalizes to any future scale/chord formula without new data.
 //
 //  2. The plain chromatic scale (Scale 0's foundation table) is NOT spelled
-//     by one uniform rule in the book — different roots mix "raise the
+//     by one uniform rule in the book, different roots mix "raise the
 //     lower neighbor" and "flat the upper neighbor" passing tones to avoid
 //     awkward spellings (e.g. F's chromatic scale uses b2/b3 early, #4 in
 //     the middle, then b6/b7). That's curated reference data, not a
@@ -43,7 +43,7 @@ const SIMPLE_FLAT_NAMES: Record<number, string> = {
 };
 
 // The 12 root keys used throughout the curriculum book, spelled exactly as
-// the book prints them (F# not Gb, Db not C#) — this is the set every
+// the book prints them (F# not Gb, Db not C#), this is the set every
 // scale/chord table iterates over, and the recommended dropdown for root
 // selection in the Transposition Dashboard.
 export const ROOT_KEYS = [
@@ -71,7 +71,7 @@ function parseNote(note: string): { letter: string; semitone: number } {
 /**
  * The pitch class (0-11, C = 0) a spelled note sounds at.
  *
- * Spelling and sound are deliberately different things in this file — the
+ * Spelling and sound are deliberately different things in this file, the
  * whole point of spellDegree is that Gb and F# are different *names*. This is
  * the one place that collapses that distinction, because a loudspeaker cannot
  * tell them apart. Exported for the audio engine (src/lib/audio-engine.ts),
@@ -83,7 +83,7 @@ export function pitchClassOf(note: string): number {
 }
 
 // Major-scale semitone offsets for unaltered degrees 1-7. Extended chord
-// degrees (9, 11, 13) fold back onto 2, 4, 6 — a 9th is a 2nd an octave up.
+// degrees (9, 11, 13) fold back onto 2, 4, 6, a 9th is a 2nd an octave up.
 const DEGREE_OFFSETS: Record<number, number> = { 1: 0, 2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 11 };
 
 function parseDegreeToken(token: string): { number: number; accidental: number } {
@@ -157,7 +157,7 @@ export const CHROMATIC_FORMULA = "1-b2-2-b3-3-4-b5-5-b6-6-b7-7";
 const CHROMATIC_ASCENDING_DEGREES = ["1", "#1", "2", "#2", "3", "4", "#4", "5", "#5", "6", "#6", "7"];
 
 // ---------------------------------------------------------------------------
-// Chords — native triads/sevenths built on a scale degree
+// Chords, native triads/sevenths built on a scale degree
 // ---------------------------------------------------------------------------
 
 export const CHORD_QUALITIES = {
@@ -190,7 +190,7 @@ export interface NativeChord {
 
 /**
  * Builds the chord rooted on a given scale degree (e.g. the vi minor of a
- * major pentatonic scale). `scaleRoot` is the scale's own root — the
+ * major pentatonic scale). `scaleRoot` is the scale's own root, the
  * degree token locates the chord's root note within that scale, and the
  * chord's own tones are then spelled from that note.
  */
@@ -216,5 +216,5 @@ export function buildChordOnDegree(
 }
 
 // ---------------------------------------------------------------------------
-// Chromatic scale — curated reference data (see file header)
+// Chromatic scale, curated reference data (see file header)
 // ---------------------------------------------------------------------------

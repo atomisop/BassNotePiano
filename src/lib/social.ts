@@ -99,7 +99,7 @@ export async function sendFriendRequest(senderId: string, receiverUsername: stri
     { windowMinutes: 60, max: 20, message: "You're sending friend requests too fast. Please wait a bit and try again." },
   );
 
-  // They already sent us a pending request — accept theirs instead of creating a mirrored duplicate.
+  // They already sent us a pending request, accept theirs instead of creating a mirrored duplicate.
   const reverse = await prisma.friendRequest.findUnique({
     where: { senderId_receiverId: { senderId: receiver.id, receiverId: senderId } },
   });

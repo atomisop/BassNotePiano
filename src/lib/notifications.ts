@@ -26,7 +26,7 @@ interface NotificationCta {
 }
 
 // One deep-link per notification type, so the emailed version of a
-// notification always lands you exactly where the in-app bell would —
+// notification always lands you exactly where the in-app bell would,
 // never just a generic "open the app" link. NEW_MESSAGE isn't here: it
 // never goes through createNotification (see the comment below), so its
 // CTA ("Click here to reply", deep-linked to the actual sender) is built
@@ -56,12 +56,12 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   // reminder function in netlify/functions/payment-plan-installments.ts),
   // since their email is a dedicated itemized invoice
   // (sendPaymentPlanInvoiceEmail in email.ts), not this generic CTA-button
-  // template — an entry here would be dead code.
+  // template, an entry here would be dead code.
   PAYMENT_PLAN_COMPLETED: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "default" },
   PAYMENT_PLAN_CANCELED: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "notice" },
   CREDITS_EXPIRED: { label: "View your credits", url: getAppUrl("/billing/plans"), kind: "notice" },
-  // Points to /lessons, not /billing/plans like its CREDITS_EXPIRED sibling
-  // — this fires while there's still time to act, and the actual action is
+  // Points to /lessons, not /billing/plans like its CREDITS_EXPIRED sibling,
+  // this fires while there's still time to act, and the actual action is
   // booking a makeup class, not reviewing plan/payment status.
   CLASS_REMINDER: { label: "See my classes", url: getAppUrl("/lessons"), kind: "default" },
   CREDITS_EXPIRING_SOON: { label: "Book a class", url: getAppUrl("/lessons"), kind: "notice" },
@@ -157,7 +157,7 @@ async function maybeSendEmail(
 }
 
 /**
- * Public entry point for callers that want the email side-effect only —
+ * Public entry point for callers that want the email side-effect only,
  * new messages use this instead of createNotification, since they already
  * have their own separate unread surface (the Messages nav badge and
  * per-conversation counts), and would otherwise duplicate into the general
@@ -175,7 +175,7 @@ export async function sendEmailIfEnabled(
   );
 }
 
-// NEW_MESSAGE is deliberately excluded here — messages have their own
+// NEW_MESSAGE is deliberately excluded here, messages have their own
 // unread surface (Messages nav badge + conversation list), kept out of the
 // general bell so the two notification systems stay visually distinct.
 export async function getUnreadCount(userId: string): Promise<number> {

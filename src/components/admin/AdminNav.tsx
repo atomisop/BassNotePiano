@@ -4,12 +4,12 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
 // Two-level nav now, by direct instruction ("keep maximum 4 main tabs with
-// multiple tabs inside them") — the previous flat 11-item version (already
+// multiple tabs inside them"), the previous flat 11-item version (already
 // trimmed down once from 15, see the fold-history notes on each page this
 // grouping now contains) still read as too many top-level buttons at a
 // glance, even wrapped onto two rows. Every leaf page keeps its own real
 // URL exactly as before (nothing here changes routing or breaks a
-// bookmark/notification deep-link) — this only changes how those same
+// bookmark/notification deep-link), this only changes how those same
 // pages are grouped and presented.
 //
 // Grouping rationale: Billing is every page that touches money (a Zelle
@@ -19,7 +19,7 @@ import Link from "next/link";
 // management, who is ready for their next scale). Operations is everything else that
 // keeps the actual teaching running (the weekly schedule plus its own
 // booking/attendance tab, uploaded lesson content, live support, and
-// broadcast announcements) — the one deliberately mixed bucket, since
+// broadcast announcements), the one deliberately mixed bucket, since
 // splitting communication out into its own 5th group would have broken
 // the 4-group cap this exists to satisfy.
 interface AdminNavLeaf {
@@ -89,7 +89,7 @@ function activeGroup(pathname: string): AdminNavGroup {
 
 /**
  * Below sm: a single native <select>, same reasoning (and same iOS-zoom
- * text-body fix) as the flat version this replaces — a phone has no room
+ * text-body fix) as the flat version this replaces, a phone has no room
  * for a real two-level control, so every leaf page is still one flat list,
  * just visually grouped via <optgroup> so the same four buckets are still
  * legible instead of eleven undifferentiated rows.
@@ -128,7 +128,7 @@ function MobileAdminSelect({ badges }: { badges: AdminNavBadges }) {
 }
 
 /**
- * sm and up: the real two-level nav — four group pills, and (for whichever
+ * sm and up: the real two-level nav, four group pills, and (for whichever
  * group the current page belongs to) a second row of that group's own
  * leaf pills right below. A single-leaf group (just Overview) never grows
  * a second row at all, nothing to switch between.

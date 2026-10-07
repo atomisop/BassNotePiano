@@ -1,5 +1,5 @@
 /**
- * #6 — Circular progress.
+ * #6, Circular progress.
  *
  * Pure SVG, no dependency. Two things make this the accessible version rather
  * than a decorative one:

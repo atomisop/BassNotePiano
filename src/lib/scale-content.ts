@@ -1,9 +1,9 @@
 import { ROOT_KEYS, spellScale, type ChordQualityKey, type RootKey } from "@/lib/music-theory";
 
-// Rich pedagogical content for the /scales/[slug] module page — kept
+// Rich pedagogical content for the /scales/[slug] module page, kept
 // separate from curriculum.ts (which only carries the single representative
 // formula/price needed for cards, gating, and the DB seed). Every scale is
-// now standalone (one ScaleGroup, one variant) — the array shape is kept
+// now standalone (one ScaleGroup, one variant), the array shape is kept
 // only so existing consumers that loop over SCALE_CONTENT[slug] don't need
 // to change how they read it, even though it now always holds exactly one
 // entry.

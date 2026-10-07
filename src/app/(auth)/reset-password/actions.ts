@@ -57,10 +57,10 @@ export async function resetPasswordAction(email: string, code: string, newPasswo
   }
 }
 
-/** Doesn't leak account existence — a RateLimitError is swallowed for the
+/** Doesn't leak account existence, a RateLimitError is swallowed for the
  *  same reason as forgot-password's requestPasswordResetAction. Wrapped in
  *  withTimingFloor for the same reason too: the early return for "no such
- *  account" is fast, while a real account goes on to a real email send —
+ *  account" is fast, while a real account goes on to a real email send,
  *  without the floor, that gap is measurable in response time alone. */
 export async function resendResetCodeAction(email: string): Promise<{ ok: true } | { ok: false; error: string }> {
   return withTimingFloor(async () => {

@@ -76,7 +76,7 @@ export async function dismissAnnouncementAction(announcementId: string): Promise
 }
 
 // AppDock's own message badge used to be a plain server-rendered prop from
-// the dashboard layout, computed once per request — so reading a message
+// the dashboard layout, computed once per request, so reading a message
 // never cleared it until the next full navigation re-ran that layout (a
 // client-side route change inside the same layout doesn't re-fetch it).
 // Polled client-side now instead, same shape as fetchNotificationsAction

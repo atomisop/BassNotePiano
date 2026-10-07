@@ -15,7 +15,7 @@ export const metadata: Metadata = pageMetadata({
   noIndex: true,
 });
 
-// Public and auth-independent on purpose, same as /terms — reachable from
+// Public and auth-independent on purpose, same as /terms, reachable from
 // the registration consent line before a session exists.
 export default function PrivacyPage() {
   return (
@@ -27,7 +27,7 @@ export default function PrivacyPage() {
       <MarketingNav />
 
       {/* id + tabIndex: the skip link in (marketing)/layout.tsx targets
-          #main-content — see terms/page.tsx for why this moved onto a real
+          #main-content, see terms/page.tsx for why this moved onto a real
           <main> instead of an empty placeholder div. */}
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section className="relative mx-auto max-w-2xl px-6 pb-24 pt-16 sm:pt-24">

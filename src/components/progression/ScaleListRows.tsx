@@ -24,7 +24,7 @@ export interface ScaleListRowsProps {
 /**
  * The actual fix for scrolling fatigue with 15 scales: one line per scale
  * (code + title + kinit name on the left, progress fraction + status/lock on
- * the right) instead of the grid's full card — genuinely denser than the
+ * the right) instead of the grid's full card, genuinely denser than the
  * grid, not a re-skin of it, so a student can scan all 15 without heavy
  * scrolling.
  */

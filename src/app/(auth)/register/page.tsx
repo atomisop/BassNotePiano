@@ -79,7 +79,7 @@ function RegisterForm() {
       return;
     }
 
-    // Account exists but isn't usable yet — a verification code was just
+    // Account exists but isn't usable yet, a verification code was just
     // emailed. Signing in happens at the end of that flow, not here.
     const params = new URLSearchParams({ email, callbackUrl });
     router.push(`/verify-email?${params}`);

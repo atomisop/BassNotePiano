@@ -1,5 +1,5 @@
 // ============================================================================
-// Canonical site identity — the single source of truth for anything that has
+// Canonical site identity, the single source of truth for anything that has
 // to agree across metadata, the sitemap, robots.txt and the OG image.
 //
 // Every one of those surfaces needs the absolute origin, and getting them out
@@ -7,12 +7,12 @@
 // preview URL while the sitemap advertises the custom domain. So the origin is
 // resolved once, here, in a fixed order of trust:
 //
-//   1. NEXT_PUBLIC_SITE_URL — set this explicitly in production. It is the
+//   1. NEXT_PUBLIC_SITE_URL, set this explicitly in production. It is the
 //      only value that survives being read in the browser, which the OG image
 //      route and any client-side canonical need.
-//   2. NEXTAUTH_URL — already required by next-auth, so on a correctly
+//   2. NEXTAUTH_URL, already required by next-auth, so on a correctly
 //      configured deploy it is right by construction and needs no new env var.
-//   3. The production domain — a deliberate last resort. Falling back to
+//   3. The production domain, a deliberate last resort. Falling back to
 //      localhost would ship `<link rel="canonical" href="http://localhost">`
 //      to real crawlers, which is worse than being wrong about the protocol.
 // ============================================================================
@@ -24,7 +24,7 @@ function resolveOrigin(): string {
   if (!candidate) return FALLBACK_ORIGIN;
 
   // A localhost NEXTAUTH_URL is the normal local-dev value, and it is correct
-  // there — but it must never become a canonical URL in a production build.
+  // there, but it must never become a canonical URL in a production build.
   try {
     const url = new URL(candidate);
     const isLocal = url.hostname === "localhost" || url.hostname === "127.0.0.1";
@@ -44,13 +44,13 @@ export const SITE_TAGLINE = "Learn Piano, Guitar & Bass";
 
 /**
  * The default social/meta description. Deliberately concrete about what the
- * curriculum actually covers — the scale names are the differentiator and the
+ * curriculum actually covers, the scale names are the differentiator and the
  * thing someone would plausibly search for.
  */
 export const SITE_DESCRIPTION =
   "Live one-on-one piano, guitar and bass lessons with a real teacher, and a curriculum that opens one scale at a time.";
 
-/** Absolute URL helper — sitemap entries and canonicals both need one. */
+/** Absolute URL helper, sitemap entries and canonicals both need one. */
 export function absoluteUrl(path = "/"): string {
   return new URL(path, SITE_URL).toString();
 }
@@ -64,7 +64,7 @@ export function absoluteUrl(path = "/"): string {
  *
  * This exists because of a genuinely surprising Next.js merge rule: metadata
  * objects are merged *shallowly*, so a page that declares `openGraph` at all
- * replaces the parent's entire `openGraph` — including the `images` entry that
+ * replaces the parent's entire `openGraph`, including the `images` entry that
  * the file-based `app/opengraph-image.tsx` convention injects automatically.
  * The same applies to `twitter`, where overriding just the title silently drops
  * `card: "summary_large_image"` back to a small `summary` card.

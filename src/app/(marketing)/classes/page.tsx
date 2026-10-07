@@ -17,7 +17,7 @@ export default function ClassesPage() {
       <MarketingNav />
 
       {/* id + tabIndex: the skip link in (marketing)/layout.tsx targets
-          #main-content — see terms/page.tsx for why this moved onto a real
+          #main-content, see terms/page.tsx for why this moved onto a real
           <main> instead of an empty placeholder div. */}
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section className="relative mx-auto max-w-lg px-6 pb-24 pt-28">

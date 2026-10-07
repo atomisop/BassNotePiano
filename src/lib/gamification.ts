@@ -4,7 +4,7 @@ import { SCALE_GROUPS } from "@/lib/curriculum";
 import { BADGES } from "@/lib/badges";
 import { createNotification } from "@/lib/notifications";
 
-/** Idempotent — the unique (userId, code) constraint makes a re-award a no-op. */
+/** Idempotent, the unique (userId, code) constraint makes a re-award a no-op. */
 export async function awardBadge(userId: string, code: BadgeCode) {
   const existing = await prisma.userBadge.findUnique({ where: { userId_code: { userId, code } }, select: { id: true } });
   if (existing) return;
@@ -28,7 +28,7 @@ const COURSE_MILESTONES: { completedCount: number; code: BadgeCode }[] = [
   { completedCount: 4, code: "SCALE_MASTER" },
   { completedCount: 8, code: "RHYTHM_SPECIALIST" },
   { completedCount: 12, code: "CHORD_MAESTRO" },
-  // Derived from SCALE_GROUPS.length rather than hardcoded — the last time
+  // Derived from SCALE_GROUPS.length rather than hardcoded, the last time
   // this was a literal (6), growing the curriculum to 15 scales silently
   // made "Course Graduate" fire 9 scales early.
   { completedCount: SCALE_GROUPS.length, code: "COURSE_GRADUATE" },
@@ -58,7 +58,7 @@ function daysBetween(a: Date, b: Date): number {
 
 /**
  * Called from every practice-related action (module read, practice logged,
- * quiz attempted) — bumps the streak at most once per calendar day. A gap
+ * quiz attempted), bumps the streak at most once per calendar day. A gap
  * of more than one day resets the streak to 1 rather than 0, since today's
  * action itself counts.
  */
@@ -92,7 +92,7 @@ const FRIEND_COUNT_MILESTONES: { count: number; code: BadgeCode }[] = [
 ];
 
 /**
- * Call whenever a friend request is accepted, for both participants — a
+ * Call whenever a friend request is accepted, for both participants, a
  * request has two sides, and either one crossing a milestone should award
  * it. ACTIVE_PRACTICE_PARTNER isn't checked here or anywhere yet: this app
  * has no synchronous "practice together" mechanic to honestly measure, so

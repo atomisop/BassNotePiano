@@ -8,10 +8,10 @@ export interface Step {
 }
 
 /**
- * #7 — Step indicator for multi-step flows (the onboarding wizard).
+ * #7, Step indicator for multi-step flows (the onboarding wizard).
  *
  * Rendered as an ordered list with `aria-current="step"` on the active item,
- * so the structure a screen reader hears matches what's on screen — a bare
+ * so the structure a screen reader hears matches what's on screen, a bare
  * row of styled divs communicates nothing about sequence or position.
  *
  * The connector between markers is solid behind completed steps and faint
@@ -40,25 +40,25 @@ export function Stepper({
           return (
             // The connector used to live *inside* this <li>, competing with
             // this step's own label for space inside one equally-divided
-            // slot — a long label like "Your instrument" left it nothing to
+            // slot, a long label like "Your instrument" left it nothing to
             // grow into, so it rendered at a real, measured 0px wide, not
             // just visually thin. It's a separate <li> now: a true sibling
             // flex item of <ol>, so it grows into whatever's actually left
             // over in the row instead of whatever's left over in one
-            // label's own cramped box. aria-hidden — it carries no content a
+            // label's own cramped box. aria-hidden, it carries no content a
             // screen reader needs, and keeps the list's announced item
             // count at the real number of steps, not steps-plus-connectors.
             //
-            // Only the active step's label is ever shown — not a viewport
+            // Only the active step's label is ever shown, not a viewport
             // check (`sm:inline`, as this used to be): the wizard's own card
             // is a fixed ~28rem regardless of how wide the screen around it
             // is, so a screen-width breakpoint never actually fires here.
             // All five full labels genuinely don't fit that card width at
-            // once — showing every label was the reason nothing was left
+            // once, showing every label was the reason nothing was left
             // for the connector even before the nesting bug above. One
             // visible label at a time always fits, and the big heading
             // right below the row already repeats the current step's full
-            // name — every step's label still reaches a screen reader via
+            // name, every step's label still reaches a screen reader via
             // sr-only, just not painted for the ones not being read.
             <Fragment key={step.title}>
               <li className="flex shrink-0 items-center" aria-current={active ? "step" : undefined}>

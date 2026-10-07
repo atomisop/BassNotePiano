@@ -13,7 +13,7 @@ function formatTime(seconds: number): string {
 /**
  * Native <video> + a custom control bar built to the reference LMS's
  * layout: play/pause, volume, ±15s seek, running title/subtitle, elapsed/
- * total time, fullscreen. No captions/settings buttons — this build has no
+ * total time, fullscreen. No captions/settings buttons, this build has no
  * way to attach real caption tracks, and a button with no function behind
  * it is worse than no button (per the brief).
  */
@@ -45,7 +45,7 @@ export function LessonVideoPlayer({
 
   // iOS Safari's native-video fullscreen path (see toggleFullscreen below)
   // fires its own pair of events on the <video> element instead of the
-  // standard `fullscreenchange` on `document` handled above — without this,
+  // standard `fullscreenchange` on `document` handled above, without this,
   // the button's icon would get stuck on whatever it last showed once an
   // iPhone/iPad visitor actually uses that path.
   useEffect(() => {
@@ -107,13 +107,13 @@ export function LessonVideoPlayer({
   /**
    * iOS Safari only ever reliably supports fullscreen for actual video
    * playback through the <video> element's own native chrome
-   * (`webkitEnterFullscreen`) — a WebKit extension that exists on iPhone/
+   * (`webkitEnterFullscreen`), a WebKit extension that exists on iPhone/
    * iPad specifically and not on desktop Safari, so feature-detecting it is
    * a safe way to single out iOS without a user-agent sniff (the same check
    * video.js/Plyr/hls.js use for this exact case).
    *
-   * The standard `Element.requestFullscreen()` on this wrapping container —
-   * what used to run unconditionally here — is what iOS was actually
+   * The standard `Element.requestFullscreen()` on this wrapping container,
+   * what used to run unconditionally here, is what iOS was actually
    * getting, and iOS has a long-standing WebKit bug where the page's zoom/
    * scroll state doesn't reliably restore once that kind of fullscreen
    * exits: reported live as the dock and top bar going missing after
@@ -157,7 +157,7 @@ export function LessonVideoPlayer({
           src={src}
           // Without this, iOS Safari's default behavior is to hijack `play()`
           // into its own native fullscreen player regardless of which control
-          // triggered it — so a lesson would jump to full-screen the instant
+          // triggered it, so a lesson would jump to full-screen the instant
           // playback started, on every phone, never showing this custom
           // control bar (±15s, volume, the reference-LMS layout) at all.
           // `playsInline` (React's prop, renders the `playsinline` attribute)
@@ -170,7 +170,7 @@ export function LessonVideoPlayer({
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
           // Reaching the end of playback no longer auto-completes the
-          // lesson — only the explicit "Mark as complete" button in
+          // lesson, only the explicit "Mark as complete" button in
           // ScaleWorkspace does that now. A student rewatching, scrubbing
           // past the end, or leaving it playing in the background
           // shouldn't silently advance their progress; finishing the
@@ -179,7 +179,7 @@ export function LessonVideoPlayer({
           onClick={togglePlay}
         />
 
-        {/* Title/subtitle overlay, top-left, fades with the rest of the chrome — cursor-not-allowed guards nothing here since it's decorative text, not a control. */}
+        {/* Title/subtitle overlay, top-left, fades with the rest of the chrome, cursor-not-allowed guards nothing here since it's decorative text, not a control. */}
         <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/70 to-transparent p-4">
           <p className="text-small text-slate-50">{title}</p>
           <p className="text-small text-slate-300">{subtitle}</p>

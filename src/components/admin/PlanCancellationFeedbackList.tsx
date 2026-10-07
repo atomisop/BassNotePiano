@@ -2,7 +2,7 @@ import type { PlanCancellationReason } from "@prisma/client";
 import type { PlanCancellationFeedback } from "@/lib/paymentPlans";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
 
-// Matches ManageSubscriptions.tsx's own CANCELLATION_REASONS labels — kept
+// Matches ManageSubscriptions.tsx's own CANCELLATION_REASONS labels, kept
 // as its own small copy rather than a shared import, same "duplicated on
 // purpose" convention this app already uses for small UI label maps (see
 // e.g. PaymentPlanTierGrid.tsx and PaymentPlanEnrollmentFlow.tsx both

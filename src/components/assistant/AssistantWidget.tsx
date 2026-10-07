@@ -17,32 +17,32 @@ import { ATOM_TRIGGER_EVENT, OPEN_ATOM_CASE_EVENT, OPEN_ATOM_EVENT, isAtomTrigge
 import { SPRING } from "@/lib/motionTokens";
 
 /**
- * Atom — the "ask me anything" assistant, floating on every page (mounted
+ * Atom, the "ask me anything" assistant, floating on every page (mounted
  * once in providers.tsx, same pattern as Toaster/CookieConsentBanner).
  *
  * The launcher (and the open panel's header icon) run the `loader-15` ui
- * component — a signal-green animated gradient ring, `components/ui/
- * loader-15.tsx` — as Atom's icon. Atom used to run its own distinct
+ * component, a signal-green animated gradient ring, `components/ui/
+ * loader-15.tsx`, as Atom's icon. Atom used to run its own distinct
  * color identity here (teal/blue, before that whatever the house accent
- * wasn't at the time — see themes.css's own "Accent" comment), on the
+ * wasn't at the time, see themes.css's own "Accent" comment), on the
  * theory that it should read as its own character rather than blend into
  * the app's chrome. Reverted by direct instruction: Atom now matches the
  * app exactly, everywhere below, including the signal green that's the
- * house accent again — no separate identity anymore. This replaces an
+ * house accent again, no separate identity anymore. This replaces an
  * earlier
  * `PulsingBorder` WebGL shader treatment (this app's own signal-green
  * identity): that version needed its own feature-detection-and-fallback
  * machinery (a shader canvas that *throws*, not warns, on a device with no
- * WebGL — real production error-monitoring events showed visitors on
+ * WebGL, real production error-monitoring events showed visitors on
  * locked-down/older hardware hitting a broken widget from it). `Loader`
- * is plain SVG, so none of that applies here — there's no fallback branch
+ * is plain SVG, so none of that applies here, there's no fallback branch
  * because there's nothing left that can fail that way.
  *
  * MOBILE OVERLAY SUPPRESSION: the launcher is portaled straight to
  * `document.body` at `z-40`, same as MarketingNav's mobile menu and the
  * dashboard's MoreSheet (`z-50`, also body-portaled). That numeric gap
  * should keep Atom behind either one, but a visitor reported seeing the
- * launcher float on top of the open mobile menu regardless — see
+ * launcher float on top of the open mobile menu regardless, see
  * `lib/overlayNav.ts` for why this doesn't just trust the z-index. Both
  * overlays broadcast `FULLSCREEN_NAV_EVENT` while open; this widget listens
  * and hides itself (`navOverlayOpen` below) for as long as one is up.
@@ -55,12 +55,12 @@ import { SPRING } from "@/lib/motionTokens";
  * isn't: AppDock adds `pb-[env(safe-area-inset-bottom)]` on top of its
  * `bottom-4`, so on a real notched/Dynamic-Island iPhone (a ~34px inset)
  * the dock's whole row shifts up by that same amount while this launcher,
- * reading no such inset, stays put — eating most of the ~20px clearance the
+ * reading no such inset, stays put, eating most of the ~20px clearance the
  * fixed 96px was sized around and letting the launcher dip down over
  * whatever dock icon sits beneath it (reported as "the text is cut out,"
  * a dock label rendering underneath Atom's loader ring). `env(...)`
  * resolves to 0 on anything without a safe area (desktop, older phones),
- * so this changes nothing there — it only restores the original ~20px gap
+ * so this changes nothing there, it only restores the original ~20px gap
  * on devices where AppDock itself already moved.
  *
  * Also owns several self-contained additions layered on top of the plain
@@ -68,12 +68,12 @@ import { SPRING } from "@/lib/motionTokens";
  *  - a thumbs up/down under every Atom reply (POSTs to /api/assistant/feedback);
  *  - a suggestion-chip row that's always available before a handoff;
  *  - a small, deterministic (non-LLM) triage: a thumbs-down or an "I need a
- *    human" kind of message offers a handoff, which — once confirmed —
+ *    human" kind of message offers a handoff, which, once confirmed,
  *    POSTs the transcript to /api/assistant/escalate. From there the widget
  *    switches into live "support mode": the composer talks to
  *    /api/assistant/support/[id] instead of the LLM, polling the same
  *    endpoint for whatever an admin replies with from /admin/support. A
- *    support reply always renders labeled "Support" — never the admin's
+ *    support reply always renders labeled "Support", never the admin's
  *    real name, which the visitor-facing API never even returns.
  */
 
@@ -100,7 +100,7 @@ const SUGGESTIONS = [
   "I need help with my account",
 ];
 
-// Simple, deterministic triage — no reliance on the model to self-report
+// Simple, deterministic triage, no reliance on the model to self-report
 // when it's stuck, which would mean trusting free-form LLM output to
 // trigger a real notification. A visitor asking in plain English to reach
 // a person is a clear, checkable signal on its own.
@@ -158,11 +158,11 @@ function AtomButton({ onClick, label }: { onClick: () => void; label: string }) 
   return <GenerateAIButton calm label="Ask AI" ariaLabel={label} onClick={onClick} />;
 }
 
-// Deliberately tiny and low-contrast — a CSAT prompt that competed
+// Deliberately tiny and low-contrast, a CSAT prompt that competed
 // visually with the actual answer would be worse than no CSAT prompt at
 // all. Rating stays changeable (clicking the other icon switches it,
 // clicking the already-selected one is a no-op) rather than locking in
-// after the first click — a visitor who mis-tapped, or who changes their
+// after the first click, a visitor who mis-tapped, or who changes their
 // mind after Atom's follow-up actually helps, isn't stuck with their first
 // answer.
 function FeedbackButtons({
@@ -220,7 +220,7 @@ function FeedbackButtons({
 }
 
 // Atom's replies point people at real in-app pages using plain markdown
-// link syntax (the system prompt writes "/messages" etc. as real paths) —
+// link syntax (the system prompt writes "/messages" etc. as real paths),
 // this turns [label](url) into an actual clickable link instead of showing
 // the bracket/paren syntax as literal text. Deliberately minimal: this is
 // the only markdown construct the model is asked to use, so a full markdown
@@ -312,7 +312,7 @@ function MessageBubble({
   );
 }
 
-// Post-handoff rendering — every bubble here carries an explicit sender
+// Post-handoff rendering, every bubble here carries an explicit sender
 // label (never ambiguous the way a plain LLM reply is), and SUPPORT gets
 // its own accent so "a real person just replied" reads at a glance rather
 // than blending into Atom's own messages.
@@ -379,13 +379,13 @@ export function AssistantWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Feedback (thumbs) — keyed by index into `messages`, which never
+  // Feedback (thumbs), keyed by index into `messages`, which never
   // reorders/truncates client-side, so the index stays a stable key for the
   // lifetime of one stored history.
   const [feedback, setFeedback] = useState<Record<number, FeedbackRating>>({});
   const [feedbackBusy, setFeedbackBusy] = useState<number | null>(null);
 
-  // Triage/handoff offer — entirely client-side state, never sent anywhere
+  // Triage/handoff offer, entirely client-side state, never sent anywhere
   // until the visitor explicitly confirms they want a person.
   const [escalationOffer, setEscalationOffer] = useState(false);
   const [collectingEmail, setCollectingEmail] = useState(false);
@@ -393,7 +393,7 @@ export function AssistantWidget() {
   const [escalationSubmitting, setEscalationSubmitting] = useState(false);
   const [escalationError, setEscalationError] = useState<string | null>(null);
 
-  // Live support mode — once set, the composer talks to the support thread
+  // Live support mode, once set, the composer talks to the support thread
   // instead of the LLM, and threadMessages (fetched/polled from the server)
   // replaces `messages` as the render source.
   const [activeEscalationId, setActiveEscalationId] = useState<string | null>(null);
@@ -402,7 +402,7 @@ export function AssistantWidget() {
   const [supportTyping, setSupportTyping] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
 
-  // See lib/overlayNav.ts — true while MarketingNav's mobile menu or the
+  // See lib/overlayNav.ts, true while MarketingNav's mobile menu or the
   // dashboard's MoreSheet is open, so the launcher steps aside instead of
   // floating on top of a full-screen overlay it's supposed to sit behind.
   const [navOverlayOpen, setNavOverlayOpen] = useState(false);
@@ -468,7 +468,7 @@ export function AssistantWidget() {
     return () => window.removeEventListener("resize", measure);
   }, [hasTopBarTrigger, showGreeting]);
 
-  // Portals need a real document — same SSR-safety pattern as NotificationBell.
+  // Portals need a real document, same SSR-safety pattern as NotificationBell.
   useEffect(() => {
     setMounted(true);
     setFeedback(readStoredFeedback());
@@ -500,13 +500,13 @@ export function AssistantWidget() {
       if (activeEscalationId) window.sessionStorage.setItem(ESCALATION_ID_KEY, activeEscalationId);
       else window.sessionStorage.removeItem(ESCALATION_ID_KEY);
     } catch {
-      // Non-fatal — worst case a reload loses the live thread and the
+      // Non-fatal, worst case a reload loses the live thread and the
       // widget falls back to plain Atom chat.
     }
   }, [activeEscalationId, mounted]);
 
   // sessionStorage clears on tab close, so a signed-in visitor who closes
-  // and reopens the tab would otherwise lose their live thread entirely —
+  // and reopens the tab would otherwise lose their live thread entirely,
   // this re-finds it server-side by account instead. Anonymous visitors
   // have no account to look it up by, so they stay scoped to whatever their
   // browser still remembers, same as the rest of the widget's history.
@@ -519,7 +519,7 @@ export function AssistantWidget() {
         if (!cancelled && data?.escalationId) setActiveEscalationId(data.escalationId);
       })
       .catch(() => {
-        // Best-effort — worst case they just stay in plain Atom chat.
+        // Best-effort, worst case they just stay in plain Atom chat.
       });
     return () => {
       cancelled = true;
@@ -546,7 +546,7 @@ export function AssistantWidget() {
     };
   }, [activeEscalationId, inputFocused, open]);
 
-  // Polls the live thread while it's open on screen — no point spending
+  // Polls the live thread while it's open on screen, no point spending
   // requests on a panel the visitor isn't looking at.
   const threadPoll = usePoll(
     async (signal) => {
@@ -698,8 +698,8 @@ export function AssistantWidget() {
   }, [open]);
 
   // overscroll-contain on the message list (below) stops wheel/trackpad
-  // scroll from chaining to the page once the list hits its own top/bottom
-  // — but that CSS property is unreliable for touch scrolling on iOS
+  // scroll from chaining to the page once the list hits its own top/bottom,
+  // but that CSS property is unreliable for touch scrolling on iOS
   // Safari specifically, which is exactly where "the page behind the chat
   // scrolls too" was actually reported from. Locking body scroll outright
   // while the panel is open is the same fix OnboardingTour.tsx already uses
@@ -766,7 +766,7 @@ export function AssistantWidget() {
 
       setMessages([...nextHistory, { role: "assistant", content: data.reply as string }]);
       // A plain-English ask for a human is offered a handoff regardless of
-      // how the reply itself reads — this check is on what the visitor
+      // how the reply itself reads, this check is on what the visitor
       // typed, not on anything the model said.
       if (HUMAN_REQUEST_RE.test(trimmed)) offerHandoff();
       void refreshSuggestions([...nextHistory, { role: "assistant", content: data.reply as string }]);
@@ -837,12 +837,12 @@ export function AssistantWidget() {
         body: JSON.stringify({ rating, messageContent: messages[index]?.content ?? "" }),
       });
     } catch {
-      // Best-effort — a failed feedback POST shouldn't disrupt the chat.
+      // Best-effort, a failed feedback POST shouldn't disrupt the chat.
     } finally {
       setFeedbackBusy(null);
     }
     // A thumbs-down is exactly the "didn't get help here" signal the triage
-    // is built around — offer the same handoff a "talk to a human" message
+    // is built around, offer the same handoff a "talk to a human" message
     // would trigger.
     if (rating === "DOWN") offerHandoff();
   }
@@ -873,7 +873,7 @@ export function AssistantWidget() {
       }
       setEscalationOffer(false);
       setCollectingEmail(false);
-      // Switches straight into live support mode — the next poll tick (or
+      // Switches straight into live support mode, the next poll tick (or
       // the immediate one the activeEscalationId effect kicks off) picks up
       // the seeded thread, which already contains this whole conversation.
       setActiveEscalationId(data.escalationId as string);
@@ -903,12 +903,12 @@ export function AssistantWidget() {
     submitEscalation(trimmedEmail);
   }
 
-  // "Done with support, back to normal Q&A" — leaves the thread itself
+  // "Done with support, back to normal Q&A", leaves the thread itself
   // untouched (still there for the admin, still reachable if the visitor
   // sends into it again), just stops routing this widget's composer to it.
   //
   // Also clears `feedback`/`feedbackBusy`, not just `messages`: `feedback`
-  // is keyed by index into `messages` (see its own declaration comment —
+  // is keyed by index into `messages` (see its own declaration comment,
   // "messages never reorders/truncates client-side, so the index stays a
   // stable key"), an invariant this function itself was the one place that
   // broke it. Resetting `messages` back to [] without also resetting
@@ -930,13 +930,13 @@ export function AssistantWidget() {
   if (!mounted) return null;
 
   const inSupportMode = Boolean(activeEscalationId);
-  // Once an admin resolves a thread, it's dead — history stays, but neither
+  // Once an admin resolves a thread, it's dead, history stays, but neither
   // Atom nor a real person is listening on it anymore. Guards the composer
   // itself (below), not just the send handler, so there's no window where a
   // stale disabled state lets a message slip through right as it resolves.
   const isResolved = inSupportMode && threadStatus === "RESOLVED";
   // The always-available suggestion row and the handoff micro-flow only
-  // make sense before a handoff exists — once a person is (or was)
+  // make sense before a handoff exists, once a person is (or was)
   // actually connected, there's nothing left to triage.
   const showSuggestions = !inSupportMode && !loading && !escalationOffer && !collectingEmail;
   // Never offer a question the visitor already asked (tapped or typed): it is
@@ -963,7 +963,7 @@ export function AssistantWidget() {
             // No local `--elev-border`/`--elev-bg` override anymore: Atom
             // used to force its own teal/blue material here regardless of
             // the active site theme, specifically so it wouldn't blend into
-            // the rest of the app. Reverted by direct instruction — this
+            // the rest of the app. Reverted by direct instruction, this
             // panel now reads the same `--elev-border`/`--elev-bg` every
             // other `glass-surface-elevated` on the site does, so it looks
             // like the rest of the app (near-black Ink, or warm Paper),
@@ -979,7 +979,7 @@ export function AssistantWidget() {
             <AiBorder rounded="rounded-3xl" glow surface="bg-neu-base" />
             <div className="relative z-10 flex h-full min-w-0 flex-col">
             {/* Used to carry a mobile-only teal→blue wash here, echoing the
-                icon's old color mix — the icon is signal green now (the
+                icon's old color mix, the icon is signal green now (the
                 house accent, not a distinct identity), and green filling
                 the whole header would compete with the message bubbles
                 below that also use it, so the header stays plain neutral
@@ -987,7 +987,7 @@ export function AssistantWidget() {
             <div className="flex items-center gap-3 border-b border-border px-4 py-3">
               <Sparkles className="size-6 shrink-0 text-primary" fill="currentColor" />
               <div className="min-w-0 flex-1">
-                {/* Always "Atom" — per direct instruction, the widget keeps its
+                {/* Always "Atom", per direct instruction, the widget keeps its
                     one identity even once a human joins the thread. Which
                     sender said what is still clear from each message's own
                     ATOM/SUPPORT/YOU label (see ThreadMessageBubble) without
@@ -1249,7 +1249,7 @@ export function AssistantWidget() {
       <AnimatePresence>
         {showGreeting && !open && !hasTopBarTrigger && (
           // A <button> (the bubble, opens the panel) used to have another
-          // interactive element (the dismiss control) nested inside it —
+          // interactive element (the dismiss control) nested inside it,
           // invalid HTML regardless of whether that inner control is a real
           // <button> or (as it was) a role="button" span, and genuinely
           // ambiguous for a screen reader or keyboard user, not just a

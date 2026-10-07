@@ -17,7 +17,7 @@ export interface EnrollPaymentPlanResult {
   error: string | null;
 }
 
-/** Every reservable slot for a cadence's weekly credit cost — feeds the enrollment picker, re-fetched whenever the student changes cadence. */
+/** Every reservable slot for a cadence's weekly credit cost, feeds the enrollment picker, re-fetched whenever the student changes cadence. */
 export async function getReservableSlotsAction(cadence: PaymentPlanCadence): Promise<ReservableSlot[]> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");

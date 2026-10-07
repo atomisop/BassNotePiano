@@ -3,7 +3,7 @@
 import { Toaster as SonnerToaster, toast } from "sonner";
 
 /**
- * #1 — Toast notifications.
+ * #1, Toast notifications.
  *
  * Styled through `toastOptions.classNames` rather than Sonner's own CSS
  * variables. Sonner ships light/dark themes built on fixed colours; this app
@@ -12,7 +12,7 @@ import { Toaster as SonnerToaster, toast } from "sonner";
  * toast matches the page it appears over is to hand it the same surface
  * classes every other panel uses (`.glass-surface`, `slate-*`, `amber-*`).
  *
- * `richColors` is deliberately off for the same reason — it would inject
+ * `richColors` is deliberately off for the same reason, it would inject
  * Sonner's own green/red rather than the ramp's slate-50/red-400.
  */
 export function Toaster() {
@@ -29,7 +29,7 @@ export function Toaster() {
           toast: "!rounded-card !bg-neu-base !shadow-raised-mid text-slate-100 !border-transparent !text-small",
           title: "!text-small font-semibold text-slate-50",
           description: "!text-small !text-slate-400",
-          // Solid --primary, neutral — see globals.css's own `--primary`
+          // Solid --primary, neutral, see globals.css's own `--primary`
           // comment: green was tried for real CTAs too and reverted by
           // direct instruction.
           actionButton: "!rounded-control !bg-[rgb(var(--cta-bg,var(--primary)))] !text-[rgb(var(--cta-ink,var(--primary-foreground)))] !font-semibold",

@@ -1,4 +1,4 @@
-// Atom — the "ask me anything" widget floating on every page (see
+// Atom, the "ask me anything" widget floating on every page (see
 // AssistantWidget.tsx). This file is the only place that talks to the
 // Gemini API (via a Google AI Studio key), builds the grounding context,
 // and enforces the rate limit.
@@ -33,7 +33,7 @@ export { RateLimitError };
 const MODEL = "gemini-3.6-flash";
 const MAX_OUTPUT_TOKENS = 800;
 
-/** Cheap, callable before doing any real work — lets the widget show a clear "not set up" reply instead of a raw API failure. */
+/** Cheap, callable before doing any real work, lets the widget show a clear "not set up" reply instead of a raw API failure. */
 export function isAssistantConfigured(): boolean {
   return Boolean(process.env.GOOGLE_AI_API_KEY);
 }
@@ -80,7 +80,7 @@ async function generateContent(req: GeminiRequest): Promise<{ text: string | und
 }
 
 // ---------------------------------------------------------------------------
-// Rate limiting — no message content stored, just "this identifier asked at
+// Rate limiting, no message content stored, just "this identifier asked at
 // this time." Anonymous visitors (this widget is on the public marketing
 // pages too) are keyed by IP and held to a tighter limit than a signed-in,
 // accountable user.
@@ -217,7 +217,7 @@ export interface AssistantMessage {
 }
 
 // ---------------------------------------------------------------------------
-// Persisted history — signed-in visitors only. An anonymous visitor's plain
+// Persisted history, signed-in visitors only. An anonymous visitor's plain
 // Atom chat lives purely in the widget's own React state and is gone on
 // reload; only once someone is signed in does a conversation get written
 // here, tied to their account, so it survives a reload, a new device, or
@@ -226,7 +226,7 @@ export interface AssistantMessage {
 // ---------------------------------------------------------------------------
 
 // Same cap the live request already applies to a client-supplied transcript
-// (MAX_MESSAGES in the route handler) — bounds both what gets sent back to
+// (MAX_MESSAGES in the route handler), bounds both what gets sent back to
 // the model as context and how much any one user's row ever grows to.
 const MAX_PERSISTED_MESSAGES = 40;
 
@@ -272,7 +272,7 @@ export async function loadPersistedHistory(userId: string): Promise<AssistantMes
   return rows.reverse().map((r) => ({ role: r.role === "USER" ? "user" : "assistant", content: r.content }));
 }
 
-/** Appends exactly one real exchange — never called with more than the one new user message + one new reply, regardless of how much context the client sent for the model call itself. */
+/** Appends exactly one real exchange, never called with more than the one new user message + one new reply, regardless of how much context the client sent for the model call itself. */
 export async function appendPersistedMessages(userId: string, userMessage: string, assistantReply: string): Promise<void> {
   await pruneStaleAssistantHistory();
   await prisma.assistantConversationMessage.createMany({
@@ -283,7 +283,7 @@ export async function appendPersistedMessages(userId: string, userMessage: strin
   });
 }
 
-/** Admin-only — the caller (admin/users/actions.ts) is responsible for verifying an ADMIN session before this runs; this function itself trusts whatever userId it's given. */
+/** Admin-only, the caller (admin/users/actions.ts) is responsible for verifying an ADMIN session before this runs; this function itself trusts whatever userId it's given. */
 export async function clearPersistedHistory(userId: string): Promise<void> {
   await prisma.assistantConversationMessage.deleteMany({ where: { userId } });
 }
@@ -378,7 +378,7 @@ export async function askAssistant(
   }
 
   const response = await generateContent({
-    // Gemini calls the assistant's own turns "model", not "assistant" —
+    // Gemini calls the assistant's own turns "model", not "assistant",
     // translated here so the rest of the app (the widget, the route
     // handler) can keep using the more universally-recognized "assistant",
     // matching how every other chat surface in this codebase names roles.

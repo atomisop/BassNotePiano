@@ -178,7 +178,7 @@ export function OnboardingWizard() {
     >
       {/* Replaces five undifferentiated bars. The horizontal Stepper marks
           completed steps with a check, the current one with a filled marker,
-          and carries `aria-current="step"` — so the position is announced
+          and carries `aria-current="step"`, so the position is announced
           rather than only drawn. */}
       <div className="mb-6">
         <Stepper

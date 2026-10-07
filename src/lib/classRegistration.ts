@@ -21,7 +21,7 @@ export interface SubmitClassRegistrationInput {
 }
 
 /**
- * Public lead-capture entry point — no account required. Fills userId
+ * Public lead-capture entry point, no account required. Fills userId
  * opportunistically when the submitter happens to be signed in, purely so
  * an approval can also raise an in-app Notification for them later.
  */
@@ -55,14 +55,14 @@ export async function submitClassRegistration(input: SubmitClassRegistrationInpu
   });
 
   // Confirms receipt to the address actually typed into the public form.
-  // Deliberately never routed through userId/createNotification — a
+  // Deliberately never routed through userId/createNotification, a
   // submitter can be signed into a different account than the email
   // they're registering with (most commonly you, testing the form), and
   // that account's email must never silently swallow this.
   const confirmationTitle = "We've got your registration";
   const confirmationBody = `Thanks, ${fullName}. We've received your registration for ${INSTRUMENT_LABEL[input.instrument]} lessons (${SKILL_LABEL[input.skillLevel]}). We'll be in touch at ${email} or ${phone} soon.`;
 
-  // No account uses this email yet — nudge them toward creating one while
+  // No account uses this email yet, nudge them toward creating one while
   // the registration is reviewed, so they land somewhere real once it's
   // approved instead of just waiting on an email.
   const existingAccount = await prisma.user.findUnique({ where: { email }, select: { id: true } });
@@ -120,14 +120,14 @@ async function notifyRegistrant(
       ? `You're confirmed for ${INSTRUMENT_LABEL[registration.instrument]} lessons. You have a ${TRIAL_DAYS}-day free trial of the first lessons in the curriculum, and we'll be in touch with next steps.`
       : `We're not able to move forward with your registration for ${INSTRUMENT_LABEL[registration.instrument]} lessons right now.${reason ? ` ${reason}` : ""}`;
 
-  // Always the address typed into the public form — never routed through
+  // Always the address typed into the public form, never routed through
   // userId's account email, which can belong to someone else entirely (see
   // the note in submitClassRegistration).
   await sendNotificationEmail(registration.email, title, body).catch((err) =>
     console.error("Class registration email failed (non-blocking):", err),
   );
 
-  // Additionally raise an in-app bell entry if they have a linked account —
+  // Additionally raise an in-app bell entry if they have a linked account,
   // no emailCategory here, since the email above already covers it and
   // this must never risk a second email to a different address.
   if (registration.userId) {

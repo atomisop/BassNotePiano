@@ -21,8 +21,8 @@ interface ProfileEditButtonProps {
   initialMusicProfile: MusicProfile;
 }
 
-// Everything that used to sit permanently on the Profile page — photo,
-// name, username, music profile — now lives behind this one button instead.
+// Everything that used to sit permanently on the Profile page, photo,
+// name, username, music profile, now lives behind this one button instead.
 export function ProfileEditButton(props: ProfileEditButtonProps) {
   const [open, setOpen] = useState(false);
 

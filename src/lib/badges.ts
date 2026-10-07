@@ -6,15 +6,15 @@ export type BadgeCategory = "COURSE" | "SOCIAL" | "STREAK" | "FINGER";
 export interface BadgeDefinition {
   code: BadgeCode;
   label: string;
-  /** Shown in the tooltip on a locked badge — what it takes to unlock it. */
+  /** Shown in the tooltip on a locked badge, what it takes to unlock it. */
   description: string;
   category: BadgeCategory;
 }
 
-// Fixed content, not admin-editable — a plain list rather than a DB table,
+// Fixed content, not admin-editable, a plain list rather than a DB table,
 // same pattern as the curriculum's SCALE_GROUPS. SOCIAL badges are defined
 // here (and can display as permanently-locked) even though nothing awards
-// them yet — the friends system they depend on doesn't exist until a later
+// them yet, the friends system they depend on doesn't exist until a later
 // step; adding their detection logic then won't require touching this list.
 export const BADGES: BadgeDefinition[] = [
   {

@@ -40,10 +40,10 @@ export function ScaleChordsPanel({ variant, root, player }: ScaleChordsPanelProp
         {chords.map(({ spec, chord }, i) => {
           const body = (
             <>
-              {/* Roman-numeral casing is meaningful here (I vs i signals major vs minor quality) — no uppercase transform. */}
+              {/* Roman-numeral casing is meaningful here (I vs i signals major vs minor quality), no uppercase transform. */}
               <p className="text-small font-semibold text-slate-400">{spec.label}</p>
               <p className="mt-0.5 text-body font-semibold text-slate-50">{chord.symbol}</p>
-              <p className="text-small text-slate-400">{chord.notes.join(" – ")}</p>
+              <p className="text-small text-slate-400">{chord.notes.join(" - ")}</p>
             </>
           );
 

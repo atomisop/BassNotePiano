@@ -12,8 +12,8 @@ function isRating(value: unknown): value is FeedbackRating {
 }
 
 /**
- * Records a thumbs up/down on one Atom reply. Public — same reachability as
- * /api/assistant itself (the widget works with no login) — so this is
+ * Records a thumbs up/down on one Atom reply. Public, same reachability as
+ * /api/assistant itself (the widget works with no login), so this is
  * rate-limited by the same identifier convention rather than requiring auth.
  * The widget itself treats this as best-effort and swallows failures, but
  * it's still wrapped so an unexpected error is logged server-side rather

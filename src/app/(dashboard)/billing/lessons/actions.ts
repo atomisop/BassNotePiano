@@ -18,7 +18,7 @@ import {
 import { RateLimitError } from "@/lib/rateLimit";
 
 // Individual a-la-carte credit purchasing (createClassCreditsPendingPaymentAction)
-// was removed once Payment Plans (/billing/plans) covered every solo case —
+// was removed once Payment Plans (/billing/plans) covered every solo case,
 // this file is Family bundle only now. submitClassCreditsPaymentAction stays
 // exported: FamilyBundleFlow still submits its Zelle reference through it,
 // the name predating the split between the two purchase paths.

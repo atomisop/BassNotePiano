@@ -1,11 +1,11 @@
 // ============================================================================
-// "What should I do right now?" — resolved from the student's real checklist
+// "What should I do right now?", resolved from the student's real checklist
 // state, nothing else.
 //
 // Deliberately deterministic rather than predictive. Every scale carries the
 // same three-item checklist (read the module, log the practice, pass the
 // quiz), and the curriculum is strictly ordered, so the next action is always
-// derivable — there is nothing here a model would know that the checklist
+// derivable, there is nothing here a model would know that the checklist
 // doesn't already say.
 //
 // Kept free of Prisma imports for the same reason as src/lib/ctaLabel.ts: it
@@ -105,7 +105,7 @@ export function resolveNextStep(roadmap: ScaleAccessState[]): NextStep {
     };
   }
 
-  // Only the quiz is left. If a previous attempt scored, say so — that's a
+  // Only the quiz is left. If a previous attempt scored, say so, that's a
   // real recorded number, not a synthesised "mastery" figure.
   return {
     kind: "take-quiz",
@@ -122,7 +122,7 @@ export function resolveNextStep(roadmap: ScaleAccessState[]): NextStep {
 
 /**
  * Progress across the whole curriculum, counting only checklist items that are
- * actually ticked. Returns raw counts, never a synthetic "mastery percentage" —
+ * actually ticked. Returns raw counts, never a synthetic "mastery percentage",
  * the schema tracks three booleans per scale and nothing finer, so a number
  * with more precision than that would be invented.
  */

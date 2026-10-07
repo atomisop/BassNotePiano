@@ -4,14 +4,14 @@ import { cn } from "@/lib/utils";
  * Shared inline icons.
  *
  * These exist because the same two marks kept being re-typed as literal
- * characters — "✓" in four different files — which the design system's
- * pre-delivery checklist rules out ("No emoji-as-icon — SVG only"). The
+ * characters, "✓" in four different files, which the design system's
+ * pre-delivery checklist rules out ("No emoji-as-icon, SVG only"). The
  * practical problem with a text checkmark isn't taste: it renders in whatever
  * fallback face the OS picks, so its weight and baseline don't match the
  * surrounding type, and it is read aloud by screen readers as "check mark"
  * in the middle of a sentence.
  *
- * All of these are `aria-hidden` — they are always decorative here, sitting
+ * All of these are `aria-hidden`, they are always decorative here, sitting
  * beside text that already carries the meaning.
  */
 
@@ -36,16 +36,16 @@ export function CheckIcon({ className, size = 14 }: { className?: string; size?:
  * `motion-safe:animate-spin` rather than a bare `animate-spin`: a loading
  * button is exactly the "repetitive movement" `prefers-reduced-motion`
  * exists to suppress, and this is otherwise the one icon here that would
- * ignore it — the other three are static marks.
+ * ignore it, the other three are static marks.
  *
- * Stroked in `currentColor`, not a hardcoded gradient — a loading spinner
+ * Stroked in `currentColor`, not a hardcoded gradient, a loading spinner
  * is a state indicator, not a call-to-action, and this app's "accent only
  * on true CTAs" instruction means it no longer carries its own persistent
  * house identity the way it briefly did; it just inherits whatever
  * foreground color already surrounds it (near-black text-on-accent inside
  * a real CTA button, a plain neutral everywhere else), same as any other
  * icon here. Atom's own icon (`loader-15.tsx`) is a separate, deliberately
- * branded component and unaffected by this — see that file's own comment.
+ * branded component and unaffected by this, see that file's own comment.
  */
 export function SpinnerIcon({ className, size = 14 }: { className?: string; size?: number }) {
   return (
@@ -119,7 +119,7 @@ export function EyeOffIcon({ className, size = 14 }: { className?: string; size?
 
 /**
  * Discord's own logomark (the "Clyde" mark), a filled shape rather than a
- * stroke like the icons above — matches the path Discord's brand guidelines
+ * stroke like the icons above, matches the path Discord's brand guidelines
  * publish and the widely-used Simple Icons rendering of it, so it reads as
  * the real mark rather than an approximation.
  */

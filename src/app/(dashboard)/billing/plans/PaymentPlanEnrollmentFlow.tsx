@@ -18,7 +18,7 @@ function formatUsd(cents: number) {
 
 const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-/** "14:00" -> "2:00 PM" — matches AdminScheduleManager.tsx's own formatTimeLabel, kept as its own small copy rather than a shared import across the admin/student boundary (same "duplicated on purpose" convention this codebase already uses for e.g. requireAdmin()). */
+/** "14:00" -> "2:00 PM", matches AdminScheduleManager.tsx's own formatTimeLabel, kept as its own small copy rather than a shared import across the admin/student boundary (same "duplicated on purpose" convention this codebase already uses for e.g. requireAdmin()). */
 function formatTimeLabel(hhmm: string): string {
   const [h, m] = hhmm.split(":").map(Number);
   const period = h >= 12 ? "PM" : "AM";
@@ -78,7 +78,7 @@ interface PaymentPlanEnrollmentFlowProps {
 /**
  * Handles both states of /billing/plans: no active plan (the cadence/term
  * picker below) and an active plan with something to pay (progress +
- * ZelleUnlockGate) — same "one component switches on local state, not two
+ * ZelleUnlockGate), same "one component switches on local state, not two
  * separate pages" shape the old a-la-carte credit purchase flow used to use.
  */
 export function PaymentPlanEnrollmentFlow({
@@ -133,7 +133,7 @@ export function PaymentPlanEnrollmentFlow({
     return slots.filter((slot) => slot.dayOfWeek === weekday).sort((x, y) => x.startTime.localeCompare(y.startTime));
   }, [slots, selectedDateKey]);
 
-  // Re-fetched whenever cadence changes (not term — a slot's room only
+  // Re-fetched whenever cadence changes (not term, a slot's room only
   // depends on the weekly credit cost, which is cadence-only, see
   // PLAN_CADENCE_CREDITS_PER_WEEK). Selection is cleared on change rather
   // than silently carried over, since the previous pick might not even be

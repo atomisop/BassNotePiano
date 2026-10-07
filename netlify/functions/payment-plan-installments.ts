@@ -43,7 +43,7 @@ async function notifyInstallment(
     body: isOverdue
       ? `${installmentLabel} on your ${planLabel} is ${overdueDays} day${overdueDays === 1 ? "" : "s"} overdue. Your classes are on hold and your plan is canceled in ${LAPSE_AFTER_DAYS - (overdueDays ?? 0)} day${LAPSE_AFTER_DAYS - (overdueDays ?? 0) === 1 ? "" : "s"} unless you pay.`
       : `${installmentLabel} on your ${planLabel} is ready to pay.`,
-    // No emailCategory here on purpose — the email below is a dedicated
+    // No emailCategory here on purpose, the email below is a dedicated
     // itemized invoice (sendPaymentPlanInvoiceEmail), not the generic
     // CTA-button template createNotification's emailCategory path sends.
   });
@@ -60,7 +60,7 @@ async function notifyInstallment(
     amountCents: payment.amountCents,
     dueDate: plan.nextDueDate,
     // Same value approveZellePayment computes for this installment's own
-    // CreditGrant.expiresAt at approval time — knowable ahead of approval
+    // CreditGrant.expiresAt at approval time, knowable ahead of approval
     // since only approval itself ever advances nextDueDate.
     cycleEndsAt: addCalendarMonthsClamped(plan.nextDueDate, 1),
     zelleHandle: payment.zelleHandle,
@@ -73,15 +73,15 @@ async function notifyInstallment(
 // staggered rather than coincidental). Two halves with different robustness
 // needs:
 //
-//  (a) Upcoming — existence-based, not exact-day-match. Robust to a missed
+//  (a) Upcoming, existence-based, not exact-day-match. Robust to a missed
 //      run: if this doesn't fire for a few days (an outage, a bad deploy),
 //      the next run still finds any ACTIVE plan whose nextDueDate has
 //      entered the window and has no open installment yet, and creates +
 //      notifies exactly once, just a bit later than ideal. A missed
-//      financial reminder is a real problem, not a shrug — unlike a missed
+//      financial reminder is a real problem, not a shrug, unlike a missed
 //      practice nudge, this can't be a same-exact-day-only check.
 //
-//  (b) Overdue escalation — exact-day-match against nextDueDate, same idiom
+//  (b) Overdue escalation, exact-day-match against nextDueDate, same idiom
 //      REMINDER_TRIGGER_DAYS uses in practice-reminders.ts. Fine here
 //      because the row from (a) already exists by the time this can ever
 //      match; a missed escalation day just means one fewer nudge, not a
@@ -123,7 +123,7 @@ export const handler = schedule("0 16 * * *", async () =>
     // paymentPlan is guaranteed non-null here: the where clause above only
     // matches rows whose related plan is ACTIVE, and every
     // PAYMENT_PLAN_INSTALLMENT row is created with a paymentPlanId set
-    // (see createPaymentPlan/getOrCreateOpenInstallmentPayment) — the schema
+    // (see createPaymentPlan/getOrCreateOpenInstallmentPayment), the schema
     // allows null only for a hypothetical future purpose that isn't this one.
     const plan = payment.paymentPlan!;
     const gap = daysSince(plan.nextDueDate, now);

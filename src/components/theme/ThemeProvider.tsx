@@ -15,7 +15,7 @@ import {
 } from "@/lib/themes";
 
 interface ThemeContextValue {
-  /** What the user picked — may be "system". */
+  /** What the user picked, may be "system". */
   theme: ThemeChoice;
   /** What "system" actually resolved to; equals `theme` otherwise. */
   resolvedTheme: ThemeId;
@@ -34,7 +34,7 @@ function resolve(choice: ThemeChoice): ThemeId {
 }
 
 /**
- * The one place that writes theme/mode onto <html> — and, since RootLayout's
+ * The one place that writes theme/mode onto <html>, and, since RootLayout's
  * `viewport` export can only ever bake in one static default (Paper vs. Ink
  * is a signed-in-only, client-stored preference, so the server can't know
  * it ahead of time), the one place that keeps `<meta name="theme-color">` in
@@ -67,7 +67,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       const t = localStorage.getItem(THEME_STORAGE_KEY);
       if (t === "system" || isThemeId(t)) storedTheme = t;
     } catch {
-      // Safari private mode throws on localStorage access — defaults are fine.
+      // Safari private mode throws on localStorage access, defaults are fine.
     }
     setThemeState(storedTheme);
     setResolvedTheme(resolve(storedTheme));
@@ -89,7 +89,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // has no picker and is locked to Ink regardless of what's stored, so
   // this is also the one spot that lock needs to live. A layout effect, not
   // a plain one, so switching between a locked page and the real app
-  // resolves before the browser paints — matching THEME_BOOT_SCRIPT's
+  // resolves before the browser paints, matching THEME_BOOT_SCRIPT's
   // no-flash guarantee on first load, now also true for client-side
   // navigation between the two.
   useLayoutEffect(() => {

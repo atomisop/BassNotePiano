@@ -1,5 +1,5 @@
 // ============================================================================
-// Bass Note Piano — Prisma schema
+// Bass Note Piano, Prisma schema
 // PostgreSQL (Neon in production, any Postgres locally). Covers auth
 // (NextAuth adapter), the six-scale curriculum, per-user progress gating,
 // and manual Zelle payment verification for the one-time $69.99 curriculum
@@ -12,10 +12,10 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  // Pooled connection (Neon's PgBouncer endpoint in production) — used for
+  // Pooled connection (Neon's PgBouncer endpoint in production), used for
   // every query the running app makes.
   url       = env("DATABASE_URL")
-  // Direct, unpooled connection — used only by `prisma migrate`. PgBouncer's
+  // Direct, unpooled connection, used only by `prisma migrate`. PgBouncer's
   // transaction-mode pooling doesn't support the session-level features
   // migrations need, so this has to bypass the pooler. Locally, where
   // there's no pooler, both vars just point at the same database.
@@ -40,10 +40,10 @@ enum ProgressStatus {
 
 enum PaymentPurpose {
   CURRICULUM // one-time $69.99 full-curriculum unlock (renamed from PRO_LIFETIME)
-  SCALE_UNLOCK // legacy Pay-As-You-Go per-scale unlock — no longer purchasable, kept for historical rows
-  CLASS_CREDITS // class-credit bundle purchase (renamed from LESSON_PACKAGE — the old 1:1 online/in-person lesson system was replaced by the weekly group-class schedule below)
+  SCALE_UNLOCK // legacy Pay-As-You-Go per-scale unlock, no longer purchasable, kept for historical rows
+  CLASS_CREDITS // class-credit bundle purchase (renamed from LESSON_PACKAGE, the old 1:1 online/in-person lesson system was replaced by the weekly group-class schedule below)
   FAMILY_BUNDLE // one credit tier bought for 2+ separate, already-existing accounts at once, an extra 10% off the combined price (FAMILY_BUNDLE_DISCOUNT_RATE in classCreditPricing.ts). See FamilyBundleRecipient below for who actually receives the credits
-  PAYMENT_PLAN_INSTALLMENT // one monthly installment of a PaymentPlan term commitment — same AWAITING_TRANSFER/PENDING_REVIEW/VERIFIED lifecycle as any other purchase, see PaymentPlan below
+  PAYMENT_PLAN_INSTALLMENT // one monthly installment of a PaymentPlan term commitment, same AWAITING_TRANSFER/PENDING_REVIEW/VERIFIED lifecycle as any other purchase, see PaymentPlan below
   // Same shape as FAMILY_BUNDLE but for curriculum access instead of class
   // credits, 2+ separate, already-existing accounts unlocking the full
   // curriculum in one purchase, 20% off the combined price
@@ -57,36 +57,36 @@ enum PaymentPurpose {
 
 // A student's standing commitment to pay for class credits in periodic
 // monthly installments over a locked term (3/6/12 months), at that term's
-// discounted rate — Zelle only, no auto-billing, ever. This model is the
+// discounted rate, Zelle only, no auto-billing, ever. This model is the
 // commitment itself (cadence, term, locked rate, progress); it never moves
-// money on its own — each individual installment's actual payment is an
+// money on its own, each individual installment's actual payment is an
 // ordinary ZellePayment row (purpose PAYMENT_PLAN_INSTALLMENT, paymentPlanId
 // pointing back here), going through the exact same AWAITING_TRANSFER ->
 // PENDING_REVIEW -> VERIFIED/REJECTED lifecycle, and the exact same
-// /admin/payments queue, as any other purchase — see approveZellePayment's
+// /admin/payments queue, as any other purchase, see approveZellePayment's
 // PAYMENT_PLAN_INSTALLMENT branch in payments.ts.
 //
 // installmentAmountCents/creditsPerInstallment/termMonths are snapshotted at
 // enrollment from calculatePaymentPlanRate() and never recomputed later, even
-// if the pricing ladder itself changes — unlike a one-time ZellePayment (a
+// if the pricing ladder itself changes, unlike a one-time ZellePayment (a
 // single frozen amountCents is enough), a plan's locked-rate promise has to
 // survive many future installment-creation events over up to a year, so
 // every number that promise depends on is frozen here.
 //
 // No stored "overdue" status: derived at read time as
 // `status == ACTIVE && nextDueDate < now`, since nothing needs to notice the
-// date passed and flip a flag — same "the fewest moving parts that can't
+// date passed and flip a flag, same "the fewest moving parts that can't
 // drift" reasoning as the rest of this app's status handling.
 //
 // reservedScheduleId/reservedChunkIndex: the plan's own weekly day/time,
 // exclusively theirs for as long as the plan (or its final still-live
-// CreditGrant) stays active — see src/lib/classSchedule.ts's
+// CreditGrant) stays active, see src/lib/classSchedule.ts's
 // getReservableSlots/createReservedBookingIfAbsent and the daily
 // netlify/functions/payment-plan-reservations.ts job that keeps a rolling
 // window of real ClassBooking rows booked against it. Null only for a
 // hypothetical plan enrolled before this existed; every new enrollment sets
 // both. reservedSlotInactiveNotifiedAt guards the one-time "your slot isn't
-// offered anymore" notice if an admin deactivates the underlying schedule —
+// offered anymore" notice if an admin deactivates the underlying schedule,
 // reset to null if it's reactivated, so a later deactivation can notify
 // again.
 model PaymentPlan {
@@ -103,7 +103,7 @@ model PaymentPlan {
 
   installmentsPaid Int               @default(0)
   // Anchored to the ORIGINAL schedule and advanced from its own prior value
-  // on each approval, never from the approval date itself — a late payment
+  // on each approval, never from the approval date itself, a late payment
   // shows up as late next time, it doesn't quietly reset the clock. Also
   // doubles as the paid-cycle boundary: the CreditGrant created by that same
   // approval expires at exactly this new value (see payments.ts).
@@ -144,7 +144,7 @@ model PaymentPlan {
 
 // 4 or 8 credits per monthly installment (30 or 60 min/week), matching
 // SOLO_MAX_CREDITS in classSchedule.ts, and also 1 or 2 credits/week (see
-// PLAN_CADENCE_CREDITS_PER_WEEK in classCreditPricing.ts) — what the plan's
+// PLAN_CADENCE_CREDITS_PER_WEEK in classCreditPricing.ts), what the plan's
 // reserved weekly slot (PaymentPlan.reservedScheduleId/reservedChunkIndex)
 // costs to auto-book each week.
 enum PaymentPlanCadence {
@@ -153,7 +153,7 @@ enum PaymentPlanCadence {
 }
 
 // How many monthly installments are locked in at enrollment, and which
-// discount tier that unlocks (0% / 10% / 20% / 30% off) — see
+// discount tier that unlocks (0% / 10% / 20% / 30% off), see
 // calculatePaymentPlanRate in classCreditPricing.ts. MONTHLY (termMonths=1,
 // 0% off) is the no-commitment tier: the old a-la-carte individual purchase
 // flow at /billing/lessons was fully removed once this existed, so this is
@@ -190,14 +190,14 @@ enum PlanCancellationReason {
   OTHER
 }
 
-// Secondary bookkeeping only — never a replacement for User.classCredits,
+// Secondary bookkeeping only, never a replacement for User.classCredits,
 // which stays the fast, authoritative balance every existing reader keeps
 // using unchanged. This table exists purely to answer "which batch of
-// credits is this, where did it come from, when does it lapse" — see
+// credits is this, where did it come from, when does it lapse", see
 // src/lib/creditLedger.ts's grantCredits/drawDownCredits/
 // expireDueCreditGrants, all best-effort against this table (never allowed
 // to block or fail the real User.classCredits mutation they run alongside).
-// Only PAYMENT_PLAN_INSTALLMENT grants ever carry a real expiresAt — a
+// Only PAYMENT_PLAN_INSTALLMENT grants ever carry a real expiresAt, a
 // Payment Plan credit is good for the ~month the installment paid for, per
 // direct instruction; every other source (Family bundle, legacy a-la-carte,
 // admin grants, and the one-time PRE_LEDGER_BALANCE backfill below) stays
@@ -207,7 +207,7 @@ enum CreditGrantSource {
   FAMILY_BUNDLE
   CLASS_CREDITS
   ADMIN_ADJUSTMENT
-  PRE_LEDGER_BALANCE // one-time migration backfill for balances that predate this table — see that migration's data backfill
+  PRE_LEDGER_BALANCE // one-time migration backfill for balances that predate this table, see that migration's data backfill
 }
 
 model CreditGrant {
@@ -217,7 +217,7 @@ model CreditGrant {
 
   source CreditGrantSource
 
-  // Only set for source == PAYMENT_PLAN_INSTALLMENT — links this grant back
+  // Only set for source == PAYMENT_PLAN_INSTALLMENT, links this grant back
   // to the plan whose reservation it's keeping alive (see PaymentPlan's own
   // "COMPLETED with a live grant still counts" reservation-maintenance
   // logic). No onDelete keyword (defaults to SetNull): a grant row is a
@@ -231,7 +231,7 @@ model CreditGrant {
   // (soonest-expiring grants first) and by expireDueCreditGrants once
   // expiresAt passes. Best-effort: this can drift from the truth
   // (User.classCredits) under concurrent activity, and that's an accepted,
-  // bounded trade-off — see creditLedger.ts's own comment.
+  // bounded trade-off, see creditLedger.ts's own comment.
   creditsRemaining       Int
   expiresAt              DateTime?
   // Stamped once expireDueCreditGrants has processed this row, so a repeat
@@ -254,7 +254,7 @@ model CreditGrant {
   @@index([paymentPlanId])
 }
 
-// Kept only for LessonType/LessonBooking below, which are now historical —
+// Kept only for LessonType/LessonBooking below, which are now historical,
 // the 1:1 online/in-person lesson system was replaced by the weekly
 // group-class schedule (see ClassSchedule/ClassBooking).
 enum LessonType {
@@ -263,7 +263,7 @@ enum LessonType {
 }
 
 // Admin-uploaded course content, distinct from LessonType/LessonBooking
-// above (those are the live-coaching booking system — different feature
+// above (those are the live-coaching booking system, different feature
 // entirely). "Lesson" here means a video or PDF module inside a scale
 // group's course player.
 enum LessonMediaType {
@@ -286,8 +286,8 @@ enum PaymentMethod {
 enum ZellePaymentStatus {
   AWAITING_TRANSFER // modal opened, instructions shown, user hasn't submitted a reference yet
   PENDING_REVIEW // user submitted a reference code; awaiting manual/automated verification
-  VERIFIED // confirmed — entitlement granted
-  REJECTED // reference could not be matched / invalid — user must resubmit
+  VERIFIED // confirmed, entitlement granted
+  REJECTED // reference could not be matched / invalid, user must resubmit
   EXPIRED // left unconfirmed past the review window, auto-closed
   REFUNDED // the money was given back; no longer counts as revenue
 }
@@ -304,11 +304,11 @@ enum VerificationPurpose {
   CHANGE_PASSWORD // confirm a password change from account settings
   CHANGE_NAME // confirm a display name change
   CHANGE_AVATAR // confirm a profile photo change
-  DELETE_ACCOUNT // confirm permanent account deletion from account settings — unlike CHANGE_*, still code-gated (see the 2026-08-07 decision note in account/actions.ts): deleting is irreversible, so it keeps the extra step the others dropped
+  DELETE_ACCOUNT // confirm permanent account deletion from account settings, unlike CHANGE_*, still code-gated (see the 2026-08-07 decision note in account/actions.ts): deleting is irreversible, so it keeps the extra step the others dropped
 }
 
 // ---------------------------------------------------------------------------
-// Onboarding — collected once, right after signup; editable later in Settings
+// Onboarding, collected once, right after signup; editable later in Settings
 // ---------------------------------------------------------------------------
 
 enum PrimaryInstrument {
@@ -343,11 +343,11 @@ enum LearningGoal {
 }
 
 // ---------------------------------------------------------------------------
-// Gamification — badges and practice streaks
+// Gamification, badges and practice streaks
 // ---------------------------------------------------------------------------
 
 // Fixed, code-defined set (see src/lib/badges.ts for label/description/
-// unlock copy) — not admin-editable content, so no separate Badge table.
+// unlock copy), not admin-editable content, so no separate Badge table.
 enum BadgeCode {
   FIRST_LESSON_DONE
   SCALE_MASTER
@@ -355,7 +355,7 @@ enum BadgeCode {
   CHORD_MAESTRO
   COURSE_GRADUATE
   FIRST_FRIEND_ADDED // awarded once the friends system (later step) exists
-  COMMUNITY_CATALYST // 5+ friends — same dependency
+  COMMUNITY_CATALYST // 5+ friends, same dependency
   ACTIVE_PRACTICE_PARTNER // same dependency
   STREAK_3_DAY
   STREAK_7_DAY
@@ -419,7 +419,7 @@ enum NotificationType {
   CURRICULUM_ACCESS_REVOKED // to the student, when an admin manually removes curriculum access outside the normal payment flow
 }
 
-// The in-app inbox is the source of truth — always written regardless of
+// The in-app inbox is the source of truth, always written regardless of
 // preference. The four notifyEmail* booleans on User only control whether a
 // given category *also* sends an email, same pattern as most apps' "also
 // notify me by email" toggle rather than a full per-channel opt-out.
@@ -438,7 +438,7 @@ model Notification {
 }
 
 // Admin-authored broadcast, shown to every signed-in user until they
-// dismiss it (swipeable banner/popup) — separate from the per-user
+// dismiss it (swipeable banner/popup), separate from the per-user
 // Notification fan-out below, which is the bell-entry copy of the same
 // announcement and has its own independent read/unread state.
 model Announcement {
@@ -456,7 +456,7 @@ model Announcement {
 }
 
 // One row per user who has swiped away / closed a given announcement's
-// banner — the absence of a row is what keeps it showing. Separate from
+// banner, the absence of a row is what keeps it showing. Separate from
 // Notification.readAt (the bell entry), which tracks independently.
 model AnnouncementDismissal {
   id             String       @id @default(cuid())
@@ -470,7 +470,7 @@ model AnnouncementDismissal {
 }
 
 // ---------------------------------------------------------------------------
-// Class registration — public lead-capture form, no account required
+// Class registration, public lead-capture form, no account required
 // ---------------------------------------------------------------------------
 
 enum ClassRegistrationStatus {
@@ -479,7 +479,7 @@ enum ClassRegistrationStatus {
   REJECTED
 }
 
-// Deliberately not tied to an account — the public form works for visitors
+// Deliberately not tied to an account, the public form works for visitors
 // who don't have (or don't yet want) a platform login. userId is filled in
 // opportunistically when the submitter happens to be signed in, purely so
 // an approval can also raise an in-app Notification for them; email is the
@@ -509,7 +509,7 @@ model ClassRegistration {
 }
 
 // ---------------------------------------------------------------------------
-// Social — friends and 1-on-1 direct messages
+// Social, friends and 1-on-1 direct messages
 // ---------------------------------------------------------------------------
 
 enum FriendRequestStatus {
@@ -518,7 +518,7 @@ enum FriendRequestStatus {
   REJECTED
 }
 
-// A friendship isn't a separate model — "are these two users friends" is
+// A friendship isn't a separate model, "are these two users friends" is
 // just "does an ACCEPTED request exist between them, in either direction."
 // Keeps the historical request itself (who asked whom, when) as the single
 // record rather than duplicating it into a second table on acceptance.
@@ -537,7 +537,7 @@ model FriendRequest {
   @@index([senderId, status])
 }
 
-// One-directional — A blocking B doesn't block B from A's perspective in
+// One-directional, A blocking B doesn't block B from A's perspective in
 // reverse, but sendFriendRequest/sendMessage check both directions before
 // allowing contact, so a block is effective regardless of who initiated it.
 model Block {
@@ -551,7 +551,7 @@ model Block {
   @@unique([blockerId, blockedId])
 }
 
-// 1-on-1 only, no group threads — "conversations" are derived at query time
+// 1-on-1 only, no group threads, "conversations" are derived at query time
 // (distinct counterpart + latest message), not a separate Conversation
 // model, since there's nothing a thread record would own beyond that.
 model Message {
@@ -598,7 +598,7 @@ model MessageReaction {
   @@index([messageId])
 }
 
-// A conversation "pinned" to the top of a user's own Messages sidebar —
+// A conversation "pinned" to the top of a user's own Messages sidebar,
 // per-user, not mutual, so pinning a friend doesn't pin you on their side.
 model PinnedConversation {
   id       String @id @default(cuid())
@@ -616,7 +616,7 @@ model PinnedConversation {
 
 // One row per (sender, recipient) pair, upserted on every debounced
 // keystroke in the composer. Freshness (updatedAt within the last few
-// seconds), not a boolean, is what the recipient's poll checks — there's no
+// seconds), not a boolean, is what the recipient's poll checks, there's no
 // "stopped typing" write, it just goes stale. Cleared explicitly on send so
 // the indicator doesn't linger for the full staleness window.
 model TypingStatus {
@@ -631,13 +631,13 @@ model TypingStatus {
   @@index([recipientId, updatedAt])
 }
 
-// Group chat — additive alongside the 1-on-1 Message model above, not a
+// Group chat, additive alongside the 1-on-1 Message model above, not a
 // replacement. Membership is friends-only at creation time (same trust
 // boundary as 1-on-1 messaging); there's no post-creation invite/kick, only
 // leaving, which keeps the moderation surface small for a first version.
 model GroupConversation {
   id          String   @id @default(cuid())
-  name        String? // optional — the UI falls back to listing member names
+  name        String? // optional, the UI falls back to listing member names
   createdById String
   createdBy   User     @relation("GroupCreator", fields: [createdById], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
@@ -663,7 +663,7 @@ model GroupTypingStatus {
 }
 
 // unreadCount is derived at query time from lastReadAt rather than a
-// per-message read receipt row — there's no need to know exactly which
+// per-message read receipt row, there's no need to know exactly which
 // message a member has seen, just "how many landed since they last looked."
 model GroupMember {
   id             String            @id @default(cuid())
@@ -730,18 +730,18 @@ model User {
   // devices" (see src/lib/auth.ts's jwt callback and
   // signOutOtherDevicesAction in the account actions). Every other
   // already-open session is carrying an older value baked into its own JWT
-  // at sign-in, so a mismatch here is what actually invalidates it — the
+  // at sign-in, so a mismatch here is what actually invalidates it, the
   // account-settings password form's claim that changing it signs out other
   // devices did nothing enforceable before this existed.
   sessionVersion Int @default(1)
 
-  // Optional — nothing in the app requires it except the friends/messages
+  // Optional, nothing in the app requires it except the friends/messages
   // system, which prompts for it inline rather than forcing it through the
   // (already-shipped) onboarding wizard. Always stored lowercase so
   // uniqueness is effectively case-insensitive without a citext extension.
   username String? @unique
 
-  // Derived/cached entitlement flags — kept in sync whenever a ZellePayment
+  // Derived/cached entitlement flags, kept in sync whenever a ZellePayment
   // transitions to VERIFIED. Read by the NextAuth JWT callback so middleware
   // can gate routes without a DB round trip on the edge.
   //
@@ -757,12 +757,12 @@ model User {
   trialEndsAt DateTime?
 
   // 1 credit = 30 minutes of class, fixed regardless of which bundle it was
-  // bought in — bundling only discounts the price paid, never the time
+  // bought in, bundling only discounts the price paid, never the time
   // value. Spent from /lessons when booking a weekly group-class occurrence
   // (creditCost per ClassSchedule row), refunded on a >=24h-ahead
   // cancellation, forfeited on a late cancellation or a marked no-show.
   // Incremented on approval of a CLASS_CREDITS ZellePayment (see
-  // approveZellePayment). Replaces the old online/in-person split — the
+  // approveZellePayment). Replaces the old online/in-person split, the
   // new weekly schedule is Zoom-only, one unified pool.
   classCredits Int @default(0)
 
@@ -778,20 +778,20 @@ model User {
 
   // A day counts once (max) toward the streak the first time any practice
   // action (module read, practice logged, quiz attempted) happens that
-  // calendar day — see recordPracticeActivity() in src/lib/gamification.ts.
+  // calendar day, see recordPracticeActivity() in src/lib/gamification.ts.
   currentStreak    Int       @default(0)
   longestStreak    Int       @default(0)
   lastActivityDate DateTime?
 
   // Per-category "also email me" toggles for the in-app notification
-  // center — reminders default off since they're the closest thing to
+  // center, reminders default off since they're the closest thing to
   // marketing email here, unlike the other three which are transactional.
   notifyEmailPayments    Boolean @default(true)
   notifyEmailRoleUpdates Boolean @default(true)
   notifyEmailSocial      Boolean @default(true)
   notifyEmailReminders   Boolean @default(false)
 
-  // Drives the "What's new" popup — shown once per calendar day (compared
+  // Drives the "What's new" popup, shown once per calendar day (compared
   // in UTC) the first time a signed-in user hits any dashboard page, not on
   // every login. Null means "never seen one," which also shows it.
   lastSeenPatchNotesAt DateTime?
@@ -800,10 +800,10 @@ model User {
   discordId       String?   @unique // the Discord account they connected, used to give them access to their private class call
   discordUsername String?
 
-  // Drives the interactive spotlight walkthrough — shown automatically
+  // Drives the interactive spotlight walkthrough, shown automatically
   // exactly once (right after onboarding wizard + first login), never
   // again on its own after that. Null means "never seen it." Replayable
-  // anytime from Settings → Tutorials, which doesn't touch this column —
+  // anytime from Settings → Tutorials, which doesn't touch this column,
   // only the automatic one-time trigger reads it.
   onboardingTourSeenAt DateTime?
 
@@ -830,7 +830,7 @@ model User {
   quizAttempts     QuizAttempt[]
   zellePayments    ZellePayment[]  @relation("PaymentSubmitter")
   reviewedPayments ZellePayment[]  @relation("PaymentReviewer")
-  lessonBookings   LessonBooking[] @relation("LessonBookingStudent") // historical — see LessonBooking model comment
+  lessonBookings   LessonBooking[] @relation("LessonBookingStudent") // historical, see LessonBooking model comment
   classBookings    ClassBooking[]  @relation("ClassBookingStudent")
 
   paymentPlans         PaymentPlan[] @relation("PaymentPlanStudent")
@@ -922,14 +922,14 @@ model VerificationToken {
 }
 
 // ---------------------------------------------------------------------------
-// Security — email verification codes, 2FA, login history
+// Security, email verification codes, 2FA, login history
 // ---------------------------------------------------------------------------
 
 // A single-use 6-digit code emailed for any sensitive action. Codes are
 // hashed at rest (never store the raw digits) and scoped to one purpose, so
 // a leaked LOGIN_2FA code can't be replayed against, say, CHANGE_PASSWORD.
 // `payload` carries the pending value for CHANGE_* purposes (the new name,
-// the new password hash, the new avatar data URI) — the change is only
+// the new password hash, the new avatar data URI), the change is only
 // ever applied once the matching code is confirmed, never before.
 model VerificationCode {
   id      String              @id @default(cuid())
@@ -950,7 +950,7 @@ model VerificationCode {
   @@index([email, purpose])
 }
 
-// One row per successful login — what new-location detection compares
+// One row per successful login, what new-location detection compares
 // against, and eventually a place a student could review their own account
 // activity from.
 model LoginEvent {
@@ -971,13 +971,13 @@ model LoginEvent {
 }
 
 // One row per failed login attempt (wrong password OR an email with no
-// account at all — recorded the same way so both paths carry the same
+// account at all, recorded the same way so both paths carry the same
 // cost to an attacker). Not tied to User by a required relation: a guess
 // against a nonexistent email still needs to count against something, so
 // this is keyed on the submitted email string directly, not a userId.
 //
 // Existence of this table is the whole fix for STEP 26's "no lockout on
-// repeated wrong-password attempts" finding — loginStepOneAction in
+// repeated wrong-password attempts" finding, loginStepOneAction in
 // login/actions.ts checks assertRateLimit against it before ever touching
 // bcrypt, and writes a row here on every failure. Rows are never deleted
 // on success; the sliding time window (see assertRateLimit) is what lets a
@@ -1006,11 +1006,11 @@ model FamilyBundleCheckAttempt {
   @@index([userId, createdAt])
 }
 
-// Rate-limit ledger for the Atom assistant widget (src/lib/assistant.ts) —
+// Rate-limit ledger for the Atom assistant widget (src/lib/assistant.ts),
 // every real reply costs a paid Anthropic API call, and the widget is
 // reachable from the public marketing pages with no login required, so this
 // exists purely to bound cost/abuse. `identifier` is `user:<id>` for a
-// signed-in visitor or the request's IP address for an anonymous one — never
+// signed-in visitor or the request's IP address for an anonymous one, never
 // both, never anything else. Not a conversation log: no message content is
 // stored here, only "this identifier made a request at this time."
 model AssistantRateLimit {
@@ -1055,13 +1055,13 @@ enum AssistantFeedbackRating {
   DOWN
 }
 
-// One row per thumbs up/down click on a single Atom reply — the small,
+// One row per thumbs up/down click on a single Atom reply, the small,
 // low-friction rating shown under each assistant bubble in the widget.
 // `identifier` follows the exact same `user:<id>` / IP convention as
 // AssistantRateLimit above, purely to rate-limit the endpoint; `userId` is
 // the separate, nullable link to a real account for whoever happens to be
 // signed in when they rate a reply, so the studio can tell "who" apart from
-// "how many" if it ever matters. Not tied to a stored conversation — Atom
+// "how many" if it ever matters. Not tied to a stored conversation, Atom
 // keeps no server-side chat log outside of an actual escalation (see
 // AssistantEscalation below), so this is just "this reply text got this
 // rating, from this identifier, at this time."
@@ -1085,7 +1085,7 @@ enum AssistantEscalationStatus {
 
 // A "connect me to a person" handoff from the Atom widget's guided triage:
 // created once the visitor confirms they want a human, after Atom couldn't
-// resolve it on its own. This is the live support thread's parent row — the
+// resolve it on its own. This is the live support thread's parent row, the
 // one place Atom's conversation is actually persisted server-side, since an
 // anonymous visitor (the widget works with no account) has no Message
 // history to point at at all. Notifying admins on creation (see
@@ -1105,7 +1105,7 @@ model AssistantEscalation {
   // First email's subject, for EMAIL threads only.
   subject         String?
   status          AssistantEscalationStatus @default(OPEN)
-  // Bumped every time any admin opens this thread in /admin/support — a
+  // Bumped every time any admin opens this thread in /admin/support, a
   // single shared "last read" rather than per-admin, same collective-inbox
   // model messages.ts already uses for admin threads. Drives the unread dot
   // in the thread list: any SupportMessage(sender: VISITOR) newer than this
@@ -1134,18 +1134,18 @@ enum SupportThreadSource {
 }
 
 enum SupportMessageSender {
-  VISITOR // the person who escalated — signed-in user or anonymous visitor
+  VISITOR // the person who escalated, signed-in user or anonymous visitor
   ATOM // replayed from the pre-escalation AI chat, seeded once at handoff time so the thread is one continuous timeline
-  SUPPORT // an admin reply — always shown to the visitor as "Support", never by name (see sentById below)
+  SUPPORT // an admin reply, always shown to the visitor as "Support", never by name (see sentById below)
   INTERNAL // a note between admins (a transfer, for example). Never sent to or shown to the customer: every visitor-facing read filters it out.
 }
 
 // One row per message in a support thread, from the pre-escalation Atom
-// history through the live back-and-forth after handoff — the whole
+// history through the live back-and-forth after handoff, the whole
 // conversation is just this table's rows in order, so the widget and the
 // admin panel both render off the exact same source. `sentById` records
 // which admin actually typed a SUPPORT reply, but is internal-only: no
-// visitor-facing API response includes it — the widget only ever sees the
+// visitor-facing API response includes it, the widget only ever sees the
 // generic "Support" role, which is the whole point (no personal admin
 // identity leaks to a visitor).
 model SupportMessage {
@@ -1154,7 +1154,7 @@ model SupportMessage {
   escalation   AssistantEscalation  @relation(fields: [escalationId], references: [id], onDelete: Cascade)
   sender       SupportMessageSender
   body         String               @db.Text
-  // Same `user:<id>` / IP convention as elsewhere — set only on VISITOR rows, for rate-limiting/abuse trail only.
+  // Same `user:<id>` / IP convention as elsewhere, set only on VISITOR rows, for rate-limiting/abuse trail only.
   identifier   String?
   sentById     String?
   sentBy       User?                @relation("SupportMessageSentBy", fields: [sentById], references: [id], onDelete: SetNull)
@@ -1171,18 +1171,18 @@ model SupportMessage {
 // ---------------------------------------------------------------------------
 
 // One row per book scale group (Scale 0 ... Scale 5). Seeded once from the
-// curriculum book — see prisma/seed.ts.
+// curriculum book, see prisma/seed.ts.
 model ScaleGroup {
   id          String  @id @default(cuid())
   slug        String  @unique // "scale-0" .. "scale-5"
   order       Int     @unique // 0-5, defines the required sequencing
   code        String // "Scale 3"
-  title       String // "Bati — Major, Minor & Lydian"
+  title       String // "Bati, Major, Minor & Lydian"
   kinitName   String? // "Bati Minor", "Tizita Major (Full Tizita)", etc.
   formula     String // degree formula, e.g. "1-b3-4-5-b7"
   description String? @db.Text
 
-  // Vestigial — Pay-As-You-Go per-scale pricing was retired in favor of a
+  // Vestigial, Pay-As-You-Go per-scale pricing was retired in favor of a
   // single $69.99 curriculum purchase (see CURRICULUM_PRICE_CENTS in
   // src/lib/curriculum.ts). Left in place rather than migrated away since
   // nothing reads it anymore; not worth a destructive column drop for it.
@@ -1200,7 +1200,7 @@ model ScaleGroup {
 
 // Admin-authored course content (video or PDF) for one scale group's course
 // player. Ordered, sequentially gated in the UI (src/lib/courseContent.ts /
-// the /scales/[scaleSlug] course player) — not the same thing as
+// the /scales/[scaleSlug] course player), not the same thing as
 // LessonBooking above (that's a student booking live 1:1 time with the
 // admin; this is pre-recorded/uploaded module content).
 model Lesson {
@@ -1226,7 +1226,7 @@ model Lesson {
   @@index([scaleGroupId])
 }
 
-// Per-user completion of one Lesson — separate from ScaleProgress's
+// Per-user completion of one Lesson, separate from ScaleProgress's
 // moduleRead/practiceCompleted/quizPassed checklist so lesson-by-lesson
 // tracking doesn't collide with it. Once every Lesson for a scale group has
 // a row here for a given user, that's treated as equivalent to moduleRead
@@ -1315,7 +1315,7 @@ model QuizAttempt {
 }
 
 // ---------------------------------------------------------------------------
-// Commerce — Zelle manual verification
+// Commerce, Zelle manual verification
 // ---------------------------------------------------------------------------
 
 // Every Zelle transfer the platform expects to receive: the $69.99 curriculum
@@ -1333,7 +1333,7 @@ model ZellePayment {
   scaleGroupId String?
   scaleGroup   ScaleGroup? @relation(fields: [scaleGroupId], references: [id])
 
-  // Only set when purpose == LESSON_PACKAGE — the discount (if any) isn't
+  // Only set when purpose == LESSON_PACKAGE, the discount (if any) isn't
   // stored, it's recomputed from these two at render time via
   // calculateLessonTotal() so the admin queue can show it without drift.
   lessonQuantity Int?
@@ -1344,7 +1344,7 @@ model ZellePayment {
   // keyword (same as scaleGroupId above) means ON DELETE SET NULL, so a
   // payment record never disappears if the plan row ever did. installmentNumber
   // is snapshotted as plan.installmentsPaid + 1 at creation time and never
-  // recomputed — needed so history/admin views can still render "Installment
+  // recomputed, needed so history/admin views can still render "Installment
   // 3 of 6" correctly for an old row after the plan's own counter has moved
   // past it.
   paymentPlanId     String?
@@ -1408,7 +1408,7 @@ model ZellePayment {
 // instruction can be, but doesn't have to be, one of the recipients too.
 // Written once at purchase time (see createFamilyBundlePayment in
 // payments.ts, which is also where every recipient is verified to already
-// hold a real, existing account — the whole point of this table existing
+// hold a real, existing account, the whole point of this table existing
 // separately from just trusting N raw email strings). approveZellePayment
 // reads this instead of payment.userId/lessonQuantity when purpose is
 // FAMILY_BUNDLE, crediting every row here rather than the payer alone.
@@ -1426,7 +1426,7 @@ model FamilyBundleRecipient {
   @@index([userId])
 }
 
-// HISTORICAL — this 1:1 on-request lesson system (student picks any
+// HISTORICAL, this 1:1 on-request lesson system (student picks any
 // date/time, admin coordinates out-of-band) was replaced by the weekly
 // group-class schedule below (ClassSchedule/ClassBooking). Left in place,
 // unwritten-to going forward, so past bookings/payments still resolve
@@ -1453,7 +1453,7 @@ model LessonBooking {
 }
 
 // ---------------------------------------------------------------------------
-// Weekly group classes — recurring schedule + per-occurrence bookings.
+// Weekly group classes, recurring schedule + per-occurrence bookings.
 // Replaces the 1:1 on-request LessonBooking system above.
 // ---------------------------------------------------------------------------
 
@@ -1468,17 +1468,17 @@ enum AttendanceStatus {
   NO_SHOW
 }
 
-// One row per recurring weekly slot (e.g. "Monday 11:00am ET, 2 hours") —
+// One row per recurring weekly slot (e.g. "Monday 11:00am ET, 2 hours"),
 // the template, not any specific week's occurrence. Repeats indefinitely;
 // dayOfWeek/startTime are ET wall-clock, converted to real UTC instants
 // per-occurrence by src/lib/classSchedule.ts (DST-correct, not a fixed
-// offset — ET oscillates between EST/EDT across the year).
+// offset, ET oscillates between EST/EDT across the year).
 model ClassSchedule {
   id          String  @id @default(cuid())
   dayOfWeek   Int // 0=Sunday..6=Saturday, matches JS Date#getDay() in ET
   startTime   String // "HH:mm" 24h, ET wall-clock
   durationMin Int
-  creditCost  Int // durationMin / 30 — 1 credit = 30 min, fixed regardless of how the credit was purchased
+  creditCost  Int // durationMin / 30, 1 credit = 30 min, fixed regardless of how the credit was purchased
   label       String?
   active      Boolean @default(true)
 
@@ -1492,7 +1492,7 @@ model ClassSchedule {
 }
 
 // One row per student per class occurrence. (scheduleId, occurrenceDate)
-// together identify a specific week's instance of a recurring slot — that
+// together identify a specific week's instance of a recurring slot, that
 // pair is what capacity (hard-capped at 10 SCHEDULED bookings) is counted
 // against, and what the unique constraint below prevents double-booking.
 model ClassBooking {
@@ -1503,14 +1503,14 @@ model ClassBooking {
   schedule   ClassSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
 
   // ET calendar date (stored at UTC midnight) identifying which week's
-  // occurrence this is — the capacity/uniqueness key, independent of DST.
+  // occurrence this is, the capacity/uniqueness key, independent of DST.
   occurrenceDate DateTime
-  // The actual UTC instant the class starts — what's shown to the student
+  // The actual UTC instant the class starts, what's shown to the student
   // (converted to their local timezone client-side) and what the 24-hour
   // cancellation cutoff and admin roster ordering are computed from.
   scheduledAt    DateTime
 
-  // The credits this booking will cost — reserved at booking time (checked
+  // The credits this booking will cost, reserved at booking time (checked
   // against the student's own available balance) but not actually deducted
   // from User.classCredits until markAttendance runs; see that function's
   // own comment for why the charge itself waits that long. Snapshotted here
@@ -1518,7 +1518,7 @@ model ClassBooking {
   // never retroactively changes what a past booking cost.
   creditsSpent Int
 
-  // Every row sharing one value here booked one family session together —
+  // Every row sharing one value here booked one family session together,
   // one credit charge per row, all against the same occurrence, but as one
   // booking "party" for capacity purposes (see getUpcomingOccurrences: an
   // occurrence with any active booking at all, solo or family, is full).
@@ -1526,7 +1526,7 @@ model ClassBooking {
   familyBookingGroupId String?
 
   // Set only on a row the daily reservation job auto-created for a Payment
-  // Plan's own reserved weekly slot (see PaymentPlan.reservedScheduleId) —
+  // Plan's own reserved weekly slot (see PaymentPlan.reservedScheduleId),
   // never set on a booking a student made by hand, even for that same
   // schedule/chunk. Lets cancelPaymentPlan bulk-cancel exactly its own
   // plan's future auto-bookings without touching anything else. No
@@ -1537,10 +1537,10 @@ model ClassBooking {
 
   status         ClassBookingStatus @default(SCHEDULED)
   attendance     AttendanceStatus? // set by admin after the class happens; null until marked
-  // True once this booking was actually canceled before ever being charged
-  // — which, now that the real charge waits for attendance, is every
+  // True once this booking was actually canceled before ever being charged,
+  // which, now that the real charge waits for attendance, is every
   // cancellation that reaches this state at all (a booking already marked
-  // COMPLETED can't be canceled — see cancelClassBooking's own guard).
+  // COMPLETED can't be canceled, see cancelClassBooking's own guard).
   refunded       Boolean            @default(false)
   canceledReason String?
   // When the student was last reminded about this class, so each reminder goes out once.
@@ -1561,8 +1561,8 @@ model ClassBooking {
 
 // Audit trail for every manual admin change to a student's classCredits
 // balance (grants, corrections, refunds outside the normal 24h-cutoff
-// flow). amount is signed — positive for a grant, negative for a
-// deduction — so the running total is just a sum of this table, and
+// flow). amount is signed, positive for a grant, negative for a
+// deduction, so the running total is just a sum of this table, and
 // reasonNote is required at the call-site (never blank) so every entry is
 // self-explanatory months later without cross-referencing anything else.
 model CreditAdjustment {

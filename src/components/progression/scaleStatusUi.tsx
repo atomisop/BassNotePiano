@@ -48,7 +48,7 @@ export function CheckIcon({ className }: { className?: string }) {
 
 /**
  * The three-item checklist, drawn as a segmented bar rather than three loose
- * dots. A scale is 2/3 done or it isn't — a bar says that at a glance, where
+ * dots. A scale is 2/3 done or it isn't, a bar says that at a glance, where
  * three separate dots make the reader count.
  */
 export function Checklist({ scale, emphasised }: { scale: ScaleAccessState; emphasised: boolean }) {

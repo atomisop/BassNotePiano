@@ -40,7 +40,7 @@ function PianoGlyph() {
   );
 }
 
-/** A plectrum, not a guitar body — the body shape read as a lopsided piano at 14px, and a pick is the one silhouette that's unambiguously "guitar" and nothing else at icon size. */
+/** A plectrum, not a guitar body, the body shape read as a lopsided piano at 14px, and a pick is the one silhouette that's unambiguously "guitar" and nothing else at icon size. */
 function GuitarGlyph() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -56,7 +56,7 @@ function GuitarGlyph() {
   );
 }
 
-/** A bass (F) clef — its curled hook and the two dots that name it, simplified but unmistakable, rather than a guitar-body shape shrunk down and re-labeled "bass". */
+/** A bass (F) clef, its curled hook and the two dots that name it, simplified but unmistakable, rather than a guitar-body shape shrunk down and re-labeled "bass". */
 function BassGlyph() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -225,7 +225,7 @@ export function ScaleChart({ variant, root, player }: { variant: ScaleVariant; r
   return (
     <div>
       <p className="text-small text-slate-400">{variant.name}</p>
-      <p className="mt-1 font-mono text-small text-slate-300">{variant.formula.split("-").join(" – ")}</p>
+      <p className="mt-1 font-mono text-small text-slate-300">{variant.formula.split("-").join(" - ")}</p>
 
       <motion.div
         key={root + variant.name}

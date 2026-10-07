@@ -54,7 +54,7 @@ function LockIcon() {
 }
 
 // Earned tiles get a snappier, overshooting entrance than the rest of the
-// site's standard spring (stiffness 240-260, damping 24-26) — this one
+// site's standard spring (stiffness 240-260, damping 24-26), this one
 // moment is meant to feel like a reward, not just another item settling in.
 const earnedTileVariants = {
   hidden: { opacity: 0, scale: 0.5 },

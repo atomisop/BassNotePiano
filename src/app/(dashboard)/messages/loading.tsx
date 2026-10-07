@@ -1,8 +1,8 @@
 import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
 
 /**
- * `MessagesClient` is a two-pane layout — a conversation/group list on the
- * left, the active chat on the right — so the skeleton mirrors that split
+ * `MessagesClient` is a two-pane layout, a conversation/group list on the
+ * left, the active chat on the right, so the skeleton mirrors that split
  * rather than the generic single-column fallback. On narrow screens the
  * real client shows one pane at a time; the skeleton keeps both stacked
  * side-by-side-collapsing-to-stacked the same way the real layout does via

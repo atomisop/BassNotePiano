@@ -10,7 +10,7 @@ const SCRIM_CLASS: Record<Scrim, string> = {
   light: "backdrop-scrim-light",
   standard: "backdrop-scrim",
   dense: "backdrop-scrim-dense",
-  // Shaped, not just weighted — see the two extra classes in globals.css for
+  // Shaped, not just weighted, see the two extra classes in globals.css for
   // why these exist alongside the three flat washes above.
   vignette: "backdrop-scrim-vignette",
   minimal: "backdrop-scrim-minimal",
@@ -18,7 +18,7 @@ const SCRIM_CLASS: Record<Scrim, string> = {
 
 interface PhotoBackdropProps {
   src: string;
-  /** Purely decorative — the scrim + surfaces above it carry all real content, so this stays out of the a11y tree. */
+  /** Purely decorative, the scrim + surfaces above it carry all real content, so this stays out of the a11y tree. */
   scrim?: Scrim;
   /** Section-scoped backdrop that drifts slower than page scroll (marketing sections). Leave off for a static shell/auth backdrop. */
   parallax?: boolean;
@@ -31,7 +31,7 @@ interface PhotoBackdropProps {
  * The photo itself, with the load handled explicitly.
  *
  * Navigating to a page used to leave this area empty until the image
- * decoded, then snap it in — the "background pops in a second late" effect.
+ * decoded, then snap it in, the "background pops in a second late" effect.
  * Two things fix that, and both are needed:
  *
  *   1. The wrapper is painted in the page ground colour, so before the photo
@@ -42,7 +42,7 @@ interface PhotoBackdropProps {
  *      rather than a flash.
  *
  * Cached images fire onLoad effectively immediately, so a revisit still
- * looks instant — the fade only shows itself when there's a real wait.
+ * looks instant, the fade only shows itself when there's a real wait.
  */
 function BackdropImage({ src, priority, sizes }: { src: string; priority: boolean; sizes: string }) {
   const [loaded, setLoaded] = useState(false);
@@ -73,8 +73,8 @@ function ParallaxImage({ src, priority, sizes }: { src: string; priority: boolea
 
 /**
  * Full-bleed photographic backdrop + scrim, in one implementation every page
- * consumes instead of copy-pasting markup. Always renders `absolute inset-0`
- * — wrap it in a `fixed inset-0` container for a persistent shell/auth
+ * consumes instead of copy-pasting markup. Always renders `absolute inset-0`,
+ * wrap it in a `fixed inset-0` container for a persistent shell/auth
  * backdrop, or a `relative` section for a marketing backdrop scoped to that
  * section.
  */
@@ -88,7 +88,7 @@ export function PhotoBackdrop({
 }: PhotoBackdropProps) {
   const prefersReducedMotion = useReducedMotion();
   // Every non-marketing page (the whole dashboard shell, auth, classes,
-  // pricing) renders this with parallax off — those callers used to still
+  // pricing) renders this with parallax off, those callers used to still
   // pay for a permanent useScroll() listener + per-frame transform write
   // that only ever produced "0%, unchanged". Skipping useScroll entirely
   // when parallax is off removes that dead scroll listener from every page
@@ -105,7 +105,7 @@ export function PhotoBackdrop({
         </div>
       )}
       <div className={`absolute inset-0 ${SCRIM_CLASS[scrim]}`} />
-      {/* Warm glow-smoke dissolve at both edges — see .backdrop-glow-smoke-*.
+      {/* Warm glow-smoke dissolve at both edges, see .backdrop-glow-smoke-*.
           Symmetric on purpose: this is what makes two stacked <PhotoBackdrop>
           sections blend into each other, not just this one fade out. */}
       <div className="backdrop-glow-smoke-top absolute inset-x-0 top-0 h-1/2" />

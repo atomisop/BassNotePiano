@@ -1,9 +1,9 @@
 /**
- * Cross-component signal for "a full-screen nav overlay is open" —
+ * Cross-component signal for "a full-screen nav overlay is open",
  * MarketingNav's mobile menu and the dashboard's MoreSheet both render a
  * `fixed inset-0 z-50` panel portaled to `document.body`. Atom
  * (AssistantWidget) is *also* portaled straight to `document.body`, at
- * `z-40`, from providers.tsx — a sibling with no shared ancestor either
+ * `z-40`, from providers.tsx, a sibling with no shared ancestor either
  * overlay can reach through props or context.
  *
  * On paper the lower z-index alone should keep Atom's launcher behind
@@ -16,7 +16,7 @@
  *
  * Same same-tab, no-shared-ancestor problem cookieConsent.ts already
  * solves with a window `CustomEvent` (the browser's own `storage` event
- * only fires in *other* tabs) — this mirrors that pattern rather than
+ * only fires in *other* tabs), this mirrors that pattern rather than
  * introducing a new Context provider for one boolean.
  */
 export const FULLSCREEN_NAV_EVENT = "bnp-fullscreen-nav";

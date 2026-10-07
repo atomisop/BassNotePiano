@@ -22,12 +22,12 @@ const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO ?? "music@bassnotepiano.com";
 const PERSONAL_FROM = process.env.PERSONAL_EMAIL_FROM ?? "Bass Note Piano <music@bassnotepiano.com>";
 const MAILING_ADDRESS = process.env.MAILING_ADDRESS?.trim() ?? "";
 
-/** Builds an absolute in-app URL for an email link — NEXTAUTH_URL has no trailing slash (matches every other usage of it in this codebase). */
+/** Builds an absolute in-app URL for an email link, NEXTAUTH_URL has no trailing slash (matches every other usage of it in this codebase). */
 export function getAppUrl(path: string): string {
   return `${process.env.NEXTAUTH_URL}${path}`;
 }
 
-// Lazily constructed — a missing key shouldn't crash module load (import
+// Lazily constructed, a missing key shouldn't crash module load (import
 // happens on every server boot, including local dev where no key is set).
 function getResendClient(): Resend | null {
   const apiKey = process.env.RESEND_API_KEY;
@@ -48,7 +48,7 @@ interface SendEmailParams {
 /**
  * The single send path for every transactional email in the app. Without
  * RESEND_API_KEY (local dev, or before it's configured in production) this
- * logs the email to the server console instead of sending — the whole
+ * logs the email to the server console instead of sending, the whole
  * verification/2FA/reset flow is fully testable without real credentials.
  */
 async function sendEmail({ to, subject, html, text, from }: SendEmailParams): Promise<void> {
@@ -91,13 +91,13 @@ async function sendEmail({ to, subject, html, text, from }: SendEmailParams): Pr
   }
 }
 
-// Accent per email "kind" — the default is neutral, not the house accent
-// (src/app/themes.css's Instagram-style purple→pink→orange — see that
+// Accent per email "kind", the default is neutral, not the house accent
+// (src/app/themes.css's Instagram-style purple→pink→orange, see that
 // file's own "Accent" comment for the full history): the "premium black
 // and white" pass covers every email touchpoint now, including the real
-// CTA button below (`cta.url`, see `ctaButtonHtml`'s own comment) — there's
+// CTA button below (`cta.url`, see `ctaButtonHtml`'s own comment), there's
 // no colour left anywhere in these emails. A cancellation/rejection still
-// gets its own warm red — that one isn't about the accent at all, just
+// gets its own warm red, that one isn't about the accent at all, just
 // keeping a rejection from reading as "this went well" (same
 // --c-rd-300/400 red the app itself uses for errors).
 const SHELL_ACCENT = {
@@ -107,7 +107,7 @@ const SHELL_ACCENT = {
 
 interface EmailShellOptions {
   kind?: keyof typeof SHELL_ACCENT;
-  /** Overrides the default "manage preferences" footer line — used by code emails, which have a different (ignore-if-not-you) concern. */
+  /** Overrides the default "manage preferences" footer line, used by code emails, which have a different (ignore-if-not-you) concern. */
   footerNote?: string;
 }
 
@@ -154,7 +154,7 @@ function emailShell(title: string, bodyHtml: string, options: EmailShellOptions 
 }
 
 function codeBlockHtml(code: string): string {
-  // Neutral, not accent-tinted — the code is information to copy, not a
+  // Neutral, not accent-tinted, the code is information to copy, not a
   // call-to-action, and it's already the single largest, boldest thing in
   // the email; size and weight carry the emphasis, not colour.
   return `
@@ -210,7 +210,7 @@ export async function sendVerificationCodeEmail(to: string, purpose: Verificatio
   const html = emailShell(
     copy.heading,
     `<p style="margin:0 0 4px;">${copy.intro}</p>${codeBlockHtml(code)}<p style="margin:0;color:#999999;font-size:13px;">This code expires in 10 minutes.</p>`,
-    // Codes are a different concern than a "manage preferences" footer — the
+    // Codes are a different concern than a "manage preferences" footer, the
     // relevant reassurance here is "someone else can't get in", not "opt out".
     { footerNote: "If you didn't request this, you can safely ignore this email. Your account is still secure." },
   );
@@ -227,7 +227,7 @@ function escapeHtml(text: string): string {
     .replace(/'/g, "&#39;");
 }
 
-/** Generic notification email — payment approvals, role changes, practice reminders, etc. */
+/** Generic notification email, payment approvals, role changes, practice reminders, etc. */
 export async function sendNotificationEmail(to: string, title: string, body: string, kind: "default" | "notice" = "default") {
   const html = emailShell(title, `<p style="margin:0;">${escapeHtml(body)}</p>`, { kind });
   const text = body;
@@ -277,7 +277,7 @@ ${linkHtml}<p style="margin:0;">Bass Note Piano</p>
 }
 
 function ctaButtonHtml(cta: { label: string; url: string }): string {
-  // Neutral, not accent — the "premium black and white" pass now covers
+  // Neutral, not accent, the "premium black and white" pass now covers
   // real CTAs too, so nothing in the app fills a button with the accent
   // gradient anymore.
   return `
@@ -291,7 +291,7 @@ function ctaButtonHtml(cta: { label: string; url: string }): string {
 
 /**
  * Same as sendNotificationEmail, plus a single call-to-action button/link
- * tailored to what the notification is about — e.g. "Click here to reply"
+ * tailored to what the notification is about, e.g. "Click here to reply"
  * deep-linked to the actual thread, not just a generic "open the app."
  */
 export async function sendNotificationEmailWithCta(
@@ -311,7 +311,7 @@ function formatUsdCents(cents: number): string {
 }
 
 export interface PaymentPlanInvoiceDetails {
-  /** e.g. "6-Month plan — 60 min/week" */
+  /** e.g. "6-Month plan, 60 min/week" */
   planLabel: string;
   /** e.g. "Installment 3 of 6" */
   installmentLabel: string;
@@ -319,18 +319,18 @@ export interface PaymentPlanInvoiceDetails {
   dueDate: Date;
   zelleHandle: string;
   cta: { label: string; url: string };
-  /** When this installment's credits (and the exclusive hold on the student's reserved weekly slot) actually lapse if unused — computed the same way the CreditGrant itself is (addCalendarMonthsClamped(plan.nextDueDate, 1), already known ahead of approval since only approval advances nextDueDate). Optional and rendered as one more summary row only when present, so a caller that doesn't have it handy doesn't need to fake one. */
+  /** When this installment's credits (and the exclusive hold on the student's reserved weekly slot) actually lapse if unused, computed the same way the CreditGrant itself is (addCalendarMonthsClamped(plan.nextDueDate, 1), already known ahead of approval since only approval advances nextDueDate). Optional and rendered as one more summary row only when present, so a caller that doesn't have it handy doesn't need to fake one. */
   cycleEndsAt?: Date;
-  /** Present only for the overdue variant — its presence, not a separate flag, is what picks the template's copy/accent. */
+  /** Present only for the overdue variant, its presence, not a separate flag, is what picks the template's copy/accent. */
   overdueDays?: number;
 }
 
 /**
- * The one dedicated "invoice" email in this app — every other transactional
+ * The one dedicated "invoice" email in this app, every other transactional
  * email goes through sendNotificationEmail(WithCta) above, whose body is a
  * single plain paragraph and can't carry an itemized amount/due-date/Zelle
  * summary. One template serves both the due-soon (kind: "default") and
- * overdue (kind: "notice", the existing red accent) cases — an overdue
+ * overdue (kind: "notice", the existing red accent) cases, an overdue
  * reminder is just "resend the same invoice, more urgently," not a
  * different layout. See netlify/functions/payment-plan-installments.ts for
  * the scheduled job that calls this.

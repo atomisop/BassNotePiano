@@ -8,8 +8,8 @@ import { OwnerStarBadge } from "@/components/ui/OwnerStar";
 import { popoverVariants } from "@/lib/motionTokens";
 import { startNavigation } from "@/lib/navigationState";
 
-// Same glyph AccountSettings.tsx's own "Sign out" row uses (TAB_ICONS.logout)
-// — one logout icon across the app, not a second one invented here.
+// Same glyph AccountSettings.tsx's own "Sign out" row uses (TAB_ICONS.logout),
+// one logout icon across the app, not a second one invented here.
 const LOGOUT_ICON_PATH = "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9";
 
 export interface ProfileMenuProps {
@@ -21,7 +21,7 @@ export interface ProfileMenuProps {
   isOwner?: boolean;
   /** Appended after the trigger's base sizing classes so a caller in a
       different-sized row (e.g. MarketingNav's h-9 pills) can fit in with
-      its neighbors — `!`-prefixed the same way MarketingNav's own primary
+      its neighbors, `!`-prefixed the same way MarketingNav's own primary
       CTA already overrides shared button classes. */
   triggerClassName?: string;
 }

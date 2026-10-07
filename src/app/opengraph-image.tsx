@@ -12,7 +12,7 @@ export const contentType = "image/png";
 
 // Dark card for social: the card is competing for attention in a feed
 // against mostly-white chrome, so it leads with the near-black ground and
-// crisp white type — neutral rather than the app's own accent, since this
+// crisp white type, neutral rather than the app's own accent, since this
 // card isn't a call-to-action and the app itself now reserves that accent
 // for true CTAs only ("premium black and white" direction; see themes.css's
 // own "Accent" comment for the full history of what that one accent has
@@ -22,7 +22,7 @@ const PAPER = "#F5F5F5";
 const MUTED = "#999999";
 
 /**
- * Satori (which backs ImageResponse) cannot use a CSS-declared webfont — it
+ * Satori (which backs ImageResponse) cannot use a CSS-declared webfont, it
  * needs the actual font binary, and it does not support woff2. Requesting the
  * Google Fonts stylesheet with an ancient Safari UA is what makes the API
  * serve a plain TTF URL instead of woff2.
@@ -65,7 +65,7 @@ export default async function OpengraphImage() {
     SITE_NAME +
     SITE_NAME.toUpperCase();
 
-  // The product now uses one family, Sora, for everything — no separate
+  // The product now uses one family, Sora, for everything, no separate
   // display/body pairing to keep straight here, so both loads request the
   // same font at the two weights the card actually uses.
   const [soraBody, soraDisplay] = await Promise.all([
@@ -219,7 +219,7 @@ export default async function OpengraphImage() {
     ),
     {
       ...size,
-      // Same family name, two weights — Satori matches on `weight`, so the
+      // Same family name, two weights, Satori matches on `weight`, so the
       // 700 registration is what `fontFamily: "Sora"` + this node's own
       // `fontSize`/no explicit weight resolves against for the headline,
       // while everything else (no `fontFamily` set) falls through to the

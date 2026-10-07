@@ -10,7 +10,7 @@ export interface KeySelectorProps {
 /**
  * The shared 12-key root picker driving both the Transposition Dashboard and
  * the Chords panel. 21st.dev's segmented-control/toggle-group components are
- * built for a handful of options (2-5) with no wrap behavior — none fit a
+ * built for a handful of options (2-5) with no wrap behavior, none fit a
  * 12-item single-select that needs to wrap onto a second row at narrow
  * widths, so this keeps its own markup, restyled with the same
  * role="group" + aria-pressed pattern those components use for accessible

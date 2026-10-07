@@ -3,7 +3,7 @@ import { runJob } from "../../src/lib/jobRun";
 import { createNotification } from "../../src/lib/notifications";
 import { expireDueCreditGrants, warnExpiringSoonCreditGrants } from "../../src/lib/creditLedger";
 
-// Runs daily at 09:00 UTC — off-hours, and deliberately ahead of
+// Runs daily at 09:00 UTC, off-hours, and deliberately ahead of
 // payment-plan-reservations.ts (09:30) so a plan whose final cycle's
 // credits expire this same morning is evaluated by that job with its grant
 // already marked expired, not a stale "still live" read from earlier in the
@@ -12,14 +12,14 @@ import { expireDueCreditGrants, warnExpiringSoonCreditGrants } from "../../src/l
 // payment-plan-installments.ts already are.
 //
 // Two phases, same "upcoming, then overdue" shape payment-plan-
-// installments.ts already uses for its own due/overdue reminders — mutually
+// installments.ts already uses for its own due/overdue reminders, mutually
 // exclusive by construction (a grant's expiresAt is either still in the
 // future, the warning phase's whole domain, or already past, the sweep
 // phase's), so the two never double up on the same grant in one run.
 export const handler = schedule("0 9 * * *", async () =>
   runJob("credit-expiry", async () => {
   // One shared instant for both phases (rather than each defaulting its own
-  // `now` independently a few lines apart) — keeps "expiring soon" and
+  // `now` independently a few lines apart), keeps "expiring soon" and
   // "expired" strictly non-overlapping even at the exact millisecond a
   // grant's expiresAt falls between the two calls, not just almost always.
   const now = new Date();

@@ -7,7 +7,7 @@ import { cancelPaymentPlan, recordPlanPaymentReceived, resendPlanInvoice } from 
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { logAudit } from "@/lib/audit";
 
-// The admin layout's redirect only protects rendering — Server Actions are
+// The admin layout's redirect only protects rendering, Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
 // authorization check for this mutation, not just a UX nicety. Duplicated
 // locally rather than shared, matching every other admin actions.ts file in

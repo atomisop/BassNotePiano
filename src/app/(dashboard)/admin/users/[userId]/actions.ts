@@ -6,7 +6,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 
-// Same pattern as every other admin actions.ts — the admin layout's
+// Same pattern as every other admin actions.ts, the admin layout's
 // redirect only protects rendering, not these Server Actions, so this
 // re-check is the actual authorization boundary.
 async function requireAdmin() {
@@ -18,7 +18,7 @@ async function requireAdmin() {
 
 /**
  * The same mechanism the student's own "Sign out of all other devices"
- * button uses (see account/actions.ts's signOutOtherDevicesAction) — every
+ * button uses (see account/actions.ts's signOutOtherDevicesAction), every
  * JWT carries the sessionVersion it was issued with, and NextAuth's
  * session callback compares it against the DB's current value on every
  * request, rejecting anything older. Bumping it here signs out every

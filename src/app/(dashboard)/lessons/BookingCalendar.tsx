@@ -3,11 +3,11 @@
 import { useMemo, useState } from "react";
 
 /**
- * Adapted from a 21st.dev/shadcnblocks "cal.com-style" bento calendar demo —
+ * Adapted from a 21st.dev/shadcnblocks "cal.com-style" bento calendar demo,
  * not a literal port. The original was a marketing teaser: a static month
  * grid where roughly 30% of days lit up via `Math.random() < 0.3` and the
  * card linked out to an external cal.com booking page. Neither of those
- * fits an actual booking flow — a random day isn't meaningfully "available",
+ * fits an actual booking flow, a random day isn't meaningfully "available",
  * and this app already has its own real booking system (see
  * ClassBookingClient, which books against live slot availability and a credit
  * balance, not a third-party calendar).
@@ -15,7 +15,7 @@ import { useMemo, useState } from "react";
  * What carried over is the genuinely useful part: a compact month-grid view
  * as a quick way to see *which* days have classes, instead of only a
  * scrolling this-week/next-week list. Every highlighted day here comes
- * straight from `occurrences` — the same data the list below it renders —
+ * straight from `occurrences`, the same data the list below it renders,
  * so the two can never disagree. Clicking a lit day filters that list down
  * to just that date; the list is still the thing that actually books.
  */
@@ -49,7 +49,7 @@ export function BookingCalendar({
   selectedDateKey: string | null;
   onSelectDate: (key: string | null) => void;
 }) {
-  // One entry per distinct calendar day that has at least one occurrence —
+  // One entry per distinct calendar day that has at least one occurrence,
   // multiple schedules landing on the same day just add to the day's own
   // count rather than producing duplicate dots.
   const dayInfo = useMemo(() => {
@@ -74,7 +74,7 @@ export function BookingCalendar({
   }, []);
 
   // Defaults to the month of the first upcoming class rather than always
-  // "today" — if the next available class is in early next month, opening
+  // "today", if the next available class is in early next month, opening
   // on a mostly-empty current month is a worse first impression than just
   // starting where the classes actually are.
   const [viewMonth, setViewMonth] = useState<{ year: number; monthIndex: number }>(() => {

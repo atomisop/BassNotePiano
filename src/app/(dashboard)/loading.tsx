@@ -5,7 +5,7 @@ import { WideLayout } from "@/components/layout/PageLayouts";
  * The fallback for every authenticated route that doesn't ship its own
  * loading.tsx.
  *
- * Deliberately generic — a heading, a lead line, and a couple of panels. Every
+ * Deliberately generic, a heading, a lead line, and a couple of panels. Every
  * dashboard route is server-rendered on demand against Postgres, so without
  * something here a navigation renders nothing at all until the query returns.
  * Routes whose shape is distinctive enough to be worth matching (the

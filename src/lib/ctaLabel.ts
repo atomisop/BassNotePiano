@@ -1,11 +1,11 @@
-// Shared "what should the primary CTA say" logic for a scale — used by both
+// Shared "what should the primary CTA say" logic for a scale, used by both
 // ScaleRoadmap's overview cards and the course player's hero, so the two
 // never drift out of sync with each other.
 //
 // Deliberately its own module, not exported from access.ts: access.ts pulls
 // in Prisma (and, transitively via courseContent.ts, the R2/AWS SDK client)
 // for its server-only logic, none of which can run in the browser.
-// ScaleRoadmap.tsx is a "use client" component — importing a *runtime*
+// ScaleRoadmap.tsx is a "use client" component, importing a *runtime*
 // function from access.ts would drag that whole server-only module graph
 // into the client bundle. This file imports only the ScaleAccessState
 // *type* (erased at compile time), so it's safe on both sides.

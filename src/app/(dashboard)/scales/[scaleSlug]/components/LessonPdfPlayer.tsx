@@ -13,14 +13,14 @@ import "react-pdf/dist/Page/TextLayer.css";
 //  - webpack bundling it: Next's production build runs the whole bundle
 //    through Terser, which can't minify a file with top-level ESM
 //    import/export ("'import' and 'export' cannot be used outside of
-//    module code") — confirmed by hitting exactly that build failure
+//    module code"), confirmed by hitting exactly that build failure
 //    before switching to this approach.
 //  - a CDN (cdnjs etc.): this app's CSP is script-src 'self' (worker-src
 //    falls back to it), so a cross-origin worker would be silently
 //    blocked in production regardless.
 // A plain public/ file sidesteps both: Next serves it unprocessed, so
 // Terser never touches it, and it's same-origin so CSP allows it.
-// react-pdf/pdfjs-dist version: 9.2.1 / 4.8.69 (package.json) — re-copy
+// react-pdf/pdfjs-dist version: 9.2.1 / 4.8.69 (package.json), re-copy
 // this file from node_modules if that version ever changes.
 pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
@@ -30,18 +30,18 @@ const SCALE_STEP = 0.2;
 
 /**
  * A real in-app PDF viewer (react-pdf/pdf.js), replacing the old bare
- * <object data=... type="application/pdf"> embed — which relied entirely on
+ * <object data=... type="application/pdf"> embed, which relied entirely on
  * the browser's own PDF plugin for chrome (no page nav, no zoom, and no
  * guarantee any given browser even has one), and would have been silently
  * blocked outright by this app's CSP once its `object-src 'none'` directive
  * ships (see next.config.mjs), since that directive exists specifically to
  * block <object>/<embed>/<applet>.
  *
- * Loading/rendering the PDF does NOT mark the lesson complete — only the
+ * Loading/rendering the PDF does NOT mark the lesson complete, only the
  * explicit "Mark as complete" button in ScaleWorkspace does that. This used
  * to fire completion itself as soon as the PDF successfully rendered
- * (onLoadSuccess), which meant just opening a PDF — without reading a word
- * of it — silently checked it off. Rendering is now purely presentational;
+ * (onLoadSuccess), which meant just opening a PDF, without reading a word
+ * of it, silently checked it off. Rendering is now purely presentational;
  * ScaleWorkspace owns the completion decision entirely.
  */
 export function LessonPdfPlayer({ src, title }: { src: string; title: string }) {

@@ -121,9 +121,9 @@ export function LandingPage() {
     <div className="relative">
       <MarketingNav />
 
-      {/* Skip-link target — see (marketing)/layout.tsx. tabIndex={-1} so
+      {/* Skip-link target, see (marketing)/layout.tsx. tabIndex={-1} so
           focus actually lands here on activation; never in normal tab order
-          otherwise. A real <main> now, not an empty placeholder div — axe's
+          otherwise. A real <main> now, not an empty placeholder div, axe's
           "region" check flagged every marketing page for having real content
           outside any landmark, since this id used to sit on an empty div
           instead of actually wrapping the content it pointed at. */}

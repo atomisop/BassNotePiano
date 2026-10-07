@@ -24,7 +24,7 @@ import { startNavigation } from "@/lib/navigationState";
  * `glass-pill`: a rounded, bordered, blurred lozenge with a mega-menu
  * dropdown. Three things were wrong with it here.
  *
- * It competes. A capsule is an object — it has an edge, a fill and a shadow,
+ * It competes. A capsule is an object, it has an edge, a fill and a shadow,
  * so it reads as a *thing sitting on* the photograph rather than as chrome.
  * On a page whose entire premise is one uninterrupted cinematic frame, the
  * header should be the least present element on screen, not the most defined.
@@ -35,7 +35,7 @@ import { startNavigation } from "@/lib/navigationState";
  *
  * It leaks. Radix's NavigationMenu portals its viewport to document.body,
  * which is outside `[data-surface="marketing"]`, so the dropdown rendered
- * with the app's luxury ramp — the white accent — no matter what the page
+ * with the app's luxury ramp, the white accent, no matter what the page
  * around it did. (It also emitted a forwardRef warning on every render.)
  * Everything here is inline, so the scope holds.
  *
@@ -106,11 +106,11 @@ export function MarketingNav() {
   }, [status]);
 
   // Passive read of the existing window scroll. Deliberately not a second
-  // scroll *engine* — Lenis still drives the position, this only observes it.
+  // scroll *engine*, Lenis still drives the position, this only observes it.
   //
   // The threshold is 8px, not "past the hero". The hero's headline sits low
   // in the frame with empty space above it, so at rest there is nothing for
-  // the bar to separate from — but that headline starts climbing into the bar
+  // the bar to separate from, but that headline starts climbing into the bar
   // on the very first scroll, and a transparent bar over 8rem serif is
   // illegible for both. So: bare while the page is at rest, backed the moment
   // anything moves.
@@ -132,7 +132,7 @@ export function MarketingNav() {
   }, [menuOpen]);
 
   // Tells Atom (portaled separately, straight to document.body) to hide
-  // its launcher while this is open — see lib/overlayNav.ts.
+  // its launcher while this is open, see lib/overlayNav.ts.
   useEffect(() => {
     setFullscreenNavOpen(menuOpen);
     return () => setFullscreenNavOpen(false);
@@ -152,7 +152,7 @@ export function MarketingNav() {
   const primary = isLoggedIn
     ? { label: "Dashboard", href: "/dashboard" }
     : { label: "Get started", href: "/register" };
-  // Logged in: no separate "Account" pill any more — ProfileMenu's own
+  // Logged in: no separate "Account" pill any more, ProfileMenu's own
   // Settings item goes to the same /account, so it'd be a second link
   // pointing at the same place. Logged out: unchanged, "Log in".
   const secondary = isLoggedIn ? null : { label: "Log in", href: "/login" };
@@ -166,7 +166,7 @@ export function MarketingNav() {
         ].join(" ")}
       >
         {/* HOMEPAGE REPLACEMENT: header-2's own "compact state on scroll" is
-            a real height/padding reduction, not just a background fade —
+            a real height/padding reduction, not just a background fade,
             adapted here as h-20/md:h-24 easing down to h-16/md:h-20 once
             `lifted`, on the same 500ms transition the background already
             used. */}
@@ -189,7 +189,7 @@ export function MarketingNav() {
                 the composition are visibly one system rather than a logo
                 dropped onto it. Bold, lowercase (via text-transform, not
                 the underlying text, so "Bass Note Piano" stays correct for
-                screen readers/SEO) — matching pianote.com's own actual
+                screen readers/SEO), matching pianote.com's own actual
                 wordmark treatment (studied directly), not the small label
                 this replaces. Colored in the accent at the time; neutral
                 again now under the "premium black and white" pass. */}
@@ -201,11 +201,11 @@ export function MarketingNav() {
                 to show from md and wrapped onto two lines beside the links. */}
           </Link>
 
-          {/* Classes/Pricing/Log in — real glass too, one tier down from the
+          {/* Classes/Pricing/Log in, real glass too, one tier down from the
               primary CTA below: `glass-surface-subtle` (Level 1, the same
               tier nav pills are documented for) rather than
               `glass-surface-elevated` (Level 3, reserved for the one most
-              important element on screen — already spent on "Start
+              important element on screen, already spent on "Start
               learning"). Using elevated glass on all four would flatten
               that hierarchy back to "everything's equally important". */}
           <div className="hidden items-center gap-2 md:flex lg:gap-3">
@@ -237,7 +237,7 @@ export function MarketingNav() {
               </Link>
             )}
             {/* Icon-only, same Level 1 glass as the pills above rather than
-                a labeled pill — this is a single external link, not another
+                a labeled pill, this is a single external link, not another
                 in-app destination, so it reads as secondary chrome next to
                 Classes/Pricing/Log in without competing with them. */}
             <a
@@ -250,7 +250,7 @@ export function MarketingNav() {
               <DiscordIcon size={16} className="text-[#5865F2]" />
             </a>
             {/* Sits immediately next to the Dashboard button, by direct
-                instruction — replaces the old plain "Account" text pill
+                instruction, replaces the old plain "Account" text pill
                 (ProfileMenu's own Settings item already goes to /account). */}
             {isLoggedIn && (
               <ProfileMenu
@@ -261,8 +261,8 @@ export function MarketingNav() {
                 triggerClassName="!h-9 !w-9"
               />
             )}
-            {/* Real liquid glass here specifically — `glass-surface-elevated`
-                (translucent, blurred, accent-tinted border — Instagram's
+            {/* Real liquid glass here specifically, `glass-surface-elevated`
+                (translucent, blurred, accent-tinted border, Instagram's
                 purple/pink/orange now, signal green originally) instead of
                 `.btn-primary`'s solid gradient fill. Scoped to just this one
                 nav button; `.btn-primary` itself is untouched, so the Hero/
@@ -348,7 +348,7 @@ export function MarketingNav() {
             // (Classes/Pricing/Shop, +Profile/Settings/Log out once signed
             // in, +Discord, +the Dashboard/Start-learning button) is taller
             // than the visible area on plenty of real phones, especially
-            // signed in — and the effect below locks `document.body` itself
+            // signed in, and the effect below locks `document.body` itself
             // to `overflow: hidden` the whole time this is open, so without
             // its own scroll the overflow isn't just visually cut off, it's
             // completely unreachable: reported live as the bottom button
@@ -396,7 +396,7 @@ export function MarketingNav() {
                   </Link>
                 );
               })}
-              {/* No dropdown on a full-screen sheet — it's already the
+              {/* No dropdown on a full-screen sheet, it's already the
                   expanded state, so Profile/Settings/Log out are just flat
                   rows here instead of nesting ProfileMenu inside it. */}
               {isLoggedIn && (

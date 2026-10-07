@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
 /**
- * #4 — Empty state.
+ * #4, Empty state.
  *
  * The design-system rule this enforces: an empty screen must say what the user
  * can do next, never just "No data". So `action` is part of the API rather

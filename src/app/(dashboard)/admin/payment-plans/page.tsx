@@ -7,10 +7,10 @@ import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { cancelPaymentPlanAction, recordPlanPaymentAction, resendBillAction } from "./actions";
 
-// "Overdue" isn't a real PaymentPlanStatus — it's derived (ACTIVE && past its
+// "Overdue" isn't a real PaymentPlanStatus, it's derived (ACTIVE && past its
 // nextDueDate) in getAdminPaymentPlans, never stored. This filter just
 // narrows the ACTIVE set down to the ones flagged isOverdue after the fact.
-// "FEEDBACK" isn't a status at all — it switches the whole list below to
+// "FEEDBACK" isn't a status at all, it switches the whole list below to
 // PlanCancellationFeedbackList instead of PaymentPlanList (see the render
 // branch below), folded in here rather than kept as its own /admin/feedback
 // tab: it's a read-only view onto these exact same PaymentPlan rows, not a

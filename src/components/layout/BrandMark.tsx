@@ -7,7 +7,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { EASE_IOS } from "@/lib/motionTokens";
 
 /**
- * The TopBar wordmark, once logged in — desktop only (`md:` and up), by
+ * The TopBar wordmark, once logged in, desktop only (`md:` and up), by
  * direct instruction. Below `md:` this renders exactly as it always has,
  * icon and text both permanently visible; there's no hover to trigger a
  * reveal on touch, so collapsing it there would just mean losing the brand
@@ -16,11 +16,11 @@ import { EASE_IOS } from "@/lib/motionTokens";
  * At `md:` and up: collapsed to just the logo mark by default. Hovering
  * anywhere on the link (not just the 28px icon itself, "near" the logo,
  * not exactly on it) slides "Bass Note Piano" in from behind the icon;
- * moving away reverses it — the text slides back toward the icon and
+ * moving away reverses it, the text slides back toward the icon and
  * shrinks slightly as it fades, reading as being drawn back into the mark
  * rather than a plain fade-out. Adapted from 21st.dev's "Expandable
  * Button" (icon-only collapsed / icon+label expanded, animated with
- * Framer Motion) — same enter/exit shape, re-triggered by hover here
+ * Framer Motion), same enter/exit shape, re-triggered by hover here
  * instead of that component's click toggle, and without its pill/button
  * chrome since this sits directly on the transparent header, not inside a
  * colored button that needs its own width to animate.

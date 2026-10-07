@@ -1,11 +1,11 @@
 name: CI
 
-# STEP 23 — CI/CD. Runs on every PR against main, plus pushes to main itself
-# (so a direct push — an admin bypass, a merge commit — still gets checked,
+# STEP 23, CI/CD. Runs on every PR against main, plus pushes to main itself
+# (so a direct push, an admin bypass, a merge commit, still gets checked,
 # not just the PR that preceded it). Deliberately does NOT deploy or merge
 # anything: Netlify's own GitHub integration already handles deploys on its
 # own trigger, and "do not automatically merge" is explicit in the master
-# spec — this workflow's only job is to turn red when something's actually
+# spec, this workflow's only job is to turn red when something's actually
 # broken, nothing more.
 on:
   pull_request:
@@ -18,11 +18,11 @@ jobs:
     runs-on: ubuntu-latest
 
     # Every DATABASE_URL/DIRECT_URL fallback below already points at
-    # postgresql://ci:ci@localhost:5432/ci — that only resolves if
+    # postgresql://ci:ci@localhost:5432/ci, that only resolves if
     # something is actually listening there. Without this service,
     # `prisma generate` is fine (it only reads the schema file), but
     # `npm run build`'s `prisma migrate deploy` step fails outright with
-    # "Can't reach database server at localhost:5432" — confirmed against
+    # "Can't reach database server at localhost:5432", confirmed against
     # this workflow's real run history (every run since it was added).
     services:
       postgres:
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/checkout@v4
 
       # Matches .nvmrc / package.json's engines.node (pinned in an earlier
-      # step this session) — same Node version in CI as in dev and on
+      # step this session), same Node version in CI as in dev and on
       # Netlify, not a separate floating version.
       - uses: actions/setup-node@v4
         with:
@@ -53,10 +53,10 @@ jobs:
       - run: npm ci
 
       # prisma generate (also wired as postinstall, so `npm ci` above
-      # already ran it once) — repeated explicitly so this step's intent
+      # already ran it once), repeated explicitly so this step's intent
       # reads clearly in the Actions log, and so it's not silently relying
       # on postinstall firing correctly. Only needs DATABASE_URL to be SET,
-      # not to point at a real reachable database — generating the client
+      # not to point at a real reachable database, generating the client
       # reads the schema file, it doesn't connect.
       - run: npx prisma generate
         env:
@@ -67,7 +67,7 @@ jobs:
       - run: npm run test
 
       # NOTE, honestly: this step has not been verified against a real
-      # GitHub Actions run — doing that would mean pushing to trigger CI,
+      # GitHub Actions run, doing that would mean pushing to trigger CI,
       # which wasn't done as part of building this workflow. `next build`
       # may reach for other env vars (NEXTAUTH_SECRET, R2 credentials, the
       # Resend key) depending on what runs at build time versus only at

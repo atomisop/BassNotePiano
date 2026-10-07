@@ -50,7 +50,7 @@ export async function setClassScheduleActiveAction(scheduleId: string, active: b
   return { ok: true as const, canceled };
 }
 
-// Moved here from the old, now-removed /admin/bookings route — folded into
+// Moved here from the old, now-removed /admin/bookings route, folded into
 // Schedule as its "Bookings & attendance" tab instead of its own top-level
 // nav slot, by direct instruction: both act on the exact same weekly-
 // schedule data, one defining it, the other operating on it day to day.
@@ -61,7 +61,7 @@ export async function markAttendanceAction(bookingId: string, attendance: Attend
 }
 
 /**
- * Full reversal of a mistaken attendance mark — refunds the credit, not
+ * Full reversal of a mistaken attendance mark, refunds the credit, not
  * just correcting Present vs. No-show (re-calling markAttendanceAction
  * above already does that safely, with no credit change either way). By
  * direct instruction: marking attendance charges a real credit, so it

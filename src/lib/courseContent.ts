@@ -1,9 +1,9 @@
 // Admin-authored course content (video/PDF lessons) for the course player at
-// /scales/[scaleSlug]. Deliberately a separate module from src/lib/lessons.ts
-// — that one is the live 1:1 lesson *booking* system (LessonType ONLINE/
+// /scales/[scaleSlug]. Deliberately a separate module from src/lib/lessons.ts,
+// that one is the live 1:1 lesson *booking* system (LessonType ONLINE/
 // IN_PERSON, credits, LessonBooking). This module is pre-recorded content a
 // student watches/reads inside a scale's course player. Different feature,
-// same word — kept in different files so the two are never confused at the
+// same word, kept in different files so the two are never confused at the
 // import site.
 
 import type { LessonMediaType } from "@prisma/client";
@@ -24,7 +24,7 @@ export interface CourseLesson {
   createdAt: Date;
 }
 
-// BigInt doesn't cross the server/client component boundary cleanly — file
+// BigInt doesn't cross the server/client component boundary cleanly, file
 // sizes here are nowhere near Number.MAX_SAFE_INTEGER (~9 petabytes), so a
 // plain number is both safe and simpler for every UI consumer.
 function toCourseLesson(row: {
@@ -43,7 +43,7 @@ function toCourseLesson(row: {
   return { ...row, fileSizeBytes: row.fileSizeBytes == null ? null : Number(row.fileSizeBytes) };
 }
 
-/** Every lesson for a scale group, in order — no per-user data, used by the admin list. */
+/** Every lesson for a scale group, in order, no per-user data, used by the admin list. */
 export async function getLessonsForScale(scaleGroupSlug: string): Promise<CourseLesson[]> {
   const rows = await prisma.lesson.findMany({
     where: { scaleGroup: { slug: scaleGroupSlug } },
@@ -56,7 +56,7 @@ export interface CourseLessonWithProgress extends CourseLesson {
   completed: boolean;
 }
 
-/** Same list, joined with the given user's completion state — what the course player renders. */
+/** Same list, joined with the given user's completion state, what the course player renders. */
 export async function getLessonsWithProgress(scaleGroupSlug: string, userId: string): Promise<CourseLessonWithProgress[]> {
   const rows = await prisma.lesson.findMany({
     where: { scaleGroup: { slug: scaleGroupSlug } },
@@ -128,7 +128,7 @@ export async function reorderLessons(scaleGroupSlug: string, orderedLessonIds: s
   ]);
 }
 
-/** Marks one lesson complete for a user — idempotent, safe to call repeatedly (e.g. re-watching a finished video). */
+/** Marks one lesson complete for a user, idempotent, safe to call repeatedly (e.g. re-watching a finished video). */
 export async function markLessonComplete(userId: string, lessonId: string): Promise<void> {
   await prisma.lessonProgress.upsert({
     where: { userId_lessonId: { userId, lessonId } },
@@ -147,7 +147,7 @@ export interface LessonCompletionSummary {
 /**
  * Whether a user has finished every uploaded lesson for a scale group.
  * `hasContent: false` (zero lessons uploaded yet) never counts as "all
- * complete" — vacuous completion would silently tick the checklist for
+ * complete", vacuous completion would silently tick the checklist for
  * content that doesn't exist yet.
  */
 export async function getLessonCompletionSummary(userId: string, scaleGroupSlug: string): Promise<LessonCompletionSummary> {

@@ -11,7 +11,7 @@ export async function markPatchNotesSeenAction(): Promise<void> {
   await prisma.user.update({ where: { id: session.user.id }, data: { lastSeenPatchVersion: LATEST_ENTRY.version } });
 }
 
-/** Called on skip/finish, whether the tour opened automatically or was replayed manually from Settings — idempotent either way. */
+/** Called on skip/finish, whether the tour opened automatically or was replayed manually from Settings, idempotent either way. */
 export async function markOnboardingTourSeenAction(): Promise<void> {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return;

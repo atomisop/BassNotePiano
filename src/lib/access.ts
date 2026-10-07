@@ -6,7 +6,7 @@ import { QUIZ_PASS_THRESHOLD } from "@/lib/curriculum";
 import { getCurriculumEntitlement } from "@/lib/entitlement";
 import { isFullAccess, TRIAL_SCALE_SLUG, type CurriculumAccessKind } from "@/lib/entitlementRules";
 
-// Badge/streak bookkeeping is a best-effort side effect — a hiccup here
+// Badge/streak bookkeeping is a best-effort side effect, a hiccup here
 // should never fail the actual checklist mutation the student is waiting on.
 async function trackGamification(userId: string, justCompleted: boolean) {
   try {
@@ -136,7 +136,7 @@ async function requireFullAccess(userId: string, scaleSlug: string): Promise<Sca
 }
 
 // ---------------------------------------------------------------------------
-// Checklist mutations — (a) module read, (b) practice completed, (c) quiz
+// Checklist mutations, (a) module read, (b) practice completed, (c) quiz
 // ---------------------------------------------------------------------------
 
 /** Recomputes status from the three checklist booleans; stamps completedAt once, on first completion. */
@@ -174,7 +174,7 @@ export async function markModuleRead(userId: string, scaleSlug: string) {
 
 /**
  * Course-player equivalent of clicking the old manual "Mark module as
- * read" button — call this after markLessonComplete() on the course-content
+ * read" button, call this after markLessonComplete() on the course-content
  * side. No-ops until every uploaded Lesson for the scale group has a
  * LessonProgress row for this user (a scale with zero lessons uploaded yet
  * never silently completes). Reuses markModuleRead itself rather than
@@ -213,7 +213,7 @@ export interface QuizSubmission {
 /**
  * Records a quiz attempt and, if it passes, ticks the checklist's quiz item.
  * Passing the final item of a scale's checklist intentionally does NOT
- * unlock the next scale — nothing here touches the next ScaleGroup's
+ * unlock the next scale, nothing here touches the next ScaleGroup's
  * ScaleProgress row. The next scale only becomes reachable once the student
  * has curriculum access (or, for legacy accounts, an existing per-scale
  * unlock from before Pay-As-You-Go was retired).
@@ -254,16 +254,16 @@ export async function recordQuizAttempt(userId: string, scaleSlug: string, submi
 }
 
 // ---------------------------------------------------------------------------
-// Unlocking — legacy per-scale grants, curriculum access, admin overrides
+// Unlocking, legacy per-scale grants, curriculum access, admin overrides
 // ---------------------------------------------------------------------------
 
 /**
- * Grants access to one scale. Idempotent — if it's already unlocked, the
+ * Grants access to one scale. Idempotent, if it's already unlocked, the
  * original unlockedAt is kept. Retained for legacy SCALE_UNLOCK payments
  * (no longer purchasable, but old pending rows can still resolve through
  * this) and admin manual-override grants.
  */
-// STEP 19: both functions below now take an optional `db` — the plain
+// STEP 19: both functions below now take an optional `db`, the plain
 // `prisma` client by default (every existing call site keeps working
 // unchanged), or a `Prisma.TransactionClient` when the caller needs this
 // write to commit atomically alongside another one. approveZellePayment is
@@ -300,12 +300,12 @@ export async function grantCurriculumAccess(userId: string, db: Prisma.Transacti
 }
 
 /**
- * Admin-only counterpart to unlockScaleForUser — revokes access to one
+ * Admin-only counterpart to unlockScaleForUser, revokes access to one
  * scale. Deliberately doesn't touch the checklist booleans or quiz history;
  * it severs access without erasing what the student already did, since this
  * is meant for correcting a mistaken unlock, not punitive resets. Also
  * doesn't re-lock later scales that may have been unlocked off of this
- * one's completion — it's a surgical override, not a full chain re-sync.
+ * one's completion, it's a surgical override, not a full chain re-sync.
  */
 export async function lockScaleForUser(userId: string, scaleSlug: string) {
   const scaleGroup = await prisma.scaleGroup.findUniqueOrThrow({ where: { slug: scaleSlug } });

@@ -15,10 +15,10 @@ const GENERIC_CREDENTIALS_ERROR = "Invalid email or password.";
 const LOCKOUT_MESSAGE = "Too many failed attempts on this account. Wait 15 minutes and try again, or reset your password.";
 
 // STEP 26 security audit: nothing previously stopped unlimited password
-// guesses against a single account — bcrypt's own cost slows each guess
+// guesses against a single account, bcrypt's own cost slows each guess
 // down a little, but that's not a real limit. FailedLoginAttempt is a
 // dedicated table (not reused from LoginEvent, which only ever recorded
-// successful logins and requires a real userId — a guess against an email
+// successful logins and requires a real userId, a guess against an email
 // with no account still needs to count against something).
 const LOCKOUT_WINDOW_MINUTES = 15;
 const LOCKOUT_MAX_ATTEMPTS = 8;
@@ -28,7 +28,7 @@ async function recordFailedAttempt(email: string): Promise<void> {
     await prisma.failedLoginAttempt.create({ data: { email } });
   } catch (err) {
     // Never let a failure to log the attempt block the (correct) error
-    // response the user is about to get — same "non-blocking" posture as
+    // response the user is about to get, same "non-blocking" posture as
     // every other audit-ish side effect in this codebase.
     console.error("Failed to record failed login attempt (non-blocking):", err);
   }
@@ -43,14 +43,14 @@ async function recordFailedAttempt(email: string): Promise<void> {
  *  - verified account → issue a LOGIN_2FA code silently (never emailed) and
  *    hand the raw code back so the client can sign in with it immediately.
  *    NextAuth's CredentialsProvider (see auth.ts) still only ever accepts a
- *    LOGIN_2FA code — this keeps that contract intact while making login
+ *    LOGIN_2FA code, this keeps that contract intact while making login
  *    itself single-step and code-free from the user's perspective, per the
  *    2026-08-07 decision to only require a code for account creation and
  *    password reset.
  *
  * Wrapped in withTimingFloor: the early return below for an email with no
  * account is fast (one lookup), while a real account goes on to a bcrypt
- * compare and possibly a real email send — without the floor, that gap is
+ * compare and possibly a real email send, without the floor, that gap is
  * measurable in response time even though every branch's response body
  * already treats both cases identically.
  */

@@ -15,7 +15,7 @@ import { changePaymentPlanTerm, cancelPaymentPlanBySelf, PaymentPlanError } from
 
 const MIN_PASSWORD_LENGTH = 8;
 
-/** Every action here operates on the signed-in user only — never on an email passed by the client. */
+/** Every action here operates on the signed-in user only, never on an email passed by the client. */
 async function requireSession() {
   const session = await getServerAuthSession();
   if (!session?.user?.id) throw new Error("Not signed in.");
@@ -23,7 +23,7 @@ async function requireSession() {
 }
 
 // ---------------------------------------------------------------------------
-// Display name — applied immediately, no code confirmation. Per the
+// Display name, applied immediately, no code confirmation. Per the
 // 2026-08-07 decision, a code is only required for account creation
 // (EMAIL_VERIFY) and password reset (PASSWORD_RESET); everything else you
 // can already only reach while signed in as yourself.
@@ -119,12 +119,12 @@ export async function updatePasswordAction(currentPassword: string, newPassword:
 }
 
 // ---------------------------------------------------------------------------
-// Sign out other devices — the explicit, on-demand version of what a
+// Sign out other devices, the explicit, on-demand version of what a
 // password change now also does as a side effect. Same mechanism (bump
 // User.sessionVersion; every other open session's JWT was issued against
 // the old value and fails the check on its next touch), exposed as its own
 // action for someone who just wants to do this without also changing their
-// password — e.g. after using a shared or public computer.
+// password, e.g. after using a shared or public computer.
 // ---------------------------------------------------------------------------
 
 export async function signOutOtherDevicesAction() {
@@ -134,7 +134,7 @@ export async function signOutOtherDevicesAction() {
 }
 
 // ---------------------------------------------------------------------------
-// Avatar — stored on R2 (like lesson content), not inline in Postgres.
+// Avatar, stored on R2 (like lesson content), not inline in Postgres.
 // The browser resizes the image client-side and uploads it directly to R2
 // via a short-lived presigned URL; the app server only ever handles the
 // resulting small URL, never the image bytes themselves.
@@ -143,7 +143,7 @@ export async function signOutOtherDevicesAction() {
 export async function requestAvatarUploadUrlAction(fileName: string, contentType: string, fileSize: number) {
   const { id } = await requireSession();
   // The real allowlist/size enforcement now lives in createPresignedAvatarUpload
-  // (see storage.ts) — this early check just keeps the existing fast, specific
+  // (see storage.ts), this early check just keeps the existing fast, specific
   // error message for the common case rather than storage.ts's generic one.
   if (!contentType.startsWith("image/")) throw new Error("Only image files are supported.");
   return createPresignedAvatarUpload(id, fileName, contentType, fileSize);
@@ -152,7 +152,7 @@ export async function requestAvatarUploadUrlAction(fileName: string, contentType
 export async function updateAvatarAction(publicUrl: string) {
   const { id } = await requireSession();
 
-  // The key is namespaced avatars/<userId>/... — checking that prefix means
+  // The key is namespaced avatars/<userId>/..., checking that prefix means
   // a user can only ever point their own image at something they actually
   // just uploaded themselves, not at another user's file.
   const key = keyFromPublicUrl(publicUrl);
@@ -164,7 +164,7 @@ export async function updateAvatarAction(publicUrl: string) {
   const updated = await prisma.user.update({ where: { id }, data: { image: publicUrl }, select: { image: true } });
 
   // Best-effort cleanup of the previous avatar so the bucket doesn't
-  // accumulate orphaned files — never blocks the update itself.
+  // accumulate orphaned files, never blocks the update itself.
   const previousKey = previous?.image ? keyFromPublicUrl(previous.image) : null;
   if (previousKey) await deleteObject(previousKey);
 
@@ -172,7 +172,7 @@ export async function updateAvatarAction(publicUrl: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Music profile (from onboarding — editable anytime, no code confirmation
+// Music profile (from onboarding, editable anytime, no code confirmation
 // needed since none of this is security-sensitive)
 // ---------------------------------------------------------------------------
 
@@ -201,7 +201,7 @@ export async function updateMusicProfileAction(input: MusicProfileInput) {
 }
 
 // ---------------------------------------------------------------------------
-// Notification settings — also not security-sensitive, no code confirmation
+// Notification settings, also not security-sensitive, no code confirmation
 // ---------------------------------------------------------------------------
 
 export interface NotificationPreferencesInput {
@@ -218,7 +218,7 @@ export async function updateNotificationPreferencesAction(input: NotificationPre
 }
 
 // ---------------------------------------------------------------------------
-// Username — used for friend search; not code-gated, same reasoning as the
+// Username, used for friend search; not code-gated, same reasoning as the
 // music profile and notification settings above (not a security-sensitive
 // change, unlike name/password/avatar which prove identity elsewhere).
 // ---------------------------------------------------------------------------
@@ -234,11 +234,11 @@ export async function updateUsernameAction(newUsername: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Delete account — the one destructive, irreversible action in this file, so
+// Delete account, the one destructive, irreversible action in this file, so
 // unlike password/name/avatar it deliberately keeps the emailed-code step
 // the 2026-08-07 decision (see PasswordSection above) dropped everywhere
 // else. Both steps require the account's own current password, checked
-// server-side each time — never trust a password the client claims it
+// server-side each time, never trust a password the client claims it
 // already validated in an earlier call.
 // ---------------------------------------------------------------------------
 
@@ -249,7 +249,7 @@ async function verifyCurrentPassword(userId: string, currentPassword: string) {
   if (!user) return { ok: false as const, error: "Something went wrong. Try signing in again." };
   if (!user.passwordHash) {
     // An account with no password (nothing in this app issues one today,
-    // but the column is nullable) has no credential to check against —
+    // but the column is nullable) has no credential to check against,
     // fail closed rather than silently skipping the check.
     return { ok: false as const, error: "This account has no password set. Message the studio to have your account removed." };
   }
@@ -310,11 +310,11 @@ export async function confirmAccountDeletionAction(currentPassword: string, code
     const target = await prisma.user.findUnique({ where: { id }, select: { image: true, name: true, email: true } });
     const upcomingClasses = await prisma.classBooking.count({ where: { studentId: id, status: "SCHEDULED", scheduledAt: { gt: new Date() } } });
 
-    // Almost everything cascades from here (schema.prisma — messages,
+    // Almost everything cascades from here (schema.prisma, messages,
     // bookings, progress, payments, notifications, ...). The one relation
     // that doesn't (Lesson.uploadedById, required + no onDelete override)
     // blocks deletion with a foreign-key error for an admin who has
-    // uploaded course content — caught below rather than left as a raw 500,
+    // uploaded course content, caught below rather than left as a raw 500,
     // since there's no other admin here to reassign that content to.
     await prisma.user.delete({ where: { id } });
 

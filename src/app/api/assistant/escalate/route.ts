@@ -11,7 +11,7 @@ const MAX_MESSAGES = 20;
 const MAX_MESSAGE_LENGTH = 2000;
 const MAX_CONTACT_NAME_LENGTH = 200;
 const MAX_CONTACT_EMAIL_LENGTH = 320; // RFC 5321 max
-// A handoff is a much rarer action than an ordinary chat turn — this just
+// A handoff is a much rarer action than an ordinary chat turn, this just
 // stops a scripted client from flooding the admin notification inbox.
 const ESCALATION_LIMIT = { windowMinutes: 60, max: 3 };
 
@@ -24,7 +24,7 @@ const ESCALATION_LIMIT = { windowMinutes: 60, max: 3 };
  * Wrapped in one outer try/catch so any unexpected failure here (a
  * migration that hasn't landed on the running database yet, a transient
  * Postgres hiccup, ...) always comes back as a clean, honest JSON error
- * instead of an unhandled 500 — the widget has no other way to tell a real
+ * instead of an unhandled 500, the widget has no other way to tell a real
  * "couldn't reach a human" apart from "the server choked," and a visitor
  * asking for help is exactly the wrong moment to hand them either a raw
  * crash or client-side JSON parsing.

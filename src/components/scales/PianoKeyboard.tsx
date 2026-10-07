@@ -8,11 +8,11 @@ import { notesToAscendingMidi } from "@/lib/audio-engine";
  * A playable keyboard showing where a spelled scale physically sits.
  *
  * The Scale Explorer could already spell a scale and sound it; this is the
- * third view of the same data — where the notes actually are under the hands.
+ * third view of the same data, where the notes actually are under the hands.
  * That matters most for the kiñits with awkward spellings: Anchihoye's b2 and
  * b5 read as abstract tokens in a table, but as an unmistakable shape on keys.
  *
- * Written from scratch rather than adapted from a component library — the
+ * Written from scratch rather than adapted from a component library, the
  * catalogues only carry *computer* keyboards.
  *
  * ## Layout
@@ -20,7 +20,7 @@ import { notesToAscendingMidi } from "@/lib/audio-engine";
  * White keys are laid out in a row and black keys are absolutely positioned
  * over the seams between them. That's the only honest way to do it: a piano
  * octave has 7 white keys and 5 black ones sitting at irregular intervals
- * (there is no black key between E–F or B–C), so a uniform 12-column grid
+ * (there is no black key between E to F or B to C), so a uniform 12-column grid
  * would draw an instrument that doesn't exist.
  */
 
@@ -53,7 +53,7 @@ export interface PianoKeyboardProps {
   /**
    * Fired with the pressed key's own MIDI number, plus which scale degree it
    * represents (null when the key isn't in the scale). The pitch must come
-   * from the MIDI, not the degree — the root occupies two different keys.
+   * from the MIDI, not the degree, the root occupies two different keys.
    */
   onPlayKey: (midi: number, degreeIndex: number | null) => void;
   disabled?: boolean;

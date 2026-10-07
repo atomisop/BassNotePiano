@@ -12,7 +12,7 @@ import { SPRING } from "@/lib/motionTokens";
 // Same 30s cadence as NotificationBell's own poll, which this mirrors.
 const POLL_INTERVAL_MS = 30_000;
 
-// Swapped from the hand-drawn NavIcon/ICON_PATHS set (still used elsewhere —
+// Swapped from the hand-drawn NavIcon/ICON_PATHS set (still used elsewhere,
 // see navIcons.tsx) to lucide-react for this dock specifically, by direct
 // instruction.
 const NAV_ICON: Record<string, LucideIcon> = {
@@ -52,21 +52,21 @@ export interface AppDockProps {
   unreadMessageCount: number;
 }
 
-// "About" and "Sign out" live inside Settings now, not as dock icons —
+// "About" and "Sign out" live inside Settings now, not as dock icons,
 // pinned to the bottom of its nav there, always. "Profile" moved to the
 // TopBar as the user's own avatar photo, next to the notification bell.
-// "Admin" moved there too, by direct instruction — next to the
-// notification bell rather than a sixth dock icon (see TopBar.tsx) — since
+// "Admin" moved there too, by direct instruction, next to the
+// notification bell rather than a sixth dock icon (see TopBar.tsx), since
 // it's a role-gated destination for the one admin account, not an
 // everyday nav item every signed-in visitor taps.
 //
 // No "More" overflow, on any width: it briefly existed for mobile, but once
 // About/Sign-out moved into Settings, Settings was the only thing it was
-// still gatekeeping — every real destination (Lessons included) was already
+// still gatekeeping, every real destination (Lessons included) was already
 // a direct icon. An overflow menu hiding exactly one item, itself the
 // gateway to the other two, wasn't earning its tap. Same five items,
 // mobile and desktop alike, admin or not.
-// `dataTour` values are OnboardingTour's hooks (see tourSteps.ts) — they
+// `dataTour` values are OnboardingTour's hooks (see tourSteps.ts), they
 // used to live on Sidebar/MobileTabBar, both now unused. Carrying them over
 // here is what keeps the tour actually pointing at real, on-screen buttons
 // instead of silently skipping almost every step (`findVisibleTarget`
@@ -80,13 +80,13 @@ const NAV_ITEMS = [
 ] as const;
 
 /**
- * The app's only bottom navigation now, at every breakpoint — a floating
+ * The app's only bottom navigation now, at every breakpoint, a floating
  * dock, replacing both the old vertical `Sidebar` rail (desktop) and
  * `MobileTabBar` (phone). Both old files are still in the tree, used by
  * nothing, kept only because deleting them wasn't asked for. Same routes,
  * same active-state and unread-badge logic either one had.
  *
- * The magnify choreography is mouse-only (see `dock.tsx`) — real mouse,
+ * The magnify choreography is mouse-only (see `dock.tsx`), real mouse,
  * specifically. It briefly also responded to touch (a finger held and
  * dragged drove the same curve a mouse move does), which stuck a magnified
  * icon in place whenever a tap's navigation cut the touch gesture off
@@ -97,21 +97,21 @@ const NAV_ITEMS = [
  * stuck-magnify bug through the mouse path instead. `dock.tsx` now uses
  * Pointer Events and checks `pointerType === 'mouse'` explicitly, which is
  * the one place the browser says what really generated the event, so
- * touch (real or synthesized) never engages the effect at all — mobile/
+ * touch (real or synthesized) never engages the effect at all, mobile/
  * tablet gets a plain, reliable tap with no growth effect, by direct
  * instruction.
  *
  * Each icon is real navigation, not the demo's decorative circles: `Link`
  * wraps the outside of `DockItem` rather than living inside it, since
- * `DockItem` clones its direct children to inject the shared hover width —
+ * `DockItem` clones its direct children to inject the shared hover width,
  * putting `Link` inside would make the clone target the anchor instead of
  * `DockIcon`.
  *
- * Icon-only, no caption under each icon — by direct instruction ("remove
+ * Icon-only, no caption under each icon, by direct instruction ("remove
  * the texts from the dock"). `aria-label` on both `Link` and `DockItem`
  * still carries each destination's real name for a screen reader; only the
  * always-visible printed caption is gone. See the `NAV_ITEMS.map` below for
- * what replaced the caption's old job of marking which tab is active — a
+ * what replaced the caption's old job of marking which tab is active, a
  * spotlight glow plus a thin top line, not a label treatment at all.
  *
  * Auto-hide, macOS-Dock style, is desktop-only: on a real mouse it slides
@@ -129,7 +129,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Seeded from the layout's own server-rendered count (no flash of 0 on
-  // first paint), then kept fresh client-side — this badge used to be that
+  // first paint), then kept fresh client-side, this badge used to be that
   // static prop alone, which only ever changed on a full re-run of the
   // dashboard layout's data fetch (a hard reload), not a client-side route
   // change within it. Reported live: reading every message in /messages
@@ -147,7 +147,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
         const count = await fetchUnreadMessageCountAction();
         if (!cancelled) setUnreadMessageCount(count);
       } catch (err) {
-        // Same non-blocking posture as NotificationBell's own poll — a
+        // Same non-blocking posture as NotificationBell's own poll, a
         // backgrounded tab killing this request mid-flight is routine, and
         // the next poll or pathname change just tries again.
         console.error("Unread message count refresh failed (non-blocking, will retry):", err);
@@ -169,7 +169,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
       clearInterval(interval);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-    // Deliberately re-runs on every pathname change (not just mount) — see
+    // Deliberately re-runs on every pathname change (not just mount), see
     // the comment above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
@@ -291,7 +291,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
 
   return (
     <>
-      {/* No fade/blur band behind the dock anymore — by direct instruction,
+      {/* No fade/blur band behind the dock anymore, by direct instruction,
           the dock is meant to be the one thing freely floating above the
           page, full stop. An earlier version of this file painted a
           ground-toned gradient (then a blurred one) behind it to soften the
@@ -316,12 +316,12 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
               hide/reveal slide above and the tap squish on an icon. */}
           <div>
             {/* !bg-black/!bg-none/!border-white/10 override `glass-surface-
-                elevated`'s own theme-driven glass background — solid black
+                elevated`'s own theme-driven glass background, solid black
                 regardless of theme or accent, by direct instruction. Both
                 `!bg-black` AND `!bg-none` are needed: `glass-surface-elevated`
                 sets `background` as a shorthand (a translucent gradient, see
                 `--elev-bg`), and Tailwind's `bg-*` utility only overrides the
-                shorthand's background-color slot — the gradient's own
+                shorthand's background-color slot, the gradient's own
                 background-image would otherwise keep painting over the black,
                 a soft wash rather than the requested pitch black. The `!` is
                 load-bearing on both: `glass-surface-elevated` sets these via a
@@ -330,7 +330,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
   
                 `!backdrop-blur-none` removes `glass-surface-elevated`'s own
                 `backdrop-filter: blur(...)`, which is pure dead weight on a
-                100%-opaque black bar — there's nothing behind it left to blur
+                100%-opaque black bar, there's nothing behind it left to blur
                 into view. It's also the precondition for a well-documented
                 WebKit rendering bug: `backdrop-filter` combined with
                 `border-radius` on an element that doesn't otherwise clip its
@@ -338,7 +338,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                 glow can extend past its own box) can leak a faint square-
                 cornered halo at each rounded corner in Safari, because the
                 blur's own compositing layer doesn't reliably mask itself to
-                the rounded shape — reported as "a light gray sharp corner on
+                the rounded shape, reported as "a light gray sharp corner on
                 all sides of the smooth corners" surviving even after the
                 tap-highlight fix (that fix addressed a real, separate
                 tap-only flash; this addresses a persistent one). Removing the
@@ -351,7 +351,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                 above: that token is a *dark* drop shadow (tuned for a card
                 sitting on a lighter surface), which all but disappears
                 underneath a bar that's forced solid black sitting on this
-                app's own near-black page ground — direct instruction: "the
+                app's own near-black page ground, direct instruction: "the
                 dock is not a freely suspended thing, it's lying on [the
                 bottom edge]." A dark shadow can't read as elevation once
                 there's no lighter surface for it to fall on, so this pairs a
@@ -362,18 +362,18 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
 
                 `!rounded-full` fixes the actual, still-unaddressed source of
                 the corner artifact reported after the backdrop-filter fix
-                above (that fix was real — it closed a genuine bug class —
+                above (that fix was real, it closed a genuine bug class,
                 but it wasn't this one). `dock.tsx`'s own `Dock` hardcodes
                 `rounded-2xl` (1rem) on the very same element that also
                 carries `glass-surface-elevated`, which sets its own
                 `border-radius: var(--surface-radius)` (0.75rem on Paper,
-                0.5rem on Ink) — two same-specificity classes fighting over
+                0.5rem on Ink), two same-specificity classes fighting over
                 one property, on the one element none of the four overrides
                 above ever touched. Nothing here ever decided which wins;
                 it was just whichever the build's own class order happened
                 to emit last. Either way, 0.5-1rem on a 60px-tall bar is a
                 visibly squared corner, not the smooth capsule this bar is
-                designed to be — and a genuine cascade tie is exactly the
+                designed to be, and a genuine cascade tie is exactly the
                 kind of thing that can paint one way in one browser/engine
                 and differently in another, which fits "the curve is there
                 but so is a frame around it" better than a single clean
@@ -386,7 +386,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
               distance={140}
               panelHeight={60}
             >
-              {/* Icon-only now, by direct instruction ("remove the texts") —
+              {/* Icon-only now, by direct instruction ("remove the texts"),
                   the permanent-caption layout (`flex-col`, a bottom-anchored
                   bar via `items-end pb-3` above) is gone along with the
                   labels themselves, so the bar is `items-center` instead:
@@ -402,8 +402,8 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                   icon, plus a thin white line hovering at the top of the
                   bar above it. Every tab carries a dimmer version of the
                   same glow, falling off with distance from whichever tab is
-                  actually active — a roaming spotlight sweeping the whole
-                  bar, not just a single fixed pool of light — the reference's
+                  actually active, a roaming spotlight sweeping the whole
+                  bar, not just a single fixed pool of light, the reference's
                   own `Math.max(0, 1 - distance * 0.6)` falloff curve,
                   ported as-is since it's what gives the sweep its shape.
 
@@ -411,13 +411,13 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                   own documented corner-artifact bug (see the big comment
                   above `<Dock`) could still have been sneaking in from: the
                   droplet this replaces carried its own inline
-                  `backdropFilter`, entirely separate from — and not reached
-                  by — the outer bar's `!backdrop-blur-none` override, which
+                  `backdropFilter`, entirely separate from, and not reached
+                  by, the outer bar's `!backdrop-blur-none` override, which
                   only ever touched `glass-surface-elevated`'s own backdrop-
                   filter, not a one-off inline style on a child. That's gone
                   now along with the droplet itself. The glow below uses a
                   plain `filter: blur()` (Tailwind's `blur-lg`), not
-                  `backdrop-filter` — blurring the glow's own pixels rather
+                  `backdrop-filter`, blurring the glow's own pixels rather
                   than sampling and blurring whatever sits behind it, which
                   is the specific combination (backdrop-sampling blur +
                   border-radius on a non-clipping element) the bug actually
@@ -427,7 +427,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                 const badge = item.href === "/messages" ? unreadMessageCount : 0;
                 const Icon = NAV_ICON[item.icon];
                 return (
-                  // Badge lives on this wrapper, not inside `DockItem` — that
+                  // Badge lives on this wrapper, not inside `DockItem`, that
                   // component clones its direct children unconditionally (see
                   // dock.tsx), so a third, sometimes-`false` child there
                   // crashes it. `DockItem` gets exactly one static child
@@ -447,13 +447,13 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                         space) and centered on the tab's own box so it tracks
                         correctly even while magnification is resizing that
                         box. Opacity-only transition (not position), since
-                        every tab's glow lives in the same spot at all times
-                        — only how bright it is ever changes. */}
+                        every tab's glow lives in the same spot at all times,
+                        only how bright it is ever changes. */}
                     {/* The line: only the active tab gets one, and the
                         shared `layoutId` is what makes Framer Motion slide
                         the single element from one tab's position to the
                         next on navigation, instead of one instance fading
-                        out while a new one fades in elsewhere — the same
+                        out while a new one fades in elsewhere, the same
                         shared-layout technique the previous glass-droplet
                         indicator used, just carried over to this new shape
                         rather than reinventing it. */}
@@ -465,7 +465,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                       />
                     )}
                     <motion.div whileTap={{ scale: 0.9 }} className="relative">
-                      {/* White at every step, not accent-colored — same
+                      {/* White at every step, not accent-colored, same
                           direct instruction as the dock's own background.
                           Active vs inactive is opacity, glow, and now stroke
                           weight too (a subtly bolder active glyph, matching

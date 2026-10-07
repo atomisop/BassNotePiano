@@ -59,7 +59,7 @@ Zelle (not a card processor), verified by hand by the sole admin.
 
 Name: Bass Note Piano. No em dashes in any copy or comments written for this
 project (explicit, standing user preference). Never fabricate testimonials,
-reviews, star ratings, or usage numbers under any framing ("we do not lie" —
+reviews, star ratings, or usage numbers under any framing ("we do not lie",
 explicit, hard constraint, not a style preference).
 
 ## Evidence on Hand
@@ -73,7 +73,7 @@ explicit, hard constraint, not a style preference).
   exist anywhere in this app's data. Do not invent any for marketing copy.
 - Real, current pricing/policy constants live in code
   (`src/lib/curriculum.ts`, `src/lib/classCreditPricing.ts`,
-  `src/lib/classSchedule.ts`) — pull numbers from these, never hardcode a
+  `src/lib/classSchedule.ts`), pull numbers from these, never hardcode a
   price or credit rule that could drift from the real one.
 
 ## Product Principles

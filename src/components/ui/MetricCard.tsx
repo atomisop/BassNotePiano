@@ -8,7 +8,7 @@ export interface MetricPoint {
 }
 
 /**
- * #9 — KPI card with a data-driven sparkline.
+ * #9, KPI card with a data-driven sparkline.
  *
  * Recharts colours are set from `currentColor` on a wrapper rather than hex
  * literals, so the chart follows the active theme's accent like everything
@@ -16,8 +16,8 @@ export interface MetricPoint {
  * `currentColor`, which is the seam that makes a themed chart possible.
  *
  * The headline figure is always plain text above the chart. If the chart
- * fails to render — no data, zero height, a container that hasn't measured
- * yet — the number the card exists to communicate is still there.
+ * fails to render, no data, zero height, a container that hasn't measured
+ * yet, the number the card exists to communicate is still there.
  */
 export function MetricCard({
   label,

@@ -63,7 +63,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Live, as-you-type, debounced — no more "remember their exact name or
+  // Live, as-you-type, debounced, no more "remember their exact name or
   // email and hit search." An empty query still runs (see
   // searchStudentsForBooking's own comment): it's what populates the
   // initial browsable list on mount and again any time the field is

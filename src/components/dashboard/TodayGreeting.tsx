@@ -10,7 +10,7 @@ import { Hero } from "@/components/ui/Hero";
  * student is sitting, and rendering "Good evening" from a US-East server to
  * someone in Addis would be wrong more often than right. Computing it during
  * render instead of in an effect would produce different HTML on the server
- * than on the client and trip a hydration mismatch — so the neutral form is
+ * than on the client and trip a hydration mismatch, so the neutral form is
  * rendered first and upgraded on mount. Only the greeting word changes; the
  * name beside it never moves.
  */

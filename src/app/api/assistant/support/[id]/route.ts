@@ -8,7 +8,7 @@ import { getThreadForVisitor, postVisitorMessage, AssistantEscalationError } fro
 
 const MAX_MESSAGE_LENGTH = 2000;
 // A live back-and-forth is a much faster cadence than the initial handoff,
-// but still a real person typing, not a script — generous enough for a
+// but still a real person typing, not a script, generous enough for a
 // genuine conversation, tight enough to stop a loop hammering the endpoint.
 const SEND_LIMIT = { windowMinutes: 10, max: 30 };
 
@@ -16,7 +16,7 @@ function resolveIdentifier(userId: string | undefined, forwardedFor: string | nu
   return userId ? `user:${userId}` : forwardedFor?.split(",")[0]?.trim() ?? "unknown";
 }
 
-/** Polls a support thread's live messages — the widget calls this on an interval while a handoff is active. */
+/** Polls a support thread's live messages, the widget calls this on an interval while a handoff is active. */
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   try {
     const thread = await getThreadForVisitor(params.id);

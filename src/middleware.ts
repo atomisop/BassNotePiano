@@ -17,7 +17,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Mandatory one-time profile wizard — every other protected route bounces
+  // Mandatory one-time profile wizard, every other protected route bounces
   // here until it's done. Checked before role/entitlement gating below so an
   // unonboarded admin still lands on the wizard rather than /admin.
   if (!token.onboarded && pathname !== "/onboarding") {

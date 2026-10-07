@@ -1,4 +1,4 @@
-// STEP 21 — OBSERVABILITY. Next.js's own instrumentation hook — this
+// STEP 21, OBSERVABILITY. Next.js's own instrumentation hook, this
 // `register()` export is called once per runtime (Node for the server,
 // edge for middleware) before anything else in that runtime runs, which is
 // what makes it the correct place to load Sentry's server/edge init rather

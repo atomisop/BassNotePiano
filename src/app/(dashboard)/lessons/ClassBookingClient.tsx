@@ -73,7 +73,7 @@ const STATUS_STYLE: Record<BookingRow["status"], string> = {
   CANCELED: "bg-neu-base shadow-pressed-low text-slate-500",
 };
 
-/** Weekday + date only — the time is shown separately as its own column. */
+/** Weekday + date only, the time is shown separately as its own column. */
 function formatOccurrenceDay(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
 }
@@ -360,7 +360,7 @@ function MonthGroup({
   );
 }
 
-/** One row's email input + live verification badge — used inside the family booking form. */
+/** One row's email input + live verification badge, used inside the family booking form. */
 function AttendeeEmailRow({
   value,
   onChange,

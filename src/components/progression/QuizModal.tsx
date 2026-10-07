@@ -16,7 +16,7 @@ export interface QuizModalProps {
   scaleSlug: string;
   onSubmit: (seed: number, answers: QuizAnswerSubmission[]) => Promise<{ passed: boolean; score: number; total: number }>;
   /**
-   * 0-1 fraction, e.g. 0.8 for "80% required" — threaded in as a prop
+   * 0-1 fraction, e.g. 0.8 for "80% required", threaded in as a prop
    * rather than imported from src/lib/access.ts (QUIZ_PASS_THRESHOLD lives
    * there), since that module pulls in Prisma/server-only code that can't
    * cross into this client component's bundle. Defaults to the app-wide
@@ -62,7 +62,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
   const [selections, setSelections] = useState<Record<string, number>>({});
   const [result, setResult] = useState<{ passed: boolean; score: number; total: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Rendered via a portal onto document.body (below) rather than in place —
+  // Rendered via a portal onto document.body (below) rather than in place,
   // the dashboard's page-enter animation puts a `transform` on an ancestor,
   // which turns `position: fixed` into "fixed to that ancestor" instead of
   // the viewport, the same containing-block gotcha this app's own

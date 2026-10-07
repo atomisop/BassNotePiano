@@ -1,4 +1,4 @@
-// Single source of truth for the terms/refund copy — rendered on the
+// Single source of truth for the terms/refund copy, rendered on the
 // public /terms page (linked from registration and both purchase flows,
 // where there's no session yet) and inside the signed-in About page's
 // "Terms & refunds" tab. Keeping this in one place means the two surfaces

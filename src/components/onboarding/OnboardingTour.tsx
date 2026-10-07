@@ -24,7 +24,7 @@ function getRect(el: Element): Rect {
 }
 
 /**
- * Wavy, spring-like connector between two points — a dotted/coiled line
+ * Wavy, spring-like connector between two points, a dotted/coiled line
  * rather than a plain straight one, per the tour's visual spec. Alternates
  * a perpendicular offset along the straight-line path in short segments.
  */
@@ -57,9 +57,9 @@ function buildCoiledPath(x1: number, y1: number, x2: number, y2: number): string
  * data-tour value only has one live match today. Kept as querySelectorAll +
  * "first element with a real (nonzero) rect", not plain querySelector,
  * because the dead Sidebar/MobileTabBar/MoreSheet still carry a few of the
- * same data-tour values from before AppDock replaced them (harmless — those
+ * same data-tour values from before AppDock replaced them (harmless, those
  * components never mount, so they never actually appear in the DOM to
- * match) — and because it's the right defensive shape regardless, in case
+ * match), and because it's the right defensive shape regardless, in case
  * a future nav split reintroduces a real duplicate.
  */
 function findVisibleTarget(target: string): Element | null {
@@ -112,7 +112,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
   }, [open]);
 
   // Auto-trigger: once per account, after a short delay so nav elements
-  // have settled in — guarded by a ref (not just the autoShow prop, which
+  // have settled in, guarded by a ref (not just the autoShow prop, which
   // is a server-computed value from the page load and won't flip false
   // again this session) so it can't restart itself on an unrelated
   // client-side navigation. Manual replay: Settings -> Tutorials links to
@@ -245,7 +245,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
 
   return createPortal(
     <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="App tour">
-      {/* Dimmed backdrop with a spotlight cutout around the current target, via a huge box-shadow — no SVG masking needed. */}
+      {/* Dimmed backdrop with a spotlight cutout around the current target, via a huge box-shadow, no SVG masking needed. */}
       {targetRect ? (
         <div
           className={`pointer-events-none fixed rounded-2xl ${transitionClass}`}
@@ -265,7 +265,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
         <div className="fixed inset-0 bg-scrim/60" onClick={handleSkip} />
       )}
 
-      {/* Coiled connector — only drawn when there's a real target to point at. */}
+      {/* Coiled connector, only drawn when there's a real target to point at. */}
       {targetRect && layout && (
         <svg className="pointer-events-none fixed inset-0 h-full w-full" aria-hidden>
           <path d={layout.path} fill="none" stroke="rgba(232,180,140,0.9)" strokeWidth="2" strokeDasharray="1 7" strokeLinecap="round" />

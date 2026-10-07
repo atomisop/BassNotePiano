@@ -1,4 +1,4 @@
-// Thumbs up/down on a single Atom reply — the small, low-attention rating
+// Thumbs up/down on a single Atom reply, the small, low-attention rating
 // shown under each assistant bubble in the widget (see AssistantWidget.tsx).
 // Deliberately its own tiny module rather than folded into assistant.ts:
 // this never talks to the model, it's a pure write-and-forget signal for
@@ -13,7 +13,7 @@ const MAX_MESSAGE_LENGTH = 4000; // generous. MAX_OUTPUT_TOKENS (800) in assista
 const FEEDBACK_LIMIT = { windowMinutes: 30, max: 40 };
 
 export interface SubmitAssistantFeedbackInput {
-  /** Same `user:<id>` / IP convention as assertAssistantRateLimit — rate-limiting only, never displayed. */
+  /** Same `user:<id>` / IP convention as assertAssistantRateLimit, rate-limiting only, never displayed. */
   identifier: string;
   userId: string | null;
   rating: FeedbackRating;

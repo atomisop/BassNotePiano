@@ -1,5 +1,5 @@
 /**
- * Motion physics — the house style for anything that moves.
+ * Motion physics, the house style for anything that moves.
  *
  * Derived from Apple's *Designing Fluid Interfaces* (WWDC 2018). The through
  * line: motion should start from the current on-screen value, inherit the
@@ -9,15 +9,15 @@
  * Apple replaced the physics triplet (mass/stiffness/damping) with two
  * designer-facing numbers: damping ratio and response. Framer Motion's
  * `bounce` + `duration` spring API is the same idea, so specify springs that
- * way rather than hand-tuning stiffness/damping — a raw pair silently encodes
+ * way rather than hand-tuning stiffness/damping, a raw pair silently encodes
  * a damping ratio nobody checked.
  *
  * For reference, ζ = damping / (2·√stiffness). The values this codebase used
- * before all landed between ζ 0.43 and 0.95 — every single spring overshot,
+ * before all landed between ζ 0.43 and 0.95, every single spring overshot,
  * including menus and panels that no gesture ever touched.
  *
  * The rule: **critically damped (bounce 0) by default.** Overshoot is only
- * earned when the gesture itself carried momentum — a flick, a throw, a drag
+ * earned when the gesture itself carried momentum, a flick, a throw, a drag
  * release. A menu that merely faded in has no business bouncing.
  */
 
@@ -30,7 +30,7 @@ import type { Transition } from "framer-motion";
  * way instead of nudging it one slot.
  *
  * This is Apple's exponential-decay form from the Fluid Interfaces sample
- * code — deliberately NOT the textbook v²/(2·decel), which decelerates on a
+ * code, deliberately NOT the textbook v²/(2·decel), which decelerates on a
  * different curve and feels wrong next to native scrolling.
  *
  * @param velocity px/s at release
@@ -53,7 +53,7 @@ export function rubberband(overshoot: number, dimension: number, constant = 0.55
 }
 
 /**
- * Velocity from a short position history, rather than the last two points —
+ * Velocity from a short position history, rather than the last two points,
  * a single pair is dominated by whatever jitter landed in the final frame.
  * Samples older than `window` are ignored so a pause before release correctly
  * reads as zero velocity instead of averaging in the earlier movement.

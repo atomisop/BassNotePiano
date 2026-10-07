@@ -10,7 +10,7 @@ import Link from "next/link";
  * would be worse than none.
  *
  * The links out are the three routes that are always valid regardless of
- * session — a dead end with no exit is the thing worth avoiding here.
+ * session, a dead end with no exit is the thing worth avoiding here.
  */
 export default function NotFound() {
   return (

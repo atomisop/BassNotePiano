@@ -12,14 +12,14 @@ function formatBytes(bytes: number): string {
 }
 
 /**
- * #5 — Drag-and-drop upload with validation and progress.
+ * #5, Drag-and-drop upload with validation and progress.
  *
  * Backend-agnostic: it validates and reports, the caller uploads. That matters
  * here because lesson media goes to R2 through a presigned URL, so the
  * component must not assume a POST endpoint.
  *
  * A real <input type="file"> stays in the DOM (visually hidden, not
- * `display:none`) rather than being replaced by a div listening for clicks —
+ * `display:none`) rather than being replaced by a div listening for clicks,
  * that is what keeps it keyboard-reachable and announced as a file input.
  * The drop zone is a label pointing at it, so click and drop both work
  * without duplicating logic.

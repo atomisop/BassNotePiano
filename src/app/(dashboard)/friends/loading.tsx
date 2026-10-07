@@ -3,7 +3,7 @@ import { WideLayout } from "@/components/layout/PageLayouts";
 
 /**
  * `FriendsClient` groups its lists into `glass-surface` sections (friends,
- * requests received/sent, blocked) — each row is an avatar + name/username
+ * requests received/sent, blocked), each row is an avatar + name/username
  * pair, same shape `Avatar.tsx`/messaging's own list rows use. Two sections
  * shown; a real page may render more or fewer depending on pending
  * requests, but the skeleton only needs to read as "a list is loading",
