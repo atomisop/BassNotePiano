@@ -1,6 +1,6 @@
 "use server";
 
-import type { AssistantEscalationStatus } from "@prisma/client";
+import type { AssistantEscalationStatus, SupportThreadSource } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import {
   getSupportThreads,
@@ -23,9 +23,9 @@ async function requireAdminId(): Promise<string> {
   return session.user.id;
 }
 
-export async function getSupportThreadsAction(status?: AssistantEscalationStatus): Promise<AdminThreadSummary[]> {
+export async function getSupportThreadsAction(status?: AssistantEscalationStatus, source?: SupportThreadSource): Promise<AdminThreadSummary[]> {
   await requireAdminId();
-  return getSupportThreads(status);
+  return getSupportThreads(status, undefined, source);
 }
 
 export async function getSupportThreadAction(escalationId: string) {

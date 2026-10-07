@@ -1,0 +1,91 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { consumeRateLimit, RateLimitError } from "@/lib/rateLimit";
+import { ingestInboundEmail } from "@/lib/support";
+import {
+  isAutomatedMail,
+  isSenderAuthenticated,
+  parseMessageHeaders,
+  parseMessageIds,
+  parseSender,
+  verifyMailgunSignature,
+} from "@/lib/inboundEmail";
+
+export const dynamic = "force-dynamic";
+
+const STUDIO_ADDRESS = "music@bassnotepiano.com";
+// One address cannot flood the Email tab, and nor can everyone at once.
+const PER_SENDER_LIMIT = { windowMinutes: 60, max: 20 };
+const OVERALL_LIMIT = { windowMinutes: 60, max: 300 };
+
+/**
+ * Receives email sent to music@bassnotepiano.com. A Mailgun route posts each
+ * message here (Mailgun dashboard > Receiving > Routes, action "Forward" to
+ * this URL, alongside the forward to the owner's Gmail). Nothing is trusted
+ * until Mailgun's signature checks out against MAILGUN_SIGNING_KEY.
+ *
+ * Mailgun retries on any answer other than 200 or 406, so a message we choose
+ * not to keep (automated mail, over a limit, not for music@) is answered 200.
+ * A genuine failure answers 500 and is retried.
+ */
+export async function POST(req: Request) {
+  const signingKey = process.env.MAILGUN_SIGNING_KEY;
+  if (!signingKey) return NextResponse.json({ error: "Not configured." }, { status: 503 });
+
+  const form = await req.formData().catch(() => null);
+  if (!form) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  const field = (name: string): string => {
+    const value = form.get(name);
+    return typeof value === "string" ? value : "";
+  };
+
+  const verified = verifyMailgunSignature({
+    signingKey,
+    timestamp: field("timestamp"),
+    token: field("token"),
+    signature: field("signature"),
+  });
+  if (!verified) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+
+  if (!field("recipient").toLowerCase().includes(STUDIO_ADDRESS)) {
+    return NextResponse.json({ outcome: "ignored", reason: "not for the studio inbox" });
+  }
+
+  const headers = parseMessageHeaders(field("message-headers"));
+  const sender = parseSender(field("from") || field("sender"));
+  if (!sender) return NextResponse.json({ outcome: "ignored", reason: "no usable sender" });
+  if (isAutomatedMail(headers, sender.email)) return NextResponse.json({ outcome: "ignored", reason: "automated mail" });
+
+  try {
+    await consumeRateLimit(prisma, `inbound-email:${sender.email}`, PER_SENDER_LIMIT);
+    await consumeRateLimit(prisma, "inbound-email:all", OVERALL_LIMIT);
+  } catch (err) {
+    if (err instanceof RateLimitError) {
+      console.error(`Inbound email over its limit, dropped: ${sender.email}`);
+      return NextResponse.json({ outcome: "ignored", reason: "rate limited" });
+    }
+    console.error("Inbound email rate limit check failed:", err);
+    return NextResponse.json({ error: "Could not process." }, { status: 500 });
+  }
+
+  try {
+    const result = await ingestInboundEmail({
+      messageId: parseMessageIds(headers.get("message-id") ?? field("Message-Id"))[0] ?? null,
+      fromEmail: sender.email,
+      fromName: sender.name,
+      senderVerified: isSenderAuthenticated(headers),
+      subject: field("subject"),
+      // "stripped-text" is the new part of a reply without the quoted history.
+      text: field("stripped-text") || field("body-plain"),
+      parentMessageIds: parseMessageIds(
+        headers.get("in-reply-to") ?? field("In-Reply-To"),
+        headers.get("references") ?? field("References"),
+      ),
+      attachmentCount: Number.parseInt(field("attachment-count"), 10) || 0,
+    });
+    return NextResponse.json({ outcome: result.outcome });
+  } catch (err) {
+    console.error("Inbound email failed:", err);
+    return NextResponse.json({ error: "Could not process." }, { status: 500 });
+  }
+}

@@ -1096,6 +1096,12 @@ model AssistantEscalation {
   user            User?                     @relation("AssistantEscalationSubmitter", fields: [userId], references: [id], onDelete: SetNull)
   contactName     String?
   contactEmail    String
+  // CHAT is an Atom handoff; EMAIL is a thread started by an email to music@
+  // (see ingestInboundEmail in support.ts). Email threads never reach the
+  // visitor-facing chat routes: the customer lives in their own inbox.
+  source          SupportThreadSource       @default(CHAT)
+  // First email's subject, for EMAIL threads only.
+  subject         String?
   status          AssistantEscalationStatus @default(OPEN)
   // Bumped every time any admin opens this thread in /admin/support — a
   // single shared "last read" rather than per-admin, same collective-inbox
@@ -1113,6 +1119,12 @@ model AssistantEscalation {
 
   @@index([status, createdAt])
   @@index([identifier, createdAt])
+  @@index([source, status, createdAt])
+}
+
+enum SupportThreadSource {
+  CHAT
+  EMAIL
 }
 
 enum SupportMessageSender {
@@ -1139,6 +1151,9 @@ model SupportMessage {
   identifier   String?
   sentById     String?
   sentBy       User?                @relation("SupportMessageSentBy", fields: [sentById], references: [id], onDelete: SetNull)
+  // The email's own Message-ID header, for EMAIL threads: dedupes a retried
+  // delivery and lets a customer's reply be matched to its thread.
+  emailMessageId String?            @unique
   createdAt    DateTime             @default(now())
 
   @@index([escalationId, createdAt])
@@ -1640,14 +1655,6 @@ model AdminNotificationSetting {
   // The owner can switch an alert off for themselves too.
   ownerEnabled     Boolean  @default(true)
   updatedAt        DateTime @updatedAt
-}
-
-// Emails sent to music@bassnotepiano.com that the owner's Gmail script
-// passed on, so the same message is never copied to employees twice.
-model ForwardedMail {
-  id        String   @id @default(cuid())
-  messageId String   @unique
-  createdAt DateTime @default(now())
 }
 
 // One row per student per day (ET) of the daily 10-minute finger exercises.

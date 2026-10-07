@@ -18,7 +18,7 @@ export const ADMIN_NOTIFICATION_KINDS = [
   { kind: "SLOT_PROBLEM", label: "A subscriber's weekly time no longer exists", group: "Classes", defaultOn: true, ownerOnly: false },
   { kind: "SUPPORT_CHAT", label: "Support Chat handoffs and messages", group: "Messages", defaultOn: true, ownerOnly: false },
   { kind: "OWNER_MESSAGES", label: "Messages sent to the owner account", group: "Messages", defaultOn: false, ownerOnly: false },
-  { kind: "MUSIC_INBOX", label: "Emails sent to music@bassnotepiano.com", group: "Messages", defaultOn: true, ownerOnly: false },
+  { kind: "MUSIC_INBOX", label: "New emails to music@bassnotepiano.com (Support Chat, Email tab)", group: "Messages", defaultOn: true, ownerOnly: false },
 ] as const;
 
 export type AdminNotificationKind = (typeof ADMIN_NOTIFICATION_KINDS)[number]["kind"];

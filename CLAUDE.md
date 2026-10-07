@@ -116,7 +116,19 @@ widget. Layered on top of it, entirely deterministic (never LLM-decided):
   is locked to their own session (`loadEscalationForVisitor` in
   `src/lib/support.ts`); an anonymous one trusts the unguessable escalation
   id as a bearer credential, same trust model as elsewhere in this app.
-- The admin side is `/admin/support` (`src/app/(dashboard)/admin/support/`,
+- Email to `music@bassnotepiano.com` (MX is Mailgun) arrives in the same tables
+as an `EMAIL`-source thread (`AssistantEscalation.source`), shown in the Email
+tab of `/admin/support`. A Mailgun route posts each message to
+`/api/inbound/mailgun` (signature checked with `MAILGUN_SIGNING_KEY`, Message-ID
+deduped, automated mail and rate limits dropped, `ingestInboundEmail` in
+`support.ts` threads it by In-Reply-To/References then sender + subject).
+An admin reply on an email thread is sent first as `music@` through Resend
+(`sendSupportEmailReply`) and only stored if the send worked. Email threads are
+never visible to the visitor-facing chat routes (`loadEscalationForVisitor` and
+`/api/assistant/support/active` filter to `CHAT`). The old Gmail-script
+`forwardStudioMail` bridge is gone; only `forwardPaymentEmails` remains.
+
+The admin side is `/admin/support` (`src/app/(dashboard)/admin/support/`,
   `src/components/admin/SupportChatPanel.tsx`) — a two-pane live inbox with
   polling, an unread indicator, and "Mark resolved." Replying again after
   resolved naturally reopens the thread.

@@ -41,34 +41,3 @@ function forwardPaymentEmails() {
     if (allSent) thread.addLabel(label);
   });
 }
-
-// Second job: copies emails sent to the studio inbox to the site, which
-// forwards them to employees the owner has switched this on for (Employees
-// page > Notifications). Add a second trigger for forwardStudioMail the same way.
-const STUDIO_URL = 'https://bassnotepiano.com/api/admin/studio-mail';
-const STUDIO_LABEL = 'bnp-studio-sent';
-
-function forwardStudioMail() {
-  const label = GmailApp.getUserLabelByName(STUDIO_LABEL) || GmailApp.createLabel(STUDIO_LABEL);
-  const query = '(to:music@bassnotepiano.com OR deliveredto:music@bassnotepiano.com) newer_than:2d -label:' + STUDIO_LABEL;
-
-  GmailApp.search(query, 0, 30).forEach(function (thread) {
-    let allSent = true;
-    thread.getMessages().forEach(function (message) {
-      const response = UrlFetchApp.fetch(STUDIO_URL, {
-        method: 'post',
-        contentType: 'application/json',
-        headers: { 'x-ingest-secret': SECRET },
-        payload: JSON.stringify({
-          messageId: message.getId(),
-          from: message.getFrom(),
-          subject: message.getSubject(),
-          body: message.getPlainBody().slice(0, 6000),
-        }),
-        muteHttpExceptions: true,
-      });
-      if (response.getResponseCode() !== 200) allSent = false;
-    });
-    if (allSent) thread.addLabel(label);
-  });
-}

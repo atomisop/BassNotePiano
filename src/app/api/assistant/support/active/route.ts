@@ -23,7 +23,7 @@ export async function GET() {
   if (!session?.user?.id) return NextResponse.json({ escalationId: null });
 
   const escalation = await prisma.assistantEscalation.findFirst({
-    where: { userId: session.user.id, status: "OPEN" },
+    where: { userId: session.user.id, status: "OPEN", source: "CHAT" },
     orderBy: { createdAt: "desc" },
     select: { id: true },
   });

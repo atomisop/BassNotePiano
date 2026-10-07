@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import type { AssistantEscalationStatus, SupportMessageSender } from "@prisma/client";
+import type { AssistantEscalationStatus, SupportMessageSender, SupportThreadSource } from "@prisma/client";
 import {
   getSupportThreadsAction,
   getSupportThreadAction,
@@ -47,12 +47,12 @@ const SENDER_LABEL: Record<SupportMessageSender, string> = {
   SUPPORT: "Support",
 };
 
-function MessageRow({ message }: { message: AdminThreadMessage }) {
+function MessageRow({ message, isEmail }: { message: AdminThreadMessage; isEmail: boolean }) {
   const isVisitor = message.sender === "VISITOR";
   return (
     <div className={`flex flex-col ${isVisitor ? "items-end" : "items-start"}`}>
       <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-600">
-        {SENDER_LABEL[message.sender]}
+        {isVisitor && isEmail ? "Customer" : SENDER_LABEL[message.sender]}
         {message.sender === "SUPPORT" && message.sentByName && ` · ${message.sentByName}`}
       </span>
       <div
@@ -96,6 +96,9 @@ function ThreadListRow({
           {thread.status === "OPEN" ? "Open" : "Resolved"}
         </span>
       </div>
+      {thread.source === "EMAIL" && thread.subject && (
+        <p className="truncate text-small text-slate-300">{thread.subject}</p>
+      )}
       {thread.lastMessage && (
         <p className="truncate text-small text-slate-500">
           {thread.lastMessage.sender === "SUPPORT" ? "You: " : thread.lastMessage.sender === "ATOM" ? "Atom: " : ""}
@@ -110,10 +113,12 @@ function ThreadListRow({
 export interface SupportChatPanelProps {
   initialThreads: AdminThreadSummary[];
   statusFilter?: AssistantEscalationStatus;
+  source?: SupportThreadSource;
   emptyMessage?: string;
 }
 
-function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "No conversations yet." }: SupportChatPanelProps) {
+function SupportChatPanelInner({ initialThreads, statusFilter, source = "CHAT", emptyMessage = "No conversations yet." }: SupportChatPanelProps) {
+  const isEmail = source === "EMAIL";
   const searchParams = useSearchParams();
   // Read once, as the initial value only: deliberately not the live
   // searchParams value. Deep links (`?thread=…`) and the browser back/
@@ -134,6 +139,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
   const [visitorTyping, setVisitorTyping] = useState(false);
   const [replyFocused, setReplyFocused] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [resolving, setResolving] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -156,16 +162,17 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
 
   const listPoll = usePoll(
     async (signal) => {
-      const result = await getSupportThreadsAction(statusFilter);
+      const result = await getSupportThreadsAction(statusFilter, source);
       if (signal.aborted) return;
       setThreads(result);
     },
     THREAD_LIST_POLL_MS,
-    { immediate: true, resetKey: statusFilter },
+    { immediate: true, resetKey: `${source}:${statusFilter ?? "all"}` },
   );
 
   useEffect(() => {
     setConfirmingDelete(false);
+    setSendError(null);
   }, [activeId]);
 
   // Switching threads used to leave the previously-selected thread's
@@ -201,7 +208,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
   // The customer sees "Support is typing" for as long as the reply box is focused:
   // refreshed every 2 seconds, and stopped at once when it loses focus or the thread changes.
   useEffect(() => {
-    if (!activeId || !replyFocused) return;
+    if (isEmail || !activeId || !replyFocused) return;
     void setSupportTypingAction(activeId, true);
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") void setSupportTypingAction(activeId, true);
@@ -210,7 +217,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
       window.clearInterval(timer);
       void setSupportTypingAction(activeId, false);
     };
-  }, [activeId, replyFocused]);
+  }, [activeId, replyFocused, isEmail]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -218,7 +225,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
 
   function selectThread(id: string | null) {
     setActiveId(id);
-    const query = [statusFilter ? `status=${statusFilter}` : null, id ? `thread=${id}` : null].filter(Boolean).join("&");
+    const query = [isEmail ? "source=email" : null, statusFilter ? `status=${statusFilter}` : null, id ? `thread=${id}` : null].filter(Boolean).join("&");
     // Keeps the URL shareable/refreshable without going through the
     // App Router; see the note above on why this isn't router.replace.
     window.history.replaceState(null, "", `/admin/support${query ? `?${query}` : ""}`);
@@ -228,7 +235,9 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
     e.preventDefault();
     if (!activeId || !reply.trim() || sending) return;
     setSending(true);
+    setSendError(null);
     const result = await sendSupportReplyAction(activeId, reply.trim());
+    if (!result.ok) setSendError(result.error);
     if (result.ok) {
       setReply("");
       const updated = await getSupportThreadAction(activeId);
@@ -236,7 +245,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
         setMessages(updated.messages);
         setThreadStatus(updated.status);
       }
-      setThreads(await getSupportThreadsAction(statusFilter));
+      setThreads(await getSupportThreadsAction(statusFilter, source));
     }
     setSending(false);
   }
@@ -246,7 +255,7 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
     setResolving(true);
     await resolveSupportThreadAction(activeId);
     setThreadStatus("RESOLVED");
-    setThreads(await getSupportThreadsAction(statusFilter));
+    setThreads(await getSupportThreadsAction(statusFilter, source));
     setResolving(false);
   }
 
@@ -299,8 +308,11 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
           <>
             <div className="flex items-center justify-between gap-3 border-b border-ink/10 px-4 py-3">
               <div className="min-w-0">
-                <p className="truncate text-small font-semibold text-slate-50">{activeThread.contactName || activeThread.contactEmail}</p>
+                <p className="truncate text-small font-semibold text-slate-50">
+                  {isEmail && activeThread.subject ? activeThread.subject : activeThread.contactName || activeThread.contactEmail}
+                </p>
                 <p className="truncate text-small text-slate-500">
+                  {isEmail && activeThread.contactName ? `${activeThread.contactName} · ` : ""}
                   {activeThread.contactEmail}
                   {activeThread.user && <> · has an account{activeThread.user.username ? ` (@${activeThread.user.username})` : ""}</>}
                 </p>
@@ -333,8 +345,9 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
             {confirmingDelete && (
               <div className="space-y-2 border-b border-ink/10 bg-red-500/5 px-4 py-3">
                 <p className="text-small text-slate-400">
-                  Permanently deletes this conversation and everything the visitor shared through it: their name,
-                  email, and every message. This can&apos;t be undone.
+                  Permanently deletes this {isEmail ? "email thread" : "conversation"} and everything the{" "}
+                  {isEmail ? "customer" : "visitor"} shared through it: their name, email, and every message. This
+                  can&apos;t be undone.{isEmail ? " Your own copy in Gmail is not touched." : ""}
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -380,9 +393,9 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
               ) : (
                 <>
                   {messages.map((m) => (
-                    <MessageRow key={m.id} message={m} />
+                    <MessageRow key={m.id} message={m} isEmail={isEmail} />
                   ))}
-                  {visitorTyping && threadStatus === "OPEN" && (
+                  {!isEmail && visitorTyping && threadStatus === "OPEN" && (
                     <div className="flex items-center gap-2 text-small text-slate-500" aria-live="polite">
                       Customer is typing <TypingIndicator />
                     </div>
@@ -402,25 +415,42 @@ function SupportChatPanelInner({ initialThreads, statusFilter, emptyMessage = "N
               )}
             </div>
 
-            <form onSubmit={handleSend} className="flex min-w-0 gap-2 border-t border-ink/10 p-3">
-              <input
-                type="text"
-                value={reply}
-                onChange={(e) => setReply(e.target.value)}
-                onFocus={() => setReplyFocused(true)}
-                onBlur={() => setReplyFocused(false)}
-                placeholder="Reply as Support…"
-                maxLength={2000}
-                disabled={sending}
-                className="min-w-0 flex-1 rounded-xl px-3 py-2 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring bg-neu-base shadow-pressed-low"
-              />
+            {sendError && (
+              <p role="alert" className="border-t border-ink/10 bg-red-500/5 px-4 py-2 text-small text-red-400">
+                {sendError}
+              </p>
+            )}
+            <form onSubmit={handleSend} className="flex min-w-0 items-end gap-2 border-t border-ink/10 p-3">
+              {isEmail ? (
+                <textarea
+                  value={reply}
+                  onChange={(e) => setReply(e.target.value)}
+                  placeholder="Write a reply. It is emailed to the customer from music@bassnotepiano.com."
+                  maxLength={5000}
+                  rows={3}
+                  disabled={sending}
+                  className="min-w-0 flex-1 resize-y rounded-xl px-3 py-2 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring bg-neu-base shadow-pressed-low"
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={reply}
+                  onChange={(e) => setReply(e.target.value)}
+                  onFocus={() => setReplyFocused(true)}
+                  onBlur={() => setReplyFocused(false)}
+                  placeholder="Reply as Support…"
+                  maxLength={2000}
+                  disabled={sending}
+                  className="min-w-0 flex-1 rounded-xl px-3 py-2 text-body text-slate-100 outline-none transition placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring bg-neu-base shadow-pressed-low"
+                />
+              )}
               <button
                 type="submit"
                 disabled={sending || !reply.trim()}
                 className="tap cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-xl px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {sending && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                {sending ? "Sending…" : "Send"}
+                {sending ? "Sending…" : isEmail ? "Send email" : "Send"}
               </button>
             </form>
           </>
