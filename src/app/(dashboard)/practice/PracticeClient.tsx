@@ -14,6 +14,7 @@ import {
   type PianoSection,
 } from "@/lib/fingerExercises";
 import { DAILY_GOAL_SECONDS, type FingerPracticeStatus } from "@/lib/fingerPracticeConstants";
+import { useWakeLock } from "@/hooks/useWakeLock";
 
 type Instrument = "PIANO" | "GUITAR";
 
@@ -180,7 +181,10 @@ export function PracticeClient({
   initialStatus,
   defaultInstrument,
   onBeat,
+  nextHref = null,
 }: {
+  /** The lesson to return to once today's 10 minutes are done. */
+  nextHref?: string | null;
   initialStatus: FingerPracticeStatus;
   defaultInstrument: Instrument;
   onBeat: () => Promise<FingerPracticeStatus & { justCompleted: boolean }>;
@@ -196,6 +200,25 @@ export function PracticeClient({
   const [activeStep, setActiveStep] = useState<number | null>(null);
   const lastBeatRef = useRef<number>(0);
   const metronome = useMetronome();
+  const wakeLock = useWakeLock(running);
+  // The timer only counts while the screen is on and this page is in view. Say so when it was paused.
+  const [pausedWhileAway, setPausedWhileAway] = useState(false);
+  useEffect(() => {
+    if (!running) {
+      setPausedWhileAway(false);
+      return;
+    }
+    let hiddenWhileRunning = false;
+    function onChange() {
+      if (document.visibilityState === "hidden") hiddenWhileRunning = true;
+      else if (hiddenWhileRunning) {
+        hiddenWhileRunning = false;
+        setPausedWhileAway(true);
+      }
+    }
+    document.addEventListener("visibilitychange", onChange);
+    return () => document.removeEventListener("visibilitychange", onChange);
+  }, [running]);
 
   const pianoExercise = PIANO_EXERCISES.find((e) => e.id === exerciseId) ?? PIANO_EXERCISES[0];
   const guitarExercise = GUITAR_EXERCISES.find((e) => e.id === exerciseId) ?? GUITAR_EXERCISES[0];
@@ -218,6 +241,7 @@ export function PracticeClient({
     try {
       const next = await onBeat();
       setStatus(next);
+      setPausedWhileAway(false);
       setLocalExtra(0);
       lastBeatRef.current = Date.now();
       if (next.justCompleted) setJustCompleted(true);
@@ -296,11 +320,20 @@ export function PracticeClient({
             {running ? "Pause" : status.completedToday ? "Practice more" : "Start"}
           </button>
           {status.completedToday && (
-            <a href="/dashboard" className={`${raisedKey} min-h-12 w-full sm:w-auto`}>
-              Go to scales
+            <a href={nextHref ?? "/dashboard"} className={`${raisedKey} min-h-12 w-full sm:w-auto`}>
+              {nextHref ? "Continue to your lesson" : "Go to scales"}
             </a>
           )}
         </div>
+        {running && !status.completedToday && (
+          <p className="mt-3 text-small text-slate-500" role="status">
+            {pausedWhileAway
+              ? "The timer paused while your screen was off or this app was in the background. It counts again now."
+              : wakeLock.held
+                ? "Your screen stays on while you practice."
+                : "Keep this screen on and in view: the timer pauses when your phone locks or you switch apps."}
+          </p>
+        )}
         {justCompleted && (
           <p className="mt-3 rounded-xl bg-neu-base px-4 py-3 text-small font-semibold text-slate-50 shadow-pressed-low">
             10 minutes done. {"\u{1F389}"}

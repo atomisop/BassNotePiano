@@ -28,7 +28,7 @@ export default async function ScalePage({ params }: { params: { scaleSlug: strin
   // Lessons open only after today's 10 minutes of finger exercises. Admins are exempt.
   if (session.user.role !== "ADMIN" && !(await hasCompletedFingerPracticeToday(session.user.id))) {
     const status = await getFingerPracticeStatus(session.user.id);
-    return <FingerPracticeGate todaySeconds={status.todaySeconds} goalSeconds={DAILY_GOAL_SECONDS} />;
+    return <FingerPracticeGate todaySeconds={status.todaySeconds} goalSeconds={DAILY_GOAL_SECONDS} streak={status.streak} returnTo={`/scales/${params.scaleSlug}`} />;
   }
 
   const { scaleGroup } = access;
