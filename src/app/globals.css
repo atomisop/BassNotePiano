@@ -1020,8 +1020,17 @@
   }
 
   /* Shapes are two shadows: light from the top-left, shade to the
-     bottom-right. Offsets are the depth. */
-  :root {
+     bottom-right. Offsets are the depth.
+     These are declared on every element that sets a mode, not only on :root.
+     A custom property that points at other variables is resolved where it is
+     declared, so a shadow resolved once on :root keeps the visitor's own
+     light or dark colors even inside a section that pins its mode (the
+     public pages are always dark): dark surfaces with a bright white glow.
+     Re-declaring them next to --neu-hi and --neu-lo makes every such section
+     resolve its own. */
+  :root,
+  [data-mode="dark"],
+  [data-mode="light"] {
     --neu-raised-low: -3px -3px 7px var(--neu-hi), 3px 3px 7px var(--neu-lo);
     --neu-raised-mid: -6px -6px 14px var(--neu-hi), 6px 6px 14px var(--neu-lo);
     --neu-raised-high: -10px -10px 22px var(--neu-hi), 10px 10px 22px var(--neu-lo);
