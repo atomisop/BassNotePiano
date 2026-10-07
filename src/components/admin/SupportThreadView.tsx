@@ -28,7 +28,7 @@ const SENDER_LABEL: Record<SupportMessageSender, string> = {
   INTERNAL: "Internal note",
 };
 
-function MessageRow({ message, isEmail }: { message: AdminThreadMessage; isEmail: boolean }) {
+function MessageRow({ message, visitorLabel }: { message: AdminThreadMessage; visitorLabel: string }) {
   if (message.sender === "INTERNAL") {
     return (
       <div className="flex flex-col items-center">
@@ -45,7 +45,7 @@ function MessageRow({ message, isEmail }: { message: AdminThreadMessage; isEmail
   return (
     <div className={`flex flex-col ${isVisitor ? "items-end" : "items-start"}`}>
       <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-600">
-        {isVisitor && isEmail ? "Customer" : SENDER_LABEL[message.sender]}
+        {isVisitor ? visitorLabel : SENDER_LABEL[message.sender]}
         {message.sender === "SUPPORT" && message.sentByName && ` · ${message.sentByName}`}
       </span>
       <div
@@ -163,7 +163,10 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
     router.replace(backHref);
   }
 
-  const title = isEmail && thread.subject ? thread.subject : thread.contactName || thread.contactEmail;
+  // Who the customer is. A signed-in person always shows as themselves (their current account name),
+  // never as an anonymous visitor.
+  const personName = thread.user?.name || thread.contactName || (isEmail ? "Customer" : "Visitor");
+  const title = isEmail && thread.subject ? thread.subject : thread.user?.name || thread.contactName || thread.contactEmail;
 
   return (
     <div className="flex flex-col gap-3">
@@ -177,6 +180,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
           <div className="min-w-0">
             <p className="truncate text-small font-semibold text-slate-50">{title}</p>
             <p className="truncate text-small text-slate-500">
+              {!isEmail && thread.subject ? `${thread.subject} · ` : ""}
               {isEmail && thread.contactName ? `${thread.contactName} · ` : ""}
               {thread.contactEmail}
               {thread.user && <> · has an account{thread.user.username ? ` (@${thread.user.username})` : ""}</>}
@@ -243,11 +247,11 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
         {/* No auto-scroll here: the list stays where you scrolled it while new messages arrive. */}
         <div className="min-w-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
           {detail.messages.map((m) => (
-            <MessageRow key={m.id} message={m} isEmail={isEmail} />
+            <MessageRow key={m.id} message={m} visitorLabel={personName} />
           ))}
           {!isEmail && detail.visitorTyping && open && (
             <div className="flex items-center gap-2 text-small text-slate-500" aria-live="polite">
-              Customer is typing <TypingIndicator />
+              {personName} is typing <TypingIndicator />
             </div>
           )}
           {poll.failed && (

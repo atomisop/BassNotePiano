@@ -59,6 +59,10 @@ export interface CreateAssistantEscalationInput {
   contactName: string | null;
   contactEmail: string;
   transcript: AssistantMessage[];
+  /** What the case is about ("Booking"), shown in the admin list and header. */
+  subject?: string;
+  /** Replaces the default "Atom handoff" admin notification text. */
+  notice?: { title: string; body: string };
 }
 
 export async function createAssistantEscalation(input: CreateAssistantEscalationInput) {
@@ -79,6 +83,7 @@ export async function createAssistantEscalation(input: CreateAssistantEscalation
       userId: input.userId,
       contactName,
       contactEmail,
+      subject: input.subject?.trim().slice(0, 200) || null,
       messages: {
         create: transcript.map((m) => ({
           sender: (m.role === "user" ? "VISITOR" : "ATOM") satisfies SupportMessageSender,
@@ -101,10 +106,12 @@ export async function createAssistantEscalation(input: CreateAssistantEscalation
       createNotification({
         userId: admin.id,
         type: "ASSISTANT_ESCALATION",
-        title: "Atom handoff: someone needs a person",
-        body: `${whoLabel} asked Atom to connect them with the team.${
-          lastUserMessage ? ` Last question: "${lastUserMessage.content.slice(0, 160)}"` : ""
-        }`,
+        title: input.notice?.title ?? `Atom handoff: ${contactName ?? "someone"} needs a person`,
+        body:
+          input.notice?.body ??
+          `${whoLabel} asked Atom to connect them with the team.${
+            lastUserMessage ? ` Last question: "${lastUserMessage.content.slice(0, 160)}"` : ""
+          }`,
         // Mirrors the other admin-facing lead notification (class
         // registrations): there's no dedicated "ops alerts" email category,
         // and this is the closest fit of the four that exist.
@@ -114,6 +121,58 @@ export async function createAssistantEscalation(input: CreateAssistantEscalation
   );
 
   return escalation;
+}
+
+/**
+ * "Message support" on a booked class: opens (or reuses) a case with the subject
+ * "Booking", under the student's real name, seeded with the class so the team
+ * knows which one. While the student already has a Booking case open, this
+ * returns it and adds a line about the new class instead of opening a second.
+ */
+export async function openBookingSupportCase(userId: string, bookingId: string): Promise<{ escalationId: string }> {
+  const [booking, user] = await Promise.all([
+    prisma.classBooking.findFirst({ where: { id: bookingId, studentId: userId }, include: { schedule: { select: { label: true } } } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true, username: true, email: true } }),
+  ]);
+  if (!booking) throw new AssistantEscalationError("That class doesn't exist.");
+  if (!user) throw new AssistantEscalationError("Account not found.");
+
+  const when = booking.scheduledAt.toLocaleString("en-US", { timeZone: "America/New_York", dateStyle: "full", timeStyle: "short" });
+  const classLine = `${booking.schedule.label ?? "Class"}, ${when} ET`;
+  const request = `I need help with my booking: ${classLine}.`;
+
+  const existing = await prisma.assistantEscalation.findFirst({
+    where: { userId, source: "CHAT", status: "OPEN", subject: "Booking" },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  if (existing) {
+    const alreadyMentioned = await prisma.supportMessage.findFirst({
+      where: { escalationId: existing.id, body: { contains: classLine } },
+      select: { id: true },
+    });
+    if (!alreadyMentioned) {
+      await prisma.supportMessage.create({
+        data: { escalationId: existing.id, sender: "VISITOR", body: request, identifier: `user:${userId}` },
+      });
+    }
+    return { escalationId: existing.id };
+  }
+
+  const name = user.name ?? user.username ?? null;
+  const escalation = await createAssistantEscalation({
+    identifier: `user:${userId}`,
+    userId,
+    contactName: name,
+    contactEmail: user.email,
+    subject: "Booking",
+    transcript: [
+      { role: "assistant", content: `Booking details: ${classLine}.` },
+      { role: "user", content: request },
+    ],
+    notice: { title: `${name ?? user.email} needs help with a booking`, body: `${classLine}.` },
+  });
+  return { escalationId: escalation.id };
 }
 
 // ---------------------------------------------------------------------------

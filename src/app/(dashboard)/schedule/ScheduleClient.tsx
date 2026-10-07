@@ -11,6 +11,7 @@ import { getReservableSlotsForChangeAction, changeReservedSlotAction, cancelClas
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
+import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 
 interface UpcomingBooking {
   id: string;
@@ -225,27 +226,30 @@ export function ScheduleClient({
                         </div>
                       </div>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSkipError(null);
-                          setConfirmSkipId(booking.id);
-                        }}
-                        className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-2"
-                      >
-                        Skip this class
-                      </button>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <Link href={`/lessons?tab=extra&move=${booking.id}`} className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
+                          Move this week
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSkipError(null);
+                            setConfirmSkipId(booking.id);
+                          }}
+                          className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
+                        >
+                          Skip this class
+                        </button>
+                      </div>
                     )
                   ) : (
                     <p className="mt-2 text-small text-slate-500">
-                      Starts within {cancellationCutoffHours} hours, so it can&apos;t be changed here.{" "}
-                      {supportContactId && (
-                        <Link href={`/messages?with=${supportContactId}`} className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
-                          Message support
-                        </Link>
-                      )}
+                      Starts within {cancellationCutoffHours} hours, so changes now go through the team.
                     </p>
                   )}
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <MessageSupportButton bookingId={booking.id} />
+                  </div>
                 </div>
               );
             })}

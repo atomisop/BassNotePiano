@@ -71,9 +71,10 @@ export async function POST(req: Request) {
 
     if (session?.user) {
       userId = session.user.id;
-      const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { email: true, name: true } });
+      const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { email: true, name: true, username: true } });
       contactEmail = user?.email ?? null;
-      contactName = user?.name ?? null;
+      // A signed-in visitor is always shown by their real identity, never as an anonymous visitor.
+      contactName = user?.name ?? user?.username ?? null;
     } else {
       contactEmail = typeof body?.contactEmail === "string" ? body.contactEmail.slice(0, MAX_CONTACT_EMAIL_LENGTH) : null;
       contactName = typeof body?.contactName === "string" ? body.contactName.slice(0, MAX_CONTACT_NAME_LENGTH) : null;
