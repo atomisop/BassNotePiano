@@ -4,6 +4,8 @@ import {
   isAutomatedMail,
   isSenderAuthenticated,
   isStudioRecipient,
+  makeProbeSubject,
+  parseProbeToken,
   normalizeSubject,
   parseMessageHeaders,
   parseMessageIds,
@@ -118,5 +120,20 @@ describe("isStudioRecipient", () => {
     expect(isStudioRecipient("music@evilbassnotepiano.com")).toBe(false);
     expect(isStudioRecipient("music@bassnotepiano.com.evil.com")).toBe(false);
     expect(isStudioRecipient("")).toBe(false);
+  });
+});
+
+describe("mail check subjects", () => {
+  const token = "0123456789abcdef01234567";
+  it("round-trips a token, through forwarding prefixes and case changes", () => {
+    expect(parseProbeToken(makeProbeSubject(token))).toBe(token);
+    expect(parseProbeToken(`Fwd: Re: ${makeProbeSubject(token)}`)).toBe(token);
+    expect(parseProbeToken(makeProbeSubject(token.toUpperCase()))).toBe(token);
+  });
+  it("ignores anything else", () => {
+    expect(parseProbeToken("Piano lessons")).toBeNull();
+    expect(parseProbeToken("BNP mail check")).toBeNull();
+    expect(parseProbeToken("BNP mail check short")).toBeNull();
+    expect(parseProbeToken(`Hello BNP mail check ${token}`)).toBeNull();
   });
 });

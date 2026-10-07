@@ -498,3 +498,10 @@ export async function sendSupportEmailReply(input: {
   const result = await client.emails.send({ from: PERSONAL_FROM, to, subject, html, text, replyTo: EMAIL_REPLY_TO, headers });
   if (result.error) throw new Error(`Resend failed to send a support reply: ${result.error.message}`);
 }
+
+/** The daily test email that proves the studio inbox chain (forwarding, filter, Mailgun, site) still delivers. */
+export async function sendMailChainProbe(token: string): Promise<void> {
+  const subject = `BNP mail check ${token}`;
+  const text = "This is the daily automatic check that email to music@ still reaches the site. Nobody needs to read or answer it.";
+  await sendEmail({ to: "music@bassnotepiano.com", subject, html: `<p>${text}</p>`, text, from: PERSONAL_FROM });
+}
