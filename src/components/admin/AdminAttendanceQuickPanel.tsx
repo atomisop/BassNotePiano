@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Check, ChevronDown, ClipboardCheck, X as XIcon } from "lucide-react";
 import { adminCancelBookingAction, getBookingFeedAction, markAttendanceAction } from "@/app/(dashboard)/admin/schedule/actions";
+import { Collapse } from "@/components/ui/Collapse";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
 const POLL_INTERVAL_MS = 30_000;
@@ -282,13 +283,13 @@ export function AdminAttendanceQuickPanel() {
                           </span>
                         )}
                         <ChevronDown
-                          className={`ml-auto h-4 w-4 shrink-0 text-slate-400 transition-transform ${expanded ? "rotate-180" : ""}`}
+                          className={`ml-auto h-4 w-4 shrink-0 text-slate-400 transition-transform duration-(--dur-base) ease-(--ease-ios) ${expanded ? "rotate-180" : ""}`}
                           strokeWidth={2}
                           aria-hidden
                         />
                       </button>
 
-                      {expanded && (
+                      <Collapse open={expanded}>
                         <div className="mt-1.5 space-y-1.5 rounded-xl bg-neu-base p-1.5 shadow-pressed-low">
                           {group.rows.map((r) => {
                             if (r.awaitingPayment) {
@@ -383,7 +384,7 @@ export function AdminAttendanceQuickPanel() {
                             );
                           })}
                         </div>
-                      )}
+                      </Collapse>
                     </section>
                   );
                 })}

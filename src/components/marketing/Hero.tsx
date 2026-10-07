@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { WordsPullUp } from "@/components/ui/words-pull-up";
 import { PillCTA } from "@/components/ui/pill-cta";
-import { BACKDROPS } from "@/lib/backdrops";
 import { heroVideoAllowed } from "@/lib/heroVideo";
+import { EASE_IOS } from "@/lib/motionTokens";
 
 // Served from R2 (the same object storage the app already uses for lesson
 // videos and avatars, see lib/storage.ts), not the Next.js public folder: 17MB
@@ -22,10 +21,14 @@ const HERO_VIDEO_URL = "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/mark
  * on load, when the tab becomes visible, and on the first touch, click, key
  * press or scroll, and quietly gives up if the browser still says no.
  */
-function useKeepPlaying(ref: React.RefObject<HTMLVideoElement>) {
+function useKeepPlaying(ref: React.RefObject<HTMLVideoElement>, enabled: boolean) {
   useEffect(() => {
     const video = ref.current;
     if (!video) return;
+    if (!enabled) {
+      video.pause();
+      return;
+    }
     const tryPlay = () => {
       if (video.paused && document.visibilityState === "visible") void video.play().catch(() => {});
     };
@@ -43,7 +46,7 @@ function useKeepPlaying(ref: React.RefObject<HTMLVideoElement>) {
       document.removeEventListener("visibilitychange", onVisible);
       gestures.forEach((g) => window.removeEventListener(g, onGesture));
     };
-  }, [ref]);
+  }, [ref, enabled]);
 }
 
 type NetworkInfo = { saveData?: boolean; effectiveType?: string };
@@ -52,41 +55,35 @@ export function Hero() {
   const { data: session } = useSession();
   const isLoggedIn = Boolean(session?.user);
   const videoRef = useRef<HTMLVideoElement>(null);
-  // The still photo paints first. The 17MB video only starts downloading after the page has
-  // finished loading, and only for people whose connection and settings suit it.
-  const [loadVideo, setLoadVideo] = useState(false);
-  const [videoPlaying, setVideoPlaying] = useState(false);
+  // The video plays right away. Only people who ask for less motion, have data saver on, or are
+  // on a slow connection get it paused on its first frame instead of looping.
+  const [motionAllowed, setMotionAllowed] = useState(true);
   useEffect(() => {
     const connection = (navigator as Navigator & { connection?: NetworkInfo }).connection;
-    const allowed = heroVideoAllowed({
-      reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-      saveData: Boolean(connection?.saveData),
-      effectiveType: connection?.effectiveType ?? null,
-    });
-    if (!allowed) return;
-    const start = () => setLoadVideo(true);
-    if (document.readyState === "complete") start();
-    else window.addEventListener("load", start, { once: true });
-    return () => window.removeEventListener("load", start);
+    setMotionAllowed(
+      heroVideoAllowed({
+        reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+        saveData: Boolean(connection?.saveData),
+        effectiveType: connection?.effectiveType ?? null,
+      }),
+    );
   }, []);
-  useKeepPlaying(videoRef);
+  useKeepPlaying(videoRef, motionAllowed);
 
   return (
     <section className="h-[100svh] w-full p-2 sm:p-3">
       <div className="relative h-full w-full overflow-hidden rounded-2xl bg-black md:rounded-[2rem]">
         {/* pointer-events-none: pure background, so a phone never offers its own tap-to-play glyph over the copy. */}
-        <Image src={BACKDROPS.marketingHero} alt="" aria-hidden fill priority sizes="100vw" className="pointer-events-none object-cover" />
         <video
           ref={videoRef}
           aria-hidden
-          autoPlay
+          autoPlay={motionAllowed}
           loop
           muted
           playsInline
-          preload="none"
-          src={loadVideo ? HERO_VIDEO_URL : undefined}
-          onPlaying={() => setVideoPlaying(true)}
-          className={`pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${videoPlaying ? "opacity-100" : "opacity-0"}`}
+          preload="auto"
+          src={HERO_VIDEO_URL}
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         />
 
         <div aria-hidden className="noise-overlay pointer-events-none absolute inset-0 opacity-[0.7] mix-blend-overlay" />
@@ -104,7 +101,7 @@ export function Hero() {
               <motion.p
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.8, delay: 0.5, ease: EASE_IOS }}
                 className="text-sm leading-[1.2] text-[#E1E0CC]/70 md:text-base"
               >
                 Ethiopian music, taught live. Piano, guitar and bass lessons with a real teacher, and a curriculum that opens one scale at a time.
@@ -113,7 +110,7 @@ export function Hero() {
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.8, delay: 0.7, ease: EASE_IOS }}
               >
                 <PillCTA href={isLoggedIn ? "/dashboard" : "/register"}>{isLoggedIn ? "Go to dashboard" : "Get started"}</PillCTA>
               </motion.div>

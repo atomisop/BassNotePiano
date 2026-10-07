@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import { EASE_IOS } from "@/lib/motionTokens";
 
 interface WordsPullUpProps {
   text: string;
@@ -25,7 +26,7 @@ export const WordsPullUp = ({ text, className = "", showAsterisk = false, style 
             key={i}
             initial={{ y: 20, opacity: 0 }}
             animate={isInView ? { y: 0, opacity: 1 } : {}}
-            transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.6, delay: i * 0.08, ease: EASE_IOS }}
             className="relative inline-block"
             style={{ marginRight: isLast ? 0 : "0.25em" }}
           >
@@ -68,7 +69,7 @@ export const WordsPullUpMultiStyle = ({ segments, className = "", style }: Words
           key={i}
           initial={{ y: 20, opacity: 0 }}
           animate={isInView ? { y: 0, opacity: 1 } : {}}
-          transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.6, delay: i * 0.08, ease: EASE_IOS }}
           className={`inline-block ${w.className ?? ""}`}
           style={{ marginRight: "0.25em" }}
         >

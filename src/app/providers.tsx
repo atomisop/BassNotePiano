@@ -5,6 +5,7 @@ import { SessionProvider } from "next-auth/react";
 import { MotionConfig } from "framer-motion";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { Toaster } from "@/components/ui/Toaster";
+import { NavigationOverlay } from "@/components/layout/NavigationOverlay";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import { AssistantWidget } from "@/components/assistant/AssistantWidget";
 
@@ -42,6 +43,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
               reasoning as Toaster/CookieConsentBanner above, except on the
               auth screens (see AtomUnlessAuth). */}
           <AtomUnlessAuth />
+          <NavigationOverlay />
         </ThemeProvider>
       </MotionConfig>
     </SessionProvider>

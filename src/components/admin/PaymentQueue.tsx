@@ -252,8 +252,9 @@ export function PaymentQueue({
                       setBusyId(null);
                     }
                   }}
-                  className="tap shrink-0 rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap inline-flex items-center justify-center shrink-0 rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
+                  {busyId === payment.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                   Mark checked
                 </button>
               )}

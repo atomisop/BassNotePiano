@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Home, CalendarCheck, Users, MessageSquare, Settings, type LucideIcon } from "lucide-react";
 import { Dock, DockIcon, DockItem } from "@/components/ui/dock";
 import { fetchUnreadMessageCountAction } from "@/app/(dashboard)/notification-actions";
+import { SPRING } from "@/lib/motionTokens";
 
 // Same 30s cadence as NotificationBell's own poll, which this mirrors.
 const POLL_INTERVAL_MS = 30_000;
@@ -307,7 +308,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
           ref={wrapperRef}
           className="pointer-events-auto"
           animate={{ y: effectivelyVisible ? 0 : "calc(100% + 24px)", opacity: effectivelyVisible ? 1 : 0 }}
-          transition={{ type: "spring", bounce: 0, duration: 0.35 }}
+          transition={SPRING.smooth}
         >
           {/* No idle bob: the dock used to drift up and down by 2px on an
               endless loop, which read as the bar never sitting still. It now
@@ -459,7 +460,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                     {active && (
                       <motion.div
                         layoutId="dock-active-line"
-                        transition={{ type: "spring", bounce: 0.15, duration: 0.55 }}
+                        transition={SPRING.lively}
                         className="pointer-events-none absolute left-1/2 top-0 h-[2px] w-8 -translate-x-1/2 -translate-y-2 rounded-full bg-signal"
                       />
                     )}

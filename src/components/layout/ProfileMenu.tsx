@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import { AnimatePresence, motion } from "framer-motion";
 import { OwnerStarBadge } from "@/components/ui/OwnerStar";
+import { popoverVariants } from "@/lib/motionTokens";
+import { startNavigation } from "@/lib/navigationState";
 
 // Same glyph AccountSettings.tsx's own "Sign out" row uses (TAB_ICONS.logout)
 // — one logout icon across the app, not a second one invented here.
@@ -89,6 +92,7 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
         {isOwner && <OwnerStarBadge />}
       </button>
 
+      <AnimatePresence>
       {open && (
         // role="region", not "menu": this is plain navigation links plus one
         // action, not an application menu, and declaring "menu" without also
@@ -96,9 +100,14 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
         // ARIA menu obligates) would tell a screen reader user to use arrow
         // keys that then do nothing. Region just labels the group; the
         // links/button inside are already correctly accessible as themselves.
-        <div
+        <motion.div
           role="region"
           aria-label="Account menu"
+          variants={popoverVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          style={{ transformOrigin: "top right" }}
           className="glass-surface-elevated absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 overflow-hidden p-1.5"
         >
           <div className="flex items-center gap-3 px-2.5 py-2">
@@ -146,7 +155,10 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
 
           <button
             type="button"
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={() => {
+              startNavigation();
+              void signOut({ callbackUrl: "/" });
+            }}
             className="tap flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-small text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -154,8 +166,9 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
             </svg>
             Log out
           </button>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }

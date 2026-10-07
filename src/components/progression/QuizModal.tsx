@@ -7,6 +7,7 @@ import { generateScaleQuiz, stripAnswers, type PublicQuizQuestion, type QuizAnsw
 import { CountUpNumber } from "@/components/ui/CountUpNumber";
 import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { SPRING } from "@/lib/motionTokens";
 
 export interface QuizModalProps {
   isOpen: boolean;
@@ -45,13 +46,13 @@ type Step = "question" | "submitting" | "result";
 // one.
 const panelVariants = {
   hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { type: "spring", bounce: 0, duration: 0.32 } },
+  visible: { opacity: 1, y: 0, transition: SPRING.snappy },
   exit: { opacity: 0, y: 16, transition: { duration: 0.15, ease: "easeIn" } },
 };
 
 const stepVariants = {
   enter: { opacity: 0, x: 16 },
-  center: { opacity: 1, x: 0, transition: { type: "spring", bounce: 0, duration: 0.36 } },
+  center: { opacity: 1, x: 0, transition: SPRING.smooth },
   exit: { opacity: 0, x: -16, transition: { duration: 0.15 } },
 };
 
@@ -286,7 +287,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                     <motion.div
                       initial={{ scale: 0.6, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: "spring", bounce: 0.35, duration: 0.5, delay: 0.05 }}
+                      transition={{ ...SPRING.lively, delay: 0.05 }}
                       className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${
                         result.passed ? "bg-slate-50/10" : "bg-neu-base shadow-pressed-low"
                       }`}

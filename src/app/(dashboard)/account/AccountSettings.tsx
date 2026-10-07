@@ -24,6 +24,7 @@ import {
   type NotificationPreferencesInput,
 } from "./actions";
 import { SettingsLayout } from "@/components/layout/PageLayouts";
+import { startNavigation } from "@/lib/navigationState";
 
 interface AccountSettingsProps {
   hasCurriculumAccess: boolean;
@@ -134,7 +135,10 @@ function SignOutButton({ className = "" }: { className?: string }) {
   return (
     <button
       type="button"
-      onClick={() => signOut({ callbackUrl: "/" })}
+      onClick={() => {
+        startNavigation();
+        void signOut({ callbackUrl: "/" });
+      }}
       className={`tap flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left text-small text-slate-400 transition hover:text-slate-200 hover:shadow-raised-low active:shadow-pressed-low ${className}`}
     >
       <TabIcon path={TAB_ICONS.logout} />
@@ -717,6 +721,7 @@ function DangerZoneSection() {
     // The account row is already gone server-side — this just clears the
     // browser's session cookie and leaves. Not setDeleting(false): there's
     // nothing left to re-enable a form for.
+    startNavigation();
     await signOut({ callbackUrl: "/" });
   }
 

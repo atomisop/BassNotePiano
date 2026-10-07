@@ -27,7 +27,6 @@ Reuse the three images already in the codebase and confirmed working — keep th
 
 | Context | Image | Unsplash ID (verified in repo) |
 |---|---|---|
-| Marketing hero | B&W grand piano, hand on keys, warm bokeh | `photo-1513883049090-d0b7439799bf` |
 | Guitar backdrop | Acoustic guitar, golden-hour light | `photo-1573603088895-d399fbee9653` |
 | Violin backdrop | Close-up hand on strings, warm tone | `photo-1566913485242-694e995731b4` |
 

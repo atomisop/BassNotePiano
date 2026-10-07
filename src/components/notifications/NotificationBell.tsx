@@ -29,6 +29,7 @@ import {
 import { Tabs } from "@/components/ui/Tabs";
 import { markAllMailReadAction } from "@/app/(dashboard)/mail/actions";
 import { playNotificationSound } from "@/lib/notification-sound";
+import { EASE_IOS, FADE, SPRING } from "@/lib/motionTokens";
 
 const POLL_INTERVAL_MS = 30_000;
 
@@ -341,7 +342,7 @@ function NotificationGroup({
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.32, ease: EASE_IOS }}
             className="overflow-hidden"
           >
             <div className="mt-2 space-y-2 border-l-2 border-ink/10 pl-3">
@@ -530,7 +531,7 @@ export function NotificationBell() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={FADE}
                   className="absolute inset-0 bg-scrim/40"
                   onClick={() => setOpen(false)}
                   aria-hidden
@@ -539,7 +540,7 @@ export function NotificationBell() {
                   initial={{ x: "100%" }}
                   animate={{ x: 0 }}
                   exit={{ x: "100%" }}
-                  transition={{ type: "spring", bounce: 0, duration: 0.45 }}
+                  transition={SPRING.smooth}
                   role="dialog"
                   aria-modal="true"
                   aria-label="Inbox"

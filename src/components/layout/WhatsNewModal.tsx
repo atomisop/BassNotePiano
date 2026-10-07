@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ChangelogEntry } from "@/lib/changelog";
 import { CheckIcon } from "@/components/ui/icons";
+import { FADE, SPRING } from "@/lib/motionTokens";
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -16,7 +17,7 @@ const panelVariants = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { type: "spring", bounce: 0, duration: 0.32 },
+    transition: SPRING.snappy,
   },
   exit: {
     opacity: 0,
@@ -41,7 +42,7 @@ export function WhatsNewModal({ open, onClose, entry }: { open: boolean; onClose
         >
           <motion.div
             variants={backdropVariants}
-            transition={{ duration: 0.2 }}
+            transition={FADE}
             className="absolute inset-0 bg-scrim/60"
             onClick={handleClose}
           />

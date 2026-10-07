@@ -1,5 +1,6 @@
 "use client";
 
+import { Collapse } from "@/components/ui/Collapse";
 import { scrollWithin } from "@/lib/scrollWithin";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -302,7 +303,7 @@ function ChevronIcon({ open }: { open: boolean }) {
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`}
+      className={`h-4 w-4 shrink-0 text-slate-500 transition-transform duration-(--dur-base) ease-(--ease-ios) ${open ? "rotate-180" : ""}`}
     >
       <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
@@ -340,7 +341,7 @@ function MonthGroup({
           <ChevronIcon open={open} />
         </span>
       </button>
-      {open && (
+      <Collapse open={open}>
         <div className="space-y-2 border-t border-ink/10 p-3">
           {group.bookings.map((b) => (
             <BookingCard
@@ -354,7 +355,7 @@ function MonthGroup({
             />
           ))}
         </div>
-      )}
+      </Collapse>
     </div>
   );
 }

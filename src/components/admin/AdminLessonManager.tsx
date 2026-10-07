@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import type { LessonMediaType } from "@prisma/client";
 import type { CourseLesson } from "@/lib/courseContent";
+import { Collapse } from "@/components/ui/Collapse";
 import { FileDropzone } from "@/components/ui/FileDropzone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
@@ -227,7 +228,7 @@ export function AdminLessonManager({
         </button>
       </div>
 
-      {showForm && (
+      <Collapse open={showForm}>
         <form onSubmit={handleUpload} className="glass-surface space-y-3.5 p-5">
           <div>
             <label className="mb-1 block text-small font-medium text-slate-400">Title</label>
@@ -275,7 +276,7 @@ export function AdminLessonManager({
             {uploading ? "Uploading…" : "Upload"}
           </button>
         </form>
-      )}
+      </Collapse>
 
       {lessons.length === 0 ? (
         <p className="glass-surface p-6 text-center text-small text-slate-500">No lessons for this scale yet.</p>

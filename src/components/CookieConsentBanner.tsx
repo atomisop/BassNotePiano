@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { readConsent, writeConsent } from "@/lib/cookieConsent";
+import { EASE_IOS } from "@/lib/motionTokens";
 
 /**
  * Cookie consent banner — mounted once in `Providers`, so it's present on
@@ -57,7 +58,7 @@ export function CookieConsentBanner() {
         initial={reduced ? { opacity: 0 } : { opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         exit={reduced ? { opacity: 0 } : { opacity: 0, y: 24 }}
-        transition={{ duration: reduced ? 0.15 : 0.4, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: reduced ? 0.15 : 0.4, ease: EASE_IOS }}
         className="glass-surface fixed inset-x-4 bottom-4 z-[70] mx-auto max-w-md p-5 sm:inset-x-auto sm:right-4 sm:left-auto"
       >
         <p className="text-small font-medium text-[rgb(var(--c-s-50))]">This site uses cookies</p>

@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { safeCallbackPath } from "@/lib/safeRedirect";
+import { startNavigation } from "@/lib/navigationState";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -24,6 +25,7 @@ function LoginCard() {
   useEffect(() => {
     if (status !== "authenticated") return;
     const safe = safeCallbackPath(callbackUrl);
+    startNavigation();
     router.replace(safe === "/" ? "/dashboard" : safe);
   }, [status, callbackUrl, router]);
 

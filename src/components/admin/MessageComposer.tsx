@@ -1,5 +1,6 @@
 "use client";
 
+import { Collapse } from "@/components/ui/Collapse";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
@@ -254,7 +255,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
                     </p>
                     <p className="mt-1 text-small text-slate-600">{relativeTime(m.createdAt)}</p>
                   </button>
-                  {open && (
+                  <Collapse open={open}>
                     <div className="border-t border-slate-50/10 px-4 pb-4 pt-3">
                       <p className="whitespace-pre-wrap text-small text-slate-200">{m.body}</p>
                       <p className="mt-3 text-small text-slate-500">
@@ -262,7 +263,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
                         {m.readAt ? ` · read ${new Date(m.readAt).toLocaleString()}` : ""}
                       </p>
                     </div>
-                  )}
+                  </Collapse>
                 </div>
               );
             })

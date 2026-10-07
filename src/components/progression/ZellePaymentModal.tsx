@@ -7,6 +7,7 @@ import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { Tabs } from "@/components/ui/Tabs";
 import { QRCodeSVG } from "qrcode.react";
+import { FADE, SPRING } from "@/lib/motionTokens";
 
 export interface ZellePaymentModalProps {
   isOpen: boolean;
@@ -43,7 +44,7 @@ const panelVariants = {
     opacity: 1,
     y: 0,
     scale: 1,
-    transition: { type: "spring", bounce: 0, duration: 0.32 },
+    transition: SPRING.snappy,
   },
   exit: {
     opacity: 0,
@@ -55,7 +56,7 @@ const panelVariants = {
 
 const stepVariants = {
   enter: { opacity: 0, x: 16 },
-  center: { opacity: 1, x: 0, transition: { type: "spring", bounce: 0, duration: 0.36 } },
+  center: { opacity: 1, x: 0, transition: SPRING.smooth },
   exit: { opacity: 0, x: -16, transition: { duration: 0.15 } },
 };
 
@@ -175,7 +176,7 @@ export function ZellePaymentModal({
         >
           <motion.div
             variants={backdropVariants}
-            transition={{ duration: 0.2 }}
+            transition={FADE}
             className="absolute inset-0 bg-scrim/60"
             onClick={handleClose}
           />
@@ -341,7 +342,7 @@ export function ZellePaymentModal({
                     <motion.div
                       initial={{ scale: 0.6, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: "spring", bounce: 0.35, duration: 0.5, delay: 0.05 }}
+                      transition={{ ...SPRING.lively, delay: 0.05 }}
                       className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.1)]"
                     >
                       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[rgb(var(--c-s-50))]" aria-hidden>
@@ -364,7 +365,7 @@ export function ZellePaymentModal({
                     <motion.div
                       initial={{ scale: 0.6, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: "spring", bounce: 0.35, duration: 0.5, delay: 0.05 }}
+                      transition={{ ...SPRING.lively, delay: 0.05 }}
                       className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.1)]"
                     >
                       <motion.svg

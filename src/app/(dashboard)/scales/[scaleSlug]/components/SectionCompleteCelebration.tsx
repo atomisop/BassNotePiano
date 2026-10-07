@@ -4,13 +4,14 @@ import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
+import { SPRING } from "@/lib/motionTokens";
 
 // Same settle-in celebration language as QuizModal's passed state and
 // ZellePaymentModal's confirmation step — reused, not reinvented, per the
 // brief. Spring values match the rest of the app's entrance pattern.
 const panelVariants = {
   hidden: { opacity: 0, y: 24, scale: 0.96 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", bounce: 0, duration: 0.4 } },
+  visible: { opacity: 1, y: 0, scale: 1, transition: SPRING.smooth },
 };
 
 export function SectionCompleteCelebration({
@@ -28,7 +29,7 @@ export function SectionCompleteCelebration({
       <motion.div
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", bounce: 0.35, duration: 0.5, delay: 0.05 }}
+        transition={{ ...SPRING.lively, delay: 0.05 }}
         className="relative mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.08)]"
       >
         <motion.svg
