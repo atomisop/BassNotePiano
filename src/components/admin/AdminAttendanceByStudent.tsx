@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { Collapse } from "@/components/ui/Collapse";
 import { formatDateTime } from "@/lib/classScheduleLabels";
 import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
 
@@ -122,9 +123,9 @@ export function AdminAttendanceByStudent({ occurrences }: { occurrences: Occurre
                     {student.canceled > 0 && <span className={`rounded-full px-2 py-0.5 ${STATE_STYLE.CANCELED}`}>{student.canceled} canceled</span>}
                   </div>
                 </div>
-                <ChevronRight className={`h-4 w-4 shrink-0 text-slate-500 transition ${open ? "rotate-90" : ""}`} aria-hidden />
+                <ChevronRight className={`h-4 w-4 shrink-0 text-slate-500 transition-transform duration-(--dur-base) ease-(--ease-ios) ${open ? "rotate-90" : ""}`} aria-hidden />
               </button>
-              {open && (
+              <Collapse open={open}>
                 <div className="border-t border-slate-50/10 px-4 pb-4 pt-3">
                   <ul className="divide-y divide-slate-50/10">
                     {student.classes.map((c) => (
@@ -141,7 +142,7 @@ export function AdminAttendanceByStudent({ occurrences }: { occurrences: Occurre
                     Open profile
                   </Link>
                 </div>
-              )}
+              </Collapse>
             </li>
           );
         })}

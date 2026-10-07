@@ -129,6 +129,12 @@
 
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
 
+  /* Every Tailwind `transition*` utility without its own duration/curve now
+     uses the same iOS ease, so hover, press and toggle changes all settle the
+     same way instead of mixing 150ms linear-ish easings. */
+  --default-transition-duration: 220ms;
+  --default-transition-timing-function: var(--ease-ios);
+
   /* Page widths for the four shared page layouts in
      components/layout/PageLayouts.tsx. Pages never set their own width;
      they pick a layout, and the layout reads these. */
@@ -144,10 +150,10 @@
   --shadow-card: var(--surface-shadow);
   --shadow-card-lifted: var(--elev-shadow);
 
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-accordion-down: accordion-down 0.3s var(--ease-ios);
+  --animate-accordion-up: accordion-up 0.3s var(--ease-ios);
   --animate-fade-up: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  --animate-fade-in: fade-in 0.5s ease-out forwards;
+  --animate-fade-in: fade-in 0.5s var(--ease-ios) forwards;
   --animate-border-beam: border-beam calc(var(--duration) * 1s) infinite linear;
 
   @keyframes border-beam {
@@ -555,7 +561,7 @@
      not"): lifts on hover, presses down on click, same -2px/+1px and
      shadow-growth physics as marketing's own .btn-primary, so a CTA
      feels identical whether it's rendered by this utility or that one. */
-  transition: filter 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+  transition: filter var(--dur-fast) var(--ease-ios), transform var(--dur-fast) var(--ease-ios), box-shadow var(--dur-fast) var(--ease-ios);
   &:hover {
     filter: brightness(1.1);
     transform: translateY(-2px);
@@ -744,7 +750,7 @@
     body * {
       transition-property: background-color, border-color, color, fill, stroke;
       transition-duration: 220ms;
-      transition-timing-function: ease;
+      transition-timing-function: var(--ease-ios);
     }
   }
 
@@ -862,11 +868,11 @@
   }
 
   .page-enter {
-    animation: page-enter 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: page-enter 380ms var(--ease-ios) both;
   }
 
   .page-enter-fade {
-    animation: page-enter-fade 260ms ease-out both;
+    animation: page-enter-fade 300ms var(--ease-ios) both;
   }
 
   @media (prefers-reduced-motion: reduce) {

@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import { AnimatePresence, motion } from "framer-motion";
 import { OwnerStarBadge } from "@/components/ui/OwnerStar";
+import { popoverVariants } from "@/lib/motionTokens";
 
 // Same glyph AccountSettings.tsx's own "Sign out" row uses (TAB_ICONS.logout)
 // — one logout icon across the app, not a second one invented here.
@@ -89,6 +91,7 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
         {isOwner && <OwnerStarBadge />}
       </button>
 
+      <AnimatePresence>
       {open && (
         // role="region", not "menu": this is plain navigation links plus one
         // action, not an application menu, and declaring "menu" without also
@@ -96,9 +99,14 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
         // ARIA menu obligates) would tell a screen reader user to use arrow
         // keys that then do nothing. Region just labels the group; the
         // links/button inside are already correctly accessible as themselves.
-        <div
+        <motion.div
           role="region"
           aria-label="Account menu"
+          variants={popoverVariants}
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          style={{ transformOrigin: "top right" }}
           className="glass-surface-elevated absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 overflow-hidden p-1.5"
         >
           <div className="flex items-center gap-3 px-2.5 py-2">
@@ -154,8 +162,9 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
             </svg>
             Log out
           </button>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </div>
   );
 }
