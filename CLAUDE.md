@@ -28,7 +28,15 @@ Node 24 pinned (`.nvmrc` / `engines`). A small Vitest suite lives in `tests/`
 `tsc --noEmit`, `next lint`, `next build` and the tests are the correctness
 gates, plus manual verification against a real Postgres (see below). Every
 scheduled Netlify function wraps its body in `runJob` (`src/lib/jobRun.ts`) so
-the owner overview and the morning email can show a job that stopped.
+the owner overview and the morning email can show a job that stopped. A job that
+never ran counts as stopped once the system has been recording longer than its
+window. `job-watchdog` (every 30 minutes) checks them all, emails the owner at
+once, and pings the outside monitor in `HEALTHCHECK_PING_URL` (healthchecks.io,
+`/fail` when something is stopped), so a dead scheduler, database or site is
+noticed from outside; the morning email is only a Monday "all clear" on quiet
+days. Unhandled server errors reach GlitchTip through `onRequestError` in
+`src/instrumentation.ts`; code that catches an error and answers 500 should call
+`reportError` (`src/lib/reportError.ts`) instead of only `console.error`.
 
 ## Repo shape
 

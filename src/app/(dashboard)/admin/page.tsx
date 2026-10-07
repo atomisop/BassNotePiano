@@ -5,7 +5,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { listAudit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
-import { JOB_MAX_SILENCE_HOURS } from "@/lib/jobRun";
+import { getJobStatuses, isStopped } from "@/lib/jobRun";
 import { OverviewStats } from "@/components/admin/OverviewStats";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { ModuleHealthSection, ModuleHealthSkeleton } from "@/components/admin/ModuleHealthSection";
@@ -23,12 +23,7 @@ export default async function AdminOverviewPage() {
   const [activity, jobs, visits] = isOwner
     ? await Promise.all([
         listAudit(20),
-        Promise.all(
-          Object.keys(JOB_MAX_SILENCE_HOURS).map(async (name) => ({
-            name,
-            last: await prisma.jobRun.findFirst({ where: { name }, orderBy: { ranAt: "desc" }, select: { ranAt: true, ok: true } }),
-          })),
-        ),
+        getJobStatuses(),
         prisma.pageHit.groupBy({ by: ["path"], where: { day: { gte: new Date(Date.now() - 7 * 86_400_000) } }, _sum: { count: true }, orderBy: { _sum: { count: "desc" } } }),
       ])
     : [[], [], []];
@@ -131,17 +126,20 @@ export default async function AdminOverviewPage() {
           <section className="glass-surface p-5">
             <h2 className="text-body font-semibold text-slate-50">Scheduled jobs</h2>
             <ul className="mt-3 divide-y divide-slate-50/10">
-              {jobs.map(({ name, last }) => {
-                const late = last ? Date.now() - last.ranAt.getTime() > JOB_MAX_SILENCE_HOURS[name] * 3_600_000 : false;
-                const bad = last ? !last.ok || late : false;
+              {jobs.map((job) => {
+                const bad = isStopped(job.state);
+                const when = job.lastRanAt
+                  ? new Date(job.lastRanAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+                  : null;
+                const text =
+                  job.state === "never" ? "has never run" : job.state === "failed" ? `failed, ${when}` : job.state === "late" ? `late, last ran ${when}` : when ?? "not run yet";
                 return (
-                  <li key={name} className="flex items-center justify-between gap-3 py-2.5 text-small">
-                    <span className="text-slate-200">{name}</span>
-                    <span className={bad ? "text-red-300" : "text-slate-500"}>
-                      {last
-                        ? `${last.ok ? "" : "failed, "}${new Date(last.ranAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`
-                        : "not run yet"}
-                    </span>
+                  <li key={job.name} className="py-2.5 text-small">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-200">{job.name}</span>
+                      <span className={bad ? "text-red-300" : "text-slate-500"}>{text}</span>
+                    </div>
+                    {job.state === "failed" && job.note && <p className="mt-1 break-words text-red-300/80">{job.note}</p>}
                   </li>
                 );
               })}

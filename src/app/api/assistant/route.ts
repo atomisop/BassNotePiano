@@ -3,6 +3,7 @@ import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { headers } from "next/headers";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { reportError } from "@/lib/reportError";
 import { askAssistant, assertAssistantRateLimit, appendPersistedMessages, RateLimitError, type AssistantMessage } from "@/lib/assistant";
 
 const MAX_MESSAGES = 20; // caps both cost and the prompt's own size
@@ -96,7 +97,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ reply });
   } catch (err) {
-    console.error("POST /api/assistant failed:", err);
+    reportError(err, "POST /api/assistant");
     return NextResponse.json({ error: "Something went wrong. Try again in a moment." }, { status: 500 });
   }
 }

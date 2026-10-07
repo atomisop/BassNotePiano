@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { ingestPaymentEmail } from "@/lib/paymentEmail";
+import { reportError } from "@/lib/reportError";
 
 function secretMatches(provided: string, expected: string) {
   const a = Buffer.from(provided);
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
     });
     return NextResponse.json({ outcome });
   } catch (err) {
-    console.error("Payment email ingest failed", err);
+    reportError(err, "Payment email ingest");
     return NextResponse.json({ error: "Could not process." }, { status: 500 });
   }
 }

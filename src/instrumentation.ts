@@ -5,6 +5,13 @@
 // than importing sentry.server.config.ts from some arbitrary server file.
 // Client-side init (sentry.client.config.ts) is wired separately, via
 // next.config.mjs's `withSentryConfig`.
+import * as Sentry from "@sentry/nextjs";
+
+// Next.js calls this for every error it catches in a route, server action or
+// server component that nobody handled, so those reach GlitchTip. Without it
+// they only went to the server log.
+export const onRequestError = Sentry.captureRequestError;
+
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     await import("../sentry.server.config");
