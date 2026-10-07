@@ -16,3 +16,12 @@ export function weekRangeForOccurrence(occurrenceDate: Date): { start: Date; end
   const start = new Date(occurrenceDate.getTime() - occurrenceDate.getUTCDay() * 86_400_000);
   return { start, end: new Date(start.getTime() + 7 * 86_400_000) };
 }
+
+/**
+ * True when an error message sends the student to the team ("message us",
+ * "message support"). The screen then shows a button that opens the case for them,
+ * instead of leaving them to find the message screen.
+ */
+export function errorNeedsTeam(message: string | null | undefined): boolean {
+  return Boolean(message && /\bmessage (us|support)\b/i.test(message));
+}

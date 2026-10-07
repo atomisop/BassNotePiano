@@ -16,7 +16,7 @@ import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { CheckIcon, XIcon } from "@/components/ui/icons";
 import { CLASS_MINUTES, CREDITS_PER_CLASS, EXTRA_CLASS_PRICE_CENTS } from "@/lib/classCreditPricing";
-import { weekRangeForOccurrence } from "@/lib/bookingRules";
+import { errorNeedsTeam, weekRangeForOccurrence } from "@/lib/bookingRules";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { createExtraClassPaymentAction, submitClassCreditsPaymentAction } from "../billing/lessons/actions";
 import type { ZellePaymentStatus } from "@prisma/client";
@@ -817,7 +817,12 @@ export function ClassBookingClient({
       </div>
 
       <div className="mt-(--space-group)">
-        {error && <p className="mb-4 text-small text-red-400" role="alert">{error}</p>}
+        {error && (
+          <div className="mb-4 flex flex-wrap items-center gap-3" role="alert">
+            <p className="text-small text-red-400">{error}</p>
+            {errorNeedsTeam(error) && <MessageSupportButton problem={error} label="Message support about this" />}
+          </div>
+        )}
         {success && <p className="mb-4 text-small text-slate-50" role="status">{success}</p>}
 
         {tab === "book" && (

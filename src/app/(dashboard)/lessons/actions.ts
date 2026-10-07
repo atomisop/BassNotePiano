@@ -19,7 +19,7 @@ import { changeReservedSlot, getActivePaymentPlan, PaymentPlanError } from "@/li
 import { PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { prisma } from "@/lib/prisma";
-import { openBookingSupportCase, AssistantEscalationError } from "@/lib/support";
+import { openBookingSupportCase, openSubjectSupportCase, AssistantEscalationError } from "@/lib/support";
 
 export async function bookClassAction(scheduleId: string, occurrenceDateMs: number, chunkIndex: number, creditsToBook?: number) {
   const session = await getServerAuthSession();
@@ -138,6 +138,33 @@ export async function contactSupportAboutBookingAction(
       { windowMinutes: 60, max: 5, message: "You've already reached out. The team will follow up soon." },
     );
     const { escalationId } = await openBookingSupportCase(session.user.id, bookingId);
+    return { ok: true, escalationId };
+  } catch (err) {
+    if (err instanceof RateLimitError || err instanceof AssistantEscalationError) return { ok: false, error: err.message };
+    return { ok: false, error: "Something went wrong. Please try again." };
+  }
+}
+
+/** The button under an error that says "message support": opens a Booking case quoting what went wrong. */
+export async function contactSupportAboutBookingProblemAction(
+  problem: string,
+): Promise<{ ok: true; escalationId: string } | { ok: false; error: string }> {
+  const session = await getServerAuthSession();
+  if (!session?.user) return { ok: false, error: "Sign in again." };
+  try {
+    await assertRateLimit(
+      prisma.assistantEscalation.count,
+      { identifier: `user:${session.user.id}` },
+      { windowMinutes: 60, max: 5, message: "You've already reached out. The team will follow up soon." },
+    );
+    const quoted = problem.replace(/\s+/g, " ").trim().slice(0, 300);
+    const { escalationId } = await openSubjectSupportCase(session.user.id, {
+      subject: "Booking",
+      contextLine: quoted,
+      request: `I need help with a booking. The app told me: "${quoted}"`,
+      noticeTitle: (name) => `${name} needs help with a booking`,
+      noticeBody: quoted,
+    });
     return { ok: true, escalationId };
   } catch (err) {
     if (err instanceof RateLimitError || err instanceof AssistantEscalationError) return { ok: false, error: err.message };

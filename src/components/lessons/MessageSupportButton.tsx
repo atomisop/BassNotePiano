@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { openAtomWithCase } from "@/lib/atomTrigger";
-import { contactSupportAboutBookingAction } from "@/app/(dashboard)/lessons/actions";
+import { contactSupportAboutBookingAction, contactSupportAboutBookingProblemAction } from "@/app/(dashboard)/lessons/actions";
 
 /**
  * "Message support" on a booked class. Opens a support case with the subject
@@ -11,7 +11,19 @@ import { contactSupportAboutBookingAction } from "@/app/(dashboard)/lessons/acti
  * team knows exactly which class this is about. It no longer drops the student
  * into the general message screen.
  */
-export function MessageSupportButton({ bookingId, className, label = "Message support" }: { bookingId: string; className?: string; label?: string }) {
+export function MessageSupportButton({
+  bookingId,
+  problem,
+  className,
+  label = "Message support",
+}: {
+  /** A booked class this is about. */
+  bookingId?: string;
+  /** Or: what went wrong, quoted to the team (the error the student just saw). */
+  problem?: string;
+  className?: string;
+  label?: string;
+}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,7 +32,7 @@ export function MessageSupportButton({ bookingId, className, label = "Message su
     setBusy(true);
     setError(null);
     try {
-      const result = await contactSupportAboutBookingAction(bookingId);
+      const result = bookingId ? await contactSupportAboutBookingAction(bookingId) : await contactSupportAboutBookingProblemAction(problem ?? "");
       if (!result.ok) {
         setError(result.error);
         return;
