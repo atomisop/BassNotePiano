@@ -8,7 +8,6 @@
 // classCreditPricing) rather than hand-typed numbers, so it can't drift out
 // of sync with what a visitor actually sees on /pricing.
 
-import { GoogleGenAI } from "@google/genai";
 import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
@@ -37,10 +36,39 @@ export function isAssistantConfigured(): boolean {
   return Boolean(process.env.GOOGLE_AI_API_KEY);
 }
 
-let client: GoogleGenAI | null = null;
-function getClient(): GoogleGenAI {
-  if (!client) client = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
-  return client;
+interface GeminiRequest {
+  contents: { role: "user" | "model"; parts: { text: string }[] }[];
+  systemInstruction: string;
+  maxOutputTokens: number;
+  responseMimeType?: string;
+}
+
+/**
+ * One Gemini generateContent call over plain fetch. The SDK is not used here:
+ * in the Netlify production bundle its request came back 401 (empty body)
+ * while this exact key, sent with fetch from the same function, got a 200.
+ */
+async function generateContent(req: GeminiRequest): Promise<{ text: string | undefined; finishReason: string | undefined }> {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+    method: "POST",
+    headers: { "x-goog-api-key": process.env.GOOGLE_AI_API_KEY ?? "", "content-type": "application/json" },
+    body: JSON.stringify({
+      contents: req.contents,
+      systemInstruction: { parts: [{ text: req.systemInstruction }] },
+      generationConfig: { maxOutputTokens: req.maxOutputTokens, responseMimeType: req.responseMimeType },
+    }),
+    signal: AbortSignal.timeout(25_000),
+  });
+  if (!res.ok) throw new Error(`Gemini API ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  const data = (await res.json()) as {
+    candidates?: { finishReason?: string; content?: { parts?: { text?: string; thought?: boolean }[] } }[];
+  };
+  const candidate = data.candidates?.[0];
+  const text = (candidate?.content?.parts ?? [])
+    .filter((part) => typeof part.text === "string" && !part.thought)
+    .map((part) => part.text)
+    .join("");
+  return { text: text || undefined, finishReason: candidate?.finishReason };
 }
 
 // ---------------------------------------------------------------------------
@@ -295,11 +323,10 @@ export async function generateSuggestions(history: AssistantMessage[], visitor: 
   if (!isAssistantConfigured() || history.length === 0) return [];
 
   const asked = history.filter((m) => m.role === "user").map((m) => m.content);
-  const response = await getClient().models.generateContent({
-    model: MODEL,
+  const response = await generateContent({
     contents: [
       ...history.map((m) => ({
-        role: m.role === "assistant" ? "model" : "user",
+        role: (m.role === "assistant" ? "model" : "user") as "user" | "model",
         parts: [{ text: m.content }],
       })),
       {
@@ -315,11 +342,9 @@ export async function generateSuggestions(history: AssistantMessage[], visitor: 
         ],
       },
     ],
-    config: {
-      systemInstruction: buildSystemPrompt(visitor),
-      maxOutputTokens: 2000,
-      responseMimeType: "application/json",
-    },
+    systemInstruction: buildSystemPrompt(visitor),
+    maxOutputTokens: 2000,
+    responseMimeType: "application/json",
   });
 
   try {
@@ -331,48 +356,8 @@ export async function generateSuggestions(history: AssistantMessage[], visitor: 
       .filter((q) => q.length > 0 && q.length <= 80)
       .slice(0, 4);
   } catch {
-    console.error("Atom suggestions: unparseable model output:", JSON.stringify(response.text)?.slice(0, 200), response.candidates?.[0]?.finishReason);
+    console.error("Atom suggestions: unparseable model output:", JSON.stringify(response.text)?.slice(0, 200), response.finishReason);
     return [];
-  }
-}
-
-/**
- * Called when the chat's Gemini request fails. The SDK's own error carries
- * almost nothing for an auth failure (an empty 401), so this repeats the
- * request once with plain fetch and logs what Google actually answers, plus
- * the shape of the key (never its characters beyond the fixed prefix).
- */
-async function logGeminiFailure(err: unknown): Promise<void> {
-  try {
-    const key = process.env.GOOGLE_AI_API_KEY ?? "";
-    const shape = {
-      length: key.length,
-      hasWhitespace: /\s/.test(key),
-      hasQuote: /["']/.test(key),
-      startsWithAQ: key.startsWith("AQ."),
-      startsWithAIza: key.startsWith("AIza"),
-    };
-    const status = (err as { status?: unknown })?.status;
-    let probe: unknown = "skipped";
-    if (key) {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
-        method: "POST",
-        headers: { "x-goog-api-key": key, "content-type": "application/json" },
-        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "ping" }] }] }),
-        signal: AbortSignal.timeout(5000),
-      });
-      const body = (await res.text()).slice(0, 400);
-      probe = {
-        status: res.status,
-        wwwAuthenticate: res.headers.get("www-authenticate"),
-        server: res.headers.get("server"),
-        via: res.headers.get("via"),
-        body: res.status === 200 ? "ok" : body,
-      };
-    }
-    console.error("Atom Gemini failure diagnostics:", JSON.stringify({ sdkStatus: status, keyShape: shape, awsRegion: process.env.AWS_REGION ?? null, probe }));
-  } catch (diagErr) {
-    console.error("Atom Gemini diagnostics failed:", String(diagErr));
   }
 }
 
@@ -384,27 +369,18 @@ export async function askAssistant(
     return "I'm not fully set up yet, the studio hasn't connected my question-answering service. In the meantime, check /pricing for costs, /terms and /privacy for policies, or message the studio directly for anything account-specific.";
   }
 
-  let response;
-  try {
-    response = await getClient().models.generateContent({
-      model: MODEL,
-      // Gemini calls the assistant's own turns "model", not "assistant" —
-      // translated here so the rest of the app (the widget, the route
-      // handler) can keep using the more universally-recognized "assistant",
-      // matching how every other chat surface in this codebase names roles.
-      contents: history.map((m) => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }],
-      })),
-      config: {
-        systemInstruction: buildSystemPrompt(visitor),
-        maxOutputTokens: MAX_OUTPUT_TOKENS,
-      },
-    });
-  } catch (err) {
-    await logGeminiFailure(err);
-    throw err;
-  }
+  const response = await generateContent({
+    // Gemini calls the assistant's own turns "model", not "assistant" —
+    // translated here so the rest of the app (the widget, the route
+    // handler) can keep using the more universally-recognized "assistant",
+    // matching how every other chat surface in this codebase names roles.
+    contents: history.map((m) => ({
+      role: (m.role === "assistant" ? "model" : "user") as "user" | "model",
+      parts: [{ text: m.content }],
+    })),
+    systemInstruction: buildSystemPrompt(visitor),
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
+  });
 
   return response.text ?? "Sorry, I didn't catch that, could you try asking again?";
 }
