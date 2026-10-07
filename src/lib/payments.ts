@@ -737,6 +737,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
     title: "Payment approved",
     body: notificationBody,
     emailCategory: "payments",
+    alwaysEmail: true,
   });
 
   // A completed plan is a distinct milestone worth its own bell entry, on
@@ -908,6 +909,7 @@ export async function rejectZellePayment(paymentId: string, reviewerId: string, 
     title: "Payment rejected",
     body: `Your payment couldn't be verified: ${reason}. You can resubmit it from your billing page.`,
     emailCategory: "payments",
+    alwaysEmail: true,
   });
 }
 
@@ -917,3 +919,8 @@ export async function getOwnPaymentStatus(userId: string, paymentId: string): Pr
   return payment?.status ?? null;
 }
 
+
+/** When one of the caller's own payments was submitted, for the "how long has it been waiting" notice. */
+export async function getOwnPaymentWaitInfo(userId: string, paymentId: string): Promise<{ status: ZellePaymentStatus; submittedAt: Date | null; amountCents: number } | null> {
+  return prisma.zellePayment.findFirst({ where: { id: paymentId, userId }, select: { status: true, submittedAt: true, amountCents: true } });
+}

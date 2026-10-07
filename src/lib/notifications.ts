@@ -13,6 +13,8 @@ export interface CreateNotificationParams {
   body?: string;
   /** If set, also emails the user provided their matching notifyEmail* preference is on. */
   emailCategory?: EmailCategory;
+  /** Send the email even if the person switched this category off: for a result they are waiting on, like a payment clearing. */
+  alwaysEmail?: boolean;
   /** Overrides the default button for this type, e.g. a deep link to the exact page. `path` is an in-app path. */
   cta?: { label: string; path?: string; url?: string };
 }
@@ -111,7 +113,7 @@ export async function createNotification(params: CreateNotificationParams) {
       });
 
   if (params.emailCategory) {
-    await maybeSendEmail(params.userId, params.emailCategory, params.title, params.body, cta).catch((err) =>
+    await maybeSendEmail(params.userId, params.emailCategory, params.title, params.body, cta, params.alwaysEmail).catch((err) =>
       console.error("Notification email failed (non-blocking):", err),
     );
   }
@@ -125,6 +127,7 @@ async function maybeSendEmail(
   title: string,
   body?: string,
   cta?: NotificationCta,
+  force = false,
 ) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -144,7 +147,7 @@ async function maybeSendEmail(
     social: user.notifyEmailSocial,
     reminders: user.notifyEmailReminders,
   };
-  if (!enabled[category]) return;
+  if (!enabled[category] && !force) return;
 
   if (cta) {
     await sendNotificationEmailWithCta(user.email, title, body ?? "", { label: cta.label, url: cta.url }, cta.kind);
