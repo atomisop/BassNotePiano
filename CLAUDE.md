@@ -34,7 +34,7 @@ window. `job-watchdog` (every 30 minutes) checks them all, emails the owner at
 once, and pings the outside monitor in `HEALTHCHECK_PING_URL` (healthchecks.io,
 `/fail` when something is stopped), so a dead scheduler, database or site is
 noticed from outside; the morning email is only a Monday "all clear" on quiet
-days. Unhandled server errors reach GlitchTip through `onRequestError` in
+days. A daily `mail-chain-probe` job sends a test email to music@ (subject `BNP mail check <token>`); the Mailgun route records its arrival (`src/lib/mailProbe.ts`, rows in `JobRun`), and the watchdog raises a problem naming the links to check if one never arrives. Unhandled server errors reach GlitchTip through `onRequestError` in
 `src/instrumentation.ts`; code that catches an error and answers 500 should call
 `reportError` (`src/lib/reportError.ts`) instead of only `console.error`.
 

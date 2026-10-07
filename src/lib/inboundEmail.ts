@@ -118,3 +118,16 @@ export function isSenderAuthenticated(headers: Map<string, string>): boolean {
 export function isStudioRecipient(recipient: string): boolean {
   return /^music@([a-z0-9-]+\.)*bassnotepiano\.com$/i.test(recipient.trim());
 }
+
+/** Every daily test email to the studio inbox starts its subject with this, then a random token. */
+export const PROBE_SUBJECT_PREFIX = "BNP mail check";
+
+export function makeProbeSubject(token: string): string {
+  return `${PROBE_SUBJECT_PREFIX} ${token}`;
+}
+
+/** The token in a test email's subject, whatever Re:/Fwd: prefixes forwarding added. Null for any other subject. */
+export function parseProbeToken(subject: string): string | null {
+  const match = new RegExp(`^(?:\\s*(?:re|fwd?|aw)\\s*:\\s*)*${PROBE_SUBJECT_PREFIX}\\s+([a-z0-9]{16,64})\\s*$`, "i").exec(subject);
+  return match ? match[1].toLowerCase() : null;
+}

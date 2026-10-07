@@ -3,6 +3,7 @@ import { getJobStatuses, runJob } from "../../src/lib/jobRun";
 import { prisma } from "../../src/lib/prisma";
 import { OWNER_EMAIL } from "../../src/lib/adminNotifications";
 import { sendNotificationEmailWithCta, getAppUrl } from "../../src/lib/email";
+import { findMailChainProblem } from "../../src/lib/mailProbe";
 import { pingMonitor, problemsFromStatuses, runWatchdog } from "../../src/lib/jobWatchdog";
 
 const ALERT_ROW = "watchdog-alert";
@@ -15,7 +16,11 @@ const ALERT_ROW = "watchdog-alert";
 export const handler = schedule("*/30 * * * *", async () =>
   runJob("job-watchdog", async () => {
     const result = await runWatchdog({
-      findProblems: async () => problemsFromStatuses(await getJobStatuses()),
+      findProblems: async () => {
+        const problems = problemsFromStatuses(await getJobStatuses());
+        const mail = await findMailChainProblem();
+        return mail ? [...problems, mail] : problems;
+      },
       getLastAlert: () => prisma.jobRun.findFirst({ where: { name: ALERT_ROW }, orderBy: { ranAt: "desc" }, select: { note: true, ranAt: true } }),
       recordAlert: async (note) => {
         await prisma.jobRun.create({ data: { name: ALERT_ROW, ok: true, note: note.slice(0, 1000) } });

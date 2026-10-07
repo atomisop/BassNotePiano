@@ -7,6 +7,7 @@ import { SCALE_SLUGS } from "@/lib/curriculum";
 import { createNotification } from "@/lib/notifications";
 import { countUnmatchedReceipts, getPaymentPipelineHealth } from "@/lib/paymentPipelineStatus";
 import { findStoppedJobs } from "@/lib/jobRun";
+import { findMailChainProblem } from "@/lib/mailProbe";
 import { getAtomAlertState } from "@/lib/atomHealth";
 import { GEMINI_BILLING_URL } from "@/lib/atomFailure";
 
@@ -481,7 +482,7 @@ export interface AttentionItem {
 /** Everything waiting on the owner or staff right now, each with the page that handles it. Items with nothing waiting are left out. */
 export async function getAttentionItems(): Promise<AttentionItem[]> {
   const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000);
-  const [payments, applications, chats, unmarked, progress, uncheckedAuto, unmatchedEmails, pipeline, stoppedJobs, atom] = await Promise.all([
+  const [payments, applications, chats, unmarked, progress, uncheckedAuto, unmatchedEmails, pipeline, stoppedJobs, atom, mailProblem] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
     prisma.classRegistration.count({ where: { status: "PENDING" } }),
     prisma.assistantEscalation.count({ where: { status: "OPEN" } }),
@@ -494,6 +495,7 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
     // Employees are admins too and never saw this: the jobs table below is owner only.
     findStoppedJobs(),
     getAtomAlertState(),
+    findMailChainProblem(),
   ]);
   const readyScales = progress.filter((p) => p.hasCurriculumAccess && p.accessKind !== "ADMIN" && p.nextApproval.state === "READY").length;
   const items: AttentionItem[] = [
@@ -509,6 +511,7 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
       count: stoppedJobs.length,
       href: "/admin",
     },
+    { label: "Studio email (music@) is not reaching the site: check the forwarding chain", count: mailProblem ? 1 : 0, href: "/admin/support?source=email" },
     {
       label: atom?.note === "busy" ? "Atom keeps failing (Google may be slow)" : "Atom can't answer: check Gemini credits and the key",
       count: atom ? 1 : 0,

@@ -3,12 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { consumeRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { ingestInboundEmail } from "@/lib/support";
 import { reportError } from "@/lib/reportError";
+import { recordProbeReceived } from "@/lib/mailProbe";
 import {
   isAutomatedMail,
   isSenderAuthenticated,
   isStudioRecipient,
   parseMessageHeaders,
   parseMessageIds,
+  parseProbeToken,
   parseSender,
   verifyMailgunSignature,
 } from "@/lib/inboundEmail";
@@ -51,6 +53,18 @@ export async function POST(req: Request) {
 
   if (!isStudioRecipient(field("recipient"))) {
     return NextResponse.json({ outcome: "ignored", reason: "not for the studio inbox" });
+  }
+
+  // The daily test email proves the whole chain works. It is recorded and never becomes a thread.
+  const probeToken = parseProbeToken(field("subject"));
+  if (probeToken) {
+    try {
+      const known = await recordProbeReceived(probeToken);
+      return NextResponse.json({ outcome: known ? "probe" : "ignored" });
+    } catch (err) {
+      reportError(err, "Inbound mail test");
+      return NextResponse.json({ error: "Could not process." }, { status: 500 });
+    }
   }
 
   const headers = parseMessageHeaders(field("message-headers"));
