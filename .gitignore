@@ -54,3 +54,6 @@ next-env.d.ts
 # 3D piano model (Step 6 feasibility work), licensing was never confirmed
 # (see Step 1's audit). Local-only until that's resolved; do not commit.
 /public/models
+
+# macOS Finder duplicates ("name 2.ext"): never commit these; Netlify rejects function names with spaces
+* [0-9].*
