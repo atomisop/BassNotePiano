@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { RESEND_CLICKS_BEFORE_HELP, useResendCooldown } from "@/hooks/useResendCooldown";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
@@ -70,11 +71,24 @@ function ResetPasswordForm() {
     router.refresh();
   }
 
+  const cooldown = useResendCooldown();
+
   async function handleResend() {
+    if (cooldown.secondsLeft > 0) return;
     setError(null);
     setResent(false);
-    await resendResetCodeAction(email);
+    try {
+      const result = await resendResetCodeAction(email);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+    } catch {
+      setError("That didn't go through. Check your connection and try again.");
+      return;
+    }
     setResent(true);
+    cooldown.start();
   }
 
   if (!email) {
@@ -209,7 +223,7 @@ function ResetPasswordForm() {
         )}
         {resent && (
           <p role="status" className="text-small text-slate-50">
-            New code sent.
+            If this address has an account, a new code is on its way. It can take a minute, and it may land in spam.
           </p>
         )}
 
@@ -221,10 +235,16 @@ function ResetPasswordForm() {
       <button
         type="button"
         onClick={handleResend}
-        className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-2 w-full sm:mt-4"
+        disabled={cooldown.secondsLeft > 0}
+        className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-2 w-full sm:mt-4 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Didn&apos;t get a code? Resend
+        {cooldown.secondsLeft > 0 ? `You can ask again in ${cooldown.secondsLeft}s` : "Didn't get a code? Resend"}
       </button>
+      {cooldown.clicks >= RESEND_CLICKS_BEFORE_HELP && (
+        <p className="mt-3 text-center text-small text-slate-500">
+          Still nothing? Email <a href="mailto:music@bassnotepiano.com" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">music@bassnotepiano.com</a> and we&apos;ll sort it out by hand.
+        </p>
+      )}
     </motion.div>
   );
 }
