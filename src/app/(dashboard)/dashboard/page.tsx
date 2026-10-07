@@ -5,7 +5,7 @@ import { getRoadmap } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { BADGES } from "@/lib/badges";
 import { DAILY_GOAL_SECONDS, getFingerPracticeStatus } from "@/lib/fingerPractice";
-import { resolveNextStep, summariseProgress } from "@/lib/next-step";
+import { putFingerPracticeFirst, resolveNextStep, summariseProgress } from "@/lib/next-step";
 import { cn } from "@/lib/utils";
 import { ScaleRoadmap } from "@/components/progression/ScaleRoadmap";
 import { StreakDots } from "@/components/gamification/StreakDots";
@@ -80,7 +80,11 @@ export default async function DashboardPage() {
   ]);
 
   const progress = summariseProgress(roadmap);
-  const nextStep = resolveNextStep(roadmap);
+  const nextStep = putFingerPracticeFirst(resolveNextStep(roadmap), {
+    required: session.user.role !== "ADMIN",
+    completedToday: practice.completedToday,
+    minutesLeft: Math.max(0, Math.ceil((DAILY_GOAL_SECONDS - practice.todaySeconds) / 60)),
+  });
   const earnedBadgeCodes = badgeRows.map((b) => b.code);
 
   const streak = user?.currentStreak ?? 0;

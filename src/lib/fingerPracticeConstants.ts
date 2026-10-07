@@ -25,3 +25,21 @@ export interface FingerPracticeStatus {
   streak: number;
 }
 
+
+/**
+ * Where "Start practice" sends the student afterwards. Only a scale page is
+ * accepted, so the practice link can never be used to bounce someone elsewhere.
+ */
+export function safePracticeNext(raw: string | null | undefined): string | null {
+  return raw && /^\/scales\/[a-z0-9][a-z0-9-]{0,80}$/i.test(raw) ? raw : null;
+}
+
+/** The link to the practice screen that returns to a lesson page once the 10 minutes are done. */
+export function practiceHref(next: string | null | undefined): string {
+  const safe = safePracticeNext(next);
+  return safe ? `/practice?next=${encodeURIComponent(safe)}` : "/practice";
+}
+
+export function minutesLeft(todaySeconds: number, goalSeconds: number = DAILY_GOAL_SECONDS): number {
+  return Math.max(0, Math.ceil((goalSeconds - todaySeconds) / 60));
+}

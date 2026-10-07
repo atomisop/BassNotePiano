@@ -3,10 +3,11 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getFingerPracticeStatus } from "@/lib/fingerPractice";
 import { WideLayout } from "@/components/layout/PageLayouts";
+import { safePracticeNext } from "@/lib/fingerPracticeConstants";
 import { PracticeClient } from "./PracticeClient";
 import { practiceBeatAction } from "./actions";
 
-export default async function PracticePage() {
+export default async function PracticePage({ searchParams }: { searchParams: { next?: string } }) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/practice");
 
@@ -21,6 +22,7 @@ export default async function PracticePage() {
         initialStatus={status}
         defaultInstrument={user?.primaryInstrument === "GUITAR" || user?.primaryInstrument === "BASS" ? "GUITAR" : "PIANO"}
         onBeat={practiceBeatAction}
+        nextHref={safePracticeNext(searchParams.next)}
       />
     </WideLayout>
   );

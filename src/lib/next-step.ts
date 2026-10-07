@@ -14,6 +14,7 @@
 // ============================================================================
 
 import type { ScaleAccessState } from "@/lib/access";
+import { practiceHref, safePracticeNext } from "@/lib/fingerPracticeConstants";
 
 export type NextStepKind =
   | "buy-curriculum"
@@ -140,5 +141,24 @@ export function summariseProgress(roadmap: ScaleAccessState[]) {
     itemsDone,
     itemsTotal,
     percent: itemsTotal === 0 ? 0 : Math.round((itemsDone / itemsTotal) * 100),
+  };
+}
+
+/**
+ * Lessons only open once today's 10 minutes of finger exercises are done (the
+ * gate on the scale page). So when the next step is a lesson and the practice is
+ * not done, say that plainly and send the student to the exercises, with a way
+ * straight back, instead of dropping them in front of a locked page.
+ */
+export function putFingerPracticeFirst(step: NextStep, practice: { required: boolean; completedToday: boolean; minutesLeft: number }): NextStep {
+  if (!practice.required || practice.completedToday || !safePracticeNext(step.href)) return step;
+  const name = step.scale ? (step.scale.scaleGroup.kinitName ?? step.scale.scaleGroup.title) : "your lesson";
+  return {
+    kind: "log-practice",
+    scale: step.scale,
+    action: "Do today's finger exercises first",
+    detail: `Lessons open after 10 minutes of finger exercises each day. ${practice.minutesLeft} minute${practice.minutesLeft === 1 ? "" : "s"} left, then you go straight to ${name}.`,
+    href: practiceHref(step.href),
+    cta: "Start finger exercises",
   };
 }
