@@ -10,6 +10,7 @@ import { ScaleListRows } from "@/components/progression/ScaleListRows";
 import { BadgeGrid } from "@/components/gamification/BadgeGrid";
 import { Tabs } from "@/components/ui/Tabs";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { startNavigation } from "@/lib/navigationState";
 
 type HomeTab = "progress" | "completed" | "badges";
 
@@ -60,6 +61,7 @@ export function ScaleRoadmap({ roadmap, earnedBadgeCodes }: ScaleRoadmapProps) {
 
   function handleCardClick(scale: ScaleAccessState) {
     // A locked scale opens a page that says why it is locked and what to do about it.
+    startNavigation();
     router.push(`/scales/${scale.scaleGroup.slug}`);
   }
 

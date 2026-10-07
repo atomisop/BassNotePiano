@@ -14,6 +14,7 @@ import { ArrowLeftIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { verifyEmailAction, resendVerificationEmailAction } from "./actions";
+import { startNavigation } from "@/lib/navigationState";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -50,6 +51,7 @@ function VerifyEmailForm() {
       return;
     }
 
+    startNavigation();
     router.push(safeCallbackPath(callbackUrl));
     router.refresh();
   }

@@ -14,6 +14,7 @@ import { setFullscreenNavOpen } from "@/lib/overlayNav";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { EASE_IOS } from "@/lib/motionTokens";
+import { startNavigation } from "@/lib/navigationState";
 
 /**
  * The homepage header.
@@ -416,7 +417,10 @@ export function MarketingNav() {
                   </Link>
                   <button
                     type="button"
-                    onClick={() => signOut({ callbackUrl: "/" })}
+                    onClick={() => {
+                      startNavigation();
+                      void signOut({ callbackUrl: "/" });
+                    }}
                     className="display-3 border-b border-[rgb(var(--c-s-50)/0.08)] py-6 text-left text-[rgb(var(--c-s-300))]"
                   >
                     Log out

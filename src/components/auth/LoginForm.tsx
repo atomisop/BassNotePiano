@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { loginStepOneAction, requestLoginCodeAction } from "@/app/(auth)/login/actions";
+import { startNavigation } from "@/lib/navigationState";
 
 /**
  * The email-and-password login form, shared by the /login page and the Log in
@@ -71,6 +72,7 @@ export function LoginForm({
     const safe = safeCallbackPath(callbackUrl);
     const target = embedded || safe === "/" ? "/dashboard" : safe;
     if (embedded) onSuccess?.();
+    startNavigation();
     router.push(target);
     router.refresh();
   }
@@ -121,6 +123,7 @@ export function LoginForm({
     if (result.needsEmailVerification) {
       const params = new URLSearchParams({ email, callbackUrl });
       onNavigateAway?.();
+      startNavigation();
       router.push(`/verify-email?${params}`);
       return;
     }

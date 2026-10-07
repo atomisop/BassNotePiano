@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { OwnerStarBadge } from "@/components/ui/OwnerStar";
 import { popoverVariants } from "@/lib/motionTokens";
+import { startNavigation } from "@/lib/navigationState";
 
 // Same glyph AccountSettings.tsx's own "Sign out" row uses (TAB_ICONS.logout)
 // — one logout icon across the app, not a second one invented here.
@@ -154,7 +155,10 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
 
           <button
             type="button"
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={() => {
+              startNavigation();
+              void signOut({ callbackUrl: "/" });
+            }}
             className="tap flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-small text-slate-400 transition hover:bg-slate-800/60 hover:text-slate-200"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>

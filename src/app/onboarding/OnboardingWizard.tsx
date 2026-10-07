@@ -9,6 +9,7 @@ import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { saveOnboardingAction, checkUsernameAvailableAction } from "./actions";
 import { Stepper } from "@/components/ui/Stepper";
+import { startNavigation } from "@/lib/navigationState";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -126,6 +127,7 @@ export function OnboardingWizard() {
     }
 
     await update();
+    startNavigation();
     router.push("/dashboard");
     router.refresh();
   }
