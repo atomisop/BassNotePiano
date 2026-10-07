@@ -113,3 +113,8 @@ export function isSenderAuthenticated(headers: Map<string, string>): boolean {
   const pass = (value: string | undefined) => value?.trim().toLowerCase() === "pass";
   return pass(headers.get("x-mailgun-dkim-check-result")) || pass(headers.get("x-mailgun-spf"));
 }
+
+/** The studio inbox: music@ on the main domain or on any of its subdomains (a forwarded copy arrives at music@inbox.bassnotepiano.com). */
+export function isStudioRecipient(recipient: string): boolean {
+  return /^music@([a-z0-9-]+\.)*bassnotepiano\.com$/i.test(recipient.trim());
+}

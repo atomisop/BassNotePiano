@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   isAutomatedMail,
   isSenderAuthenticated,
+  isStudioRecipient,
   normalizeSubject,
   parseMessageHeaders,
   parseMessageIds,
@@ -104,5 +105,18 @@ describe("isSenderAuthenticated", () => {
   it("rejects a fail, a softfail and no result", () => {
     expect(isSenderAuthenticated(headers([["X-Mailgun-Dkim-Check-Result", "Fail"], ["X-Mailgun-Spf", "SoftFail"]]))).toBe(false);
     expect(isSenderAuthenticated(new Map())).toBe(false);
+  });
+});
+
+describe("isStudioRecipient", () => {
+  it("accepts music@ on the domain and on a subdomain", () => {
+    expect(isStudioRecipient("music@bassnotepiano.com")).toBe(true);
+    expect(isStudioRecipient("Music@Inbox.BassNotePiano.com")).toBe(true);
+  });
+  it("rejects other addresses and look-alike domains", () => {
+    expect(isStudioRecipient("info@bassnotepiano.com")).toBe(false);
+    expect(isStudioRecipient("music@evilbassnotepiano.com")).toBe(false);
+    expect(isStudioRecipient("music@bassnotepiano.com.evil.com")).toBe(false);
+    expect(isStudioRecipient("")).toBe(false);
   });
 });

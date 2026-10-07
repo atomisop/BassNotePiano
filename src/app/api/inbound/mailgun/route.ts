@@ -5,6 +5,7 @@ import { ingestInboundEmail } from "@/lib/support";
 import {
   isAutomatedMail,
   isSenderAuthenticated,
+  isStudioRecipient,
   parseMessageHeaders,
   parseMessageIds,
   parseSender,
@@ -13,15 +14,15 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const STUDIO_ADDRESS = "music@bassnotepiano.com";
 // One address cannot flood the Email tab, and nor can everyone at once.
 const PER_SENDER_LIMIT = { windowMinutes: 60, max: 20 };
 const OVERALL_LIMIT = { windowMinutes: 60, max: 300 };
 
 /**
- * Receives email sent to music@bassnotepiano.com. A Mailgun route posts each
- * message here (Mailgun dashboard > Receiving > Routes, action "Forward" to
- * this URL, alongside the forward to the owner's Gmail). Nothing is trusted
+ * Receives email sent to the studio inbox. The domain's own mail is handled by
+ * Squarespace's forwarding, so a copy of each music@ message is forwarded to
+ * music@inbox.bassnotepiano.com, a subdomain on the owner's own Mailgun
+ * account, whose route (Receiving > Routes) posts it here. Nothing is trusted
  * until Mailgun's signature checks out against MAILGUN_SIGNING_KEY.
  *
  * Mailgun retries on any answer other than 200 or 406, so a message we choose
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
   });
   if (!verified) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
 
-  if (!field("recipient").toLowerCase().includes(STUDIO_ADDRESS)) {
+  if (!isStudioRecipient(field("recipient"))) {
     return NextResponse.json({ outcome: "ignored", reason: "not for the studio inbox" });
   }
 
