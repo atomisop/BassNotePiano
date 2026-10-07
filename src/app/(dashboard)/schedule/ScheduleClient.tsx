@@ -12,6 +12,7 @@ import type { ReservableSlot } from "@/lib/classSchedule";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
+import { errorNeedsTeam } from "@/lib/bookingRules";
 
 interface UpcomingBooking {
   id: string;
@@ -253,7 +254,12 @@ export function ScheduleClient({
                 </div>
               );
             })}
-            {skipError && <p className="text-small text-red-400">{skipError}</p>}
+            {skipError && (
+              <div className="flex flex-wrap items-center gap-3" role="alert">
+                <p className="text-small text-red-400">{skipError}</p>
+                {errorNeedsTeam(skipError) && <MessageSupportButton problem={skipError} label="Message support about this" />}
+              </div>
+            )}
           </div>
         )}
 
