@@ -344,6 +344,57 @@ async function assertNoOtherBookingSameDay(
 }
 
 /**
+ * Classes a subscriber may hold in one week through their credits: one. A
+ * subscriber's monthly credits are meant to pay for their weekly class, so
+ * having credits left over (after a skip, a cancel, or a bonus grant) must not
+ * be a way to book a second class that week. More time that week is bought as
+ * an extra session, which is paid separately and never goes through here.
+ */
+export const SUBSCRIBER_CLASSES_PER_WEEK = 1;
+
+/** Sunday 00:00 UTC of the week holding an occurrenceDate (a UTC-midnight stand-in for an ET calendar day), and the Sunday after. */
+export function weekRangeForOccurrence(occurrenceDate: Date): { start: Date; end: Date } {
+  const start = new Date(occurrenceDate.getTime() - occurrenceDate.getUTCDay() * 86_400_000);
+  return { start, end: new Date(start.getTime() + 7 * 86_400_000) };
+}
+
+/**
+ * Refuses a booking that would give a payment-plan subscriber a second class in
+ * the same Sunday to Saturday week. `ignoreBookingId` is the class being moved
+ * (a reschedule), `ignoreSlot` the exact schedule and day being re-booked by
+ * its own row. Students without a live plan are not limited here.
+ */
+async function assertWithinSubscriberWeeklyLimit(
+  tx: Prisma.TransactionClient,
+  studentId: string,
+  occurrenceDate: Date,
+  ignore: { bookingId?: string; scheduleId?: string },
+): Promise<void> {
+  const plan = await tx.paymentPlan.findFirst({
+    where: { userId: studentId, OR: livePaymentPlanConditions() },
+    select: { id: true },
+  });
+  if (!plan) return;
+  const { start, end } = weekRangeForOccurrence(occurrenceDate);
+  const held = await tx.classBooking.count({
+    where: {
+      studentId,
+      status: { in: ["SCHEDULED", "COMPLETED"] },
+      occurrenceDate: { gte: start, lt: end },
+      NOT: [
+        ...(ignore.bookingId ? [{ id: ignore.bookingId }] : []),
+        ...(ignore.scheduleId ? [{ scheduleId: ignore.scheduleId, occurrenceDate }] : []),
+      ],
+    },
+  });
+  if (held >= SUBSCRIBER_CLASSES_PER_WEEK) {
+    throw new ClassBookingError(
+      "You already have your class for that week. Your credits cover one class a week. You can add an extra session from the Extra sessions tab.",
+    );
+  }
+}
+
+/**
  * Books a specific occurrence for one student alone. Solo 1:1 is the
  * default tier now: every booking is one class of CLASS_MINUTES (45), which
  * costs CREDITS_PER_CLASS internal credits; `creditsToBook`, if passed, must
@@ -461,6 +512,7 @@ export async function bookClass(
         // open self-service, not something it should also block.
         if (!options.isAdminAssisted) {
           await assertNoOtherBookingSameDay(tx, studentId, occurrenceDate, scheduleId);
+          await assertWithinSubscriberWeeklyLimit(tx, studentId, occurrenceDate, { scheduleId });
         }
 
         const [user, pending] = await Promise.all([
@@ -581,6 +633,38 @@ async function notifyAdminsOfBooking(
       }),
     ),
   );
+}
+
+/**
+ * Tells the admins when a student cancels or moves a class on their own, with
+ * their name and the times, so the teacher never finds out by an empty chair.
+ * `to` present means a reschedule. Never throws: a notification hiccup must
+ * not undo a real cancel or move.
+ */
+async function notifyAdminsOfSelfChange(
+  studentId: string,
+  change: { from: Date; to?: Date },
+) {
+  try {
+    const [student, admins] = await Promise.all([
+      prisma.user.findUnique({ where: { id: studentId }, select: { name: true, email: true } }),
+      getAdminRecipients("NEW_BOOKING"),
+    ]);
+    const who = student?.name ?? student?.email ?? "A student";
+    const title = change.to ? `${who} rescheduled a class` : `${who} canceled a class`;
+    const body = change.to
+      ? `${who} rescheduled from ${formatEtDateTime(change.from)} to ${formatEtDateTime(change.to)}.`
+      : `${who} canceled their ${formatEtDateTime(change.from)} class.`;
+    await Promise.all(
+      admins.map((admin) =>
+        createNotification({ userId: admin.id, type: "LESSON_BOOKING_CANCELED", title, body, emailCategory: "social" }).catch((err) =>
+          console.error("Admin self-change notification failed (non-blocking):", err),
+        ),
+      ),
+    );
+  } catch (err) {
+    console.error("Admin self-change notification failed (non-blocking):", err);
+  }
 }
 
 async function notifyAdminsOfFamilyBooking(
@@ -1265,6 +1349,8 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
     emailCategory: "social",
   });
 
+  await notifyAdminsOfSelfChange(studentId, { from: booking.scheduledAt });
+
   return { refunded: true };
 }
 
@@ -1303,9 +1389,6 @@ export async function rescheduleClassBooking(
   const oldBooking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
   if (oldBooking.studentId !== studentId) throw new ClassBookingError("Not your booking.");
   if (oldBooking.status !== "SCHEDULED") throw new ClassBookingError("This booking isn't active.");
-  if (oldBooking.reservedByPlanId) {
-    throw new ClassBookingError("Your weekly class is set by your payment plan. Change your reserved day from the Lessons page instead.");
-  }
 
   const hoursUntil = (oldBooking.scheduledAt.getTime() - Date.now()) / 3_600_000;
   if (hoursUntil < CANCELLATION_CUTOFF_HOURS) {
@@ -1379,6 +1462,8 @@ export async function rescheduleClassBooking(
           throw new ClassBookingError("You can only book one class per day, message support if you need a second class on the same day.");
         }
 
+        await assertWithinSubscriberWeeklyLimit(tx, studentId, newOccurrenceDate, { bookingId: oldBooking.id });
+
         const [user, pendingOthers] = await Promise.all([
           tx.user.findUniqueOrThrow({ where: { id: studentId }, select: { classCredits: true } }),
           tx.classBooking.aggregate({
@@ -1393,7 +1478,14 @@ export async function rescheduleClassBooking(
           );
         }
 
-        await tx.classBooking.update({ where: { id: oldBooking.id }, data: { status: "CANCELED", refunded: true } });
+        // A plan's weekly class moved for one week only: the old day is marked
+        // skipped so the nightly reservation job leaves it alone, and the new
+        // booking keeps the plan link. The standing weekly slot is unchanged
+        // (changeReservedSlot in paymentPlans.ts moves that one for good).
+        await tx.classBooking.update({
+          where: { id: oldBooking.id },
+          data: { status: "CANCELED", refunded: true, ...(oldBooking.reservedByPlanId ? { canceledReason: SKIPPED_BY_STUDENT } : {}) },
+        });
 
         // Same reuse-a-CANCELED-row idiom bookClass uses — this also
         // transparently covers "same schedule, different time," since
@@ -1414,12 +1506,20 @@ export async function rescheduleClassBooking(
               refunded: false,
               canceledReason: null,
               familyBookingGroupId: null,
+              reservedByPlanId: oldBooking.reservedByPlanId,
             },
           });
         }
 
         return tx.classBooking.create({
-          data: { studentId, scheduleId: newScheduleId, occurrenceDate: newOccurrenceDate, scheduledAt: newScheduledAt, creditsSpent: credits },
+          data: {
+            studentId,
+            scheduleId: newScheduleId,
+            occurrenceDate: newOccurrenceDate,
+            scheduledAt: newScheduledAt,
+            creditsSpent: credits,
+            reservedByPlanId: oldBooking.reservedByPlanId,
+          },
         });
       },
       { isolationLevel: "Serializable" },
@@ -1442,9 +1542,7 @@ export async function rescheduleClassBooking(
     body: `Your class moved to ${formatEtDateTime(newScheduledAt)}. No credits were charged for the change.`,
     emailCategory: "social",
   });
-  notifyAdminsOfBooking(studentId, newSchedule, newScheduledAt, credits).catch((err) =>
-    console.error("Admin reschedule notification failed (non-blocking):", err),
-  );
+  await notifyAdminsOfSelfChange(studentId, { from: oldBooking.scheduledAt, to: newScheduledAt });
 
   return newBooking;
 }
