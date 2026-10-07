@@ -16,7 +16,7 @@ import {
 // so this re-check is the actual authorization boundary.
 async function requireAdmin() {
   const session = await getServerAuthSession();
-  if (!session?.user) redirect("/login?callbackUrl=/admin/credits");
+  if (!session?.user) redirect("/login?callbackUrl=/admin/payments?tab=credits");
   if (session.user.role !== "ADMIN") redirect("/dashboard");
   return session.user;
 }
@@ -36,7 +36,7 @@ export async function adjustUserCreditsAction(targetUserId: string, amount: numb
   try {
     const result = await adjustUserCredits(admin.id, targetUserId, amount, reasonNote);
     await logAudit({ actorId: admin.id, actorEmail: admin.email, action: amount > 0 ? "credits.grant" : "credits.revoke", targetType: "User", targetId: targetUserId, detail: `${amount > 0 ? "+" : ""}${amount}. ${reasonNote}` });
-    revalidatePath("/admin/credits");
+    revalidatePath("/admin/payments");
     return { ok: true as const, balance: result.balance };
   } catch (err) {
     if (err instanceof CreditAdjustmentError) {

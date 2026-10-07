@@ -26,6 +26,7 @@ const nextConfig = {
       { source: "/billing/curriculum", destination: "/billing/plans", permanent: false },
       { source: "/billing/curriculum/family", destination: "/billing/plans", permanent: false },
       { source: "/admin/progress", destination: "/admin/users?filter=approval", permanent: false },
+      { source: "/admin/credits", destination: "/admin/payments?tab=credits", permanent: false },
       { source: "/admin/announcements", destination: "/admin/messages?tab=announcements", permanent: false },
     ];
   },
