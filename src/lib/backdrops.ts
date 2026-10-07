@@ -7,8 +7,6 @@ function unsplash(id: string, params = "w=2400&q=80&fit=crop&auto=format") {
 }
 
 export const BACKDROPS = {
-  /** Marketing homepage hero — B&W grand piano, hand on keys, warm bokeh. */
-  marketingHero: unsplash("photo-1513883049090-d0b7439799bf"),
   /** Marketing "every instrument" section — acoustic guitar, golden-hour light. */
   guitar: unsplash("photo-1573603088895-d399fbee9653"),
   /** Marketing homepage "The curriculum" section — grand piano in an atmospheric room, distinct from the hero's close-up shot. */

@@ -1,5 +1,5 @@
 // Whether to play the homepage background video. It is a 17MB file, so people on a slow
-// connection, with data saver on, or who ask for less motion get the still photo instead.
+// connection, with data saver on, or who ask for less motion get a plain dark hero instead.
 // Pure, so it is tested.
 
 export interface HeroVideoSignals {

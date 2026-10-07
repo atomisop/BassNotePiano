@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { WordsPullUp } from "@/components/ui/words-pull-up";
 import { PillCTA } from "@/components/ui/pill-cta";
-import { BACKDROPS } from "@/lib/backdrops";
 import { heroVideoAllowed } from "@/lib/heroVideo";
 import { EASE_IOS } from "@/lib/motionTokens";
 
@@ -53,8 +51,7 @@ export function Hero() {
   const { data: session } = useSession();
   const isLoggedIn = Boolean(session?.user);
   const videoRef = useRef<HTMLVideoElement>(null);
-  // The still photo paints first. The 17MB video only starts downloading after the page has
-  // finished loading, and only for people whose connection and settings suit it.
+  // The 17MB video only starts downloading after the page has finished loading, and only for people whose connection and settings suit it.
   const [loadVideo, setLoadVideo] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState(false);
   useEffect(() => {
@@ -76,7 +73,6 @@ export function Hero() {
     <section className="h-[100svh] w-full p-2 sm:p-3">
       <div className="relative h-full w-full overflow-hidden rounded-2xl bg-black md:rounded-[2rem]">
         {/* pointer-events-none: pure background, so a phone never offers its own tap-to-play glyph over the copy. */}
-        <Image src={BACKDROPS.marketingHero} alt="" aria-hidden fill priority sizes="100vw" className="pointer-events-none object-cover" />
         <video
           ref={videoRef}
           aria-hidden
