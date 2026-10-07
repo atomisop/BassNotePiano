@@ -124,36 +124,31 @@ export async function createAssistantEscalation(input: CreateAssistantEscalation
 }
 
 /**
- * "Message support" on a booked class: opens (or reuses) a case with the subject
- * "Booking", under the student's real name, seeded with the class so the team
- * knows which one. While the student already has a Booking case open, this
- * returns it and adds a line about the new class instead of opening a second.
+ * Opens (or reuses) a support case with a subject, under the signed-in
+ * student's real name, seeded with one line of context and the student's
+ * request. While the student already has an open case with this subject, it is
+ * returned and the new context line is added once, instead of a second case.
  */
-export async function openBookingSupportCase(userId: string, bookingId: string): Promise<{ escalationId: string }> {
-  const [booking, user] = await Promise.all([
-    prisma.classBooking.findFirst({ where: { id: bookingId, studentId: userId }, include: { schedule: { select: { label: true } } } }),
-    prisma.user.findUnique({ where: { id: userId }, select: { name: true, username: true, email: true } }),
-  ]);
-  if (!booking) throw new AssistantEscalationError("That class doesn't exist.");
+export async function openSubjectSupportCase(
+  userId: string,
+  input: { subject: string; contextLine: string; request: string; noticeTitle: (name: string) => string; noticeBody: string },
+): Promise<{ escalationId: string }> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true, username: true, email: true } });
   if (!user) throw new AssistantEscalationError("Account not found.");
 
-  const when = booking.scheduledAt.toLocaleString("en-US", { timeZone: "America/New_York", dateStyle: "full", timeStyle: "short" });
-  const classLine = `${booking.schedule.label ?? "Class"}, ${when} ET`;
-  const request = `I need help with my booking: ${classLine}.`;
-
   const existing = await prisma.assistantEscalation.findFirst({
-    where: { userId, source: "CHAT", status: "OPEN", subject: "Booking" },
+    where: { userId, source: "CHAT", status: "OPEN", subject: input.subject },
     orderBy: { createdAt: "desc" },
     select: { id: true },
   });
   if (existing) {
     const alreadyMentioned = await prisma.supportMessage.findFirst({
-      where: { escalationId: existing.id, body: { contains: classLine } },
+      where: { escalationId: existing.id, body: { contains: input.contextLine } },
       select: { id: true },
     });
     if (!alreadyMentioned) {
       await prisma.supportMessage.create({
-        data: { escalationId: existing.id, sender: "VISITOR", body: request, identifier: `user:${userId}` },
+        data: { escalationId: existing.id, sender: "VISITOR", body: input.request, identifier: `user:${userId}` },
       });
     }
     return { escalationId: existing.id };
@@ -165,14 +160,35 @@ export async function openBookingSupportCase(userId: string, bookingId: string):
     userId,
     contactName: name,
     contactEmail: user.email,
-    subject: "Booking",
+    subject: input.subject,
     transcript: [
-      { role: "assistant", content: `Booking details: ${classLine}.` },
-      { role: "user", content: request },
+      { role: "assistant", content: `${input.subject} details: ${input.contextLine}.` },
+      { role: "user", content: input.request },
     ],
-    notice: { title: `${name ?? user.email} needs help with a booking`, body: `${classLine}.` },
+    notice: { title: input.noticeTitle(name ?? user.email), body: input.noticeBody },
   });
   return { escalationId: escalation.id };
+}
+
+/**
+ * "Message support" on a booked class: a case with the subject "Booking",
+ * seeded with the class so the team knows which one.
+ */
+export async function openBookingSupportCase(userId: string, bookingId: string): Promise<{ escalationId: string }> {
+  const booking = await prisma.classBooking.findFirst({
+    where: { id: bookingId, studentId: userId },
+    include: { schedule: { select: { label: true } } },
+  });
+  if (!booking) throw new AssistantEscalationError("That class doesn't exist.");
+  const when = booking.scheduledAt.toLocaleString("en-US", { timeZone: "America/New_York", dateStyle: "full", timeStyle: "short" });
+  const classLine = `${booking.schedule.label ?? "Class"}, ${when} ET`;
+  return openSubjectSupportCase(userId, {
+    subject: "Booking",
+    contextLine: classLine,
+    request: `I need help with my booking: ${classLine}.`,
+    noticeTitle: (name) => `${name} needs help with a booking`,
+    noticeBody: `${classLine}.`,
+  });
 }
 
 // ---------------------------------------------------------------------------

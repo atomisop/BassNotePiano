@@ -9,6 +9,9 @@ import { LESSON_VARIANTS, SCALE_CONTENT } from "@/lib/scale-content";
 import { generateScaleQuiz, stripAnswers } from "@/lib/quiz";
 import { ScaleWorkspace } from "./components/ScaleWorkspace";
 import { FingerPracticeGate } from "./components/FingerPracticeGate";
+import { LockedScale } from "./components/LockedScale";
+import { describeLockedScale } from "@/lib/lockedScale";
+import { getNextApproval } from "@/lib/scaleApproval";
 import { DAILY_GOAL_SECONDS, getFingerPracticeStatus, hasCompletedFingerPracticeToday } from "@/lib/fingerPractice";
 import { markLessonCompleteAction, markPracticeCompletedAction, saveScaleNoteAction, submitQuizAction } from "./actions";
 
@@ -20,9 +23,17 @@ export default async function ScalePage({ params }: { params: { scaleSlug: strin
   if (!access) notFound();
 
   if (!access.canAccess) {
-    // No plan: the way forward is a class plan. A paying student whose
-    // teacher hasn't released this scale yet just goes back to the roadmap.
-    redirect(access.lockedBecause === "not-yet-approved" ? "/dashboard" : "/billing/plans");
+    // Say why it is locked and what to do, instead of bouncing the student somewhere without a word.
+    const next = await getNextApproval(session.user.id);
+    const previousSlug = next.state === "NEEDS_CHECKLIST" ? next.previousSlug : null;
+    const previous = previousSlug ? await prisma.scaleGroup.findUnique({ where: { slug: previousSlug }, select: { code: true, title: true } }) : null;
+    const message = describeLockedScale({
+      lockedBecause: access.lockedBecause ?? "no-plan",
+      next,
+      slug: params.scaleSlug,
+      previousTitle: previous ? `${previous.code}: ${previous.title}` : null,
+    });
+    return <LockedScale scaleLabel={`${access.scaleGroup.code}: ${access.scaleGroup.title}`} scaleSlug={params.scaleSlug} message={message} />;
   }
 
   // Lessons open only after today's 10 minutes of finger exercises. Admins are exempt.
