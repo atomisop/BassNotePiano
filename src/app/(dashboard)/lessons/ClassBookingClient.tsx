@@ -15,6 +15,7 @@ import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { CheckIcon, XIcon } from "@/components/ui/icons";
 import { CLASS_MINUTES, CREDITS_PER_CLASS, EXTRA_CLASS_PRICE_CENTS } from "@/lib/classCreditPricing";
+import { weekRangeForOccurrence } from "@/lib/bookingRules";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { createExtraClassPaymentAction, submitClassCreditsPaymentAction } from "../billing/lessons/actions";
 import type { ZellePaymentStatus } from "@prisma/client";
@@ -39,6 +40,8 @@ interface OccurrenceRow {
 
 interface BookingRow {
   id: string;
+  /** The ET calendar day of the class, as UTC midnight. Decides which week it counts toward. */
+  occurrenceDateMs?: number;
   label: string | null;
   scheduledAt: string;
   creditsSpent: number;
@@ -46,14 +49,14 @@ interface BookingRow {
   refunded: boolean;
   attendance: "PRESENT" | "NO_SHOW" | null;
   canceledReason: string | null;
-  /** Booked by the student's payment plan (their weekly class). It can be skipped, not rescheduled here. */
+  /** Booked by the student's payment plan (their weekly class). Moving it changes this week only. */
   reserved?: boolean;
   /** The private Discord call for this class, once it exists. */
   discordUrl?: string | null;
 }
 
 type BookingMode = "SOLO" | "FAMILY";
-type PanelId = "for" | "upcoming" | "past";
+type TabId = "book" | "upcoming" | "past";
 
 const STATUS_LABEL: Record<BookingRow["status"], string> = {
   SCHEDULED: "Scheduled",
@@ -77,11 +80,13 @@ function lengthLabel(credits: number) {
   return `${Math.round((credits / CREDITS_PER_CLASS) * CLASS_MINUTES)} min`;
 }
 
-/** Whole classes behind a credit amount (credits are internal; students see classes). */
+/** Whole classes behind a credit amount. */
 function classCount(credits: number) {
   return Math.floor(credits / CREDITS_PER_CLASS);
 }
 const classWord = (n: number) => `class${n === 1 ? "" : "es"}`;
+const creditsLabel = (n: number) => `${n} credit${n === 1 ? "" : "s"}`;
+const weekStartMs = (occurrenceDateMs: number) => weekRangeForOccurrence(new Date(occurrenceDateMs)).start.getTime();
 
 function formatOccurrenceTime(iso: string) {
   return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
@@ -169,7 +174,7 @@ function BookingCard({
           {b.label ?? "Class"} · {formatDateTime(b.scheduledAt)}
         </p>
         <p className="mt-0.5 text-small text-slate-500">
-          {classCount(b.creditsSpent)} {classWord(classCount(b.creditsSpent))}
+          {creditsLabel(b.creditsSpent)}
           {b.status === "SCHEDULED" &&
             (pastSelfServeWindow ? " · Too close to class time to self-cancel" : "")}
         </p>
@@ -199,7 +204,7 @@ function BookingCard({
             Add to calendar
           </a>
         )}
-        {cancelEligible && !b.reserved && (
+        {cancelEligible && (
           <button
             type="button"
             onClick={() => onStartReschedule(b)}
@@ -210,7 +215,7 @@ function BookingCard({
                 : "border-transparent text-slate-300 hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low"
             }`}
           >
-            {isBeingRescheduled ? "Picking new time…" : "Reschedule"}
+            {isBeingRescheduled ? "Picking new time…" : b.reserved ? "Move this week" : "Reschedule"}
           </button>
         )}
         {cancelEligible && (
@@ -367,9 +372,12 @@ export function ClassBookingClient({
   initialBookings,
   zelleHandle,
   extraMode = false,
+  weeklyLimited = false,
 }: {
   /** A student on a payment plan: this is where they book EXTRA sessions on top of their weekly class. */
   extraMode?: boolean;
+  /** A subscriber: credits book one class a week, anything more that week is paid extra time. */
+  weeklyLimited?: boolean;
   initialCredits: number;
   cancellationCutoffHours: number;
   soloMaxCredits: number;
@@ -381,10 +389,8 @@ export function ClassBookingClient({
   zelleHandle: string;
 }) {
   const [credits, setCredits] = useState(initialCredits);
-  // At confirm: spend credits (a gift, a refund) or pay for this class. Credits are the default when there are enough.
-  const [useCredits, setUseCredits] = useState(true);
   const [extraPayment, setExtraPayment] = useState<{ id: string; status: ZellePaymentStatus; amountCents: number; when: string } | null>(null);
-  const [payBusy, setPayBusy] = useState(false);
+  const [payBusyKey, setPayBusyKey] = useState<string | null>(null);
   const [bookings, setBookings] = useState(initialBookings);
   const [rows, setRows] = useState(occurrences);
 
@@ -397,85 +403,74 @@ export function ClassBookingClient({
   useEffect(() => setBookings(initialBookings), [bookingsSig]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => setCredits(initialCredits), [initialCredits]);
   const [mode, setMode] = useState<BookingMode>("SOLO");
-  const [bookingKey, setBookingKey] = useState<string | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
-  // Set by tapping "Reschedule" on an upcoming booking — while set, the
-  // "Book" button on every open slot below turns into "Move here," picking
-  // it as this booking's new time instead of adding a separate one. Only
-  // one reschedule is ever in flight at a time, same single-slot-in-progress
-  // idiom familyRowKey already uses below.
+  // Set by tapping "Reschedule" on an upcoming booking: while set, every open
+  // time offers "Move here" instead of being added to the selection. Only one
+  // reschedule is ever in flight at a time.
   const [reschedulingBooking, setReschedulingBooking] = useState<BookingRow | null>(null);
   const [reschedulingKey, setReschedulingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  // Set by clicking a lit day in BookingCalendar — narrows the list below to
-  // just that date. The calendar and this list read the same `rows`, so a
-  // day only ever lights up when it genuinely has something to show here.
+  // Set by tapping a day on the calendar: the times for that day appear below it.
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
-
-  // Bundle booking (solo only): check off several occurrences, then book
-  // them all in one submit. Keyed the same way bookingKey is
-  // (`scheduleId:occurrenceDateMs`), so both features share one identity
-  // format for a row.
+  // Every time the student has tapped, across days. Keyed `scheduleId:occurrenceDateMs:chunkIndex`.
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
-  // Step 3 of the flow: the time the student tapped, shown as a short summary
-  // they confirm before anything is booked. null = nothing picked yet.
-  const [pendingKey, setPendingKey] = useState<string | null>(null);
-  // "Book several" is off by default: checkboxes on every row with no
-  // explanation confused first-time students. It switches them on.
-  const [multiSelect, setMultiSelect] = useState(false);
   const timesRef = useRef<HTMLDivElement>(null);
-  // Which panel of the small tab slider is open (credits, who the class is for, upcoming, past).
-  const [panel, setPanel] = useState<PanelId>("upcoming");
+  const [tab, setTab] = useState<TabId>("book");
   const [bundleSubmitting, setBundleSubmitting] = useState(false);
 
   // Family booking: which occurrence, and the list of attendee emails being
-  // typed in. Only one family booking is composed at a time — picking a
-  // different row for it replaces the in-progress one rather than stacking.
+  // typed in. Only one family booking is composed at a time.
   const [familyRowKey, setFamilyRowKey] = useState<string | null>(null);
   const [familyEmails, setFamilyEmails] = useState<string[]>(["", ""]);
   const [familyChecks, setFamilyChecks] = useState<Record<string, { checking: boolean; found: boolean; verified: boolean; name: string | null }>>({});
   const [familySubmitting, setFamilySubmitting] = useState(false);
 
-  // Every class is its own fixed length now, by direct instruction: what
-  // used to be a student's own "stay until" choice (1 or 2 credits, up to
-  // an hour) is gone, so a slot always books for its whole defined window
-  // (capped at soloMaxCredits), with no shorter option and no silent
-  // auto-shrinking to whatever's affordable either. Insufficient balance is
-  // surfaced as a real block (insufficientCredits below), not a quietly
-  // truncated class.
+  const rowKey = (r: OccurrenceRow) => `${r.scheduleId}:${r.occurrenceDateMs}:${r.chunkIndex}`;
+
+  // A class is always one fixed length, so a time books for its whole window.
   function creditsFor(row: OccurrenceRow): number {
     return Math.min(row.creditCost, soloMaxCredits);
   }
 
-  // No list at all until a day is tapped: the page stays short, and the times
-  // that appear are exactly that day's.
+  // No times at all until a day is tapped; then exactly that day's, in order.
   const displayRows = useMemo(
-    () => (selectedDateKey ? rows.filter((r) => dayKey(r.occurrenceDateMs) === selectedDateKey) : []),
+    () =>
+      selectedDateKey
+        ? rows.filter((r) => dayKey(r.occurrenceDateMs) === selectedDateKey).sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))
+        : [],
     [rows, selectedDateKey],
   );
 
-  // Tapping a day jumps straight to that day's times, so nobody scrolls past
-  // the calendar to find them.
+  // Tapping a day jumps straight to that day's times.
   useEffect(() => {
     if (!selectedDateKey) return;
     scrollWithin(timesRef.current, "start");
   }, [selectedDateKey]);
 
-  const selectedRows = useMemo(
-    () => rows.filter((r) => selectedKeys.has(`${r.scheduleId}:${r.occurrenceDateMs}:${r.chunkIndex}`)),
-    [rows, selectedKeys],
-  );
-  const selectedCreditTotal = useMemo(
-    () => selectedRows.reduce((sum, r) => sum + Math.min(r.creditCost, soloMaxCredits), 0),
-    [selectedRows, soloMaxCredits],
-  );
-  const selectedExceedsBalance = selectedCreditTotal > credits;
-  const pendingRow = rows.find((r) => `${r.scheduleId}:${r.occurrenceDateMs}:${r.chunkIndex}` === pendingKey && !r.isBooked) ?? null;
-  const canUseCredits = pendingRow ? credits >= creditsFor(pendingRow) : false;
+  const selectedRows = useMemo(() => rows.filter((r) => selectedKeys.has(rowKey(r))), [rows, selectedKeys]);
+  const selectedCreditTotal = useMemo(() => selectedRows.reduce((sum, r) => sum + Math.min(r.creditCost, soloMaxCredits), 0), [selectedRows, soloMaxCredits]);
+  const missingCredits = Math.max(0, selectedCreditTotal - credits);
+
+  // Weeks (Sunday to Saturday) in which a subscriber already holds a class, and
+  // weeks they have already picked a time in. A second credit class in either
+  // is not available: that is paid extra time.
+  const heldWeeks = useMemo(() => {
+    const set = new Set<number>();
+    if (!weeklyLimited) return set;
+    for (const b of bookings) {
+      if ((b.status === "SCHEDULED" || b.status === "COMPLETED") && b.occurrenceDateMs !== undefined && b.id !== reschedulingBooking?.id) {
+        set.add(weekStartMs(b.occurrenceDateMs));
+      }
+    }
+    return set;
+  }, [bookings, weeklyLimited, reschedulingBooking]);
+  const pickedWeeks = useMemo(() => new Set(selectedRows.map((r) => weekStartMs(r.occurrenceDateMs))), [selectedRows]);
 
   function toggleSelected(row: OccurrenceRow) {
-    const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
+    const key = rowKey(row);
+    setError(null);
+    setSuccess(null);
     setSelectedKeys((prev) => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
@@ -484,79 +479,20 @@ export function ClassBookingClient({
     });
   }
 
-  // Split into "needs your attention" (still scheduled) vs. an archived,
-  // collapsible-by-month history — a flat list of every booking ever made
-  // was turning into an endless scroll for anyone with more than a couple
-  // months of history.
   const occurrenceGroups = useMemo(() => groupOccurrencesByWeek(displayRows), [displayRows]);
-  const upcoming = useMemo(() => bookings.filter((b) => b.status === "SCHEDULED"), [bookings]);
+  const upcoming = useMemo(() => bookings.filter((b) => b.status === "SCHEDULED").sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)), [bookings]);
   const history = useMemo(() => bookings.filter((b) => b.status !== "SCHEDULED"), [bookings]);
   const historyGroups = useMemo(() => groupByMonth(history), [history]);
 
-  function markRowBooked(scheduleId: string, occurrenceDateMs: number, chunkIndex: number) {
-    setRows((prev) =>
-      prev.map((r) =>
-        r.scheduleId === scheduleId && r.occurrenceDateMs === occurrenceDateMs && r.chunkIndex === chunkIndex ? { ...r, isBooked: true } : r,
-      ),
-    );
-  }
-
-  async function handleBook(row: OccurrenceRow) {
-    const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
-    const chosen = creditsFor(row);
-    setError(null);
-    setSuccess(null);
-    setBookingKey(key);
-    let result: Awaited<ReturnType<typeof bookClassAction>>;
-    try {
-      result = await bookClassAction(row.scheduleId, row.occurrenceDateMs, row.chunkIndex, chosen);
-    } catch {
-      setError(NETWORK_ERROR);
-      return;
-    } finally {
-      setBookingKey(null);
-    }
-
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-
-    // Reserved, not yet charged — the real deduction lands once the teacher
-    // marks attendance (present or absent, either way). This only reflects
-    // what's no longer *free to book again* right now.
-    setCredits((c) => c - chosen);
-    markRowBooked(row.scheduleId, row.occurrenceDateMs, row.chunkIndex);
-    setBookings((prev) => [
-      {
-        id: result.id,
-        label: row.label,
-        scheduledAt: row.scheduledAt,
-        creditsSpent: chosen,
-        status: "SCHEDULED",
-        refunded: false,
-        attendance: null,
-        canceledReason: null,
-      },
-      ...prev,
-    ]);
-    setSuccess("Booked.");
-  }
-
-  /**
-   * Books every currently-checked row in one submit. Each selection is its
-   * own independent attempt server-side (see bookClassBundle) — someone
-   * else taking selection #2's slot doesn't undo #1 or #3, so this applies
-   * each result exactly like handleBook would, one at a time, and reports
-   * whatever mix of success/failure actually happened.
-   */
-  async function handleBookBundle() {
+  /** Books every picked time in one go. Each is its own attempt server-side, so one taken slot does not undo the rest. */
+  async function handleBookSelected() {
     if (selectedRows.length === 0) return;
     setError(null);
     setSuccess(null);
     setBundleSubmitting(true);
 
-    const selections = selectedRows.map((r) => ({
+    const picked = selectedRows;
+    const selections = picked.map((r) => ({
       scheduleId: r.scheduleId,
       occurrenceDateMs: r.occurrenceDateMs,
       chunkIndex: r.chunkIndex,
@@ -571,7 +507,6 @@ export function ClassBookingClient({
     } finally {
       setBundleSubmitting(false);
     }
-    setSelectedKeys(new Set());
 
     if (!result.ok) {
       setError(result.error);
@@ -580,18 +515,20 @@ export function ClassBookingClient({
 
     const succeeded = result.results.filter((r) => r.ok);
     const failed = result.results.filter((r) => !r.ok);
+    const succeededKeys = new Set(succeeded.map((r) => `${r.scheduleId}:${r.occurrenceDateMs}:${r.chunkIndex}`));
+    // Keep the times that did not book selected, so nothing the student chose silently disappears.
+    setSelectedKeys(new Set(picked.filter((r) => !succeededKeys.has(rowKey(r))).map(rowKey)));
 
     if (succeeded.length > 0) {
-      const succeededKeys = new Set(succeeded.map((r) => `${r.scheduleId}:${r.occurrenceDateMs}:${r.chunkIndex}`));
-      const succeededRows = selectedRows.filter((r) => succeededKeys.has(`${r.scheduleId}:${r.occurrenceDateMs}:${r.chunkIndex}`));
-
+      const succeededRows = picked.filter((r) => succeededKeys.has(rowKey(r)));
       setCredits((c) => c - succeededRows.reduce((sum, r) => sum + creditsFor(r), 0));
-      setRows((prev) => prev.map((r) => (succeededKeys.has(`${r.scheduleId}:${r.occurrenceDateMs}:${r.chunkIndex}`) ? { ...r, isBooked: true } : r)));
+      setRows((prev) => prev.map((r) => (succeededKeys.has(rowKey(r)) ? { ...r, isBooked: true } : r)));
       setBookings((prev) => [
         ...succeeded.map((r) => {
           const row = succeededRows.find((sr) => sr.scheduleId === r.scheduleId && sr.occurrenceDateMs === r.occurrenceDateMs && sr.chunkIndex === r.chunkIndex)!;
           return {
             id: r.bookingId!,
+            occurrenceDateMs: row.occurrenceDateMs,
             label: row.label,
             scheduledAt: row.scheduledAt,
             creditsSpent: creditsFor(row),
@@ -606,7 +543,7 @@ export function ClassBookingClient({
     }
 
     if (failed.length === 0) {
-      setSuccess(`Booked ${succeeded.length} class${succeeded.length === 1 ? "" : "es"}.`);
+      setSuccess(`Booked ${succeeded.length} class${succeeded.length === 1 ? "" : "es"}. You can see ${succeeded.length === 1 ? "it" : "them"} under Upcoming.`);
     } else if (succeeded.length === 0) {
       setError(failed[0]!.error ?? "Couldn't book those classes.");
     } else {
@@ -634,27 +571,26 @@ export function ClassBookingClient({
     }
 
     setBookings((prev) => prev.map((b) => (b.id === booking.id ? { ...b, status: "CANCELED", refunded: true } : b)));
-    // Frees the reservation, not a refund of anything actually charged —
-    // nothing was charged yet (see cancelClassBookingAction).
+    // Frees the reservation; nothing was charged yet (see cancelClassBookingAction).
     setCredits((c) => c + booking.creditsSpent);
-    setSuccess("Canceled.");
+    setSuccess("Canceled. No credits were used.");
   }
 
   function startReschedule(booking: BookingRow) {
     setError(null);
     setSuccess(null);
-    // Toggling the same booking's button again cancels the in-progress pick
-    // rather than restarting it — same as clicking a lit calendar day twice.
+    // Pressing the same booking's button again cancels the in-progress pick.
     setReschedulingBooking((prev) => (prev?.id === booking.id ? null : booking));
-    scrollWithin(document.getElementById("booking-calendar"), "start");
+    setTab("book");
     setMode("SOLO");
     setSelectedKeys(new Set());
     setFamilyRowKey(null);
+    setTimeout(() => scrollWithin(document.getElementById("booking-calendar"), "start"), 50);
   }
 
   async function handleReschedule(row: OccurrenceRow) {
     if (!reschedulingBooking) return;
-    const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
+    const key = rowKey(row);
     const chosen = creditsFor(row);
     const oldBooking = reschedulingBooking;
     setError(null);
@@ -676,21 +612,18 @@ export function ClassBookingClient({
     }
 
     setReschedulingBooking(null);
-    markRowBooked(row.scheduleId, row.occurrenceDateMs, row.chunkIndex);
-    // The old slot is free again — it may be the exact same schedule+day as
-    // the new one (a same-day time change), which markRowBooked above just
-    // (re)marked booked regardless, so this only touches a genuinely
-    // different old slot.
+    // The old time is open again, unless it is the very time just picked.
     setRows((prev) =>
-      prev.map((r) =>
-        r.scheduledAt === oldBooking.scheduledAt && !(r.scheduleId === row.scheduleId && r.occurrenceDateMs === row.occurrenceDateMs && r.chunkIndex === row.chunkIndex)
-          ? { ...r, isBooked: false }
-          : r,
-      ),
+      prev.map((r) => {
+        if (rowKey(r) === key) return { ...r, isBooked: true };
+        if (r.scheduledAt === oldBooking.scheduledAt) return { ...r, isBooked: false };
+        return r;
+      }),
     );
     setBookings((prev) => [
       {
         id: result.id,
+        occurrenceDateMs: row.occurrenceDateMs,
         label: row.label,
         scheduledAt: row.scheduledAt,
         creditsSpent: chosen,
@@ -698,18 +631,42 @@ export function ClassBookingClient({
         refunded: false,
         attendance: null,
         canceledReason: null,
+        reserved: oldBooking.reserved,
       },
       ...prev.filter((b) => b.id !== oldBooking.id),
     ]);
-    // The old slot's held credits are released and the new one's are held
-    // instead — only a net change if the two differ in length (e.g. moving
-    // from a 30-min slot to a 60-min one).
+    // Only a net change if the two classes differ in length.
     setCredits((c) => c + oldBooking.creditsSpent - chosen);
-    setSuccess("Rescheduled.");
+    setSuccess("Rescheduled. The teacher has been told.");
+    setTab("upcoming");
+  }
+
+  /** Extra time the credits cannot pay for (a second class in a week the plan already covers): the one place money is still involved. */
+  async function startExtraPayment(row: OccurrenceRow) {
+    setError(null);
+    setSuccess(null);
+    setPayBusyKey(rowKey(row));
+    try {
+      const result = await createExtraClassPaymentAction(row.scheduleId, row.occurrenceDateMs, row.chunkIndex);
+      if (!result.ok || !result.id || !result.status || result.amountCents === null) {
+        setError(result.error ?? "Something went wrong. Please try again.");
+        return;
+      }
+      setExtraPayment({
+        id: result.id,
+        status: result.status as ZellePaymentStatus,
+        amountCents: result.amountCents,
+        when: `${formatOccurrenceDay(row.scheduledAt)}, ${formatOccurrenceTime(row.scheduledAt)}`,
+      });
+    } catch {
+      setError(NETWORK_ERROR);
+    } finally {
+      setPayBusyKey(null);
+    }
   }
 
   function openFamilyBooking(row: OccurrenceRow) {
-    setFamilyRowKey(`${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`);
+    setFamilyRowKey(rowKey(row));
     setFamilyEmails(["", ""]);
     setFamilyChecks({});
     setError(null);
@@ -718,9 +675,6 @@ export function ClassBookingClient({
 
   function updateFamilyEmail(index: number, value: string) {
     setFamilyEmails((prev) => prev.map((e, i) => (i === index ? value : e)));
-    // Debounce-free live check: fires on every keystroke via a trailing
-    // check once the field looks like a complete email, same threshold
-    // EMAIL_RE-style validation elsewhere in the app uses.
     if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) {
       checkFamilyEmail(value.trim());
     }
@@ -734,8 +688,6 @@ export function ClassBookingClient({
     try {
       results = await checkFamilyClassAttendeesAction([email]);
     } catch {
-      // Clear the "checking" state so the field isn't stuck; the person can
-      // retype or blur to check again.
       setFamilyChecks((prev) => ({ ...prev, [email]: { checking: false, found: false, verified: false, name: null } }));
       return;
     }
@@ -744,7 +696,7 @@ export function ClassBookingClient({
     setFamilyChecks((prev) => ({ ...prev, [email]: { checking: false, found: result.found, verified: result.verified, name: result.name } }));
   }
 
-  const familyRow = rows.find((r) => `${r.scheduleId}:${r.occurrenceDateMs}:${r.chunkIndex}` === familyRowKey) ?? null;
+  const familyRow = rows.find((r) => rowKey(r) === familyRowKey) ?? null;
   const familyEmailsTrimmed = familyEmails.map((e) => e.trim().toLowerCase()).filter(Boolean);
   const familyAllVerified =
     familyEmailsTrimmed.length >= familyMinAttendees && familyEmailsTrimmed.every((e) => familyChecks[e]?.verified);
@@ -769,12 +721,16 @@ export function ClassBookingClient({
       return;
     }
 
-    markRowBooked(familyRow.scheduleId, familyRow.occurrenceDateMs, familyRow.chunkIndex);
+    setRows((prev) => prev.map((r) => (rowKey(r) === rowKey(familyRow) ? { ...r, isBooked: true } : r)));
     setFamilyRowKey(null);
     setFamilyEmails(["", ""]);
     setFamilyChecks({});
-    setSuccess(`Booked for ${familyEmailsTrimmed.length} students, ${classCount(familyCreditsPerStudent)} ${classWord(classCount(familyCreditsPerStudent))} reserved from each.`);
+    setSuccess(`Booked for ${familyEmailsTrimmed.length} students, ${creditsLabel(familyCreditsPerStudent)} reserved from each.`);
   }
+
+  const actionClass =
+    "tap flex min-h-11 shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold transition disabled:cursor-not-allowed disabled:text-slate-600 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low text-[rgb(var(--c-s-50))]";
+  const bookingBarVisible = tab === "book" && mode === "SOLO" && !reschedulingBooking && selectedKeys.size > 0 && !extraPayment;
 
   return (
     <WideLayout>
@@ -785,438 +741,359 @@ export function ClassBookingClient({
         {extraMode ? "Book an extra class" : "Book a class"}
       </h1>
 
-      {/* The calendar comes first, straight after the title. Credits, who the
-          class is for, upcoming and past classes all sit in one small tab
-          slider below it (to its right on desktop, where it stays in view). */}
-      <div className="mt-(--space-group) grid gap-(--space-group) lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
-        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
-          {error && <p className="mb-4 text-small text-red-400">{error}</p>}
-          {success && <p className="mb-4 text-small text-slate-50">{success}</p>}
+      <div className="mt-(--space-group)">
+        <Tabs<TabId>
+          label="Booking, upcoming and past classes"
+          value={tab}
+          onChange={(next) => {
+            setError(null);
+            setSuccess(null);
+            setTab(next);
+          }}
+          items={[
+            { id: "book", label: "Book" },
+            { id: "upcoming", label: "Upcoming", count: upcoming.length || undefined },
+            { id: "past", label: "Past", count: history.length || undefined },
+          ]}
+        />
+      </div>
 
-          {rows.length > 0 && (
-            <div id="booking-calendar" className="scroll-mt-20">
-              <h2 className="mb-3 text-body font-semibold text-slate-100">1. Pick a day</h2>
-              <BookingCalendar occurrences={rows} selectedDateKey={selectedDateKey} onSelectDate={setSelectedDateKey} />
-            </div>
-          )}
+      <div className="mt-(--space-group)">
+        {error && <p className="mb-4 text-small text-red-400" role="alert">{error}</p>}
+        {success && <p className="mb-4 text-small text-slate-50" role="status">{success}</p>}
 
-          {mode === "SOLO" && selectedKeys.size > 0 && (
-            <div className="glass-surface-elevated mt-8 flex flex-wrap items-center justify-between gap-4 p-5">
-              <div>
-                <p className="text-small font-medium text-slate-100">
-                  {selectedRows.length} class{selectedRows.length === 1 ? "" : "es"} selected
-                </p>
-                <p className={`mt-0.5 text-small ${selectedExceedsBalance ? "text-red-400" : "text-slate-500"}`}>
-                  {classCount(selectedCreditTotal)} {classWord(classCount(selectedCreditTotal))} in total
-                  {selectedExceedsBalance && `, you only have ${classCount(credits)}`}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setSelectedKeys(new Set())}
-                  disabled={bundleSubmitting}
-                  className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
-                >
-                  Clear
-                </button>
-                <button
-                  type="button"
-                  onClick={handleBookBundle}
-                  disabled={bundleSubmitting || selectedExceedsBalance}
-                  className="tap cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {bundleSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                  {bundleSubmitting ? "Booking…" : `Book ${selectedRows.length} class${selectedRows.length === 1 ? "" : "es"}`}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {mode === "FAMILY" && familyRow && (
-            <div className="glass-surface-elevated mt-8 p-5">
-              <p className="text-small font-medium text-slate-100">
-                Family booking · {formatOccurrenceDay(familyRow.scheduledAt)} at {formatOccurrenceTime(familyRow.scheduledAt)}
+        {tab === "book" && (
+          <div className="min-w-0">
+            {/* Credits: what a class costs and what the student has. No money here. */}
+            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-xl bg-neu-base px-4 py-3 shadow-pressed-low">
+              <p className="text-small text-slate-400">
+                Your credits <span className="ml-1 text-body font-semibold tabular-nums text-slate-50">{credits}</span>
               </p>
-              <div className="mt-4 space-y-2">
-                {familyEmails.map((email, i) => (
-                  <AttendeeEmailRow
-                    key={i}
-                    value={email}
-                    onChange={(v) => updateFamilyEmail(i, v)}
-                    onRemove={() => setFamilyEmails((prev) => prev.filter((_, idx) => idx !== i))}
-                    removable={familyEmails.length > familyMinAttendees}
-                    status={familyChecks[email.trim().toLowerCase()]}
-                  />
-                ))}
-              </div>
-              <div className="mt-3 flex items-center justify-between">
+              <p className="text-small text-slate-400">
+                Each class costs <span className="font-semibold text-slate-100">{creditsLabel(CREDITS_PER_CLASS)}</span> · {CLASS_MINUTES} min
+              </p>
+            </div>
+            {weeklyLimited && (
+              <p className="mt-2 text-small text-slate-500">
+                Your plan covers one class a week. A second class in the same week is extra time, paid separately.
+              </p>
+            )}
+
+            <div className="mt-5 flex w-fit flex-wrap gap-1.5 rounded-full bg-neu-base p-1 shadow-pressed-low" role="group" aria-label="Who is this class for?">
+              {(["SOLO", "FAMILY"] as const).map((m) => (
                 <button
+                  key={m}
                   type="button"
-                  onClick={() => setFamilyEmails((prev) => [...prev, ""])}
-                  className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
+                  onClick={() => {
+                    setMode(m);
+                    setSelectedKeys(new Set());
+                    setFamilyRowKey(null);
+                  }}
+                  aria-pressed={mode === m}
+                  className={`tap rounded-full px-4 py-2 text-small font-medium transition ${
+                    mode === m ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
+                  }`}
                 >
-                  + Add another student
+                  {m === "SOLO" ? "Just me" : "Me and my family"}
                 </button>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setFamilyRowKey(null)}
-                    disabled={familySubmitting}
-                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
-                  >
-                    Cancel
+              ))}
+            </div>
+
+            {reschedulingBooking && (
+              <div className="glass-surface-elevated mt-5 flex flex-wrap items-center justify-between gap-4 p-5">
+                <p className="text-small font-medium text-slate-100">
+                  Moving {reschedulingBooking.label ?? "your class"} · {formatDateTime(reschedulingBooking.scheduledAt)}
+                  {reschedulingBooking.reserved && <span className="font-normal text-slate-500"> (this week only, your weekly time stays)</span>}
+                </p>
+                <button type="button" onClick={() => setReschedulingBooking(null)} className="tap neu-btn rounded-lg px-3 py-1.5 text-small shrink-0">
+                  Never mind
+                </button>
+              </div>
+            )}
+
+            {rows.length > 0 ? (
+              <div id="booking-calendar" className="mt-5 scroll-mt-20">
+                <p className="mb-3 text-small font-medium uppercase tracking-wide text-slate-500">Pick a day, then pick one or more times</p>
+                <BookingCalendar occurrences={rows} selectedDateKey={selectedDateKey} onSelectDate={setSelectedDateKey} />
+              </div>
+            ) : (
+              <p className="mt-5 text-small text-slate-500">No classes scheduled.</p>
+            )}
+
+            {extraPayment && (
+              <div className="glass-surface-elevated mt-6 p-5">
+                <p className="mb-3 text-small text-slate-400">
+                  Extra time for {extraPayment.when}. Credits are for your weekly class, so this one is paid on its own.
+                </p>
+                <ZelleUnlockGate
+                  status={extraPayment.status}
+                  rejectionReason={null}
+                  scaleCode="Extra class"
+                  scaleTitle={extraPayment.when}
+                  eyebrowLabel="Pay"
+                  amountCents={extraPayment.amountCents}
+                  zelleHandle={zelleHandle}
+                  paymentId={extraPayment.id}
+                  onSubmitPayment={submitClassCreditsPaymentAction.bind(null, extraPayment.id)}
+                />
+                <button type="button" onClick={() => setExtraPayment(null)} className="tap neu-btn mt-3 rounded-lg px-3 py-1.5 text-small">
+                  Back to times
+                </button>
+              </div>
+            )}
+
+            {mode === "FAMILY" && familyRow && (
+              <div className="glass-surface-elevated mt-6 p-5">
+                <p className="text-small font-medium text-slate-100">
+                  Family booking · {formatOccurrenceDay(familyRow.scheduledAt)} at {formatOccurrenceTime(familyRow.scheduledAt)}
+                </p>
+                <div className="mt-4 space-y-2">
+                  {familyEmails.map((email, i) => (
+                    <AttendeeEmailRow
+                      key={i}
+                      value={email}
+                      onChange={(v) => updateFamilyEmail(i, v)}
+                      onRemove={() => setFamilyEmails((prev) => prev.filter((_, idx) => idx !== i))}
+                      removable={familyEmails.length > familyMinAttendees}
+                      status={familyChecks[email.trim().toLowerCase()]}
+                    />
+                  ))}
+                </div>
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <button type="button" onClick={() => setFamilyEmails((prev) => [...prev, ""])} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
+                    + Add another student
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleBookFamily}
-                    disabled={!familyAllVerified || familySubmitting}
-                    className="tap cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {familySubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                    {familySubmitting ? "Booking…" : `Book for ${familyEmailsTrimmed.length || familyMinAttendees} students`}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={() => setFamilyRowKey(null)} disabled={familySubmitting} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleBookFamily}
+                      disabled={!familyAllVerified || familySubmitting}
+                      className="tap cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {familySubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                      {familySubmitting ? "Booking…" : `Book for ${familyEmailsTrimmed.length || familyMinAttendees} students`}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {reschedulingBooking && (
-            <div className="glass-surface-elevated mt-8 flex flex-wrap items-center justify-between gap-4 p-5">
-              <div>
-                <p className="text-small font-medium text-slate-100">
-                  Rescheduling {reschedulingBooking.label ?? "your class"} · {formatDateTime(reschedulingBooking.scheduledAt)}
+            {/* The day's times show as soon as a day is tapped. */}
+            <div ref={timesRef} className="mt-6 scroll-mt-20">
+              {selectedDateKey && (
+                <p className="mb-3 text-body font-semibold text-slate-100">
+                  {new Date(selectedDateKey).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })}
                 </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setReschedulingBooking(null)}
-                className="tap neu-btn rounded-lg px-3 py-1.5 text-small shrink-0"
-              >
-                Cancel reschedule
-              </button>
-            </div>
-          )}
-
-          {/* Step 3: confirm. Nothing is booked until this is pressed. */}
-          {pendingRow && mode === "SOLO" && !reschedulingBooking && (
-            <div className="glass-surface-elevated mt-8 p-5" role="region" aria-label="Confirm your class">
-              <p className="text-small font-medium uppercase tracking-wide text-slate-500">3. Confirm your class</p>
-              <p className="mt-2 text-body font-semibold text-slate-50">{formatOccurrenceDay(pendingRow.scheduledAt)}</p>
-              <p className="text-body text-slate-100">
-                {formatOccurrenceTime(pendingRow.scheduledAt)} to {formatEndTime(pendingRow.scheduledAt, creditsFor(pendingRow))}
-              </p>
-              <ul className="mt-3 space-y-1 text-small text-slate-400">
-                <li>{lengthLabel(creditsFor(pendingRow))} · Live on Discord</li>
-                <li>
-                  Free to cancel until{" "}
-                  {new Date(new Date(pendingRow.scheduledAt).getTime() - cancellationCutoffHours * 3_600_000).toLocaleString(undefined, {
-                    weekday: "short",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}
-                </li>
-              </ul>
-
-              {extraPayment ? (
-                <div className="mt-4">
-                  <ZelleUnlockGate
-                    status={extraPayment.status}
-                    rejectionReason={null}
-                    scaleCode="Extra class"
-                    scaleTitle={extraPayment.when}
-                    eyebrowLabel="Pay"
-                    amountCents={extraPayment.amountCents}
-                    zelleHandle={zelleHandle}
-                    paymentId={extraPayment.id}
-                    onSubmitPayment={submitClassCreditsPaymentAction.bind(null, extraPayment.id)}
-                  />
-                </div>
+              )}
+              {!selectedDateKey ? null : displayRows.length === 0 ? (
+                <p className="text-small text-slate-500">No open times on that day.</p>
               ) : (
-                <>
-                  <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-neu-base px-4 py-3 shadow-pressed-low">
-                    <p className="text-body font-semibold text-slate-50">${(EXTRA_CLASS_PRICE_CENTS / 100).toFixed(0)}</p>
-                    {canUseCredits && (
-                      <label className="flex cursor-pointer items-center gap-2 text-small text-slate-200">
-                        <input
-                          type="checkbox"
-                          checked={useCredits}
-                          onChange={(e) => setUseCredits(e.target.checked)}
-                          className="h-5 w-5 shrink-0 cursor-pointer accent-[rgb(var(--signal))]"
-                        />
-                        Use credits
-                        <span className="text-small tabular-nums text-slate-500">({classCount(credits)})</span>
-                      </label>
-                    )}
-                  </div>
-                  <div className="mt-4 flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (canUseCredits && useCredits) {
-                          await handleBook(pendingRow);
-                          setPendingKey(null);
-                          return;
-                        }
-                        setPayBusy(true);
-                        setError(null);
-                        try {
-                          const result = await createExtraClassPaymentAction(pendingRow.scheduleId, pendingRow.occurrenceDateMs, pendingRow.chunkIndex);
-                          if (!result.ok || !result.id || !result.status || result.amountCents === null) {
-                            setError(result.error ?? "Something went wrong. Please try again.");
-                            return;
-                          }
-                          setExtraPayment({
-                            id: result.id,
-                            status: result.status as ZellePaymentStatus,
-                            amountCents: result.amountCents,
-                            when: `${formatOccurrenceDay(pendingRow.scheduledAt)}, ${formatOccurrenceTime(pendingRow.scheduledAt)}`,
-                          });
-                        } catch {
-                          setError(NETWORK_ERROR);
-                        } finally {
-                          setPayBusy(false);
-                        }
-                      }}
-                      disabled={bookingKey !== null || payBusy}
-                      className="tap cta-sheen cta-fill flex min-h-11 flex-1 items-center justify-center rounded-xl px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {(bookingKey !== null || payBusy) && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                      {bookingKey !== null || payBusy ? "One moment…" : canUseCredits && useCredits ? "Book this class" : `Pay $${(EXTRA_CLASS_PRICE_CENTS / 100).toFixed(0)}`}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPendingKey(null)}
-                      disabled={bookingKey !== null || payBusy}
-                      className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
-                    >
-                      Change
-                    </button>
-                  </div>
-                </>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {occurrenceGroups.flatMap((group) => group.rows).map((row) => {
+                    const key = rowKey(row);
+                    const cost = creditsFor(row);
+                    const isSelected = selectedKeys.has(key);
+                    const weekStart = weekStartMs(row.occurrenceDateMs);
+                    const isCurrentRescheduleSlot = reschedulingBooking !== null && row.scheduledAt === reschedulingBooking.scheduledAt;
+                    // The credits the class being moved holds are freed by the same move.
+                    const effectiveCredits = reschedulingBooking ? credits + reschedulingBooking.creditsSpent : credits;
+
+                    const card = (children: React.ReactNode, onClick?: () => void, extra = "") => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={onClick}
+                        disabled={!onClick}
+                        aria-pressed={onClick ? isSelected : undefined}
+                        className={`tap flex min-h-14 w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left transition disabled:cursor-not-allowed bg-neu-base ${
+                          isSelected ? "shadow-pressed-low ring-1 ring-[rgb(var(--signal)/0.5)]" : "shadow-raised-low hover:shadow-raised-mid"
+                        } ${extra}`}
+                      >
+                        {children}
+                      </button>
+                    );
+                    const time = (
+                      <span className="min-w-0">
+                        <span className="block text-body font-semibold text-slate-50">
+                          {formatOccurrenceTime(row.scheduledAt)} to {formatEndTime(row.scheduledAt, cost)}
+                        </span>
+                        <span className="block text-small text-slate-500">{creditsLabel(cost)}</span>
+                      </span>
+                    );
+
+                    if (row.isBooked) {
+                      return card(
+                        <>
+                          {time}
+                          <span className="shrink-0 text-small text-red-400">{isCurrentRescheduleSlot ? "Your time" : "Booked"}</span>
+                        </>,
+                        undefined,
+                        "opacity-60",
+                      );
+                    }
+
+                    if (reschedulingBooking) {
+                      const tooPricey = effectiveCredits < cost;
+                      return (
+                        <div key={key} className="flex items-center justify-between gap-3 rounded-xl bg-neu-base px-4 py-3 shadow-raised-low">
+                          {time}
+                          <button
+                            type="button"
+                            onClick={() => handleReschedule(row)}
+                            disabled={tooPricey || reschedulingKey !== null}
+                            className={actionClass}
+                          >
+                            {reschedulingKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                            {reschedulingKey === key ? "Moving…" : tooPricey ? "Not enough credits" : "Move here"}
+                          </button>
+                        </div>
+                      );
+                    }
+
+                    if (mode === "FAMILY") {
+                      return (
+                        <div key={key} className="flex items-center justify-between gap-3 rounded-xl bg-neu-base px-4 py-3 shadow-raised-low">
+                          <span className="min-w-0">
+                            <span className="block text-body font-semibold text-slate-50">
+                              {formatOccurrenceTime(row.scheduledAt)} to {formatEndTime(row.scheduledAt, familyCreditsPerStudent)}
+                            </span>
+                            <span className="block text-small text-slate-500">{creditsLabel(familyCreditsPerStudent)} per student</span>
+                          </span>
+                          <button type="button" onClick={() => openFamilyBooking(row)} disabled={familySubmitting} className={actionClass}>
+                            Set up family
+                          </button>
+                        </div>
+                      );
+                    }
+
+                    // A subscriber's week already has its class: more time is paid, not credits.
+                    if (weeklyLimited && heldWeeks.has(weekStart)) {
+                      return (
+                        <div key={key} className="flex items-center justify-between gap-3 rounded-xl bg-neu-base px-4 py-3 shadow-raised-low">
+                          {time}
+                          <button type="button" onClick={() => startExtraPayment(row)} disabled={payBusyKey !== null} className={actionClass}>
+                            {payBusyKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                            Buy extra · ${(EXTRA_CLASS_PRICE_CENTS / 100).toFixed(0)}
+                          </button>
+                        </div>
+                      );
+                    }
+                    if (weeklyLimited && pickedWeeks.has(weekStart) && !isSelected) {
+                      return card(
+                        <>
+                          {time}
+                          <span className="shrink-0 text-right text-small text-slate-500">One class a week</span>
+                        </>,
+                        undefined,
+                        "opacity-60",
+                      );
+                    }
+
+                    return card(
+                      <>
+                        {time}
+                        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isSelected ? "bg-[rgb(var(--signal))] text-black" : "bg-ink/10 text-transparent"}`}>
+                          <CheckIcon size={12} />
+                        </span>
+                      </>,
+                      () => toggleSelected(row),
+                    );
+                  })}
+                </div>
               )}
             </div>
-          )}
 
-          <div ref={timesRef} className="mt-8 scroll-mt-20">
-            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-              <div>
-                <h2 className="text-body font-semibold text-slate-100">2. Choose a time</h2>
-                {selectedDateKey && (
-                  <p className="mt-0.5 text-small text-slate-500">
-                    {new Date(selectedDateKey).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" })}
+            {/* The total, once anything is picked. Sticks to the bottom so it is always in reach. */}
+            {bookingBarVisible && (
+              <div
+                className="glass-surface-elevated sticky bottom-2 z-20 mt-6 flex flex-wrap items-center justify-between gap-4 p-4 lg:bottom-4"
+                role="region"
+                aria-label="Your selection"
+              >
+                <div>
+                  <p className="text-small font-medium text-slate-100">
+                    {selectedRows.length} class{selectedRows.length === 1 ? "" : "es"} · <span className="tabular-nums">{creditsLabel(selectedCreditTotal)}</span>
                   </p>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
-                {selectedDateKey && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDateKey(null)}
-                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small shrink-0"
-                  >
-                    Clear day
+                  <p className={`mt-0.5 text-small ${missingCredits > 0 ? "text-red-400" : "text-slate-500"}`}>
+                    {missingCredits > 0
+                      ? `You have ${creditsLabel(credits)}, so you need ${creditsLabel(missingCredits)} more.`
+                      : `You have ${creditsLabel(credits)}. ${creditsLabel(credits - selectedCreditTotal)} left after this.`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={() => setSelectedKeys(new Set())} disabled={bundleSubmitting} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
+                    Clear
                   </button>
-                )}
-                {mode === "SOLO" && !reschedulingBooking && credits >= CREDITS_PER_CLASS * 2 && (
-                  <button
-                    type="button"
-                    aria-pressed={multiSelect}
-                    onClick={() => {
-                      setMultiSelect((v) => !v);
-                      setPendingKey(null);
-                      setSelectedKeys(new Set());
-                    }}
-                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small shrink-0"
-                  >
-                    {multiSelect ? "Done selecting" : "Book several"}
-                  </button>
-                )}
+                  {missingCredits > 0 ? (
+                    <Link href="/billing/plans" className="tap cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold">
+                      Get more credits
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleBookSelected}
+                      disabled={bundleSubmitting}
+                      className="tap cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {bundleSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                      {bundleSubmitting ? "Booking…" : `Book ${selectedRows.length} class${selectedRows.length === 1 ? "" : "es"}`}
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-            {rows.length === 0 ? (
-              <p className="text-small text-slate-500">No classes scheduled.</p>
-            ) : !selectedDateKey ? null : displayRows.length === 0 ? (
-              <p className="text-small text-slate-500">No open times on that day.</p>
+            )}
+          </div>
+        )}
+
+        {tab === "upcoming" && (
+          <div className="max-w-3xl">
+            {upcoming.length === 0 ? (
+              <p className="text-small text-slate-500">No upcoming classes. Pick a time under Book.</p>
             ) : (
-              <div className="space-y-6">
-                {occurrenceGroups.map((group) => (
-                  <section key={group.key}>
-                    <div className="glass-surface divide-y divide-ink/10 overflow-hidden">
-                      {group.rows.map((row) => {
-                        const key = `${row.scheduleId}:${row.occurrenceDateMs}:${row.chunkIndex}`;
-                        const chosen = creditsFor(row);
-                        // While rescheduling, the credits the old booking is
-                        // still holding (client-side, nothing is actually freed
-                        // until the swap commits) are added back for this check
-                        // only, since the real backend check treats them the
-                        // same way: freed by the same move, not double-spent.
-                        const effectiveCredits = reschedulingBooking ? credits + reschedulingBooking.creditsSpent : credits;
-                        const insufficientCredits = effectiveCredits < chosen;
-                        const isCurrentRescheduleSlot =
-                          reschedulingBooking !== null && row.scheduledAt === reschedulingBooking.scheduledAt;
-                        const disabled = reschedulingBooking
-                          ? row.isBooked || insufficientCredits || reschedulingKey !== null
-                          : row.isBooked || bookingKey !== null || bundleSubmitting;
-                        const isSelected = selectedKeys.has(key);
-                        const isPending = pendingKey === key;
-                        const actionClass =
-                          "tap flex min-h-11 shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold transition disabled:cursor-not-allowed disabled:text-slate-600 sm:w-36 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low text-[rgb(var(--c-s-50))]";
-                        return (
-                          <div key={key} className="flex items-center gap-3 px-4 py-3 sm:gap-5 sm:px-5">
-                            {mode === "SOLO" && !reschedulingBooking && multiSelect && (
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => toggleSelected(row)}
-                                disabled={row.isBooked || bundleSubmitting}
-                                aria-label={`Select ${formatOccurrenceDay(row.scheduledAt)} at ${formatOccurrenceTime(row.scheduledAt)}`}
-                                className="h-6 w-6 shrink-0 cursor-pointer accent-[rgb(var(--signal))] disabled:cursor-not-allowed disabled:opacity-30"
-                              />
-                            )}
-                            <div className="min-w-0 flex-1">
-                              <p className="text-small text-slate-500">{formatOccurrenceDay(row.scheduledAt)}</p>
-                              <p className="text-body font-semibold text-slate-50">
-                                {formatOccurrenceTime(row.scheduledAt)} to{" "}
-                                {formatEndTime(row.scheduledAt, mode === "SOLO" ? chosen : familyCreditsPerStudent)}
-                              </p>
-                              <p className="text-small text-slate-500">
-                                {mode === "SOLO"
-                                  ? lengthLabel(chosen)
-                                  : `${lengthLabel(familyCreditsPerStudent)} per student`}
-                                {row.isBooked && <span className="text-red-400"> · Booked</span>}
-                                {isCurrentRescheduleSlot && <span className="text-[rgb(var(--c-s-50))]"> · Your current time</span>}
-                              </p>
-                            </div>
-                            {reschedulingBooking ? (
-                              <button type="button" onClick={() => handleReschedule(row)} disabled={disabled} className={actionClass}>
-                                {reschedulingKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                                {reschedulingKey === key ? "Moving…" : isCurrentRescheduleSlot ? "Current" : insufficientCredits ? "Not enough classes" : "Move here"}
-                              </button>
-                            ) : mode === "SOLO" ? (
-                              multiSelect ? null : row.isBooked ? null : (
-                                <button
-                                  type="button"
-                                  onClick={() => setPendingKey(isPending ? null : key)}
-                                  disabled={disabled}
-                                  aria-pressed={isPending}
-                                  className={`${actionClass} ${isPending ? "!shadow-pressed-low" : ""}`}
-                                >
-                                  {isPending ? "Selected" : "Choose"}
-                                </button>
-                              )
-                            ) : row.isBooked ? null : (
-                              <button type="button" onClick={() => openFamilyBooking(row)} disabled={familySubmitting} className={actionClass}>
-                                Set up family
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </section>
+              <div className="space-y-3">
+                {upcoming.map((b) => (
+                  <BookingCard
+                    key={b.id}
+                    booking={b}
+                    cancellationCutoffHours={cancellationCutoffHours}
+                    supportContactId={supportContactId}
+                    cancelingId={cancelingId}
+                    reschedulingBookingId={reschedulingBooking?.id ?? null}
+                    onCancel={handleCancel}
+                    onStartReschedule={startReschedule}
+                  />
                 ))}
               </div>
             )}
           </div>
-        </div>
+        )}
 
-        {/* Everything that is not the booking itself lives in one small tab
-            slider, the same sliding tabs the rest of the app uses. */}
-        <aside className="min-w-0 space-y-4 lg:sticky lg:top-0 lg:col-start-2 lg:row-start-1" aria-label="Credits and bookings">
-          <Tabs<PanelId>
-            label="Credits and bookings"
-            value={panel}
-            onChange={setPanel}
-            items={[
-              { id: "for", label: "Booking for" },
-              { id: "upcoming", label: "Upcoming", count: upcoming.length || undefined },
-              { id: "past", label: "Past", count: history.length || undefined },
-            ]}
-          />
-
-          {panel === "for" && <div className="glass-surface p-5">
-          {/* Who is the class for. Two plain choices; "Group" is left out until it exists. */}
-          <p className="text-small font-medium text-slate-400">Who is this class for?</p>
-          <div className="mt-2 flex w-fit flex-wrap gap-1.5 rounded-full bg-neu-base p-1 shadow-pressed-low">
-            <button
-              type="button"
-              onClick={() => {
-                setMode("SOLO");
-                setPendingKey(null);
-              }}
-              aria-pressed={mode === "SOLO"}
-              className={`tap rounded-full px-4 py-2 text-small font-medium transition ${
-                mode === "SOLO" ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
-              }`}
-            >
-              Just me
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode("FAMILY");
-                setPendingKey(null);
-                setMultiSelect(false);
-                setSelectedKeys(new Set());
-              }}
-              aria-pressed={mode === "FAMILY"}
-              className={`tap rounded-full px-4 py-2 text-small font-medium transition ${
-                mode === "FAMILY" ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
-              }`}
-            >
-              Me and my family
-            </button>
+        {tab === "past" && (
+          <div className="max-w-3xl">
+            {historyGroups.length === 0 ? (
+              <p className="text-small text-slate-500">No past classes yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {historyGroups.map((group, i) => (
+                  <MonthGroup
+                    key={group.key}
+                    group={group}
+                    defaultOpen={i === 0}
+                    cancellationCutoffHours={cancellationCutoffHours}
+                    supportContactId={supportContactId}
+                    cancelingId={cancelingId}
+                    reschedulingBookingId={reschedulingBooking?.id ?? null}
+                    onCancel={handleCancel}
+                    onStartReschedule={startReschedule}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-          </div>}
-
-          {panel === "upcoming" && (
-            <div className="glass-surface p-5">
-              {upcoming.length === 0 ? (
-                <p className="text-small text-slate-500">No upcoming classes.</p>
-              ) : (
-                <div className="space-y-2">
-                  {upcoming.map((b) => (
-                    <BookingCard
-                      key={b.id}
-                      booking={b}
-                      cancellationCutoffHours={cancellationCutoffHours}
-                      supportContactId={supportContactId}
-                      cancelingId={cancelingId}
-                      reschedulingBookingId={reschedulingBooking?.id ?? null}
-                      onCancel={handleCancel}
-                      onStartReschedule={startReschedule}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {panel === "past" && (
-            <div className="glass-surface p-5">
-              {historyGroups.length === 0 ? (
-                <p className="text-small text-slate-500">No past classes yet.</p>
-              ) : (
-                <div className="space-y-2">
-                  {historyGroups.map((group, i) => (
-                    <MonthGroup
-                      key={group.key}
-                      group={group}
-                      defaultOpen={i === 0}
-                      cancellationCutoffHours={cancellationCutoffHours}
-                      supportContactId={supportContactId}
-                      cancelingId={cancelingId}
-                      reschedulingBookingId={reschedulingBooking?.id ?? null}
-                      onCancel={handleCancel}
-                      onStartReschedule={startReschedule}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </aside>
+        )}
       </div>
     </WideLayout>
   );

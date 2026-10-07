@@ -3,6 +3,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   getEffectiveClassCredits,
+  hasLivePaymentPlan,
   getUpcomingOccurrences,
   getUserClassBookings,
   getWeeklyCreditUsage,
@@ -38,7 +39,7 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
 
   const activePlan = await getActivePaymentPlan(session.user.id);
 
-  const [credits, occurrences, bookings, supportContactId] = await Promise.all([
+  const [credits, occurrences, bookings, supportContactId, weeklyLimited] = await Promise.all([
     // Effective, not raw: a credit already reserved by another SCHEDULED
     // booking isn't actually free to spend again, even though the real
     // charge for it hasn't landed yet — see getEffectiveClassCredits.
@@ -46,11 +47,13 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
     getUpcomingOccurrences(),
     getUserClassBookings(session.user.id),
     getSupportContactId(),
+    hasLivePaymentPlan(session.user.id),
   ]);
 
   const bookingClient = (
     <ClassBookingClient
       extraMode={Boolean(activePlan)}
+      weeklyLimited={weeklyLimited}
       initialCredits={credits}
       zelleHandle={process.env.ZELLE_HANDLE ?? "payments@yourplatform.com"}
       cancellationCutoffHours={CANCELLATION_CUTOFF_HOURS}
@@ -72,6 +75,7 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
       initialBookings={bookings.map((b) => ({
         id: b.id,
         label: b.schedule.label,
+        occurrenceDateMs: b.occurrenceDate.getTime(),
         scheduledAt: b.scheduledAt.toISOString(),
         creditsSpent: b.creditsSpent,
         status: b.status,
