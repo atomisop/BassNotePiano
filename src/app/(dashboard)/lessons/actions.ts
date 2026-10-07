@@ -17,7 +17,9 @@ import {
 } from "@/lib/classSchedule";
 import { changeReservedSlot, getActivePaymentPlan, PaymentPlanError } from "@/lib/paymentPlans";
 import { PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
-import { RateLimitError } from "@/lib/rateLimit";
+import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
+import { prisma } from "@/lib/prisma";
+import { openBookingSupportCase, AssistantEscalationError } from "@/lib/support";
 
 export async function bookClassAction(scheduleId: string, occurrenceDateMs: number, chunkIndex: number, creditsToBook?: number) {
   const session = await getServerAuthSession();
@@ -119,5 +121,26 @@ export async function changeReservedSlotAction(newScheduleId: string, newChunkIn
     return { ok: true as const };
   } catch (err) {
     return { ok: false as const, error: err instanceof PaymentPlanError ? err.message : "Something went wrong." };
+  }
+}
+
+/** "Message support" on a booked class: opens a support case with the subject Booking and returns its id. */
+export async function contactSupportAboutBookingAction(
+  bookingId: string,
+): Promise<{ ok: true; escalationId: string } | { ok: false; error: string }> {
+  const session = await getServerAuthSession();
+  if (!session?.user) return { ok: false, error: "Sign in again." };
+  try {
+    // Opening a case pings every admin, so it is rate limited like the Atom handoff.
+    await assertRateLimit(
+      prisma.assistantEscalation.count,
+      { identifier: `user:${session.user.id}` },
+      { windowMinutes: 60, max: 5, message: "You've already reached out. The team will follow up soon." },
+    );
+    const { escalationId } = await openBookingSupportCase(session.user.id, bookingId);
+    return { ok: true, escalationId };
+  } catch (err) {
+    if (err instanceof RateLimitError || err instanceof AssistantEscalationError) return { ok: false, error: err.message };
+    return { ok: false, error: "Something went wrong. Please try again." };
   }
 }

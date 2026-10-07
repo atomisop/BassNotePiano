@@ -42,7 +42,7 @@ function ThreadRow({ thread, href, currentAdminId }: { thread: AdminThreadSummar
       <div className="flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-1.5 truncate text-small font-medium text-slate-100">
           {thread.hasUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[rgb(var(--c-s-50))]" />}
-          <span className="truncate">{thread.contactName || thread.contactEmail}</span>
+          <span className="truncate">{thread.user?.name || thread.contactName || thread.contactEmail}</span>
         </span>
         <span className="flex shrink-0 items-center gap-1.5">
           {isEmail && <span className="rounded-full bg-slate-50/10 px-2 py-0.5 text-small font-medium uppercase tracking-wide text-slate-300">Email</span>}
@@ -51,7 +51,7 @@ function ThreadRow({ thread, href, currentAdminId }: { thread: AdminThreadSummar
           </span>
         </span>
       </div>
-      {isEmail && thread.subject && <p className="truncate text-small text-slate-300">{thread.subject}</p>}
+      {thread.subject && <p className="truncate text-small text-slate-300">{thread.subject}</p>}
       {thread.lastMessage && (
         <p className="truncate text-small text-slate-500">
           {thread.lastMessage.sender === "SUPPORT" ? "You: " : thread.lastMessage.sender === "ATOM" ? "Atom: " : ""}

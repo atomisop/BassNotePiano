@@ -3,6 +3,7 @@
 import { scrollWithin } from "@/lib/scrollWithin";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   bookClassAction,
   bookClassBundleAction,
@@ -23,6 +24,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { Tabs } from "@/components/ui/Tabs";
+import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 
 const NETWORK_ERROR = "That didn't go through. Check your connection and try again.";
 
@@ -144,7 +146,6 @@ function groupByMonth(list: BookingRow[]): { key: string; label: string; booking
 function BookingCard({
   booking,
   cancellationCutoffHours,
-  supportContactId,
   cancelingId,
   reschedulingBookingId,
   onCancel,
@@ -152,95 +153,146 @@ function BookingCard({
 }: {
   booking: BookingRow;
   cancellationCutoffHours: number;
-  supportContactId: string | null;
   cancelingId: string | null;
   reschedulingBookingId: string | null;
   onCancel: (booking: BookingRow) => void;
   onStartReschedule: (booking: BookingRow) => void;
 }) {
   const b = booking;
-  const hoursUntil = (new Date(b.scheduledAt).getTime() - Date.now()) / 3_600_000;
-  // Self-cancel and self-reschedule share the exact same >=24h eligibility
-  // (see cancelClassBooking / rescheduleClassBooking) — inside that window
-  // neither button shows, just a way to reach support for a manual,
-  // case-by-case call.
-  const cancelEligible = b.status === "SCHEDULED" && hoursUntil >= cancellationCutoffHours;
-  const pastSelfServeWindow = b.status === "SCHEDULED" && hoursUntil > 0 && hoursUntil < cancellationCutoffHours;
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const start = new Date(b.scheduledAt);
+  const hoursUntil = (start.getTime() - Date.now()) / 3_600_000;
+  // Self-cancel and self-reschedule share one rule (see cancelClassBooking and
+  // rescheduleClassBooking): free to change until the cutoff, then it goes
+  // through the team.
+  const scheduled = b.status === "SCHEDULED";
+  const changeEligible = scheduled && hoursUntil >= cancellationCutoffHours;
+  const insideWindow = scheduled && hoursUntil > 0 && hoursUntil < cancellationCutoffHours;
   const isBeingRescheduled = reschedulingBookingId === b.id;
+  const canceling = cancelingId === b.id;
+  const freeUntil = new Date(start.getTime() - cancellationCutoffHours * 3_600_000);
+  const minutes = Math.round((b.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES);
+
   return (
-    <div className="glass-surface flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <p className="text-small text-slate-100">
-          {b.label ?? "Class"} · {formatDateTime(b.scheduledAt)}
-        </p>
-        <p className="mt-0.5 text-small text-slate-500">
-          {creditsLabel(b.creditsSpent)}
-          {b.status === "SCHEDULED" &&
-            (pastSelfServeWindow ? " · Too close to class time to self-cancel" : "")}
-        </p>
-        {b.status === "COMPLETED" && b.attendance && (
-          <p className={`mt-0.5 text-small ${b.attendance === "PRESENT" ? "text-slate-50" : "text-red-400"}`}>
-            {b.attendance === "PRESENT" ? "Attended" : "Marked no-show, still charged"}
+    <div className="glass-surface p-4 sm:p-5">
+      <div className="flex items-start gap-4">
+        <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-xl bg-neu-base shadow-pressed-low">
+          <span className="text-small font-medium uppercase tracking-wide text-slate-500">
+            {start.toLocaleDateString(undefined, { weekday: "short" })}
+          </span>
+          <span className="text-xl font-bold leading-none text-slate-50">{start.getDate()}</span>
+          <span className="text-small text-slate-500">{start.toLocaleDateString(undefined, { month: "short" })}</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <p className="text-body font-semibold text-slate-50">{b.label ?? "Class"}</p>
+            {b.reserved && scheduled && (
+              <span className="rounded-full bg-neu-base px-2 py-0.5 text-small text-slate-400 shadow-raised-low">Your weekly class</span>
+            )}
+            {!scheduled && (
+              <span className={`rounded-full px-2.5 py-0.5 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[b.status]}`}>
+                {STATUS_LABEL[b.status]}
+              </span>
+            )}
+          </div>
+          <p className="mt-0.5 text-small text-slate-200">
+            {start.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} to {formatEndTime(b.scheduledAt, b.creditsSpent)}
           </p>
-        )}
-        {b.status === "CANCELED" && <p className="mt-0.5 text-small text-slate-50">Canceled</p>}
+          <p className="mt-0.5 text-small text-slate-500">
+            {creditsLabel(b.creditsSpent)} · {minutes} min
+          </p>
+          {changeEligible && (
+            <p className="mt-1 text-small text-slate-500">
+              Free to change until {freeUntil.toLocaleString(undefined, { weekday: "short", hour: "numeric", minute: "2-digit" })}
+            </p>
+          )}
+          {insideWindow && (
+            <p className="mt-1 text-small text-slate-500">
+              Starts within {cancellationCutoffHours} hours, so changes now go through the team. Message support and they will sort it out.
+            </p>
+          )}
+          {b.status === "COMPLETED" && b.attendance && (
+            <p className={`mt-1 text-small ${b.attendance === "PRESENT" ? "text-slate-50" : "text-red-400"}`}>
+              {b.attendance === "PRESENT" ? "Attended" : "Marked no-show, still charged"}
+            </p>
+          )}
+        </div>
       </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
-        {b.status === "SCHEDULED" && hoursUntil > -1 && hoursUntil <= 0.5 && (
-          <a
-            href={b.discordUrl ?? DISCORD_INVITE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="tap cta-sheen cta-fill inline-flex items-center rounded-lg px-3 py-1.5 text-small font-semibold"
-          >
-            Join on Discord
-          </a>
-        )}
-        {b.status === "SCHEDULED" && hoursUntil > 0 && (
-          <a
-            href={`/api/calendar/class?s=${encodeURIComponent(b.scheduledAt)}&m=${45 * classCount(b.creditsSpent)}`}
-            className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium"
-          >
-            Add to calendar
-          </a>
-        )}
-        {cancelEligible && (
-          <button
-            type="button"
-            onClick={() => onStartReschedule(b)}
-            disabled={cancelingId === b.id}
-            className={`tap flex items-center justify-center rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
-              isBeingRescheduled
-                ? "border-[rgb(var(--c-s-50)/0.4)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
-                : "border-transparent text-slate-300 hover:border-[rgb(var(--c-s-50)/0.4)] hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low"
-            }`}
-          >
-            {isBeingRescheduled ? "Picking new time…" : b.reserved ? "Move this week" : "Reschedule"}
-          </button>
-        )}
-        {cancelEligible && (
-          <button
-            type="button"
-            onClick={() => onCancel(b)}
-            disabled={cancelingId === b.id}
-            className="tap flex items-center justify-center rounded-lg border border-red-400/20 px-3 py-1.5 text-small font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
-          >
-            {cancelingId === b.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-            {cancelingId === b.id ? "Canceling…" : b.reserved ? "Skip" : "Cancel"}
-          </button>
-        )}
-        {pastSelfServeWindow && supportContactId && (
-          <Link
-            href={`/messages?with=${supportContactId}`}
-            className="tap inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-          >
-            Message support
-          </Link>
-        )}
-        <span className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[b.status]}`}>
-          {STATUS_LABEL[b.status]}
-        </span>
-      </div>
+
+      {scheduled && hoursUntil > -1 && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {hoursUntil <= 0.5 && (
+            <a
+              href={b.discordUrl ?? DISCORD_INVITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="tap cta-sheen cta-fill inline-flex items-center rounded-lg px-3 py-1.5 text-small font-semibold"
+            >
+              Join on Discord
+            </a>
+          )}
+          {changeEligible && (
+            <button
+              type="button"
+              onClick={() => onStartReschedule(b)}
+              disabled={canceling}
+              className={`tap flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                isBeingRescheduled
+                  ? "bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))] shadow-pressed-low"
+                  : "bg-neu-base text-slate-100 shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+              }`}
+            >
+              {isBeingRescheduled ? "Picking new time…" : b.reserved ? "Move this week" : "Reschedule"}
+            </button>
+          )}
+          {changeEligible && !confirmingCancel && (
+            <button
+              type="button"
+              onClick={() => setConfirmingCancel(true)}
+              disabled={canceling}
+              className="tap flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-medium text-red-400 transition hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+            >
+              {b.reserved ? "Skip" : "Cancel"}
+            </button>
+          )}
+          {hoursUntil > 0 && (
+            <a
+              href={`/api/calendar/class?s=${encodeURIComponent(b.scheduledAt)}&m=${minutes}`}
+              className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium"
+            >
+              Add to calendar
+            </a>
+          )}
+          <MessageSupportButton bookingId={b.id} />
+        </div>
+      )}
+
+      {changeEligible && confirmingCancel && (
+        <div className="mt-3 rounded-xl bg-neu-base px-4 py-3 shadow-pressed-low">
+          <p className="text-small text-slate-300">
+            {b.reserved ? "Skip this class? It stays on your account." : "Cancel this class? No credits are used."} The teacher is told right away.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirmingCancel(false)}
+              disabled={canceling}
+              className="tap rounded-lg px-3 py-2 text-small font-medium text-slate-300 bg-neu-base shadow-raised-low active:shadow-pressed-low disabled:opacity-50"
+            >
+              Keep it
+            </button>
+            <button
+              type="button"
+              onClick={() => onCancel(b)}
+              disabled={canceling}
+              className="tap flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-2 text-small font-semibold text-white shadow-raised-low hover:bg-red-400 disabled:opacity-50"
+            >
+              {canceling && <MorphingSquare size={12} />}
+              {canceling ? "Canceling…" : b.reserved ? "Yes, skip it" : "Yes, cancel it"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -261,7 +313,6 @@ function MonthGroup({
   group,
   defaultOpen,
   cancellationCutoffHours,
-  supportContactId,
   cancelingId,
   reschedulingBookingId,
   onCancel,
@@ -270,7 +321,6 @@ function MonthGroup({
   group: { key: string; label: string; bookings: BookingRow[] };
   defaultOpen: boolean;
   cancellationCutoffHours: number;
-  supportContactId: string | null;
   cancelingId: string | null;
   reschedulingBookingId: string | null;
   onCancel: (booking: BookingRow) => void;
@@ -297,7 +347,6 @@ function MonthGroup({
               key={b.id}
               booking={b}
               cancellationCutoffHours={cancellationCutoffHours}
-              supportContactId={supportContactId}
               cancelingId={cancelingId}
               reschedulingBookingId={reschedulingBookingId}
               onCancel={onCancel}
@@ -367,7 +416,6 @@ export function ClassBookingClient({
   soloMaxCredits,
   familyMinAttendees,
   familyCreditsPerStudent,
-  supportContactId,
   occurrences,
   initialBookings,
   zelleHandle,
@@ -383,7 +431,6 @@ export function ClassBookingClient({
   soloMaxCredits: number;
   familyMinAttendees: number;
   familyCreditsPerStudent: number;
-  supportContactId: string | null;
   occurrences: OccurrenceRow[];
   initialBookings: BookingRow[];
   zelleHandle: string;
@@ -425,6 +472,17 @@ export function ClassBookingClient({
   const [familyEmails, setFamilyEmails] = useState<string[]>(["", ""]);
   const [familyChecks, setFamilyChecks] = useState<Record<string, { checking: boolean; found: boolean; verified: boolean; name: string | null }>>({});
   const [familySubmitting, setFamilySubmitting] = useState(false);
+
+  // /lessons?tab=extra&move=<bookingId> (from the weekly class page) opens straight into moving that class.
+  const moveId = useSearchParams().get("move");
+  const startedMoveRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!moveId || startedMoveRef.current === moveId) return;
+    const target = initialBookings.find((b) => b.id === moveId && b.status === "SCHEDULED");
+    if (!target) return;
+    startedMoveRef.current = moveId;
+    startReschedule(target);
+  }); // eslint-disable-line react-hooks/exhaustive-deps
 
   const rowKey = (r: OccurrenceRow) => `${r.scheduleId}:${r.occurrenceDateMs}:${r.chunkIndex}`;
 
@@ -1059,7 +1117,6 @@ export function ClassBookingClient({
                     key={b.id}
                     booking={b}
                     cancellationCutoffHours={cancellationCutoffHours}
-                    supportContactId={supportContactId}
                     cancelingId={cancelingId}
                     reschedulingBookingId={reschedulingBooking?.id ?? null}
                     onCancel={handleCancel}
@@ -1083,7 +1140,6 @@ export function ClassBookingClient({
                     group={group}
                     defaultOpen={i === 0}
                     cancellationCutoffHours={cancellationCutoffHours}
-                    supportContactId={supportContactId}
                     cancelingId={cancelingId}
                     reschedulingBookingId={reschedulingBooking?.id ?? null}
                     onCancel={handleCancel}

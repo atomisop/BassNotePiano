@@ -60,7 +60,6 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
       soloMaxCredits={SOLO_MAX_CREDITS}
       familyMinAttendees={FAMILY_MIN_ATTENDEES}
       familyCreditsPerStudent={FAMILY_CREDITS_PER_STUDENT}
-      supportContactId={supportContactId}
       occurrences={occurrences.map((o) => ({
         scheduleId: o.scheduleId,
         label: o.label,
