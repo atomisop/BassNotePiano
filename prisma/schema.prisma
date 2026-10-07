@@ -1648,6 +1648,8 @@ model ProcessedPaymentEmail {
   amountCents Int
   memo        String?       @db.Text
   paymentId   String?
+  // Set when an admin says this email is nothing to do with a payment (a personal transfer, say), so it stops being counted as unmatched.
+  dismissedAt DateTime?
   createdAt   DateTime      @default(now())
 
   @@index([amountCents, createdAt])

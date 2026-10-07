@@ -5,6 +5,7 @@ import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { SCALE_SLUGS } from "@/lib/curriculum";
 import { createNotification } from "@/lib/notifications";
+import { countUnmatchedReceipts, getPaymentPipelineHealth } from "@/lib/paymentPipelineStatus";
 
 // ---------------------------------------------------------------------------
 // Overview metrics
@@ -477,16 +478,23 @@ export interface AttentionItem {
 /** Everything waiting on the owner or staff right now, each with the page that handles it. Items with nothing waiting are left out. */
 export async function getAttentionItems(): Promise<AttentionItem[]> {
   const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000);
-  const [payments, applications, chats, unmarked, progress] = await Promise.all([
+  const [payments, applications, chats, unmarked, progress, uncheckedAuto, unmatchedEmails, pipeline] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
     prisma.classRegistration.count({ where: { status: "PENDING" } }),
     prisma.assistantEscalation.count({ where: { status: "OPEN" } }),
     prisma.classBooking.count({ where: { status: "SCHEDULED", scheduledAt: { lt: hoursAgo(3) } } }),
     getAdminProgressOverview(""),
+    // Approved from an email, not yet looked at by a person.
+    prisma.zellePayment.count({ where: { autoApproved: true, checkedAt: null, status: "VERIFIED" } }),
+    countUnmatchedReceipts(),
+    getPaymentPipelineHealth(),
   ]);
   const readyScales = progress.filter((p) => p.hasCurriculumAccess && p.accessKind !== "ADMIN" && p.nextApproval.state === "READY").length;
   const items: AttentionItem[] = [
     { label: payments === 1 ? "Payment to review" : "Payments to review", count: payments, href: "/admin/payments" },
+    { label: uncheckedAuto === 1 ? "Auto-approved payment to check" : "Auto-approved payments to check", count: uncheckedAuto, href: "/admin/payments?status=UNCHECKED" },
+    { label: unmatchedEmails === 1 ? "Payment email that matched no one" : "Payment emails that matched no one", count: unmatchedEmails, href: "/admin/payments?tab=emails" },
+    { label: "Bank emails have stopped arriving while payments wait", count: pipeline.status === "quiet" ? 1 : 0, href: "/admin/payments" },
     { label: applications === 1 ? "Class application" : "Class applications", count: applications, href: "/admin/students" },
     { label: chats === 1 ? "Open support chat" : "Open support chats", count: chats, href: "/admin/support" },
     { label: unmarked === 1 ? "Finished class to mark" : "Finished classes to mark", count: unmarked, href: "/admin/schedule?view=ATTENDANCE" },

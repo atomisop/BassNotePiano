@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { approveZellePayment, deleteZellePayment, markPaymentChecked, refundZellePayment, rejectZellePayment } from "@/lib/payments";
 import { isOwnerEmail } from "@/lib/adminNotifications";
+import { dismissReceipt, matchReceiptToPayment, ReceiptError } from "@/lib/paymentReceipts";
 
 // The admin layout's redirect only protects rendering — Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
@@ -60,5 +61,31 @@ export async function refundPaymentAction(
     return { ok: true, error: null, warning: warnings.length ? warnings.join(" ") : null };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Could not refund." };
+  }
+}
+
+/** Attaches a bank or Venmo email that matched nobody to an open payment for the same amount, and approves it. */
+export async function matchReceiptAction(receiptId: string, paymentId: string): Promise<{ ok: boolean; error: string | null }> {
+  const admin = await requireAdmin();
+  try {
+    await matchReceiptToPayment({ receiptId, paymentId, admin: { id: admin.id, email: admin.email ?? null } });
+    revalidatePath("/admin/payments");
+    revalidatePath("/admin");
+    return { ok: true, error: null };
+  } catch (err) {
+    return { ok: false, error: err instanceof ReceiptError ? err.message : "Something went wrong. Nothing was changed." };
+  }
+}
+
+/** Says a payment email has nothing to do with a payment, so it stops being counted. */
+export async function dismissReceiptAction(receiptId: string): Promise<{ ok: boolean; error: string | null }> {
+  const admin = await requireAdmin();
+  try {
+    await dismissReceipt({ receiptId, admin: { id: admin.id, email: admin.email ?? null } });
+    revalidatePath("/admin/payments");
+    revalidatePath("/admin");
+    return { ok: true, error: null };
+  } catch {
+    return { ok: false, error: "Something went wrong. Nothing was changed." };
   }
 }
