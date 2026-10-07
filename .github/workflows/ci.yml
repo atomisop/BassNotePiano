@@ -81,3 +81,15 @@ jobs:
           DIRECT_URL: ${{ secrets.DIRECT_URL || 'postgresql://ci:ci@localhost:5432/ci' }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-placeholder-secret-not-for-production-use' }}
           NEXTAUTH_URL: "http://localhost:3000"
+
+      # The build above has applied every migration to the throwaway Postgres, so the
+      # database-backed tests (booking rules, support cases, payments, login codes,
+      # backups) run here against a real database.
+      - run: npm run test:db
+        env:
+          # Always the throwaway database, never a secret: these tests create and delete rows.
+          DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
+          DIRECT_URL: "postgresql://ci:ci@localhost:5432/ci"
+          NEXTAUTH_SECRET: "ci-placeholder-secret-not-for-production-use"
+          NEXTAUTH_URL: "http://localhost:3000"
+          RESEND_API_KEY: ""
