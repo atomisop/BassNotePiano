@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { AnimatePresence, motion, useInView, useReducedMotion } from "framer-motion";
+import { useInView, useReducedMotion } from "framer-motion";
 import { PhoneFrame } from "@/components/ui/phone-frame";
 
 export interface SolutionScreen {
@@ -24,6 +24,14 @@ const SCREEN_MS = 3400;
 export function SolutionScreenshotTabs({ screens, defaultKey }: { screens: SolutionScreen[]; defaultKey: string }) {
   const reduced = useReducedMotion();
   const [active, setActive] = useState(() => Math.max(0, screens.findIndex((s) => s.key === defaultKey)));
+  const [prev, setPrev] = useState(-1);
+  const [started, setStarted] = useState(false);
+  function goTo(next: number) {
+    if (next === active) return;
+    setPrev(active);
+    setStarted(true);
+    setActive(next);
+  }
   const wrapRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
   const inView = useInView(wrapRef, { amount: 0.4 });
@@ -31,8 +39,9 @@ export function SolutionScreenshotTabs({ screens, defaultKey }: { screens: Solut
 
   useEffect(() => {
     if (reduced || !inView) return;
-    const id = setTimeout(() => setActive((i) => (i + 1) % screens.length), SCREEN_MS);
+    const id = setTimeout(() => goTo((active + 1) % screens.length), SCREEN_MS);
     return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, inView, reduced, screens.length]);
 
   useEffect(() => {
@@ -45,19 +54,25 @@ export function SolutionScreenshotTabs({ screens, defaultKey }: { screens: Solut
   return (
     <div ref={wrapRef}>
       <PhoneFrame>
-        <AnimatePresence initial={false}>
-          <motion.div
-            key={screen.key}
-            className="absolute inset-0"
-            initial={reduced ? false : { y: "5%", opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            // The old screen stays fully visible underneath until the new one has faded in, so the phone never goes dark in between.
-            exit={reduced ? undefined : { opacity: 1, transition: { duration: 0.6 } }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <Image src={screen.src} alt={screen.alt} fill sizes="(min-width: 1024px) 300px, 80vw" className="object-cover object-top" priority={active === 0} />
-          </motion.div>
-        </AnimatePresence>
+        {/* Every screen is stacked and already loaded. The new one fades in on top while the
+            previous one stays fully visible underneath, so the phone is never empty or dark. */}
+        {screens.map((s, i) => {
+          const isActive = i === active;
+          const isPrev = i === prev;
+          return (
+            <div
+              key={s.key}
+              className="absolute inset-0"
+              style={{
+                zIndex: isActive ? 2 : isPrev ? 1 : 0,
+                opacity: isActive || isPrev ? 1 : 0,
+                animation: isActive && !reduced && started ? "phone-screen-in 0.6s ease-out both" : undefined,
+              }}
+            >
+              <Image src={s.src} alt={isActive ? s.alt : ""} aria-hidden={!isActive} fill sizes="(min-width: 1024px) 300px, 80vw" loading="eager" className="object-cover object-top" />
+            </div>
+          );
+        })}
       </PhoneFrame>
 
       <p className="mt-6 text-center text-small text-[#E1E0CC]/60" aria-live="off">
@@ -79,7 +94,7 @@ export function SolutionScreenshotTabs({ screens, defaultKey }: { screens: Solut
               role="tab"
               data-screen={s.key}
               aria-selected={selected}
-              onClick={() => setActive(i)}
+              onClick={() => goTo(i)}
               className={`tap shrink-0 snap-center rounded-full px-4 py-1.5 text-small font-medium transition ${
                 selected ? "bg-[rgb(var(--c-a-400))] text-black" : "bg-[#E1E0CC]/10 text-[#E1E0CC]/70 hover:text-[#E1E0CC]"
               }`}
