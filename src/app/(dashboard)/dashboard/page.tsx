@@ -51,8 +51,8 @@ function Stat({ value, label }: { value: string; label: string }) {
 /**
  * Home (STEP 2B wireframe, approved 2026-10-02).
  *
- * Desktop: the full width. A band of cards (next step, week, progress, next
- * class, badges) sits on the same four columns as the scales below it.
+ * Desktop: the full width. A band of cards (finger practice, next class, next
+ * step, week, progress) sits on the same four columns as the scales below it.
  * Below lg the cards become one swipeable deck (CardDeck).
  *
  * STEP 2C: the greeting is the one Hero; the student's progress ("3/14")
@@ -237,14 +237,15 @@ export default async function DashboardPage() {
           <TodayGreeting name={user?.name ?? null} className="relative z-(--z-mid)" />
         </div>
 
-        {/* ---- Phones: the five cards as one swipeable deck ---------------- */}
+        {/* ---- Phones: the cards as one swipeable deck. Finger practice is
+            first: it is the thing to do today, and it unlocks the scales. --- */}
         <CardDeck
           className="lg:hidden"
           label="Your home cards"
-          labels={["Next class", "Finger practice", "Your next step", "This week", "Progress", "Badges"]}
+          labels={["Finger practice", "Next class", "Your next step", "This week", "Progress", "Badges"]}
         >
-          {nextClassCard()}
           {practiceCard()}
+          {nextClassCard()}
           {nextStepCard()}
           {weekCard()}
           {progressCard()}
@@ -256,8 +257,8 @@ export default async function DashboardPage() {
             the week and progress cards take the space it used to leave empty,
             so there is no side column and the scales get the full width. ---- */}
         <div className="hidden gap-3 lg:grid lg:grid-cols-4 [&>*>*]:h-full">
-          <div className="lg:col-span-2">{nextClassCard()}</div>
           <div className="lg:col-span-2">{practiceCard()}</div>
+          <div className="lg:col-span-2">{nextClassCard()}</div>
           <div className="lg:col-span-2">{nextStepCard()}</div>
           <div>{weekCard()}</div>
           <div>{progressCard()}</div>
