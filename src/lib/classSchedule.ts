@@ -1864,6 +1864,13 @@ export async function createClassSchedule(input: ClassScheduleInput) {
  * case, not a blocked action here — see PaymentPlan.reservedSlotInactiveNotifiedAt.
  */
 export async function updateClassSchedule(scheduleId: string, input: ClassScheduleInput) {
+  const upcoming = await countUpcomingBookingsBySchedule([scheduleId]);
+  if ((upcoming.get(scheduleId) ?? 0) > 0) {
+    const n = upcoming.get(scheduleId)!;
+    throw new ClassScheduleError(
+      `${n} upcoming booking${n === 1 ? " is" : "s are"} on this time. Cancel ${n === 1 ? "it" : "them"} first (Bookings tab), or turn the slot off and add a new one, so no student's class moves without them knowing.`,
+    );
+  }
   const reservationCount = await prisma.paymentPlan.count({ where: { reservedScheduleId: scheduleId, status: "ACTIVE" } });
   if (reservationCount > 0) {
     throw new ClassScheduleError(
@@ -1886,6 +1893,39 @@ export async function updateClassSchedule(scheduleId: string, input: ClassSchedu
   });
 }
 
-export async function setClassScheduleActive(scheduleId: string, active: boolean) {
-  return prisma.classSchedule.update({ where: { id: scheduleId }, data: { active } });
+/** Future SCHEDULED bookings per schedule, for warning the admin before a slot is turned off or edited. */
+export async function countUpcomingBookingsBySchedule(scheduleIds: string[]): Promise<Map<string, number>> {
+  if (scheduleIds.length === 0) return new Map();
+  const rows = await prisma.classBooking.groupBy({
+    by: ["scheduleId"],
+    where: { scheduleId: { in: scheduleIds }, status: "SCHEDULED", scheduledAt: { gt: new Date() } },
+    _count: { _all: true },
+  });
+  return new Map(rows.map((r) => [r.scheduleId, r._count._all]));
+}
+
+/**
+ * Turning a slot off only stops new bookings. Classes already booked on it
+ * still happen (and still send reminders) unless `cancelUpcoming` is set, in
+ * which case each one is canceled through the normal admin cancel, so the
+ * student is told and nothing is charged. Returns how many were canceled.
+ */
+export async function setClassScheduleActive(scheduleId: string, active: boolean, opts?: { cancelUpcoming?: boolean }): Promise<number> {
+  await prisma.classSchedule.update({ where: { id: scheduleId }, data: { active } });
+  if (active || !opts?.cancelUpcoming) return 0;
+
+  const upcoming = await prisma.classBooking.findMany({
+    where: { scheduleId, status: "SCHEDULED", scheduledAt: { gt: new Date() } },
+    select: { id: true },
+  });
+  let canceled = 0;
+  for (const { id } of upcoming) {
+    try {
+      await adminCancelClassBooking(id, "This class time is no longer offered");
+      canceled++;
+    } catch (err) {
+      console.error(`Canceling booking ${id} on a turned-off slot failed (non-blocking):`, err);
+    }
+  }
+  return canceled;
 }

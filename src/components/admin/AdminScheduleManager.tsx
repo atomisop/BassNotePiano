@@ -13,6 +13,8 @@ interface ScheduleRow {
   creditCost: number;
   label: string | null;
   active: boolean;
+  /** Future classes already booked on this slot. */
+  upcomingBookings: number;
 }
 
 interface ScheduleInput {
@@ -23,12 +25,13 @@ interface ScheduleInput {
 }
 
 type ActionResult = { ok: true } | { ok: false; error: string };
+type SetActiveResult = { ok: true; canceled?: number } | { ok: false; error: string };
 
 export interface AdminScheduleManagerProps {
   schedules: ScheduleRow[];
   onCreate: (input: ScheduleInput) => Promise<ActionResult>;
   onUpdate: (scheduleId: string, input: ScheduleInput) => Promise<ActionResult>;
-  onSetActive: (scheduleId: string, active: boolean) => Promise<ActionResult>;
+  onSetActive: (scheduleId: string, active: boolean, cancelUpcoming?: boolean) => Promise<SetActiveResult>;
 }
 
 const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -186,9 +189,12 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
     router.refresh();
   }
 
-  async function handleToggleActive(row: ScheduleRow) {
+  const [confirmOffId, setConfirmOffId] = useState<string | null>(null);
+
+  async function handleToggleActive(row: ScheduleRow, cancelUpcoming = false) {
     setBusyId(row.id);
-    await onSetActive(row.id, !row.active);
+    setConfirmOffId(null);
+    await onSetActive(row.id, !row.active, cancelUpcoming);
     setBusyId(null);
     router.refresh();
   }
@@ -227,7 +233,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                 ) : (
                   <div
                     key={row.id}
-                    className={`flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between ${
+                    className={`flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between ${
                       row.active ? "border-transparent bg-neu-base shadow-raised-low" : "border-transparent opacity-50 bg-neu-base shadow-raised-low"
                     }`}
                   >
@@ -238,7 +244,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                       </p>
                       <p className="mt-0.5 text-small text-slate-500">
                         {row.durationMin} min window · {classesInWindow(row.durationMin)} class{classesInWindow(row.durationMin) === 1 ? "" : "es"} ·{" "}
-                        {row.active ? "Bookable" : "Off"}
+                        {row.active ? "Bookable" : "Off"}{row.upcomingBookings > 0 && ` · ${row.upcomingBookings} booked`}
                       </p>
                     </div>
                     <div className="flex shrink-0 gap-2">
@@ -254,7 +260,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleToggleActive(row)}
+                        onClick={() => (row.active && row.upcomingBookings > 0 ? setConfirmOffId(row.id) : handleToggleActive(row))}
                         disabled={busyId === row.id}
                         className={`tap flex items-center justify-center rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
                           row.active
@@ -265,6 +271,25 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                         {busyId === row.id ? <MorphingSquare size={12} /> : row.active ? "Turn off" : "Turn on"}
                       </button>
                     </div>
+                    {confirmOffId === row.id && (
+                      <div className="w-full rounded-lg border border-red-400/20 p-3 text-small text-slate-300 sm:basis-full">
+                        <p>
+                          {row.upcomingBookings} upcoming class{row.upcomingBookings === 1 ? " is" : "es are"} booked on this time. Turning it off stops new
+                          bookings only. What should happen to the booked classes?
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <button type="button" onClick={() => handleToggleActive(row, true)} className="tap rounded-lg border border-red-400/30 px-3 py-1.5 font-medium text-red-300">
+                            Cancel them and tell the students
+                          </button>
+                          <button type="button" onClick={() => handleToggleActive(row, false)} className="tap rounded-lg px-3 py-1.5 font-medium text-slate-100 bg-neu-base shadow-raised-low">
+                            Keep them, turn off new bookings
+                          </button>
+                          <button type="button" onClick={() => setConfirmOffId(null)} className="tap rounded-lg px-3 py-1.5 text-slate-400">
+                            Back
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ),
               )}

@@ -56,11 +56,11 @@ export async function updateClassScheduleAction(scheduleId: string, input: Class
   }
 }
 
-export async function setClassScheduleActiveAction(scheduleId: string, active: boolean) {
+export async function setClassScheduleActiveAction(scheduleId: string, active: boolean, cancelUpcoming = false) {
   await requireAdmin();
-  await setClassScheduleActive(scheduleId, active);
+  const canceled = await setClassScheduleActive(scheduleId, active, { cancelUpcoming });
   revalidatePath("/admin/schedule");
-  return { ok: true as const };
+  return { ok: true as const, canceled };
 }
 
 // Moved here from the old, now-removed /admin/bookings route — folded into

@@ -147,10 +147,24 @@ export async function expireDueCreditGrants(now: Date = new Date()): Promise<Exp
       if (!grant || grant.expiredAt || grant.creditsRemaining <= 0) return null;
 
       const user = await tx.user.findUniqueOrThrow({ where: { id: grant.userId }, select: { classCredits: true } });
-      const toExpire = Math.min(grant.creditsRemaining, user.classCredits);
+      // Credits already promised to classes the student has booked but that
+      // have not happened yet are not up for expiry: otherwise a class booked
+      // for after the cutoff would be charged into a negative balance.
+      const held = await tx.classBooking.aggregate({
+        where: { studentId: grant.userId, status: "SCHEDULED" },
+        _sum: { creditsSpent: true },
+      });
+      const free = Math.max(0, user.classCredits - (held._sum.creditsSpent ?? 0));
+      const toExpire = Math.min(grant.creditsRemaining, free);
 
       if (toExpire > 0) {
         await tx.user.update({ where: { id: grant.userId }, data: { classCredits: { decrement: toExpire } } });
+      }
+      if (toExpire < Math.min(grant.creditsRemaining, user.classCredits)) {
+        // Part of this grant is held by an upcoming class: expire only the free part
+        // now and leave the rest to the next daily run, after that class has happened.
+        if (toExpire > 0) await tx.creditGrant.update({ where: { id: grant.id }, data: { creditsRemaining: { decrement: toExpire } } });
+        return toExpire > 0 ? { userId: grant.userId, grantId: grant.id, creditsExpired: toExpire } : null;
       }
       await tx.creditGrant.update({ where: { id: grant.id }, data: { expiredAt: now } });
 
