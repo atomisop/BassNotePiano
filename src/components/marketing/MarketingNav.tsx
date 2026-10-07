@@ -213,8 +213,8 @@ export function MarketingNav() {
                   aria-current={isActive ? "page" : undefined}
                   className={
                     isActive
-                      ? "tap flex h-9 items-center !rounded-full bg-[rgb(var(--c-s-50))] px-4 text-small font-medium text-slate-950 transition-colors duration-200"
-                      : "tap glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-small font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
+                      ? "tap flex h-9 items-center !rounded-full bg-neu-base px-4 text-small font-medium text-[rgb(var(--c-s-50))] shadow-pressed-mid transition duration-200"
+                      : "neu-btn tap flex h-9 items-center !rounded-full px-4 text-small font-medium duration-200"
                   }
                 >
                   {link.label}
@@ -225,7 +225,7 @@ export function MarketingNav() {
               <Link
                 href={secondary.href}
                 onClick={openLogin}
-                className="tap glass-surface-subtle flex h-9 items-center !rounded-full px-4 text-small font-medium text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
+                className="neu-btn tap flex h-9 items-center !rounded-full px-4 text-small font-medium duration-200"
               >
                 {secondary.label}
               </Link>
@@ -239,7 +239,7 @@ export function MarketingNav() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Join our Discord"
-              className="tap glass-surface-subtle flex h-9 w-9 items-center justify-center !rounded-full text-[rgb(var(--c-s-200))] transition-colors duration-200 hover:text-[rgb(var(--c-s-50))]"
+              className="neu-btn tap flex h-9 w-9 items-center justify-center !rounded-full duration-200"
             >
               <DiscordIcon size={16} className="text-[#5865F2]" />
             </a>
@@ -266,7 +266,7 @@ export function MarketingNav() {
             {!isLoggedIn && (
               <Link
                 href={primary.href}
-                className="btn glass-surface-elevated !h-10 !px-5 !text-small text-[rgb(var(--c-s-50))]"
+                className="tap inline-flex h-10 items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] px-5 text-small font-semibold text-black shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 {primary.label}
               </Link>
@@ -298,28 +298,28 @@ export function MarketingNav() {
                     <Link
                       href={secondary.href}
                       onClick={openLogin}
-                      className="tap flex h-9 items-center rounded-full px-3 text-small font-semibold text-[rgb(var(--c-s-50))] transition hover:opacity-80"
+                      className="neu-btn tap flex h-9 items-center rounded-full px-3 text-small font-semibold !text-[rgb(var(--c-s-50))]"
                     >
                       {secondary.label}
                     </Link>
                   )}
                   <Link
                     href={primary.href}
-                    className="tap hidden h-9 items-center rounded-full bg-[rgb(var(--signal))] px-4 text-small font-semibold text-slate-950 shadow-raised-low transition active:shadow-pressed-low min-[360px]:flex"
+                    className="tap hidden h-9 items-center rounded-full bg-[rgb(var(--c-a-400))] px-4 text-small font-semibold text-black shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low min-[360px]:flex"
                   >
                     {primary.label}
                   </Link>
                 </>
               )}
             </div>
-            <AskAiButton compactOnPhones />
+            <AskAiButton compactOnPhones surface="bg-neu-base" />
           {/* 44px minimum target, which the previous icon button did not meet. */}
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-label="Open menu"
             aria-expanded={menuOpen}
-            className="-mr-3 flex h-11 w-11 items-center justify-center md:hidden"
+            className="neu-btn flex h-11 w-11 items-center justify-center !rounded-full md:hidden"
           >
             <span className="flex flex-col gap-[5px]">
               <span className="block h-px w-5 bg-[rgb(var(--c-s-50))]" />

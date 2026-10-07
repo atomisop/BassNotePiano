@@ -96,7 +96,7 @@ export function SolutionScreenshotTabs({ screens, defaultKey }: { screens: Solut
               aria-selected={selected}
               onClick={() => goTo(i)}
               className={`tap shrink-0 snap-center rounded-full px-4 py-1.5 text-small font-medium transition ${
-                selected ? "bg-[rgb(var(--c-a-400))] text-black" : "bg-[#E1E0CC]/10 text-[#E1E0CC]/70 hover:text-[#E1E0CC]"
+                selected ? "bg-[rgb(var(--c-a-400))] text-black shadow-pressed-low" : "neu-btn !text-[#E1E0CC]/70 hover:!text-[#E1E0CC]"
               }`}
             >
               {s.label}
