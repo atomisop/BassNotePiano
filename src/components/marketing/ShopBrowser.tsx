@@ -32,7 +32,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
       onClick={onClick}
       aria-pressed={active}
       className={`tap shrink-0 rounded-full px-4 py-2 text-small font-medium transition ${
-        active ? "bg-[rgb(var(--c-a-400))] text-black" : "bg-black text-[#E1E0CC]/80 hover:text-[#E1E0CC]"
+        active ? "bg-[rgb(var(--c-a-400))] text-black shadow-pressed-low" : "neu-btn !text-[#E1E0CC]/80 hover:!text-[#E1E0CC]"
       }`}
     >
       {children}
@@ -77,14 +77,14 @@ export function ShopBrowser({ products }: { products: ShopProduct[] }) {
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div role="group" aria-label="Type" className="flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div role="group" aria-label="Type" className="-m-3 flex gap-2 overflow-x-auto p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {CATEGORIES.map((c) => (
             <Chip key={c.id} active={category === c.id} onClick={() => setCategory(c.id)}>
               {c.label}
             </Chip>
           ))}
         </div>
-        <div role="group" aria-label="Price" className="flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div role="group" aria-label="Price" className="-m-3 flex gap-2 overflow-x-auto p-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {PRICE_BANDS.map((b) => (
             <Chip key={b.id} active={band === b.id} onClick={() => setBand(b.id)}>
               {b.label}
