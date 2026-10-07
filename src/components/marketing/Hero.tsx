@@ -21,10 +21,14 @@ const HERO_VIDEO_URL = "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/mark
  * on load, when the tab becomes visible, and on the first touch, click, key
  * press or scroll, and quietly gives up if the browser still says no.
  */
-function useKeepPlaying(ref: React.RefObject<HTMLVideoElement>) {
+function useKeepPlaying(ref: React.RefObject<HTMLVideoElement>, enabled: boolean) {
   useEffect(() => {
     const video = ref.current;
     if (!video) return;
+    if (!enabled) {
+      video.pause();
+      return;
+    }
     const tryPlay = () => {
       if (video.paused && document.visibilityState === "visible") void video.play().catch(() => {});
     };
@@ -42,7 +46,7 @@ function useKeepPlaying(ref: React.RefObject<HTMLVideoElement>) {
       document.removeEventListener("visibilitychange", onVisible);
       gestures.forEach((g) => window.removeEventListener(g, onGesture));
     };
-  }, [ref]);
+  }, [ref, enabled]);
 }
 
 type NetworkInfo = { saveData?: boolean; effectiveType?: string };
@@ -51,23 +55,20 @@ export function Hero() {
   const { data: session } = useSession();
   const isLoggedIn = Boolean(session?.user);
   const videoRef = useRef<HTMLVideoElement>(null);
-  // The 17MB video only starts downloading after the page has finished loading, and only for people whose connection and settings suit it.
-  const [loadVideo, setLoadVideo] = useState(false);
-  const [videoPlaying, setVideoPlaying] = useState(false);
+  // The video plays right away. Only people who ask for less motion, have data saver on, or are
+  // on a slow connection get it paused on its first frame instead of looping.
+  const [motionAllowed, setMotionAllowed] = useState(true);
   useEffect(() => {
     const connection = (navigator as Navigator & { connection?: NetworkInfo }).connection;
-    const allowed = heroVideoAllowed({
-      reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-      saveData: Boolean(connection?.saveData),
-      effectiveType: connection?.effectiveType ?? null,
-    });
-    if (!allowed) return;
-    const start = () => setLoadVideo(true);
-    if (document.readyState === "complete") start();
-    else window.addEventListener("load", start, { once: true });
-    return () => window.removeEventListener("load", start);
+    setMotionAllowed(
+      heroVideoAllowed({
+        reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+        saveData: Boolean(connection?.saveData),
+        effectiveType: connection?.effectiveType ?? null,
+      }),
+    );
   }, []);
-  useKeepPlaying(videoRef);
+  useKeepPlaying(videoRef, motionAllowed);
 
   return (
     <section className="h-[100svh] w-full p-2 sm:p-3">
@@ -76,14 +77,13 @@ export function Hero() {
         <video
           ref={videoRef}
           aria-hidden
-          autoPlay
+          autoPlay={motionAllowed}
           loop
           muted
           playsInline
-          preload="none"
-          src={loadVideo ? HERO_VIDEO_URL : undefined}
-          onPlaying={() => setVideoPlaying(true)}
-          className={`pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${videoPlaying ? "opacity-100" : "opacity-0"}`}
+          preload="auto"
+          src={HERO_VIDEO_URL}
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
         />
 
         <div aria-hidden className="noise-overlay pointer-events-none absolute inset-0 opacity-[0.7] mix-blend-overlay" />
