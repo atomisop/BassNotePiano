@@ -7,6 +7,8 @@ import { SCALE_SLUGS } from "@/lib/curriculum";
 import { createNotification } from "@/lib/notifications";
 import { countUnmatchedReceipts, getPaymentPipelineHealth } from "@/lib/paymentPipelineStatus";
 import { findStoppedJobs } from "@/lib/jobRun";
+import { getAtomAlertState } from "@/lib/atomHealth";
+import { GEMINI_BILLING_URL } from "@/lib/atomFailure";
 
 // ---------------------------------------------------------------------------
 // Overview metrics
@@ -479,7 +481,7 @@ export interface AttentionItem {
 /** Everything waiting on the owner or staff right now, each with the page that handles it. Items with nothing waiting are left out. */
 export async function getAttentionItems(): Promise<AttentionItem[]> {
   const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000);
-  const [payments, applications, chats, unmarked, progress, uncheckedAuto, unmatchedEmails, pipeline, stoppedJobs] = await Promise.all([
+  const [payments, applications, chats, unmarked, progress, uncheckedAuto, unmatchedEmails, pipeline, stoppedJobs, atom] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
     prisma.classRegistration.count({ where: { status: "PENDING" } }),
     prisma.assistantEscalation.count({ where: { status: "OPEN" } }),
@@ -491,6 +493,7 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
     getPaymentPipelineHealth(),
     // Employees are admins too and never saw this: the jobs table below is owner only.
     findStoppedJobs(),
+    getAtomAlertState(),
   ]);
   const readyScales = progress.filter((p) => p.hasCurriculumAccess && p.accessKind !== "ADMIN" && p.nextApproval.state === "READY").length;
   const items: AttentionItem[] = [
@@ -505,6 +508,11 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
           : `${stoppedJobs.length} scheduled jobs stopped: ${stoppedJobs.slice(0, 3).join(", ")}${stoppedJobs.length > 3 ? ` and ${stoppedJobs.length - 3} more` : ""}`,
       count: stoppedJobs.length,
       href: "/admin",
+    },
+    {
+      label: atom?.note === "busy" ? "Atom keeps failing (Google may be slow)" : "Atom can't answer: check Gemini credits and the key",
+      count: atom ? 1 : 0,
+      href: atom?.note === "busy" ? "/admin" : GEMINI_BILLING_URL,
     },
     { label: applications === 1 ? "Class application" : "Class applications", count: applications, href: "/admin/students" },
     { label: chats === 1 ? "Open support chat" : "Open support chats", count: chats, href: "/admin/support" },

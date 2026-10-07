@@ -152,6 +152,15 @@ re-read `src/lib/support.ts` and the current `SupportMessage`/
 still exactly accurate; treat this section as "how it was built," not a
 guarantee of the current byte-for-byte shape.
 
+When Gemini refuses or cannot be reached, `generateContent` throws a typed
+`GeminiError` (`src/lib/atomFailure.ts`, classified as credits, key, busy or
+other). The chat route answers 503 with `code: "atom_unavailable"` and a plain
+message, and the widget then offers the handoff to a person. `recordAtomFailure`
+(`src/lib/atomHealth.ts`) emails the owner at once for credits or key problems
+(or after 5 temporary failures in 10 minutes), at most every 12 hours, with one
+"answering again" email on recovery; the state is `atom-alert` rows in `JobRun`
+and shows as an item in the Overview's "Needs you now".
+
 A **separate** persistence mechanism now also exists for ordinary (non-
 escalated) Atom chats, per the current system prompt in
 `src/lib/assistant.ts`: a signed-in visitor's regular conversation with Atom
