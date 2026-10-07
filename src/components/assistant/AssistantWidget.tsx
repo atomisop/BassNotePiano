@@ -758,6 +758,8 @@ export function AssistantWidget() {
 
       if (!res.ok) {
         setError(data?.error ?? "Something went wrong. Try again in a moment.");
+        // Atom could not answer at all (not a one-off hiccup): put a person one tap away.
+        if (data?.code === "atom_unavailable") offerHandoff();
         return;
       }
 

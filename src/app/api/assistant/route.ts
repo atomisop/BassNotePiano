@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { reportError } from "@/lib/reportError";
+import { ATOM_UNAVAILABLE_MESSAGE, GeminiError } from "@/lib/atomFailure";
+import { noteAtomSuccess, recordAtomFailure } from "@/lib/atomHealth";
 import { askAssistant, assertAssistantRateLimit, appendPersistedMessages, RateLimitError, type AssistantMessage } from "@/lib/assistant";
 
 const MAX_MESSAGES = 20; // caps both cost and the prompt's own size
@@ -95,8 +97,16 @@ export async function POST(req: Request) {
       );
     }
 
+    await noteAtomSuccess();
     return NextResponse.json({ reply });
   } catch (err) {
+    // Gemini refused or could not be reached: tell the visitor plainly and offer a
+    // person (the widget does that on this code), and tell the owner.
+    if (err instanceof GeminiError) {
+      reportError(err, `POST /api/assistant (Gemini ${err.kind})`);
+      await recordAtomFailure(err);
+      return NextResponse.json({ error: ATOM_UNAVAILABLE_MESSAGE, code: "atom_unavailable" }, { status: 503 });
+    }
     reportError(err, "POST /api/assistant");
     return NextResponse.json({ error: "Something went wrong. Try again in a moment." }, { status: 500 });
   }

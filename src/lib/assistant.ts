@@ -26,6 +26,8 @@ import {
 import { TERMS_LAST_UPDATED } from "@/components/legal/TermsContent";
 import { PRIVACY_LAST_UPDATED } from "@/components/legal/PrivacyContent";
 
+import { GeminiError } from "@/lib/atomFailure";
+
 export { RateLimitError };
 
 const MODEL = "gemini-3.6-flash";
@@ -49,17 +51,23 @@ interface GeminiRequest {
  * while this exact key, sent with fetch from the same function, got a 200.
  */
 async function generateContent(req: GeminiRequest): Promise<{ text: string | undefined; finishReason: string | undefined }> {
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
-    method: "POST",
-    headers: { "x-goog-api-key": process.env.GOOGLE_AI_API_KEY ?? "", "content-type": "application/json" },
-    body: JSON.stringify({
-      contents: req.contents,
-      systemInstruction: { parts: [{ text: req.systemInstruction }] },
-      generationConfig: { maxOutputTokens: req.maxOutputTokens, responseMimeType: req.responseMimeType },
-    }),
-    signal: AbortSignal.timeout(25_000),
-  });
-  if (!res.ok) throw new Error(`Gemini API ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  let res: Response;
+  try {
+    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+      method: "POST",
+      headers: { "x-goog-api-key": process.env.GOOGLE_AI_API_KEY ?? "", "content-type": "application/json" },
+      body: JSON.stringify({
+        contents: req.contents,
+        systemInstruction: { parts: [{ text: req.systemInstruction }] },
+        generationConfig: { maxOutputTokens: req.maxOutputTokens, responseMimeType: req.responseMimeType },
+      }),
+      signal: AbortSignal.timeout(25_000),
+    });
+  } catch (err) {
+    // A network error or timeout: status 0, treated as Google being slow.
+    throw new GeminiError(0, err instanceof Error ? err.message.slice(0, 200) : "request failed");
+  }
+  if (!res.ok) throw new GeminiError(res.status, (await res.text()).slice(0, 300));
   const data = (await res.json()) as {
     candidates?: { finishReason?: string; content?: { parts?: { text?: string; thought?: boolean }[] } }[];
   };
