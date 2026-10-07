@@ -33,6 +33,8 @@ export interface NextStep {
   detail: string;
   href: string;
   cta: string;
+  /** A second way forward, shown as a quieter link next to the main button. */
+  secondary?: { href: string; cta: string };
 }
 
 /**

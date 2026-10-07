@@ -59,14 +59,8 @@ export function ScaleRoadmap({ roadmap, earnedBadgeCodes }: ScaleRoadmapProps) {
   const shown = tab === "completed" ? completed : inProgress;
 
   function handleCardClick(scale: ScaleAccessState) {
-    if (scale.canAccess) {
-      router.push(`/scales/${scale.scaleGroup.slug}`);
-      return;
-    }
-    // Locked for a paying student means "your teacher hasn't released this
-    // yet": nothing to buy, so the click does nothing. Locked with no plan
-    // is the one case where the way forward is a class plan.
-    if (scale.lockedBecause === "no-plan") router.push("/billing/plans");
+    // A locked scale opens a page that says why it is locked and what to do about it.
+    router.push(`/scales/${scale.scaleGroup.slug}`);
   }
 
   return (

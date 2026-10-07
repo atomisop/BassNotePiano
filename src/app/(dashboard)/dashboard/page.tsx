@@ -5,7 +5,9 @@ import { getRoadmap } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { BADGES } from "@/lib/badges";
 import { DAILY_GOAL_SECONDS, getFingerPracticeStatus } from "@/lib/fingerPractice";
-import { putFingerPracticeFirst, resolveNextStep, summariseProgress } from "@/lib/next-step";
+import { putFingerPracticeFirst, resolveNextStep, summariseProgress, type NextStep } from "@/lib/next-step";
+import { gettingStartedStep } from "@/lib/lockedScale";
+import { getCurriculumEntitlement } from "@/lib/entitlement";
 import { cn } from "@/lib/utils";
 import { ScaleRoadmap } from "@/components/progression/ScaleRoadmap";
 import { StreakDots } from "@/components/gamification/StreakDots";
@@ -63,7 +65,7 @@ export default async function DashboardPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
 
-  const [roadmap, badgeRows, user, practice, nextClass] = await Promise.all([
+  const [roadmap, badgeRows, user, practice, nextClass, entitlement, pendingApplication] = await Promise.all([
     getRoadmap(session.user.id),
     prisma.userBadge.findMany({ where: { userId: session.user.id }, select: { code: true } }),
     prisma.user.findUnique({
@@ -77,10 +79,20 @@ export default async function DashboardPage() {
       orderBy: { scheduledAt: "asc" },
       select: { scheduledAt: true, creditsSpent: true, discordChannelId: true },
     }),
+    getCurriculumEntitlement(session.user.id),
+    // An application from this account, or from this email before the account existed.
+    prisma.classRegistration.count({
+      where: {
+        status: "PENDING",
+        OR: [{ userId: session.user.id }, { email: { equals: session.user.email ?? "", mode: "insensitive" } }],
+      },
+    }),
   ]);
 
   const progress = summariseProgress(roadmap);
-  const nextStep = putFingerPracticeFirst(resolveNextStep(roadmap), {
+  const starting = gettingStartedStep({ kind: entitlement.kind, applicationPending: pendingApplication > 0 });
+  const resolvedStep = resolveNextStep(roadmap);
+  const nextStep: NextStep = starting ? { ...resolvedStep, ...starting } : putFingerPracticeFirst(resolvedStep, {
     required: session.user.role !== "ADMIN",
     completedToday: practice.completedToday,
     minutesLeft: Math.max(0, Math.ceil((DAILY_GOAL_SECONDS - practice.todaySeconds) / 60)),
@@ -102,6 +114,11 @@ export default async function DashboardPage() {
           {nextStep.cta}
           <ArrowIcon />
         </Link>
+        {nextStep.secondary && (
+          <Link href={nextStep.secondary.href} className="tap inline-flex items-center text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline">
+            {nextStep.secondary.cta}
+          </Link>
+        )}
         {nextStep.scale && nextStep.kind !== "buy-curriculum" && (
           <span className="text-small text-slate-400">
             {nextStep.scale.scaleGroup.code} · {nextStep.scale.scaleGroup.title}
