@@ -10,12 +10,20 @@ import { reportError } from "@/lib/reportError";
 // app is realistically exposed to actually involve. `SELECT 1` is the
 // standard cheapest-possible real query: it exercises the connection and
 // auth without touching an actual table, and Prisma's own connection pool.
+//
+// force-dynamic: without it Next.js runs this route once at build time and
+// serves that saved answer forever, so the check would say "ok" with a dead
+// database. no-store keeps any cache in front of it from doing the same.
+export const dynamic = "force-dynamic";
+
+const NO_STORE = { "Cache-Control": "no-store" };
+
 export async function GET() {
   const checkedAt = new Date().toISOString();
 
   try {
     await prisma.$queryRaw`SELECT 1`;
-    return NextResponse.json({ status: "ok", database: "ok", checkedAt });
+    return NextResponse.json({ status: "ok", database: "ok", checkedAt }, { headers: NO_STORE });
   } catch (err) {
     // No error detail in the response body — this endpoint is meant to be
     // hit by external monitors and isn't authenticated, so it's public by
@@ -24,6 +32,6 @@ export async function GET() {
     // (reportError), an operator investigating has that, an anonymous prober
     // doesn't need it.
     reportError(err, "Health check: database unreachable");
-    return NextResponse.json({ status: "error", database: "unreachable", checkedAt }, { status: 503 });
+    return NextResponse.json({ status: "error", database: "unreachable", checkedAt }, { status: 503, headers: NO_STORE });
   }
 }
