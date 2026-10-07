@@ -4,9 +4,9 @@ import { prisma } from "../../src/lib/prisma";
 import { OWNER_EMAIL } from "../../src/lib/adminNotifications";
 import { todayBoundsEt } from "../../src/lib/classSchedule";
 import { sendNotificationEmailWithCta, getAppUrl } from "../../src/lib/email";
+import { countUnmatchedReceipts, getPaymentPipelineHealth } from "../../src/lib/paymentPipelineStatus";
 
 const HOUR_MS = 60 * 60 * 1000;
-const DAY_MS = 24 * HOUR_MS;
 
 function count(n: number, one: string, many: string): string | null {
   return n > 0 ? `${n} ${n === 1 ? one : many}` : null;
@@ -20,13 +20,11 @@ export const handler = schedule("0 12 * * *", async () =>
   runJob("admin-daily-summary", async () => {
   const now = Date.now();
   const today = todayBoundsEt();
-  const [pendingPayments, uncheckedAuto, unmatchedEmails, applications, openChats, classesToday, unmarked, stoppedJobs, lastBankEmail, stalePayments] = await Promise.all([
+  const [pendingPayments, uncheckedAuto, unmatchedEmails, applications, openChats, classesToday, unmarked, stoppedJobs, pipeline] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
     prisma.zellePayment.count({ where: { autoApproved: true, checkedAt: null, status: "VERIFIED" } }),
-    // A payment email that matched nobody an hour later, from the last week.
-    prisma.processedPaymentEmail.count({
-      where: { paymentId: null, createdAt: { lt: new Date(now - HOUR_MS), gt: new Date(now - 7 * DAY_MS) } },
-    }),
+    // Payment emails that matched nobody and nobody has dismissed (the same count the Overview shows).
+    countUnmatchedReceipts(new Date(now)),
     prisma.classRegistration.count({ where: { status: "PENDING" } }),
     prisma.assistantEscalation.count({ where: { status: "OPEN" } }),
     prisma.classBooking.findMany({
@@ -37,13 +35,10 @@ export const handler = schedule("0 12 * * *", async () =>
     // Classes already over that have no attendance marked.
     prisma.classBooking.count({ where: { status: "SCHEDULED", scheduledAt: { lt: new Date(now - 3 * HOUR_MS) } } }),
     findStoppedJobs(new Date(now)),
-    prisma.processedPaymentEmail.findFirst({ orderBy: { createdAt: "desc" }, select: { createdAt: true } }),
-    // Payments sitting open for over a day.
-    prisma.zellePayment.count({ where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, createdAt: { lt: new Date(now - DAY_MS) } } }),
+    // Payments someone says they sent, with no bank email for two days: the Gmail script has probably stopped.
+    getPaymentPipelineHealth(new Date(now)),
   ]);
-
-  // Open payments, yet no bank email has arrived for a week: the Gmail script has probably stopped.
-  const pipelineQuiet = stalePayments > 0 && (!lastBankEmail || now - lastBankEmail.createdAt.getTime() > 7 * DAY_MS);
+  const pipelineQuiet = pipeline.status === "quiet";
 
   const classLine = classesToday.length
     ? `Teaching today: ${classesToday
@@ -62,7 +57,7 @@ export const handler = schedule("0 12 * * *", async () =>
     count(openChats, "open support chat", "open support chats"),
     count(unmarked, "finished class with no attendance marked", "finished classes with no attendance marked"),
     stoppedJobs.length ? `Scheduled ${stoppedJobs.length === 1 ? "job has" : "jobs have"} stopped: ${stoppedJobs.join(", ")}` : null,
-    pipelineQuiet ? "No bank or Venmo email has arrived in a week while payments are waiting, check the Gmail script" : null,
+    pipelineQuiet ? "No bank or Venmo email has arrived in two days while payments are waiting, check the Gmail script" : null,
   ].filter((p): p is string => p !== null);
 
   if (parts.length === 0 && !classLine) {

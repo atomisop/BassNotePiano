@@ -7,7 +7,11 @@ import { isOwnerEmail } from "@/lib/adminNotifications";
 import { searchUsersForCredits, getRecentCreditAdjustments } from "@/lib/creditAdjustments";
 import { AdminCreditGrantPanel } from "@/components/admin/AdminCreditGrantPanel";
 import { searchUsersForCreditsAction, adjustUserCreditsAction, getUserCreditHistoryAction } from "./credit-actions";
-import { approvePaymentAction, checkPaymentAction, deletePaymentAction, refundPaymentAction, rejectPaymentAction } from "./actions";
+import { approvePaymentAction, checkPaymentAction, deletePaymentAction, dismissReceiptAction, matchReceiptAction, refundPaymentAction, rejectPaymentAction } from "./actions";
+import { countUnmatchedReceipts, getPaymentPipelineHealth } from "@/lib/paymentPipelineStatus";
+import { listUnmatchedReceipts } from "@/lib/paymentReceipts";
+import { PaymentPipelineBanner } from "@/components/admin/PaymentPipelineBanner";
+import { UnmatchedEmailList } from "@/components/admin/UnmatchedEmailList";
 
 const FILTERS: { label: string; value: ZellePaymentStatus | "ALL" | "UNCHECKED" }[] = [
   { label: "Pending", value: "PENDING_REVIEW" },
@@ -22,9 +26,14 @@ const FILTERS: { label: string; value: ZellePaymentStatus | "ALL" | "UNCHECKED" 
 
 export default async function AdminPaymentsPage({ searchParams }: { searchParams: { status?: string; tab?: string } }) {
   if (searchParams.tab === "credits") return <CreditsTab />;
+  if (searchParams.tab === "emails") return <EmailsTab />;
   const requested = searchParams.status?.toUpperCase();
   const activeFilter = FILTERS.find((f) => f.value === requested)?.value ?? "PENDING_REVIEW";
-  const payments = await getAdminPayments(activeFilter === "ALL" ? undefined : activeFilter);
+  const [payments, health, unmatched] = await Promise.all([
+    getAdminPayments(activeFilter === "ALL" ? undefined : activeFilter),
+    getPaymentPipelineHealth(),
+    countUnmatchedReceipts(),
+  ]);
   const session = await getServerAuthSession();
   const isOwner = isOwnerEmail(session?.user?.email);
   const activeLabel = FILTERS.find((f) => f.value === activeFilter)!.label;
@@ -33,7 +42,8 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
     <div>
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payments</h1>
-      <TopTabs credits={false} />
+      <TopTabs active="payments" unmatched={unmatched} />
+      <PaymentPipelineBanner health={health} />
       <p className="mt-2 text-small text-slate-500">
         {payments.length} payment{payments.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
       </p>
@@ -73,16 +83,55 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
   );
 }
 
-function TopTabs({ credits }: { credits: boolean }) {
+function TopTabs({ active, unmatched }: { active: "payments" | "emails" | "credits"; unmatched: number }) {
   return (
     <div className="mt-6">
       <AdminFilterTabs
         label="Payments section"
         items={[
-          { label: "Zelle payments", href: "/admin/payments", active: !credits },
-          { label: "Class credits", href: "/admin/payments?tab=credits", active: credits },
+          { label: "Zelle payments", href: "/admin/payments", active: active === "payments" },
+          { label: unmatched > 0 ? `Unmatched emails (${unmatched})` : "Unmatched emails", href: "/admin/payments?tab=emails", active: active === "emails" },
+          { label: "Class credits", href: "/admin/payments?tab=credits", active: active === "credits" },
         ]}
       />
+    </div>
+  );
+}
+
+/** Bank and Venmo emails that matched no payment: attach each to a payment for the same amount, or dismiss it. */
+async function EmailsTab() {
+  const [rows, health] = await Promise.all([listUnmatchedReceipts(), getPaymentPipelineHealth()]);
+  return (
+    <div>
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payments</h1>
+      <TopTabs active="emails" unmatched={rows.length} />
+      <PaymentPipelineBanner health={health} />
+      <p className="mt-2 max-w-[70ch] text-small text-slate-500">
+        These emails arrived but matched no student by name and amount, so no payment was approved from them. Attach one to an open
+        payment for the same amount, or dismiss it if it is not a studio payment.
+      </p>
+      <div className="mt-6">
+        <UnmatchedEmailList
+          rows={rows.map((r) => ({
+            id: r.id,
+            method: r.method,
+            senderName: r.senderName,
+            amountCents: r.amountCents,
+            memo: r.memo,
+            receivedAtMs: r.receivedAt.getTime(),
+            candidates: r.candidates.map((c) => ({
+              id: c.id,
+              status: c.status,
+              studentName: c.studentName,
+              studentEmail: c.studentEmail,
+              createdAtMs: c.createdAt.getTime(),
+            })),
+          }))}
+          onMatch={matchReceiptAction}
+          onDismiss={dismissReceiptAction}
+        />
+      </div>
     </div>
   );
 }
@@ -94,7 +143,7 @@ async function CreditsTab() {
     <div>
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payments</h1>
-      <TopTabs credits />
+      <TopTabs active="credits" unmatched={await countUnmatchedReceipts()} />
 
       <div className="mt-6">
         <AdminCreditGrantPanel

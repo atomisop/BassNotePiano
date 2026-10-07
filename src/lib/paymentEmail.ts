@@ -201,6 +201,7 @@ export async function settleWithStoredReceipt(paymentId: string): Promise<boolea
   const receipts = await prisma.processedPaymentEmail.findMany({
     where: {
       paymentId: null,
+      dismissedAt: null,
       amountCents: payment.amountCents,
       createdAt: { gte: new Date(Date.now() - RECEIPT_MAX_AGE_MS) },
     },
