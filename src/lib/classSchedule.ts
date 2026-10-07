@@ -1,4 +1,4 @@
-import { getAdminRecipients } from "@/lib/adminNotifications";
+import { getAdminRecipients, notifyAdmins } from "@/lib/adminNotifications";
 import { addMinutesToHHmm, formatEtDateTime } from "@/lib/classScheduleLabels";
 import type { AttendanceStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -1810,6 +1810,8 @@ export async function adminCancelClassBooking(bookingId: string, reason?: string
 
 export class ClassScheduleError extends Error {}
 
+const DAY_NAMES_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
 export interface ClassScheduleInput {
   dayOfWeek: number;
   /** "HH:mm", ET wall-clock — same format ClassSchedule.startTime already stores. */
@@ -1911,7 +1913,21 @@ export async function countUpcomingBookingsBySchedule(scheduleIds: string[]): Pr
  * student is told and nothing is charged. Returns how many were canceled.
  */
 export async function setClassScheduleActive(scheduleId: string, active: boolean, opts?: { cancelUpcoming?: boolean }): Promise<number> {
-  await prisma.classSchedule.update({ where: { id: scheduleId }, data: { active } });
+  const schedule = await prisma.classSchedule.update({ where: { id: scheduleId }, data: { active } });
+  if (!active) {
+    // Subscribers who hold this weekly time stop being booked (the daily job
+    // tells each of them once), so make sure an admin knows who to move.
+    const holders = await prisma.paymentPlan.count({ where: { reservedScheduleId: scheduleId, OR: livePaymentPlanConditions() } });
+    if (holders > 0) {
+      await notifyAdmins("SLOT_PROBLEM", {
+        type: "ADMIN_ALERT",
+        title: "A reserved weekly time was turned off",
+        body: `${holders} subscriber${holders === 1 ? " holds" : "s hold"} the ${DAY_NAMES_LONG[schedule.dayOfWeek]} ${schedule.startTime} time you just turned off. They will not be booked until you pick them a new time.`,
+        emailCategory: "social",
+        cta: { label: "See subscribers", path: "/admin/payment-plans" },
+      }).catch((err) => console.error("Slot-off alert failed (non-blocking):", err));
+    }
+  }
   if (active || !opts?.cancelUpcoming) return 0;
 
   const upcoming = await prisma.classBooking.findMany({

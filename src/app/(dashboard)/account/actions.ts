@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel, PaymentPlanTerm, PlanCancellationReason } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
+import { notifyAdmins } from "@/lib/adminNotifications";
 import { prisma } from "@/lib/prisma";
 import { setUsername, SocialError } from "@/lib/social";
 import { createPresignedAvatarUpload, deleteObject, keyFromPublicUrl, isObjectStorageConfigured } from "@/lib/storage";
@@ -306,7 +307,8 @@ export async function confirmAccountDeletionAction(currentPassword: string, code
     // The privacy policy promises deletion "of your account and its data,"
     // and an orphaned photo a stranger could still load by URL doesn't
     // meet that bar just because nothing in the app links to it anymore.
-    const target = await prisma.user.findUnique({ where: { id }, select: { image: true } });
+    const target = await prisma.user.findUnique({ where: { id }, select: { image: true, name: true, email: true } });
+    const upcomingClasses = await prisma.classBooking.count({ where: { studentId: id, status: "SCHEDULED", scheduledAt: { gt: new Date() } } });
 
     // Almost everything cascades from here (schema.prisma — messages,
     // bookings, progress, payments, notifications, ...). The one relation
@@ -315,6 +317,15 @@ export async function confirmAccountDeletionAction(currentPassword: string, code
     // uploaded course content — caught below rather than left as a raw 500,
     // since there's no other admin here to reassign that content to.
     await prisma.user.delete({ where: { id } });
+
+    if (upcomingClasses > 0) {
+      await notifyAdmins("ACCOUNT_DELETED", {
+        type: "ADMIN_ALERT",
+        title: "A student deleted their account",
+        body: `${target?.name ?? target?.email ?? "A student"} deleted their account, so ${upcomingClasses} upcoming class${upcomingClasses === 1 ? " was" : "es were"} removed from the schedule.`,
+        emailCategory: "social",
+      }).catch((err) => console.error("Account deletion alert failed (non-blocking):", err));
+    }
 
     const avatarKey = target?.image ? keyFromPublicUrl(target.image) : null;
     if (avatarKey) await deleteObject(avatarKey);

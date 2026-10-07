@@ -831,7 +831,8 @@ export async function refundZellePayment(
   paymentId: string,
   admin: { id: string; email: string | null },
   opts: { note: string; removeCredits: boolean; cancelPlan: boolean },
-): Promise<void> {
+): Promise<{ warnings: string[] }> {
+  const warnings: string[] = [];
   const note = opts.note.trim();
   if (!note) throw new Error("A reason is required.");
   const payment = await prisma.zellePayment.findUniqueOrThrow({
@@ -848,12 +849,26 @@ export async function refundZellePayment(
   if (flipped.count === 0) throw new Error("Only a verified payment can be refunded.");
 
   if (opts.removeCredits && payment.lessonQuantity) {
-    const take = Math.min(payment.user.classCredits, payment.lessonQuantity);
+    // Credits promised to classes the student has already booked are not
+    // taken back, so a booked class is never left without credits to cover it.
+    const held = await prisma.classBooking.aggregate({
+      where: { studentId: payment.userId, status: "SCHEDULED" },
+      _sum: { creditsSpent: true },
+    });
+    const free = Math.max(0, payment.user.classCredits - (held._sum.creditsSpent ?? 0));
+    const take = Math.min(free, payment.lessonQuantity);
     if (take > 0) await adjustUserCredits(admin.id, payment.userId, -take, `Refund: ${note}`);
+    if (take < payment.lessonQuantity) {
+      warnings.push(
+        `Only ${take} of ${payment.lessonQuantity} credits were taken back; the rest are held by this student's upcoming classes. Adjust them under Credits once those classes are done or canceled.`,
+      );
+    }
   }
   if (opts.cancelPlan && payment.paymentPlanId) {
     const { cancelPaymentPlan } = await import("@/lib/paymentPlans");
-    await cancelPaymentPlan(payment.paymentPlanId, admin.id, `Refund: ${note}`).catch(() => undefined);
+    await cancelPaymentPlan(payment.paymentPlanId, admin.id, `Refund: ${note}`).catch((err) => {
+      warnings.push(`The plan was not canceled: ${err instanceof Error ? err.message : "unknown error"}`);
+    });
   }
 
   await createNotification({
@@ -870,8 +885,9 @@ export async function refundZellePayment(
     action: "payment.refund",
     targetType: "ZellePayment",
     targetId: paymentId,
-    detail: `${formatUsdCents(payment.amountCents)} to ${payment.user.email}${opts.removeCredits ? ", credits removed" : ""}${opts.cancelPlan ? ", plan canceled" : ""}. ${note}`,
+    detail: `${formatUsdCents(payment.amountCents)} to ${payment.user.email}${opts.removeCredits ? ", credits removed" : ""}${opts.cancelPlan ? ", plan canceled" : ""}. ${note}${warnings.length ? ` (${warnings.join(" ")})` : ""}`,
   });
+  return { warnings };
 }
 
 /** Rejects a pending payment with a reason the student sees on the resubmit screen. */

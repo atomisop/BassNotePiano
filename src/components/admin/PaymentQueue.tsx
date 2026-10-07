@@ -15,7 +15,7 @@ export interface PaymentQueueProps {
   onReject: (paymentId: string, reason: string) => Promise<void>;
   onCheck?: (paymentId: string) => Promise<void>;
   /** Owner only. Marks a verified payment refunded, optionally taking back its credits and ending its plan. */
-  onRefund?: (paymentId: string, note: string, removeCredits: boolean, cancelPlan: boolean) => Promise<{ ok: boolean; error: string | null }>;
+  onRefund?: (paymentId: string, note: string, removeCredits: boolean, cancelPlan: boolean) => Promise<{ ok: boolean; error: string | null; warning?: string | null }>;
   /** Owner only. Permanently removes the payment record. */
   onDelete?: (paymentId: string) => Promise<void>;
   emptyMessage?: string;
@@ -148,6 +148,8 @@ export function PaymentQueue({
       setRefundingId(null);
       setRefundNote("");
       router.refresh();
+      // The refund went through but part of it could not be done; the panel is gone after a refresh, so say so now.
+      if (result.warning) window.alert(`Refunded, with a note: ${result.warning}`);
     } finally {
       setBusyId(null);
     }

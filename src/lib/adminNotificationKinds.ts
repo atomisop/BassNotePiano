@@ -8,6 +8,7 @@ export type AdminNotificationGroup = (typeof ADMIN_NOTIFICATION_GROUPS)[number];
 export const ADMIN_NOTIFICATION_KINDS = [
   { kind: "NEW_ACCOUNT", label: "New account created, not verified yet", group: "People", defaultOn: false, ownerOnly: true },
   { kind: "ACCOUNT_VERIFIED", label: "New account verified", group: "People", defaultOn: false, ownerOnly: true },
+  { kind: "ACCOUNT_DELETED", label: "A student deleted their account while classes were booked", group: "People", defaultOn: true, ownerOnly: false },
   { kind: "NEW_REGISTRATION", label: "New class registration", group: "People", defaultOn: true, ownerOnly: false },
   { kind: "NEW_SUBSCRIPTION", label: "New subscription and weekly time", group: "Payments", defaultOn: true, ownerOnly: false },
   { kind: "PAYMENT_REVIEW", label: "Payment to review", group: "Payments", defaultOn: true, ownerOnly: false },

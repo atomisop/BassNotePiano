@@ -50,15 +50,15 @@ export async function refundPaymentAction(
   note: string,
   removeCredits: boolean,
   cancelPlan: boolean,
-): Promise<{ ok: boolean; error: string | null }> {
+): Promise<{ ok: boolean; error: string | null; warning?: string | null }> {
   const admin = await requireAdmin();
   if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can refund a payment." };
   try {
-    await refundZellePayment(paymentId, { id: admin.id, email: admin.email ?? null }, { note, removeCredits, cancelPlan });
+    const { warnings } = await refundZellePayment(paymentId, { id: admin.id, email: admin.email ?? null }, { note, removeCredits, cancelPlan });
+    revalidatePath("/admin/payments");
+    revalidatePath("/admin");
+    return { ok: true, error: null, warning: warnings.length ? warnings.join(" ") : null };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Could not refund." };
   }
-  revalidatePath("/admin/payments");
-  revalidatePath("/admin");
-  return { ok: true, error: null };
 }
