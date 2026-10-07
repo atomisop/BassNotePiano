@@ -3,7 +3,7 @@ import { findStoppedJobs, runJob } from "../../src/lib/jobRun";
 import { prisma } from "../../src/lib/prisma";
 import { OWNER_EMAIL } from "../../src/lib/adminNotifications";
 import { todayBoundsEt } from "../../src/lib/classSchedule";
-import { sendNotificationEmailWithCta, getAppUrl } from "../../src/lib/email";
+import { sendNotificationEmailWithCta, sendTodoListEmail, getAppUrl, type TodoEmailItem } from "../../src/lib/email";
 import { countUnmatchedReceipts, getPaymentPipelineHealth } from "../../src/lib/paymentPipelineStatus";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -51,16 +51,22 @@ export const handler = schedule("0 12 * * *", async () =>
         .join(", ")}.`
     : null;
 
+  const item = (n: number, one: string, many: string, path: string): TodoEmailItem | null =>
+    n > 0 ? { text: `${n} ${n === 1 ? one : many}`, url: getAppUrl(path) } : null;
   const parts = [
-    count(pendingPayments, "payment waiting for review", "payments waiting for review"),
-    count(uncheckedAuto, "auto-approved payment to check", "auto-approved payments to check"),
-    count(unmatchedEmails, "payment email that matched no one", "payment emails that matched no one"),
-    count(applications, "class application to review", "class applications to review"),
-    count(openChats, "open support chat", "open support chats"),
-    count(unmarked, "finished class with no attendance marked", "finished classes with no attendance marked"),
-    stoppedJobs.length ? `Scheduled ${stoppedJobs.length === 1 ? "job has" : "jobs have"} stopped: ${stoppedJobs.join(", ")}` : null,
-    pipelineQuiet ? "No bank or Venmo email has arrived in two days while payments are waiting, check the Gmail script" : null,
-  ].filter((p): p is string => p !== null);
+    item(pendingPayments, "payment waiting for review", "payments waiting for review", "/admin/payments"),
+    item(uncheckedAuto, "auto-approved payment to check", "auto-approved payments to check", "/admin/payments?status=UNCHECKED"),
+    item(unmatchedEmails, "payment email that matched no one", "payment emails that matched no one", "/admin/payments?tab=emails"),
+    item(applications, "class application to review", "class applications to review", "/admin/students"),
+    item(openChats, "open support chat", "open support chats", "/admin/support"),
+    item(unmarked, "finished class with no attendance marked", "finished classes with no attendance marked", "/admin/schedule?view=ATTENDANCE"),
+    stoppedJobs.length
+      ? { text: `Scheduled ${stoppedJobs.length === 1 ? "job has" : "jobs have"} stopped: ${stoppedJobs.join(", ")}`, url: getAppUrl("/admin") }
+      : null,
+    pipelineQuiet
+      ? { text: "No bank or Venmo email has arrived in two days while payments are waiting, check the Gmail script", url: getAppUrl("/admin/payments") }
+      : null,
+  ].filter((p): p is TodoEmailItem => p !== null);
 
   if (parts.length === 0 && !classLine) {
     const isMonday = new Date(now).toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long" }) === "Monday";
@@ -78,12 +84,7 @@ export const handler = schedule("0 12 * * *", async () =>
     return { statusCode: 200 };
   }
 
-  await sendNotificationEmailWithCta(
-    OWNER_EMAIL,
-    "Today's to-do",
-    [classLine, parts.length ? `${parts.join(". ")}.` : null].filter(Boolean).join(" "),
-    { label: "Open admin", url: getAppUrl("/admin") },
-  );
+  await sendTodoListEmail(OWNER_EMAIL, "Today's to-do", classLine, parts);
   console.log(`Admin daily summary: sent (${parts.length} items, ${classesToday.length} classes)`);
   return { statusCode: 200 };
 }));

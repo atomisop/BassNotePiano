@@ -11,6 +11,7 @@ import { prisma } from "@/lib/prisma";
 import { unlockScaleForUser, lockScaleForUser } from "@/lib/access";
 import { clearPersistedHistory } from "@/lib/assistant";
 import { approveNextScale, ScaleApprovalError } from "@/lib/scaleApproval";
+import { getAdminProgressOverview } from "@/lib/admin";
 
 // Same pattern as admin/payments/actions.ts — the admin layout's redirect
 // only protects rendering, not these Server Actions, so this re-check is
@@ -76,6 +77,32 @@ export async function approveNextScaleAction(targetUserId: string, force: boolea
   }
   revalidatePath("/admin/users");
   revalidatePath("/admin");
+}
+
+/**
+ * "Approve all ready": releases the next scale for every student who is ready for it under the normal
+ * rules (previous scale finished, a week since the last unlock). Never forces anyone past a rule, and a
+ * failure for one student does not stop the rest.
+ */
+export async function approveAllReadyScalesAction(): Promise<{ message: string }> {
+  await requireAdmin();
+  const progress = await getAdminProgressOverview("");
+  const ready = progress.filter((p) => p.hasCurriculumAccess && p.accessKind !== "ADMIN" && p.nextApproval.state === "READY");
+  let approved = 0;
+  let skipped = 0;
+  for (const student of ready) {
+    try {
+      await approveNextScale(student.id, { force: false });
+      approved++;
+    } catch (err) {
+      if (!(err instanceof ScaleApprovalError)) throw err;
+      skipped++;
+    }
+  }
+  revalidatePath("/admin/users");
+  revalidatePath("/admin");
+  const base = approved === 1 ? "Released the next scale for 1 student." : `Released the next scale for ${approved} students.`;
+  return { message: skipped > 0 ? `${base} ${skipped} could not be released (see their row).` : base };
 }
 
 // Per direct instruction: a signed-in visitor's Atom conversation is kept

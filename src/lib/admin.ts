@@ -524,3 +524,14 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
   ];
   return items.filter((i) => i.count > 0);
 }
+
+/** What is waiting, by admin page, for the small count badges in the admin menu. Four cheap counts. */
+export async function getAdminNavBadges(): Promise<Record<string, number>> {
+  const [payments, applications, chats, unmarked] = await Promise.all([
+    prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
+    prisma.classRegistration.count({ where: { status: "PENDING" } }),
+    prisma.assistantEscalation.count({ where: { status: "OPEN" } }),
+    prisma.classBooking.count({ where: { status: "SCHEDULED", scheduledAt: { lt: new Date(Date.now() - 3 * 3_600_000) } } }),
+  ]);
+  return { "/admin/payments": payments, "/admin/students": applications, "/admin/support": chats, "/admin/schedule": unmarked };
+}

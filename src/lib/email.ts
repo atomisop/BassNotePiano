@@ -505,3 +505,24 @@ export async function sendMailChainProbe(token: string): Promise<void> {
   const text = "This is the daily automatic check that email to music@ still reaches the site. Nobody needs to read or answer it.";
   await sendEmail({ to: "music@bassnotepiano.com", subject, html: `<p>${text}</p>`, text, from: PERSONAL_FROM });
 }
+
+export interface TodoEmailItem {
+  text: string;
+  url: string;
+}
+
+/** The owner's morning list: one line per thing, each a link straight to the page that handles it. */
+export async function sendTodoListEmail(to: string, title: string, intro: string | null, items: TodoEmailItem[]) {
+  const rows = items
+    .map(
+      (item) =>
+        `<li style="margin:0 0 10px;"><a href="${item.url}" style="color:#f5f5f5;text-decoration:underline;">${escapeHtml(item.text)}</a></li>`,
+    )
+    .join("");
+  const html = emailShell(
+    title,
+    `${intro ? `<p style="margin:0 0 14px;">${escapeHtml(intro)}</p>` : ""}<ul style="margin:0 0 20px;padding-left:20px;">${rows}</ul>${ctaButtonHtml({ label: "Open admin", url: getAppUrl("/admin") })}`,
+  );
+  const text = [intro, ...items.map((i) => `- ${i.text}: ${i.url}`), "", `Open admin: ${getAppUrl("/admin")}`].filter((l): l is string => l !== null).join("\n");
+  await sendEmail({ to, subject: title, html, text });
+}
