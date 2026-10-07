@@ -39,7 +39,6 @@ const NAV_GROUPS: AdminNavGroup[] = [
     leaves: [
       { href: "/admin/payments", label: "Payments" },
       { href: "/admin/payment-plans", label: "Payment Plans" },
-      { href: "/admin/credits", label: "Credits" },
     ],
   },
   {

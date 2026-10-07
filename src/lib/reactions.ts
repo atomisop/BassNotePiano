@@ -9,7 +9,7 @@
 // one emoji (isValidReaction) instead of trusting arbitrary client text into
 // the emoji column.
 export const REACTION_EMOJI = ["❤️", "👍", "👎", "😂", "‼️", "❓", "😮", "😢"] as const;
-export type ReactionEmoji = (typeof REACTION_EMOJI)[number];
+type ReactionEmoji = (typeof REACTION_EMOJI)[number];
 
 // Built with the constructor: the project targets ES5, which rejects a /u literal.
 const EMOJI_PATTERN = new RegExp("^(?:\\p{Extended_Pictographic}|\\p{Regional_Indicator}{2}|[0-9#*]\\uFE0F?\\u20E3)", "u");

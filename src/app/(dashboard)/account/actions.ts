@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel, PaymentPlanTerm, PlanCancellationReason } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
+import { notifyAdmins } from "@/lib/adminNotifications";
 import { prisma } from "@/lib/prisma";
 import { setUsername, SocialError } from "@/lib/social";
 import { createPresignedAvatarUpload, deleteObject, keyFromPublicUrl, isObjectStorageConfigured } from "@/lib/storage";
@@ -69,6 +70,17 @@ export async function requestPasswordChangeCodeAction(currentPassword: string, n
     throw err;
   }
   return { ok: true as const };
+}
+
+/** Deleting the account also deletes its payment and booking records, so a student who is still paying (or whose payment is being checked) has to sort that out first. */
+async function accountDeletionBlocker(userId: string): Promise<string | null> {
+  const [livePlan, pendingPayment] = await Promise.all([
+    prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" }, select: { id: true } }),
+    prisma.zellePayment.findFirst({ where: { userId, status: "PENDING_REVIEW" }, select: { id: true } }),
+  ]);
+  if (livePlan) return "You still have an active payment plan. Cancel it under Manage Subscriptions first, then delete your account.";
+  if (pendingPayment) return "A payment of yours is still being confirmed. Wait until it clears, then delete your account.";
+  return null;
 }
 
 /** Step 2: re-checks the passwords and the emailed code, then applies the change. */
@@ -253,6 +265,9 @@ export async function requestAccountDeletionCodeAction(currentPassword: string) 
   const check = await verifyCurrentPassword(id, currentPassword);
   if (!check.ok) return check;
 
+  const blocker1 = await accountDeletionBlocker(id);
+  if (blocker1) return { ok: false as const, error: blocker1 };
+
   try {
     const result = await createAndSendCode({ email: check.email, userId: id, purpose: DELETE_ACCOUNT_CODE_PURPOSE });
     if (!result.ok) return { ok: false as const, error: "Couldn't send a verification code. Try again in a moment." };
@@ -281,6 +296,9 @@ export async function confirmAccountDeletionAction(currentPassword: string, code
     return { ok: false as const, error: REASON_MESSAGE[verified.reason] };
   }
 
+  const blocker = await accountDeletionBlocker(id);
+  if (blocker) return { ok: false as const, error: blocker };
+
   try {
     // Read the avatar URL before the row disappears. Deleting the User
     // row was, until this fix, the entire "delete my account" story: it
@@ -289,7 +307,8 @@ export async function confirmAccountDeletionAction(currentPassword: string, code
     // The privacy policy promises deletion "of your account and its data,"
     // and an orphaned photo a stranger could still load by URL doesn't
     // meet that bar just because nothing in the app links to it anymore.
-    const target = await prisma.user.findUnique({ where: { id }, select: { image: true } });
+    const target = await prisma.user.findUnique({ where: { id }, select: { image: true, name: true, email: true } });
+    const upcomingClasses = await prisma.classBooking.count({ where: { studentId: id, status: "SCHEDULED", scheduledAt: { gt: new Date() } } });
 
     // Almost everything cascades from here (schema.prisma — messages,
     // bookings, progress, payments, notifications, ...). The one relation
@@ -298,6 +317,15 @@ export async function confirmAccountDeletionAction(currentPassword: string, code
     // uploaded course content — caught below rather than left as a raw 500,
     // since there's no other admin here to reassign that content to.
     await prisma.user.delete({ where: { id } });
+
+    if (upcomingClasses > 0) {
+      await notifyAdmins("ACCOUNT_DELETED", {
+        type: "ADMIN_ALERT",
+        title: "A student deleted their account",
+        body: `${target?.name ?? target?.email ?? "A student"} deleted their account, so ${upcomingClasses} upcoming class${upcomingClasses === 1 ? " was" : "es were"} removed from the schedule.`,
+        emailCategory: "social",
+      }).catch((err) => console.error("Account deletion alert failed (non-blocking):", err));
+    }
 
     const avatarKey = target?.image ? keyFromPublicUrl(target.image) : null;
     if (avatarKey) await deleteObject(avatarKey);

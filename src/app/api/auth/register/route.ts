@@ -76,15 +76,17 @@ export async function POST(req: NextRequest) {
     if (await hasApprovedRegistration(user.email).catch(() => false)) {
       await startTrialForEmail(user.email).catch((err) => console.error("Starting the free trial failed (non-blocking):", err));
     }
+    await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
     // Owner only (see ADMIN_NOTIFICATION_KINDS): who signed up, still unverified.
+    // After the code goes out and never blocking: a failed alert must not leave
+    // the account created but the person stuck without a code.
     await notifyAdmins("NEW_ACCOUNT", {
       type: "ADMIN_ALERT",
       title: "New account, not verified yet",
       body: `${name} (${user.email}) just created an account and has not verified their email yet. You will get another email when they do.`,
       emailCategory: "social",
       cta: { label: "View account", path: `/admin/users/${user.id}` },
-    });
-    await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
+    }).catch((err) => console.error("New account alert failed (non-blocking):", err));
     return NextResponse.json(user, { status: 201 });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {

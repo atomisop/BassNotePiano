@@ -20,7 +20,7 @@
  */
 
 export const CURATED_THEME_IDS = ["paper", "ink"] as const;
-export type CuratedThemeId = (typeof CURATED_THEME_IDS)[number];
+type CuratedThemeId = (typeof CURATED_THEME_IDS)[number];
 
 export const THEME_IDS = CURATED_THEME_IDS;
 export type ThemeId = (typeof THEME_IDS)[number];

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAllClassSchedules, getAdminOccurrences, getUpcomingOccurrences } from "@/lib/classSchedule";
+import { getAllClassSchedules, countUpcomingBookingsBySchedule, getAdminOccurrences, getUpcomingOccurrences } from "@/lib/classSchedule";
 import { AdminScheduleManager } from "@/components/admin/AdminScheduleManager";
 import { AdminAttendanceRoster } from "@/components/admin/AdminAttendanceRoster";
 import { AdminAttendanceByStudent } from "@/components/admin/AdminAttendanceByStudent";
@@ -132,6 +132,7 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
   }
 
   const schedules = await getAllClassSchedules();
+  const upcomingCounts = await countUpcomingBookingsBySchedule(schedules.map((s) => s.id));
   const viewer = await getServerAuthSession();
   const isOwner = isOwnerEmail(viewer?.user?.email);
   const calendarHost = (process.env.NEXTAUTH_URL ?? "").replace(/^https?:\/\//, "");
@@ -162,6 +163,7 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
             creditCost: s.creditCost,
             label: s.label,
             active: s.active,
+            upcomingBookings: upcomingCounts.get(s.id) ?? 0,
           }))}
           onCreate={createClassScheduleAction}
           onUpdate={updateClassScheduleAction}
