@@ -37,6 +37,16 @@ window (check your current plan at console.neon.tech under
 Settings → Billing if the exact window matters for a specific incident).
 Nothing to set up here — just know it exists.
 
+**Database, second copy (nightly, encrypted):** besides Neon's own backups, a
+scheduled job (`netlify/functions/db-backup.ts`, every night at 06:30 UTC) copies
+every table into one encrypted file in the R2 bucket under `backups/` and keeps the
+last 35 days. It is encrypted before upload because the bucket is public. It checks
+that the stored file is the right size and that the key opens it. If it fails, or
+stops running, the job watchdog emails the owner within the hour. One-time setup:
+in Netlify's environment variables add `BACKUP_ENCRYPTION_KEY` (32 random bytes as
+base64: run `openssl rand -base64 32`), and **keep a copy of that key somewhere safe
+outside Netlify** (a password manager). Without it a backup cannot be opened.
+
 **Lesson videos/PDFs (R2):** this is the one gap worth knowing about
 plainly. R2 does **not** version or back up objects by default, and this
 app doesn't currently enable R2 versioning. In practice: whatever file you
@@ -59,6 +69,12 @@ own "restore to main" flow if you want the original connection strings to
 keep working unchanged. Neon's own docs walk through this with screenshots
 — search "Neon point-in-time restore" if you're mid-incident and need the
 exact clicks.
+
+**From the nightly backup:** download the day's file from the bucket
+(`backups/YYYY-MM-DD.json.enc`), then on a computer with the project run
+`BACKUP_ENCRYPTION_KEY=<your key> node scripts/restore-backup.mjs <file> > backup.json`.
+The result is one readable file with every table's rows, so a single student, payment
+or booking can be looked up or put back by hand.
 
 **A single lesson file:** re-upload it through `/admin/lessons` from your
 own local copy (see the backup note above — this is why keeping local

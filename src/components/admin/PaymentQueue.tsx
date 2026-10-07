@@ -27,7 +27,7 @@ function formatUsd(cents: number) {
 
 function describePayment(payment: PendingZellePayment): { eyebrow: string; title: string } {
   if (payment.purpose === "CURRICULUM") {
-    return { eyebrow: "Curriculum $69.99", title: "Full platform unlock" };
+    return { eyebrow: "Curriculum (retired)", title: "Full platform unlock" };
   }
   // The Schedule screen's guided extra-session flow: show the exact picked
   // time so the reviewing admin sees what this $35 is actually for, same
