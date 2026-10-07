@@ -8,9 +8,10 @@ import { setUsername, isValidUsername, normalizeUsername, SocialError } from "@/
 export interface OnboardingInput {
   username: string;
   primaryInstrument: PrimaryInstrument;
-  skillLevel: SkillLevel;
+  /** Everything after the instrument is optional: a student can finish now and fill it in later. */
+  skillLevel: SkillLevel | null;
   genres: MusicGenre[];
-  learningGoal: LearningGoal;
+  learningGoal: LearningGoal | null;
 }
 
 export async function checkUsernameAvailableAction(raw: string): Promise<{ available: boolean; reason?: string }> {
@@ -26,10 +27,6 @@ export async function saveOnboardingAction(input: OnboardingInput) {
   const session = await getServerAuthSession();
   if (!session?.user?.id) return { ok: false as const, error: "Not signed in." };
 
-  if (input.genres.length === 0) {
-    return { ok: false as const, error: "Pick at least one genre." };
-  }
-
   try {
     await setUsername(session.user.id, input.username);
   } catch (err) {
@@ -40,9 +37,9 @@ export async function saveOnboardingAction(input: OnboardingInput) {
     where: { id: session.user.id },
     data: {
       primaryInstrument: input.primaryInstrument,
-      skillLevel: input.skillLevel,
+      skillLevel: input.skillLevel ?? undefined,
       genres: input.genres,
-      learningGoal: input.learningGoal,
+      learningGoal: input.learningGoal ?? undefined,
       onboardedAt: new Date(),
     },
   });
