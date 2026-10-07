@@ -478,6 +478,15 @@ export async function notifyAutoApproved(paymentId: string) {
 }
 
 /** Admin confirms an auto-approved payment really arrived. */
+/** Marks every auto-approved payment that nobody has looked at as checked. Returns how many. */
+export async function markAllPaymentsChecked(): Promise<number> {
+  const result = await prisma.zellePayment.updateMany({
+    where: { autoApproved: true, checkedAt: null },
+    data: { checkedAt: new Date() },
+  });
+  return result.count;
+}
+
 export async function markPaymentChecked(paymentId: string) {
   await prisma.zellePayment.updateMany({
     where: { id: paymentId, autoApproved: true, checkedAt: null },
@@ -529,13 +538,26 @@ export type PendingZellePayment = Prisma.ZellePaymentGetPayload<{ include: typeo
  * the richer "all payments" view (verified/rejected/expired history), not
  * just the live pending queue.
  */
-export async function getAdminPayments(status?: ZellePaymentStatus | "UNCHECKED"): Promise<PendingZellePayment[]> {
+export const ADMIN_PAYMENTS_PAGE_SIZE = 25;
+
+/** One page of the payments list (newest first) with the total, so a long list is not one endless page. */
+export async function getAdminPayments(
+  status?: ZellePaymentStatus | "UNCHECKED",
+  page = 1,
+): Promise<{ payments: PendingZellePayment[]; total: number; page: number; pageCount: number }> {
   await expireStalePendingPayments();
-  return prisma.zellePayment.findMany({
-    where: status === "UNCHECKED" ? { autoApproved: true, checkedAt: null } : status ? { status } : undefined,
+  const where = status === "UNCHECKED" ? { autoApproved: true, checkedAt: null } : status ? { status } : undefined;
+  const total = await prisma.zellePayment.count({ where });
+  const pageCount = Math.max(1, Math.ceil(total / ADMIN_PAYMENTS_PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, Math.floor(page) || 1), pageCount);
+  const payments = await prisma.zellePayment.findMany({
+    where,
     orderBy: { createdAt: "desc" },
     include: pendingPaymentInclude,
+    skip: (safePage - 1) * ADMIN_PAYMENTS_PAGE_SIZE,
+    take: ADMIN_PAYMENTS_PAGE_SIZE,
   });
+  return { payments, total, page: safePage, pageCount };
 }
 
 /**
@@ -707,7 +729,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
 
   let notificationBody = "Your payment was verified.";
   if (payment.purpose === "CURRICULUM") {
-    notificationBody = "Your $69.99 curriculum payment was verified. Every scale is unlocked, for good.";
+    notificationBody = "Your curriculum payment was verified. Every scale is unlocked, for good.";
   } else if (payment.purpose === "CLASS_CREDITS" && payment.extraSessionScheduleId) {
     notificationBody = extraSessionBooked
       ? "Your extra session payment was verified and the class is booked. See it on your Schedule."
@@ -737,6 +759,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
     title: "Payment approved",
     body: notificationBody,
     emailCategory: "payments",
+    alwaysEmail: true,
   });
 
   // A completed plan is a distinct milestone worth its own bell entry, on
@@ -908,6 +931,7 @@ export async function rejectZellePayment(paymentId: string, reviewerId: string, 
     title: "Payment rejected",
     body: `Your payment couldn't be verified: ${reason}. You can resubmit it from your billing page.`,
     emailCategory: "payments",
+    alwaysEmail: true,
   });
 }
 
@@ -917,3 +941,8 @@ export async function getOwnPaymentStatus(userId: string, paymentId: string): Pr
   return payment?.status ?? null;
 }
 
+
+/** When one of the caller's own payments was submitted, for the "how long has it been waiting" notice. */
+export async function getOwnPaymentWaitInfo(userId: string, paymentId: string): Promise<{ status: ZellePaymentStatus; submittedAt: Date | null; amountCents: number } | null> {
+  return prisma.zellePayment.findFirst({ where: { id: paymentId, userId }, select: { status: true, submittedAt: true, amountCents: true } });
+}

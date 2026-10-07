@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { WordsPullUp } from "@/components/ui/words-pull-up";
 import { PillCTA } from "@/components/ui/pill-cta";
+import { BACKDROPS } from "@/lib/backdrops";
+import { heroVideoAllowed } from "@/lib/heroVideo";
 
 // Served from R2 (the same object storage the app already uses for lesson
 // videos and avatars, see lib/storage.ts), not the Next.js public folder: 17MB
@@ -43,19 +46,48 @@ function useKeepPlaying(ref: React.RefObject<HTMLVideoElement>) {
   }, [ref]);
 }
 
+type NetworkInfo = { saveData?: boolean; effectiveType?: string };
+
 export function Hero() {
   const { data: session } = useSession();
   const isLoggedIn = Boolean(session?.user);
   const videoRef = useRef<HTMLVideoElement>(null);
+  // The still photo paints first. The 17MB video only starts downloading after the page has
+  // finished loading, and only for people whose connection and settings suit it.
+  const [loadVideo, setLoadVideo] = useState(false);
+  const [videoPlaying, setVideoPlaying] = useState(false);
+  useEffect(() => {
+    const connection = (navigator as Navigator & { connection?: NetworkInfo }).connection;
+    const allowed = heroVideoAllowed({
+      reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      saveData: Boolean(connection?.saveData),
+      effectiveType: connection?.effectiveType ?? null,
+    });
+    if (!allowed) return;
+    const start = () => setLoadVideo(true);
+    if (document.readyState === "complete") start();
+    else window.addEventListener("load", start, { once: true });
+    return () => window.removeEventListener("load", start);
+  }, []);
   useKeepPlaying(videoRef);
 
   return (
     <section className="h-[100svh] w-full p-2 sm:p-3">
       <div className="relative h-full w-full overflow-hidden rounded-2xl bg-black md:rounded-[2rem]">
         {/* pointer-events-none: pure background, so a phone never offers its own tap-to-play glyph over the copy. */}
-        <video ref={videoRef} aria-hidden autoPlay loop muted playsInline className="pointer-events-none absolute inset-0 h-full w-full object-cover">
-          <source src={HERO_VIDEO_URL} type="video/mp4" />
-        </video>
+        <Image src={BACKDROPS.marketingHero} alt="" aria-hidden fill priority sizes="100vw" className="pointer-events-none object-cover" />
+        <video
+          ref={videoRef}
+          aria-hidden
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="none"
+          src={loadVideo ? HERO_VIDEO_URL : undefined}
+          onPlaying={() => setVideoPlaying(true)}
+          className={`pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${videoPlaying ? "opacity-100" : "opacity-0"}`}
+        />
 
         <div aria-hidden className="noise-overlay pointer-events-none absolute inset-0 opacity-[0.7] mix-blend-overlay" />
         <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/70" />

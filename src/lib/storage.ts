@@ -22,7 +22,7 @@
 //      or a custom domain) — lessons are served directly from this URL by
 //      <video>/<iframe>, so it has to be reachable without a signed request.
 
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const REQUIRED_ENV = ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET_NAME", "R2_PUBLIC_URL"] as const;
@@ -213,4 +213,37 @@ export function keyFromPublicUrl(publicUrl: string): string | null {
   const base = process.env.R2_PUBLIC_URL?.replace(/\/$/, "");
   if (!base || !publicUrl.startsWith(`${base}/`)) return null;
   return publicUrl.slice(base.length + 1);
+}
+
+// ---------------------------------------------------------------------------
+// Nightly database backup (see src/lib/backupCore.ts, netlify/functions/db-backup.ts)
+// ---------------------------------------------------------------------------
+//
+// The bucket is public, so only ENCRYPTED bytes are ever stored under backups/.
+// These helpers never return a public URL for them.
+
+/** Stores an already-encrypted backup. No cache headers, never linked from anywhere. */
+export async function putBackupObject(key: string, body: Buffer): Promise<void> {
+  await getClient().send(
+    new PutObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key, Body: body, ContentType: "application/octet-stream", CacheControl: "no-store" }),
+  );
+}
+
+/** The stored size of a backup, or null if it is not there. */
+export async function headBackupObject(key: string): Promise<number | null> {
+  try {
+    const head = await getClient().send(new HeadObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key }));
+    return head.ContentLength ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function listBackupObjects(): Promise<string[]> {
+  const out = await getClient().send(new ListObjectsV2Command({ Bucket: process.env.R2_BUCKET_NAME, Prefix: "backups/", MaxKeys: 1000 }));
+  return (out.Contents ?? []).map((o) => o.Key).filter((k): k is string => Boolean(k));
+}
+
+export async function deleteBackupObject(key: string): Promise<void> {
+  await getClient().send(new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key }));
 }

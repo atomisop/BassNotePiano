@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/site";
 
 /**
- * Only the three indexable marketing routes belong here.
+ * Only the indexable public marketing routes belong here.
  *
  * Everything else in the app is behind auth (see src/middleware.ts and the
  * per-page getServerAuthSession guards) — listing those would advertise URLs
@@ -23,5 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: absoluteUrl("/"), lastModified, changeFrequency: "monthly", priority: 1 },
     { url: absoluteUrl("/pricing"), lastModified, changeFrequency: "monthly", priority: 0.9 },
     { url: absoluteUrl("/classes"), lastModified, changeFrequency: "weekly", priority: 0.8 },
+    { url: absoluteUrl("/shop"), lastModified, changeFrequency: "monthly", priority: 0.6 },
+    { url: absoluteUrl("/privacy"), lastModified, changeFrequency: "yearly", priority: 0.2 },
   ];
 }

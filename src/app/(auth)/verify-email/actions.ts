@@ -63,14 +63,17 @@ export async function verifyEmailAction(email: string, code: string) {
  *  a RateLimitError is swallowed for the same reason (see forgot-password's
  *  requestPasswordResetAction for the full reasoning). Wrapped in
  *  withTimingFloor for the same reason too — see requestPasswordResetAction. */
-export async function resendVerificationEmailAction(email: string) {
+export async function resendVerificationEmailAction(email: string): Promise<{ ok: true } | { ok: false; error: string }> {
   return withTimingFloor(async () => {
     const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
-    if (!user || user.emailVerified) return;
+    if (!user || user.emailVerified) return { ok: true as const };
     try {
-      await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
+      const sent = await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
+      // A failed send is about the email service, not about this account, so it is safe to say so.
+      if (!sent.ok) return { ok: false as const, error: "We couldn't send the email just now. Please try again in a minute." };
     } catch (err) {
       if (!(err instanceof RateLimitError)) throw err;
     }
+    return { ok: true as const };
   });
 }

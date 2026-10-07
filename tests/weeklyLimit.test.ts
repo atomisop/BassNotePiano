@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { SUBSCRIBER_CLASSES_PER_WEEK, weekRangeForOccurrence } from "@/lib/bookingRules";
+import { SUBSCRIBER_CLASSES_PER_WEEK, errorNeedsTeam, weekRangeForOccurrence } from "@/lib/bookingRules";
 
 const day = (iso: string) => new Date(`${iso}T00:00:00Z`);
 
@@ -18,5 +18,16 @@ describe("weekRangeForOccurrence", () => {
   });
   it("allows one credit-booked class a week", () => {
     expect(SUBSCRIBER_CLASSES_PER_WEEK).toBe(1);
+  });
+});
+
+describe("errorNeedsTeam", () => {
+  it("spots the messages that send a student to the team", () => {
+    expect(errorNeedsTeam("Too close to class time to cancel yourself (inside 24 hours). Message us and we'll help.")).toBe(true);
+    expect(errorNeedsTeam("You can only book one class per day, message support if you need a second class on the same day.")).toBe(true);
+  });
+  it("leaves ordinary errors alone", () => {
+    expect(errorNeedsTeam("That slot was just taken. Try again.")).toBe(false);
+    expect(errorNeedsTeam(null)).toBe(false);
   });
 });

@@ -62,14 +62,17 @@ export async function resetPasswordAction(email: string, code: string, newPasswo
  *  withTimingFloor for the same reason too: the early return for "no such
  *  account" is fast, while a real account goes on to a real email send —
  *  without the floor, that gap is measurable in response time alone. */
-export async function resendResetCodeAction(email: string) {
+export async function resendResetCodeAction(email: string): Promise<{ ok: true } | { ok: false; error: string }> {
   return withTimingFloor(async () => {
     const user = await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
-    if (!user?.passwordHash) return;
+    if (!user?.passwordHash) return { ok: true as const };
     try {
-      await createAndSendCode({ email: user.email, userId: user.id, purpose: "PASSWORD_RESET" });
+      const sent = await createAndSendCode({ email: user.email, userId: user.id, purpose: "PASSWORD_RESET" });
+      // A failed send is about the email service, not about this account, so it is safe to say so.
+      if (!sent.ok) return { ok: false as const, error: "We couldn't send the email just now. Please try again in a minute." };
     } catch (err) {
       if (!(err instanceof RateLimitError)) throw err;
     }
+    return { ok: true as const };
   });
 }

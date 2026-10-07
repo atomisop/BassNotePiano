@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { getAllClassSchedules, countUpcomingBookingsBySchedule, getAdminOccurrences, getUpcomingOccurrences } from "@/lib/classSchedule";
+import { getUpcomingOccurrences } from "@/lib/classSchedule";
+import { getAdminOccurrences } from "@/lib/classScheduleAdmin";
+import { getAllClassSchedules, countUpcomingBookingsBySchedule } from "@/lib/classScheduleManage";
 import { AdminScheduleManager } from "@/components/admin/AdminScheduleManager";
 import { AdminAttendanceRoster } from "@/components/admin/AdminAttendanceRoster";
 import { AdminAttendanceByStudent } from "@/components/admin/AdminAttendanceByStudent";

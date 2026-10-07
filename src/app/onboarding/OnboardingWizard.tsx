@@ -53,6 +53,8 @@ const LEARNING_GOALS: { value: LearningGoal; label: string }[] = [
 ];
 
 const STEP_TITLES = ["Your username", "Your instrument", "Your skill level", "Your genres", "Your goal"];
+/** Steps up to and including this one are required. The rest can be skipped and filled in later from the profile. */
+const LAST_REQUIRED_STEP = 1;
 
 function OptionButton({
   label,
@@ -107,15 +109,26 @@ export function OnboardingWizard() {
     setGenres((prev) => (prev.includes(value) ? prev.filter((g) => g !== value) : [...prev, value]));
   }
 
-  const canAdvance = [
-    username.trim().length >= 3,
-    instrument !== null,
-    skillLevel !== null,
-    genres.length > 0,
-    goal !== null,
-  ][step];
+  // Only the username and the instrument are needed to get going.
+  const canAdvance = step === 0 ? username.trim().length >= 3 : step === 1 ? instrument !== null : true;
+  const optional = step > LAST_REQUIRED_STEP;
 
   const lastStep = STEP_TITLES.length - 1;
+
+  async function save() {
+    if (!instrument) return;
+    setSubmitting(true);
+    const result = await saveOnboardingAction({ username, primaryInstrument: instrument, skillLevel, genres, learningGoal: goal });
+    if (!result.ok) {
+      setError(result.error);
+      setSubmitting(false);
+      return;
+    }
+
+    await update();
+    router.push("/dashboard");
+    router.refresh();
+  }
 
   async function handleNext() {
     setError(null);
@@ -135,19 +148,20 @@ export function OnboardingWizard() {
       return;
     }
 
-    if (!instrument || !skillLevel || !goal) return;
+    await save();
+  }
 
-    setSubmitting(true);
-    const result = await saveOnboardingAction({ username, primaryInstrument: instrument, skillLevel, genres, learningGoal: goal });
-    if (!result.ok) {
-      setError(result.error);
-      setSubmitting(false);
+  /** Skips this step's question, and finishes if it was the last. */
+  async function handleSkip() {
+    setError(null);
+    if (step === 2) setSkillLevel(null);
+    if (step === 3) setGenres([]);
+    if (step === 4) setGoal(null);
+    if (step < lastStep) {
+      setStep((s) => s + 1);
       return;
     }
-
-    await update();
-    router.push("/dashboard");
-    router.refresh();
+    await save();
   }
 
   function handleBack() {
@@ -176,6 +190,7 @@ export function OnboardingWizard() {
 
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
         Step {step + 1} of {STEP_TITLES.length}
+        {optional ? " · optional" : ""}
       </p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{STEP_TITLES[step]}</h1>
 
@@ -235,6 +250,13 @@ export function OnboardingWizard() {
       </AnimatePresence>
 
       {error && <p className="mt-4 text-small text-red-400">{error}</p>}
+      {step === 0 && <p className="mt-4 text-small text-slate-500">Only your username and instrument are needed. The rest is optional, and you can change any of it later in your profile.</p>}
+
+      {step === LAST_REQUIRED_STEP && instrument !== null && (
+        <button type="button" onClick={save} disabled={submitting} className="mt-4 text-small font-medium text-slate-400 underline-offset-4 transition hover:text-slate-100 hover:underline disabled:opacity-60">
+          Finish now, I&apos;ll fill in the rest later
+        </button>
+      )}
 
       <div className="mt-6 flex items-center gap-2">
         {step > 0 && (
@@ -256,6 +278,16 @@ export function OnboardingWizard() {
           {(checkingUsername || submitting) && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
           {checkingUsername ? "Checking…" : submitting ? "Saving…" : step < lastStep ? "Next" : "Finish"}
         </button>
+        {optional && (
+          <button
+            type="button"
+            onClick={handleSkip}
+            disabled={submitting}
+            className="rounded-xl px-4 py-2.5 text-small font-medium text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+          >
+            Skip
+          </button>
+        )}
       </div>
     </motion.div>
   );
