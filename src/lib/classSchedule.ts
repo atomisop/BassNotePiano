@@ -5,7 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { PLAN_CADENCE_CREDITS_PER_WEEK, CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
-import { SUBSCRIBER_CLASSES_PER_WEEK, weekRangeForOccurrence } from "@/lib/bookingRules";
+import { weekRangeForOccurrence } from "@/lib/bookingRules";
+import { getBoolSetting, getNumberSetting, getTextSetting } from "@/lib/siteSettings";
 
 export class ClassBookingError extends Error {}
 
@@ -71,6 +72,22 @@ function getEtOffsetMinutes(utcInstant: Date): number {
   const hour = get("hour") % 24; // some engines report midnight as "24"
   const asUtc = Date.UTC(get("year"), get("month") - 1, get("day"), hour, get("minute"), get("second"));
   return (asUtc - utcInstant.getTime()) / 60_000;
+}
+
+/**
+ * The admin's booking switches (Settings → Booking), checked for a student making
+ * their own booking. An admin booking on a student's behalf skips these.
+ */
+async function assertBookingAllowed(scheduledAt: Date, opts: { family?: boolean } = {}): Promise<void> {
+  if (await getBoolSetting("booking.paused")) throw new ClassBookingError(await getTextSetting("booking.pausedMessage"));
+  if (opts.family && !(await getBoolSetting("booking.allowFamily"))) throw new ClassBookingError("Family bookings are not available right now.");
+  const minNoticeHours = await getNumberSetting("booking.minNoticeHours");
+  if (minNoticeHours > 0 && scheduledAt.getTime() - Date.now() < minNoticeHours * 3_600_000) {
+    throw new ClassBookingError(`Classes need to be booked at least ${minNoticeHours} hour${minNoticeHours === 1 ? "" : "s"} ahead.`);
+  }
+  if (!(await getBoolSetting("booking.allowSameDay")) && scheduledAt.getTime() < todayBoundsEt().end.getTime()) {
+    throw new ClassBookingError("Same-day booking is turned off. Please pick a class on a later day.");
+  }
 }
 
 /** Converts an ET wall-clock date+time to the UTC instant it represents. */
@@ -216,6 +233,7 @@ export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
   if (schedules.length === 0) return [];
 
   const now = Date.now();
+  const horizonWeeks = await getNumberSetting("booking.horizonWeeks");
 
   const candidates: {
     schedule: (typeof schedules)[number];
@@ -228,7 +246,7 @@ export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
     const { hour, minute } = parseStartTime(schedule.startTime);
     const chunks = chunksForSchedule(schedule);
 
-    for (const candidateDate of nextOccurrenceDates(schedule.dayOfWeek, OCCURRENCES_PER_SLOT)) {
+    for (const candidateDate of nextOccurrenceDates(schedule.dayOfWeek, horizonWeeks)) {
       const baseScheduledAt = etWallTimeToUtc(
         candidateDate.getUTCFullYear(),
         candidateDate.getUTCMonth() + 1,
@@ -376,7 +394,7 @@ async function assertWithinSubscriberWeeklyLimit(
       ],
     },
   });
-  if (held >= SUBSCRIBER_CLASSES_PER_WEEK) {
+  if (held >= (await getNumberSetting("booking.subscriberClassesPerWeek"))) {
     throw new ClassBookingError(
       "You already have your class for that week. Your credits cover one class a week. You can add an extra session from the Extra sessions tab.",
     );
@@ -435,6 +453,7 @@ export async function bookClass(
   if (scheduledAt.getTime() <= Date.now()) {
     throw new ClassBookingError("That class has already started or passed.");
   }
+  if (!options.isAdminAssisted) await assertBookingAllowed(scheduledAt);
   // Payment Plan subscribers can book here too: their weekly class is
   // auto-booked and paid by the plan, and this is where they book EXTRA
   // sessions on top of it, with credits bought at $40 each (see
@@ -450,7 +469,7 @@ export async function bookClass(
   await assertRateLimit(
     prisma.classBooking.count,
     { studentId },
-    { windowMinutes: 60, max: 20, message: "You're booking too fast. Please wait a bit and try again." },
+    { windowMinutes: 60, max: await getNumberSetting("booking.perHourLimit"), message: "You're booking too fast. Please wait a bit and try again." },
   );
 
   let booking;
@@ -557,7 +576,7 @@ export async function bookClass(
   // booking themselves (adminBookClass below), notifying the admin that
   // the admin just booked something is noise, not news.
   if (!options.isAdminAssisted) {
-    notifyAdminsOfBooking(studentId, schedule, scheduledAt, credits).catch((err) =>
+    (await getBoolSetting("booking.notifyAdminOnBooking") ? notifyAdminsOfBooking(studentId, schedule, scheduledAt, credits) : Promise.resolve()).catch((err) =>
       console.error("Admin booking notification failed (non-blocking):", err),
     );
   }
@@ -855,11 +874,12 @@ export async function bookFamilyClass(
   if (scheduledAt.getTime() <= Date.now()) {
     throw new ClassBookingError("That class has already started or passed.");
   }
+  await assertBookingAllowed(scheduledAt, { family: true });
 
   await assertRateLimit(
     prisma.classBooking.count,
     { studentId: initiatorId },
-    { windowMinutes: 60, max: 20, message: "You're booking too fast. Please wait a bit and try again." },
+    { windowMinutes: 60, max: await getNumberSetting("booking.perHourLimit"), message: "You're booking too fast. Please wait a bit and try again." },
   );
 
   // Re-verified here, never trusted from whatever the client last showed,
@@ -1313,10 +1333,14 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
   if (booking.studentId !== studentId) throw new ClassBookingError("Not your booking.");
   if (booking.status !== "SCHEDULED") throw new ClassBookingError("This booking isn't active.");
 
+  if (!(await getBoolSetting("cancel.studentCanCancel"))) {
+    throw new ClassBookingError("Classes can't be canceled in the app right now. Message us and we'll help.");
+  }
+  const cancelCutoffHours = await getNumberSetting("cancel.cutoffHours");
   const hoursUntil = (booking.scheduledAt.getTime() - Date.now()) / 3_600_000;
-  if (hoursUntil < CANCELLATION_CUTOFF_HOURS) {
+  if (hoursUntil < cancelCutoffHours) {
     throw new ClassBookingError(
-      `Too close to class time to cancel yourself (inside ${CANCELLATION_CUTOFF_HOURS} hours). Message us and we'll help.`,
+      `Too close to class time to cancel yourself (inside ${cancelCutoffHours} hours). Message us and we'll help.`,
     );
   }
 
@@ -1379,10 +1403,14 @@ export async function rescheduleClassBooking(
   if (oldBooking.studentId !== studentId) throw new ClassBookingError("Not your booking.");
   if (oldBooking.status !== "SCHEDULED") throw new ClassBookingError("This booking isn't active.");
 
+  if (!(await getBoolSetting("cancel.studentCanReschedule"))) {
+    throw new ClassBookingError("Classes can't be rescheduled in the app right now. Message us and we'll help.");
+  }
+  const rescheduleCutoffHours = await getNumberSetting("cancel.rescheduleCutoffHours");
   const hoursUntil = (oldBooking.scheduledAt.getTime() - Date.now()) / 3_600_000;
-  if (hoursUntil < CANCELLATION_CUTOFF_HOURS) {
+  if (hoursUntil < rescheduleCutoffHours) {
     throw new ClassBookingError(
-      `Too close to class time to reschedule yourself (inside ${CANCELLATION_CUTOFF_HOURS} hours). Message us and we'll help.`,
+      `Too close to class time to reschedule yourself (inside ${rescheduleCutoffHours} hours). Message us and we'll help.`,
     );
   }
 
@@ -1402,6 +1430,7 @@ export async function rescheduleClassBooking(
   if (newScheduledAt.getTime() <= Date.now()) {
     throw new ClassBookingError("That class has already started or passed.");
   }
+  await assertBookingAllowed(newScheduledAt);
   if (
     newScheduleId === oldBooking.scheduleId &&
     newOccurrenceDate.getTime() === oldBooking.occurrenceDate.getTime() &&

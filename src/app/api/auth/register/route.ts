@@ -7,6 +7,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createAndSendCode, RateLimitError } from "@/lib/verification";
 import { isDisposableEmailDomain } from "@/lib/disposableEmail";
+import { getBoolSetting, getTextSetting } from "@/lib/siteSettings";
 import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
@@ -23,6 +24,10 @@ export async function POST(req: NextRequest) {
   if (!isSameOriginJsonPost(req)) return NextResponse.json({ error: "Bad request." }, { status: 403 });
 
   const body = await req.json().catch(() => null);
+
+  if (!(await getBoolSetting("signup.open"))) {
+    return NextResponse.json({ error: await getTextSetting("signup.closedMessage") }, { status: 403 });
+  }
 
   // Honeypot: a hidden field real visitors never fill. Answered with a fake
   // success so a bot gets no signal that it was caught.
@@ -45,7 +50,7 @@ export async function POST(req: NextRequest) {
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body?.password === "string" ? body.password : "";
 
-  if (!hasFirstAndLastName(name)) {
+  if ((await getBoolSetting("signup.requireFullName")) && !hasFirstAndLastName(name)) {
     return NextResponse.json({ error: FULL_NAME_MESSAGE }, { status: 400 });
   }
   if (!name || !EMAIL_PATTERN.test(email) || password.length < MIN_PASSWORD_LENGTH) {
@@ -61,7 +66,7 @@ export async function POST(req: NextRequest) {
   // actually being reachable by the student long-term, and the family
   // bundle feature specifically depends on "an account" meaning a real,
   // ongoing person rather than a throwaway inbox nobody can be reached at.
-  if (isDisposableEmailDomain(email)) {
+  if ((await getBoolSetting("signup.blockDisposable")) && isDisposableEmailDomain(email)) {
     return NextResponse.json(
       { error: "That looks like a temporary or disposable email address. Please use one you can actually receive mail at." },
       { status: 400 },

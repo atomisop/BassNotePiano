@@ -5,6 +5,7 @@ const recordAtomFailure = vi.fn();
 const noteAtomSuccess = vi.fn();
 vi.mock("@/lib/auth", () => ({ getServerAuthSession: async () => null, authOptions: {} }));
 vi.mock("@/lib/prisma", () => ({ prisma: {} }));
+vi.mock("@/lib/siteSettings", () => ({ getBoolSetting: async () => true, getNumberSetting: async () => 20 }));
 vi.mock("next/headers", () => ({ headers: async () => new Headers({ "x-forwarded-for": "203.0.113.9" }) }));
 vi.mock("@/lib/reportError", () => ({ reportError: vi.fn() }));
 vi.mock("@/lib/atomHealth", () => ({

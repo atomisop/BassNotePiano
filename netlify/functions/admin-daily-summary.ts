@@ -4,6 +4,7 @@ import { prisma } from "../../src/lib/prisma";
 import { OWNER_EMAIL } from "../../src/lib/adminNotifications";
 import { todayBoundsEt } from "../../src/lib/classSchedule";
 import { sendNotificationEmailWithCta, sendTodoListEmail, getAppUrl, type TodoEmailItem } from "../../src/lib/email";
+import { getBoolSetting } from "../../src/lib/siteSettings";
 import { countUnmatchedReceipts, getPaymentPipelineHealth } from "../../src/lib/paymentPipelineStatus";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -20,6 +21,10 @@ function count(n: number, one: string, many: string): string | null {
 // cache (see the other scheduled functions).
 export const handler = schedule("0 12 * * *", async () =>
   runJob("admin-daily-summary", async () => {
+  if (!(await getBoolSetting("reminders.adminDailySummary"))) {
+    console.log("Admin daily summary: turned off in settings");
+    return { statusCode: 200 };
+  }
   const now = Date.now();
   const today = todayBoundsEt();
   const [pendingPayments, uncheckedAuto, unmatchedEmails, applications, openChats, classesToday, unmarked, stoppedJobs, pipeline] = await Promise.all([

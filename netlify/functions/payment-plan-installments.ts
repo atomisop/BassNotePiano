@@ -8,16 +8,14 @@ import {
   getOrCreateOpenInstallmentPayment,
   addCalendarMonthsClamped,
   lapsePlanForNonPayment,
-  INSTALLMENT_OPEN_LEAD_DAYS,
-  LAPSE_AFTER_DAYS,
 } from "../../src/lib/paymentPlans";
+import { getNumberSetting } from "../../src/lib/siteSettings";
 import { describePaymentPlan } from "../../src/lib/classCreditPricing";
 
 // A reminder every day once a payment is overdue, then the plan is canceled
 // at LAPSE_AFTER_DAYS (see lapsePlanForNonPayment). The cap is the lapse
 // itself: the daily email stops the day the plan is canceled, so it can never
 // become an endless nag under the shared notifyEmailPayments toggle.
-const OVERDUE_TRIGGER_DAYS = Array.from({ length: LAPSE_AFTER_DAYS - 1 }, (_, i) => i + 1);
 
 function daysSince(date: Date, now: Date): number {
   const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -31,6 +29,7 @@ async function notifyInstallment(
   payment: ZellePayment,
   type: "PAYMENT_PLAN_INSTALLMENT_DUE" | "PAYMENT_PLAN_INSTALLMENT_OVERDUE",
   overdueDays?: number,
+  lapseAfterDays = 7,
 ) {
   const planLabel = describePaymentPlan(plan.cadence, plan.term);
   const installmentLabel = `Installment ${payment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`;
@@ -41,7 +40,7 @@ async function notifyInstallment(
     type,
     title: isOverdue ? "Installment overdue" : "Installment due",
     body: isOverdue
-      ? `${installmentLabel} on your ${planLabel} is ${overdueDays} day${overdueDays === 1 ? "" : "s"} overdue. Your classes are on hold and your plan is canceled in ${LAPSE_AFTER_DAYS - (overdueDays ?? 0)} day${LAPSE_AFTER_DAYS - (overdueDays ?? 0) === 1 ? "" : "s"} unless you pay.`
+      ? `${installmentLabel} on your ${planLabel} is ${overdueDays} day${overdueDays === 1 ? "" : "s"} overdue. Your classes are on hold and your plan is canceled in ${lapseAfterDays - (overdueDays ?? 0)} day${lapseAfterDays - (overdueDays ?? 0) === 1 ? "" : "s"} unless you pay.`
       : `${installmentLabel} on your ${planLabel} is ready to pay.`,
     // No emailCategory here on purpose, the email below is a dedicated
     // itemized invoice (sendPaymentPlanInvoiceEmail), not the generic
@@ -89,7 +88,10 @@ async function notifyInstallment(
 export const handler = schedule("0 16 * * *", async () =>
   runJob("payment-plan-installments", async () => {
   const now = new Date();
-  const leadWindowEnd = new Date(now.getTime() + INSTALLMENT_OPEN_LEAD_DAYS * 24 * 60 * 60 * 1000);
+  const leadDays = await getNumberSetting("payments.installmentLeadDays");
+  const lapseAfterDays = await getNumberSetting("payments.lapseAfterDays");
+  const overdueTriggerDays = Array.from({ length: lapseAfterDays - 1 }, (_, i) => i + 1);
+  const leadWindowEnd = new Date(now.getTime() + leadDays * 24 * 60 * 60 * 1000);
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
 
   const duePlans = await prisma.paymentPlan.findMany({
@@ -127,13 +129,13 @@ export const handler = schedule("0 16 * * *", async () =>
     // allows null only for a hypothetical future purpose that isn't this one.
     const plan = payment.paymentPlan!;
     const gap = daysSince(plan.nextDueDate, now);
-    if (!OVERDUE_TRIGGER_DAYS.includes(gap)) continue;
-    await notifyInstallment(plan, payment, "PAYMENT_PLAN_INSTALLMENT_OVERDUE", gap);
+    if (!overdueTriggerDays.includes(gap)) continue;
+    await notifyInstallment(plan, payment, "PAYMENT_PLAN_INSTALLMENT_OVERDUE", gap, lapseAfterDays);
     escalated++;
   }
 
   // Past the cutoff with nothing in review: cancel the plan and tell the student.
-  const lapseCutoff = new Date(now.getTime() - LAPSE_AFTER_DAYS * 24 * 60 * 60 * 1000);
+  const lapseCutoff = new Date(now.getTime() - lapseAfterDays * 24 * 60 * 60 * 1000);
   const lapsing = await prisma.paymentPlan.findMany({ where: { status: "ACTIVE", nextDueDate: { lte: lapseCutoff } }, select: { id: true } });
   let lapsed = 0;
   for (const plan of lapsing) {

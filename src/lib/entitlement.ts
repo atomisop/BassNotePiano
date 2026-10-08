@@ -2,7 +2,8 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { canonicalEmail } from "@/lib/canonicalEmail";
 import { addCalendarMonthsClamped } from "@/lib/paymentPlans";
-import { resolveEntitlement, TRIAL_DAYS, type CurriculumEntitlement } from "@/lib/entitlementRules";
+import { resolveEntitlement, type CurriculumEntitlement } from "@/lib/entitlementRules";
+import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 
 type Db = Prisma.TransactionClient | typeof prisma;
 
@@ -53,6 +54,7 @@ export async function getCurriculumEntitlements(userIds: string[], db: Db = pris
   }
 
   const now = new Date();
+  const graceDays = await getNumberSetting("access.planGraceDays");
   for (const user of users) {
     result.set(
       user.id,
@@ -64,6 +66,7 @@ export async function getCurriculumEntitlements(userIds: string[], db: Db = pris
           trialEndsAt: user.trialEndsAt,
         },
         now,
+        graceDays,
       ),
     );
   }
@@ -77,6 +80,7 @@ export async function getCurriculumEntitlements(userIds: string[], db: Db = pris
  * makes it one per person rather than one per application.
  */
 export async function startTrialForEmail(email: string, db: Db = prisma): Promise<boolean> {
+  if (!(await getBoolSetting("trial.enabled"))) return false;
   const user = await db.user.findFirst({
     where: { email: { equals: email.trim(), mode: "insensitive" }, trialEndsAt: null, role: "STUDENT" },
     select: { id: true, email: true, emailCanonical: true },
@@ -89,7 +93,7 @@ export async function startTrialForEmail(email: string, db: Db = prisma): Promis
     select: { id: true },
   });
   if (alreadyUsed) return false;
-  await db.user.update({ where: { id: user.id }, data: { trialEndsAt: new Date(Date.now() + TRIAL_DAYS * DAY_MS) } });
+  await db.user.update({ where: { id: user.id }, data: { trialEndsAt: new Date(Date.now() + (await getNumberSetting("trial.days")) * DAY_MS) } });
   return true;
 }
 

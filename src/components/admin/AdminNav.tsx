@@ -33,7 +33,13 @@ interface AdminNavGroup {
 }
 
 const NAV_GROUPS: AdminNavGroup[] = [
-  { label: "Overview", leaves: [{ href: "/admin", label: "Overview" }] },
+  {
+    label: "Overview",
+    leaves: [
+      { href: "/admin", label: "Overview" },
+      { href: "/admin/settings", label: "Settings" },
+    ],
+  },
   {
     label: "Billing",
     leaves: [

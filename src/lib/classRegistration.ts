@@ -1,6 +1,6 @@
 import { getAdminRecipients } from "@/lib/adminNotifications";
 import { startTrialForEmail } from "@/lib/entitlement";
-import { TRIAL_DAYS } from "@/lib/entitlementRules";
+import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import type { ClassRegistrationStatus, PrimaryInstrument, SkillLevel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
@@ -114,10 +114,11 @@ async function notifyRegistrant(
   outcome: "APPROVED" | "REJECTED",
   reason?: string,
 ) {
+  const trialDays = (await getBoolSetting("trial.enabled")) ? await getNumberSetting("trial.days") : 0;
   const title = outcome === "APPROVED" ? "Your class registration was approved" : "Update on your class registration";
   const body =
     outcome === "APPROVED"
-      ? `You're confirmed for ${INSTRUMENT_LABEL[registration.instrument]} lessons. You have a ${TRIAL_DAYS}-day free trial of the first lessons in the curriculum, and we'll be in touch with next steps.`
+      ? `You're confirmed for ${INSTRUMENT_LABEL[registration.instrument]} lessons. ${trialDays > 0 ? `You have a ${trialDays}-day free trial of the first lessons in the curriculum, and w` : "W"}e'll be in touch with next steps.`
       : `We're not able to move forward with your registration for ${INSTRUMENT_LABEL[registration.instrument]} lessons right now.${reason ? ` ${reason}` : ""}`;
 
   // Always the address typed into the public form, never routed through

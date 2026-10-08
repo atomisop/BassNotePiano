@@ -4,12 +4,25 @@ import { runJob } from "../../src/lib/jobRun";
 import { OWNER_EMAIL } from "../../src/lib/adminNotifications";
 import { createNotification } from "../../src/lib/notifications";
 import { discordChannelUrl } from "../../src/lib/discord";
-import { classChannelName, createClassChannel, deleteChannel, isGuildMember, TEST_CHANNEL_KEY } from "../../src/lib/discordApi";
+import { classChannelName, createClassChannel, deleteChannel, isGuildMember, moveToVoiceChannel, TEST_CHANNEL_KEY } from "../../src/lib/discordApi";
+import { getBoolSetting, getNumberSetting } from "../../src/lib/siteSettings";
 
 const MINUTE_MS = 60_000;
-const OPEN_BEFORE_MIN = 5; // a private channel appears five minutes before the class
-const CLOSE_AFTER_MIN = 5; // and goes away five minutes after it ends, so it is up for 55 minutes in all
+// How early a call opens and how long it stays after class are admin settings (Settings → Discord live classes). Defaults: 5 and 5.
 const CLASS_MINUTES = 45;
+
+/**
+ * One in-app notice to the owner per reason, so a job that runs every two minutes does not repeat itself.
+ * The marker is a small AppSetting row, cleared after a day.
+ */
+async function tellOwnerOnce(ownerId: string | undefined, marker: string, title: string, body: string, now: number): Promise<void> {
+  if (!ownerId) return;
+  const key = `discord_notice:${marker}`;
+  const existing = await prisma.appSetting.findUnique({ where: { key } });
+  if (existing && Number(existing.value) > now - 24 * 60 * MINUTE_MS) return;
+  await prisma.appSetting.upsert({ where: { key }, update: { value: String(now) }, create: { key, value: String(now) } });
+  await createNotification({ userId: ownerId, type: "CLASS_REMINDER", title, body }).catch((err) => console.error("Owner notice failed (non-blocking):", err));
+}
 
 // Every 2 minutes, so a call opens and closes within a couple of minutes of its time. Does nothing until the bot token is set, so it is safe to
 // ship before Discord is fully set up.
@@ -19,6 +32,16 @@ export const handler = schedule("*/2 * * * *", async () =>
       console.log("Discord class channels: no bot token yet, nothing to do");
       return { statusCode: 200 };
     }
+    if (!(await getBoolSetting("discord.enabled"))) {
+      console.log("Discord class channels: turned off in settings");
+      return { statusCode: 200 };
+    }
+    const OPEN_BEFORE_MIN = await getNumberSetting("discord.openBeforeMinutes");
+    const CLOSE_AFTER_MIN = await getNumberSetting("discord.closeAfterMinutes");
+    const addOwner = await getBoolSetting("discord.addOwner");
+    const notifyOwner = await getBoolSetting("discord.notifyOwner");
+    const notifyStudents = await getBoolSetting("discord.notifyStudents");
+    const autoMove = await getBoolSetting("discord.autoMove");
     const now = Date.now();
     let created = 0;
     let removed = 0;
@@ -46,25 +69,60 @@ export const handler = schedule("*/2 * * * *", async () =>
       calls.set(key, [...(calls.get(key) ?? []), booking]);
     }
 
-    const owner = await prisma.user.findFirst({ where: { email: OWNER_EMAIL, role: "ADMIN" }, select: { discordId: true } });
+    const owner = await prisma.user.findFirst({ where: { email: OWNER_EMAIL, role: "ADMIN" }, select: { id: true, discordId: true } });
+    // The owner can only be given a call they are actually in the server for, and a missing
+    // Discord link means they are not added to the call at all. Say so instead of staying silent.
+    const ownerInServer = addOwner && owner?.discordId ? await isGuildMember(owner.discordId).catch(() => false) : false;
 
     for (const members of Array.from(calls.values())) {
       try {
         const linked = members.filter((m) => m.student.discordId);
-        if (linked.length === 0) continue;
         const inServer: typeof linked = [];
         for (const m of linked) if (await isGuildMember(m.student.discordId as string)) inServer.push(m);
-        if (inServer.length === 0) continue;
+        if (inServer.length === 0) {
+          // No call is made when nobody in the class can be put into it. Tell the owner once, with the reason.
+          const why = linked.length === 0 ? "has not connected Discord" : "is not in the Discord server";
+          await tellOwnerOnce(owner?.id, `skip:${members[0].id}`, "A class call was not opened", `${members.map((m) => m.student.name ?? "A student").join(", ")} ${why}, so there is no call to join. Ask them to connect Discord on the Lessons page.`, now);
+          continue;
+        }
 
-        const ids = Array.from(new Set([...inServer.map((m) => m.student.discordId as string), ...(owner?.discordId ? [owner.discordId] : [])]));
+        if (addOwner && !ownerInServer) {
+          await tellOwnerOnce(
+            owner?.id,
+            `owner:${owner?.id ?? "none"}`,
+            "You are not added to class calls",
+            owner?.discordId ? "Your connected Discord account is not in the server, so class calls open without you." : "Connect your own Discord on the Lessons page, or class calls open without you.",
+            now,
+          );
+        }
+        const ids = Array.from(new Set([...inServer.map((m) => m.student.discordId as string), ...(ownerInServer && owner?.discordId ? [owner.discordId] : [])]));
         const channelId = await createClassChannel(
           classChannelName(inServer.map((m) => m.student.name ?? ""), members[0].scheduledAt),
           ids,
         );
         await prisma.classBooking.updateMany({ where: { id: { in: members.map((m) => m.id) } }, data: { discordChannelId: channelId } });
         created++;
+
+        // Discord cannot drag someone who is not on voice. For anyone already connected to a voice
+        // channel it can move them straight in; everyone else gets the link below.
+        if (autoMove) {
+          for (const id of ids) {
+            const result = await moveToVoiceChannel(id, channelId).catch(() => "failed" as const);
+            console.log(`Discord auto-move ${id}: ${result}`);
+          }
+        }
+
+        if (notifyOwner && owner?.id) {
+          await createNotification({
+            userId: owner.id,
+            type: "CLASS_REMINDER",
+            title: "Your class call is open",
+            body: `${inServer.map((m) => m.student.name ?? "Your student").join(", ")} can join now. Tap to enter the call.`,
+            cta: { label: "Join on Discord", url: discordChannelUrl(channelId) },
+          }).catch((err) => console.error("Owner class call notification failed (non-blocking):", err));
+        }
         // Tell each student their call is open, with a link straight to it.
-        for (const m of inServer) {
+        for (const m of notifyStudents ? inServer : []) {
           await createNotification({
             userId: (await prisma.user.findFirst({ where: { discordId: m.student.discordId }, select: { id: true } }))?.id ?? "",
             type: "CLASS_REMINDER",
@@ -120,6 +178,8 @@ export const handler = schedule("*/2 * * * *", async () =>
         }
       }
     }
+
+    await prisma.appSetting.deleteMany({ where: { key: { startsWith: "discord_notice:" }, updatedAt: { lt: new Date(now - 2 * 24 * 60 * MINUTE_MS) } } });
 
     console.log(`Discord class channels: ${created} created, ${removed} removed`);
     return { statusCode: 200 };

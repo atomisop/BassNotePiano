@@ -3,6 +3,7 @@ import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
 import { runJob } from "../../src/lib/jobRun";
 import { DISCORD_INVITE_URL, discordChannelUrl } from "../../src/lib/discord";
+import { getBoolSetting } from "../../src/lib/siteSettings";
 import { formatEtDateTime } from "../../src/lib/classScheduleLabels";
 
 const HOUR_MS = 3_600_000;
@@ -13,6 +14,8 @@ const HOUR_MS = 3_600_000;
 export const handler = schedule("*/15 * * * *", async () =>
   runJob("class-reminders", async () => {
     const now = new Date();
+    const sendDayBefore = await getBoolSetting("reminders.classDayBefore");
+    const sendHourBefore = await getBoolSetting("reminders.classHourBefore");
 
     const dayBefore = await prisma.classBooking.findMany({
       where: {
@@ -26,7 +29,7 @@ export const handler = schedule("*/15 * * * *", async () =>
     for (const booking of dayBefore) {
       const bookedInsideWindow = booking.createdAt.getTime() > booking.scheduledAt.getTime() - 24 * HOUR_MS;
       await prisma.classBooking.update({ where: { id: booking.id }, data: { reminder24At: now } });
-      if (bookedInsideWindow) continue;
+      if (bookedInsideWindow || !sendDayBefore) continue;
       await createNotification({
         userId: booking.studentId,
         type: "CLASS_REMINDER",
@@ -48,6 +51,7 @@ export const handler = schedule("*/15 * * * *", async () =>
 
     for (const booking of soon) {
       await prisma.classBooking.update({ where: { id: booking.id }, data: { reminder1hAt: now, reminder24At: now } });
+      if (!sendHourBefore) continue;
       const minutes = Math.max(1, Math.round((booking.scheduledAt.getTime() - now.getTime()) / 60_000));
       await createNotification({
         userId: booking.studentId,

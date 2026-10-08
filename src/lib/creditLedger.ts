@@ -18,6 +18,7 @@
 // phantom grant row if an outer transaction later rolls back for an
 // unrelated reason, never a double-charge, never a broken booking.
 
+import { getNumberSetting } from "@/lib/siteSettings";
 import type { CreditGrantSource, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
@@ -180,7 +181,7 @@ export async function expireDueCreditGrants(now: Date = new Date()): Promise<Exp
 // still has a real chance to book a makeup class before forfeiture, short
 // enough that the warning is still relevant to *this* cycle rather than
 // firing against credits that still have weeks of normal use left.
-const EXPIRY_WARNING_LEAD_DAYS = 5;
+// The lead time is an admin setting (Settings → Reminders), default 5 days.
 
 export interface ExpiringSoonGrantSummary {
   userId: string;
@@ -203,7 +204,7 @@ export interface ExpiringSoonGrantSummary {
  * (netlify/functions/credit-expiry.ts) to notify the student from.
  */
 export async function warnExpiringSoonCreditGrants(now: Date = new Date()): Promise<ExpiringSoonGrantSummary[]> {
-  const warningWindowEnd = new Date(now.getTime() + EXPIRY_WARNING_LEAD_DAYS * 24 * 60 * 60 * 1000);
+  const warningWindowEnd = new Date(now.getTime() + (await getNumberSetting("reminders.creditExpiryWarningDays")) * 24 * 60 * 60 * 1000);
   const dueSoon = await prisma.creditGrant.findMany({
     where: {
       expiresAt: { gt: now, lte: warningWindowEnd },

@@ -41,11 +41,11 @@ export interface EntitlementInputs {
   trialEndsAt: Date | null;
 }
 
-export function resolveEntitlement(input: EntitlementInputs, now: Date = new Date()): CurriculumEntitlement {
+export function resolveEntitlement(input: EntitlementInputs, now: Date = new Date(), graceDays: number = PLAN_GRACE_DAYS): CurriculumEntitlement {
   if (input.isAdmin) return { kind: "ADMIN", until: null };
 
   if (input.planPaidUntil) {
-    const graceEnd = new Date(input.planPaidUntil.getTime() + PLAN_GRACE_DAYS * DAY_MS);
+    const graceEnd = new Date(input.planPaidUntil.getTime() + graceDays * DAY_MS);
     if (graceEnd.getTime() > now.getTime()) return { kind: "PAID", until: graceEnd };
   }
 
@@ -91,7 +91,7 @@ export type NextApproval =
  * SCALE_UNLOCK_INTERVAL_DAYS have passed since the last unlock. The teacher
  * still clicks approve; an admin can force past both from the matrix.
  */
-export function computeNextApproval(scales: ApprovalScaleState[], nowMs: number): NextApproval {
+export function computeNextApproval(scales: ApprovalScaleState[], nowMs: number, intervalDays: number = SCALE_UNLOCK_INTERVAL_DAYS): NextApproval {
   const ordered = [...scales].sort((a, b) => a.order - b.order);
   const next = ordered.find((s) => s.order > 0 && s.unlockedAt === null && s.status !== "COMPLETED");
   if (!next) return { state: "ALL_UNLOCKED" };
@@ -102,7 +102,7 @@ export function computeNextApproval(scales: ApprovalScaleState[], nowMs: number)
   }
 
   const lastUnlock = ordered.reduce((max, s) => (s.unlockedAt !== null ? Math.max(max, s.unlockedAt) : max), 0);
-  const availableAt = lastUnlock + SCALE_UNLOCK_INTERVAL_DAYS * DAY_MS;
+  const availableAt = lastUnlock + intervalDays * DAY_MS;
   if (lastUnlock > 0 && availableAt > nowMs) {
     return { state: "WAITING_PACE", nextSlug: next.slug, availableAt };
   }
