@@ -30,7 +30,7 @@ export interface ClassScheduleInput {
   dayOfWeek: number;
   /** "HH:mm", ET wall-clock, same format ClassSchedule.startTime already stores. */
   startTime: string;
-  /** "HH:mm", ET wall-clock, end of the window; durationMin/creditCost are derived from (end - start), never entered directly, so they can never drift out of the 1-credit-per-30-min invariant bookClass depends on. */
+  /** "HH:mm", ET wall-clock, end of the window; durationMin/creditCost are derived from (end - start), never entered directly. Classes themselves are always 45 minutes (see chunksForSchedule), so creditCost here is only a display figure. */
   endTime: string;
   label: string | null;
 }
@@ -43,13 +43,18 @@ function parseHHMM(value: string): number {
   return hour * 60 + minute;
 }
 
+/** A window is at least one class long (45 minutes) and grows in 15-minute steps, so a single 45-minute class can be posted. */
+const MIN_WINDOW_MIN = 45;
+const WINDOW_STEP_MIN = 15;
+
 /** Shared validation for create/update, throws ClassScheduleError with a message meant to be shown as-is. */
-function resolveDurationMin(startTime: string, endTime: string): number {
+export function resolveDurationMin(startTime: string, endTime: string): number {
   const startMin = parseHHMM(startTime);
   const endMin = parseHHMM(endTime);
   const durationMin = endMin - startMin;
   if (durationMin <= 0) throw new ClassScheduleError("End time has to be after the start time.");
-  if (durationMin % 30 !== 0) throw new ClassScheduleError("The window has to be a whole number of 30-minute chunks.");
+  if (durationMin < MIN_WINDOW_MIN) throw new ClassScheduleError(`The window has to be at least ${MIN_WINDOW_MIN} minutes, one class.`);
+  if (durationMin % WINDOW_STEP_MIN !== 0) throw new ClassScheduleError(`The window has to be a multiple of ${WINDOW_STEP_MIN} minutes.`);
   return durationMin;
 }
 
@@ -65,7 +70,7 @@ export async function createClassSchedule(input: ClassScheduleInput) {
       dayOfWeek: input.dayOfWeek,
       startTime: input.startTime,
       durationMin,
-      creditCost: durationMin / 30,
+      creditCost: Math.ceil(durationMin / 30),
       label: input.label,
     },
   });
@@ -103,7 +108,7 @@ export async function updateClassSchedule(scheduleId: string, input: ClassSchedu
       dayOfWeek: input.dayOfWeek,
       startTime: input.startTime,
       durationMin,
-      creditCost: durationMin / 30,
+      creditCost: Math.ceil(durationMin / 30),
       label: input.label,
     },
   });
