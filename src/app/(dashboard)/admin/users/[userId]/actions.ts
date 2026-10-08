@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
+import { forgetPayerName } from "@/lib/paymentReceipts";
 
 // Same pattern as every other admin actions.ts, the admin layout's
 // redirect only protects rendering, not these Server Actions, so this
@@ -30,5 +31,14 @@ export async function adminForceSignOutAction(targetUserId: string) {
   const admin = await requireAdmin();
   await prisma.user.update({ where: { id: targetUserId }, data: { sessionVersion: { increment: 1 } } });
   await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "user.sign-out-everywhere", targetType: "User", targetId: targetUserId });
+  revalidatePath(`/admin/users/${targetUserId}`);
+}
+
+/** Stops a saved payer name from clearing this student's payments by itself. */
+export async function forgetPayerNameAction(targetUserId: string, aliasId: string) {
+  const admin = await requireAdmin();
+  // Scoped to this student, so an id from another page cannot remove someone else's.
+  const alias = await prisma.payerAlias.findFirst({ where: { id: aliasId, userId: targetUserId }, select: { id: true } });
+  if (alias) await forgetPayerName({ aliasId: alias.id, admin: { id: admin.id, email: admin.email ?? null } });
   revalidatePath(`/admin/users/${targetUserId}`);
 }

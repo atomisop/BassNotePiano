@@ -117,7 +117,7 @@ describe("runWatchdog", () => {
     });
     expect((await runWatchdog(deps, NOW)).recovered).toBe(true);
     expect((await runWatchdog(deps, NOW)).recovered).toBe(false);
-    expect(emails).toEqual(["Scheduled jobs are running again"]);
+    expect(emails).toEqual(["Everything is running again"]);
   });
   it("a healthy system pings OK and sends nothing", async () => {
     const { deps, calls } = fakes();

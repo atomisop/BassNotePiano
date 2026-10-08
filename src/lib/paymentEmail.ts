@@ -1,6 +1,8 @@
 import type { PaymentMethod } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { approveZellePayment, notifyAutoApproved } from "@/lib/payments";
+import { createNotification } from "@/lib/notifications";
+import { memoHasOtherReference, memoHasReferenceFor } from "@/lib/paymentReference";
 
 /**
  * Settles payments from the "you received money" emails the owner's Gmail
@@ -14,6 +16,8 @@ import { approveZellePayment, notifyAutoApproved } from "@/lib/payments";
 const ALLOWED_SENDER_DOMAINS = ["bankofamerica.com", "venmo.com", "sofi.com"];
 
 const RECEIPT_MAX_AGE_MS = 3 * 24 * 60 * 60 * 1000;
+/** How far back an open payment still counts as one a student is waiting on. */
+const OPEN_PAYMENT_LOOKBACK_MS = 14 * 24 * 60 * 60 * 1000;
 
 export interface ParsedPaymentEmail {
   method: PaymentMethod;
@@ -98,14 +102,39 @@ type OpenPayment = {
   status: "AWAITING_TRANSFER" | "PENDING_REVIEW";
   amountCents: number;
   senderName: string | null;
-  user: { name: string | null };
+  user: { name: string | null; payerAliases: { name: string }[] };
 };
 
-function paymentMatchesReceipt(payment: OpenPayment, receipt: { senderName: string; amountCents: number }) {
-  // Only the account holder's own name counts. The sender name a student types
-  // when submitting is theirs to choose, so it must never be what claims
-  // someone else's money. A mismatch just leaves the payment for the admin.
-  return payment.amountCents === receipt.amountCents && namesMatch(payment.user.name, receipt.senderName);
+type ReceiptFacts = { senderName: string; amountCents: number; memo: string | null };
+
+/** The names this student's money may arrive under: their own, plus any a person confirmed by hand. */
+function payerNames(user: OpenPayment["user"]): (string | null)[] {
+  return [user.name, ...user.payerAliases.map((alias) => alias.name)];
+}
+
+/**
+ * The exact amount always has to match. On top of that, one of:
+ *  - the note carries this payment's own reference code (so a parent paying, or two
+ *    students with one name, still land on the right payment), or
+ *  - the sender is the account holder or a confirmed alias, and the note does not
+ *    name a different payment.
+ * The sender name a student types when submitting is theirs to choose, so it is
+ * never what claims someone else's money. A mismatch just leaves the payment for the admin.
+ */
+export function receiptMatchesPayment(payment: OpenPayment, receipt: ReceiptFacts): boolean {
+  if (payment.amountCents !== receipt.amountCents) return false;
+  if (memoHasReferenceFor(receipt.memo, payment.id)) return true;
+  if (memoHasOtherReference(receipt.memo, payment.id)) return false;
+  return payerNames(payment.user).some((name) => namesMatch(name, receipt.senderName));
+}
+
+/** The one payment an email settles, or null when it is unclear (then a person decides). */
+export function pickMatchingPayment<T extends OpenPayment>(payments: T[], receipt: ReceiptFacts): T | null {
+  const matches = payments.filter((payment) => receiptMatchesPayment(payment, receipt));
+  if (matches.length === 1) return matches[0];
+  if (matches.length === 0) return null;
+  const byCode = matches.filter((payment) => memoHasReferenceFor(receipt.memo, payment.id));
+  return byCode.length === 1 ? byCode[0] : null;
 }
 
 async function approveFromReceipt(paymentId: string, receipt: { id: string; senderName: string; method: PaymentMethod }) {
@@ -149,7 +178,7 @@ const openPaymentSelect = {
   status: true,
   amountCents: true,
   senderName: true,
-  user: { select: { name: true } },
+  user: { select: { name: true, payerAliases: { select: { name: true } } } },
 } as const;
 
 export type IngestOutcome = "ignored" | "duplicate" | "approved" | "stored";
@@ -185,9 +214,48 @@ export async function ingestPaymentEmail(input: {
     where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: parsed.amountCents },
     select: openPaymentSelect,
   });
-  const matches = candidates.filter((payment) => paymentMatchesReceipt(payment as OpenPayment, receipt));
-  if (matches.length === 1 && (await approveFromReceipt(matches[0].id, receipt))) return "approved";
+  const match = pickMatchingPayment(candidates as OpenPayment[], receipt);
+  if (match && (await approveFromReceipt(match.id, receipt))) return "approved";
+  if (!match) await warnAboutAmountMismatch(receipt).catch((err) => console.error("Amount mismatch notice failed (non-blocking):", err));
   return "stored";
+}
+
+/**
+ * The money came from a name that has an open payment, but for a different amount.
+ * Tell that student now, so they do not sit waiting on a payment that can never match.
+ * Only when no payment of the exact amount was a candidate at all.
+ */
+async function warnAboutAmountMismatch(receipt: ReceiptFacts) {
+  const sameAmount = await prisma.zellePayment.count({
+    where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: receipt.amountCents },
+  });
+  if (sameAmount > 0) return;
+  const open = await prisma.zellePayment.findMany({
+    where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, createdAt: { gte: new Date(Date.now() - OPEN_PAYMENT_LOOKBACK_MS) } },
+    select: { userId: true, amountCents: true, user: openPaymentSelect.user },
+    orderBy: { createdAt: "desc" },
+    take: 500,
+  });
+  const students = new Map<string, number>();
+  for (const payment of open) {
+    if (students.has(payment.userId)) continue;
+    if (payerNames(payment.user).some((name) => namesMatch(name, receipt.senderName))) students.set(payment.userId, payment.amountCents);
+  }
+  // Two or more people share this name: it is not clear whose money it is, so say nothing.
+  if (students.size !== 1) return;
+  const [userId, expectedCents] = Array.from(students.entries())[0];
+  await createNotification({
+    userId,
+    type: "PAYMENT_AMOUNT_MISMATCH",
+    title: "We received a different amount",
+    body: `We received ${formatUsd(receipt.amountCents)} under your name, but your open payment is for ${formatUsd(expectedCents)}, so it could not clear on its own. A person will look at it. You do not need to send it again. If you meant to pay a different amount, message us.`,
+    emailCategory: "payments",
+    alwaysEmail: true,
+  });
+}
+
+function formatUsd(cents: number): string {
+  return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
 /**
@@ -206,7 +274,9 @@ export async function settleWithStoredReceipt(paymentId: string): Promise<boolea
       createdAt: { gte: new Date(Date.now() - RECEIPT_MAX_AGE_MS) },
     },
   });
-  const matches = receipts.filter((receipt) => paymentMatchesReceipt(payment as OpenPayment, receipt));
-  if (matches.length !== 1) return false;
-  return approveFromReceipt(payment.id, matches[0]);
+  const matches = receipts.filter((receipt) => receiptMatchesPayment(payment as OpenPayment, receipt));
+  // Several emails of the same amount: only the one that carries this payment's own code is certain.
+  const certain = matches.length > 1 ? matches.filter((receipt) => memoHasReferenceFor(receipt.memo, payment.id)) : matches;
+  if (certain.length !== 1) return false;
+  return approveFromReceipt(payment.id, certain[0]);
 }

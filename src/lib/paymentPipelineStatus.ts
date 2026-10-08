@@ -71,3 +71,17 @@ export function unmatchedReceiptWhere(now = new Date()) {
 export async function countUnmatchedReceipts(now = new Date()): Promise<number> {
   return prisma.processedPaymentEmail.count({ where: unmatchedReceiptWhere(now) });
 }
+
+/**
+ * One line for the job watchdog when payment emails have stopped arriving. The text is
+ * constant on purpose: the watchdog treats a changed line as a new problem and emails again.
+ */
+export function pipelineProblem(health: Pick<PaymentPipelineHealth, "status">): string | null {
+  return health.status === "quiet"
+    ? `payment emails: payments are waiting and no bank or Venmo email has arrived for over ${QUIET_AFTER_HOURS} hours (check the Gmail forwarding script)`
+    : null;
+}
+
+export async function findPaymentPipelineProblem(now = new Date()): Promise<string | null> {
+  return pipelineProblem(await getPaymentPipelineHealth(now));
+}

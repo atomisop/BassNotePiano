@@ -9,6 +9,7 @@ import { createAndSendCode, RateLimitError } from "@/lib/verification";
 import { isDisposableEmailDomain } from "@/lib/disposableEmail";
 import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { verifyTurnstile } from "@/lib/turnstile";
+import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
 import { clientIpFrom, consumeRateLimit, RateLimitError as IpRateLimitError } from "@/lib/rateLimit";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -44,6 +45,9 @@ export async function POST(req: NextRequest) {
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body?.password === "string" ? body.password : "";
 
+  if (!hasFirstAndLastName(name)) {
+    return NextResponse.json({ error: FULL_NAME_MESSAGE }, { status: 400 });
+  }
   if (!name || !EMAIL_PATTERN.test(email) || password.length < MIN_PASSWORD_LENGTH) {
     return NextResponse.json(
       { error: `Enter a name, a valid email, and a password of at least ${MIN_PASSWORD_LENGTH} characters.` },

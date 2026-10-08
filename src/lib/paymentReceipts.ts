@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { approveZellePayment } from "@/lib/payments";
 import { logAudit } from "@/lib/audit";
 import { unmatchedReceiptWhere } from "@/lib/paymentPipelineStatus";
+import { namesMatch } from "@/lib/paymentEmail";
 
 // Bank and Venmo emails that matched no payment, and what an admin can do
 // about them: attach one to a payment, or dismiss it. Every function here
@@ -60,7 +61,7 @@ export async function matchReceiptToPayment(input: {
   if (!receipt || receipt.paymentId || receipt.dismissedAt) throw new ReceiptError("That email has already been handled.");
   const payment = await prisma.zellePayment.findUnique({
     where: { id: paymentId },
-    select: { id: true, status: true, amountCents: true },
+    select: { id: true, userId: true, status: true, amountCents: true, user: { select: { name: true } } },
   });
   if (!payment || (payment.status !== "AWAITING_TRANSFER" && payment.status !== "PENDING_REVIEW")) {
     throw new ReceiptError("That payment is no longer open.");
@@ -90,13 +91,16 @@ export async function matchReceiptToPayment(input: {
     }
   }
 
+  // A person has now confirmed this payer pays for this student: remember the name, so next time it clears by itself.
+  const learned = await rememberPayerName(payment.userId, payment.user.name, receipt.senderName).catch(() => false);
+
   await logAudit({
     actorId: admin.id,
     actorEmail: admin.email,
     action: "payment.match_email",
     targetType: "ZellePayment",
     targetId: paymentId,
-    detail: `Attached a ${receipt.method} email from ${receipt.senderName} (${(receipt.amountCents / 100).toFixed(2)}) to the payment and approved it`,
+    detail: `Attached a ${receipt.method} email from ${receipt.senderName} (${(receipt.amountCents / 100).toFixed(2)}) to the payment and approved it${learned ? `; will accept payments from "${receipt.senderName}" for this student from now on` : ""}`,
   });
 }
 
@@ -115,5 +119,38 @@ export async function dismissReceipt(input: { receiptId: string; admin: { id: st
     targetType: "ProcessedPaymentEmail",
     targetId: receiptId,
     detail: "Dismissed a payment email that matched no payment",
+  });
+}
+
+const MAX_ALIASES_PER_STUDENT = 5;
+
+/**
+ * Saves the name an email came from as another name this student's payments arrive under.
+ * Skipped when it is just their own name, when it is a single word (too loose to trust), or
+ * when the student already has several. Only ever called from an admin's confirmed match.
+ */
+export async function rememberPayerName(userId: string, accountName: string | null, senderName: string): Promise<boolean> {
+  const name = senderName.trim().replace(/\s+/g, " ").slice(0, 120);
+  if (name.split(" ").length < 2) return false;
+  if (namesMatch(accountName, name)) return false;
+  const existing = await prisma.payerAlias.findMany({ where: { userId }, select: { name: true } });
+  if (existing.some((alias) => namesMatch(alias.name, name))) return false;
+  if (existing.length >= MAX_ALIASES_PER_STUDENT) return false;
+  await prisma.payerAlias.create({ data: { userId, name } });
+  return true;
+}
+
+/** Forgets one saved payer name (an admin removing a mistake). */
+export async function forgetPayerName(input: { aliasId: string; admin: { id: string; email: string | null } }): Promise<void> {
+  const alias = await prisma.payerAlias.findUnique({ where: { id: input.aliasId }, select: { id: true, userId: true, name: true } });
+  if (!alias) return;
+  await prisma.payerAlias.delete({ where: { id: alias.id } });
+  await logAudit({
+    actorId: input.admin.id,
+    actorEmail: input.admin.email,
+    action: "payment.forget_payer_name",
+    targetType: "User",
+    targetId: alias.userId,
+    detail: `Stopped accepting payments from "${alias.name}" for this student automatically`,
   });
 }
