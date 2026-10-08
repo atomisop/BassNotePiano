@@ -1,3 +1,4 @@
+import { getBoolSetting } from "@/lib/siteSettings";
 import type { PaymentMethod } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { approveZellePayment, notifyAutoApproved } from "@/lib/payments";
@@ -215,8 +216,8 @@ export async function ingestPaymentEmail(input: {
     select: openPaymentSelect,
   });
   const match = pickMatchingPayment(candidates as OpenPayment[], receipt);
-  if (match && (await approveFromReceipt(match.id, receipt))) return "approved";
-  if (!match) await warnAboutAmountMismatch(receipt).catch((err) => console.error("Amount mismatch notice failed (non-blocking):", err));
+  if (match && (await getBoolSetting("payments.emailAutoApprove")) && (await approveFromReceipt(match.id, receipt))) return "approved";
+  if (!match && (await getBoolSetting("payments.amountMismatchNotice"))) await warnAboutAmountMismatch(receipt).catch((err) => console.error("Amount mismatch notice failed (non-blocking):", err));
   return "stored";
 }
 

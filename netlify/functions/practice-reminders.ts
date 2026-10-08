@@ -3,6 +3,7 @@ import { runJob } from "../../src/lib/jobRun";
 import { todayBoundsEt } from "../../src/lib/classSchedule";
 import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
+import { getBoolSetting, getTextSetting } from "../../src/lib/siteSettings";
 
 // Nudge points, in days since last practice activity, spaced out (not
 // daily) so a lapsed student gets a few gentle reminders rather than one
@@ -14,7 +15,7 @@ import { createNotification } from "../../src/lib/notifications";
 // reminders skip the user entirely, no bell entry, no email, when
 // notifyEmailReminders is off. Turning "Practice reminders" off in
 // Settings is meant to mean silence, not "email off, bell still nags."
-const REMINDER_TRIGGER_DAYS = [1, 3, 7, 14, 30];
+// (The days are an admin setting, Settings → Reminders; the default is 1, 3, 7, 14, 30.)
 
 function daysSince(date: Date, now: Date): number {
   const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -29,6 +30,11 @@ function daysSince(date: Date, now: Date): number {
 // flow (already handled separately).
 export const handler = schedule("0 15 * * *", async () =>
   runJob("practice-reminders", async () => {
+  if (!(await getBoolSetting("reminders.practiceEnabled"))) {
+    console.log("Practice reminders: turned off in settings");
+    return { statusCode: 200 };
+  }
+  const triggerDays = (await getTextSetting("reminders.practiceDays")).split(",").map((d) => Number(d.trim())).filter((d) => Number.isInteger(d) && d > 0);
   const now = new Date();
   const users = await prisma.user.findMany({
     where: { onboardedAt: { not: null }, lastActivityDate: { not: null }, notifyEmailReminders: true },
@@ -51,7 +57,7 @@ export const handler = schedule("0 15 * * *", async () =>
     if (!user.lastActivityDate) continue;
     if (hasClassToday.has(user.id)) continue;
     const gap = daysSince(user.lastActivityDate, now);
-    if (!REMINDER_TRIGGER_DAYS.includes(gap)) continue;
+    if (!triggerDays.includes(gap)) continue;
 
     await createNotification({
       userId: user.id,

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { canAccessScale, QUIZ_PASS_THRESHOLD } from "@/lib/access";
 import { getLessonsWithProgress } from "@/lib/courseContent";
 import { getCurriculumEntitlement } from "@/lib/entitlement";
-import { TRIAL_LESSON_COUNT } from "@/lib/entitlementRules";
+import { getNumberSetting } from "@/lib/siteSettings";
 import { LESSON_VARIANTS, SCALE_CONTENT } from "@/lib/scale-content";
 import { generateScaleQuiz, stripAnswers } from "@/lib/quiz";
 import { ScaleWorkspace } from "./components/ScaleWorkspace";
@@ -58,6 +58,7 @@ export default async function ScalePage({ params }: { params: { scaleSlug: strin
   // A trial opens only the first few lessons. The rest are reduced to titles
   // here on the server so their file URLs never reach the browser.
   const isTrial = access.reason === "trial";
+  const TRIAL_LESSON_COUNT = await getNumberSetting("trial.lessonCount");
   const lessons = isTrial ? allLessons.slice(0, TRIAL_LESSON_COUNT) : allLessons;
   const freeTrial = isTrial
     ? {

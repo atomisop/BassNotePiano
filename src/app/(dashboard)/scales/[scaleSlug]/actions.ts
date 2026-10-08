@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { canAccessScale, markPracticeCompleted, recordQuizAttempt, syncLessonCompletionToModuleRead, AccessDeniedError } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
-import { TRIAL_LESSON_COUNT } from "@/lib/entitlementRules";
+import { getNumberSetting } from "@/lib/siteSettings";
 import { markLessonComplete } from "@/lib/courseContent";
 import { gradeQuiz, type QuizAnswerSubmission } from "@/lib/quiz";
 import { SCALE_NOTE_MAX_LENGTH } from "@/lib/scaleNotes";
@@ -67,7 +67,7 @@ export async function markLessonCompleteAction(scaleSlug: string, lessonId: stri
   if (!access?.canAccess) throw new AccessDeniedError(`No access to "${scaleSlug}"`);
   const lesson = await prisma.lesson.findUnique({ where: { id: lessonId }, select: { order: true, scaleGroupId: true } });
   if (!lesson || lesson.scaleGroupId !== access.scaleGroup.id) throw new AccessDeniedError("Lesson is not part of this scale");
-  if (access.reason === "trial" && lesson.order >= TRIAL_LESSON_COUNT) throw new AccessDeniedError("Not part of the free trial");
+  if (access.reason === "trial" && lesson.order >= (await getNumberSetting("trial.lessonCount"))) throw new AccessDeniedError("Not part of the free trial");
 
   await markLessonComplete(session.user.id, lessonId);
   await syncLessonCompletionToModuleRead(session.user.id, scaleSlug);

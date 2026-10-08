@@ -3,6 +3,7 @@ import { getCurriculumEntitlements } from "@/lib/entitlement";
 import { computeNextApproval, isFullAccess, type CurriculumAccessKind, type NextApproval } from "@/lib/entitlementRules";
 import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getNumberSetting } from "@/lib/siteSettings";
 import { SCALE_SLUGS } from "@/lib/curriculum";
 import { createNotification } from "@/lib/notifications";
 import { countUnmatchedReceipts, getPaymentPipelineHealth } from "@/lib/paymentPipelineStatus";
@@ -268,6 +269,7 @@ export async function getAdminProgressOverview(query: string): Promise<AdminProg
   const entitlements = await getCurriculumEntitlements(users.map((u) => u.id));
   const nowMs = Date.now();
 
+  const unlockIntervalDays = await getNumberSetting("access.scaleUnlockIntervalDays");
   return users.map((user) => {
     const entitlement = entitlements.get(user.id) ?? { kind: "NONE" as const, until: null };
     const scales = scaleGroups.map((sg) => {
@@ -293,7 +295,7 @@ export async function getAdminProgressOverview(query: string): Promise<AdminProg
     hasCurriculumAccess: isFullAccess(entitlement.kind),
     accessKind: entitlement.kind,
     accessUntil: entitlement.until ? entitlement.until.getTime() : null,
-    nextApproval: computeNextApproval(scales, nowMs),
+    nextApproval: computeNextApproval(scales, nowMs, unlockIntervalDays),
     classCredits: user.classCredits,
     currentStreak: user.currentStreak,
     lastActivityAt: user.lastActivityDate ? user.lastActivityDate.getTime() : null,

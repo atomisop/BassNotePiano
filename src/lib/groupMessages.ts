@@ -1,3 +1,4 @@
+import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { prisma } from "@/lib/prisma";
 import { sendEmailIfEnabled } from "@/lib/notifications";
 import { getAppUrl } from "@/lib/email";
@@ -5,10 +6,9 @@ import { isFriend, normalizeUsername, SocialError } from "@/lib/social";
 import { assertRateLimit } from "@/lib/rateLimit";
 import { isValidReaction } from "@/lib/reactions";
 
-const MAX_MESSAGE_LENGTH = 2000;
 // Creator + up to 23 friends, generous headroom over a normal friend-group
 // size while keeping the member-list UI and per-message email fanout sane.
-const MAX_GROUP_MEMBERS = 24;
+// Group size and message length are admin settings (Settings → Messaging).
 
 export interface CreateGroupInput {
   creatorId: string;
@@ -20,9 +20,11 @@ export interface CreateGroupInput {
 // messaging) and fixed after that, there's no post-creation invite/kick,
 // only leaving, which keeps the moderation surface small for a first version.
 export async function createGroup({ creatorId, name, memberUsernames }: CreateGroupInput) {
+  if (!(await getBoolSetting("messaging.groupsEnabled"))) throw new SocialError("Group chats are turned off right now.");
+  const maxMembers = await getNumberSetting("messaging.maxGroupMembers");
   const usernames = Array.from(new Set(memberUsernames.map(normalizeUsername))).filter(Boolean);
   if (usernames.length === 0) throw new SocialError("Add at least one friend to the group.");
-  if (usernames.length > MAX_GROUP_MEMBERS - 1) throw new SocialError(`Groups are limited to ${MAX_GROUP_MEMBERS} members.`);
+  if (usernames.length > maxMembers - 1) throw new SocialError(`Groups are limited to ${maxMembers} members.`);
 
   const found = await prisma.user.findMany({ where: { username: { in: usernames } }, select: { id: true, username: true } });
   const foundUsernames = new Set(found.map((u) => u.username));
@@ -163,7 +165,8 @@ export async function getGroupMessages(userId: string, groupId: string, limit = 
 export async function sendGroupMessage(senderId: string, groupId: string, body: string, replyToId?: string) {
   const trimmed = body.trim();
   if (!trimmed) throw new SocialError("Message can't be empty.");
-  if (trimmed.length > MAX_MESSAGE_LENGTH) throw new SocialError(`Message is too long (${MAX_MESSAGE_LENGTH} characters max).`);
+  const maxLength = await getNumberSetting("messaging.maxLength");
+  if (trimmed.length > maxLength) throw new SocialError(`Message is too long (${maxLength} characters max).`);
 
   const membership = await requireMembership(senderId, groupId);
 
@@ -211,6 +214,7 @@ export async function sendGroupMessage(senderId: string, groupId: string, body: 
 
 /** Same shape as 1-on-1 messages' own reactToMessage, see its comment. */
 export async function reactToGroupMessage(userId: string, messageId: string, emoji: string): Promise<{ removed: boolean }> {
+  if (!(await getBoolSetting("messaging.reactionsEnabled"))) throw new SocialError("Reactions are turned off right now.");
   if (!isValidReaction(emoji)) {
     throw new SocialError("Not a real reaction.");
   }

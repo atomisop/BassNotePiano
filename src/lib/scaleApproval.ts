@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { unlockScaleForUser } from "@/lib/access";
 import { getCurriculumEntitlement } from "@/lib/entitlement";
+import { getNumberSetting } from "@/lib/siteSettings";
 import { computeNextApproval, isFullAccess, type ApprovalScaleState, type NextApproval } from "@/lib/entitlementRules";
 import { createNotification } from "@/lib/notifications";
 
@@ -25,7 +26,7 @@ export async function loadApprovalStates(userId: string): Promise<ApprovalScaleS
 }
 
 export async function getNextApproval(userId: string): Promise<NextApproval> {
-  return computeNextApproval(await loadApprovalStates(userId), Date.now());
+  return computeNextApproval(await loadApprovalStates(userId), Date.now(), await getNumberSetting("access.scaleUnlockIntervalDays"));
 }
 
 /**

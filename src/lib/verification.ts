@@ -2,9 +2,9 @@ import { createHash, randomInt } from "crypto";
 import type { Prisma, VerificationPurpose } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationCodeEmail } from "@/lib/email";
+import { getNumberSetting } from "@/lib/siteSettings";
 
-const CODE_EXPIRY_MINUTES = 10;
-const MAX_VERIFICATION_ATTEMPTS = 5;
+// Code lifetime, wrong tries, and the request throttle below are admin settings (Settings → Security).
 
 // Throttles how often a NEW code can be requested for the same email+purpose,
 // separate from MAX_VERIFICATION_ATTEMPTS above, which throttles GUESSES
@@ -16,8 +16,6 @@ const MAX_VERIFICATION_ATTEMPTS = 5;
 // choke point, covers all three flows without duplicating logic three times
 // or standing up a new rate-limit table (this reuses the [email, purpose]
 // index the VerificationCode model already has).
-const RATE_LIMIT_WINDOW_MINUTES = 15;
-const RATE_LIMIT_MAX_ISSUANCES = 5;
 
 export class RateLimitError extends Error {
   constructor() {
@@ -27,11 +25,11 @@ export class RateLimitError extends Error {
 }
 
 async function assertNotRateLimited(email: string, purpose: VerificationPurpose) {
-  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000);
+  const windowStart = new Date(Date.now() - (await getNumberSetting("security.codeIssueWindowMinutes")) * 60 * 1000);
   const recentCount = await prisma.verificationCode.count({
     where: { email: email.toLowerCase(), purpose, createdAt: { gte: windowStart } },
   });
-  if (recentCount >= RATE_LIMIT_MAX_ISSUANCES) {
+  if (recentCount >= (await getNumberSetting("security.codeIssueLimit"))) {
     throw new RateLimitError();
   }
 }
@@ -71,7 +69,7 @@ async function issueCode({ email, userId, purpose, payload }: CreateCodeParams) 
       purpose,
       payload,
       codeHash: hashCode(code),
-      expiresAt: new Date(Date.now() + CODE_EXPIRY_MINUTES * 60 * 1000),
+      expiresAt: new Date(Date.now() + (await getNumberSetting("security.codeExpiryMinutes")) * 60 * 1000),
     },
   });
 
@@ -142,7 +140,7 @@ export async function verifyCode(email: string, purpose: VerificationPurpose, su
   // has guesses left, so a burst of parallel requests cannot all read "attempts
   // is 0" and each get a free try. Counted whether or not the guess is right.
   const claimed = await prisma.verificationCode.updateMany({
-    where: { id: record.id, consumedAt: null, attempts: { lt: MAX_VERIFICATION_ATTEMPTS } },
+    where: { id: record.id, consumedAt: null, attempts: { lt: await getNumberSetting("security.maxCodeAttempts") } },
     data: { attempts: { increment: 1 } },
   });
   if (claimed.count === 0) {

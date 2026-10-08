@@ -158,15 +158,38 @@ export async function addToGuild(discordId: string, accessToken: string): Promis
 }
 
 export const TEST_CHANNEL_KEY = "discord_test_channel";
-const TEST_CHANNEL_MINUTES = 10;
+const DEFAULT_TEST_CHANNEL_MINUTES = 10;
 
 /**
  * Makes a visible test call for the owner and leaves it for a few minutes, so
  * the owner can see it in Discord. The channel id is remembered in AppSetting
  * and the class-channel job removes it after the time is up.
  */
-export async function createLingeringTestChannel(ownerDiscordId: string, remember: (value: string) => Promise<void>): Promise<string> {
-  const id = await createClassChannel("Test call (removed in 10 minutes)", [ownerDiscordId]);
-  await remember(`${id}|${Date.now() + TEST_CHANNEL_MINUTES * 60_000}`);
+export async function createLingeringTestChannel(
+  ownerDiscordId: string,
+  remember: (value: string) => Promise<void>,
+  minutes: number = DEFAULT_TEST_CHANNEL_MINUTES,
+): Promise<string> {
+  const id = await createClassChannel(`Test call (removed in ${minutes} minutes)`, [ownerDiscordId]);
+  await remember(`${id}|${Date.now() + minutes * 60_000}`);
   return id;
+}
+
+export type MoveResult = "moved" | "not_in_voice" | "failed";
+
+/**
+ * Pulls a person into a voice channel. Discord only allows this for someone who is
+ * already connected to a voice channel somewhere in the server (a bot cannot make a
+ * disconnected person join), and it needs the bot to have the Move Members permission.
+ * "not_in_voice" is the normal answer for anyone who has not opened Discord voice yet.
+ */
+export async function moveToVoiceChannel(discordId: string, channelId: string): Promise<MoveResult> {
+  const res = await discordFetch(`/guilds/${DISCORD_GUILD_ID}/members/${discordId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ channel_id: channelId }),
+  });
+  if (res.ok) return "moved";
+  // 40032: "Target user is not connected to voice."
+  const body = (await res.json().catch(() => ({}))) as { code?: number };
+  return res.status === 400 && body.code === 40032 ? "not_in_voice" : "failed";
 }

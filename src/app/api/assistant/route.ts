@@ -1,3 +1,4 @@
+import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { NextResponse } from "next/server";
 import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { headers } from "next/headers";
@@ -8,7 +9,7 @@ import { ATOM_UNAVAILABLE_MESSAGE, GeminiError } from "@/lib/atomFailure";
 import { noteAtomSuccess, recordAtomFailure } from "@/lib/atomHealth";
 import { askAssistant, assertAssistantRateLimit, appendPersistedMessages, RateLimitError, type AssistantMessage } from "@/lib/assistant";
 
-const MAX_MESSAGES = 20; // caps both cost and the prompt's own size
+// How many recent messages are read is an admin setting (Settings → Atom and support).
 const MAX_MESSAGE_LENGTH = 2000;
 
 /**
@@ -33,6 +34,10 @@ const MAX_MESSAGE_LENGTH = 2000;
 export async function POST(req: Request) {
   if (!isSameOriginJsonPost(req)) return NextResponse.json({ error: "Bad request." }, { status: 403 });
   try {
+    if (!(await getBoolSetting("atom.enabled"))) {
+      return NextResponse.json({ error: ATOM_UNAVAILABLE_MESSAGE, code: "atom_unavailable" }, { status: 503 });
+    }
+    const maxMessages = await getNumberSetting("atom.maxConversationMessages");
     const body = await req.json().catch(() => null);
     const rawHistory = Array.isArray(body?.messages) ? body.messages : null;
     if (!rawHistory || rawHistory.length === 0) {
@@ -40,7 +45,7 @@ export async function POST(req: Request) {
     }
 
     const history: AssistantMessage[] = rawHistory
-      .slice(-MAX_MESSAGES)
+      .slice(-maxMessages)
       .filter(
         (m: unknown): m is AssistantMessage =>
           typeof m === "object" &&

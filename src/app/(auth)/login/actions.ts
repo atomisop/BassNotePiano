@@ -1,5 +1,6 @@
 "use server";
 
+import { getNumberSetting } from "@/lib/siteSettings";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { createAndSendCode, createSilentCode, RateLimitError as CodeRateLimitError } from "@/lib/verification";
@@ -12,7 +13,7 @@ export type LoginStepOneResult =
   | { ok: true; needsEmailVerification: false; autoCode: string };
 
 const GENERIC_CREDENTIALS_ERROR = "Invalid email or password.";
-const LOCKOUT_MESSAGE = "Too many failed attempts on this account. Wait 15 minutes and try again, or reset your password.";
+const LOCKOUT_MESSAGE = "Too many failed attempts on this account. Wait a little while and try again, or reset your password.";
 
 // STEP 26 security audit: nothing previously stopped unlimited password
 // guesses against a single account, bcrypt's own cost slows each guess
@@ -20,8 +21,7 @@ const LOCKOUT_MESSAGE = "Too many failed attempts on this account. Wait 15 minut
 // dedicated table (not reused from LoginEvent, which only ever recorded
 // successful logins and requires a real userId, a guess against an email
 // with no account still needs to count against something).
-const LOCKOUT_WINDOW_MINUTES = 15;
-const LOCKOUT_MAX_ATTEMPTS = 8;
+// The window and the number of wrong passwords are admin settings (Settings → Security).
 
 async function recordFailedAttempt(email: string): Promise<void> {
   try {
@@ -68,7 +68,11 @@ async function loginStepOneWork(email: string, password: string): Promise<LoginS
     await assertRateLimit(
       prisma.failedLoginAttempt.count,
       { email: normalizedEmail },
-      { windowMinutes: LOCKOUT_WINDOW_MINUTES, max: LOCKOUT_MAX_ATTEMPTS, message: LOCKOUT_MESSAGE },
+      {
+        windowMinutes: await getNumberSetting("security.loginLockoutMinutes"),
+        max: await getNumberSetting("security.loginMaxAttempts"),
+        message: LOCKOUT_MESSAGE,
+      },
     );
   } catch (err) {
     if (err instanceof LockoutError) return { ok: false, error: err.message };

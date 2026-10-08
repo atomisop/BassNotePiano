@@ -1,3 +1,4 @@
+import { getBoolSetting } from "@/lib/siteSettings";
 import { NextResponse } from "next/server";
 import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { headers } from "next/headers";
@@ -32,6 +33,9 @@ const ESCALATION_LIMIT = { windowMinutes: 60, max: 3 };
 export async function POST(req: Request) {
   if (!isSameOriginJsonPost(req)) return NextResponse.json({ error: "Bad request." }, { status: 403 });
   try {
+    if (!(await getBoolSetting("atom.handoffEnabled"))) {
+      return NextResponse.json({ error: "Talking to a person through chat is unavailable right now. Please email music@bassnotepiano.com." }, { status: 503 });
+    }
     const body = await req.json().catch(() => null);
     const rawHistory = Array.isArray(body?.messages) ? body.messages : null;
     if (!rawHistory) {

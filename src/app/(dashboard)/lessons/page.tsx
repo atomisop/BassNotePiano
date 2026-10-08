@@ -17,6 +17,7 @@ import { getActivePaymentPlan } from "@/lib/paymentPlans";
 import { getSupportContactId } from "@/lib/admin";
 import { ClassBookingClient } from "./ClassBookingClient";
 import { ScheduleClient } from "../schedule/ScheduleClient";
+import { getNumberSetting } from "@/lib/siteSettings";
 import { LessonsHub } from "./LessonsHub";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 import { discordChannelUrl } from "@/lib/discord";
@@ -38,6 +39,7 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
   // this covers anyone who somehow already holds credits without it too.
 
   const activePlan = await getActivePaymentPlan(session.user.id);
+  const cancelCutoffHours = await getNumberSetting("cancel.cutoffHours");
 
   const [credits, occurrences, bookings, supportContactId, weeklyLimited] = await Promise.all([
     // Effective, not raw: a credit already reserved by another SCHEDULED
@@ -56,7 +58,7 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
       weeklyLimited={weeklyLimited}
       initialCredits={credits}
       zelleHandle={process.env.ZELLE_HANDLE ?? "payments@yourplatform.com"}
-      cancellationCutoffHours={CANCELLATION_CUTOFF_HOURS}
+      cancellationCutoffHours={cancelCutoffHours}
       soloMaxCredits={SOLO_MAX_CREDITS}
       familyMinAttendees={FAMILY_MIN_ATTENDEES}
       familyCreditsPerStudent={FAMILY_CREDITS_PER_STUDENT}
@@ -118,7 +120,7 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
       weekly={
         <ScheduleClient
           supportContactId={supportContactId}
-          cancellationCutoffHours={CANCELLATION_CUTOFF_HOURS}
+          cancellationCutoffHours={cancelCutoffHours}
           hasClassThisWeek={weeklyUsage.creditsUsedThisWeek > 0}
           weeklyTime={
             reservedSchedule

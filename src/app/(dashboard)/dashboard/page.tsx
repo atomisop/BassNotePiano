@@ -16,6 +16,7 @@ import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Card, Eyebrow } from "@/components/ui/Card";
 import { CardDeck } from "@/components/ui/CardDeck";
 import { buttonVariants } from "@/components/ui/button";
+import { TeacherNotesCard } from "@/components/dashboard/TeacherNotesCard";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { formatEtDateTime } from "@/lib/classScheduleLabels";
 import { DISCORD_INVITE_URL, discordChannelUrl } from "@/lib/discord";
@@ -284,6 +285,8 @@ export default async function DashboardPage() {
           <div>{weekCard()}</div>
           <div>{progressCard()}</div>
         </div>
+
+        <TeacherNotesCard studentId={session.user.id} />
 
         {/* ---- The path: tabs + scale grid --------------------------------- */}
         <div>

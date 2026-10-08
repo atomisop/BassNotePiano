@@ -9,6 +9,7 @@ import { isOwnerEmail } from "@/lib/adminNotifications";
 import { checkBotSetup, createLingeringTestChannel, isGuildMember, TEST_CHANNEL_KEY, type SetupCheck } from "@/lib/discordApi";
 import { discordChannelUrl } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
+import { getNumberSetting } from "@/lib/siteSettings";
 import { adminBookClass, ClassBookingError } from "@/lib/classSchedule";
 import { markAttendance, undoAttendance, adminCancelClassBooking, getPendingAttendanceBookings, getBookingFeed, type PendingAttendanceRow, type BookingFeedRow } from "@/lib/classScheduleAdmin";
 import { createClassSchedule, updateClassSchedule, setClassScheduleActive, ClassScheduleError, type ClassScheduleInput } from "@/lib/classScheduleManage";
@@ -139,10 +140,11 @@ export async function createVisibleTestChannelAction(): Promise<{ ok: boolean; m
   if (!me?.discordId) return { ok: false, message: "Connect your Discord first.", url: null };
   try {
     if (!(await isGuildMember(me.discordId))) return { ok: false, message: "Your connected Discord account is not in the server.", url: null };
+    const minutes = await getNumberSetting("discord.testChannelMinutes");
     const id = await createLingeringTestChannel(me.discordId, async (value) => {
       await prisma.appSetting.upsert({ where: { key: TEST_CHANNEL_KEY }, update: { value }, create: { key: TEST_CHANNEL_KEY, value } });
-    });
-    return { ok: true, message: "Created. Look in the Live Classes category in Discord. It is removed in 10 minutes.", url: discordChannelUrl(id) };
+    }, minutes);
+    return { ok: true, message: `Created. Look in the Live Classes category in Discord. It is removed in ${minutes} minutes.`, url: discordChannelUrl(id) };
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message.slice(0, 200) : "Something went wrong.", url: null };
   }

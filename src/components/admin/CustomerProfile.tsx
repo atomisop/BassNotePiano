@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Role } from "@prisma/client";
 import type { CustomerProfile as CustomerProfileData } from "@/lib/adminCustomer";
 import { SCALE_GROUPS } from "@/lib/curriculum";
+import { StudentNotesEditor } from "@/components/admin/StudentNotesEditor";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
 export interface CustomerProfileProps {
@@ -41,6 +42,28 @@ function SectionCard({ title, action, children }: { title: string; action?: Reac
       </div>
       <div className="mt-4">{children}</div>
     </div>
+  );
+}
+
+/** Collapsed until the Notes button is pressed: the teacher's permanent notes on this student. */
+function NotesSection({ studentId }: { studentId: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <SectionCard
+      title="Notes"
+      action={
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          className="tap rounded-lg bg-neu-base px-3 py-1.5 text-small font-medium text-slate-200 shadow-raised-low active:shadow-pressed-low"
+        >
+          {open ? "Close notes" : "Notes"}
+        </button>
+      }
+    >
+      {open ? <StudentNotesEditor studentId={studentId} /> : <p className="text-small text-slate-500">Permanent notes on this student. Mark any as hidden from them.</p>}
+    </SectionCard>
   );
 }
 
@@ -340,6 +363,8 @@ export function CustomerProfile({
               ))}
             </div>
           </SectionCard>
+
+          <NotesSection studentId={user.id} />
 
           {/* Credits + bookings */}
           <SectionCard title={`Class credits · ${user.classCredits} available`}>

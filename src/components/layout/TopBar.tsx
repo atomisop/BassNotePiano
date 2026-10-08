@@ -1,6 +1,7 @@
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { StudentNotesPanel } from "@/components/admin/StudentNotesPanel";
 import { AdminAttendanceQuickPanel } from "@/components/admin/AdminAttendanceQuickPanel";
 import { ProfileMenu } from "./ProfileMenu";
 import { AdminTopLink } from "./AdminTopLink";
@@ -71,6 +72,8 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
       <div className="flex items-center gap-2 md:gap-3">
         {/* Leftmost of the right-hand cluster: Ask AI, admin, attendance, bell, profile. */}
         <AskAiButton />
+        {/* Owner only: the teacher's permanent notes on each student, right beside Ask AI. */}
+        {isOwner && <StudentNotesPanel />}
         {/* Moved here from AppDock's own row of icons, by direct
             instruction, it was the one dock item that wasn't an everyday
             destination for every signed-in visitor (just the single admin

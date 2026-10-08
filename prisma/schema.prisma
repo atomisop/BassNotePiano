@@ -831,6 +831,8 @@ model User {
   quizAttempts     QuizAttempt[]
   zellePayments    ZellePayment[]  @relation("PaymentSubmitter")
   payerAliases     PayerAlias[]
+  teacherNotes     StudentNote[]   @relation("StudentNoteStudent")
+  authoredNotes    StudentNote[]   @relation("StudentNoteAuthor")
   reviewedPayments ZellePayment[]  @relation("PaymentReviewer")
   lessonBookings   LessonBooking[] @relation("LessonBookingStudent") // historical, see LessonBooking model comment
   classBookings    ClassBooking[]  @relation("ClassBookingStudent")
@@ -1741,4 +1743,23 @@ model SupportTypingStatus {
   updatedAt    DateTime             @updatedAt
 
   @@id([escalationId, side])
+}
+
+// A teacher's running notes on one student: progress, what to work on next,
+// private observations. Permanent and editable. A note marked hiddenFromStudent
+// is private to the teacher; any other note is shown to the student on their
+// own page. The author link is kept so a note survives if that account goes
+// (SetNull), while a student's deletion removes their notes.
+model StudentNote {
+  id                String   @id @default(cuid())
+  studentId         String
+  student           User     @relation("StudentNoteStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  authorId          String?
+  author            User?    @relation("StudentNoteAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  body              String
+  hiddenFromStudent Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([studentId, createdAt])
 }

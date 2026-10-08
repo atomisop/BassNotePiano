@@ -1,3 +1,4 @@
+import { getNumberSetting } from "@/lib/siteSettings";
 import { getAdminRecipients, notifyAdmins } from "@/lib/adminNotifications";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 import { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason, type Prisma, type PaymentPlanStatus } from "@prisma/client";
@@ -238,7 +239,7 @@ export async function getOrCreateOpenInstallmentPayment(
   });
   if (existing) return { payment: existing, wasCreated: false };
 
-  const opensAt = new Date(plan.nextDueDate.getTime() - INSTALLMENT_OPEN_LEAD_DAYS * 24 * 60 * 60 * 1000);
+  const opensAt = new Date(plan.nextDueDate.getTime() - (await getNumberSetting("payments.installmentLeadDays")) * 24 * 60 * 60 * 1000);
   if (now < opensAt) {
     return { payment: null, wasCreated: false, nextDueDate: plan.nextDueDate };
   }

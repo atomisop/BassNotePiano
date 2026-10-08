@@ -1,3 +1,4 @@
+import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { prisma } from "@/lib/prisma";
 import { createNotification, sendEmailIfEnabled } from "@/lib/notifications";
 import { getEmployeeRecipients, isOwnerEmail } from "@/lib/adminNotifications";
@@ -6,7 +7,7 @@ import { isFriend, getFriendsList, SocialError } from "@/lib/social";
 import { assertRateLimit } from "@/lib/rateLimit";
 import { isValidReaction } from "@/lib/reactions";
 
-const MAX_MESSAGE_LENGTH = 2000;
+// Longest message and the other messaging limits are admin settings (Settings → Messaging).
 
 // A typing row older than this is treated as stale rather than actively
 // typing, there's no explicit "stopped typing" write, so recency is the
@@ -40,6 +41,7 @@ async function canConverse(userIdA: string, userIdB: string): Promise<boolean> {
     prisma.user.findUnique({ where: { id: userIdB }, select: { role: true } }),
   ]);
   if (a?.role === "ADMIN" || b?.role === "ADMIN") return true;
+  if (!(await getBoolSetting("messaging.enabled"))) throw new SocialError("Messaging between students is turned off right now.");
   return isFriend(userIdA, userIdB);
 }
 
@@ -57,7 +59,8 @@ async function canConverse(userIdA: string, userIdB: string): Promise<boolean> {
 export async function sendMessage(senderId: string, recipientId: string, body: string, replyToId?: string) {
   const trimmed = body.trim();
   if (!trimmed) throw new SocialError("Message can't be empty.");
-  if (trimmed.length > MAX_MESSAGE_LENGTH) throw new SocialError(`Message is too long (${MAX_MESSAGE_LENGTH} characters max).`);
+  const maxLength = await getNumberSetting("messaging.maxLength");
+  if (trimmed.length > maxLength) throw new SocialError(`Message is too long (${maxLength} characters max).`);
   if (senderId === recipientId) throw new SocialError("You can't message yourself.");
 
   if (!(await canConverse(senderId, recipientId))) throw new SocialError("You can only message friends.");
@@ -297,6 +300,7 @@ export async function getConversationMessages(userId: string, friendId: string, 
  * still reaching the other through the thread's own old messages.
  */
 export async function reactToMessage(userId: string, messageId: string, emoji: string): Promise<{ removed: boolean }> {
+  if (!(await getBoolSetting("messaging.reactionsEnabled"))) throw new SocialError("Reactions are turned off right now.");
   if (!isValidReaction(emoji)) {
     throw new SocialError("Not a real reaction.");
   }
