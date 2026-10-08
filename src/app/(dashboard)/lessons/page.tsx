@@ -17,7 +17,7 @@ import { getActivePaymentPlan } from "@/lib/paymentPlans";
 import { getSupportContactId } from "@/lib/admin";
 import { ClassBookingClient } from "./ClassBookingClient";
 import { ScheduleClient } from "../schedule/ScheduleClient";
-import { getNumberSetting } from "@/lib/siteSettings";
+import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { LessonsHub } from "./LessonsHub";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 import { discordChannelUrl } from "@/lib/discord";
@@ -39,7 +39,11 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
   // this covers anyone who somehow already holds credits without it too.
 
   const activePlan = await getActivePaymentPlan(session.user.id);
-  const cancelCutoffHours = await getNumberSetting("cancel.cutoffHours");
+  const [cancelCutoffHours, canCancel, canReschedule] = await Promise.all([
+    getNumberSetting("cancel.cutoffHours"),
+    getBoolSetting("cancel.studentCanCancel"),
+    getBoolSetting("cancel.studentCanReschedule"),
+  ]);
 
   const [credits, occurrences, bookings, supportContactId, weeklyLimited] = await Promise.all([
     // Effective, not raw: a credit already reserved by another SCHEDULED
@@ -59,6 +63,8 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
       initialCredits={credits}
       zelleHandle={process.env.ZELLE_HANDLE ?? "payments@yourplatform.com"}
       cancellationCutoffHours={cancelCutoffHours}
+      canCancel={canCancel}
+      canReschedule={canReschedule}
       soloMaxCredits={SOLO_MAX_CREDITS}
       familyMinAttendees={FAMILY_MIN_ATTENDEES}
       familyCreditsPerStudent={FAMILY_CREDITS_PER_STUDENT}
@@ -121,6 +127,8 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
         <ScheduleClient
           supportContactId={supportContactId}
           cancellationCutoffHours={cancelCutoffHours}
+          canCancel={canCancel}
+          canReschedule={canReschedule}
           hasClassThisWeek={weeklyUsage.creditsUsedThisWeek > 0}
           weeklyTime={
             reservedSchedule

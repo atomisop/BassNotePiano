@@ -85,7 +85,11 @@ export function StudentNotesPanel() {
               <>
                 <button
                   type="button"
-                  onClick={() => setSelected(null)}
+                  onClick={() => {
+                    setSelected(null);
+                    // Note counts change while writing, so reload the list on the way back.
+                    getTodaysNotesRosterAction().then(setRoster).catch(() => undefined);
+                  }}
                   className="tap inline-flex items-center gap-1.5 text-small font-medium text-slate-400 hover:text-slate-100"
                 >
                   <ArrowLeft className="h-4 w-4" /> Back
