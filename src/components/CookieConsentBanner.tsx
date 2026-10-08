@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { readConsent, writeConsent } from "@/lib/cookieConsent";
+import { ATOM_PANEL_OPEN_EVENT } from "@/lib/overlayNav";
 import { EASE_IOS } from "@/lib/motionTokens";
 
 /**
@@ -30,12 +31,19 @@ import { EASE_IOS } from "@/lib/motionTokens";
  * exist during server render, rendering `null` until after mount avoids a
  * hydration mismatch, same pattern the theme boot script exists to avoid
  * for `data-theme`.
+ *
+ * Also steps aside, not just defers to, Atom's chat panel while it's open
+ * (`ATOM_PANEL_OPEN_EVENT`, see overlayNav.ts): both are `fixed`,
+ * body-portaled elements claiming the same corner of the screen, and a
+ * first-time visitor opening Atom before deciding on cookies used to get
+ * this banner rendered on top of the open panel, confirmed live.
  */
 export function CookieConsentBanner() {
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
   const [customizing, setCustomizing] = useState(false);
   const [analyticsChoice, setAnalyticsChoice] = useState(false);
+  const [atomPanelOpen, setAtomPanelOpen] = useState(false);
   const reduced = useReducedMotion();
 
   useEffect(() => {
@@ -43,12 +51,25 @@ export function CookieConsentBanner() {
     setVisible(readConsent() === null);
   }, []);
 
+  // Atom's chat panel is a fixed, body-portaled element that can claim the
+  // same corner of the screen this banner does, see overlayNav.ts. Stepping
+  // aside while it's open (rather than fighting it on z-index) is the same
+  // deference Atom's own greeting bubble already shows this banner, just
+  // running the other way.
+  useEffect(() => {
+    function onAtomPanel(e: Event) {
+      setAtomPanelOpen(Boolean((e as CustomEvent<boolean>).detail));
+    }
+    window.addEventListener(ATOM_PANEL_OPEN_EVENT, onAtomPanel);
+    return () => window.removeEventListener(ATOM_PANEL_OPEN_EVENT, onAtomPanel);
+  }, []);
+
   function decide(analytics: boolean) {
     writeConsent({ analytics });
     setVisible(false);
   }
 
-  if (!mounted || !visible) return null;
+  if (!mounted || !visible || atomPanelOpen) return null;
 
   return (
     <AnimatePresence>
