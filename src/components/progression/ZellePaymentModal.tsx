@@ -8,6 +8,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { Tabs } from "@/components/ui/Tabs";
 import { QRCodeSVG } from "qrcode.react";
 import { FADE, SPRING } from "@/lib/motionTokens";
+import { paymentReferenceCode } from "@/lib/paymentReference";
 
 export interface ZellePaymentModalProps {
   isOpen: boolean;
@@ -21,6 +22,8 @@ export interface ZellePaymentModalProps {
   amountCents: number;
   /** Platform's Zelle-registered email or phone handle. */
   zelleHandle: string;
+  /** The payment this sheet pays for. Its short code goes in the transfer note so the bank email finds the right payment even when someone else sends the money. */
+  paymentId?: string;
   /** Polled while the sheet is open: resolves to the payment's status, so it can notice the bank email clearing it. */
   checkStatus?: () => Promise<string | null>;
   onVerified?: () => void;
@@ -86,6 +89,7 @@ export function ZellePaymentModal({
   eyebrowLabel,
   amountCents,
   zelleHandle,
+  paymentId,
   checkStatus,
   onVerified,
   onSubmit,
@@ -95,7 +99,9 @@ export function ZellePaymentModal({
   const [note, setNote] = useState("");
   const [copied, setCopied] = useState(false);
   const [method, setMethod] = useState<"ZELLE" | "VENMO">("ZELLE");
-  const venmo = venmoLinks(amountCents, `${scaleCode}: ${scaleTitle} (Bass Note Piano)`);
+  const reference = paymentId ? paymentReferenceCode(paymentId) : null;
+  const venmo = venmoLinks(amountCents, `${scaleCode}: ${scaleTitle} (Bass Note Piano)${reference ? ` ${reference}` : ""}`);
+  const [copiedWhat, setCopiedWhat] = useState<"amount" | "code" | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Portaled to the page itself: inside a page with a transform, `fixed` is measured against that box and the sheet lands off screen.
@@ -144,6 +150,12 @@ export function ZellePaymentModal({
     await navigator.clipboard.writeText(method === "VENMO" ? `@${VENMO_HANDLE}` : zelleHandle);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1800);
+  }
+
+  async function handleCopy(what: "amount" | "code", value: string) {
+    await navigator.clipboard.writeText(value);
+    setCopiedWhat(what);
+    window.setTimeout(() => setCopiedWhat(null), 1800);
   }
 
   async function handleSubmit() {
@@ -263,14 +275,51 @@ export function ZellePaymentModal({
                       </button>
                     </div>
 
+                    <div className="mt-3 flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-neu-base shadow-raised-low">
+                      <div className="min-w-0">
+                        <p className="text-small uppercase tracking-wide text-slate-500">Exact amount</p>
+                        <p className="truncate font-mono text-small text-slate-100">{formatUsd(amountCents)}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy("amount", (amountCents / 100).toFixed(2))}
+                        className="tap shrink-0 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] px-3 py-1.5 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:bg-[rgb(var(--c-s-50)/0.1)] bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                      >
+                        {copiedWhat === "amount" ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+
+                    {reference && method === "ZELLE" && (
+                      <div className="mt-3 flex items-center justify-between gap-3 rounded-xl px-4 py-3 bg-neu-base shadow-raised-low">
+                        <div className="min-w-0">
+                          <p className="text-small uppercase tracking-wide text-slate-500">Put this in the message</p>
+                          <p className="truncate font-mono text-small text-slate-100">{reference}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy("code", reference)}
+                          className="tap shrink-0 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] px-3 py-1.5 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:bg-[rgb(var(--c-s-50)/0.1)] bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                        >
+                          {copiedWhat === "code" ? "Copied" : "Copy"}
+                        </button>
+                      </div>
+                    )}
+
                     <ol className="mt-5 space-y-2.5 text-small text-slate-300">
                       <li className="flex gap-2.5">
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-small font-semibold text-[rgb(var(--c-s-50))]">1</span>
                         {method === "VENMO"
-                          ? `Send ${formatUsd(amountCents)} on Venmo, set to Private.`
-                          : `Open your bank's Zelle transfer and send ${formatUsd(amountCents)} to the handle above.`}
+                          ? `Send exactly ${formatUsd(amountCents)} on Venmo, set to Private. Leave the note as it is.`
+                          : `Open your bank's Zelle transfer and send exactly ${formatUsd(amountCents)} to the handle above.`}
                       </li>
+                      {reference && method === "ZELLE" && (
+                        <li className="flex gap-2.5">
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-small font-semibold text-[rgb(var(--c-s-50))]">2</span>
+                          Type {reference} in the message box. That is how we find your payment, even if someone else sends it for you.
+                        </li>
+                      )}
                     </ol>
+                    <p className="mt-3 text-small text-slate-500">We only accept Zelle and Venmo.</p>
 
                     <div className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-neu-base px-4 py-3 text-small font-medium text-slate-200 shadow-pressed-low" role="status">
                       <MorphingSquare size={13} className="shrink-0" />

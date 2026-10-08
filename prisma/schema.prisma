@@ -417,6 +417,7 @@ enum NotificationType {
   RESERVED_SLOT_CHANGED // to the student, when they self-serve move their Payment Plan's standing weekly slot to a different day/time
   CLASS_REMINDER // to the student, a day before and shortly before a booked live class
   CURRICULUM_ACCESS_REVOKED // to the student, when an admin manually removes curriculum access outside the normal payment flow
+  PAYMENT_AMOUNT_MISMATCH // to the student, when a bank or Venmo email under their name arrives for a different amount than their open payment
 }
 
 // The in-app inbox is the source of truth, always written regardless of
@@ -829,6 +830,7 @@ model User {
   progress         ScaleProgress[]
   quizAttempts     QuizAttempt[]
   zellePayments    ZellePayment[]  @relation("PaymentSubmitter")
+  payerAliases     PayerAlias[]
   reviewedPayments ZellePayment[]  @relation("PaymentReviewer")
   lessonBookings   LessonBooking[] @relation("LessonBookingStudent") // historical, see LessonBooking model comment
   classBookings    ClassBooking[]  @relation("ClassBookingStudent")
@@ -1638,6 +1640,20 @@ model PageHit {
   count Int      @default(0)
 
   @@unique([day, path])
+}
+
+// Another name a student's payments arrive under (a parent's, a spouse's). Only
+// ever created when an admin attaches a bank email to that student's payment
+// by hand, so a student cannot add one themselves. Matching an email to a
+// payment accepts the account name or any alias, and still needs the exact amount.
+model PayerAlias {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, name])
 }
 
 model ProcessedPaymentEmail {

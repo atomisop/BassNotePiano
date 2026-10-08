@@ -4,6 +4,7 @@ import { prisma } from "../../src/lib/prisma";
 import { OWNER_EMAIL } from "../../src/lib/adminNotifications";
 import { sendNotificationEmailWithCta, getAppUrl } from "../../src/lib/email";
 import { findMailChainProblem } from "../../src/lib/mailProbe";
+import { findPaymentPipelineProblem } from "../../src/lib/paymentPipelineStatus";
 import { pingMonitor, problemsFromStatuses, runWatchdog } from "../../src/lib/jobWatchdog";
 
 const ALERT_ROW = "watchdog-alert";
@@ -19,7 +20,8 @@ export const handler = schedule("*/30 * * * *", async () =>
       findProblems: async () => {
         const problems = problemsFromStatuses(await getJobStatuses());
         const mail = await findMailChainProblem();
-        return mail ? [...problems, mail] : problems;
+        const payments = await findPaymentPipelineProblem();
+        return [...problems, ...(mail ? [mail] : []), ...(payments ? [payments] : [])];
       },
       getLastAlert: () => prisma.jobRun.findFirst({ where: { name: ALERT_ROW }, orderBy: { ranAt: "desc" }, select: { note: true, ranAt: true } }),
       recordAlert: async (note) => {

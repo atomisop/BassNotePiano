@@ -63,8 +63,8 @@ export async function runWatchdog(deps: WatchdogDeps, now = new Date()): Promise
   if (shouldAlert({ problems, last, now })) {
     try {
       await deps.sendEmail(
-        problems.length === 1 ? "A scheduled job has stopped" : `${problems.length} scheduled jobs have stopped`,
-        `${problems.join("\n")}\n\nThese run by themselves in the background. Open Admin > Overview to see each one, or Netlify > Logs > Functions for the error.`,
+        problems.length === 1 ? "Something needs attention" : `${problems.length} things need attention`,
+        `${problems.join("\n")}\n\nThese are checked automatically in the background. Open Admin > Overview to see each one, or Netlify > Logs > Functions for the error.`,
       );
       await deps.recordAlert(problemKey(problems));
       alerted = true;
@@ -74,7 +74,7 @@ export async function runWatchdog(deps: WatchdogDeps, now = new Date()): Promise
     }
   } else if (shouldAnnounceRecovery({ problems, last })) {
     try {
-      await deps.sendEmail("Scheduled jobs are running again", "Every scheduled job has run within its window again.");
+      await deps.sendEmail("Everything is running again", "Every scheduled job has run within its window again, and the mail and payment email checks are passing.");
       await deps.recordAlert(RECOVERED_NOTE);
       recovered = true;
     } catch (err) {

@@ -14,6 +14,7 @@ import { CheckIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
+import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -50,6 +51,10 @@ function RegisterForm() {
     e.preventDefault();
     setError(null);
 
+    if (!hasFirstAndLastName(name)) {
+      setError(FULL_NAME_MESSAGE);
+      return;
+    }
     if (password.length < MIN_PASSWORD_LENGTH) {
       setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
       return;
@@ -112,12 +117,13 @@ function RegisterForm() {
       </div>
         <div>
           <Label htmlFor="name" className={fieldLabel}>
-            Name
+            Full name
           </Label>
           <Input
             id="name"
             type="text"
             autoComplete="name"
+            placeholder="First and last name"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}

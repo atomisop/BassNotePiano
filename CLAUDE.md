@@ -180,6 +180,20 @@ to read it). Atom currently teaches piano/guitar/bass only, drums and
 voice are "coming soon" on the public interest-registration form, and the
 system prompt explicitly forbids implying either is bookable today.
 
+## Payment emails: how a bank email finds its payment
+
+`src/lib/paymentEmail.ts` settles a payment only when the email's amount equals the
+payment's exactly AND either the note carries that payment's reference code
+(`paymentReferenceCode`, "BNP-" + last 5 of the id, shown on the pay screen) or the
+sender is the account holder or a `PayerAlias`. A note naming a *different* payment's code
+never matches by name. Two matches with no code settle nothing. A `PayerAlias` is created
+only when an admin attaches an email by hand (`matchReceiptToPayment`), is shown and
+removable on `/admin/users/[id]`, and needs two words. An email whose name matches exactly
+one student's open payment but whose amount is different sends that student a
+`PAYMENT_AMOUNT_MISMATCH` notice (routed to Mail). `job-watchdog` also reports a quiet
+payment-email pipeline (`findPaymentPipelineProblem`), with a constant line so it alerts once.
+Accounts now need a first and last name (`src/lib/studentName.ts`).
+
 ## Curriculum access: live classes only (as of 2026-09-25)
 
 The curriculum is **not sold on its own anymore.** It comes with live

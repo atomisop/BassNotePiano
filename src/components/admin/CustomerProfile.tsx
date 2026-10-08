@@ -17,6 +17,7 @@ export interface CustomerProfileProps {
   onAdjustCredits: (userId: string, amount: number, reasonNote: string) => Promise<{ ok: true; balance: number } | { ok: false; error: string }>;
   onCancelBooking: (bookingId: string, reason?: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   onForceSignOut: (userId: string) => Promise<void>;
+  onForgetPayerName: (userId: string, aliasId: string) => Promise<void>;
 }
 
 function formatUsd(cents: number) {
@@ -56,6 +57,7 @@ export function CustomerProfile({
   onAdjustCredits,
   onCancelBooking,
   onForceSignOut,
+  onForgetPayerName,
 }: CustomerProfileProps) {
   const router = useRouter();
   const { user } = profile;
@@ -518,6 +520,36 @@ export function CustomerProfile({
                   >
                     {p.status.replace(/_/g, " ").toLowerCase()}
                   </span>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+
+          {/* Other names their payments arrive under */}
+          <SectionCard title="Other payer names">
+            {profile.payerAliases.length === 0 && (
+              <Empty>None. When you attach a bank email from a different name to this student&apos;s payment, that name is remembered here and clears their future payments by itself.</Empty>
+            )}
+            <div className="space-y-2">
+              {profile.payerAliases.map((alias) => (
+                <div key={alias.id} className="flex items-center justify-between gap-3 rounded-xl p-3 text-small bg-neu-base shadow-raised-low">
+                  <span className="min-w-0 truncate text-slate-100">{alias.name}</span>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={async () => {
+                      setBusy(true);
+                      try {
+                        await onForgetPayerName(user.id, alias.id);
+                        router.refresh();
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
+                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small font-medium disabled:opacity-60"
+                  >
+                    Forget
+                  </button>
                 </div>
               ))}
             </div>

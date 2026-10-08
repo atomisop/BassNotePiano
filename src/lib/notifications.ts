@@ -38,6 +38,7 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   PAYMENT_SUBMITTED: { label: "Review payment", url: getAppUrl("/admin/payments"), kind: "default" },
   PAYMENT_APPROVED: { label: "View your purchase", url: getAppUrl("/billing/history"), kind: "default" },
   PAYMENT_REJECTED: { label: "Review & resubmit", url: getAppUrl("/billing/history"), kind: "notice" },
+  PAYMENT_AMOUNT_MISMATCH: { label: "View your payments", url: getAppUrl("/billing/history"), kind: "notice" },
   ROLE_UPDATED: { label: "Go to admin panel", url: getAppUrl("/admin"), kind: "default" },
   FRIEND_REQUEST_RECEIVED: { label: "View request", url: getAppUrl("/friends#requests"), kind: "default" },
   FRIEND_REQUEST_ACCEPTED: { label: "Say hello", url: getAppUrl("/friends"), kind: "default" },

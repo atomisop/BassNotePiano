@@ -410,6 +410,7 @@ function NameSection({ initialName, onDone }: { initialName: string | null; onDo
           {submitting ? "Saving…" : "Save"}
         </button>
       </form>
+      <p className="mt-2 text-small text-slate-400">Use your first and last name as they appear on your bank or Venmo account, so your payments clear on their own.</p>
 
       {error && <p className="mt-2 text-small text-red-400">{error}</p>}
       {success && <p className="mt-2 text-small text-slate-50">Name updated.</p>}

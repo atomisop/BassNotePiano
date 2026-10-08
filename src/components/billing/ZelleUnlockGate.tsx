@@ -79,6 +79,7 @@ export function ZelleUnlockGate({
         eyebrowLabel={eyebrowLabel}
         amountCents={amountCents}
         zelleHandle={zelleHandle}
+        paymentId={paymentId}
         onSubmit={handleSubmit}
         checkStatus={checkStatus}
         onVerified={() => router.refresh()}

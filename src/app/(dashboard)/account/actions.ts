@@ -11,6 +11,7 @@ import { setUsername, SocialError } from "@/lib/social";
 import { createPresignedAvatarUpload, deleteObject, keyFromPublicUrl, isObjectStorageConfigured } from "@/lib/storage";
 import { createAndSendCode, verifyCode, RateLimitError } from "@/lib/verification";
 import { sendPasswordChangedEmail } from "@/lib/email";
+import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
 import { changePaymentPlanTerm, cancelPaymentPlanBySelf, PaymentPlanError } from "@/lib/paymentPlans";
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -32,6 +33,7 @@ async function requireSession() {
 export async function updateNameAction(newName: string) {
   const trimmed = newName.trim();
   if (!trimmed) return { ok: false as const, error: "Name can't be empty." };
+  if (!hasFirstAndLastName(trimmed)) return { ok: false as const, error: FULL_NAME_MESSAGE };
 
   const { id } = await requireSession();
   const updated = await prisma.user.update({ where: { id }, data: { name: trimmed }, select: { name: true } });

@@ -63,6 +63,8 @@ export interface CustomerProfile {
   };
   roadmap: ScaleAccessState[];
   payments: UserPaymentRecord[];
+  /** Other names this student's payments arrive under, saved when an admin attached a bank email by hand. */
+  payerAliases: { id: string; name: string }[];
   bookings: Awaited<ReturnType<typeof getUserClassBookings>>;
   supportThreads: AdminThreadSummary[];
   creditHistory: CreditAdjustmentRow[];
@@ -91,7 +93,7 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
   });
   if (!user) return null;
 
-  const [roadmap, scaleProgressRows, payments, bookings, supportThreads, creditHistory] = await Promise.all([
+  const [roadmap, scaleProgressRows, payments, payerAliases, bookings, supportThreads, creditHistory] = await Promise.all([
     getRoadmap(userId),
     // getRoadmap's own ScaleAccessState is a processed *current* snapshot
     // (status/canAccess), not the raw timestamps a timeline needs, pulled
@@ -99,6 +101,7 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
     // other caller (the dashboard, the roadmap page) has no use for.
     prisma.scaleProgress.findMany({ where: { userId }, include: scaleProgressWithGroupInclude }),
     getUserPaymentHistory(userId),
+    prisma.payerAlias.findMany({ where: { userId }, select: { id: true, name: true }, orderBy: { createdAt: "asc" } }),
     getUserClassBookings(userId),
     getSupportThreads(undefined, userId),
     getUserCreditHistory(userId, 100),
@@ -125,6 +128,7 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
     },
     roadmap,
     payments,
+    payerAliases,
     bookings,
     supportThreads,
     creditHistory,

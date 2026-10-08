@@ -81,7 +81,7 @@ export function UnmatchedEmailList({
             <p className="mt-3 text-small text-slate-500">No open payment for {usd(row.amountCents)} yet.</p>
           ) : (
             <div className="mt-3 space-y-2">
-              <p className="text-small text-slate-400">Open payments for {usd(row.amountCents)}:</p>
+              <p className="text-small text-slate-400">Open payments for {usd(row.amountCents)}. Attaching also remembers &ldquo;{row.senderName}&rdquo; as a name this student pays under, so their next payment clears by itself.</p>
               {row.candidates.map((c) => {
                 const isConfirming = confirming?.receiptId === row.id && confirming.paymentId === c.id;
                 const who = c.studentName ? `${c.studentName} (${c.studentEmail})` : c.studentEmail;
