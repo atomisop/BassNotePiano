@@ -12,7 +12,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
 import { readConsent, CONSENT_DECIDED_EVENT } from "@/lib/cookieConsent";
-import { FULLSCREEN_NAV_EVENT } from "@/lib/overlayNav";
+import { FULLSCREEN_NAV_EVENT, setAtomPanelOpen } from "@/lib/overlayNav";
 import { ATOM_TRIGGER_EVENT, OPEN_ATOM_CASE_EVENT, OPEN_ATOM_EVENT, isAtomTriggerPresent } from "@/lib/atomTrigger";
 import { SPRING } from "@/lib/motionTokens";
 
@@ -20,23 +20,22 @@ import { SPRING } from "@/lib/motionTokens";
  * Atom, the "ask me anything" assistant, floating on every page (mounted
  * once in providers.tsx, same pattern as Toaster/CookieConsentBanner).
  *
- * The launcher (and the open panel's header icon) run the `loader-15` ui
- * component, a signal-green animated gradient ring, `components/ui/
- * loader-15.tsx`, as Atom's icon. Atom used to run its own distinct
- * color identity here (teal/blue, before that whatever the house accent
- * wasn't at the time, see themes.css's own "Accent" comment), on the
- * theory that it should read as its own character rather than blend into
- * the app's chrome. Reverted by direct instruction: Atom now matches the
- * app exactly, everywhere below, including the signal green that's the
- * house accent again, no separate identity anymore. This replaces an
- * earlier
- * `PulsingBorder` WebGL shader treatment (this app's own signal-green
- * identity): that version needed its own feature-detection-and-fallback
- * machinery (a shader canvas that *throws*, not warns, on a device with no
- * WebGL, real production error-monitoring events showed visitors on
- * locked-down/older hardware hitting a broken widget from it). `Loader`
- * is plain SVG, so none of that applies here, there's no fallback branch
- * because there's nothing left that can fail that way.
+ * The launcher (and the open panel's header icon, and every per-message
+ * accent) run `AiBorder`/`GenerateAIButton` from `components/ui/button-33.tsx`,
+ * a signal-green animated gradient ring. Atom used to run its own distinct
+ * color identity here (`components/ui/loader-15.tsx`'s pink/orange gradient
+ * first, since deleted, then teal/blue, see themes.css's own "Accent"
+ * comment), on the theory it should read as its own character rather than
+ * blend into the app's chrome. Reverted by direct instruction: Atom now
+ * matches the app exactly, everywhere below, including the signal green
+ * that's the house accent again, no separate identity anymore. This whole
+ * lineage replaced an original `PulsingBorder` WebGL shader treatment:
+ * that version needed its own feature-detection-and-fallback machinery (a
+ * shader canvas that *throws*, not warns, on a device with no WebGL, real
+ * production error-monitoring events showed visitors on locked-down/older
+ * hardware hitting a broken widget from it). Everything since is plain
+ * SVG/CSS, so none of that applies, there's no fallback branch because
+ * there's nothing left that can fail that way.
  *
  * MOBILE OVERLAY SUPPRESSION: the launcher is portaled straight to
  * `document.body` at `z-40`, same as MarketingNav's mobile menu and the
@@ -46,6 +45,15 @@ import { SPRING } from "@/lib/motionTokens";
  * `lib/overlayNav.ts` for why this doesn't just trust the z-index. Both
  * overlays broadcast `FULLSCREEN_NAV_EVENT` while open; this widget listens
  * and hides itself (`navOverlayOpen` below) for as long as one is up.
+ *
+ * COOKIE BANNER COLLISION, the same problem running the other way: the
+ * open chat panel is itself a `fixed`, body-portaled element claiming the
+ * same corner of the screen CookieConsentBanner does (`z-[70]`), which had
+ * no idea this panel existed and rendered on top of it, confirmed live
+ * (a first visitor opening Atom before deciding on cookies got the banner
+ * sitting over the bottom of the open panel). Fixed from this side too,
+ * broadcasting `ATOM_PANEL_OPEN_EVENT` whenever `open` changes so the
+ * banner can step aside while this is up, same `lib/overlayNav.ts`.
  *
  * Positioned at bottom-24 (not bottom-6, where ScrollToTopButton and the
  * marketing pages' footer live) specifically to clear that button and the
@@ -413,6 +421,14 @@ export function AssistantWidget() {
     window.addEventListener(FULLSCREEN_NAV_EVENT, onFullscreenNav);
     return () => window.removeEventListener(FULLSCREEN_NAV_EVENT, onFullscreenNav);
   }, []);
+
+  // Tells CookieConsentBanner (a separate fixed, body-portaled element
+  // claiming the same corner of the screen) to hold itself back while this
+  // panel is open, see overlayNav.ts.
+  useEffect(() => {
+    setAtomPanelOpen(open);
+    return () => setAtomPanelOpen(false);
+  }, [open]);
 
   // The dashboard TopBar's "Ask AI" button (see lib/atomTrigger.ts) replaces
   // the floating launcher and greeting bubble while it is mounted, and opens

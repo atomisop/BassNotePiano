@@ -25,3 +25,26 @@ export function setFullscreenNavOpen(open: boolean) {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent<boolean>(FULLSCREEN_NAV_EVENT, { detail: open }));
 }
+
+/**
+ * Same collision, the other direction. Atom's own open chat panel is
+ * *also* a `fixed`, body-portaled element that can claim the same corner
+ * of the screen as something else, specifically CookieConsentBanner
+ * (`z-[70]`, `fixed inset-x-4 bottom-4` on mobile widening to
+ * `sm:right-4`), which has no idea Atom's panel exists and just always
+ * renders on top of it. A first-time visitor who opens Atom before
+ * deciding on cookies gets the banner sitting over the bottom of the open
+ * panel, visually broken, confirmed live.
+ *
+ * Atom already makes its *greeting bubble* wait for a cookie decision
+ * (`CONSENT_DECIDED_EVENT` in cookieConsent.ts), this is that same
+ * deference running the other way: while the panel itself is open, the
+ * banner steps aside instead, reappearing the moment it closes if a
+ * choice still hasn't been made.
+ */
+export const ATOM_PANEL_OPEN_EVENT = "bnp-atom-panel-open";
+
+export function setAtomPanelOpen(open: boolean) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<boolean>(ATOM_PANEL_OPEN_EVENT, { detail: open }));
+}
