@@ -82,7 +82,7 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "security.loginMaxAttempts", category: "security", type: "number", default: 8, min: 3, max: 50, unit: "tries", label: "Wrong passwords before a lockout", help: "Counted per account over the window below." },
   { key: "security.loginLockoutMinutes", category: "security", type: "number", default: 15, min: 1, max: 240, unit: "minutes", label: "Sign-in lockout window", help: "How long wrong passwords are counted, and how long a lockout lasts." },
   { key: "security.codeExpiryMinutes", category: "security", type: "number", default: 10, min: 2, max: 60, unit: "minutes", label: "Emailed code lifetime", help: "How long a 6-digit code works." },
-  { key: "security.maxCodeAttempts", category: "security", type: "number", default: 5, min: 1, max: 20, unit: "tries", label: "Wrong tries per code", help: "A code is cancelled after this many wrong entries." },
+  { key: "security.maxCodeAttempts", category: "security", type: "number", default: 5, min: 1, max: 20, unit: "tries", label: "Wrong tries per code", help: "A code is canceled after this many wrong entries." },
   { key: "security.codeIssueLimit", category: "security", type: "number", default: 5, min: 1, max: 30, unit: "codes", label: "Codes that can be requested per window", help: "Per email address and purpose." },
   { key: "security.codeIssueWindowMinutes", category: "security", type: "number", default: 15, min: 1, max: 120, unit: "minutes", label: "Code request window", help: "The window that the limit above counts over." },
 
@@ -108,7 +108,7 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "payments.installmentLeadDays", category: "payments", type: "number", default: 7, min: 0, max: 30, unit: "days", label: "Open an installment this early", help: "How many days before the due date the next installment can be paid." },
   { key: "payments.emailAutoApprove", category: "payments", type: "toggle", default: true, label: "Approve payments from matching bank emails", help: "Off: receipts are still kept, but every payment waits for you to approve it." },
   { key: "payments.amountMismatchNotice", category: "payments", type: "toggle", default: true, label: "Tell a student when their payment amount is wrong", help: "The notice sent when the money arrives under their name for a different amount." },
-  { key: "payments.lapseAfterDays", category: "payments", type: "number", default: 7, min: 1, max: 60, unit: "days", label: "Cancel an unpaid plan after", help: "A plan this many days past due with nothing in review is cancelled." },
+  { key: "payments.lapseAfterDays", category: "payments", type: "number", default: 7, min: 1, max: 60, unit: "days", label: "Cancel an unpaid plan after", help: "A plan this many days past due with nothing in review is canceled." },
 
   // ---- Messaging
   { key: "messaging.enabled", category: "messaging", type: "toggle", default: true, label: "Allow student messages", help: "Off: direct messages between students are refused. Admin messages still work." },
