@@ -5,6 +5,8 @@ import { getActivePaymentPlan } from "@/lib/paymentPlans";
 import { loadPersistedHistory } from "@/lib/assistant";
 import { AccountSettings } from "./AccountSettings";
 
+export const metadata = { title: "Settings" };
+
 export default async function AccountPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/account");

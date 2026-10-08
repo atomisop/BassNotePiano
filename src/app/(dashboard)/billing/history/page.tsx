@@ -63,6 +63,8 @@ function describePayment(payment: {
   return { eyebrow: payment.scaleGroup?.code ?? "Scale unlock", title: payment.scaleGroup?.title ?? "Scale unlock" };
 }
 
+export const metadata = { title: "Billing history" };
+
 export default async function BillingHistoryPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/history");

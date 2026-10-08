@@ -6,6 +6,8 @@ import { isOwnerEmail } from "@/lib/adminNotifications";
 import { approveAllReadyScalesAction, approveNextScaleAction } from "./actions";
 import { BulkConfirmButton } from "@/components/admin/BulkConfirmButton";
 
+export const metadata = { title: "Admin: People" };
+
 export default async function AdminUsersPage({ searchParams }: { searchParams: { q?: string; filter?: string } }) {
   const query = searchParams.q ?? "";
   const session = await getServerAuthSession();

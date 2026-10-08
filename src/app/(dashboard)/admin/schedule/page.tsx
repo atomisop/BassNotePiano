@@ -38,6 +38,8 @@ const VIEWS: { label: string; value: ViewValue }[] = [
   { label: "Attendance", value: "ATTENDANCE" },
 ];
 
+export const metadata = { title: "Admin: Schedule" };
+
 export default async function AdminSchedulePage({ searchParams }: { searchParams: { view?: string; group?: string } }) {
   const requested = searchParams.view?.toUpperCase();
   const activeView = VIEWS.find((v) => v.value === requested)?.value ?? "WINDOWS";

@@ -17,6 +17,8 @@ function formatUsd(cents: number) {
   });
 }
 
+export const metadata = { title: "Admin: Overview" };
+
 export default async function AdminOverviewPage() {
   const [stats, trends, session, subs, attention] = await Promise.all([getOverviewStats(), getOverviewTrends(6), getServerAuthSession(), getSubscriptionStats(), getAttentionItems()]);
   const isOwner = isOwnerEmail(session?.user?.email);

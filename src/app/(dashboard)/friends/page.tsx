@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { getFriendsList, getPendingRequestsReceived, getPendingRequestsSent, getBlockedUsers } from "@/lib/social";
 import { FriendsClient } from "./FriendsClient";
 
+export const metadata = { title: "Friends" };
+
 export default async function FriendsPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/friends");

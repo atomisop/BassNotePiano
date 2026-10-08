@@ -10,6 +10,8 @@ import { ArrowLeftIcon } from "@/components/ui/icons";
 import { ProfileEditButton } from "./ProfileEditButton";
 import { WideLayout } from "@/components/layout/PageLayouts";
 
+export const metadata = { title: "Profile" };
+
 export default async function ProfilePage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/profile");

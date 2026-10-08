@@ -5,6 +5,8 @@ import { MessageComposer } from "@/components/admin/MessageComposer";
 import { AnnouncementManager } from "@/components/admin/AnnouncementManager";
 import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 
+export const metadata = { title: "Admin: Messages" };
+
 export default async function AdminMessagesPage({ searchParams }: { searchParams: { tab?: string } }) {
   const announcementsTab = searchParams.tab === "announcements";
 

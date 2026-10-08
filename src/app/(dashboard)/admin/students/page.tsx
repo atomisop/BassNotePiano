@@ -11,6 +11,8 @@ const FILTERS: { label: string; value: ClassRegistrationStatus | "ALL" }[] = [
   { label: "All", value: "ALL" },
 ];
 
+export const metadata = { title: "Admin: Students" };
+
 export default async function AdminStudentsPage({ searchParams }: { searchParams: { status?: string } }) {
   const requested = searchParams.status?.toUpperCase();
   const activeFilter = FILTERS.find((f) => f.value === requested)?.value ?? "PENDING";

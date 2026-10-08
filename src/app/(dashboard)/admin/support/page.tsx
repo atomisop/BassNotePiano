@@ -17,6 +17,8 @@ const SOURCES: { label: string; value: SupportThreadSource; param: string }[] = 
   { label: "Email", value: "EMAIL", param: "email" },
 ];
 
+export const metadata = { title: "Admin: Support chat" };
+
 export default async function AdminSupportPage({
   searchParams,
 }: {

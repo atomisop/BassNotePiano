@@ -12,6 +12,8 @@ import Link from "next/link";
  * The links out are the three routes that are always valid regardless of
  * session, a dead end with no exit is the thing worth avoiding here.
  */
+export const metadata = { title: "Page not found" };
+
 export default function NotFound() {
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col items-start justify-center px-6 py-20">
