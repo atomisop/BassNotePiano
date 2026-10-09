@@ -75,6 +75,8 @@ export interface GettingStartedInput {
   kind: "ADMIN" | "PAID" | "COMPED" | "TRIAL" | "NONE";
   /** The student has applied for a class and nobody has answered yet. */
   applicationPending: boolean;
+  /** Length of the free trial in days, from Settings. 0 or missing means the copy does not mention a trial by length (default 3). */
+  trialDays?: number;
 }
 
 export interface GettingStartedStep {
@@ -88,6 +90,7 @@ export interface GettingStartedStep {
 /** What a student with no access yet should do next. Null for anyone who already has access. */
 export function gettingStartedStep(input: GettingStartedInput): GettingStartedStep | null {
   if (input.kind !== "NONE") return null;
+  const trialDays = input.trialDays ?? 3;
   if (input.applicationPending) {
     return {
       action: "Your class application is being reviewed",
@@ -99,9 +102,11 @@ export function gettingStartedStep(input: GettingStartedInput): GettingStartedSt
   }
   return {
     action: "Two ways to start",
-    detail: "Apply for a free trial class and get the first lessons for 3 days, or choose a class plan and start right away.",
+    detail: trialDays > 0
+      ? `Apply for a free trial class and get the first lessons for ${trialDays} days, or choose a class plan and start right away.`
+      : "Apply for classes, or choose a class plan and start right away.",
     href: "/classes",
-    cta: "Apply for a free trial class",
+    cta: trialDays > 0 ? "Apply for a free trial class" : "Apply for classes",
     secondary: { href: "/billing/plans", cta: "See class plans" },
   };
 }

@@ -47,3 +47,10 @@ describe("gettingStartedStep", () => {
     for (const kind of ["ADMIN", "PAID", "COMPED", "TRIAL"] as const) expect(gettingStartedStep({ kind, applicationPending: false })).toBeNull();
   });
 });
+
+describe("getting started copy follows the trial length", () => {
+  it("names the configured number of days, or leaves the trial out when it is off", () => {
+    expect(gettingStartedStep({ kind: "NONE", applicationPending: false, trialDays: 5 })?.detail).toContain("5 days");
+    expect(gettingStartedStep({ kind: "NONE", applicationPending: false, trialDays: 0 })?.detail).not.toMatch(/trial|days/);
+  });
+});
