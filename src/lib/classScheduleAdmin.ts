@@ -265,20 +265,29 @@ export async function markAttendance(bookingId: string, attendance: AttendanceSt
   const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
   if (booking.status === "CANCELED") throw new ClassBookingError("Can't mark attendance for a canceled booking.");
 
-  const alreadyCharged = booking.status === "COMPLETED";
-  await prisma.$transaction(async (tx) => {
-    await tx.classBooking.update({ where: { id: bookingId }, data: { attendance, status: "COMPLETED" } });
-    if (!alreadyCharged) {
+  // The charge is claimed atomically: only the one request that flips the booking
+  // from SCHEDULED to COMPLETED charges. Reading the status first and charging after
+  // let two quick clicks both see SCHEDULED and both charge.
+  const charged = await prisma.$transaction(async (tx) => {
+    const claimed = await tx.classBooking.updateMany({
+      where: { id: bookingId, status: "SCHEDULED" },
+      data: { attendance, status: "COMPLETED" },
+    });
+    if (claimed.count === 1) {
       await tx.user.update({ where: { id: booking.studentId }, data: { classCredits: { decrement: booking.creditsSpent } } });
+      return true;
     }
+    // Already completed (a correction, or the other click won): only the mark changes.
+    await tx.classBooking.updateMany({ where: { id: bookingId, status: "COMPLETED" }, data: { attendance } });
+    return false;
   });
   // Best-effort ledger draw-down, outside the transaction above on purpose
   // (see drawDownCredits's own comment), the real charge already landed
   // unconditionally, this just keeps CreditGrant's bookkeeping roughly in
-  // sync with it. Skipped entirely on a re-mark (alreadyCharged): the one
+  // sync with it. Skipped entirely on a re-mark (already charged): the one
   // real charge, and the one real draw-down, both already happened on the
   // first call.
-  if (!alreadyCharged) {
+  if (charged) {
     await drawDownCredits(booking.studentId, booking.creditsSpent);
   }
 }

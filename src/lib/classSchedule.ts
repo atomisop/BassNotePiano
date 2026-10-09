@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { PLAN_CADENCE_CREDITS_PER_WEEK, CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
-import { weekRangeForOccurrence } from "@/lib/bookingRules";
+import { SUBSCRIBER_CLASSES_PER_WEEK, weekRangeForOccurrence } from "@/lib/bookingRules";
 import { getBoolSetting, getNumberSetting, getTextSetting } from "@/lib/siteSettings";
 
 export class ClassBookingError extends Error {}
@@ -394,7 +394,7 @@ async function assertWithinSubscriberWeeklyLimit(
       ],
     },
   });
-  if (held >= (await getNumberSetting("booking.subscriberClassesPerWeek"))) {
+  if (held >= SUBSCRIBER_CLASSES_PER_WEEK) {
     throw new ClassBookingError(
       "You already have your class for that week. Your credits cover one class a week. You can add an extra session from the Extra sessions tab.",
     );
@@ -1406,7 +1406,7 @@ export async function rescheduleClassBooking(
   if (!(await getBoolSetting("cancel.studentCanReschedule"))) {
     throw new ClassBookingError("Classes can't be rescheduled in the app right now. Message us and we'll help.");
   }
-  const rescheduleCutoffHours = await getNumberSetting("cancel.rescheduleCutoffHours");
+  const rescheduleCutoffHours = await getNumberSetting("cancel.cutoffHours");
   const hoursUntil = (oldBooking.scheduledAt.getTime() - Date.now()) / 3_600_000;
   if (hoursUntil < rescheduleCutoffHours) {
     throw new ClassBookingError(

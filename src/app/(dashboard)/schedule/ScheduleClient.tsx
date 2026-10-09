@@ -46,6 +46,9 @@ interface ScheduleClientProps {
   supportContactId: string | null;
   /** Hours before class that changing or cancelling stops being self-service. */
   cancellationCutoffHours: number;
+  /** The owner can switch self-cancel and self-reschedule off (Settings → Cancel and reschedule). */
+  canCancel: boolean;
+  canReschedule: boolean;
   /** Whether this calendar week already has a class on the books. A
       subscriber never sees a credit count, just whether this week is
       handled or needs attention. */
@@ -61,6 +64,8 @@ interface ScheduleClientProps {
 export function ScheduleClient({
   supportContactId,
   cancellationCutoffHours,
+  canCancel,
+  canReschedule,
   hasClassThisWeek,
   weeklyTime,
   upcomingBookings,
@@ -166,7 +171,8 @@ export function ScheduleClient({
           <div className="mt-3 space-y-2.5">
             {upcomingBookings.map((booking) => {
               const hoursUntil = (new Date(booking.scheduledAt).getTime() - Date.now()) / 3_600_000;
-              const canChange = hoursUntil >= cancellationCutoffHours;
+              const insideCutoff = hoursUntil < cancellationCutoffHours;
+              const canChange = !insideCutoff && (canCancel || canReschedule);
               const confirming = confirmSkipId === booking.id;
               const busy = skippingId === booking.id;
               return (
@@ -228,9 +234,12 @@ export function ScheduleClient({
                       </div>
                     ) : (
                       <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <Link href={`/lessons?tab=extra&move=${booking.id}`} className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
-                          Move this week
-                        </Link>
+                        {canReschedule && (
+                          <Link href={`/lessons?tab=extra&move=${booking.id}`} className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
+                            Move this week
+                          </Link>
+                        )}
+                        {canCancel && (
                         <button
                           type="button"
                           onClick={() => {
@@ -241,11 +250,12 @@ export function ScheduleClient({
                         >
                           Skip this class
                         </button>
+                        )}
                       </div>
                     )
                   ) : (
                     <p className="mt-2 text-small text-slate-500">
-                      Starts within {cancellationCutoffHours} hours, so changes now go through the team.
+                      {insideCutoff ? `Starts within ${cancellationCutoffHours} hours, so changes now go through the team.` : "Changes to this class go through the team."}
                     </p>
                   )}
                   <div className="mt-2 flex flex-wrap items-center gap-2">

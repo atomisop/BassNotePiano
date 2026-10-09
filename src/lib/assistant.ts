@@ -8,6 +8,7 @@
 // classCreditPricing) rather than hand-typed numbers, so it can't drift out
 // of sync with what a visitor actually sees on /pricing.
 
+import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
@@ -115,7 +116,19 @@ export interface VisitorContext {
   isAdmin: boolean;
 }
 
-function buildSystemPrompt(visitor: VisitorContext): string {
+async function buildSystemPrompt(visitor: VisitorContext): Promise<string> {
+  // Policy numbers the owner can change in Settings, so Atom never quotes a stale one.
+  const [cancelHours, trialOn, trialDays, trialLessons, unlockDays] = await Promise.all([
+    getNumberSetting("cancel.cutoffHours"),
+    getBoolSetting("trial.enabled"),
+    getNumberSetting("trial.days"),
+    getNumberSetting("trial.lessonCount"),
+    getNumberSetting("access.scaleUnlockIntervalDays"),
+  ]);
+  const trialLine = trialOn
+    ? `An approved class applicant gets a ${trialDays}-day free trial of just the first ${trialLessons} lessons of Scale 1.`
+    : "There is no free trial right now.";
+  const cutoff = `${cancelHours} hour${cancelHours === 1 ? "" : "s"}`;
   const scaleList = SCALE_GROUPS.map(
     (s) => `  - ${s.code}: ${s.title}${s.kinitName ? ` (${s.kinitName})` : ""}`,
   ).join("\n");
@@ -163,19 +176,19 @@ ${visitorLine}
 REAL FACTS ABOUT THIS APP: never invent a price, policy, or page that isn't listed here:
 
 Curriculum (self-paced, on the website):
-  - The curriculum is NOT sold on its own. It comes with live classes: an active Payment Plan opens it, and the teacher releases each next scale one at a time (at most one new scale per week) once the student has finished the previous one. If a plan ends, access closes when the paid month ends. An approved class applicant gets a 3-day free trial of just the first three lessons of Scale 1.
+  - The curriculum is NOT sold on its own. It comes with live classes: an active Payment Plan opens it, and the teacher releases each next scale one at a time (no sooner than ${unlockDays} days after the last one) once the student has finished the previous one. If a plan ends, access closes when the paid month ends. ${trialLine}
   - The scale groups, in order:
 ${scaleList}
   - Each scale group includes video/PDF lessons, a practice tracker, and a quiz you need to pass to mark it complete.
 
 Live classes (weekly, on Discord). Every class is one 45-minute lesson, one-on-one with the teacher, starting on the hour:
-  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a term (Monthly, no commitment, 3-Month, or 6-Month), paid one Zelle or Venmo installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active, nothing to book yourself. A plan is 4 classes a month. If a specific week doesn't work, the student can skip that class in the app up to 24 hours before it starts (see below); inside 24 hours they attend or message the studio. Longer terms cost less per month:
+  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a term (Monthly, no commitment, 3-Month, or 6-Month), paid one Zelle or Venmo installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active, nothing to book yourself. A plan is 4 classes a month. If a specific week doesn't work, the student can skip that class in the app up to ${cutoff} before it starts (see below); inside ${cutoff} they attend or message the studio. Longer terms cost less per month:
 ${planList}
   - Family (2+ separate, already-existing accounts sharing the same cadence and term at once) is a different, separate purchase: the exact same per-month rate and term discount a solo Payment Plan gets, paid once upfront for the whole term instead of monthly installments, plus an extra ${FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total (these classes never expire):
 ${bundleList}
   - Classes are one-on-one with the teacher. A family session is siblings with their own accounts taught together, one class for the whole family.
   - When someone starts a Payment Plan they pick their weekly day and time on a calendar of the open spots, and that time is locked in for them every week of the term and booked automatically, so a subscriber never has to buy anything or book their weekly class. The /lessons page has two tabs for them: "My weekly class" and "Extra sessions". Extra sessions is the booking calendar for extra time with the teacher on top of their weekly class, each extra class is booked and paid for one at a time at a flat ${formatUsd(EXTRA_CLASS_PRICE_CENTS)} (one 45-minute class), by Zelle or Venmo. Credits cannot be bought. They only come as a gift, a refund or an employee benefit, and a student with credits can tick "Use credits" when booking. Anyone without an active plan sees the same booking calendar directly (Family sessions, or a between-plans student).
-  - A scheduled class can be canceled or changed until 24 hours before it starts, and the class stays on the account for the student to rebook. Inside 24 hours it can't be changed in the app: the student attends, or messages the studio for a case-by-case call. A subscriber's weekly class works the same way: "skip this class" until 24 hours before, then use it to book a different time under Extra sessions. The standing weekly time can't be moved while a class is starting within 24 hours.
+  - A scheduled class can be canceled or changed until ${cutoff} before it starts, and the class stays on the account for the student to rebook. Inside ${cutoff} it can't be changed in the app: the student attends, or messages the studio for a case-by-case call. A subscriber's weekly class works the same way: "skip this class" until ${cutoff} before, then use it to book a different time under Extra sessions. The standing weekly time can't be moved while a class is starting within ${cutoff}.
   - Nothing about a purchase (curriculum, a payment plan installment, or a family bundle) is refundable as cash, the only way a class comes back is the 24h+ cancellation above.
 
 Payment:
@@ -350,7 +363,7 @@ export async function generateSuggestions(history: AssistantMessage[], visitor: 
         ],
       },
     ],
-    systemInstruction: buildSystemPrompt(visitor),
+    systemInstruction: await buildSystemPrompt(visitor),
     maxOutputTokens: 2000,
     responseMimeType: "application/json",
   });
@@ -386,7 +399,7 @@ export async function askAssistant(
       role: (m.role === "assistant" ? "model" : "user") as "user" | "model",
       parts: [{ text: m.content }],
     })),
-    systemInstruction: buildSystemPrompt(visitor),
+    systemInstruction: await buildSystemPrompt(visitor),
     maxOutputTokens: MAX_OUTPUT_TOKENS,
   });
 
