@@ -28,6 +28,9 @@ export interface TextDef extends BaseDef {
   default: string;
   maxLength: number;
   multiline?: boolean;
+  /** When set, a saved value must match this. `patternHint` is the message shown when it does not. */
+  pattern?: RegExp;
+  patternHint?: string;
 }
 export type SettingDef = ToggleDef | NumberDef | TextDef;
 
@@ -55,18 +58,16 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "booking.horizonWeeks", category: "booking", type: "number", default: 8, min: 1, max: 12, unit: "weeks", label: "How far ahead students can book", help: "How many upcoming weeks of each weekly slot are offered." },
   { key: "booking.perHourLimit", category: "booking", type: "number", default: 20, min: 1, max: 100, unit: "per hour", label: "Booking attempts per student per hour", help: "Stops a script from hammering the booking screen." },
   { key: "booking.allowFamily", category: "booking", type: "toggle", default: true, label: "Allow family bookings", help: "Off: only one-student bookings can be made." },
-  { key: "booking.subscriberClassesPerWeek", category: "booking", type: "number", default: 1, min: 1, max: 7, unit: "classes", label: "Credit classes per week for subscribers", help: "How many classes a subscriber may hold in one week through credits." },
   { key: "booking.notifyAdminOnBooking", category: "booking", type: "toggle", default: true, label: "Tell admins when a student books", help: "Sends the in-app and email notice for each new booking." },
 
   // ---- Cancel and reschedule
   { key: "cancel.studentCanCancel", category: "cancellation", type: "toggle", default: true, label: "Students can cancel their own classes", help: "Off: students must message you to cancel." },
-  { key: "cancel.cutoffHours", category: "cancellation", type: "number", default: 24, min: 0, max: 168, unit: "hours", label: "Cancellation cutoff", help: "A student can cancel only if the class is at least this far away." },
+  { key: "cancel.cutoffHours", category: "cancellation", type: "number", default: 24, min: 0, max: 168, unit: "hours", label: "Cancel and reschedule cutoff", help: "A student can cancel or move a class only if it is at least this far away. The app and Atom follow this number; the public Terms and FAQ pages still say 24 hours." },
   { key: "cancel.studentCanReschedule", category: "cancellation", type: "toggle", default: true, label: "Students can reschedule their own classes", help: "Off: students must message you to move a class." },
-  { key: "cancel.rescheduleCutoffHours", category: "cancellation", type: "number", default: 24, min: 0, max: 168, unit: "hours", label: "Reschedule cutoff", help: "A student can move a class only if it is at least this far away." },
 
   // ---- Trial and access
   { key: "trial.enabled", category: "trial", type: "toggle", default: true, label: "Free trial for new students", help: "Off: approving an application or registering no longer starts a trial." },
-  { key: "trial.days", category: "trial", type: "number", default: 3, min: 1, max: 30, unit: "days", label: "Trial length", help: "How long a new trial lasts." },
+  { key: "trial.days", category: "trial", type: "number", default: 3, min: 1, max: 30, unit: "days", label: "Trial length", help: "How long a new trial lasts. The app and Atom follow this number; the public Terms and FAQ pages still say 3 days." },
   { key: "trial.lessonCount", category: "trial", type: "number", default: 3, min: 1, max: 20, unit: "lessons", label: "Lessons open during the trial", help: "How many of Scale 1's first lessons a trial student can open." },
   { key: "access.planGraceDays", category: "trial", type: "number", default: 3, min: 0, max: 30, unit: "days", label: "Grace period after a plan's paid month", help: "Curriculum access continues this long after the paid period ends." },
   { key: "access.scaleUnlockIntervalDays", category: "trial", type: "number", default: 7, min: 0, max: 60, unit: "days", label: "Days between scale unlocks", help: "A student becomes eligible for the next scale this long after the last unlock." },
@@ -88,7 +89,7 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "security.loginMaxAttempts", category: "security", type: "number", default: 8, min: 3, max: 50, unit: "tries", label: "Wrong passwords before a lockout", help: "Counted per account over the window below." },
   { key: "security.loginLockoutMinutes", category: "security", type: "number", default: 15, min: 1, max: 240, unit: "minutes", label: "Sign-in lockout window", help: "How long wrong passwords are counted, and how long a lockout lasts." },
   { key: "security.codeExpiryMinutes", category: "security", type: "number", default: 10, min: 2, max: 60, unit: "minutes", label: "Emailed code lifetime", help: "How long a 6-digit code works." },
-  { key: "security.maxCodeAttempts", category: "security", type: "number", default: 5, min: 1, max: 20, unit: "tries", label: "Wrong tries per code", help: "A code is cancelled after this many wrong entries." },
+  { key: "security.maxCodeAttempts", category: "security", type: "number", default: 5, min: 1, max: 20, unit: "tries", label: "Wrong tries per code", help: "A code is canceled after this many wrong entries." },
   { key: "security.codeIssueLimit", category: "security", type: "number", default: 5, min: 1, max: 30, unit: "codes", label: "Codes that can be requested per window", help: "Per email address and purpose." },
   { key: "security.codeIssueWindowMinutes", category: "security", type: "number", default: 15, min: 1, max: 120, unit: "minutes", label: "Code request window", help: "The window that the limit above counts over." },
 
@@ -96,7 +97,7 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "reminders.classDayBefore", category: "reminders", type: "toggle", default: true, label: "Remind students the day before class", help: "The 'Your class is tomorrow' notice." },
   { key: "reminders.classHourBefore", category: "reminders", type: "toggle", default: true, label: "Remind students shortly before class", help: "The 'Your class starts soon' notice." },
   { key: "reminders.practiceEnabled", category: "reminders", type: "toggle", default: true, label: "Practice reminders", help: "Nudges students who have stopped practicing." },
-  { key: "reminders.practiceDays", category: "reminders", type: "text", default: "1,3,7,14,30", maxLength: 40, label: "Days of silence that trigger a practice reminder", help: "Comma-separated, such as 1,3,7,14,30." },
+  { key: "reminders.practiceDays", category: "reminders", type: "text", default: "1,3,7,14,30", maxLength: 40, pattern: /^\d{1,3}(\s*,\s*\d{1,3})*$/, patternHint: "Use whole numbers separated by commas, such as 1,3,7,14,30.", label: "Days of silence that trigger a practice reminder", help: "Comma-separated, such as 1,3,7,14,30." },
   { key: "reminders.creditExpiryWarningDays", category: "reminders", type: "number", default: 5, min: 1, max: 30, unit: "days", label: "Warn before credits expire", help: "How many days ahead a student is told their credits are about to expire." },
   { key: "reminders.adminDailySummary", category: "reminders", type: "toggle", default: true, label: "Morning summary email to you", help: "The daily owner email." },
 
@@ -116,7 +117,7 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "payments.amountMismatchNotice", category: "payments", type: "toggle", default: true, label: "Tell a student when their payment amount is wrong", help: "The notice sent when the money arrives under their name for a different amount." },
   { key: "payments.matchByAmount", category: "payments", type: "toggle", default: true, label: "Clear a payment by its exact amount when only one is open", help: "When nothing else matches (no code, name or phone) but exactly one recent payment is open for that exact amount, and the sender is not a known person on another account, it is approved and left in your unchecked list. Off: those wait for you." },
   { key: "payments.askPhone", category: "payments", type: "toggle", default: false, label: "Ask for a phone number when someone pays", help: "The payment sheet asks for the phone number they pay from, before showing the payment code, and it must match the number on their own account (green check). Off by default: SoFi and Bank of America emails do not show a sender phone, so it does not help match payments." },
-  { key: "payments.lapseAfterDays", category: "payments", type: "number", default: 7, min: 1, max: 60, unit: "days", label: "Cancel an unpaid plan after", help: "A plan this many days past due with nothing in review is cancelled." },
+  { key: "payments.lapseAfterDays", category: "payments", type: "number", default: 7, min: 1, max: 60, unit: "days", label: "Cancel an unpaid plan after", help: "A plan this many days past due with nothing in review is canceled." },
 
   // ---- Messaging
   { key: "messaging.enabled", category: "messaging", type: "toggle", default: true, label: "Allow student messages", help: "Off: direct messages between students are refused. Admin messages still work." },
@@ -160,5 +161,6 @@ export function serializeSetting(def: SettingDef, value: unknown): string {
   const text = String(value ?? "").trim();
   if (!text) throw new Error(`${def.label} cannot be empty.`);
   if (text.length > def.maxLength) throw new Error(`${def.label} can be ${def.maxLength} characters at most.`);
+  if (def.pattern && !def.pattern.test(text)) throw new Error(def.patternHint ?? `${def.label} is not in the right format.`);
   return text;
 }

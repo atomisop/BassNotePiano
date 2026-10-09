@@ -7,6 +7,8 @@ import { safePracticeNext } from "@/lib/fingerPracticeConstants";
 import { PracticeClient } from "./PracticeClient";
 import { practiceBeatAction } from "./actions";
 
+export const metadata = { title: "Finger practice" };
+
 export default async function PracticePage({ searchParams }: { searchParams: { next?: string } }) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/practice");

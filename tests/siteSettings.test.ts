@@ -40,3 +40,17 @@ describe("parse and serialize", () => {
     expect(serializeSetting(SETTING_BY_KEY["booking.allowSameDay"], false)).toBe("0");
   });
 });
+
+describe("text settings with a format", () => {
+  it("accepts a comma list of whole numbers and refuses anything else", () => {
+    const days = SETTING_BY_KEY["reminders.practiceDays"];
+    expect(serializeSetting(days, "1, 3,7")).toBe("1, 3,7");
+    expect(() => serializeSetting(days, "soon")).toThrow(/whole numbers/);
+    expect(() => serializeSetting(days, "1,,3")).toThrow();
+  });
+  it("no longer offers settings the booking screen cannot honor", () => {
+    expect(SETTING_BY_KEY["booking.subscriberClassesPerWeek"]).toBeUndefined();
+    expect(SETTING_BY_KEY["cancel.rescheduleCutoffHours"]).toBeUndefined();
+    expect(SETTING_DEFS.length).toBeGreaterThanOrEqual(50);
+  });
+});

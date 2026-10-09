@@ -12,6 +12,8 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "America/New_York" });
 }
 
+export const metadata = { title: "Mail" };
+
 export default async function MailPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/mail");

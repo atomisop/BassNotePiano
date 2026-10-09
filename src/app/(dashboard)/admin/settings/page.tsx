@@ -5,6 +5,8 @@ import { SETTING_CATEGORIES, SETTING_DEFS } from "@/lib/siteSettingsDefs";
 import { SettingsPanel } from "@/components/admin/SettingsPanel";
 import { saveSettingAction, resetSettingAction } from "./actions";
 
+export const metadata = { title: "Admin: Settings" };
+
 export default async function AdminSettingsPage() {
   const session = await getServerAuthSession();
   const isOwner = isOwnerEmail(session?.user.email);

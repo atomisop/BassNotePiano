@@ -26,6 +26,8 @@ const FILTERS: { label: string; value: ZellePaymentStatus | "ALL" | "UNCHECKED" 
   { label: "All", value: "ALL" },
 ];
 
+export const metadata = { title: "Admin: Payments" };
+
 export default async function AdminPaymentsPage({ searchParams }: { searchParams: { status?: string; tab?: string; page?: string } }) {
   if (searchParams.tab === "credits") return <CreditsTab />;
   if (searchParams.tab === "emails") return <EmailsTab />;

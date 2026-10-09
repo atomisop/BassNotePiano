@@ -16,6 +16,7 @@ import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Card, Eyebrow } from "@/components/ui/Card";
 import { CardDeck } from "@/components/ui/CardDeck";
 import { buttonVariants } from "@/components/ui/button";
+import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { TeacherNotesCard } from "@/components/dashboard/TeacherNotesCard";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { formatEtDateTime } from "@/lib/classScheduleLabels";
@@ -62,6 +63,8 @@ function Stat({ value, label }: { value: string; label: string }) {
  * sits huge and faint behind it on the back plane; Continue is the one
  * green button.
  */
+export const metadata = { title: "Home" };
+
 export default async function DashboardPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
@@ -91,7 +94,8 @@ export default async function DashboardPage() {
   ]);
 
   const progress = summariseProgress(roadmap);
-  const starting = gettingStartedStep({ kind: entitlement.kind, applicationPending: pendingApplication > 0 });
+  const trialDays = (await getBoolSetting("trial.enabled")) ? await getNumberSetting("trial.days") : 0;
+  const starting = gettingStartedStep({ kind: entitlement.kind, applicationPending: pendingApplication > 0, trialDays });
   const resolvedStep = resolveNextStep(roadmap);
   const nextStep: NextStep = starting ? { ...resolvedStep, ...starting } : putFingerPracticeFirst(resolvedStep, {
     required: session.user.role !== "ADMIN",

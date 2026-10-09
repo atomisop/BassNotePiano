@@ -7,6 +7,8 @@ import { adjustUserCreditsAction } from "../../payments/credit-actions";
 import { adminCancelBookingAction } from "../../schedule/actions";
 import { adminClearPhoneAction, adminForceSignOutAction, forgetPayerNameAction } from "./actions";
 
+export const metadata = { title: "Admin: Student" };
+
 export default async function AdminCustomerPage({ params }: { params: { userId: string } }) {
   const profile = await getCustomerProfile(params.userId);
   if (!profile) notFound();

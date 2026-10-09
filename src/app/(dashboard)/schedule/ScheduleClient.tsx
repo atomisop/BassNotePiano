@@ -5,12 +5,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
-import { Calendar } from "lucide-react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { getReservableSlotsForChangeAction, changeReservedSlotAction, cancelClassBookingAction } from "../lessons/actions";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
+import { WeeklyTimePicker } from "./WeeklyTimePicker";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 import { errorNeedsTeam } from "@/lib/bookingRules";
 
@@ -46,6 +46,9 @@ interface ScheduleClientProps {
   supportContactId: string | null;
   /** Hours before class that changing or cancelling stops being self-service. */
   cancellationCutoffHours: number;
+  /** The owner can switch self-cancel and self-reschedule off (Settings → Cancel and reschedule). */
+  canCancel: boolean;
+  canReschedule: boolean;
   /** Whether this calendar week already has a class on the books. A
       subscriber never sees a credit count, just whether this week is
       handled or needs attention. */
@@ -61,6 +64,8 @@ interface ScheduleClientProps {
 export function ScheduleClient({
   supportContactId,
   cancellationCutoffHours,
+  canCancel,
+  canReschedule,
   hasClassThisWeek,
   weeklyTime,
   upcomingBookings,
@@ -166,7 +171,8 @@ export function ScheduleClient({
           <div className="mt-3 space-y-2.5">
             {upcomingBookings.map((booking) => {
               const hoursUntil = (new Date(booking.scheduledAt).getTime() - Date.now()) / 3_600_000;
-              const canChange = hoursUntil >= cancellationCutoffHours;
+              const insideCutoff = hoursUntil < cancellationCutoffHours;
+              const canChange = !insideCutoff && (canCancel || canReschedule);
               const confirming = confirmSkipId === booking.id;
               const busy = skippingId === booking.id;
               return (
@@ -228,9 +234,12 @@ export function ScheduleClient({
                       </div>
                     ) : (
                       <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <Link href={`/lessons?tab=extra&move=${booking.id}`} className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
-                          Move this week
-                        </Link>
+                        {canReschedule && (
+                          <Link href={`/lessons?tab=extra&move=${booking.id}`} className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
+                            Move this week
+                          </Link>
+                        )}
+                        {canCancel && (
                         <button
                           type="button"
                           onClick={() => {
@@ -241,11 +250,12 @@ export function ScheduleClient({
                         >
                           Skip this class
                         </button>
+                        )}
                       </div>
                     )
                   ) : (
                     <p className="mt-2 text-small text-slate-500">
-                      Starts within {cancellationCutoffHours} hours, so changes now go through the team.
+                      {insideCutoff ? `Starts within ${cancellationCutoffHours} hours, so changes now go through the team.` : "Changes to this class go through the team."}
                     </p>
                   )}
                   <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -296,30 +306,8 @@ export function ScheduleClient({
                 Nothing open right now.
               </p>
             ) : (
-              <div className="mt-3 space-y-2">
-                {reservableSlots.map((slot) => {
-                  const key = `${slot.scheduleId}:${slot.chunkIndex}`;
-                  const pending = changingSlotKey === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => handleChangeTime(slot)}
-                      disabled={changingSlotKey !== null}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-left text-small text-slate-300 transition hover:bg-[rgb(var(--c-s-50)/0.06)] disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-                    >
-                      {pending ? (
-                        <MorphingSquare size={15} className="shrink-0" />
-                      ) : (
-                        <Calendar className="h-[15px] w-[15px] shrink-0 text-slate-500" strokeWidth={1.5} />
-                      )}
-                      <span>
-                        {DAY_LABELS[slot.dayOfWeek]}s at {formatTimeLabel(slot.startTime)}
-                      </span>
-                      <span className="ml-auto text-small font-medium text-[rgb(var(--c-s-50))]">{pending ? "Moving…" : "Choose"}</span>
-                    </button>
-                  );
-                })}
+              <div className="mt-3">
+                <WeeklyTimePicker slots={reservableSlots} busyKey={changingSlotKey} onConfirm={handleChangeTime} />
               </div>
             )}
           </div>

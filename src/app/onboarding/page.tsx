@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { phoneVerifyMode } from "@/lib/phoneVerification";
 import { OnboardingWizard } from "./OnboardingWizard";
 
+export const metadata = { title: "Welcome" };
+
 export default async function OnboardingPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/onboarding");

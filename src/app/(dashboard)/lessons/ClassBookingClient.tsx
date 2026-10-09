@@ -147,6 +147,8 @@ function groupByMonth(list: BookingRow[]): { key: string; label: string; booking
 function BookingCard({
   booking,
   cancellationCutoffHours,
+  canCancel,
+  canReschedule,
   cancelingId,
   reschedulingBookingId,
   onCancel,
@@ -154,6 +156,8 @@ function BookingCard({
 }: {
   booking: BookingRow;
   cancellationCutoffHours: number;
+  canCancel: boolean;
+  canReschedule: boolean;
   cancelingId: string | null;
   reschedulingBookingId: string | null;
   onCancel: (booking: BookingRow) => void;
@@ -168,6 +172,9 @@ function BookingCard({
   // through the team.
   const scheduled = b.status === "SCHEDULED";
   const changeEligible = scheduled && hoursUntil >= cancellationCutoffHours;
+  // The owner can switch self-cancel and self-reschedule off (Settings → Cancel and reschedule).
+  const cancelEligible = changeEligible && canCancel;
+  const rescheduleEligible = changeEligible && canReschedule;
   const insideWindow = scheduled && hoursUntil > 0 && hoursUntil < cancellationCutoffHours;
   const isBeingRescheduled = reschedulingBookingId === b.id;
   const canceling = cancelingId === b.id;
@@ -232,7 +239,7 @@ function BookingCard({
               Join on Discord
             </a>
           )}
-          {changeEligible && (
+          {rescheduleEligible && (
             <button
               type="button"
               onClick={() => onStartReschedule(b)}
@@ -246,7 +253,7 @@ function BookingCard({
               {isBeingRescheduled ? "Picking new time…" : b.reserved ? "Move this week" : "Reschedule"}
             </button>
           )}
-          {changeEligible && !confirmingCancel && (
+          {cancelEligible && !confirmingCancel && (
             <button
               type="button"
               onClick={() => setConfirmingCancel(true)}
@@ -268,7 +275,7 @@ function BookingCard({
         </div>
       )}
 
-      {changeEligible && confirmingCancel && (
+      {cancelEligible && confirmingCancel && (
         <div className="mt-3 rounded-xl bg-neu-base px-4 py-3 shadow-pressed-low">
           <p className="text-small text-slate-300">
             {b.reserved ? "Skip this class? It stays on your account." : "Cancel this class? No credits are used."} The teacher is told right away.
@@ -314,6 +321,8 @@ function MonthGroup({
   group,
   defaultOpen,
   cancellationCutoffHours,
+  canCancel,
+  canReschedule,
   cancelingId,
   reschedulingBookingId,
   onCancel,
@@ -322,6 +331,8 @@ function MonthGroup({
   group: { key: string; label: string; bookings: BookingRow[] };
   defaultOpen: boolean;
   cancellationCutoffHours: number;
+  canCancel: boolean;
+  canReschedule: boolean;
   cancelingId: string | null;
   reschedulingBookingId: string | null;
   onCancel: (booking: BookingRow) => void;
@@ -348,6 +359,8 @@ function MonthGroup({
               key={b.id}
               booking={b}
               cancellationCutoffHours={cancellationCutoffHours}
+                    canCancel={canCancel}
+                    canReschedule={canReschedule}
               cancelingId={cancelingId}
               reschedulingBookingId={reschedulingBookingId}
               onCancel={onCancel}
@@ -414,6 +427,8 @@ function AttendeeEmailRow({
 export function ClassBookingClient({
   initialCredits,
   cancellationCutoffHours,
+  canCancel,
+  canReschedule,
   soloMaxCredits,
   familyMinAttendees,
   familyCreditsPerStudent,
@@ -429,6 +444,8 @@ export function ClassBookingClient({
   weeklyLimited?: boolean;
   initialCredits: number;
   cancellationCutoffHours: number;
+  canCancel: boolean;
+  canReschedule: boolean;
   soloMaxCredits: number;
   familyMinAttendees: number;
   familyCreditsPerStudent: number;
@@ -1123,6 +1140,8 @@ export function ClassBookingClient({
                     key={b.id}
                     booking={b}
                     cancellationCutoffHours={cancellationCutoffHours}
+                    canCancel={canCancel}
+                    canReschedule={canReschedule}
                     cancelingId={cancelingId}
                     reschedulingBookingId={reschedulingBooking?.id ?? null}
                     onCancel={handleCancel}
@@ -1146,6 +1165,8 @@ export function ClassBookingClient({
                     group={group}
                     defaultOpen={i === 0}
                     cancellationCutoffHours={cancellationCutoffHours}
+                    canCancel={canCancel}
+                    canReschedule={canReschedule}
                     cancelingId={cancelingId}
                     reschedulingBookingId={reschedulingBooking?.id ?? null}
                     onCancel={handleCancel}

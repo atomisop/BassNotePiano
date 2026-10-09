@@ -9,6 +9,8 @@ import { FamilyBundleFlow } from "./FamilyBundleFlow";
 // cover every case a single buyer needs, including the old one-off/no-
 // discount purchase. This page is Family bundle only now: buying the same
 // cadence and term at once for 2+ separate, already-existing accounts.
+export const metadata = { title: "Class credits" };
+
 export default async function BillingLessonsPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/lessons");
