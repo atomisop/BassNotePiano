@@ -197,6 +197,12 @@ const PURPOSE_COPY: Record<VerificationPurpose, { subject: string; heading: stri
     heading: "Confirm photo change",
     intro: "Enter this code to confirm your new profile photo.",
   },
+  // Phone codes go by text (see createAndSendCode), so this email copy is never sent; the record needs an entry anyway.
+  PHONE_VERIFY: {
+    subject: "Confirm your phone number",
+    heading: "Confirm your phone number",
+    intro: "Enter this code to confirm your phone number.",
+  },
   DELETE_ACCOUNT: {
     subject: "Confirm account deletion",
     heading: "Confirm account deletion",

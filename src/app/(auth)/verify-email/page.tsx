@@ -52,6 +52,12 @@ function VerifyEmailForm() {
     }
 
     startNavigation();
+    // A new account still has to confirm its phone number, which is part of creating it.
+    if (result.needsPhone) {
+      router.push(`/verify-phone?${new URLSearchParams({ callbackUrl: safeCallbackPath(callbackUrl), ...(result.phoneCodeSent ? { sent: "1" } : {}) })}`);
+      router.refresh();
+      return;
+    }
     router.push(safeCallbackPath(callbackUrl));
     router.refresh();
   }

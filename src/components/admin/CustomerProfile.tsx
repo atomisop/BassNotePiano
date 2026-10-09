@@ -7,6 +7,7 @@ import type { Role } from "@prisma/client";
 import type { CustomerProfile as CustomerProfileData } from "@/lib/adminCustomer";
 import { SCALE_GROUPS } from "@/lib/curriculum";
 import { StudentNotesEditor } from "@/components/admin/StudentNotesEditor";
+import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
 export interface CustomerProfileProps {
@@ -187,6 +188,9 @@ export function CustomerProfile({
                 {user.username && <p className="mt-0.5 text-slate-500">@{user.username}</p>}
                 <p className="mt-1 text-small text-slate-600">
                   Joined {formatDate(user.createdAt)} · {user.emailVerified ? "Email verified" : "Email not verified"}
+                </p>
+                <p className="mt-1 text-small text-slate-600">
+                  {user.phone ? `${formatPhone(user.phone)} · ${user.phoneVerifiedAt ? "Phone verified" : "Phone not verified"}` : "No phone number"}
                 </p>
                 <p className="mt-1 text-small text-slate-600">
                   {user.passwordChangedAt ? `Password changed ${formatDate(user.passwordChangedAt)}` : "Password never changed"}

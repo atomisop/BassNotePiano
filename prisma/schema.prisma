@@ -304,6 +304,7 @@ enum VerificationPurpose {
   CHANGE_PASSWORD // confirm a password change from account settings
   CHANGE_NAME // confirm a display name change
   CHANGE_AVATAR // confirm a profile photo change
+  PHONE_VERIFY // confirm a phone number with a 6-digit text message (signup, or add/change in Settings); the number being confirmed rides in payload
   DELETE_ACCOUNT // confirm permanent account deletion from account settings, unlike CHANGE_*, still code-gated (see the 2026-08-07 decision note in account/actions.ts): deleting is irreversible, so it keeps the extra step the others dropped
 }
 
@@ -723,6 +724,16 @@ model User {
   email         String    @unique
   emailCanonical String? // the email with Gmail dots and plus tags removed, so one inbox is one person for the free trial
   emailVerified DateTime?
+
+  // Phone number, confirmed by a 6-digit text. `phone` (E.164, such as +15551234567) only ever holds a
+  // VERIFIED number, so it is unique: one number, one account. A number someone has typed but not yet
+  // confirmed waits in `pendingPhone`, where it cannot block anyone else. `phoneRequired` marks accounts
+  // created while phone was mandatory at sign-up: they cannot get past verification. Older accounts leave
+  // it false and are only asked, never forced.
+  phone           String?   @unique
+  phoneVerifiedAt DateTime?
+  pendingPhone    String?
+  phoneRequired   Boolean   @default(false)
   image         String?
   passwordHash  String? // set only for credentials-based signup
   role          Role      @default(STUDENT)
