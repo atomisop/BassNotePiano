@@ -5,12 +5,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
-import { Calendar } from "lucide-react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { getReservableSlotsForChangeAction, changeReservedSlotAction, cancelClassBookingAction } from "../lessons/actions";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
+import { WeeklyTimePicker } from "./WeeklyTimePicker";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 import { errorNeedsTeam } from "@/lib/bookingRules";
 
@@ -306,30 +306,8 @@ export function ScheduleClient({
                 Nothing open right now.
               </p>
             ) : (
-              <div className="mt-3 space-y-2">
-                {reservableSlots.map((slot) => {
-                  const key = `${slot.scheduleId}:${slot.chunkIndex}`;
-                  const pending = changingSlotKey === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => handleChangeTime(slot)}
-                      disabled={changingSlotKey !== null}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-left text-small text-slate-300 transition hover:bg-[rgb(var(--c-s-50)/0.06)] disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-                    >
-                      {pending ? (
-                        <MorphingSquare size={15} className="shrink-0" />
-                      ) : (
-                        <Calendar className="h-[15px] w-[15px] shrink-0 text-slate-500" strokeWidth={1.5} />
-                      )}
-                      <span>
-                        {DAY_LABELS[slot.dayOfWeek]}s at {formatTimeLabel(slot.startTime)}
-                      </span>
-                      <span className="ml-auto text-small font-medium text-[rgb(var(--c-s-50))]">{pending ? "Moving…" : "Choose"}</span>
-                    </button>
-                  );
-                })}
+              <div className="mt-3">
+                <WeeklyTimePicker slots={reservableSlots} busyKey={changingSlotKey} onConfirm={handleChangeTime} />
               </div>
             )}
           </div>
