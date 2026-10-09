@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { PendingZellePayment } from "@/lib/payments";
 import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing";
 import { formatDateTime } from "@/lib/classScheduleLabels";
+import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
 export interface PaymentQueueProps {
@@ -20,6 +21,14 @@ export interface PaymentQueueProps {
   onDelete?: (paymentId: string) => Promise<void>;
   emptyMessage?: string;
 }
+
+const MATCHED_VIA_LABEL: Record<string, string> = {
+  code: "the payment code in the note",
+  name: "the sender's name",
+  codeTypo: "a payment code with a typo that is one character from this payment's (please check it is the right person)",
+  phone: "the phone number (please check it is the right person)",
+  amount: "the exact amount only: nobody else had this amount open (please check it is the right person)",
+};
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -221,6 +230,18 @@ export function PaymentQueue({
             <div>
               <dt className="text-small text-slate-600">{payment.method === "VENMO" ? "Venmo name" : "Zelle name"}</dt>
               <dd className="text-slate-300">{payment.senderName ?? "None"}</dd>
+            </div>
+            {payment.matchedVia && (
+              <div className="col-span-2">
+                <dt className="text-small text-slate-600">Cleared by the bank email through</dt>
+                <dd className={payment.matchedVia === "amount" || payment.matchedVia === "phone" || payment.matchedVia === "codeTypo" ? "text-amber-300" : "text-slate-300"}>
+                  {MATCHED_VIA_LABEL[payment.matchedVia] ?? payment.matchedVia}
+                </dd>
+              </div>
+            )}
+            <div>
+              <dt className="text-small text-slate-600">Paying from phone</dt>
+              <dd className="text-slate-300">{payment.senderPhone ? formatPhone(payment.senderPhone) : "None given"}</dd>
             </div>
             <div>
               <dt className="text-small text-slate-600">Paid with</dt>

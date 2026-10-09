@@ -16,6 +16,9 @@ import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { CommandMenu } from "@/components/layout/CommandMenu";
 import { OwnerStarProvider } from "@/components/ui/OwnerStar";
 import { isOwnerEmail, OWNER_EMAIL } from "@/lib/adminNotifications";
+import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
+import { phoneVerifyMode } from "@/lib/phoneVerification";
+import { PhonePromptToast } from "@/components/account/PhonePromptToast";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerAuthSession();
@@ -24,15 +27,24 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const [directUnreadCount, groupUnreadCount, user, activeAnnouncement] = await Promise.all([
     getTotalUnreadMessageCount(session.user.id),
     getTotalUnreadGroupMessageCount(session.user.id),
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { onboardingTourSeenAt: true, lastSeenPatchVersion: true } }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { onboardingTourSeenAt: true, lastSeenPatchVersion: true, phone: true, phoneVerifiedAt: true, phoneRequired: true } }),
     getActiveAnnouncementForUser(session.user.id),
   ]);
   const unreadMessageCount = directUnreadCount + groupUnreadCount;
+
+  // Text confirmation is off by default. When the owner switches it on, an account made while it was on has to
+  // finish confirming its number; older accounts are never blocked, they get a short popup (below) instead.
+  const verifyMode = await phoneVerifyMode();
+  if (verifyMode && user?.phoneRequired && !user.phoneVerifiedAt) redirect("/verify-phone");
 
   const shouldShowTour = !user?.onboardingTourSeenAt;
   // The tour goes first: a brand-new account never gets the tour and the "what's new" popup stacked on top of each other.
   // Once per account for each new version, and not on top of the first-visit tour.
   const showWhatsNew = !shouldShowTour && user?.lastSeenPatchVersion !== LATEST_ENTRY.version;
+  // Anyone with no number on file is asked (or no confirmed one, when text confirmation is on).
+  const needsPhone = verifyMode ? !user?.phoneVerifiedAt : !user?.phone;
+  const promptPhone = needsPhone && !shouldShowTour && !showWhatsNew && (await getBoolSetting("phone.promptExisting"));
+  const promptSeconds = promptPhone ? await getNumberSetting("phone.promptSeconds") : 0;
   const isAdmin = session.user.role === "ADMIN";
   const isOwner = isAdmin && isOwnerEmail(session.user.email);
   const owner = await prisma.user.findUnique({ where: { email: OWNER_EMAIL }, select: { id: true } });
@@ -81,6 +93,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Suspense fallback={null}>
         <OnboardingTour autoShow={shouldShowTour} />
       </Suspense>
+      {promptPhone && <PhonePromptToast seconds={promptSeconds} verifying={verifyMode} />}
     </div>
     </WhatsNewProvider>
     </OwnerStarProvider>

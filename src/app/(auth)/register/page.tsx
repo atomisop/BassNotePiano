@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
+import { normalizePhone, PHONE_HELP } from "@/lib/phone";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -38,6 +39,15 @@ function RegisterForm() {
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  // Whether this sign-up asks for a phone number (it does whenever texts can be sent).
+  const [phoneRequired, setPhoneRequired] = useState(false);
+  useEffect(() => {
+    fetch("/api/auth/signup-options")
+      .then((r) => r.json())
+      .then((o) => setPhoneRequired(Boolean(o?.phoneRequired)))
+      .catch(() => undefined);
+  }, []);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -53,6 +63,10 @@ function RegisterForm() {
 
     if (!hasFirstAndLastName(name)) {
       setError(FULL_NAME_MESSAGE);
+      return;
+    }
+    if (phoneRequired && !normalizePhone(phone)) {
+      setError("Enter a phone number we can text a code to.");
       return;
     }
     if (password.length < MIN_PASSWORD_LENGTH) {
@@ -73,7 +87,7 @@ function RegisterForm() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, website, turnstileToken }),
+      body: JSON.stringify({ name, email, phone, password, website, turnstileToken }),
     });
 
     if (!res.ok) {
@@ -142,6 +156,24 @@ function RegisterForm() {
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
+        {phoneRequired && (
+          <div>
+            <Label htmlFor="phone" className={fieldLabel}>
+              Phone number
+            </Label>
+            <Input
+              id="phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="(555) 123-4567"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+            <p className="mt-1.5 text-small text-slate-500">We text you a 6-digit code to confirm it. {PHONE_HELP}</p>
+          </div>
+        )}
         <div>
           <Label htmlFor="password" className={fieldLabel}>
             Password

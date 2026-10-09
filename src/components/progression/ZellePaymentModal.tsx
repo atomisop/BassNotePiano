@@ -4,11 +4,15 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
+import { AnimatedCheck } from "@/components/ui/AnimatedCheck";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { Tabs } from "@/components/ui/Tabs";
 import { QRCodeSVG } from "qrcode.react";
 import { FADE, SPRING } from "@/lib/motionTokens";
 import { paymentReferenceCode } from "@/lib/paymentReference";
+import { normalizePhone, PHONE_HELP } from "@/lib/phone";
+import { checkPaymentPhoneAction, getPaymentPhoneStateAction, savePaymentPhoneAction } from "@/app/(dashboard)/billing/payment-phone-actions";
+import type { PaymentPhoneCheck } from "@/lib/paymentPhone";
 
 export interface ZellePaymentModalProps {
   isOpen: boolean;
@@ -34,7 +38,8 @@ export interface ZellePaymentModalProps {
   }) => Promise<void>;
 }
 
-type Step = "instructions" | "confirming" | "pending" | "verified";
+// "loading" and "phone" come first: the sheet asks which phone the person pays from before it shows the code.
+type Step = "loading" | "phone" | "instructions" | "confirming" | "pending" | "verified";
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -94,7 +99,22 @@ export function ZellePaymentModal({
   onVerified,
   onSubmit,
 }: ZellePaymentModalProps) {
-  const [step, setStep] = useState<Step>("instructions");
+  const [step, setStep] = useState<Step>(paymentId ? "loading" : "instructions");
+  const [phoneInput, setPhoneInput] = useState("");
+  // The account has no number yet: typed twice, like a password, and saved to the account as well.
+  const [phoneConfirm, setPhoneConfirm] = useState("");
+  const [accountLast4, setAccountLast4] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [phoneSaving, setPhoneSaving] = useState(false);
+  // What the server says about the typed number: is it real, and is it the one on the account (or free to add).
+  const [phoneCheck, setPhoneCheck] = useState<PaymentPhoneCheck | "checking" | null>(null);
+  const hasAccountPhone = accountLast4 !== null;
+  const typedDigits = phoneInput.replace(/\D/g, "").length;
+  const confirmDigits = phoneConfirm.replace(/\D/g, "").length;
+  const phoneNormalized = normalizePhone(phoneInput);
+  const confirmMatches = hasAccountPhone || (Boolean(phoneNormalized) && phoneNormalized === normalizePhone(phoneConfirm));
+  // The green check: the number is real and is the account's own (or new and not anyone else's, typed twice).
+  const phoneOk = confirmMatches && phoneCheck !== null && phoneCheck !== "checking" && (phoneCheck.status === "match" || phoneCheck.status === "free");
   const [senderName, setSenderName] = useState("");
   const [note, setNote] = useState("");
   const [copied, setCopied] = useState(false);
@@ -107,6 +127,69 @@ export function ZellePaymentModal({
   // Portaled to the page itself: inside a page with a transform, `fixed` is measured against that box and the sheet lands off screen.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // Ask the server as the number is typed, so the check reflects the real comparison with the account.
+  useEffect(() => {
+    if (step !== "phone") return;
+    if (typedDigits < 10) {
+      setPhoneCheck(null);
+      return;
+    }
+    let live = true;
+    setPhoneCheck("checking");
+    const timer = window.setTimeout(() => {
+      checkPaymentPhoneAction(phoneInput)
+        .then((result) => live && setPhoneCheck(result))
+        .catch(() => live && setPhoneCheck({ status: "invalid", error: "We couldn't check that just now. Try again." }));
+    }, 350);
+    return () => {
+      live = false;
+      window.clearTimeout(timer);
+    };
+  }, [step, phoneInput, typedDigits]);
+
+  // Before showing the code, find out whether to ask for the phone number (owner setting) and whether this payment
+  // already has one.
+  useEffect(() => {
+    if (!isOpen || step !== "loading" || !paymentId) return;
+    let live = true;
+    getPaymentPhoneStateAction(paymentId)
+      .then((state) => {
+        if (!live) return;
+        if (!state || !state.ask || state.paymentPhone) return setStep("instructions");
+        setAccountLast4(state.hasAccountPhone ? state.accountPhoneLast4 : null);
+        setStep("phone");
+      })
+      .catch(() => live && setStep("instructions"));
+    return () => {
+      live = false;
+    };
+  }, [isOpen, step, paymentId]);
+
+  async function handlePhoneContinue() {
+    if (!paymentId) return setStep("instructions");
+    if (!phoneOk) return;
+    setPhoneError(null);
+    setPhoneSaving(true);
+    const result = await savePaymentPhoneAction(paymentId, phoneInput).catch(() => null);
+    setPhoneSaving(false);
+    if (!result || !result.ok) {
+      setPhoneError(result?.error ?? "Something went wrong. Please try again.");
+      return;
+    }
+    setStep("instructions");
+  }
+
+  const checkMessage =
+    phoneCheck && phoneCheck !== "checking"
+      ? phoneCheck.status === "invalid"
+        ? phoneCheck.error
+        : phoneCheck.status === "mismatch"
+          ? "That isn't the phone number on your account. Type the number saved on your account, or change it in Settings, then Account."
+          : phoneCheck.status === "taken"
+            ? "That number is already on another account. If it is yours, message us and we will sort it out."
+            : null
+      : null;
 
   // The manual "tell us" button only appears once the automatic check has had a fair chance.
   const [waitedLong, setWaitedLong] = useState(false);
@@ -132,7 +215,11 @@ export function ZellePaymentModal({
 
   function reset() {
     setWaitedLong(false);
-    setStep("instructions");
+    setStep(paymentId ? "loading" : "instructions");
+    setPhoneError(null);
+    setPhoneInput("");
+    setPhoneConfirm("");
+    setPhoneCheck(null);
     setMethod("ZELLE");
     setSenderName("");
     setNote("");
@@ -230,6 +317,89 @@ export function ZellePaymentModal({
               </div>
 
               <AnimatePresence mode="wait">
+                {step === "loading" && (
+                  <motion.div key="loading" variants={stepVariants} initial="enter" animate="center" exit="exit" className="flex justify-center py-10">
+                    <MorphingSquare size={18} />
+                  </motion.div>
+                )}
+
+                {step === "phone" && (
+                  <motion.div key="phone" variants={stepVariants} initial="enter" animate="center" exit="exit">
+                    <div className="space-y-3.5">
+                      <div>
+                        <label htmlFor="pay-phone" className="mb-1 block text-small font-medium text-slate-300">
+                          {hasAccountPhone ? "Confirm your phone number" : "Phone number you will pay from"}
+                        </label>
+                        <div className="relative">
+                          <input
+                            id="pay-phone"
+                            type="tel"
+                            inputMode="tel"
+                            autoComplete={hasAccountPhone ? "off" : "tel"}
+                            autoFocus
+                            value={phoneInput}
+                            onChange={(e) => setPhoneInput(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handlePhoneContinue()}
+                            placeholder="(555) 123-4567"
+                            className="w-full glass-surface-subtle py-2 pl-3 pr-12 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                          />
+                          {phoneOk && (
+                            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                              <AnimatedCheck size={26} />
+                            </span>
+                          )}
+                          {phoneCheck === "checking" && (
+                            <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2">
+                              <MorphingSquare size={16} />
+                            </span>
+                          )}
+                        </div>
+                        {checkMessage ? (
+                          <p role="status" className="mt-1.5 text-small text-red-400">{checkMessage}</p>
+                        ) : (
+                          <p className="mt-1.5 text-small text-slate-500">
+                            {hasAccountPhone
+                              ? `Type the phone number saved on your account (it ends in ${accountLast4}). It has to match, so nobody can pay as someone else.`
+                              : `The number linked to your Zelle or Venmo account. It is saved to your account too. ${PHONE_HELP}`}
+                          </p>
+                        )}
+                      </div>
+                      {!hasAccountPhone && (
+                        <div>
+                          <label htmlFor="pay-phone-confirm" className="mb-1 block text-small font-medium text-slate-300">
+                            Confirm phone number
+                          </label>
+                          <input
+                            id="pay-phone-confirm"
+                            type="tel"
+                            inputMode="tel"
+                            autoComplete="off"
+                            value={phoneConfirm}
+                            onChange={(e) => setPhoneConfirm(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handlePhoneContinue()}
+                            placeholder="Type it again"
+                            aria-invalid={confirmDigits >= 10 && !confirmMatches}
+                            className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                          />
+                          {confirmDigits >= 10 && !confirmMatches && (
+                            <p role="status" className="mt-1.5 text-small text-red-400">These don&apos;t match yet.</p>
+                          )}
+                        </div>
+                      )}
+                      {phoneError && <p role="alert" className="text-small text-red-400">{phoneError}</p>}
+                      <button
+                        type="button"
+                        onClick={handlePhoneContinue}
+                        disabled={phoneSaving || !phoneOk}
+                        className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {phoneSaving && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
+                        {phoneSaving ? "Saving…" : "Continue to payment"}
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+
                 {step === "instructions" && (
                   <motion.div key="instructions" variants={stepVariants} initial="enter" animate="center" exit="exit">
                     {VENMO_OK && (

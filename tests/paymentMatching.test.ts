@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { pickMatchingPayment, receiptMatchesPayment } from "@/lib/paymentEmail";
-import { paymentReferenceCode } from "@/lib/paymentReference";
+import { codesOneTypoApart, paymentReferenceCode } from "@/lib/paymentReference";
 import { pipelineProblem } from "@/lib/paymentPipelineStatus";
 
 type P = Parameters<typeof receiptMatchesPayment>[0];
@@ -75,5 +75,229 @@ describe("pipelineProblem", () => {
     const line = pipelineProblem({ status: "quiet" });
     expect(line).toContain("payment emails");
     expect(pipelineProblem({ status: "quiet" })).toBe(line);
+  });
+});
+
+import { extractPhoneClues, namesMatch, parsePaymentEmail, parseSofi, pickNearMissCode, phoneAgrees, phoneConflicts, pickMatch, receiptMatchVia } from "@/lib/paymentEmail";
+
+const payWithPhone = (id: string, name: string, phone: string | null): P => ({ ...pay(id, name), user: { name, phone, payerAliases: [] } });
+const withPhone = (senderName: string, senderPhone: string | null, senderPhoneLast4: string | null = null, memo: string | null = null) => ({
+  senderName,
+  amountCents: 9999,
+  memo,
+  senderPhone,
+  senderPhoneLast4,
+});
+
+describe("extractPhoneClues", () => {
+  it("reads a phone written like a phone number", () => {
+    expect(extractPhoneClues("Jordan Alemu (347) 419-7648 sent you $25").phone).toBe("+13474197648");
+    expect(extractPhoneClues("from 347-419-7648").phone).toBe("+13474197648");
+    expect(extractPhoneClues("from +1 347 419 7648").phone).toBe("+13474197648");
+    expect(extractPhoneClues("Mobile: 3474197648").phone).toBe("+13474197648");
+  });
+  it("reads only the last four of a masked number", () => {
+    expect(extractPhoneClues("Sent from xxx-xxx-7648")).toEqual({ phone: null, last4: "7648" });
+    expect(extractPhoneClues("Sent from (***) ***-7648")).toEqual({ phone: null, last4: "7648" });
+    expect(extractPhoneClues("Sent from •••-•••-7648")).toEqual({ phone: null, last4: "7648" });
+    expect(extractPhoneClues("phone number ending in 7648")).toEqual({ phone: null, last4: "7648" });
+  });
+  it("does not mistake amounts, dates or long ids for a phone number", () => {
+    expect(extractPhoneClues("Jordan Alemu sent you $2,500.00")).toEqual({ phone: null, last4: null });
+    expect(extractPhoneClues("Confirmation number 3474197648")).toEqual({ phone: null, last4: null });
+    expect(extractPhoneClues("Sent on 2026-10-09 at 4:15 PM")).toEqual({ phone: null, last4: null });
+  });
+  it("is attached to a parsed email only when one is there", () => {
+    const withIt = parsePaymentEmail("Jordan Alemu sent you $25.00", "Jordan Alemu sent you $25.00\nFrom (347) 419-7648\nView your balance");
+    expect(withIt?.senderPhone).toBe("+13474197648");
+    const without = parsePaymentEmail("Jordan Alemu sent you $25.00", "Jordan Alemu sent you $25.00\nView your balance");
+    expect([without?.senderPhone, without?.senderPhoneLast4]).toEqual([null, null]);
+  });
+});
+
+describe("phone as a cross-check, never an approval", () => {
+  const phone = "+13474197648";
+  it("a matching phone changes nothing: the name still decides", () => {
+    expect(receiptMatchesPayment(payWithPhone(A, "Jordan Alemu", phone), withPhone("Jordan Alemu", phone))).toBe(true);
+    expect(receiptMatchesPayment(payWithPhone(A, "Jordan Alemu", phone), withPhone("Maria Alemu", phone))).toBe(false);
+  });
+  it("a phone alone never settles a payment", () => {
+    expect(pickMatchingPayment([payWithPhone(A, "Jordan Alemu", phone)], withPhone("Stranger Person", phone))).toBeNull();
+  });
+  it("a different phone holds a name match for a person to look at", () => {
+    expect(receiptMatchesPayment(payWithPhone(A, "Jordan Alemu", phone), withPhone("Jordan Alemu", "+12125550142"))).toBe(false);
+    expect(receiptMatchesPayment(payWithPhone(A, "Jordan Alemu", phone), withPhone("Jordan Alemu", null, "0000"))).toBe(false);
+    expect(receiptMatchesPayment(payWithPhone(A, "Jordan Alemu", phone), withPhone("Jordan Alemu", null, "7648"))).toBe(true);
+  });
+  it("no phone on either side means no opinion", () => {
+    expect(receiptMatchesPayment(payWithPhone(A, "Jordan Alemu", null), withPhone("Jordan Alemu", phone))).toBe(true);
+    expect(receiptMatchesPayment(payWithPhone(A, "Jordan Alemu", phone), withPhone("Jordan Alemu", null))).toBe(true);
+  });
+  it("the payment's own code outranks the phone clue", () => {
+    const memo = `lessons ${paymentReferenceCode(A)}`;
+    expect(receiptMatchesPayment(payWithPhone(A, "Jordan Alemu", phone), withPhone("Maria Alemu", "+12125550142", null, memo))).toBe(true);
+  });
+  it("helpers agree with each other", () => {
+    expect(phoneConflicts(phone, { senderName: "x", amountCents: 1, memo: null, senderPhone: "+12125550142" })).toBe(true);
+    expect(phoneAgrees(phone, { senderPhone: phone })).toBe(true);
+    expect(phoneAgrees(phone, { senderPhoneLast4: "7648" })).toBe(true);
+    expect(phoneAgrees(null, { senderPhone: phone })).toBe(false);
+    expect(phoneAgrees(phone, {})).toBe(false);
+  });
+});
+
+describe("the phone typed when paying", () => {
+  const typed = "+13474197648";
+  const payTyped = (id: string, name: string, senderPhone: string | null, accountPhone: string | null = null): P => ({
+    ...pay(id, name),
+    senderPhone,
+    user: { name, phone: accountPhone, payerAliases: [] },
+  });
+
+  it("finds the payment by the whole number even when the name is someone else's", () => {
+    expect(receiptMatchVia(payTyped(A, "Jordan Alemu", typed), withPhone("Parent Payer", typed))).toBe("phone");
+  });
+  it("a masked last four never finds a payment on its own", () => {
+    expect(receiptMatchVia(payTyped(A, "Jordan Alemu", typed), withPhone("Parent Payer", null, "7648"))).toBeNull();
+  });
+  it("a different number finds nothing", () => {
+    expect(receiptMatchVia(payTyped(A, "Jordan Alemu", typed), withPhone("Parent Payer", "+12125550142"))).toBeNull();
+  });
+  it("the amount still has to match exactly", () => {
+    expect(receiptMatchVia(payTyped(A, "Jordan Alemu", typed), { ...withPhone("Parent Payer", typed), amountCents: 100 })).toBeNull();
+  });
+  it("the code and a name are stronger ways in than the phone", () => {
+    expect(receiptMatchVia(payTyped(A, "Jordan Alemu", typed), withPhone("Maria Alemu", typed, null, `x ${paymentReferenceCode(A)}`))).toBe("code");
+    expect(receiptMatchVia(payTyped(A, "Jordan Alemu", typed), withPhone("Jordan Alemu", typed))).toBe("name");
+  });
+  it("a name match is held when the number typed for the payment is not the one on the email", () => {
+    expect(receiptMatchVia(payTyped(A, "Jordan Alemu", typed, "+12125550142"), withPhone("Jordan Alemu", "+12125550142"))).toBeNull();
+  });
+  it("two payments claiming one number settle nothing, so claiming someone's number cannot steal their money", () => {
+    const list = [payTyped(A, "Jordan Alemu", typed), payTyped(B, "Sam Tesfaye", typed)];
+    expect(pickMatch(list, withPhone("Parent Payer", typed))).toBeNull();
+  });
+  it("reports how a payment was found", () => {
+    expect(pickMatch([payTyped(A, "Jordan Alemu", typed)], withPhone("Parent Payer", typed))?.via).toBe("phone");
+    expect(pickMatch([payTyped(A, "Jordan Alemu", typed)], withPhone("Jordan Alemu", null))?.via).toBe("name");
+  });
+});
+
+// The shape of SoFi's Zelle email (the real one's name and IDs are not copied; these are invented).
+const sofiBody = (name: string, dollars: string, note: string | null) =>
+  [
+    "SoFi together with Zelle",
+    name,
+    `The $${dollars} sent to you by ${name} will be automatically deposited to your account.`,
+    ...(note ? [note] : []),
+    "SoFi is not responsible for the content of the personal message. SoFi cannot protect against the receipt of material in the personal message that may be offensive.",
+    "Privacy and Security:",
+    "Your trust and security are our highest priorities.",
+    "Contact Us:",
+    "MemberID (11111111)",
+    "AlertID (2222222222)",
+    "ReferenceID (333333333)",
+  ].join("\n");
+
+describe("reading SoFi's Zelle email", () => {
+  it("reads the sender, the exact amount and the note", () => {
+    const parsed = parseSofi(sofiBody("JORDAN ALEMU", "199.99", "Guitar LessonMonthly"));
+    expect(parsed).toEqual({ method: "ZELLE", name: "JORDAN ALEMU", amountCents: 19999, memo: "Guitar LessonMonthly" });
+  });
+  it("has no note when the sender wrote none, and never mistakes SoFi's own wording for one", () => {
+    expect(parseSofi(sofiBody("JORDAN ALEMU", "199.99", null))?.memo).toBeNull();
+  });
+  it("does not need to know the subject line, whatever it says", () => {
+    for (const subject of ["You received money with Zelle", "JORDAN ALEMU sent you money", "Zelle deposit", ""]) {
+      expect(parsePaymentEmail(subject, sofiBody("JORDAN ALEMU", "1,250.00", "BNP-4K7Q2"))).toMatchObject({ name: "JORDAN ALEMU", amountCents: 125000, memo: "BNP-4K7Q2" });
+    }
+  });
+  it("copes with a name that wraps onto a second line", () => {
+    const wrapped = sofiBody("MARIA ANTOINETTE ALEMU", "199.99", null).replace("MARIA ANTOINETTE ALEMU will", "MARIA ANTOINETTE\nALEMU will");
+    expect(parseSofi(wrapped)?.name).toBe("MARIA ANTOINETTE ALEMU");
+  });
+  it("ignores SoFi emails that are not a payment", () => {
+    expect(parseSofi("Your statement is ready. Sign in to view it.")).toBeNull();
+    expect(parsePaymentEmail("Your SoFi statement", "Your statement is ready.")).toBeNull();
+  });
+  it("still reads the Bank of America wording", () => {
+    expect(parsePaymentEmail("Jordan Alemu sent you $25.00", "Jordan Alemu sent you $25.00\nBNP-4K7Q2\nView your balance")).toMatchObject({ name: "Jordan Alemu", amountCents: 2500, memo: "BNP-4K7Q2" });
+  });
+});
+
+describe("names as banks and people write them", () => {
+  it("ignores capitals, middle names and order of extra words", () => {
+    expect(namesMatch("Jordan Alemu", "JORDAN ALEMU")).toBe(true);
+    expect(namesMatch("Jordan Alemu", "JORDAN T ALEMU")).toBe(true);
+  });
+  it("lets an initial stand for the word it starts, but never two initials alone", () => {
+    expect(namesMatch("Jordan A", "JORDAN ALEMU")).toBe(true);
+    expect(namesMatch("J A", "JORDAN ALEMU")).toBe(false);
+  });
+  it("does not match a different person", () => {
+    expect(namesMatch("Jordan Alemu", "JORDAN TESFAYE")).toBe(false);
+    expect(namesMatch("Jordan", "JORDAN ALEMU")).toBe(false);
+  });
+});
+
+describe("a code with a typo", () => {
+  it("is one wrong character or one swapped pair, never an equal or a very different code", () => {
+    expect(codesOneTypoApart("4K7Q2", "4K7Q3")).toBe(true);
+    expect(codesOneTypoApart("4K7Q2", "4K72Q")).toBe(true);
+    expect(codesOneTypoApart("4K7Q2", "4K7Q2")).toBe(false);
+    expect(codesOneTypoApart("4K7Q2", "5K7Q3")).toBe(false);
+    expect(codesOneTypoApart("4K7Q2", "4K7Q")).toBe(false);
+  });
+
+  const withId = (id: string, amountCents = 9999): P => ({ ...pay(id, "Jordan Alemu", amountCents) });
+  const mine = "cuid-student-a-K7MS7";
+  const other = "cuid-student-b-K7MS9";
+  it("finds the one payment a mistyped code is one character from", () => {
+    expect(pickNearMissCode([withId(mine)], email("Parent Payer", 9999, "lessons BNP-K7MS8"), new Set())?.id).toBe(mine);
+  });
+  it("leaves a real code alone: it belongs to that payment, it is not a typo", () => {
+    expect(pickNearMissCode([withId(mine)], email("Parent Payer", 9999, "BNP-K7MS8"), new Set(["K7MS8"]))).toBeNull();
+  });
+  it("does nothing when two payments are equally close", () => {
+    expect(pickNearMissCode([withId(mine), withId(other)], email("Parent Payer", 9999, "BNP-K7MS8"), new Set())).toBeNull();
+  });
+  it("only considers payments for the same exact amount, and a note with no code", () => {
+    expect(pickNearMissCode([withId(mine, 5000)], email("Parent Payer", 9999, "BNP-K7MS8"), new Set())).toBeNull();
+    expect(pickNearMissCode([withId(mine)], email("Parent Payer", 9999, "guitar lesson"), new Set())).toBeNull();
+  });
+});
+
+describe("one student's look-alike payments", () => {
+  const dup = (id: string, userId: string, minutesAgo: number): P => ({ ...pay(id, "Jordan Alemu"), userId, createdAt: new Date(Date.now() - minutesAgo * 60_000) });
+  it("clears the oldest when every match is the same student's, and says so", () => {
+    const picked = pickMatch([dup(A, "u1", 5), dup(B, "u1", 30)], email("Jordan Alemu"));
+    expect(picked?.payment.id).toBe(B);
+    expect(picked?.duplicate).toBe(true);
+  });
+  it("still settles nothing when the matches belong to different students", () => {
+    expect(pickMatch([dup(A, "u1", 5), dup(B, "u2", 30)], email("Jordan Alemu"))).toBeNull();
+  });
+  it("a code still picks the exact payment", () => {
+    const picked = pickMatch([dup(A, "u1", 5), dup(B, "u1", 30)], email("Jordan Alemu", 9999, paymentReferenceCode(A)));
+    expect(picked?.payment.id).toBe(A);
+    expect(picked?.duplicate).toBeUndefined();
+  });
+});
+
+describe("reading a Venmo note", () => {
+  const venmo = (...lines: string[]) => parsePaymentEmail("Jordan Alemu paid you $25.00", ["Jordan Alemu paid you $25.00", ...lines, "View payment"].join("\n"));
+  it("takes the line our own link writes", () => {
+    expect(venmo("Scale 1: Major (Bass Note Piano) BNP-4K7Q2")?.memo).toBe("Scale 1: Major (Bass Note Piano) BNP-4K7Q2");
+  });
+  it("still finds the payment code when the student retyped the note", () => {
+    expect(venmo("lessons BNP-4K7Q2")?.memo).toBe("lessons BNP-4K7Q2");
+  });
+  it("finds a note that mentions Bass Note Piano without the brackets", () => {
+    expect(venmo("Bass Note Piano monthly")?.memo).toBe("Bass Note Piano monthly");
+  });
+  it("falls back to the short line under the headline, never Venmo's own boilerplate", () => {
+    expect(venmo("guitar lessons")?.memo).toBe("guitar lessons");
+    expect(venmo("View payment")?.memo).toBeNull();
+    expect(venmo()?.memo).toBeNull();
   });
 });

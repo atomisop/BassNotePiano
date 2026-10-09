@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
@@ -25,8 +25,24 @@ import {
 } from "./actions";
 import { SettingsLayout } from "@/components/layout/PageLayouts";
 import { startNavigation } from "@/lib/navigationState";
+import { PhoneCard, type PhoneState } from "@/components/account/PhoneCard";
+import { formatPhone } from "@/lib/phone";
+import { unlinkDiscordAction } from "../lessons/discordActions";
+
+/** What the Account section shows about the person. Plain data, chosen on the server. */
+export interface AccountOverview {
+  name: string | null;
+  username: string | null;
+  email: string;
+  emailVerified: boolean;
+  /** ISO date the account was made. */
+  createdAt: string;
+  phone: PhoneState;
+  discordUsername: string | null;
+}
 
 interface AccountSettingsProps {
+  account: AccountOverview;
   hasCurriculumAccess: boolean;
   initialNotificationPreferences: NotificationPreferencesInput;
   assistantHistory: AssistantMessage[];
@@ -34,6 +50,7 @@ interface AccountSettingsProps {
 }
 
 const TAB_ICONS = {
+  account: "M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0",
   notifications:
     "M12 3a5 5 0 00-5 5v2.7c0 .57-.19 1.13-.53 1.58L5 14.5c-.94 1.24-.06 3 1.49 3h11.02c1.55 0 2.43-1.76 1.49-3l-1.47-2.22a2.67 2.67 0 01-.53-1.58V8a5 5 0 00-5-5zM9.5 19.5a2.5 2.5 0 005 0",
   membership: "M3 8h18M3 6h18v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6zM7 15h4",
@@ -55,14 +72,16 @@ const TAB_ICONS = {
 // purpose: a destructive action should never blend visually into routine
 // settings.
 const TABS = [
+  { id: "account", label: "Account", icon: TAB_ICONS.account, category: "Account" },
   { id: "notifications", label: "Notifications", icon: TAB_ICONS.notifications, category: "Preferences" },
   { id: "appearance", label: "Themes & Appearance", icon: TAB_ICONS.appearance, category: "Preferences" },
   { id: "membership", label: "Membership & Purchases", icon: TAB_ICONS.membership, category: "Billing" },
-  { id: "password", label: "Password & Security", icon: TAB_ICONS.password, category: "Account & security" },
-  { id: "privacy", label: "Privacy & Data", icon: TAB_ICONS.privacy, category: "Account & security" },
   { id: "tutorials", label: "Tutorials", icon: TAB_ICONS.tutorials, category: "Help" },
-  { id: "danger", label: "Delete Account", icon: TAB_ICONS.danger, category: "Danger zone" },
 ] as const;
+
+// Password, privacy and delete used to be tabs of their own. They are groups inside Account now, so old
+// links and bookmarks that still ask for them land there.
+const LEGACY_TABS: Record<string, "account"> = { password: "account", privacy: "account", danger: "account" };
 
 type TabId = (typeof TABS)[number]["id"];
 type Category = (typeof TABS)[number]["category"];
@@ -154,9 +173,7 @@ function SignOutButton({ className = "" }: { className?: string }) {
 function CategoryHeading({ category, isFirst }: { category: Category; isFirst: boolean }) {
   return (
     <p
-      className={`px-3 pb-1 text-small font-semibold uppercase tracking-[0.16em] ${isFirst ? "" : "mt-3"} ${
-        category === "Danger zone" ? "text-[rgb(var(--c-rd-300))]" : "text-slate-500"
-      }`}
+      className={`px-3 pb-1 text-small font-semibold uppercase tracking-[0.16em] text-slate-500 ${isFirst ? "" : "mt-3"}`}
     >
       {category}
     </p>
@@ -220,16 +237,14 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
       {groupedTabs().map((group) => (
         <section key={group.category}>
           <p
-            className={`px-1 pb-2 text-small font-semibold uppercase tracking-[0.16em] ${
-              group.category === "Danger zone" ? "text-[rgb(var(--c-rd-300))]" : "text-slate-500"
-            }`}
+            className="px-1 pb-2 text-small font-semibold uppercase tracking-[0.16em] text-slate-500"
           >
             {group.category}
           </p>
           <div className="divide-y divide-ink/10 overflow-hidden rounded-2xl bg-neu-base shadow-raised-low">
             {group.tabs.map((tab) => (
               <button key={tab.id} type="button" onClick={() => onSelect(tab.id)} className={row}>
-                <span className={`${well} ${group.category === "Danger zone" ? "text-[rgb(var(--c-rd-300))]" : ""}`}>
+                <span className={`${well} `}>
                   <TabIcon path={tab.icon} />
                 </span>
                 <span className="flex-1 text-small text-slate-100">{tab.label}</span>
@@ -266,12 +281,14 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
 
 function TabContent({
   tab,
+  account,
   hasCurriculumAccess,
   initialNotificationPreferences,
   assistantHistory,
   activePlan,
 }: {
   tab: TabId;
+  account: AccountOverview;
   hasCurriculumAccess: boolean;
   initialNotificationPreferences: NotificationPreferencesInput;
   assistantHistory: AssistantMessage[];
@@ -281,9 +298,157 @@ function TabContent({
   if (tab === "membership") return <MembershipSection hasCurriculumAccess={hasCurriculumAccess} activePlan={activePlan} />;
   if (tab === "appearance") return <AppearanceSection />;
   if (tab === "tutorials") return <TutorialsSection />;
-  if (tab === "privacy") return <PrivacySection history={assistantHistory} />;
-  if (tab === "danger") return <DangerZoneSection />;
-  return <PasswordSection />;
+  return <AccountSection account={account} history={assistantHistory} />;
+}
+
+function AccountGroup({ id, title, blurb, danger, children }: { id: string; title: string; blurb?: string; danger?: boolean; children: React.ReactNode }) {
+  return (
+    <section data-account-group={id} className="scroll-mt-4 space-y-4">
+      <div>
+        <h2 className={`text-small font-semibold uppercase tracking-[0.16em] ${danger ? "text-[rgb(var(--c-rd-300))]" : "text-slate-400"}`}>{title}</h2>
+        {blurb && <p className="mt-1 text-small text-slate-500">{blurb}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-2.5">
+      <span className="text-small text-slate-500">{label}</span>
+      <span className="min-w-0 text-right text-small text-slate-100">{children}</span>
+    </div>
+  );
+}
+
+function Badge({ ok, children }: { ok: boolean; children: React.ReactNode }) {
+  return (
+    <span className={`ml-2 rounded-full px-2 py-0.5 text-small font-medium ${ok ? "bg-[rgb(var(--signal)/0.16)] text-signal" : "bg-slate-700/60 text-slate-300"}`}>{children}</span>
+  );
+}
+
+function DiscordAccountCard({ username }: { username: string | null }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  return (
+    <SectionCard title="Discord">
+      <p className="text-small text-slate-500">
+        Live classes happen in a private Discord call. Connecting gives you access to yours.
+      </p>
+      <p className="mt-3 text-small text-slate-100">
+        {username ? (
+          <>
+            Connected as <span className="font-semibold">{username}</span>
+          </>
+        ) : (
+          "Not connected"
+        )}
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <a href="/api/discord/connect" className="tap inline-flex items-center rounded-lg bg-neu-base px-3 py-2 text-small font-medium text-slate-100 shadow-raised-low active:shadow-pressed-low">
+          {username ? "Reconnect" : "Connect Discord"}
+        </a>
+        {username && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={async () => {
+              if (!window.confirm("Disconnect Discord? You will not be added to your class calls until you connect again.")) return;
+              setBusy(true);
+              await unlinkDiscordAction();
+              setBusy(false);
+              router.refresh();
+            }}
+            className="tap rounded-lg bg-neu-base px-3 py-2 text-small font-medium text-red-400 shadow-raised-low active:shadow-pressed-low disabled:opacity-50"
+          >
+            Disconnect
+          </button>
+        )}
+      </div>
+    </SectionCard>
+  );
+}
+
+const ACCOUNT_JUMPS = [
+  { id: "profile", label: "Profile" },
+  { id: "contact", label: "Contact" },
+  { id: "security", label: "Sign-in & security" },
+  { id: "connections", label: "Connected accounts" },
+  { id: "privacy", label: "Privacy & data" },
+  { id: "danger", label: "Delete account" },
+] as const;
+
+// Everything about the person and their sign-in, in one place and in groups, so nothing account-related is
+// scattered across tabs: who you are, how we reach you, how you sign in, what is connected, what we keep, and
+// the one irreversible action last.
+function AccountSection({ account, history }: { account: AccountOverview; history: AssistantMessage[] }) {
+  // Looked up inside this copy only: Settings renders the section twice (desktop column, phone panel), so ids would clash.
+  const root = useRef<HTMLDivElement>(null);
+  return (
+    <div ref={root} className="space-y-10">
+      <div className="flex flex-wrap gap-1.5" role="navigation" aria-label="Jump to a group">
+        {ACCOUNT_JUMPS.map((j) => (
+          <button
+            key={j.id}
+            type="button"
+            onClick={() => root.current?.querySelector(`[data-account-group="${j.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className="tap rounded-full bg-neu-base px-3 py-1.5 text-small font-medium text-slate-300 shadow-raised-low transition hover:text-slate-100 active:shadow-pressed-low"
+          >
+            {j.label}
+          </button>
+        ))}
+      </div>
+
+      <AccountGroup id="profile" title="Profile">
+        <SectionCard title="Your account">
+          <div className="divide-y divide-ink/10">
+            <InfoRow label="Name">{account.name ?? "Not set"}</InfoRow>
+            <InfoRow label="Username">{account.username ? `@${account.username}` : "Not set"}</InfoRow>
+            <InfoRow label="Member since">{new Date(account.createdAt).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}</InfoRow>
+          </div>
+          <Link href="/profile" className="tap mt-3 inline-flex items-center rounded-lg bg-neu-base px-3 py-2 text-small font-medium text-slate-100 shadow-raised-low active:shadow-pressed-low">
+            Edit name, photo and music profile
+          </Link>
+        </SectionCard>
+      </AccountGroup>
+
+      <AccountGroup id="contact" title="Contact" blurb="How we reach you, and how we know it is you.">
+        <SectionCard title="Email address">
+          <div className="flex flex-wrap items-center">
+            <span className="text-small text-slate-100">{account.email}</span>
+            <Badge ok={account.emailVerified}>{account.emailVerified ? "Verified" : "Not verified"}</Badge>
+          </div>
+          <p className="mt-2 text-small text-slate-500">Sign-in codes, receipts and class reminders go here. To change it, message the studio from the Messages tab.</p>
+        </SectionCard>
+        <PhoneCard state={account.phone} />
+      </AccountGroup>
+
+      <AccountGroup id="security" title="Sign-in & security" blurb="Your password, and where you are signed in.">
+        <PasswordSection />
+      </AccountGroup>
+
+      <AccountGroup id="connections" title="Connected accounts">
+        <DiscordAccountCard username={account.discordUsername} />
+      </AccountGroup>
+
+      <AccountGroup id="privacy" title="Privacy & data" blurb="What we keep, and getting a copy of it.">
+        <PrivacySection history={history} />
+        <SectionCard title="Download my data">
+          <p className="text-small text-slate-500">
+            A copy of your account details, classes, payments, progress and any teacher notes shared with you, as one file.
+          </p>
+          <a href="/api/account/export" download className="tap mt-3 inline-flex items-center rounded-lg bg-neu-base px-3 py-2 text-small font-medium text-slate-100 shadow-raised-low active:shadow-pressed-low">
+            Download my data
+          </a>
+        </SectionCard>
+      </AccountGroup>
+
+      <AccountGroup id="danger" title="Delete account" danger>
+        <DangerZoneSection />
+      </AccountGroup>
+    </div>
+  );
 }
 
 // Atom's live chat window always opens on a clean slate now (see
@@ -294,7 +459,7 @@ function TabContent({
 // who wants it gone sooner.
 function PrivacySection({ history }: { history: AssistantMessage[] }) {
   return (
-    <SectionCard title="Privacy & data">
+    <SectionCard title="Saved Atom conversations">
       <div>
         <h3 className="text-small font-medium text-slate-200">History → Atom</h3>
         <div className="mt-3 max-h-96 space-y-2 overflow-y-auto rounded-xl p-3 bg-neu-base shadow-raised-low">
@@ -338,6 +503,7 @@ function AppearanceSection() {
 }
 
 function AccountSettingsInner({
+  account,
   hasCurriculumAccess,
   initialNotificationPreferences,
   assistantHistory,
@@ -346,7 +512,7 @@ function AccountSettingsInner({
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
-  const initialTab: TabId = TABS.some((t) => t.id === requestedTab) ? (requestedTab as TabId) : "notifications";
+  const initialTab: TabId = TABS.some((t) => t.id === requestedTab) ? (requestedTab as TabId) : (requestedTab && LEGACY_TABS[requestedTab]) || "account";
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [mobileOpenTab, setMobileOpenTab] = useState<TabId | null>(null);
 
@@ -355,9 +521,11 @@ function AccountSettingsInner({
   // slide-over panel directly instead of silently doing nothing, since the
   // menu list below shows no content on its own.
   useEffect(() => {
-    if (!requestedTab || !TABS.some((t) => t.id === requestedTab)) return;
+    if (!requestedTab) return;
+    const target: TabId | undefined = TABS.some((t) => t.id === requestedTab) ? (requestedTab as TabId) : LEGACY_TABS[requestedTab];
+    if (!target) return;
     if (window.matchMedia("(max-width: 1023px)").matches) {
-      setMobileOpenTab(requestedTab as TabId);
+      setMobileOpenTab(target);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -378,8 +546,8 @@ function AccountSettingsInner({
       <SettingsLayout
         header={
           <div>
-            <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Settings</p>
-            <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Account</h1>
+            <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Yours to control</p>
+            <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Settings</h1>
           </div>
         }
         menu={
@@ -392,6 +560,7 @@ function AccountSettingsInner({
         <div className="hidden min-w-0 flex-1 space-y-6 lg:block">
           <TabContent
             tab={activeTab}
+            account={account}
             hasCurriculumAccess={hasCurriculumAccess}
             initialNotificationPreferences={initialNotificationPreferences}
             assistantHistory={assistantHistory}
@@ -408,6 +577,7 @@ function AccountSettingsInner({
         {mobileOpenTab && (
           <TabContent
             tab={mobileOpenTab}
+            account={account}
             hasCurriculumAccess={hasCurriculumAccess}
             initialNotificationPreferences={initialNotificationPreferences}
             assistantHistory={assistantHistory}

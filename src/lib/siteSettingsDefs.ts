@@ -39,6 +39,7 @@ export const SETTING_CATEGORIES = [
   { id: "cancellation", label: "Cancel and reschedule", blurb: "What students may change themselves." },
   { id: "trial", label: "Trial and access", blurb: "Free trial, grace periods, and how scales unlock." },
   { id: "signup", label: "Sign-up", blurb: "Who can create an account." },
+  { id: "phone", label: "Phone numbers", blurb: "Phone numbers on file, and optional text confirmation." },
   { id: "security", label: "Security", blurb: "Emailed codes and sign-in protection." },
   { id: "reminders", label: "Reminders and alerts", blurb: "Messages students and you receive." },
   { id: "discord", label: "Discord live classes", blurb: "How class calls are opened and who is told." },
@@ -77,7 +78,12 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "signup.open", category: "signup", type: "toggle", default: true, label: "Allow new sign-ups", help: "Off: the register form refuses new accounts. Existing students are unaffected." },
   { key: "signup.closedMessage", category: "signup", type: "text", default: "New sign-ups are closed right now. Please check back soon.", maxLength: 200, label: "Message shown when sign-ups are closed", help: "What a visitor sees when they try to register." },
   { key: "signup.requireFullName", category: "signup", type: "toggle", default: true, label: "Require first and last name", help: "Off: a single name is accepted at sign-up." },
+  { key: "phone.askAtSignup", category: "phone", type: "toggle", default: true, label: "Ask for a phone number at sign-up", help: "New students must enter a real number to create an account. It is checked for realness and cannot be a number another account already has, but it is not proven theirs; payments only use it as an extra clue." },
+  { key: "phone.verifyBySms", category: "phone", type: "toggle", default: false, label: "Confirm numbers with a 6-digit text", help: "Off: numbers are kept as typed. On: new accounts must confirm theirs by text before using the app. Needs a text-message service set up on the server (Plivo keys), so it costs money per text." },
   { key: "signup.blockDisposable", category: "signup", type: "toggle", default: true, label: "Block throwaway email addresses", help: "Refuses sign-ups from disposable email domains." },
+
+  { key: "phone.promptExisting", category: "phone", type: "toggle", default: true, label: "Ask existing students for a phone number", help: "Shows a short popup once per sign-in to anyone who has no number on file (or none confirmed, when text confirmation is on). They are never locked out." },
+  { key: "phone.promptSeconds", category: "phone", type: "number", default: 5, min: 3, max: 30, unit: "seconds", label: "How long the phone popup stays", help: "A bar on the popup runs out over this time, then it closes by itself." },
 
   // ---- Security
   { key: "security.loginMaxAttempts", category: "security", type: "number", default: 8, min: 3, max: 50, unit: "tries", label: "Wrong passwords before a lockout", help: "Counted per account over the window below." },
@@ -109,6 +115,8 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "payments.installmentLeadDays", category: "payments", type: "number", default: 7, min: 0, max: 30, unit: "days", label: "Open an installment this early", help: "How many days before the due date the next installment can be paid." },
   { key: "payments.emailAutoApprove", category: "payments", type: "toggle", default: true, label: "Approve payments from matching bank emails", help: "Off: receipts are still kept, but every payment waits for you to approve it." },
   { key: "payments.amountMismatchNotice", category: "payments", type: "toggle", default: true, label: "Tell a student when their payment amount is wrong", help: "The notice sent when the money arrives under their name for a different amount." },
+  { key: "payments.matchByAmount", category: "payments", type: "toggle", default: true, label: "Clear a payment by its exact amount when only one is open", help: "When nothing else matches (no code, name or phone) but exactly one recent payment is open for that exact amount, and the sender is not a known person on another account, it is approved and left in your unchecked list. Off: those wait for you." },
+  { key: "payments.askPhone", category: "payments", type: "toggle", default: false, label: "Ask for a phone number when someone pays", help: "The payment sheet asks for the phone number they pay from, before showing the payment code, and it must match the number on their own account (green check). Off by default: SoFi and Bank of America emails do not show a sender phone, so it does not help match payments." },
   { key: "payments.lapseAfterDays", category: "payments", type: "number", default: 7, min: 1, max: 60, unit: "days", label: "Cancel an unpaid plan after", help: "A plan this many days past due with nothing in review is canceled." },
 
   // ---- Messaging

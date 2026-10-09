@@ -53,6 +53,8 @@ export interface CustomerProfile {
     image: string | null;
     role: "STUDENT" | "ADMIN";
     emailVerified: Date | null;
+    phone: string | null;
+    phoneVerifiedAt: Date | null;
     passwordChangedAt: Date | null;
     createdAt: Date;
     classCredits: number;
@@ -82,6 +84,8 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
       image: true,
       role: true,
       emailVerified: true,
+      phone: true,
+      phoneVerifiedAt: true,
       passwordChangedAt: true,
       createdAt: true,
       classCredits: true,
@@ -118,6 +122,8 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
       image: user.image,
       role: user.role,
       emailVerified: user.emailVerified,
+      phone: user.phone,
+      phoneVerifiedAt: user.phoneVerifiedAt,
       passwordChangedAt: user.passwordChangedAt,
       createdAt: user.createdAt,
       classCredits: user.classCredits,

@@ -2,6 +2,7 @@ import { createHash, randomInt } from "crypto";
 import type { Prisma, VerificationPurpose } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationCodeEmail } from "@/lib/email";
+import { sendSms } from "@/lib/sms";
 import { getNumberSetting } from "@/lib/siteSettings";
 
 // Code lifetime, wrong tries, and the request throttle below are admin settings (Settings → Security).
@@ -87,10 +88,18 @@ async function issueCode({ email, userId, purpose, payload }: CreateCodeParams) 
 export async function createAndSendCode(params: CreateCodeParams): Promise<{ ok: true } | { ok: false }> {
   const { code, normalizedEmail } = await issueCode(params);
   try {
-    await sendVerificationCodeEmail(normalizedEmail, params.purpose, code);
+    if (params.purpose === "PHONE_VERIFY") {
+      // The number being confirmed rides in the payload; the code goes to it by text, not to the inbox.
+      const phone = (params.payload as { phone?: string } | undefined)?.phone;
+      if (!phone) throw new Error("PHONE_VERIFY needs a phone in its payload");
+      const minutes = await getNumberSetting("security.codeExpiryMinutes");
+      await sendSms(phone, `Your Bass Note Piano code is ${code}. It expires in ${minutes} minutes. If you did not ask for it, ignore this text.`);
+    } else {
+      await sendVerificationCodeEmail(normalizedEmail, params.purpose, code);
+    }
     return { ok: true };
   } catch (err) {
-    console.error(`Failed to send ${params.purpose} code to ${normalizedEmail}:`, err);
+    console.error(`Failed to send ${params.purpose} code for ${normalizedEmail}:`, err instanceof Error ? err.message : err);
     return { ok: false };
   }
 }

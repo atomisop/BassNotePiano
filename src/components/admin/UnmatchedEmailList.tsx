@@ -10,8 +10,10 @@ export interface UnmatchedEmailRow {
   senderName: string;
   amountCents: number;
   memo: string | null;
+  /** Last four digits of the phone the email showed for the sender, if any. */
+  senderPhoneLast4: string | null;
   receivedAtMs: number;
-  candidates: { id: string; status: string; studentName: string | null; studentEmail: string; createdAtMs: number }[];
+  candidates: { id: string; status: string; studentName: string | null; studentEmail: string; createdAtMs: number; phoneMatch: boolean }[];
 }
 
 type Result = { ok: boolean; error: string | null };
@@ -76,6 +78,7 @@ export function UnmatchedEmailList({
             </p>
           </div>
           {row.memo && <p className="mt-1 text-small text-slate-400">&ldquo;{row.memo}&rdquo;</p>}
+          {row.senderPhoneLast4 && <p className="mt-1 text-small text-slate-500">Phone on the email ends in {row.senderPhoneLast4}.</p>}
 
           {row.candidates.length === 0 ? (
             <p className="mt-3 text-small text-slate-500">No open payment for {usd(row.amountCents)} yet.</p>
@@ -89,6 +92,7 @@ export function UnmatchedEmailList({
                   <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-neu-base px-3 py-2 shadow-pressed-low">
                     <span className="min-w-0 text-small text-slate-200">
                       {who} <span className="text-slate-500">· {STATUS_LABEL[c.status] ?? c.status.toLowerCase()}, started {ago(c.createdAtMs)}</span>
+                      {c.phoneMatch && <span className="ml-2 rounded-full bg-[rgb(var(--signal)/0.16)] px-2 py-0.5 text-small font-medium text-signal">Phone matches</span>}
                     </span>
                     {isConfirming ? (
                       <span className="flex gap-2">

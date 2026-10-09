@@ -304,6 +304,7 @@ enum VerificationPurpose {
   CHANGE_PASSWORD // confirm a password change from account settings
   CHANGE_NAME // confirm a display name change
   CHANGE_AVATAR // confirm a profile photo change
+  PHONE_VERIFY // confirm a phone number with a 6-digit text message (signup, or add/change in Settings); the number being confirmed rides in payload
   DELETE_ACCOUNT // confirm permanent account deletion from account settings, unlike CHANGE_*, still code-gated (see the 2026-08-07 decision note in account/actions.ts): deleting is irreversible, so it keeps the extra step the others dropped
 }
 
@@ -723,6 +724,20 @@ model User {
   email         String    @unique
   emailCanonical String? // the email with Gmail dots and plus tags removed, so one inbox is one person for the free trial
   emailVerified DateTime?
+
+  // Phone number the person typed in. It is checked to be a real-looking number but is NOT proof of ownership
+  // unless `phoneVerifiedAt` is set, which only happens when text-message verification is switched on and a
+  // 6-digit code was confirmed. UNIQUE: one number, one account, so nobody can put an enrolled student's number
+  // on their own account and then use it at payment time (the payment sheet requires the number to match this
+  // one). The cost: whoever types a number first holds it, so an admin can clear a number that was taken by
+  // mistake or by someone else. Because it is unproven, the payment matcher still treats it as a clue, never
+  // as the thing that approves money on its own (see paymentEmail.ts).
+  // `pendingPhone` is a number waiting for its text code (it never counts as the account's). `phoneRequired`
+  // marks accounts made while text verification was on: they cannot get past it.
+  phone           String?   @unique
+  phoneVerifiedAt DateTime?
+  pendingPhone    String?
+  phoneRequired   Boolean   @default(false)
   image         String?
   passwordHash  String? // set only for credentials-based signup
   role          Role      @default(STUDENT)
@@ -1382,6 +1397,13 @@ model ZellePayment {
 
   // Filled in by the student on the "I've sent it" step of the modal
   senderName    String?
+  // The phone number the student says they are paying from, asked when the payment sheet opens (before the money
+  // moves), so a matching bank email can find this payment without a tap. E.164, typed in, not proven.
+  senderPhone   String?
+  // How a bank email claimed this payment when it was cleared automatically: "code" (the BNP code in the note),
+  // "name" (the sender's name), "phone" or "amount" (the exact amount alone: nothing else to go on). The last two
+  // are the weak ways in, so those payments wait in the owner's unchecked list.
+  matchedVia    String?
   referenceCode String? // Zelle confirmation/reference number
   note          String? @db.Text
   screenshotUrl String? // optional proof-of-transfer upload
@@ -1666,6 +1688,11 @@ model ProcessedPaymentEmail {
   amountCents Int
   memo        String?       @db.Text
   paymentId   String?
+  // A phone number the email showed for the sender, when the bank includes one: the whole number (E.164), or
+  // only its last four digits when the bank masks it. A cross-check against the student's number, never a
+  // claim on money by itself.
+  senderPhone      String?
+  senderPhoneLast4 String?
   // Set when an admin says this email is nothing to do with a payment (a personal transfer, say), so it stops being counted as unmatched.
   dismissedAt DateTime?
   createdAt   DateTime      @default(now())

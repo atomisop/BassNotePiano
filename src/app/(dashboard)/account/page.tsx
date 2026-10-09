@@ -3,6 +3,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getActivePaymentPlan } from "@/lib/paymentPlans";
 import { loadPersistedHistory } from "@/lib/assistant";
+import { phoneVerifyMode } from "@/lib/phoneVerification";
 import { AccountSettings } from "./AccountSettings";
 
 export const metadata = { title: "Settings" };
@@ -15,6 +16,16 @@ export default async function AccountPage() {
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
+        name: true,
+        username: true,
+        email: true,
+        emailVerified: true,
+        createdAt: true,
+        phone: true,
+        phoneVerifiedAt: true,
+        pendingPhone: true,
+        phoneRequired: true,
+        discordUsername: true,
         notifyEmailPayments: true,
         notifyEmailRoleUpdates: true,
         notifyEmailSocial: true,
@@ -28,6 +39,21 @@ export default async function AccountPage() {
 
   return (
     <AccountSettings
+      account={{
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        emailVerified: Boolean(user.emailVerified),
+        createdAt: user.createdAt.toISOString(),
+        phone: {
+          phone: user.phone,
+          verified: Boolean(user.phone && user.phoneVerifiedAt),
+          pendingPhone: user.pendingPhone,
+          required: user.phoneRequired,
+          verifyMode: await phoneVerifyMode(),
+        },
+        discordUsername: user.discordUsername,
+      }}
       hasCurriculumAccess={session.user.hasCurriculumAccess}
       initialNotificationPreferences={{
         notifyEmailPayments: user.notifyEmailPayments,
