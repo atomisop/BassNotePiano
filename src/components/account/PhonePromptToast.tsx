@@ -7,12 +7,12 @@ import { Phone, X } from "lucide-react";
 const SEEN_KEY = "bnp-phone-prompt-shown";
 
 /**
- * A short popup asking someone with no verified phone number to add one. It appears once per sign-in
+ * A short popup asking someone with no phone number on file (or none confirmed, when text confirmation is on) to add one. It appears once per sign-in
  * (sessionStorage, so a new session asks again until they do), a bar on its bottom edge runs out over
  * `seconds`, and then it closes by itself. Nothing is blocked: the same step is always in
  * Settings → Account.
  */
-export function PhonePromptToast({ seconds }: { seconds: number }) {
+export function PhonePromptToast({ seconds, verifying }: { seconds: number; /** True when the number will be confirmed with a text. */ verifying: boolean }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export function PhonePromptToast({ seconds }: { seconds: number }) {
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-body font-semibold text-slate-100">Add your phone number</p>
-          <p className="mt-0.5 text-small text-slate-400">Confirm it with a 6-digit text. It takes under a minute.</p>
+          <p className="mt-0.5 text-small text-slate-400">{verifying ? "Confirm it with a 6-digit text. It takes under a minute." : "It helps us match your payments and reach you. It takes a few seconds."}</p>
           <div className="mt-3 flex gap-2">
             <Link
               href="/account?tab=account#phone"

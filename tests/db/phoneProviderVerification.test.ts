@@ -15,11 +15,10 @@ vi.mock("@/lib/sms", () => ({
 }));
 
 import { confirmPhoneVerification, resendPhoneCode, startPhoneVerification } from "@/lib/phoneVerification";
-import { makeUser, newTag, prisma } from "./helpers";
+import { freshPhone, makeUser, newTag, prisma } from "./helpers";
 
 const tag = newTag("pp");
-const rnd = (n: number) => String(Math.floor(Math.random() * 10 ** n)).padStart(n, "0");
-const fresh = () => `+1${2 + Math.floor(Math.random() * 8)}${rnd(2)}${2 + Math.floor(Math.random() * 8)}${rnd(6)}`;
+const fresh = freshPhone;
 let user: { id: string; email: string };
 
 beforeAll(async () => {

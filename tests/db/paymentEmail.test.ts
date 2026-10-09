@@ -2,8 +2,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/auth", () => ({ getServerAuthSession: async () => null, authOptions: {} }));
 import { ingestPaymentEmail } from "@/lib/paymentEmail";
 import { paymentReferenceCode } from "@/lib/paymentReference";
-import { forgetPayerName, matchReceiptToPayment } from "@/lib/paymentReceipts";
-import { makeUser, newTag, prisma } from "./helpers";
+import { forgetPayerName, listUnmatchedReceipts, matchReceiptToPayment } from "@/lib/paymentReceipts";
+import { freshPhone, makeUser, newTag, prisma } from "./helpers";
 
 const tag = newTag("pe");
 let admin: { id: string; email: string };
@@ -32,6 +32,23 @@ function zelleEmail(sender: string, dollars: string, memo?: string) {
     subject: `${sender} sent you $${dollars}`,
     body: `${sender} sent you $${dollars}\n${memo ?? ""}\nView your balance`.replace("\n\n", "\n"),
   });
+}
+
+/** An email whose body also shows a phone number for the sender (as some banks do). */
+function emailWithPhone(sender: string, dollars: string, phoneLine: string) {
+  return ingestPaymentEmail({
+    messageId: `${tag}-${++counter}`,
+    from: "Bank of America <alerts@bankofamerica.com>",
+    subject: `${sender} sent you $${dollars}`,
+    body: `${sender} sent you $${dollars}\nFrom ${phoneLine}\nView your balance`,
+  });
+}
+
+/** A student with a typed-in phone number on file. */
+async function studentWithPhone(name: string, phone: string | null) {
+  const user = await student(name);
+  await prisma.user.update({ where: { id: user.id }, data: { phone } });
+  return user;
 }
 
 const status = async (id: string) => (await prisma.zellePayment.findUniqueOrThrow({ where: { id } })).status;
@@ -156,5 +173,60 @@ describe("a payment for the wrong amount", () => {
     await openPayment(b.id, 12404);
     expect(await zelleEmail("Eden Tadesse", "124.04")).toBe("stored");
     expect(await prisma.mailMessage.count({ where: { userId: a.id } })).toBe(0);
+  });
+});
+
+describe("the phone number as a cross-check", () => {
+  it("still settles a name match when the email's phone agrees with the number on file", async () => {
+    const phone = freshPhone();
+    const u = await studentWithPhone("Pia Phonelast", phone);
+    const p = await openPayment(u.id, 14101);
+    expect(await emailWithPhone("Pia Phonelast", "141.01", phone)).toBe("approved");
+    expect(await status(p.id)).toBe("VERIFIED");
+  });
+
+  it("settles on the last four digits when the bank masks the rest", async () => {
+    const phone = freshPhone();
+    const u = await studentWithPhone("Mara Masked", phone);
+    const p = await openPayment(u.id, 14102);
+    expect(await emailWithPhone("Mara Masked", "141.02", `xxx-xxx-${phone.slice(-4)}`)).toBe("approved");
+    expect(await status(p.id)).toBe("VERIFIED");
+  });
+
+  it("holds the payment for a person when the email's phone is a different number", async () => {
+    const u = await studentWithPhone("Hal Holdit", freshPhone());
+    const p = await openPayment(u.id, 14103);
+    expect(await emailWithPhone("Hal Holdit", "141.03", freshPhone())).toBe("stored");
+    expect(await status(p.id)).toBe("PENDING_REVIEW");
+  });
+
+  it("ignores the phone when the email has none, so nothing changes for most banks", async () => {
+    const u = await studentWithPhone("Nora Nophone", freshPhone());
+    const p = await openPayment(u.id, 14104);
+    expect(await zelleEmail("Nora Nophone", "141.04")).toBe("approved");
+    expect(await status(p.id)).toBe("VERIFIED");
+  });
+
+  it("never settles on the phone alone", async () => {
+    const phone = freshPhone();
+    const u = await studentWithPhone("Sole Solo", phone);
+    const p = await openPayment(u.id, 14105);
+    expect(await emailWithPhone("Totally Different", "141.05", phone)).toBe("stored");
+    expect(await status(p.id)).toBe("PENDING_REVIEW");
+  });
+
+  it("points the admin at the student whose number agrees, listed first", async () => {
+    const phone = freshPhone();
+    const other = await studentWithPhone("Otto Other", freshPhone());
+    const match = await studentWithPhone("Mina Match", phone);
+    await openPayment(other.id, 14106);
+    const target = await openPayment(match.id, 14106);
+    await emailWithPhone("Parent Payer", "141.06", phone); // a parent pays: the name matches nobody
+    const rows = await listUnmatchedReceipts(new Date(Date.now() + 2 * 60 * 60 * 1000));
+    const row = rows.find((r) => r.amountCents === 14106 && r.senderName === "Parent Payer");
+    expect(row).toBeDefined();
+    expect(row!.senderPhoneLast4).toBe(phone.slice(-4));
+    expect(row!.candidates[0]).toMatchObject({ id: target.id, phoneMatch: true });
+    expect(row!.candidates.filter((c) => c.phoneMatch)).toHaveLength(1);
   });
 });

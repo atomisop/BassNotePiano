@@ -163,6 +163,7 @@ async function EmailsTab() {
             senderName: r.senderName,
             amountCents: r.amountCents,
             memo: r.memo,
+            senderPhoneLast4: r.senderPhoneLast4,
             receivedAtMs: r.receivedAt.getTime(),
             candidates: r.candidates.map((c) => ({
               id: c.id,
@@ -170,6 +171,7 @@ async function EmailsTab() {
               studentName: c.studentName,
               studentEmail: c.studentEmail,
               createdAtMs: c.createdAt.getTime(),
+              phoneMatch: c.phoneMatch,
             })),
           }))}
           onMatch={matchReceiptAction}

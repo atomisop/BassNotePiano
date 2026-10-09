@@ -5,8 +5,7 @@ import { verifyCode, createAndSendCode, createSilentCode, RateLimitError, type V
 import { sendWelcomeEmail } from "@/lib/email";
 import { notifyAdmins } from "@/lib/adminNotifications";
 import { withTimingFloor } from "@/lib/timingSafe";
-import { smsAvailable } from "@/lib/sms";
-import { resendPhoneCode } from "@/lib/phoneVerification";
+import { phoneVerifyMode, resendPhoneCode } from "@/lib/phoneVerification";
 
 const REASON_MESSAGES: Record<string, string> = {
   not_found: "We couldn't find an active code for this email. Request a new one below.",
@@ -56,7 +55,7 @@ export async function verifyEmailAction(email: string, code: string) {
     const { code: autoCode } = await createSilentCode({ email: user.email, userId: user.id, purpose: "LOGIN_2FA" });
     // An account made while a phone number was required still has to confirm it. The text goes out now, so the
     // next screen can ask for the code straight away. If it cannot be sent, that screen offers to try again.
-    const needsPhone = user.phoneRequired && !user.phoneVerifiedAt && smsAvailable();
+    const needsPhone = user.phoneRequired && !user.phoneVerifiedAt && (await phoneVerifyMode());
     const phoneCodeSent = needsPhone ? (await resendPhoneCode(user.id).catch(() => ({ ok: false as const }))).ok : false;
     return { ok: true as const, autoCode, needsPhone, phoneCodeSent };
   } catch (err) {

@@ -1,9 +1,8 @@
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createAndSendCode, RateLimitError, verifyCode } from "@/lib/verification";
-import { normalizePhone } from "@/lib/phone";
-import { checkVerifySession, isSmsConfigured, startVerifySession } from "@/lib/sms";
-import { getNumberSetting } from "@/lib/siteSettings";
+import { assessPhone } from "@/lib/phoneValidity";
+import { checkVerifySession, isSmsConfigured, smsAvailable, startVerifySession } from "@/lib/sms";
+import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 
 export type PhoneResult<T = unknown> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -15,9 +14,17 @@ const REASON_MESSAGES: Record<string, string> = {
 };
 const TAKEN = "That number is already linked to another account.";
 
-/** The number must be free: a verified number belongs to exactly one account. */
+/**
+ * Whether numbers are confirmed by text right now: the owner switched it on and a text service is set up. Off by
+ * default, so numbers are just kept as typed. Everything that gates people on a confirmed number checks this.
+ */
+export async function phoneVerifyMode(): Promise<boolean> {
+  return smsAvailable() && (await getBoolSetting("phone.verifyBySms"));
+}
+
+/** A number someone has CONFIRMED by text belongs to that one account. Typed-only numbers can be shared (a family). */
 async function isTaken(phone: string, userId: string): Promise<boolean> {
-  return Boolean(await prisma.user.findFirst({ where: { phone, id: { not: userId } }, select: { id: true } }));
+  return Boolean(await prisma.user.findFirst({ where: { phone, phoneVerifiedAt: { not: null }, id: { not: userId } }, select: { id: true } }));
 }
 
 const SEND_FAILED = "We couldn't send the text just now. Check the number and try again in a minute.";
@@ -99,8 +106,9 @@ async function sendCode(user: { id: string; email: string }, phone: string): Pro
 
 /** Takes a typed number and texts it a code. The number only becomes the account's once the code is confirmed. */
 export async function startPhoneVerification(userId: string, rawPhone: string): Promise<PhoneResult<{ phone: string }>> {
-  const phone = normalizePhone(rawPhone);
-  if (!phone) return { ok: false, error: "That doesn't look like a phone number. US and Canada numbers work as typed; anywhere else, start with + and your country code." };
+  const assessed = assessPhone(rawPhone);
+  if (!assessed.ok) return assessed;
+  const phone = assessed.phone;
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, phone: true, phoneVerifiedAt: true } });
   if (!user) return { ok: false, error: "Account not found." };
   if (user.phone === phone && user.phoneVerifiedAt) return { ok: false, error: "That number is already verified on your account." };
@@ -133,13 +141,25 @@ export async function confirmPhoneVerification(userId: string, code: string): Pr
   }
   // The code only counts for the number it was sent to, which must still be the one waiting.
   if (!phone || phone !== user.pendingPhone) return { ok: false, error: "That code was for a different number. Request a new one." };
-  try {
-    await prisma.user.update({ where: { id: userId }, data: { phone, phoneVerifiedAt: new Date(), pendingPhone: null } });
-  } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") return { ok: false, error: TAKEN };
-    throw err;
-  }
+  if (await isTaken(phone, userId)) return { ok: false, error: TAKEN };
+  await prisma.user.update({ where: { id: userId }, data: { phone, phoneVerifiedAt: new Date(), pendingPhone: null } });
   return { ok: true, phone };
+}
+
+/**
+ * Saves a typed number as-is, after checking it looks real. No text is sent, so nothing is proven: it is kept
+ * as a clue (the payment matcher cross-checks it) and the number stays "not verified". Changing it clears any
+ * earlier confirmation, because the confirmed number is gone.
+ */
+export async function savePhone(userId: string, rawPhone: string): Promise<PhoneResult<{ phone: string }>> {
+  const assessed = assessPhone(rawPhone);
+  if (!assessed.ok) return assessed;
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { phone: true } });
+  if (!user) return { ok: false, error: "Account not found." };
+  if (user.phone !== assessed.phone) {
+    await prisma.user.update({ where: { id: userId }, data: { phone: assessed.phone, phoneVerifiedAt: null, pendingPhone: null } });
+  }
+  return { ok: true, phone: assessed.phone };
 }
 
 /** Removes the number. An account that had to give one at sign-up can change it but not remove it. */

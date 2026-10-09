@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { approveZellePayment } from "@/lib/payments";
 import { logAudit } from "@/lib/audit";
 import { unmatchedReceiptWhere } from "@/lib/paymentPipelineStatus";
-import { namesMatch } from "@/lib/paymentEmail";
+import { namesMatch, phoneAgrees } from "@/lib/paymentEmail";
 
 // Bank and Venmo emails that matched no payment, and what an admin can do
 // about them: attach one to a payment, or dismiss it. Every function here
@@ -17,8 +17,13 @@ export interface UnmatchedReceipt {
   amountCents: number;
   memo: string | null;
   receivedAt: Date;
-  /** Open payments for exactly the same amount: the only ones this email may be attached to. */
-  candidates: { id: string; status: string; studentName: string | null; studentEmail: string; createdAt: Date }[];
+  /** The last four digits of the phone the email showed for the sender, if it showed one. */
+  senderPhoneLast4: string | null;
+  /**
+   * Open payments for exactly the same amount: the only ones this email may be attached to. `phoneMatch` marks a
+   * student whose typed-in number agrees with the email's: a pointer for the admin, never an approval.
+   */
+  candidates: { id: string; status: string; studentName: string | null; studentEmail: string; createdAt: Date; phoneMatch: boolean }[];
 }
 
 export async function listUnmatchedReceipts(now = new Date()): Promise<UnmatchedReceipt[]> {
@@ -30,7 +35,7 @@ export async function listUnmatchedReceipts(now = new Date()): Promise<Unmatched
   if (receipts.length === 0) return [];
   const open = await prisma.zellePayment.findMany({
     where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: { in: receipts.map((r) => r.amountCents) } },
-    select: { id: true, status: true, amountCents: true, createdAt: true, user: { select: { name: true, email: true } } },
+    select: { id: true, status: true, amountCents: true, createdAt: true, user: { select: { name: true, email: true, phone: true } } },
     orderBy: { createdAt: "desc" },
   });
   return receipts.map((r) => ({
@@ -40,9 +45,12 @@ export async function listUnmatchedReceipts(now = new Date()): Promise<Unmatched
     amountCents: r.amountCents,
     memo: r.memo,
     receivedAt: r.createdAt,
+    senderPhoneLast4: r.senderPhone ? r.senderPhone.slice(-4) : r.senderPhoneLast4,
     candidates: open
       .filter((p) => p.amountCents === r.amountCents)
-      .map((p) => ({ id: p.id, status: p.status, studentName: p.user.name, studentEmail: p.user.email, createdAt: p.createdAt })),
+      .map((p) => ({ id: p.id, status: p.status, studentName: p.user.name, studentEmail: p.user.email, createdAt: p.createdAt, phoneMatch: phoneAgrees(p.user.phone, r) }))
+      // Students whose number agrees with the email come first.
+      .sort((a, b) => Number(b.phoneMatch) - Number(a.phoneMatch)),
   }));
 }
 

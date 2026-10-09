@@ -36,7 +36,7 @@ export const SETTING_CATEGORIES = [
   { id: "cancellation", label: "Cancel and reschedule", blurb: "What students may change themselves." },
   { id: "trial", label: "Trial and access", blurb: "Free trial, grace periods, and how scales unlock." },
   { id: "signup", label: "Sign-up", blurb: "Who can create an account." },
-  { id: "phone", label: "Phone numbers", blurb: "Text-message verification for accounts." },
+  { id: "phone", label: "Phone numbers", blurb: "Phone numbers on file, and optional text confirmation." },
   { id: "security", label: "Security", blurb: "Emailed codes and sign-in protection." },
   { id: "reminders", label: "Reminders and alerts", blurb: "Messages students and you receive." },
   { id: "discord", label: "Discord live classes", blurb: "How class calls are opened and who is told." },
@@ -77,10 +77,11 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "signup.open", category: "signup", type: "toggle", default: true, label: "Allow new sign-ups", help: "Off: the register form refuses new accounts. Existing students are unaffected." },
   { key: "signup.closedMessage", category: "signup", type: "text", default: "New sign-ups are closed right now. Please check back soon.", maxLength: 200, label: "Message shown when sign-ups are closed", help: "What a visitor sees when they try to register." },
   { key: "signup.requireFullName", category: "signup", type: "toggle", default: true, label: "Require first and last name", help: "Off: a single name is accepted at sign-up." },
-  { key: "signup.requirePhone", category: "phone", type: "toggle", default: true, label: "Require a verified phone number at sign-up", help: "New accounts must confirm a number with a 6-digit text before they can use the app. Only applies once text messages are set up (Plivo keys on the server)." },
+  { key: "phone.askAtSignup", category: "phone", type: "toggle", default: true, label: "Ask for a phone number at sign-up", help: "New students must enter a real-looking number to create an account. It is checked for realness but not proven theirs; payments only use it as an extra clue." },
+  { key: "phone.verifyBySms", category: "phone", type: "toggle", default: false, label: "Confirm numbers with a 6-digit text", help: "Off: numbers are kept as typed. On: new accounts must confirm theirs by text before using the app. Needs a text-message service set up on the server (Plivo keys), so it costs money per text." },
   { key: "signup.blockDisposable", category: "signup", type: "toggle", default: true, label: "Block throwaway email addresses", help: "Refuses sign-ups from disposable email domains." },
 
-  { key: "phone.promptExisting", category: "phone", type: "toggle", default: true, label: "Ask existing students to add a phone number", help: "Shows a short popup once per sign-in to anyone who has no verified number. They are never locked out." },
+  { key: "phone.promptExisting", category: "phone", type: "toggle", default: true, label: "Ask existing students for a phone number", help: "Shows a short popup once per sign-in to anyone who has no number on file (or none confirmed, when text confirmation is on). They are never locked out." },
   { key: "phone.promptSeconds", category: "phone", type: "number", default: 5, min: 3, max: 30, unit: "seconds", label: "How long the phone popup stays", help: "A bar on the popup runs out over this time, then it closes by itself." },
 
   // ---- Security

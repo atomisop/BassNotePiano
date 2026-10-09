@@ -3,7 +3,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getActivePaymentPlan } from "@/lib/paymentPlans";
 import { loadPersistedHistory } from "@/lib/assistant";
-import { smsAvailable } from "@/lib/sms";
+import { phoneVerifyMode } from "@/lib/phoneVerification";
 import { AccountSettings } from "./AccountSettings";
 
 export default async function AccountPage() {
@@ -48,7 +48,7 @@ export default async function AccountPage() {
           verified: Boolean(user.phone && user.phoneVerifiedAt),
           pendingPhone: user.pendingPhone,
           required: user.phoneRequired,
-          smsAvailable: smsAvailable(),
+          verifyMode: await phoneVerifyMode(),
         },
         discordUsername: user.discordUsername,
       }}

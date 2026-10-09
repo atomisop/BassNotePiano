@@ -6,7 +6,7 @@ import { Phone } from "lucide-react";
 import { formatPhone, PHONE_HELP } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { useResendCooldown } from "@/hooks/useResendCooldown";
-import { confirmPhoneAction, removePhoneAction, resendPhoneCodeAction, startPhoneAction } from "@/app/(dashboard)/account/phone-actions";
+import { confirmPhoneAction, removePhoneAction, resendPhoneCodeAction, savePhoneAction, startPhoneAction } from "@/app/(dashboard)/account/phone-actions";
 
 export interface PhoneState {
   phone: string | null;
@@ -14,13 +14,13 @@ export interface PhoneState {
   pendingPhone: string | null;
   /** True for accounts made while a number was mandatory: they can change it but not remove it. */
   required: boolean;
-  /** Whether verification texts can be sent right now. */
-  smsAvailable: boolean;
+  /** True when numbers are confirmed with a text. False (the default): a number is kept as typed, no text. */
+  verifyMode: boolean;
 }
 
 const input = "w-full rounded-lg bg-neu-base px-3 py-2.5 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500";
 const primary = "tap inline-flex items-center gap-2 rounded-lg bg-signal px-4 py-2 text-small font-semibold text-slate-950 shadow-raised-low disabled:cursor-not-allowed disabled:opacity-50";
-const plain = "tap rounded-lg bg-neu-base px-3 py-2 text-small font-medium text-slate-300 shadow-raised-low active:shadow-pressed-low disabled:opacity-50";
+const plainBtn = "tap rounded-lg bg-neu-base px-3 py-2 text-small font-medium text-slate-300 shadow-raised-low active:shadow-pressed-low disabled:opacity-50";
 
 /** Add, confirm, change or remove the account's phone number. The number only counts once its text code is entered. */
 export function PhoneCard({ state }: { state: PhoneState }) {
@@ -28,8 +28,11 @@ export function PhoneCard({ state }: { state: PhoneState }) {
   const ref = useRef<HTMLDivElement>(null);
   const cooldown = useResendCooldown();
   // "view": showing the saved number. "number": typing one. "code": waiting for the text's code.
-  const [mode, setMode] = useState<"view" | "number" | "code">(state.verified ? "view" : state.pendingPhone ? "code" : "number");
-  const [number, setNumber] = useState(state.pendingPhone ?? "");
+  const plain = !state.verifyMode;
+  const [mode, setMode] = useState<"view" | "number" | "code">(
+    plain ? (state.phone ? "view" : "number") : state.verified ? "view" : state.pendingPhone ? "code" : "number",
+  );
+  const [number, setNumber] = useState(state.pendingPhone ?? (plain ? "" : state.phone ?? ""));
   const [pending, setPending] = useState(state.pendingPhone);
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -45,11 +48,23 @@ export function PhoneCard({ state }: { state: PhoneState }) {
 
   // Keep in step with the server: once the number shows as verified (here or in the other copy), show it.
   useEffect(() => {
-    if (state.verified) {
+    if (plain ? Boolean(state.phone) : state.verified) {
       setMode("view");
       setPending(null);
     }
-  }, [state.verified, state.phone]);
+  }, [plain, state.verified, state.phone]);
+
+  /** No text: keep the number as typed, after the server checks it looks real. */
+  async function save() {
+    setBusy(true);
+    setError(null);
+    const r = await savePhoneAction(number);
+    setBusy(false);
+    if (!r.ok) return setError(r.error);
+    setDone(true);
+    setMode("view");
+    router.refresh();
+  }
 
   async function send() {
     setBusy(true);
@@ -97,34 +112,34 @@ export function PhoneCard({ state }: { state: PhoneState }) {
     router.refresh();
   }
 
-  const shown = mode === "view" ? formatPhone(state.phone ?? "") : null;
+  const shown = mode === "view" && state.phone ? formatPhone(state.phone) : null;
 
   return (
     <div ref={ref} data-phone-card className="glass-surface p-6">
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-body font-semibold text-slate-50">Phone number</h2>
-        {state.verified && mode === "view" && (
-          <span className="rounded-full bg-[rgb(var(--signal)/0.16)] px-2.5 py-0.5 text-small font-medium text-signal">Verified</span>
+        {mode === "view" && state.phone && (
+          <span className={`rounded-full px-2.5 py-0.5 text-small font-medium ${state.verified ? "bg-[rgb(var(--signal)/0.16)] text-signal" : "bg-slate-700/60 text-slate-300"}`}>
+            {state.verified ? "Verified" : "Saved"}
+          </span>
         )}
       </div>
 
-      {!state.smsAvailable && !state.verified ? (
-        <p className="mt-3 text-small text-slate-500">Text-message verification is not available yet. It will show up here when it is.</p>
-      ) : (
-        <div className="mt-4 space-y-3">
-          {done && <p role="status" className="text-small text-signal">Your phone number is verified.</p>}
+      <div className="mt-4 space-y-3">
+          {done && <p role="status" className="text-small text-signal">{plain ? "Your phone number is saved." : "Your phone number is verified."}</p>}
 
           {mode === "view" && (
             <>
               <p className="flex items-center gap-2 text-body text-slate-100">
                 <Phone className="h-4 w-4 text-slate-500" strokeWidth={1.5} /> {shown}
               </p>
+              {plain && <p className="text-small text-slate-500">We use it to help match your payments and reach you. It is never shared.</p>}
               <div className="flex flex-wrap gap-2">
-                <button type="button" className={plain} onClick={() => { setDone(false); setNumber(""); setMode("number"); }}>
+                <button type="button" className={plainBtn} onClick={() => { setDone(false); setNumber(""); setMode("number"); }}>
                   Change number
                 </button>
                 {!state.required && (
-                  <button type="button" className={`${plain} text-red-400`} disabled={busy} onClick={remove}>
+                  <button type="button" className={`${plainBtn} text-red-400`} disabled={busy} onClick={remove}>
                     Remove
                   </button>
                 )}
@@ -135,7 +150,12 @@ export function PhoneCard({ state }: { state: PhoneState }) {
           {mode === "number" && (
             <>
               <p className="text-small text-slate-500">
-                {state.verified ? "Enter your new number. Your current one stays until the new one is confirmed." : "Add a number and confirm it with a 6-digit text."} {PHONE_HELP}
+                {plain
+                  ? "Add the number you use for Zelle and calls. We use it to help match your payments."
+                  : state.verified
+                    ? "Enter your new number. Your current one stays until the new one is confirmed."
+                    : "Add a number and confirm it with a 6-digit text."}{" "}
+                {PHONE_HELP}
               </p>
               <input
                 type="tel"
@@ -148,11 +168,11 @@ export function PhoneCard({ state }: { state: PhoneState }) {
                 className={input}
               />
               <div className="flex flex-wrap gap-2">
-                <button type="button" className={primary} disabled={busy || !number.trim()} onClick={send}>
-                  {busy && <MorphingSquare size={12} />} Text me a code
+                <button type="button" className={primary} disabled={busy || !number.trim()} onClick={plain ? save : send}>
+                  {busy && <MorphingSquare size={12} />} {plain ? "Save number" : "Text me a code"}
                 </button>
-                {state.verified && (
-                  <button type="button" className={plain} onClick={() => { setError(null); setMode("view"); }}>
+                {(plain ? Boolean(state.phone) : state.verified) && (
+                  <button type="button" className={plainBtn} onClick={() => { setError(null); setMode("view"); }}>
                     Cancel
                   </button>
                 )}
@@ -180,10 +200,10 @@ export function PhoneCard({ state }: { state: PhoneState }) {
                 <button type="button" className={primary} disabled={busy || code.length !== 6} onClick={confirm}>
                   {busy && <MorphingSquare size={12} />} Verify
                 </button>
-                <button type="button" className={plain} disabled={busy || cooldown.secondsLeft > 0} onClick={resend}>
+                <button type="button" className={plainBtn} disabled={busy || cooldown.secondsLeft > 0} onClick={resend}>
                   {cooldown.secondsLeft > 0 ? `Send again in ${cooldown.secondsLeft}s` : "Send it again"}
                 </button>
-                <button type="button" className={plain} onClick={() => { setError(null); setMode(state.verified ? "view" : "number"); }}>
+                <button type="button" className={plainBtn} onClick={() => { setError(null); setMode(state.verified ? "view" : "number"); }}>
                   Use a different number
                 </button>
               </div>
@@ -191,8 +211,7 @@ export function PhoneCard({ state }: { state: PhoneState }) {
           )}
 
           {error && <p role="alert" className="text-small text-red-400">{error}</p>}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

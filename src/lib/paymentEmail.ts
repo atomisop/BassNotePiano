@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { approveZellePayment, notifyAutoApproved } from "@/lib/payments";
 import { createNotification } from "@/lib/notifications";
 import { memoHasOtherReference, memoHasReferenceFor } from "@/lib/paymentReference";
+import { normalizePhone } from "@/lib/phone";
 
 /**
  * Settles payments from the "you received money" emails the owner's Gmail
@@ -25,6 +26,32 @@ export interface ParsedPaymentEmail {
   name: string;
   amountCents: number;
   memo: string | null;
+  /** The sender's whole phone number (E.164), when the email shows one. */
+  senderPhone: string | null;
+  /** Only the last four digits, when the bank masks the rest ("xxx-xxx-1234"). */
+  senderPhoneLast4: string | null;
+}
+
+/**
+ * Looks for the sender's phone number in an email, if the bank included one. A whole number counts only when
+ * it is written like a phone number (separators, brackets or a +1) or sits right after the word "phone",
+ * "mobile" or "cell", so order numbers and amounts are not mistaken for one. A masked number gives its last four.
+ */
+export function extractPhoneClues(text: string): { phone: string | null; last4: string | null } {
+  const spaced = text.replace(/[\u00a0\u2007\u202f]/g, " ");
+  const formatted = spaced.match(/(?:\+?1[\s.-]?)?\(?[2-9]\d{2}\)?[\s.-]\d{3}[\s.-]\d{4}|\+1\d{10}/);
+  if (formatted) {
+    const phone = normalizePhone(formatted[0]);
+    if (phone) return { phone, last4: null };
+  }
+  const labelled = spaced.match(/(?:phone|mobile|cell)[^\d\n]{0,20}(\+?1?[\s.-]?[2-9]\d{9})\b/i);
+  if (labelled) {
+    const phone = normalizePhone(labelled[1]);
+    if (phone) return { phone, last4: null };
+  }
+  const masked = spaced.match(/(?:[*•xX#]{2,}[\s).-]*){1,3}(\d{4})\b/) ?? spaced.match(/(?:phone|mobile|cell|number)[^\d\n]{0,25}ending (?:in|with) (\d{4})\b/i);
+  if (masked) return { phone: null, last4: masked[1] };
+  return { phone: null, last4: null };
 }
 
 function toCents(raw: string): number | null {
@@ -40,8 +67,15 @@ export function isAllowedSender(from: string): boolean {
   return ALLOWED_SENDER_DOMAINS.some((allowed) => domain === allowed || domain.endsWith(`.${allowed}`));
 }
 
-/** Reads the payer, amount and memo out of a Zelle or Venmo "you received money" email. */
+/** Reads the payer, amount, memo and (when the bank shows one) the sender's phone out of a Zelle or Venmo "you received money" email. */
 export function parsePaymentEmail(subject: string, body: string): ParsedPaymentEmail | null {
+  const core = parseCore(subject, body);
+  if (!core) return null;
+  const clues = extractPhoneClues(`${subject}\n${body}`);
+  return { ...core, senderPhone: clues.phone, senderPhoneLast4: clues.last4 };
+}
+
+function parseCore(subject: string, body: string): Omit<ParsedPaymentEmail, "senderPhone" | "senderPhoneLast4"> | null {
   const cleanSubject = subject.replace(/Zelle®?/gi, "").replace(/\s+/g, " ").trim();
   const lines = body
     .split(/\r?\n/)
@@ -103,10 +137,30 @@ type OpenPayment = {
   status: "AWAITING_TRANSFER" | "PENDING_REVIEW";
   amountCents: number;
   senderName: string | null;
-  user: { name: string | null; payerAliases: { name: string }[] };
+  user: { name: string | null; phone?: string | null; payerAliases: { name: string }[] };
 };
 
-type ReceiptFacts = { senderName: string; amountCents: number; memo: string | null };
+type ReceiptFacts = { senderName: string; amountCents: number; memo: string | null; senderPhone?: string | null; senderPhoneLast4?: string | null };
+
+/**
+ * True when the email shows a phone number for the sender AND the account has one on file AND they disagree.
+ * An account number is only typed in, never proven, so this is a cross-check that can only HOLD a payment for a
+ * person to look at; it never approves one. Missing on either side means no opinion.
+ */
+export function phoneConflicts(accountPhone: string | null | undefined, receipt: ReceiptFacts): boolean {
+  if (!accountPhone) return false;
+  if (receipt.senderPhone) return receipt.senderPhone !== accountPhone;
+  if (receipt.senderPhoneLast4) return !accountPhone.endsWith(receipt.senderPhoneLast4);
+  return false;
+}
+
+/** True when the email's phone clue agrees with the account's number (used only to point an admin at the likely student). */
+export function phoneAgrees(accountPhone: string | null | undefined, receipt: { senderPhone?: string | null; senderPhoneLast4?: string | null }): boolean {
+  if (!accountPhone) return false;
+  if (receipt.senderPhone) return receipt.senderPhone === accountPhone;
+  if (receipt.senderPhoneLast4) return accountPhone.endsWith(receipt.senderPhoneLast4);
+  return false;
+}
 
 /** The names this student's money may arrive under: their own, plus any a person confirmed by hand. */
 function payerNames(user: OpenPayment["user"]): (string | null)[] {
@@ -118,7 +172,8 @@ function payerNames(user: OpenPayment["user"]): (string | null)[] {
  *  - the note carries this payment's own reference code (so a parent paying, or two
  *    students with one name, still land on the right payment), or
  *  - the sender is the account holder or a confirmed alias, and the note does not
- *    name a different payment.
+ *    name a different payment, and the phone clue (if the email has one and the
+ *    account has one) does not point at a different number.
  * The sender name a student types when submitting is theirs to choose, so it is
  * never what claims someone else's money. A mismatch just leaves the payment for the admin.
  */
@@ -126,7 +181,8 @@ export function receiptMatchesPayment(payment: OpenPayment, receipt: ReceiptFact
   if (payment.amountCents !== receipt.amountCents) return false;
   if (memoHasReferenceFor(receipt.memo, payment.id)) return true;
   if (memoHasOtherReference(receipt.memo, payment.id)) return false;
-  return payerNames(payment.user).some((name) => namesMatch(name, receipt.senderName));
+  if (!payerNames(payment.user).some((name) => namesMatch(name, receipt.senderName))) return false;
+  return !phoneConflicts(payment.user.phone, receipt);
 }
 
 /** The one payment an email settles, or null when it is unclear (then a person decides). */
@@ -179,7 +235,7 @@ const openPaymentSelect = {
   status: true,
   amountCents: true,
   senderName: true,
-  user: { select: { name: true, payerAliases: { select: { name: true } } } },
+  user: { select: { name: true, phone: true, payerAliases: { select: { name: true } } } },
 } as const;
 
 export type IngestOutcome = "ignored" | "duplicate" | "approved" | "stored";
@@ -204,6 +260,8 @@ export async function ingestPaymentEmail(input: {
         senderName: parsed.name.slice(0, 120),
         amountCents: parsed.amountCents,
         memo: parsed.memo?.slice(0, 300) ?? null,
+        senderPhone: parsed.senderPhone,
+        senderPhoneLast4: parsed.senderPhoneLast4,
       },
     });
   } catch (err) {

@@ -9,13 +9,11 @@ vi.mock("@/lib/sms", () => ({
   },
 }));
 
-import { confirmPhoneVerification, removePhone, resendPhoneCode, startPhoneVerification } from "@/lib/phoneVerification";
-import { makeUser, newTag, prisma } from "./helpers";
+import { confirmPhoneVerification, phoneVerifyMode, removePhone, resendPhoneCode, savePhone, startPhoneVerification } from "@/lib/phoneVerification";
+import { freshPhone, makeUser, newTag, prisma } from "./helpers";
 
 const tag = newTag("ph");
-// Fresh valid US numbers every run, so leftover rows from earlier runs can never collide with these tests.
-const rnd = (n: number) => String(Math.floor(Math.random() * 10 ** n)).padStart(n, "0");
-const fresh = () => `+1${2 + Math.floor(Math.random() * 8)}${rnd(2)}${2 + Math.floor(Math.random() * 8)}${rnd(6)}`;
+const fresh = freshPhone;
 const [NUM_A, NUM_B, NUM_C, NUM_D, NUM_E] = [fresh(), fresh(), fresh(), fresh(), fresh()];
 const typed = (e164: string) => `(${e164.slice(2, 5)}) ${e164.slice(5, 8)}-${e164.slice(8)}`;
 const ids: string[] = [];
@@ -117,3 +115,47 @@ async function resendOrStart(id: string) {
   await prisma.user.update({ where: { id }, data: { pendingPhone: NUM_E } });
   return resendPhoneCode(id);
 }
+
+describe("keeping a number without a text", () => {
+  it("text confirmation is off unless the owner switches it on", async () => {
+    expect(await phoneVerifyMode()).toBe(false);
+  });
+
+  it("saves a real-looking number as typed, unverified, and sends no text", async () => {
+    const carol = await makeUser(tag, "Carol Typed");
+    ids.push(carol.id);
+    const phone = freshPhone();
+    expect(await savePhone(carol.id, phone)).toEqual({ ok: true, phone });
+    const row = await prisma.user.findUniqueOrThrow({ where: { id: carol.id } });
+    expect([row.phone, row.phoneVerifiedAt, row.pendingPhone]).toEqual([phone, null, null]);
+    expect(sent).toHaveLength(0);
+  });
+
+  it("refuses a number that cannot exist, and leaves the old one alone", async () => {
+    const dave = await makeUser(tag, "Dave Typed");
+    ids.push(dave.id);
+    const phone = freshPhone();
+    await savePhone(dave.id, phone);
+    expect((await savePhone(dave.id, "(555) 234-5678")).ok).toBe(false);
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: dave.id } })).phone).toBe(phone);
+  });
+
+  it("allows a family to share one number", async () => {
+    const e = await makeUser(tag, "Eve Family");
+    const f = await makeUser(tag, "Finn Family");
+    ids.push(e.id, f.id);
+    const phone = freshPhone();
+    expect((await savePhone(e.id, phone)).ok).toBe(true);
+    expect((await savePhone(f.id, phone)).ok).toBe(true);
+  });
+
+  it("changing the number clears an earlier confirmation, because that number is gone", async () => {
+    const g = await makeUser(tag, "Gus Changed");
+    ids.push(g.id);
+    await prisma.user.update({ where: { id: g.id }, data: { phone: freshPhone(), phoneVerifiedAt: new Date() } });
+    const next = freshPhone();
+    await savePhone(g.id, next);
+    const row = await prisma.user.findUniqueOrThrow({ where: { id: g.id } });
+    expect([row.phone, row.phoneVerifiedAt]).toEqual([next, null]);
+  });
+});

@@ -230,25 +230,29 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
   stop someone who has the URL. Watermarked, in-app-only PDFs are the planned
   follow-up.
 
-## Phone verification (added 2026-10-09)
+## Phone numbers (added 2026-10-09)
 
-A phone number is part of creating an account, confirmed by a 6-digit text. Same shared code system as email
-(`VerificationPurpose.PHONE_VERIFY` in `src/lib/verification.ts`, the number rides in `payload`), so expiry,
-attempt and issue limits are the existing `security.*` settings. Logic is `src/lib/phoneVerification.ts`;
-sending is `src/lib/sms.ts`: Plivo Verify over plain fetch (env `PLIVO_*`, see `.env.example`). With Plivo the provider makes, texts and checks the code (we store only a session row in `VerificationCode`); without it, dev mode makes our own code and prints it.
+Everyone is asked for a phone number (sign-up form, a 5-second popup for older accounts, Settings → Account).
+By default it is **kept as typed and not verified**: `assessPhone` (`src/lib/phoneValidity.ts`, libphonenumber
+metadata) checks it could really exist (real area code, right length, no filler or 555-01xx numbers). That
+proves nothing about the line being active or theirs; only a text code or a paid line lookup can.
 
-- `User.phone` is unique and holds ONLY a verified number; a typed-but-unconfirmed one waits in `pendingPhone`
-  so it can never block someone else. `phoneRequired` is set at sign-up and gates only those accounts.
-- Gate: `(dashboard)/layout.tsx` and `onboarding/page.tsx` send an unverified `phoneRequired` account to
-  `/verify-phone`. Older accounts are never gated; they get `PhonePromptToast` (once per session, timer bar,
-  seconds = `phone.promptSeconds`) and the card in Settings → Account.
-- `smsAvailable()` is false in production without Plivo keys. Everything phone-related then switches off
-  (no field at sign-up, no gate, no popup) so a missing key can never lock people out. In development the
-  code is printed to the server log (`[dev] SMS to ...`).
-- There is NO free production SMS service. Plivo charges per text; US carrier registration rules may still apply, ask their support.
-- Settings (`/account`) now has one "Account" choice that holds every account item in groups (profile,
-  contact, sign-in and security, connected accounts, privacy and data incl. download, delete). The content
-  is rendered twice (desktop column and phone slide-over), so never use DOM ids inside it.
+- `User.phone` is NOT unique (families share numbers). `phoneVerifiedAt` is set only by text confirmation.
+- **Payments**: `parsePaymentEmail` extracts a sender phone (whole, or last four if masked) when the bank
+  includes one; it is stored on `ProcessedPaymentEmail`. In `receiptMatchesPayment` a phone that DISAGREES with
+  the account's number holds a name match for an admin; it never approves anything and never settles a payment
+  alone (an unverified number is claimable by anyone, so using it to approve money would be an attack). The
+  admin's unmatched-email list flags and sorts the student whose number agrees ("Phone matches"). Whether the
+  banks' emails carry a sender phone at all is unknown; with none, nothing changes.
+- **Optional text confirmation** (owner setting `phone.verifyBySms`, OFF by default, needs `PLIVO_*` env):
+  shared code system with `VerificationPurpose.PHONE_VERIFY`; `src/lib/sms.ts` talks to Plivo Verify, which makes,
+  texts and checks the code (we store only a session row). New accounts made while it is on get
+  `phoneRequired` and are sent to `/verify-phone` by `(dashboard)/layout.tsx` and `onboarding/page.tsx`. Without
+  Plivo keys in production it can never turn on (`smsAvailable()`), so nobody gets locked out. In development
+  the code is printed to the server log. There is NO free production SMS service.
+- Settings (`/account`) has one "Account" choice that holds every account item in groups (profile, contact,
+  sign-in and security, connected accounts, privacy and data incl. download, delete). The content is rendered
+  twice (desktop column and phone slide-over), so never use DOM ids inside it.
 
 ## Sessions can now be invalidated server-side
 

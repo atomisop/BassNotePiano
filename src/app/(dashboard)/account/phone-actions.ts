@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getServerAuthSession } from "@/lib/auth";
-import { confirmPhoneVerification, removePhone, resendPhoneCode, startPhoneVerification, type PhoneResult } from "@/lib/phoneVerification";
+import { confirmPhoneVerification, removePhone, resendPhoneCode, savePhone, startPhoneVerification, type PhoneResult } from "@/lib/phoneVerification";
 
 // Every action reads the user from the session, never from what the browser sends.
 async function userId(): Promise<string | null> {
@@ -10,6 +10,15 @@ async function userId(): Promise<string | null> {
   return session?.user?.id ?? null;
 }
 const SIGN_IN = { ok: false as const, error: "Please sign in again." };
+
+/** Keeps a typed number as-is (no text), after checking it looks real. Used while text confirmation is off. */
+export async function savePhoneAction(rawPhone: string): Promise<PhoneResult<{ phone: string }>> {
+  const id = await userId();
+  if (!id) return SIGN_IN;
+  const result = await savePhone(id, rawPhone);
+  if (result.ok) revalidatePath("/account");
+  return result;
+}
 
 export async function startPhoneAction(rawPhone: string): Promise<PhoneResult<{ phone: string }>> {
   const id = await userId();

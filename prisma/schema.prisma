@@ -725,12 +725,13 @@ model User {
   emailCanonical String? // the email with Gmail dots and plus tags removed, so one inbox is one person for the free trial
   emailVerified DateTime?
 
-  // Phone number, confirmed by a 6-digit text. `phone` (E.164, such as +15551234567) only ever holds a
-  // VERIFIED number, so it is unique: one number, one account. A number someone has typed but not yet
-  // confirmed waits in `pendingPhone`, where it cannot block anyone else. `phoneRequired` marks accounts
-  // created while phone was mandatory at sign-up: they cannot get past verification. Older accounts leave
-  // it false and are only asked, never forced.
-  phone           String?   @unique
+  // Phone number the person typed in. It is checked to be a real-looking number but is NOT proof of ownership
+  // unless `phoneVerifiedAt` is set, which only happens when text-message verification is switched on and a
+  // 6-digit code was confirmed. Not unique: a family can share one number. Because it is unproven, the payment
+  // matcher only uses it as a cross-check, never as the thing that approves money (see paymentEmail.ts).
+  // `pendingPhone` is a number waiting for its text code (it never counts as the account's). `phoneRequired`
+  // marks accounts made while text verification was on: they cannot get past it.
+  phone           String?
   phoneVerifiedAt DateTime?
   pendingPhone    String?
   phoneRequired   Boolean   @default(false)
@@ -899,6 +900,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@index([emailCanonical])
+  @@index([phone])
 }
 
 model Account {
@@ -1677,6 +1679,11 @@ model ProcessedPaymentEmail {
   amountCents Int
   memo        String?       @db.Text
   paymentId   String?
+  // A phone number the email showed for the sender, when the bank includes one: the whole number (E.164), or
+  // only its last four digits when the bank masks it. A cross-check against the student's number, never a
+  // claim on money by itself.
+  senderPhone      String?
+  senderPhoneLast4 String?
   // Set when an admin says this email is nothing to do with a payment (a personal transfer, say), so it stops being counted as unmatched.
   dismissedAt DateTime?
   createdAt   DateTime      @default(now())

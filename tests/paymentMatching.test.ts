@@ -77,3 +77,71 @@ describe("pipelineProblem", () => {
     expect(pipelineProblem({ status: "quiet" })).toBe(line);
   });
 });
+
+import { extractPhoneClues, parsePaymentEmail, phoneAgrees, phoneConflicts } from "@/lib/paymentEmail";
+
+const payWithPhone = (id: string, name: string, phone: string | null): P => ({ ...pay(id, name), user: { name, phone, payerAliases: [] } });
+const withPhone = (senderName: string, senderPhone: string | null, senderPhoneLast4: string | null = null, memo: string | null = null) => ({
+  senderName,
+  amountCents: 9999,
+  memo,
+  senderPhone,
+  senderPhoneLast4,
+});
+
+describe("extractPhoneClues", () => {
+  it("reads a phone written like a phone number", () => {
+    expect(extractPhoneClues("Jordan Alemu (347) 419-7648 sent you $25").phone).toBe("+13474197648");
+    expect(extractPhoneClues("from 347-419-7648").phone).toBe("+13474197648");
+    expect(extractPhoneClues("from +1 347 419 7648").phone).toBe("+13474197648");
+    expect(extractPhoneClues("Mobile: 3474197648").phone).toBe("+13474197648");
+  });
+  it("reads only the last four of a masked number", () => {
+    expect(extractPhoneClues("Sent from xxx-xxx-7648")).toEqual({ phone: null, last4: "7648" });
+    expect(extractPhoneClues("Sent from (***) ***-7648")).toEqual({ phone: null, last4: "7648" });
+    expect(extractPhoneClues("Sent from •••-•••-7648")).toEqual({ phone: null, last4: "7648" });
+    expect(extractPhoneClues("phone number ending in 7648")).toEqual({ phone: null, last4: "7648" });
+  });
+  it("does not mistake amounts, dates or long ids for a phone number", () => {
+    expect(extractPhoneClues("Jordan Alemu sent you $2,500.00")).toEqual({ phone: null, last4: null });
+    expect(extractPhoneClues("Confirmation number 3474197648")).toEqual({ phone: null, last4: null });
+    expect(extractPhoneClues("Sent on 2026-10-09 at 4:15 PM")).toEqual({ phone: null, last4: null });
+  });
+  it("is attached to a parsed email only when one is there", () => {
+    const withIt = parsePaymentEmail("Jordan Alemu sent you $25.00", "Jordan Alemu sent you $25.00\nFrom (347) 419-7648\nView your balance");
+    expect(withIt?.senderPhone).toBe("+13474197648");
+    const without = parsePaymentEmail("Jordan Alemu sent you $25.00", "Jordan Alemu sent you $25.00\nView your balance");
+    expect([without?.senderPhone, without?.senderPhoneLast4]).toEqual([null, null]);
+  });
+});
+
+describe("phone as a cross-check, never an approval", () => {
+  const phone = "+13474197648";
+  it("a matching phone changes nothing: the name still decides", () => {
+    expect(receiptMatchesPayment(payWithPhone(A, "Jordan Alemu", phone), withPhone("Jordan Alemu", phone))).toBe(true);
+    expect(receiptMatchesPayment(payWithPhone(A, "Jordan Alemu", phone), withPhone("Maria Alemu", phone))).toBe(false);
+  });
+  it("a phone alone never settles a payment", () => {
+    expect(pickMatchingPayment([payWithPhone(A, "Jordan Alemu", phone)], withPhone("Stranger Person", phone))).toBeNull();
+  });
+  it("a different phone holds a name match for a person to look at", () => {
+    expect(receiptMatchesPayment(payWithPhone(A, "Jordan Alemu", phone), withPhone("Jordan Alemu", "+12125550142"))).toBe(false);
+    expect(receiptMatchesPayment(payWithPhone(A, "Jordan Alemu", phone), withPhone("Jordan Alemu", null, "0000"))).toBe(false);
+    expect(receiptMatchesPayment(payWithPhone(A, "Jordan Alemu", phone), withPhone("Jordan Alemu", null, "7648"))).toBe(true);
+  });
+  it("no phone on either side means no opinion", () => {
+    expect(receiptMatchesPayment(payWithPhone(A, "Jordan Alemu", null), withPhone("Jordan Alemu", phone))).toBe(true);
+    expect(receiptMatchesPayment(payWithPhone(A, "Jordan Alemu", phone), withPhone("Jordan Alemu", null))).toBe(true);
+  });
+  it("the payment's own code outranks the phone clue", () => {
+    const memo = `lessons ${paymentReferenceCode(A)}`;
+    expect(receiptMatchesPayment(payWithPhone(A, "Jordan Alemu", phone), withPhone("Maria Alemu", "+12125550142", null, memo))).toBe(true);
+  });
+  it("helpers agree with each other", () => {
+    expect(phoneConflicts(phone, { senderName: "x", amountCents: 1, memo: null, senderPhone: "+12125550142" })).toBe(true);
+    expect(phoneAgrees(phone, { senderPhone: phone })).toBe(true);
+    expect(phoneAgrees(phone, { senderPhoneLast4: "7648" })).toBe(true);
+    expect(phoneAgrees(null, { senderPhone: phone })).toBe(false);
+    expect(phoneAgrees(phone, {})).toBe(false);
+  });
+});

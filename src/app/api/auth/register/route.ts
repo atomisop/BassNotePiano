@@ -8,8 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { createAndSendCode, RateLimitError } from "@/lib/verification";
 import { isDisposableEmailDomain } from "@/lib/disposableEmail";
 import { getBoolSetting, getTextSetting } from "@/lib/siteSettings";
-import { normalizePhone } from "@/lib/phone";
-import { smsAvailable } from "@/lib/sms";
+import { assessPhone } from "@/lib/phoneValidity";
+import { phoneVerifyMode } from "@/lib/phoneVerification";
 import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
@@ -75,16 +75,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // A phone number is part of creating an account whenever texts can be sent. It is stored as pending and
-  // only becomes the account's number once the 6-digit text is confirmed (see phoneVerification.ts).
-  const phoneRequired = smsAvailable() && (await getBoolSetting("signup.requirePhone"));
-  let pendingPhone: string | null = null;
-  if (phoneRequired) {
-    pendingPhone = normalizePhone(typeof body?.phone === "string" ? body.phone : "");
-    if (!pendingPhone) {
-      return NextResponse.json({ error: "Enter a phone number we can text a code to. US and Canada numbers work as typed; anywhere else, start with + and your country code." }, { status: 400 });
-    }
-    if (await prisma.user.findFirst({ where: { phone: pendingPhone }, select: { id: true } })) {
+  // A real-looking phone number is part of creating an account. With text confirmation off (the default) it is
+  // kept as typed; with it on, it waits as pending until the 6-digit text is confirmed (phoneVerification.ts).
+  const askPhone = await getBoolSetting("phone.askAtSignup");
+  const verifying = await phoneVerifyMode();
+  let phone: string | null = null;
+  if (askPhone) {
+    const assessed = assessPhone(typeof body?.phone === "string" ? body.phone : "");
+    if (!assessed.ok) return NextResponse.json({ error: assessed.error }, { status: 400 });
+    phone = assessed.phone;
+    if (verifying && (await prisma.user.findFirst({ where: { phone, phoneVerifiedAt: { not: null } }, select: { id: true } }))) {
       return NextResponse.json({ error: "That number is already linked to another account." }, { status: 409 });
     }
   }
@@ -93,7 +93,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const user = await prisma.user.create({
-      data: { name, email, emailCanonical: canonicalEmail(email), passwordHash, pendingPhone, phoneRequired },
+      data: {
+        name,
+        email,
+        emailCanonical: canonicalEmail(email),
+        passwordHash,
+        // Confirming by text: keep it pending. Otherwise it is simply the number on file.
+        ...(verifying ? { pendingPhone: phone, phoneRequired: phone !== null } : { phone }),
+      },
       select: { id: true, email: true },
     });
     // Someone approved for classes before they made an account gets their
