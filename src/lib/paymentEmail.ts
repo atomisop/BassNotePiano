@@ -144,7 +144,7 @@ function nameTokens(value: string | null | undefined): string[] {
     .filter((token) => token.length > 0);
 }
 
-/** The same word, or a single letter that starts the other ("T" for "Tessema"), as banks and people shorten names. */
+/** The same word, or a single letter that starts the other ("A" for "Alemu"), as banks and people shorten names. */
 function sameToken(a: string, b: string): boolean {
   return a === b || (a.length === 1 && b.startsWith(a)) || (b.length === 1 && a.startsWith(b));
 }
