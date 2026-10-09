@@ -227,16 +227,15 @@ describe("reading SoFi's Zelle email", () => {
 
 describe("names as banks and people write them", () => {
   it("ignores capitals, middle names and order of extra words", () => {
-    expect(namesMatch("Meshesha Tessema", "MESHESHA TESSEMA")).toBe(true);
-    expect(namesMatch("Meshesha Tessema", "MESHESHA T TESSEMA")).toBe(true);
+    expect(namesMatch("Jordan Alemu", "JORDAN ALEMU")).toBe(true);
+    expect(namesMatch("Jordan Alemu", "JORDAN T ALEMU")).toBe(true);
   });
   it("lets an initial stand for the word it starts, but never two initials alone", () => {
-    expect(namesMatch("Meshesha T", "MESHESHA TESSEMA")).toBe(true);
-    expect(namesMatch("J A", "JORDAN ALEMU")).toBe(false);
     expect(namesMatch("Jordan A", "JORDAN ALEMU")).toBe(true);
+    expect(namesMatch("J A", "JORDAN ALEMU")).toBe(false);
   });
   it("does not match a different person", () => {
-    expect(namesMatch("Meshesha Tessema", "MESHESHA ALEMU")).toBe(false);
-    expect(namesMatch("Meshesha", "MESHESHA TESSEMA")).toBe(false);
+    expect(namesMatch("Jordan Alemu", "JORDAN TESFAYE")).toBe(false);
+    expect(namesMatch("Jordan", "JORDAN ALEMU")).toBe(false);
   });
 });
