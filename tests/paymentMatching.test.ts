@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { pickMatchingPayment, receiptMatchesPayment } from "@/lib/paymentEmail";
-import { paymentReferenceCode } from "@/lib/paymentReference";
+import { codesOneTypoApart, paymentReferenceCode } from "@/lib/paymentReference";
 import { pipelineProblem } from "@/lib/paymentPipelineStatus";
 
 type P = Parameters<typeof receiptMatchesPayment>[0];
@@ -78,7 +78,7 @@ describe("pipelineProblem", () => {
   });
 });
 
-import { extractPhoneClues, namesMatch, parsePaymentEmail, parseSofi, phoneAgrees, phoneConflicts, pickMatch, receiptMatchVia } from "@/lib/paymentEmail";
+import { extractPhoneClues, namesMatch, parsePaymentEmail, parseSofi, pickNearMissCode, phoneAgrees, phoneConflicts, pickMatch, receiptMatchVia } from "@/lib/paymentEmail";
 
 const payWithPhone = (id: string, name: string, phone: string | null): P => ({ ...pay(id, name), user: { name, phone, payerAliases: [] } });
 const withPhone = (senderName: string, senderPhone: string | null, senderPhoneLast4: string | null = null, memo: string | null = null) => ({
@@ -237,5 +237,67 @@ describe("names as banks and people write them", () => {
   it("does not match a different person", () => {
     expect(namesMatch("Jordan Alemu", "JORDAN TESFAYE")).toBe(false);
     expect(namesMatch("Jordan", "JORDAN ALEMU")).toBe(false);
+  });
+});
+
+describe("a code with a typo", () => {
+  it("is one wrong character or one swapped pair, never an equal or a very different code", () => {
+    expect(codesOneTypoApart("4K7Q2", "4K7Q3")).toBe(true);
+    expect(codesOneTypoApart("4K7Q2", "4K72Q")).toBe(true);
+    expect(codesOneTypoApart("4K7Q2", "4K7Q2")).toBe(false);
+    expect(codesOneTypoApart("4K7Q2", "5K7Q3")).toBe(false);
+    expect(codesOneTypoApart("4K7Q2", "4K7Q")).toBe(false);
+  });
+
+  const withId = (id: string, amountCents = 9999): P => ({ ...pay(id, "Jordan Alemu", amountCents) });
+  const mine = "cuid-student-a-K7MS7";
+  const other = "cuid-student-b-K7MS9";
+  it("finds the one payment a mistyped code is one character from", () => {
+    expect(pickNearMissCode([withId(mine)], email("Parent Payer", 9999, "lessons BNP-K7MS8"), new Set())?.id).toBe(mine);
+  });
+  it("leaves a real code alone: it belongs to that payment, it is not a typo", () => {
+    expect(pickNearMissCode([withId(mine)], email("Parent Payer", 9999, "BNP-K7MS8"), new Set(["K7MS8"]))).toBeNull();
+  });
+  it("does nothing when two payments are equally close", () => {
+    expect(pickNearMissCode([withId(mine), withId(other)], email("Parent Payer", 9999, "BNP-K7MS8"), new Set())).toBeNull();
+  });
+  it("only considers payments for the same exact amount, and a note with no code", () => {
+    expect(pickNearMissCode([withId(mine, 5000)], email("Parent Payer", 9999, "BNP-K7MS8"), new Set())).toBeNull();
+    expect(pickNearMissCode([withId(mine)], email("Parent Payer", 9999, "guitar lesson"), new Set())).toBeNull();
+  });
+});
+
+describe("one student's look-alike payments", () => {
+  const dup = (id: string, userId: string, minutesAgo: number): P => ({ ...pay(id, "Jordan Alemu"), userId, createdAt: new Date(Date.now() - minutesAgo * 60_000) });
+  it("clears the oldest when every match is the same student's, and says so", () => {
+    const picked = pickMatch([dup(A, "u1", 5), dup(B, "u1", 30)], email("Jordan Alemu"));
+    expect(picked?.payment.id).toBe(B);
+    expect(picked?.duplicate).toBe(true);
+  });
+  it("still settles nothing when the matches belong to different students", () => {
+    expect(pickMatch([dup(A, "u1", 5), dup(B, "u2", 30)], email("Jordan Alemu"))).toBeNull();
+  });
+  it("a code still picks the exact payment", () => {
+    const picked = pickMatch([dup(A, "u1", 5), dup(B, "u1", 30)], email("Jordan Alemu", 9999, paymentReferenceCode(A)));
+    expect(picked?.payment.id).toBe(A);
+    expect(picked?.duplicate).toBeUndefined();
+  });
+});
+
+describe("reading a Venmo note", () => {
+  const venmo = (...lines: string[]) => parsePaymentEmail("Jordan Alemu paid you $25.00", ["Jordan Alemu paid you $25.00", ...lines, "View payment"].join("\n"));
+  it("takes the line our own link writes", () => {
+    expect(venmo("Scale 1: Major (Bass Note Piano) BNP-4K7Q2")?.memo).toBe("Scale 1: Major (Bass Note Piano) BNP-4K7Q2");
+  });
+  it("still finds the payment code when the student retyped the note", () => {
+    expect(venmo("lessons BNP-4K7Q2")?.memo).toBe("lessons BNP-4K7Q2");
+  });
+  it("finds a note that mentions Bass Note Piano without the brackets", () => {
+    expect(venmo("Bass Note Piano monthly")?.memo).toBe("Bass Note Piano monthly");
+  });
+  it("falls back to the short line under the headline, never Venmo's own boilerplate", () => {
+    expect(venmo("guitar lessons")?.memo).toBe("guitar lessons");
+    expect(venmo("View payment")?.memo).toBeNull();
+    expect(venmo()?.memo).toBeNull();
   });
 });

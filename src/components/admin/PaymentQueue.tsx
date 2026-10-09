@@ -25,6 +25,7 @@ export interface PaymentQueueProps {
 const MATCHED_VIA_LABEL: Record<string, string> = {
   code: "the payment code in the note",
   name: "the sender's name",
+  codeTypo: "a payment code with a typo that is one character from this payment's (please check it is the right person)",
   phone: "the phone number (please check it is the right person)",
   amount: "the exact amount only: nobody else had this amount open (please check it is the right person)",
 };
@@ -233,7 +234,7 @@ export function PaymentQueue({
             {payment.matchedVia && (
               <div className="col-span-2">
                 <dt className="text-small text-slate-600">Cleared by the bank email through</dt>
-                <dd className={payment.matchedVia === "amount" || payment.matchedVia === "phone" ? "text-amber-300" : "text-slate-300"}>
+                <dd className={payment.matchedVia === "amount" || payment.matchedVia === "phone" || payment.matchedVia === "codeTypo" ? "text-amber-300" : "text-slate-300"}>
                   {MATCHED_VIA_LABEL[payment.matchedVia] ?? payment.matchedVia}
                 </dd>
               </div>

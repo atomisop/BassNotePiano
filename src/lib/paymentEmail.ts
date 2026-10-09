@@ -3,7 +3,8 @@ import type { PaymentMethod } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { approveZellePayment, notifyAutoApproved } from "@/lib/payments";
 import { createNotification } from "@/lib/notifications";
-import { memoHasOtherReference, memoHasReferenceFor } from "@/lib/paymentReference";
+import { codesOneTypoApart, memoHasOtherReference, memoHasReferenceFor, normalizedCodeOf, referenceInMemo } from "@/lib/paymentReference";
+import { notifyAdmins } from "@/lib/adminNotifications";
 import { normalizePhone } from "@/lib/phone";
 
 /**
@@ -112,8 +113,7 @@ function parseCore(subject: string, body: string): Omit<ParsedPaymentEmail, "sen
   if (match) {
     const amountCents = toCents(match[2]);
     if (!amountCents) return null;
-    const noteLine = lines.find((line) => /\(Bass Note Piano\)/i.test(line)) ?? null;
-    return { method: "VENMO", name: match[1].trim(), amountCents, memo: noteLine };
+    return { method: "VENMO", name: match[1].trim(), amountCents, memo: venmoNote(lines) };
   }
 
   return null;
@@ -132,6 +132,24 @@ export function parseSofi(body: string): Omit<ParsedPaymentEmail, "senderPhone" 
   const rest = sentenceEnd >= 0 ? afterHeadline.slice(sentenceEnd + 1) : "";
   const note = rest.split(/SoFi is not responsible|Privacy and Security|Contact Us/i)[0].trim();
   return { method: "ZELLE", name: headline[2].trim(), amountCents, memo: note || null };
+}
+
+/**
+ * The payer's note in a Venmo email. Our own link writes "(Bass Note Piano)" and the payment code into it, but people
+ * edit or retype it, so a line with the code, or one that mentions Bass Note Piano, counts too; failing those, the
+ * line right under the headline, as long as it is short and not Venmo's own boilerplate.
+ */
+function venmoNote(lines: string[]): string | null {
+  const ours = lines.find((line) => /\(Bass Note Piano\)/i.test(line));
+  if (ours) return ours;
+  const withCode = lines.find((line) => referenceInMemo(line) !== null);
+  if (withCode) return withCode;
+  const mentions = lines.find((line) => /bass note piano/i.test(line));
+  if (mentions) return mentions;
+  const headline = lines.findIndex((line) => /paid you \$/i.test(line));
+  const next = headline >= 0 ? lines[headline + 1] : undefined;
+  if (next && next.length <= 140 && !/venmo|view|transaction|transfer|privacy|unsubscribe|©|https?:|\bpaid you\b|\$/i.test(next)) return next;
+  return null;
 }
 
 function nameTokens(value: string | null | undefined): string[] {
@@ -167,6 +185,9 @@ type OpenPayment = {
   senderName: string | null;
   /** The number the student typed when the payment sheet opened (before paying). */
   senderPhone?: string | null;
+  /** Who is paying, and since when the payment has been open (used to tell one student's duplicates apart). */
+  userId?: string;
+  createdAt?: Date;
   user: { name: string | null; phone?: string | null; payerAliases: { name: string }[] };
 };
 
@@ -197,7 +218,7 @@ function payerNames(user: OpenPayment["user"]): (string | null)[] {
   return [user.name, ...user.payerAliases.map((alias) => alias.name)];
 }
 
-export type MatchVia = "code" | "name" | "phone" | "amount";
+export type MatchVia = "code" | "codeTypo" | "name" | "phone" | "amount";
 
 /**
  * How an email claims a payment, or null when it does not. The exact amount always has to match. On top of that:
@@ -227,13 +248,39 @@ export function receiptMatchesPayment(payment: OpenPayment, receipt: ReceiptFact
   return receiptMatchVia(payment, receipt) !== null;
 }
 
-/** The one payment an email settles, and how, or null when it is unclear (then a person decides). */
-export function pickMatch<T extends OpenPayment>(payments: T[], receipt: ReceiptFacts): { payment: T; via: MatchVia } | null {
+/**
+ * Several open payments from the SAME student for the same amount (a double tap on Pay, or two purchases at one
+ * price). The money is theirs whichever it is for, so the oldest is the one cleared, and the other waits for its
+ * own money. Null when they are not all one student's.
+ */
+function oldestOfSameStudent<T extends OpenPayment>(payments: T[]): T | null {
+  if (payments.length < 2) return null;
+  const student = payments[0].userId;
+  if (!student || payments.some((payment) => payment.userId !== student)) return null;
+  return [...payments].sort((a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0))[0];
+}
+
+/** The one payment an email settles, and how, or null when it is unclear (then a person decides). `duplicate` marks a pick made among one student's look-alike payments. */
+export function pickMatch<T extends OpenPayment>(payments: T[], receipt: ReceiptFacts): { payment: T; via: MatchVia; duplicate?: boolean } | null {
   const matches = payments.map((payment) => ({ payment, via: receiptMatchVia(payment, receipt) })).filter((m): m is { payment: T; via: MatchVia } => m.via !== null);
   if (matches.length === 1) return matches[0];
   if (matches.length === 0) return null;
   const byCode = matches.filter((m) => m.via === "code");
-  return byCode.length === 1 ? byCode[0] : null;
+  if (byCode.length === 1) return byCode[0];
+  const oldest = oldestOfSameStudent(matches.map((m) => m.payment));
+  return oldest ? { payment: oldest, via: matches.find((m) => m.payment === oldest)!.via, duplicate: true } : null;
+}
+
+/**
+ * A note that carries a code which is not any open payment's, but is one typo away from exactly one of the
+ * payments open for this exact amount: the student mistyped their own code. Null otherwise.
+ */
+export function pickNearMissCode<T extends OpenPayment>(candidates: T[], receipt: ReceiptFacts, allOpenCodes: Set<string>): T | null {
+  const typed = referenceInMemo(receipt.memo);
+  if (!typed) return null;
+  if (allOpenCodes.has(typed)) return null; // a real code for some payment: not a typo
+  const near = candidates.filter((payment) => payment.amountCents === receipt.amountCents && codesOneTypoApart(typed, normalizedCodeOf(payment.id)));
+  return near.length === 1 ? near[0] : null;
 }
 
 /** The one payment an email settles, or null when it is unclear (then a person decides). */
@@ -290,9 +337,41 @@ const openPaymentSelect = {
   user: { select: { name: true, phone: true, payerAliases: { select: { name: true } } } },
 } as const;
 
-export type IngestOutcome = "ignored" | "duplicate" | "approved" | "stored";
+export type IngestOutcome = "ignored" | "duplicate" | "approved" | "stored" | "unreadable";
 
 /** Handles one forwarded email. Safe to call repeatedly with the same message. */
+/** Looks like a payment (an amount in dollars) even though the reader could not make sense of it. */
+function looksLikePayment(subject: string, body: string): boolean {
+  return /\$\s?\d[\d,]*(?:\.\d{2})?/.test(`${subject}\n${body}`);
+}
+
+/**
+ * Tells the admins about a bank email that looks like a payment but could not be read, so a changed wording is
+ * noticed the day it happens instead of by payments quietly piling up. Once per email. Never throws.
+ */
+async function reportUnreadable(input: { messageId: string; from: string; subject: string; body: string }): Promise<void> {
+  try {
+    const key = `payment-email-unreadable:${input.messageId.slice(0, 160)}`;
+    try {
+      await prisma.appSetting.create({ data: { key, value: String(Date.now()) } });
+    } catch (err) {
+      if ((err as { code?: string })?.code === "P2002") return; // already reported
+      throw err;
+    }
+    // Markers are tiny; keep the table tidy by dropping the old ones now and then.
+    await prisma.appSetting.deleteMany({ where: { key: { startsWith: "payment-email-unreadable:" }, updatedAt: { lt: new Date(Date.now() - 45 * 24 * 3600 * 1000) } } });
+    const excerpt = input.body.replace(/\s+/g, " ").trim().slice(0, 180);
+    await notifyAdmins("PAYMENT_EMAIL_UNREADABLE", {
+      type: "ADMIN_ALERT",
+      title: "A payment email could not be read",
+      body: `An email from ${input.from.replace(/<.*>/, "").trim() || "your bank"} ("${input.subject.slice(0, 120)}") looks like a payment, but the sender and amount could not be found in it, so it was not matched. If it was a payment, approve it by hand in Admin > Payments. It begins: ${excerpt}`,
+      cta: { label: "Open payments", path: "/admin/payments" },
+    });
+  } catch (err) {
+    console.error("Unreadable payment email report failed (non-blocking):", err);
+  }
+}
+
 export async function ingestPaymentEmail(input: {
   messageId: string;
   from: string;
@@ -301,7 +380,13 @@ export async function ingestPaymentEmail(input: {
 }): Promise<IngestOutcome> {
   if (!isAllowedSender(input.from)) return "ignored";
   const parsed = parsePaymentEmail(input.subject, input.body);
-  if (!parsed) return "ignored";
+  if (!parsed) {
+    if (looksLikePayment(input.subject, input.body)) {
+      await reportUnreadable(input);
+      return "unreadable";
+    }
+    return "ignored";
+  }
 
   let receipt;
   try {
@@ -321,22 +406,39 @@ export async function ingestPaymentEmail(input: {
     throw err;
   }
 
-  const candidates = await prisma.zellePayment.findMany({
+  const candidates = (await prisma.zellePayment.findMany({
     where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: parsed.amountCents },
     select: openPaymentSelect,
-  });
-  let picked: { payment: OpenPayment & { id: string }; via: MatchVia } | null = pickMatch(candidates as OpenPayment[], receipt);
+  })) as (OpenPayment & { userId: string; createdAt: Date })[];
+
+  type Picked = { payment: OpenPayment & { id: string }; via: MatchVia; duplicate?: boolean };
+  // Strongest first: the code, the name, a phone; then a code with a typo; then (last) the exact amount alone.
+  let picked: Picked | null = pickMatch(candidates, receipt);
+  if (!picked && referenceInMemo(receipt.memo)) {
+    const near = pickNearMissCode(candidates, receipt, await openPaymentCodes());
+    if (near) picked = { payment: near, via: "codeTypo" };
+  }
   // Nothing matched by code, name or phone. If exactly one recent payment is open for this exact amount (prices end in
   // .99, which nobody sends by accident) and the sender is not someone we know under another account, the money is
   // almost certainly for that payment. It is approved but left in the owner's unchecked list.
   if (!picked) {
-    const only = await pickByAmountAlone(candidates as (OpenPayment & { userId: string; createdAt: Date })[], receipt);
-    if (only) picked = { payment: only, via: "amount" };
+    const alone = await pickByAmountAlone(candidates, receipt);
+    if (alone) picked = { payment: alone.payment, via: "amount", duplicate: alone.duplicate };
   }
   const match = picked?.payment ?? null;
-  if (picked && (await getBoolSetting("payments.emailAutoApprove")) && (await approveFromReceipt(picked.payment.id, receipt, { needsCheck: picked.via === "phone" || picked.via === "amount", via: picked.via }))) return "approved";
+  if (picked && (await getBoolSetting("payments.emailAutoApprove"))) {
+    // The weaker ways in leave the payment in the owner's unchecked list to be confirmed.
+    const needsCheck = Boolean(picked.duplicate) || picked.via === "phone" || picked.via === "amount" || picked.via === "codeTypo";
+    if (await approveFromReceipt(picked.payment.id, receipt, { needsCheck, via: picked.via })) return "approved";
+  }
   if (!match && (await getBoolSetting("payments.amountMismatchNotice"))) await warnAboutAmountMismatch(receipt).catch((err) => console.error("Amount mismatch notice failed (non-blocking):", err));
   return "stored";
+}
+
+/** The comparable code of every open payment, so a code in a note is known to be a real one (not a typo). */
+async function openPaymentCodes(): Promise<Set<string>> {
+  const open = await prisma.zellePayment.findMany({ where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } }, select: { id: true } });
+  return new Set(open.map((payment) => normalizedCodeOf(payment.id)));
 }
 
 /** An open payment older than this is not one a student is waiting on, so the exact amount alone does not claim it. */
@@ -363,20 +465,20 @@ async function senderBelongsToAnotherAccount(senderName: string, userId: string)
 
 /**
  * The exact amount, by itself, claims a payment only when ALL of these hold: the owner has the setting on, exactly
- * one payment is open for that amount, it was opened recently, the note does not name a different payment, and the
- * sender is not a known person on another account (then they are probably paying for something else, so a person
- * decides). The money did arrive in exactly that amount, so the worst case is a wrong attribution, which the owner
- * sees in the unchecked list.
+ * one payment is open for that amount (or several, all one student's: then the oldest), it was opened recently, the
+ * note does not name a different payment, and the sender is not a known person on another account (then they are
+ * probably paying for something else, so a person decides). The money did arrive in exactly that amount, so the
+ * worst case is a wrong attribution, which the owner sees in the unchecked list.
  */
-async function pickByAmountAlone<T extends OpenPayment & { userId: string; createdAt: Date }>(candidates: T[], receipt: ReceiptFacts): Promise<T | null> {
-  if (candidates.length !== 1) return null;
-  const only = candidates[0];
-  if (only.amountCents !== receipt.amountCents) return null;
+async function pickByAmountAlone<T extends OpenPayment & { userId: string; createdAt: Date }>(candidates: T[], receipt: ReceiptFacts): Promise<{ payment: T; duplicate: boolean } | null> {
+  if (candidates.length === 0) return null;
+  const only = candidates.length === 1 ? candidates[0] : oldestOfSameStudent(candidates);
+  if (!only || only.amountCents !== receipt.amountCents) return null;
   if (Date.now() - only.createdAt.getTime() > AMOUNT_ALONE_MAX_AGE_MS) return null;
   if (memoHasOtherReference(receipt.memo, only.id)) return null;
   if (!(await getBoolSetting("payments.matchByAmount"))) return null;
   if (await senderBelongsToAnotherAccount(receipt.senderName, only.userId)) return null;
-  return only;
+  return { payment: only, duplicate: candidates.length > 1 };
 }
 
 /**
@@ -436,6 +538,41 @@ export async function settleWithStoredReceipt(paymentId: string): Promise<boolea
   const matches = receipts.filter((receipt) => receiptMatchesPayment(payment as OpenPayment, receipt));
   // Several emails of the same amount: only the one that carries this payment's own code is certain.
   const certain = matches.length > 1 ? matches.filter((receipt) => memoHasReferenceFor(receipt.memo, payment.id)) : matches;
-  if (certain.length !== 1) return false;
-  return approveFromReceipt(payment.id, certain[0]);
+  if (certain.length === 1) {
+    const via = receiptMatchVia(payment as OpenPayment, certain[0]) ?? undefined;
+    return approveFromReceipt(payment.id, certain[0], { via, needsCheck: via === "phone" });
+  }
+  if (certain.length > 1) return false;
+
+  // Nothing certain by code, name or phone. The same two softer rules the arriving email gets, so the order in which
+  // the money and the student's "I've sent it" happen does not decide whether it clears.
+  if (!(await getBoolSetting("payments.emailAutoApprove"))) return false;
+  if (receipts.length === 0) return false;
+
+  // A code one typo away from this payment's own (and not any open payment's): the student mistyped it.
+  const mine = normalizedCodeOf(payment.id);
+  const typos = receipts.filter((receipt) => {
+    const typed = referenceInMemo(receipt.memo);
+    return typed !== null && codesOneTypoApart(typed, mine);
+  });
+  if (typos.length === 1) {
+    const typed = referenceInMemo(typos[0].memo) as string;
+    if (!(await openPaymentCodes()).has(typed)) return approveFromReceipt(payment.id, typos[0], { needsCheck: true, via: "codeTypo" });
+  }
+
+  // The exact amount alone: one email, one open payment for it (or all one student's), recent, not for another payment,
+  // not from a known person on a different account.
+  if (receipts.length !== 1) return false;
+  const [receipt] = receipts;
+  if (!(await getBoolSetting("payments.matchByAmount"))) return false;
+  const full = await prisma.zellePayment.findUnique({ where: { id: payment.id }, select: { userId: true, createdAt: true } });
+  if (!full || Date.now() - full.createdAt.getTime() > AMOUNT_ALONE_MAX_AGE_MS) return false;
+  if (memoHasOtherReference(receipt.memo, payment.id)) return false;
+  const others = await prisma.zellePayment.findMany({
+    where: { id: { not: payment.id }, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: payment.amountCents },
+    select: { userId: true },
+  });
+  if (others.some((other) => other.userId !== full.userId)) return false;
+  if (await senderBelongsToAnotherAccount(receipt.senderName, full.userId)) return false;
+  return approveFromReceipt(payment.id, receipt, { needsCheck: true, via: "amount" });
 }

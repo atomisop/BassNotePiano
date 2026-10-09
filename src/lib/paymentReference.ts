@@ -21,6 +21,23 @@ export function paymentReferenceCode(paymentId: string): string {
   return `${PREFIX}-${paymentId.slice(-CODE_LENGTH).toUpperCase()}`;
 }
 
+/** A payment's code in the normalized form used to compare codes, e.g. "4K7Q2". */
+export function normalizedCodeOf(paymentId: string): string {
+  return normalize(paymentId.slice(-CODE_LENGTH));
+}
+
+/**
+ * True when two codes are NOT equal but differ by one wrong character or by one swapped pair: a typo, not another
+ * payment's code. Only ever used among payments already open for the exact same amount.
+ */
+export function codesOneTypoApart(a: string, b: string): boolean {
+  if (a === b || a.length !== b.length) return false;
+  const diffs: number[] = [];
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) diffs.push(i);
+  if (diffs.length === 1) return true;
+  return diffs.length === 2 && diffs[1] === diffs[0] + 1 && a[diffs[0]] === b[diffs[1]] && a[diffs[1]] === b[diffs[0]];
+}
+
 /** The code inside a note, in the same normalized form for every payment, or null if the note has none. */
 export function referenceInMemo(memo: string | null | undefined): string | null {
   if (!memo) return null;

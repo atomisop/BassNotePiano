@@ -3,6 +3,7 @@ vi.mock("@/lib/auth", () => ({ getServerAuthSession: async () => null, authOptio
 import { ingestPaymentEmail } from "@/lib/paymentEmail";
 import { paymentReferenceCode } from "@/lib/paymentReference";
 import { forgetPayerName, listUnmatchedReceipts, matchReceiptToPayment } from "@/lib/paymentReceipts";
+import { settleWithStoredReceipt } from "@/lib/paymentEmail";
 import { checkPaymentPhone, getPaymentPhoneState, savePaymentPhone } from "@/lib/paymentPhone";
 import { resetSetting, saveSetting } from "@/lib/siteSettings";
 import { freshPhone, makeUser, newTag, prisma } from "./helpers";
@@ -454,5 +455,166 @@ describe("clearing a payment by its exact amount", () => {
     expect(await sofiEmail("SOME PARENT", "199.12")).toBe("approved");
     expect(await sofiEmail("SOME PARENT", "199.12")).toBe("stored"); // the second email has nothing left to clear
     expect(await status(p.id)).toBe("VERIFIED");
+  });
+});
+
+/** Makes a payment code one character off the real one. */
+function mistypedCode(paymentId: string): string {
+  const code = paymentReferenceCode(paymentId).slice(4);
+  return `BNP-${code[0] === "Z" ? "Y" : "Z"}${code.slice(1)}`;
+}
+
+/** A student who has already tapped "I've sent it": the payment is waiting for its money. */
+async function submittedPayment(userId: string, amountCents: number) {
+  return openPayment(userId, amountCents, "PENDING_REVIEW");
+}
+
+describe("when the student submits after the money email already arrived", () => {
+  beforeAll(async () => {
+    await saveSetting("payments.matchByAmount", true);
+  });
+
+  it("clears it by the exact amount, like an email arriving second would", async () => {
+    expect(await sofiEmail("SOME PARENT", "199.21", "Guitar LessonMonthly")).toBe("stored"); // nothing open yet
+    const u = await student("Late Larry");
+    const p = await submittedPayment(u.id, 19921);
+    expect(await settleWithStoredReceipt(p.id)).toBe(true);
+    const r = await row(p.id);
+    expect([r.status, r.matchedVia, r.checkedAt]).toEqual(["VERIFIED", "amount", null]);
+  });
+
+  it("clears it by the name, confirmed", async () => {
+    expect(await sofiEmail("LENA LATE", "199.22")).toBe("stored");
+    const u = await student("Lena Late");
+    const p = await submittedPayment(u.id, 19922);
+    expect(await settleWithStoredReceipt(p.id)).toBe(true);
+    const r = await row(p.id);
+    expect([r.matchedVia, r.checkedAt === null]).toEqual(["name", false]);
+  });
+
+  it("clears it by a code with a typo, and leaves it to be checked", async () => {
+    const u = await student("Tessa Typo");
+    const p = await submittedPayment(u.id, 19923);
+    expect(await sofiEmail("SOME PARENT", "199.23", `lessons ${mistypedCode(p.id)}`)).toBe("approved"); // the email arriving second already handles it
+    expect((await row(p.id)).matchedVia).toBe("codeTypo");
+  });
+
+  it("clears a typo'd code when the email came first", async () => {
+    const earlyId = (await student("Early Ed")).id;
+    const p = await submittedPayment(earlyId, 19924);
+    await prisma.zellePayment.update({ where: { id: p.id }, data: { status: "AWAITING_TRANSFER" } }); // closed to the arriving email for this test
+    await prisma.zellePayment.update({ where: { id: p.id }, data: { status: "REJECTED" } });
+    expect(await sofiEmail("SOME PARENT", "199.24", `lessons ${mistypedCode(p.id)}`)).toBe("stored");
+    await prisma.zellePayment.update({ where: { id: p.id }, data: { status: "PENDING_REVIEW" } });
+    expect(await settleWithStoredReceipt(p.id)).toBe(true);
+    expect((await row(p.id)).matchedVia).toBe("codeTypo");
+  });
+
+  it("does nothing when two emails of that amount are waiting", async () => {
+    await sofiEmail("PARENT ONE", "199.25");
+    await sofiEmail("PARENT TWO", "199.25");
+    const u = await student("Pair Paula");
+    const p = await submittedPayment(u.id, 19925);
+    expect(await settleWithStoredReceipt(p.id)).toBe(false);
+    expect(await status(p.id)).toBe("PENDING_REVIEW");
+  });
+
+  it("does nothing when another student also has that amount open", async () => {
+    await sofiEmail("SOME PARENT", "199.26");
+    const a = await submittedPayment((await student("Dual Dan")).id, 19926);
+    await submittedPayment((await student("Dual Dora")).id, 19926);
+    expect(await settleWithStoredReceipt(a.id)).toBe(false);
+  });
+
+  it("does nothing when the sender is a known person on a different account", async () => {
+    await student("Known Kim");
+    await sofiEmail("KNOWN KIM", "199.27");
+    const p = await submittedPayment((await student("Other Omar")).id, 19927);
+    expect(await settleWithStoredReceipt(p.id)).toBe(false);
+  });
+
+  it("does nothing when the setting is off", async () => {
+    await sofiEmail("SOME PARENT", "199.28");
+    const p = await submittedPayment((await student("Off Olga")).id, 19928);
+    await saveSetting("payments.matchByAmount", false);
+    expect(await settleWithStoredReceipt(p.id)).toBe(false);
+    await saveSetting("payments.matchByAmount", true);
+  });
+});
+
+describe("one student with two open payments for the same amount", () => {
+  beforeAll(async () => {
+    await saveSetting("payments.matchByAmount", true);
+  });
+
+  it("clears the oldest by name and leaves the other for its own money, flagged to check", async () => {
+    const u = await student("Dup Daria");
+    const first = await openPayment(u.id, 19931, "AWAITING_TRANSFER");
+    await prisma.zellePayment.update({ where: { id: first.id }, data: { createdAt: new Date(Date.now() - 3600_000) } });
+    const second = await openPayment(u.id, 19931, "AWAITING_TRANSFER");
+    expect(await sofiEmail("DUP DARIA", "199.31")).toBe("approved");
+    expect(await status(first.id)).toBe("VERIFIED");
+    expect(await status(second.id)).toBe("AWAITING_TRANSFER");
+    expect((await row(first.id)).checkedAt).toBeNull();
+    // The next email of that amount clears the other one.
+    expect(await sofiEmail("DUP DARIA", "199.31")).toBe("approved");
+    expect(await status(second.id)).toBe("VERIFIED");
+  });
+
+  it("clears the oldest by amount alone when the sender's name matches nobody", async () => {
+    const u = await student("Dup Dante");
+    const first = await openPayment(u.id, 19932, "AWAITING_TRANSFER");
+    await prisma.zellePayment.update({ where: { id: first.id }, data: { createdAt: new Date(Date.now() - 3600_000) } });
+    const second = await openPayment(u.id, 19932, "AWAITING_TRANSFER");
+    expect(await sofiEmail("SOME PARENT", "199.32")).toBe("approved");
+    expect([await status(first.id), await status(second.id)]).toEqual(["VERIFIED", "AWAITING_TRANSFER"]);
+  });
+});
+
+describe("a mistyped payment code", () => {
+  beforeAll(async () => {
+    await saveSetting("payments.matchByAmount", true);
+  });
+
+  it("finds the one payment it is a character away from, whatever the sender's name, and flags it", async () => {
+    const u = await student("Cody Typo");
+    const p = await openPayment(u.id, 19941, "AWAITING_TRANSFER");
+    expect(await sofiEmail("SOME PARENT", "199.41", `lessons ${mistypedCode(p.id)}`)).toBe("approved");
+    const r = await row(p.id);
+    expect([r.matchedVia, r.checkedAt]).toEqual(["codeTypo", null]);
+  });
+
+  it("does not guess when the code is another open payment's real code", async () => {
+    const mine = await openPayment((await student("Mine Mia")).id, 19942, "AWAITING_TRANSFER");
+    const theirs = await openPayment((await student("Theirs Tom")).id, 19943, "AWAITING_TRANSFER");
+    expect(await sofiEmail("SOME PARENT", "199.42", paymentReferenceCode(theirs.id))).toBe("stored");
+    expect(await status(mine.id)).toBe("AWAITING_TRANSFER");
+    expect(await status(theirs.id)).toBe("AWAITING_TRANSFER");
+  });
+});
+
+describe("a payment email that cannot be read", () => {
+  const noteCount = async (needle: string) => prisma.notification.count({ where: { userId: admin.id, title: "A payment email could not be read", body: { contains: needle } } });
+
+  it("tells the admins once, instead of failing silently", async () => {
+    const messageId = `${tag}-unreadable-${++counter}`;
+    const send = () =>
+      ingestPaymentEmail({
+        messageId,
+        from: "SoFi <no-reply@sofi.com>",
+        subject: `Zelle activity ${tag}`,
+        body: "You were paid $75.00 for lessons. Something about this wording is new.",
+      });
+    expect(await send()).toBe("unreadable");
+    expect(await noteCount(`Zelle activity ${tag}`)).toBe(1);
+    expect(await send()).toBe("unreadable");
+    expect(await noteCount(`Zelle activity ${tag}`)).toBe(1); // the same email is not reported twice
+  });
+
+  it("stays quiet about a bank email with no amount in it, or from someone else", async () => {
+    expect(await ingestPaymentEmail({ messageId: `${tag}-q-${++counter}`, from: "SoFi <no-reply@sofi.com>", subject: `Statement ${tag}-q`, body: "Your statement is ready." })).toBe("ignored");
+    expect(await ingestPaymentEmail({ messageId: `${tag}-s-${++counter}`, from: "Scammer <x@evil.example>", subject: `Zelle ${tag}-s`, body: "You were paid $75.00" })).toBe("ignored");
+    expect(await noteCount(`${tag}-q`)).toBe(0);
+    expect(await noteCount(`${tag}-s`)).toBe(0);
   });
 });

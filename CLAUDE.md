@@ -251,6 +251,13 @@ proves nothing about the line being active or theirs; only a text code or a paid
   accident. `phone` and `amount` clears are left UNCHECKED (`checkedAt` null) so the owner reviews them, and
   `ZellePayment.matchedVia` records which way in was used (shown in the admin queue). A name match whose phone
   disagrees is held for an admin. Phone-at-payment (`payments.askPhone`) is OFF by default since emails have no phone.
+  Hardening (2026-10-09): the same softer rules (typo'd code, exact amount alone) also run when the student submits
+  AFTER the money email arrived (`settleWithStoredReceipt`), so the order does not decide the outcome; one student's
+  look-alike open payments (same amount) clear oldest-first (`oldestOfSameStudent`, flagged unchecked); a note code
+  one typo from exactly one same-amount payment and not equal to any open payment's code clears as `codeTypo`
+  (unchecked); the Venmo note falls back to a line with the code or "Bass Note Piano"; and a bank email that looks
+  like a payment (has a $ amount) but cannot be read raises the admin alert `PAYMENT_EMAIL_UNREADABLE` once per email
+  (marker rows `payment-email-unreadable:<id>` in AppSetting) and ingest answers "unreadable".
 - **Optional text confirmation** (owner setting `phone.verifyBySms`, OFF by default, needs `PLIVO_*` env):
   shared code system with `VerificationPurpose.PHONE_VERIFY`; `src/lib/sms.ts` talks to Plivo Verify, which makes,
   texts and checks the code (we store only a session row). New accounts made while it is on get
