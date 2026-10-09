@@ -2,6 +2,8 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createAndSendCode, RateLimitError, verifyCode } from "@/lib/verification";
 import { normalizePhone } from "@/lib/phone";
+import { checkVerifySession, isSmsConfigured, startVerifySession } from "@/lib/sms";
+import { getNumberSetting } from "@/lib/siteSettings";
 
 export type PhoneResult<T = unknown> = ({ ok: true } & T) | { ok: false; error: string };
 
@@ -18,13 +20,79 @@ async function isTaken(phone: string, userId: string): Promise<boolean> {
   return Boolean(await prisma.user.findFirst({ where: { phone, id: { not: userId } }, select: { id: true } }));
 }
 
+const SEND_FAILED = "We couldn't send the text just now. Check the number and try again in a minute.";
+const TOO_MANY = "Too many codes requested. Please wait a few minutes and try again.";
+
+/**
+ * With a provider (Plivo Verify) the provider makes, texts and checks the code, so we only keep a row that
+ * remembers its session, when it expires and how many tries were used. Same throttle as every other code.
+ */
+async function sendProviderCode(user: { id: string; email: string }, phone: string): Promise<PhoneResult> {
+  const email = user.email.toLowerCase();
+  const windowStart = new Date(Date.now() - (await getNumberSetting("security.codeIssueWindowMinutes")) * 60_000);
+  const recent = await prisma.verificationCode.count({ where: { email, purpose: "PHONE_VERIFY", createdAt: { gte: windowStart } } });
+  if (recent >= (await getNumberSetting("security.codeIssueLimit"))) return { ok: false, error: TOO_MANY };
+
+  let session: string;
+  try {
+    session = await startVerifySession(phone);
+  } catch (err) {
+    console.error("Phone verification text failed:", err instanceof Error ? err.message : err);
+    return { ok: false, error: SEND_FAILED };
+  }
+  // Only the newest code counts: close any still open, then record this one.
+  await prisma.verificationCode.updateMany({ where: { email, purpose: "PHONE_VERIFY", consumedAt: null }, data: { consumedAt: new Date() } });
+  await prisma.verificationCode.create({
+    data: {
+      email,
+      userId: user.id,
+      purpose: "PHONE_VERIFY",
+      codeHash: "provider", // there is no code here to hash: the provider holds it
+      payload: { phone, session },
+      expiresAt: new Date(Date.now() + (await getNumberSetting("security.codeExpiryMinutes")) * 60_000),
+    },
+  });
+  return { ok: true };
+}
+
+/** The provider-checked counterpart of verifyCode: same reasons, same attempt limit. */
+async function checkProviderCode(email: string, code: string): Promise<{ ok: true; phone: string } | { ok: false; error: string }> {
+  const record = await prisma.verificationCode.findFirst({
+    where: { email: email.toLowerCase(), purpose: "PHONE_VERIFY", consumedAt: null },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!record) return { ok: false, error: REASON_MESSAGES.not_found };
+  if (record.expiresAt < new Date()) return { ok: false, error: REASON_MESSAGES.expired };
+  const { phone, session } = (record.payload ?? {}) as { phone?: string; session?: string };
+  if (!phone || !session) return { ok: false, error: REASON_MESSAGES.not_found };
+
+  // A try is claimed before asking, so a burst of parallel guesses cannot all slip under the limit.
+  const claimed = await prisma.verificationCode.updateMany({
+    where: { id: record.id, consumedAt: null, attempts: { lt: await getNumberSetting("security.maxCodeAttempts") } },
+    data: { attempts: { increment: 1 } },
+  });
+  if (claimed.count === 0) return { ok: false, error: REASON_MESSAGES.too_many_attempts };
+
+  const outcome = await checkVerifySession(session, code);
+  if (outcome === "error") {
+    // Not their mistake: give the try back.
+    await prisma.verificationCode.updateMany({ where: { id: record.id, attempts: { gt: 0 } }, data: { attempts: { decrement: 1 } } });
+    return { ok: false, error: "We couldn't check that code just now. Please try again in a moment." };
+  }
+  if (outcome === "invalid") return { ok: false, error: REASON_MESSAGES.incorrect };
+  const used = await prisma.verificationCode.updateMany({ where: { id: record.id, consumedAt: null }, data: { consumedAt: new Date() } });
+  if (used.count === 0) return { ok: false, error: REASON_MESSAGES.not_found };
+  return { ok: true, phone };
+}
+
 async function sendCode(user: { id: string; email: string }, phone: string): Promise<PhoneResult> {
+  if (isSmsConfigured()) return sendProviderCode(user, phone);
   try {
     const sent = await createAndSendCode({ email: user.email, userId: user.id, purpose: "PHONE_VERIFY", payload: { phone } });
-    if (!sent.ok) return { ok: false, error: "We couldn't send the text just now. Check the number and try again in a minute." };
+    if (!sent.ok) return { ok: false, error: SEND_FAILED };
     return { ok: true };
   } catch (err) {
-    if (err instanceof RateLimitError) return { ok: false, error: "Too many codes requested. Please wait a few minutes and try again." };
+    if (err instanceof RateLimitError) return { ok: false, error: TOO_MANY };
     throw err;
   }
 }
@@ -53,9 +121,16 @@ export async function resendPhoneCode(userId: string): Promise<PhoneResult> {
 export async function confirmPhoneVerification(userId: string, code: string): Promise<PhoneResult<{ phone: string }>> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, pendingPhone: true } });
   if (!user) return { ok: false, error: "Account not found." };
-  const result = await verifyCode(user.email, "PHONE_VERIFY", code);
-  if (!result.ok) return { ok: false, error: REASON_MESSAGES[result.reason] };
-  const phone = (result.payload as { phone?: string } | null)?.phone;
+  let phone: string | undefined;
+  if (isSmsConfigured()) {
+    const checked = await checkProviderCode(user.email, code);
+    if (!checked.ok) return checked;
+    phone = checked.phone;
+  } else {
+    const result = await verifyCode(user.email, "PHONE_VERIFY", code);
+    if (!result.ok) return { ok: false, error: REASON_MESSAGES[result.reason] };
+    phone = (result.payload as { phone?: string } | null)?.phone;
+  }
   // The code only counts for the number it was sent to, which must still be the one waiting.
   if (!phone || phone !== user.pendingPhone) return { ok: false, error: "That code was for a different number. Request a new one." };
   try {

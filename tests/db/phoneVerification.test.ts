@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 const sent: { to: string; body: string }[] = [];
 vi.mock("@/lib/sms", () => ({
   smsAvailable: () => true,
-  isSmsConfigured: () => true,
+  isSmsConfigured: () => false, // the built-in code path; the Plivo path has its own test file
   sendSms: async (to: string, body: string) => {
     sent.push({ to, body });
   },

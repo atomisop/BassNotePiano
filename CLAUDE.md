@@ -235,17 +235,17 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
 A phone number is part of creating an account, confirmed by a 6-digit text. Same shared code system as email
 (`VerificationPurpose.PHONE_VERIFY` in `src/lib/verification.ts`, the number rides in `payload`), so expiry,
 attempt and issue limits are the existing `security.*` settings. Logic is `src/lib/phoneVerification.ts`;
-sending is `src/lib/sms.ts` (Twilio over plain fetch, env `TWILIO_*`, see `.env.example`).
+sending is `src/lib/sms.ts`: Plivo Verify over plain fetch (env `PLIVO_*`, see `.env.example`). With Plivo the provider makes, texts and checks the code (we store only a session row in `VerificationCode`); without it, dev mode makes our own code and prints it.
 
 - `User.phone` is unique and holds ONLY a verified number; a typed-but-unconfirmed one waits in `pendingPhone`
   so it can never block someone else. `phoneRequired` is set at sign-up and gates only those accounts.
 - Gate: `(dashboard)/layout.tsx` and `onboarding/page.tsx` send an unverified `phoneRequired` account to
   `/verify-phone`. Older accounts are never gated; they get `PhonePromptToast` (once per session, timer bar,
   seconds = `phone.promptSeconds`) and the card in Settings → Account.
-- `smsAvailable()` is false in production without Twilio keys. Everything phone-related then switches off
+- `smsAvailable()` is false in production without Plivo keys. Everything phone-related then switches off
   (no field at sign-up, no gate, no popup) so a missing key can never lock people out. In development the
   code is printed to the server log (`[dev] SMS to ...`).
-- There is NO free production SMS service. Twilio's trial only texts pre-verified numbers.
+- There is NO free production SMS service. Plivo charges per text; US carrier registration rules may still apply, ask their support.
 - Settings (`/account`) now has one "Account" choice that holds every account item in groups (profile,
   contact, sign-in and security, connected accounts, privacy and data incl. download, delete). The content
   is rendered twice (desktop column and phone slide-over), so never use DOM ids inside it.
