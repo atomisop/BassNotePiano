@@ -11,5 +11,8 @@ ADD COLUMN     "pendingPhone" TEXT;
 ALTER TABLE "ProcessedPaymentEmail" ADD COLUMN     "senderPhone" TEXT,
 ADD COLUMN     "senderPhoneLast4" TEXT;
 
+-- AlterTable
+ALTER TABLE "ZellePayment" ADD COLUMN     "senderPhone" TEXT;
+
 -- CreateIndex
-CREATE INDEX "User_phone_idx" ON "User"("phone");
+CREATE UNIQUE INDEX "User_phone_key" ON "User"("phone");

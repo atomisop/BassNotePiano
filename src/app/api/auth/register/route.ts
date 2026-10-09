@@ -9,7 +9,7 @@ import { createAndSendCode, RateLimitError } from "@/lib/verification";
 import { isDisposableEmailDomain } from "@/lib/disposableEmail";
 import { getBoolSetting, getTextSetting } from "@/lib/siteSettings";
 import { assessPhone } from "@/lib/phoneValidity";
-import { phoneVerifyMode } from "@/lib/phoneVerification";
+import { isPhoneConflict, isPhoneTaken, PHONE_TAKEN, phoneVerifyMode } from "@/lib/phoneVerification";
 import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
@@ -84,9 +84,8 @@ export async function POST(req: NextRequest) {
     const assessed = assessPhone(typeof body?.phone === "string" ? body.phone : "");
     if (!assessed.ok) return NextResponse.json({ error: assessed.error }, { status: 400 });
     phone = assessed.phone;
-    if (verifying && (await prisma.user.findFirst({ where: { phone, phoneVerifiedAt: { not: null } }, select: { id: true } }))) {
-      return NextResponse.json({ error: "That number is already linked to another account." }, { status: 409 });
-    }
+    // One number, one account: it cannot be one an existing student already has.
+    if (await isPhoneTaken(phone, null)) return NextResponse.json({ error: PHONE_TAKEN }, { status: 409 });
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
@@ -121,6 +120,7 @@ export async function POST(req: NextRequest) {
     }).catch((err) => console.error("New account alert failed (non-blocking):", err));
     return NextResponse.json(user, { status: 201 });
   } catch (err) {
+    if (isPhoneConflict(err)) return NextResponse.json({ error: PHONE_TAKEN }, { status: 409 });
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
       return NextResponse.json({ error: "An account with that email already exists." }, { status: 409 });
     }

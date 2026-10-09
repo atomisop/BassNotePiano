@@ -3,6 +3,7 @@ vi.mock("@/lib/auth", () => ({ getServerAuthSession: async () => null, authOptio
 import { ingestPaymentEmail } from "@/lib/paymentEmail";
 import { paymentReferenceCode } from "@/lib/paymentReference";
 import { forgetPayerName, listUnmatchedReceipts, matchReceiptToPayment } from "@/lib/paymentReceipts";
+import { checkPaymentPhone, getPaymentPhoneState, savePaymentPhone } from "@/lib/paymentPhone";
 import { freshPhone, makeUser, newTag, prisma } from "./helpers";
 
 const tag = newTag("pe");
@@ -17,9 +18,9 @@ async function student(name: string) {
   return user;
 }
 
-async function openPayment(userId: string, amountCents: number, status: "AWAITING_TRANSFER" | "PENDING_REVIEW" = "PENDING_REVIEW") {
+async function openPayment(userId: string, amountCents: number, status: "AWAITING_TRANSFER" | "PENDING_REVIEW" = "PENDING_REVIEW", senderPhone: string | null = null) {
   const p = await prisma.zellePayment.create({
-    data: { userId, purpose: "CLASS_CREDITS", lessonQuantity: 2, amountCents, zelleHandle: "pay@example.com", status, submittedAt: status === "PENDING_REVIEW" ? new Date() : null },
+    data: { userId, purpose: "CLASS_CREDITS", lessonQuantity: 2, amountCents, zelleHandle: "pay@example.com", status, senderPhone, submittedAt: status === "PENDING_REVIEW" ? new Date() : null },
   });
   paymentIds.push(p.id);
   return p;
@@ -228,5 +229,106 @@ describe("the phone number as a cross-check", () => {
     expect(row!.senderPhoneLast4).toBe(phone.slice(-4));
     expect(row!.candidates[0]).toMatchObject({ id: target.id, phoneMatch: true });
     expect(row!.candidates.filter((c) => c.phoneMatch)).toHaveLength(1);
+  });
+});
+
+describe("the phone number asked when paying", () => {
+  it("clears a payment from the number typed for it, even when the name on the email is someone else's, and leaves it to be checked", async () => {
+    const phone = freshPhone();
+    const kid = await student("Kai Child");
+    const p = await openPayment(kid.id, 15001, "AWAITING_TRANSFER", phone);
+    expect(await emailWithPhone("Parent Payer", "150.01", phone)).toBe("approved");
+    const row = await prisma.zellePayment.findUniqueOrThrow({ where: { id: p.id } });
+    expect(row.status).toBe("VERIFIED");
+    // A settlement that rested on a typed number alone is not marked confirmed: it waits in the unchecked list.
+    expect([row.autoApproved, row.checkedAt]).toEqual([true, null]);
+  });
+
+  it("a name match with the right number is confirmed as before", async () => {
+    const phone = freshPhone();
+    const u = await student("Nia Namer");
+    const p = await openPayment(u.id, 15002, "AWAITING_TRANSFER", phone);
+    expect(await emailWithPhone("Nia Namer", "150.02", phone)).toBe("approved");
+    expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: p.id } })).checkedAt).not.toBeNull();
+  });
+
+  it("two students who typed the same number settle nothing from it", async () => {
+    const phone = freshPhone();
+    const victim = await student("Vera Victim");
+    const thief = await student("Theo Thief");
+    const a = await openPayment(victim.id, 15003, "AWAITING_TRANSFER", phone);
+    const b = await openPayment(thief.id, 15003, "AWAITING_TRANSFER", phone);
+    expect(await emailWithPhone("Someone Else", "150.03", phone)).toBe("stored");
+    expect([await status(a.id), await status(b.id)]).toEqual(["AWAITING_TRANSFER", "AWAITING_TRANSFER"]);
+  });
+
+  it("a different number than the one typed settles nothing", async () => {
+    const u = await student("Dina Different");
+    const p = await openPayment(u.id, 15004, "AWAITING_TRANSFER", freshPhone());
+    expect(await emailWithPhone("Parent Payer", "150.04", freshPhone())).toBe("stored");
+    expect(await status(p.id)).toBe("AWAITING_TRANSFER");
+  });
+
+  it("a name match is held when the number on the email is not the one typed for the payment", async () => {
+    const u = await student("Hugo Held");
+    const p = await openPayment(u.id, 15005, "AWAITING_TRANSFER", freshPhone());
+    expect(await emailWithPhone("Hugo Held", "150.05", freshPhone())).toBe("stored");
+    expect(await status(p.id)).toBe("AWAITING_TRANSFER");
+  });
+
+  it("stores the number on the student's own open payment, and fills the account's number when it had none", async () => {
+    const u = await student("Sia Saver");
+    const p = await openPayment(u.id, 15006, "AWAITING_TRANSFER");
+    const phone = freshPhone();
+    expect(await getPaymentPhoneState(u.id, p.id)).toMatchObject({ ask: true, paymentPhone: null, hasAccountPhone: false, accountPhoneLast4: null });
+    expect(await savePaymentPhone(u.id, p.id, phone)).toEqual({ ok: true, phone });
+    expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: p.id } })).senderPhone).toBe(phone);
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: u.id } })).phone).toBe(phone);
+    expect((await getPaymentPhoneState(u.id, p.id))?.paymentPhone).toBe(phone);
+  });
+
+  it("an account that has a number can only pay with that number, and the sheet is told only its last four digits", async () => {
+    const own = freshPhone();
+    const u = await studentWithPhone("Mona Match", own);
+    const p = await openPayment(u.id, 15008, "AWAITING_TRANSFER");
+    const state = await getPaymentPhoneState(u.id, p.id);
+    expect(state).toMatchObject({ hasAccountPhone: true, accountPhoneLast4: own.slice(-4) });
+    expect(JSON.stringify(state)).not.toContain(own);
+    expect(await checkPaymentPhone(u.id, own)).toEqual({ status: "match" });
+    expect(await checkPaymentPhone(u.id, freshPhone())).toEqual({ status: "mismatch" });
+    expect((await savePaymentPhone(u.id, p.id, freshPhone())).ok).toBe(false);
+    expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: p.id } })).senderPhone).toBeNull();
+    expect(await savePaymentPhone(u.id, p.id, own)).toEqual({ ok: true, phone: own });
+  });
+
+  it("cannot borrow a number that is on someone else's account", async () => {
+    const taken = freshPhone();
+    await studentWithPhone("Holder Hana", taken);
+    const thief = await student("Thief Theo");
+    const p = await openPayment(thief.id, 15009, "AWAITING_TRANSFER");
+    expect(await checkPaymentPhone(thief.id, taken)).toEqual({ status: "taken" });
+    expect((await savePaymentPhone(thief.id, p.id, taken)).ok).toBe(false);
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: thief.id } })).phone).toBeNull();
+    expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: p.id } })).senderPhone).toBeNull();
+  });
+
+  it("flags a typo or fake number as not real before anything is saved", async () => {
+    const u = await student("Tina Typo");
+    const p = await openPayment(u.id, 15010, "AWAITING_TRANSFER");
+    expect(await checkPaymentPhone(u.id, "(555) 234-5678")).toMatchObject({ status: "invalid" });
+    expect(await checkPaymentPhone(u.id, "123")).toMatchObject({ status: "invalid" });
+    expect((await savePaymentPhone(u.id, p.id, "(555) 234-5678")).ok).toBe(false);
+  });
+
+  it("will not store a number on someone else's payment, a closed one, or a fake number", async () => {
+    const owner = await student("Olga Owner");
+    const other = await student("Otis Other");
+    const p = await openPayment(owner.id, 15007, "AWAITING_TRANSFER");
+    expect((await savePaymentPhone(other.id, p.id, freshPhone())).ok).toBe(false);
+    expect(await getPaymentPhoneState(other.id, p.id)).toBeNull();
+    expect((await savePaymentPhone(owner.id, p.id, "(555) 234-5678")).ok).toBe(false);
+    await prisma.zellePayment.update({ where: { id: p.id }, data: { status: "REJECTED" } });
+    expect((await savePaymentPhone(owner.id, p.id, freshPhone())).ok).toBe(false);
+    expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: p.id } })).senderPhone).toBeNull();
   });
 });

@@ -34,6 +34,20 @@ export async function adminForceSignOutAction(targetUserId: string) {
   revalidatePath(`/admin/users/${targetUserId}`);
 }
 
+/**
+ * Frees a phone number held by this account, for when someone took a number that is not theirs (a number is unique to
+ * one account) or a student typed a wrong one. Their payments keep any number already stored on them; only the
+ * account's number is cleared, so the real owner can add it to theirs.
+ */
+export async function adminClearPhoneAction(targetUserId: string) {
+  const admin = await requireAdmin();
+  const before = await prisma.user.findUnique({ where: { id: targetUserId }, select: { phone: true } });
+  if (!before?.phone) return;
+  await prisma.user.update({ where: { id: targetUserId }, data: { phone: null, phoneVerifiedAt: null, pendingPhone: null } });
+  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "user.clear-phone", targetType: "User", targetId: targetUserId, detail: `Cleared the phone number ending ${before.phone.slice(-4)}` });
+  revalidatePath(`/admin/users/${targetUserId}`);
+}
+
 /** Stops a saved payer name from clearing this student's payments by itself. */
 export async function forgetPayerNameAction(targetUserId: string, aliasId: string) {
   const admin = await requireAdmin();

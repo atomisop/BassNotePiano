@@ -20,6 +20,8 @@ export interface CustomerProfileProps {
   onCancelBooking: (bookingId: string, reason?: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   onForceSignOut: (userId: string) => Promise<void>;
   onForgetPayerName: (userId: string, aliasId: string) => Promise<void>;
+  /** Frees this account's phone number (a number belongs to one account). */
+  onClearPhone: (userId: string) => Promise<void>;
 }
 
 function formatUsd(cents: number) {
@@ -82,6 +84,7 @@ export function CustomerProfile({
   onCancelBooking,
   onForceSignOut,
   onForgetPayerName,
+  onClearPhone,
 }: CustomerProfileProps) {
   const router = useRouter();
   const { user } = profile;
@@ -191,6 +194,17 @@ export function CustomerProfile({
                 </p>
                 <p className="mt-1 text-small text-slate-600">
                   {user.phone ? `${formatPhone(user.phone)} · ${user.phoneVerifiedAt ? "Phone verified" : "Phone not verified"}` : "No phone number"}
+                  {user.phone && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm("Clear this phone number? It frees the number so its real owner can add it to their own account.")) void withBusy(() => onClearPhone(user.id));
+                      }}
+                      className="tap ml-2 text-[rgb(var(--c-s-50))] underline hover:opacity-70"
+                    >
+                      Clear
+                    </button>
+                  )}
                 </p>
                 <p className="mt-1 text-small text-slate-600">
                   {user.passwordChangedAt ? `Password changed ${formatDate(user.passwordChangedAt)}` : "Password never changed"}

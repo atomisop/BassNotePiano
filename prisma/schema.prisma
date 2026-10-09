@@ -727,11 +727,14 @@ model User {
 
   // Phone number the person typed in. It is checked to be a real-looking number but is NOT proof of ownership
   // unless `phoneVerifiedAt` is set, which only happens when text-message verification is switched on and a
-  // 6-digit code was confirmed. Not unique: a family can share one number. Because it is unproven, the payment
-  // matcher only uses it as a cross-check, never as the thing that approves money (see paymentEmail.ts).
+  // 6-digit code was confirmed. UNIQUE: one number, one account, so nobody can put an enrolled student's number
+  // on their own account and then use it at payment time (the payment sheet requires the number to match this
+  // one). The cost: whoever types a number first holds it, so an admin can clear a number that was taken by
+  // mistake or by someone else. Because it is unproven, the payment matcher still treats it as a clue, never
+  // as the thing that approves money on its own (see paymentEmail.ts).
   // `pendingPhone` is a number waiting for its text code (it never counts as the account's). `phoneRequired`
   // marks accounts made while text verification was on: they cannot get past it.
-  phone           String?
+  phone           String?   @unique
   phoneVerifiedAt DateTime?
   pendingPhone    String?
   phoneRequired   Boolean   @default(false)
@@ -900,7 +903,6 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@index([emailCanonical])
-  @@index([phone])
 }
 
 model Account {
@@ -1395,6 +1397,9 @@ model ZellePayment {
 
   // Filled in by the student on the "I've sent it" step of the modal
   senderName    String?
+  // The phone number the student says they are paying from, asked when the payment sheet opens (before the money
+  // moves), so a matching bank email can find this payment without a tap. E.164, typed in, not proven.
+  senderPhone   String?
   referenceCode String? // Zelle confirmation/reference number
   note          String? @db.Text
   screenshotUrl String? // optional proof-of-transfer upload

@@ -78,7 +78,7 @@ describe("pipelineProblem", () => {
   });
 });
 
-import { extractPhoneClues, parsePaymentEmail, phoneAgrees, phoneConflicts } from "@/lib/paymentEmail";
+import { extractPhoneClues, parsePaymentEmail, phoneAgrees, phoneConflicts, pickMatch, receiptMatchVia } from "@/lib/paymentEmail";
 
 const payWithPhone = (id: string, name: string, phone: string | null): P => ({ ...pay(id, name), user: { name, phone, payerAliases: [] } });
 const withPhone = (senderName: string, senderPhone: string | null, senderPhoneLast4: string | null = null, memo: string | null = null) => ({
@@ -143,5 +143,42 @@ describe("phone as a cross-check, never an approval", () => {
     expect(phoneAgrees(phone, { senderPhoneLast4: "7648" })).toBe(true);
     expect(phoneAgrees(null, { senderPhone: phone })).toBe(false);
     expect(phoneAgrees(phone, {})).toBe(false);
+  });
+});
+
+describe("the phone typed when paying", () => {
+  const typed = "+13474197648";
+  const payTyped = (id: string, name: string, senderPhone: string | null, accountPhone: string | null = null): P => ({
+    ...pay(id, name),
+    senderPhone,
+    user: { name, phone: accountPhone, payerAliases: [] },
+  });
+
+  it("finds the payment by the whole number even when the name is someone else's", () => {
+    expect(receiptMatchVia(payTyped(A, "Jordan Alemu", typed), withPhone("Parent Payer", typed))).toBe("phone");
+  });
+  it("a masked last four never finds a payment on its own", () => {
+    expect(receiptMatchVia(payTyped(A, "Jordan Alemu", typed), withPhone("Parent Payer", null, "7648"))).toBeNull();
+  });
+  it("a different number finds nothing", () => {
+    expect(receiptMatchVia(payTyped(A, "Jordan Alemu", typed), withPhone("Parent Payer", "+12125550142"))).toBeNull();
+  });
+  it("the amount still has to match exactly", () => {
+    expect(receiptMatchVia(payTyped(A, "Jordan Alemu", typed), { ...withPhone("Parent Payer", typed), amountCents: 100 })).toBeNull();
+  });
+  it("the code and a name are stronger ways in than the phone", () => {
+    expect(receiptMatchVia(payTyped(A, "Jordan Alemu", typed), withPhone("Maria Alemu", typed, null, `x ${paymentReferenceCode(A)}`))).toBe("code");
+    expect(receiptMatchVia(payTyped(A, "Jordan Alemu", typed), withPhone("Jordan Alemu", typed))).toBe("name");
+  });
+  it("a name match is held when the number typed for the payment is not the one on the email", () => {
+    expect(receiptMatchVia(payTyped(A, "Jordan Alemu", typed, "+12125550142"), withPhone("Jordan Alemu", "+12125550142"))).toBeNull();
+  });
+  it("two payments claiming one number settle nothing, so claiming someone's number cannot steal their money", () => {
+    const list = [payTyped(A, "Jordan Alemu", typed), payTyped(B, "Sam Tesfaye", typed)];
+    expect(pickMatch(list, withPhone("Parent Payer", typed))).toBeNull();
+  });
+  it("reports how a payment was found", () => {
+    expect(pickMatch([payTyped(A, "Jordan Alemu", typed)], withPhone("Parent Payer", typed))?.via).toBe("phone");
+    expect(pickMatch([payTyped(A, "Jordan Alemu", typed)], withPhone("Jordan Alemu", null))?.via).toBe("name");
   });
 });

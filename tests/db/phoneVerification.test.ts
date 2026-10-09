@@ -9,7 +9,7 @@ vi.mock("@/lib/sms", () => ({
   },
 }));
 
-import { confirmPhoneVerification, phoneVerifyMode, removePhone, resendPhoneCode, savePhone, startPhoneVerification } from "@/lib/phoneVerification";
+import { confirmPhoneVerification, isPhoneConflict, phoneVerifyMode, removePhone, resendPhoneCode, savePhone, startPhoneVerification } from "@/lib/phoneVerification";
 import { freshPhone, makeUser, newTag, prisma } from "./helpers";
 
 const tag = newTag("ph");
@@ -140,13 +140,32 @@ describe("keeping a number without a text", () => {
     expect((await prisma.user.findUniqueOrThrow({ where: { id: dave.id } })).phone).toBe(phone);
   });
 
-  it("allows a family to share one number", async () => {
-    const e = await makeUser(tag, "Eve Family");
-    const f = await makeUser(tag, "Finn Family");
+  it("refuses a number that is already on another account, typed or confirmed", async () => {
+    const e = await makeUser(tag, "Eve Holder");
+    const f = await makeUser(tag, "Finn Borrower");
     ids.push(e.id, f.id);
     const phone = freshPhone();
     expect((await savePhone(e.id, phone)).ok).toBe(true);
-    expect((await savePhone(f.id, phone)).ok).toBe(true);
+    const borrowed = await savePhone(f.id, phone);
+    expect(borrowed).toMatchObject({ ok: false });
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: f.id } })).phone).toBeNull();
+    // The same person can save their own number again without it counting as someone else's.
+    expect((await savePhone(e.id, phone)).ok).toBe(true);
+  });
+
+  it("the database itself refuses a second account with the same number", async () => {
+    const g = await makeUser(tag, "Gia Unique");
+    const h = await makeUser(tag, "Hank Unique");
+    ids.push(g.id, h.id);
+    const phone = freshPhone();
+    await prisma.user.update({ where: { id: g.id }, data: { phone } });
+    let conflict = false;
+    try {
+      await prisma.user.update({ where: { id: h.id }, data: { phone } });
+    } catch (err) {
+      conflict = isPhoneConflict(err);
+    }
+    expect(conflict).toBe(true);
   });
 
   it("changing the number clears an earlier confirmation, because that number is gone", async () => {

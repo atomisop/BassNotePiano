@@ -5,7 +5,7 @@ import { CustomerProfile } from "@/components/admin/CustomerProfile";
 import { setCurriculumAccessAction, toggleScaleUnlockAction, clearAssistantHistoryAction, setUserRoleAction } from "../actions";
 import { adjustUserCreditsAction } from "../../payments/credit-actions";
 import { adminCancelBookingAction } from "../../schedule/actions";
-import { adminForceSignOutAction, forgetPayerNameAction } from "./actions";
+import { adminClearPhoneAction, adminForceSignOutAction, forgetPayerNameAction } from "./actions";
 
 export default async function AdminCustomerPage({ params }: { params: { userId: string } }) {
   const profile = await getCustomerProfile(params.userId);
@@ -30,6 +30,7 @@ export default async function AdminCustomerPage({ params }: { params: { userId: 
           onCancelBooking={adminCancelBookingAction}
           onForceSignOut={adminForceSignOutAction}
           onForgetPayerName={forgetPayerNameAction}
+          onClearPhone={adminClearPhoneAction}
         />
       </div>
     </div>

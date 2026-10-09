@@ -237,7 +237,8 @@ By default it is **kept as typed and not verified**: `assessPhone` (`src/lib/pho
 metadata) checks it could really exist (real area code, right length, no filler or 555-01xx numbers). That
 proves nothing about the line being active or theirs; only a text code or a paid line lookup can.
 
-- `User.phone` is NOT unique (families share numbers). `phoneVerifiedAt` is set only by text confirmation.
+- `User.phone` IS unique (one number, one account), so nobody can put an enrolled student's number on their own account; the cost is that whoever types a number first holds it, so an admin can clear one on the student page (`adminClearPhoneAction`). `phoneVerifiedAt` is set only by text confirmation.
+- **Payment sheet** (`ZellePaymentModal`) asks for the phone BEFORE showing the code. The number must equal the paying account's own (`checkPaymentPhone`, live server check behind the green check; the sheet only ever gets the last four digits), or, for an account with none, be real and untaken, typed twice, and is then saved to the account. It is stored on `ZellePayment.senderPhone`. Owner setting `payments.askPhone`.
 - **Payments**: `parsePaymentEmail` extracts a sender phone (whole, or last four if masked) when the bank
   includes one; it is stored on `ProcessedPaymentEmail`. In `receiptMatchesPayment` a phone that DISAGREES with
   the account's number holds a name match for an admin; it never approves anything and never settles a payment

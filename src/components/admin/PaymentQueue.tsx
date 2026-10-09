@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { PendingZellePayment } from "@/lib/payments";
 import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing";
 import { formatDateTime } from "@/lib/classScheduleLabels";
+import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 
 export interface PaymentQueueProps {
@@ -221,6 +222,10 @@ export function PaymentQueue({
             <div>
               <dt className="text-small text-slate-600">{payment.method === "VENMO" ? "Venmo name" : "Zelle name"}</dt>
               <dd className="text-slate-300">{payment.senderName ?? "None"}</dd>
+            </div>
+            <div>
+              <dt className="text-small text-slate-600">Paying from phone</dt>
+              <dd className="text-slate-300">{payment.senderPhone ? formatPhone(payment.senderPhone) : "None given"}</dd>
             </div>
             <div>
               <dt className="text-small text-slate-600">Paid with</dt>

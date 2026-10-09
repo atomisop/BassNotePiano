@@ -35,7 +35,7 @@ export async function listUnmatchedReceipts(now = new Date()): Promise<Unmatched
   if (receipts.length === 0) return [];
   const open = await prisma.zellePayment.findMany({
     where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: { in: receipts.map((r) => r.amountCents) } },
-    select: { id: true, status: true, amountCents: true, createdAt: true, user: { select: { name: true, email: true, phone: true } } },
+    select: { id: true, status: true, amountCents: true, createdAt: true, senderPhone: true, user: { select: { name: true, email: true, phone: true } } },
     orderBy: { createdAt: "desc" },
   });
   return receipts.map((r) => ({
@@ -48,7 +48,7 @@ export async function listUnmatchedReceipts(now = new Date()): Promise<Unmatched
     senderPhoneLast4: r.senderPhone ? r.senderPhone.slice(-4) : r.senderPhoneLast4,
     candidates: open
       .filter((p) => p.amountCents === r.amountCents)
-      .map((p) => ({ id: p.id, status: p.status, studentName: p.user.name, studentEmail: p.user.email, createdAt: p.createdAt, phoneMatch: phoneAgrees(p.user.phone, r) }))
+      .map((p) => ({ id: p.id, status: p.status, studentName: p.user.name, studentEmail: p.user.email, createdAt: p.createdAt, phoneMatch: phoneAgrees(p.senderPhone ?? p.user.phone, r) }))
       // Students whose number agrees with the email come first.
       .sort((a, b) => Number(b.phoneMatch) - Number(a.phoneMatch)),
   }));

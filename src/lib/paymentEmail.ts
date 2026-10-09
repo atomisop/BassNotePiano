@@ -137,15 +137,17 @@ type OpenPayment = {
   status: "AWAITING_TRANSFER" | "PENDING_REVIEW";
   amountCents: number;
   senderName: string | null;
+  /** The number the student typed when the payment sheet opened (before paying). */
+  senderPhone?: string | null;
   user: { name: string | null; phone?: string | null; payerAliases: { name: string }[] };
 };
 
 type ReceiptFacts = { senderName: string; amountCents: number; memo: string | null; senderPhone?: string | null; senderPhoneLast4?: string | null };
 
 /**
- * True when the email shows a phone number for the sender AND the account has one on file AND they disagree.
- * An account number is only typed in, never proven, so this is a cross-check that can only HOLD a payment for a
- * person to look at; it never approves one. Missing on either side means no opinion.
+ * True when the email shows a phone number for the sender AND we have one for the payer AND they disagree.
+ * Used on name matches, where it can only HOLD a payment for a person to look at. Missing on either side
+ * means no opinion.
  */
 export function phoneConflicts(accountPhone: string | null | undefined, receipt: ReceiptFacts): boolean {
   if (!accountPhone) return false;
@@ -167,34 +169,51 @@ function payerNames(user: OpenPayment["user"]): (string | null)[] {
   return [user.name, ...user.payerAliases.map((alias) => alias.name)];
 }
 
+export type MatchVia = "code" | "name" | "phone";
+
 /**
- * The exact amount always has to match. On top of that, one of:
- *  - the note carries this payment's own reference code (so a parent paying, or two
- *    students with one name, still land on the right payment), or
- *  - the sender is the account holder or a confirmed alias, and the note does not
- *    name a different payment, and the phone clue (if the email has one and the
- *    account has one) does not point at a different number.
- * The sender name a student types when submitting is theirs to choose, so it is
- * never what claims someone else's money. A mismatch just leaves the payment for the admin.
+ * How an email claims a payment, or null when it does not. The exact amount always has to match. On top of that:
+ *  - "code": the note carries this payment's own reference code (so a parent paying, or two students with one
+ *    name, still land on the right payment), or
+ *  - "name": the sender is the account holder or a confirmed alias, the note does not name a different payment,
+ *    and the phone clue (when the email has one and we have one) does not point at a different number, or
+ *  - "phone": the email shows the WHOLE phone number the student typed for this very payment. A masked
+ *    last-four never claims a payment by itself (too few combinations).
+ * A typed phone is not proof, since anyone can type someone else's number, so "phone" is the weakest way in: the
+ * picker below only settles when it is the one payment that matches, and the caller leaves a phone settlement in
+ * the owner's "unchecked" list instead of marking it confirmed.
  */
+export function receiptMatchVia(payment: OpenPayment, receipt: ReceiptFacts): MatchVia | null {
+  if (payment.amountCents !== receipt.amountCents) return null;
+  if (memoHasReferenceFor(receipt.memo, payment.id)) return "code";
+  if (memoHasOtherReference(receipt.memo, payment.id)) return null;
+  if (payerNames(payment.user).some((name) => namesMatch(name, receipt.senderName))) {
+    // The number typed for this payment is the best one to compare; the account's number is the fallback.
+    return phoneConflicts(payment.senderPhone ?? payment.user.phone, receipt) ? null : "name";
+  }
+  if (payment.senderPhone && receipt.senderPhone && payment.senderPhone === receipt.senderPhone) return "phone";
+  return null;
+}
+
 export function receiptMatchesPayment(payment: OpenPayment, receipt: ReceiptFacts): boolean {
-  if (payment.amountCents !== receipt.amountCents) return false;
-  if (memoHasReferenceFor(receipt.memo, payment.id)) return true;
-  if (memoHasOtherReference(receipt.memo, payment.id)) return false;
-  if (!payerNames(payment.user).some((name) => namesMatch(name, receipt.senderName))) return false;
-  return !phoneConflicts(payment.user.phone, receipt);
+  return receiptMatchVia(payment, receipt) !== null;
+}
+
+/** The one payment an email settles, and how, or null when it is unclear (then a person decides). */
+export function pickMatch<T extends OpenPayment>(payments: T[], receipt: ReceiptFacts): { payment: T; via: MatchVia } | null {
+  const matches = payments.map((payment) => ({ payment, via: receiptMatchVia(payment, receipt) })).filter((m): m is { payment: T; via: MatchVia } => m.via !== null);
+  if (matches.length === 1) return matches[0];
+  if (matches.length === 0) return null;
+  const byCode = matches.filter((m) => m.via === "code");
+  return byCode.length === 1 ? byCode[0] : null;
 }
 
 /** The one payment an email settles, or null when it is unclear (then a person decides). */
 export function pickMatchingPayment<T extends OpenPayment>(payments: T[], receipt: ReceiptFacts): T | null {
-  const matches = payments.filter((payment) => receiptMatchesPayment(payment, receipt));
-  if (matches.length === 1) return matches[0];
-  if (matches.length === 0) return null;
-  const byCode = matches.filter((payment) => memoHasReferenceFor(receipt.memo, payment.id));
-  return byCode.length === 1 ? byCode[0] : null;
+  return pickMatch(payments, receipt)?.payment ?? null;
 }
 
-async function approveFromReceipt(paymentId: string, receipt: { id: string; senderName: string; method: PaymentMethod }) {
+async function approveFromReceipt(paymentId: string, receipt: { id: string; senderName: string; method: PaymentMethod }, opts: { needsCheck?: boolean } = {}) {
   // Claim the receipt first so two payments can never settle from one email.
   const claimed = await prisma.processedPaymentEmail.updateMany({
     where: { id: receipt.id, paymentId: null },
@@ -213,8 +232,9 @@ async function approveFromReceipt(paymentId: string, receipt: { id: string; send
       },
     });
     await approveZellePayment(paymentId, null, { auto: true });
-    // The money is confirmed by the email itself, so nothing is left to check.
-    await prisma.zellePayment.update({ where: { id: paymentId }, data: { checkedAt: new Date() } });
+    // The money is confirmed by the email itself, so nothing is left to check. Except a settlement that rested on
+    // a typed-in phone number alone: that stays in the owner's "unchecked" list to be looked at.
+    if (!opts.needsCheck) await prisma.zellePayment.update({ where: { id: paymentId }, data: { checkedAt: new Date() } });
     await notifyAutoApproved(paymentId);
     return true;
   } catch (err) {
@@ -235,6 +255,7 @@ const openPaymentSelect = {
   status: true,
   amountCents: true,
   senderName: true,
+  senderPhone: true,
   user: { select: { name: true, phone: true, payerAliases: { select: { name: true } } } },
 } as const;
 
@@ -273,8 +294,9 @@ export async function ingestPaymentEmail(input: {
     where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: parsed.amountCents },
     select: openPaymentSelect,
   });
-  const match = pickMatchingPayment(candidates as OpenPayment[], receipt);
-  if (match && (await getBoolSetting("payments.emailAutoApprove")) && (await approveFromReceipt(match.id, receipt))) return "approved";
+  const picked = pickMatch(candidates as OpenPayment[], receipt);
+  const match = picked?.payment ?? null;
+  if (picked && (await getBoolSetting("payments.emailAutoApprove")) && (await approveFromReceipt(picked.payment.id, receipt, { needsCheck: picked.via === "phone" }))) return "approved";
   if (!match && (await getBoolSetting("payments.amountMismatchNotice"))) await warnAboutAmountMismatch(receipt).catch((err) => console.error("Amount mismatch notice failed (non-blocking):", err));
   return "stored";
 }

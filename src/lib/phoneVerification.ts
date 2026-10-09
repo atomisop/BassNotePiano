@@ -12,7 +12,8 @@ const REASON_MESSAGES: Record<string, string> = {
   too_many_attempts: "Too many incorrect tries. Request a new code.",
   incorrect: "That code isn't right. Check it and try again.",
 };
-const TAKEN = "That number is already linked to another account.";
+export const PHONE_TAKEN = "That number is already on another account. If it is yours, message us and we will sort it out.";
+const TAKEN = PHONE_TAKEN;
 
 /**
  * Whether numbers are confirmed by text right now: the owner switched it on and a text service is set up. Off by
@@ -22,9 +23,16 @@ export async function phoneVerifyMode(): Promise<boolean> {
   return smsAvailable() && (await getBoolSetting("phone.verifyBySms"));
 }
 
-/** A number someone has CONFIRMED by text belongs to that one account. Typed-only numbers can be shared (a family). */
-async function isTaken(phone: string, userId: string): Promise<boolean> {
-  return Boolean(await prisma.user.findFirst({ where: { phone, phoneVerifiedAt: { not: null }, id: { not: userId } }, select: { id: true } }));
+/** One number, one account: a number already on someone else's account (typed or confirmed) cannot be put on yours. */
+export async function isPhoneTaken(phone: string, userId: string | null): Promise<boolean> {
+  return Boolean(await prisma.user.findFirst({ where: { phone, ...(userId ? { id: { not: userId } } : {}) }, select: { id: true } }));
+}
+const isTaken = isPhoneTaken;
+
+/** True when a save failed because another account got the number first (the unique index is the last word). */
+export function isPhoneConflict(err: unknown): boolean {
+  const e = err as { code?: string; meta?: { target?: unknown } };
+  return e?.code === "P2002" && String(e.meta?.target ?? "").includes("phone");
 }
 
 const SEND_FAILED = "We couldn't send the text just now. Check the number and try again in a minute.";
@@ -142,7 +150,12 @@ export async function confirmPhoneVerification(userId: string, code: string): Pr
   // The code only counts for the number it was sent to, which must still be the one waiting.
   if (!phone || phone !== user.pendingPhone) return { ok: false, error: "That code was for a different number. Request a new one." };
   if (await isTaken(phone, userId)) return { ok: false, error: TAKEN };
-  await prisma.user.update({ where: { id: userId }, data: { phone, phoneVerifiedAt: new Date(), pendingPhone: null } });
+  try {
+    await prisma.user.update({ where: { id: userId }, data: { phone, phoneVerifiedAt: new Date(), pendingPhone: null } });
+  } catch (err) {
+    if (isPhoneConflict(err)) return { ok: false, error: TAKEN };
+    throw err;
+  }
   return { ok: true, phone };
 }
 
@@ -157,7 +170,13 @@ export async function savePhone(userId: string, rawPhone: string): Promise<Phone
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { phone: true } });
   if (!user) return { ok: false, error: "Account not found." };
   if (user.phone !== assessed.phone) {
-    await prisma.user.update({ where: { id: userId }, data: { phone: assessed.phone, phoneVerifiedAt: null, pendingPhone: null } });
+    if (await isTaken(assessed.phone, userId)) return { ok: false, error: TAKEN };
+    try {
+      await prisma.user.update({ where: { id: userId }, data: { phone: assessed.phone, phoneVerifiedAt: null, pendingPhone: null } });
+    } catch (err) {
+      if (isPhoneConflict(err)) return { ok: false, error: TAKEN };
+      throw err;
+    }
   }
   return { ok: true, phone: assessed.phone };
 }
