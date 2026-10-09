@@ -26,6 +26,8 @@ const FILTERS: { label: string; value: FilterValue }[] = [
   { label: "Feedback", value: "FEEDBACK" },
 ];
 
+export const metadata = { title: "Admin: Payment plans" };
+
 export default async function AdminPaymentPlansPage({ searchParams }: { searchParams: { status?: string } }) {
   const requested = searchParams.status?.toUpperCase();
   const activeFilter = FILTERS.find((f) => f.value === requested)?.value ?? "ACTIVE";

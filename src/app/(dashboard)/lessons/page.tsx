@@ -31,6 +31,8 @@ import { DiscordConnectCard } from "@/components/lessons/DiscordConnectCard";
  * teacher on top of that, paid with credits at $55 each. Everyone else (no
  * active plan, between plans) goes straight to the booking calendar.
  */
+export const metadata = { title: "Online lessons" };
+
 export default async function LessonsPage({ searchParams }: { searchParams: { tab?: string; discord?: string } }) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");

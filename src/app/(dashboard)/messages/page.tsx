@@ -4,6 +4,8 @@ import { getConversations } from "@/lib/messages";
 import { getGroups } from "@/lib/groupMessages";
 import { MessagesClient } from "./MessagesClient";
 
+export const metadata = { title: "Messages" };
+
 export default async function MessagesPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/messages");

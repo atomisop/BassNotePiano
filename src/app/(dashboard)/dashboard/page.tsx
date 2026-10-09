@@ -63,6 +63,8 @@ function Stat({ value, label }: { value: string; label: string }) {
  * sits huge and faint behind it on the back plane; Continue is the one
  * green button.
  */
+export const metadata = { title: "Home" };
+
 export default async function DashboardPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");

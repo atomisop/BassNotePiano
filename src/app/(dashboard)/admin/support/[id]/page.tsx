@@ -5,6 +5,8 @@ import { SupportThreadView } from "@/components/admin/SupportThreadView";
 
 const FILTER_PARAMS = new Set(["open", "resolved", "all", "mine"]);
 
+export const metadata = { title: "Admin: Support thread" };
+
 export default async function SupportThreadPage({
   params,
   searchParams,

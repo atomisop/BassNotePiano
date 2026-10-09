@@ -7,6 +7,8 @@ import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
 
+export const metadata = { title: "Payment plans" };
+
 export default async function BillingPlansPage({
   searchParams,
 }: {

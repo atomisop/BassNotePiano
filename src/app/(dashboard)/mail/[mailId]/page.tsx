@@ -11,6 +11,8 @@ import { ContactSupportButton } from "./ContactSupportButton";
 const KIND_LABEL = { ADMIN_MESSAGE: "Message", PAYMENT: "Payment", BILLING: "Billing" } as const;
 const DEFAULT_ACTION = { ADMIN_MESSAGE: null, PAYMENT: { label: "View billing history", href: "/billing/history" }, BILLING: { label: "View your plan", href: "/billing/plans" } } as const;
 
+export const metadata = { title: "Mail" };
+
 export default async function MailDetailPage({ params }: { params: { mailId: string } }) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect(`/login?callbackUrl=/mail/${params.mailId}`);

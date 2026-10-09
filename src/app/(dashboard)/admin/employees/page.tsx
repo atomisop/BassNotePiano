@@ -6,6 +6,8 @@ import { getAutomations } from "@/lib/appSettings";
 import { AUTOMATIONS } from "@/lib/automationKeys";
 import { revokeEmployeeAction, setAutomationAction, setEmployeeNotificationAction } from "./actions";
 
+export const metadata = { title: "Admin: Employees" };
+
 export default async function AdminEmployeesPage() {
   const session = await getServerAuthSession();
   const isOwner = isOwnerEmail(session?.user.email);

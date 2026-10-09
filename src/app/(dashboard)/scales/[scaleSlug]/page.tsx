@@ -15,6 +15,8 @@ import { getNextApproval } from "@/lib/scaleApproval";
 import { DAILY_GOAL_SECONDS, getFingerPracticeStatus, hasCompletedFingerPracticeToday } from "@/lib/fingerPractice";
 import { markLessonCompleteAction, markPracticeCompletedAction, saveScaleNoteAction, submitQuizAction } from "./actions";
 
+export const metadata = { title: "Scale" };
+
 export default async function ScalePage({ params }: { params: { scaleSlug: string } }) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect(`/login?callbackUrl=/scales/${params.scaleSlug}`);

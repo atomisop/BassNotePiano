@@ -114,7 +114,7 @@ export function resolveNextStep(roadmap: ScaleAccessState[]): NextStep {
     detail:
       current.quizScore !== null
         ? `One item left on ${name}. Your last attempt scored ${current.quizScore}.`
-        : `Read and practised. ${name} just needs its quiz to close out.`,
+        : `Read and practiced. ${name} just needs its quiz to close out.`,
     href,
     cta: "Start the quiz",
   };
