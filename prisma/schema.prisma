@@ -1400,6 +1400,10 @@ model ZellePayment {
   // The phone number the student says they are paying from, asked when the payment sheet opens (before the money
   // moves), so a matching bank email can find this payment without a tap. E.164, typed in, not proven.
   senderPhone   String?
+  // How a bank email claimed this payment when it was cleared automatically: "code" (the BNP code in the note),
+  // "name" (the sender's name), "phone" or "amount" (the exact amount alone: nothing else to go on). The last two
+  // are the weak ways in, so those payments wait in the owner's unchecked list.
+  matchedVia    String?
   referenceCode String? // Zelle confirmation/reference number
   note          String? @db.Text
   screenshotUrl String? // optional proof-of-transfer upload

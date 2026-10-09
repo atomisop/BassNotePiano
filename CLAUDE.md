@@ -239,12 +239,18 @@ proves nothing about the line being active or theirs; only a text code or a paid
 
 - `User.phone` IS unique (one number, one account), so nobody can put an enrolled student's number on their own account; the cost is that whoever types a number first holds it, so an admin can clear one on the student page (`adminClearPhoneAction`). `phoneVerifiedAt` is set only by text confirmation.
 - **Payment sheet** (`ZellePaymentModal`) asks for the phone BEFORE showing the code. The number must equal the paying account's own (`checkPaymentPhone`, live server check behind the green check; the sheet only ever gets the last four digits), or, for an account with none, be real and untaken, typed twice, and is then saved to the account. It is stored on `ZellePayment.senderPhone`. Owner setting `payments.askPhone`.
-- **Payments**: `parsePaymentEmail` extracts a sender phone (whole, or last four if masked) when the bank
-  includes one; it is stored on `ProcessedPaymentEmail`. In `receiptMatchesPayment` a phone that DISAGREES with
-  the account's number holds a name match for an admin; it never approves anything and never settles a payment
-  alone (an unverified number is claimable by anyone, so using it to approve money would be an attack). The
-  admin's unmatched-email list flags and sorts the student whose number agrees ("Phone matches"). Whether the
-  banks' emails carry a sender phone at all is unknown; with none, nothing changes.
+- **Payments** (`src/lib/paymentEmail.ts`). The bank emails (SoFi for Zelle, Bank of America, Venmo) carry the sender's
+  full legal NAME, the exact AMOUNT and the sender's NOTE; they do NOT carry a phone number (checked against a real SoFi
+  email, 2026-10-09). SoFi's wording ("The $X sent to you by NAME will be automatically deposited...", note below it) is
+  read from the BODY by `parseSofi`; the subject is not relied on, and the Gmail script finds SoFi mail by that
+  sentence. A bank email claims an open payment, strongest first: `code` (BNP code in the note), `name`
+  (`namesMatch`: case-insensitive, middle names, initials, at least one whole word), `phone` (only if an email ever
+  shows a whole number equal to the one typed for the payment), `amount` (the exact amount alone: exactly one payment
+  open for it, opened within 3 days, the note does not name another payment, the sender is not a known person on
+  another account; owner setting `payments.matchByAmount`, on by default). Prices end in .99, which nobody sends by
+  accident. `phone` and `amount` clears are left UNCHECKED (`checkedAt` null) so the owner reviews them, and
+  `ZellePayment.matchedVia` records which way in was used (shown in the admin queue). A name match whose phone
+  disagrees is held for an admin. Phone-at-payment (`payments.askPhone`) is OFF by default since emails have no phone.
 - **Optional text confirmation** (owner setting `phone.verifyBySms`, OFF by default, needs `PLIVO_*` env):
   shared code system with `VerificationPurpose.PHONE_VERIFY`; `src/lib/sms.ts` talks to Plivo Verify, which makes,
   texts and checks the code (we store only a session row). New accounts made while it is on get

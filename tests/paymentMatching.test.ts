@@ -78,7 +78,7 @@ describe("pipelineProblem", () => {
   });
 });
 
-import { extractPhoneClues, parsePaymentEmail, phoneAgrees, phoneConflicts, pickMatch, receiptMatchVia } from "@/lib/paymentEmail";
+import { extractPhoneClues, namesMatch, parsePaymentEmail, parseSofi, phoneAgrees, phoneConflicts, pickMatch, receiptMatchVia } from "@/lib/paymentEmail";
 
 const payWithPhone = (id: string, name: string, phone: string | null): P => ({ ...pay(id, name), user: { name, phone, payerAliases: [] } });
 const withPhone = (senderName: string, senderPhone: string | null, senderPhoneLast4: string | null = null, memo: string | null = null) => ({
@@ -180,5 +180,63 @@ describe("the phone typed when paying", () => {
   it("reports how a payment was found", () => {
     expect(pickMatch([payTyped(A, "Jordan Alemu", typed)], withPhone("Parent Payer", typed))?.via).toBe("phone");
     expect(pickMatch([payTyped(A, "Jordan Alemu", typed)], withPhone("Jordan Alemu", null))?.via).toBe("name");
+  });
+});
+
+// The shape of SoFi's Zelle email (the real one's name and IDs are not copied; these are invented).
+const sofiBody = (name: string, dollars: string, note: string | null) =>
+  [
+    "SoFi together with Zelle",
+    name,
+    `The $${dollars} sent to you by ${name} will be automatically deposited to your account.`,
+    ...(note ? [note] : []),
+    "SoFi is not responsible for the content of the personal message. SoFi cannot protect against the receipt of material in the personal message that may be offensive.",
+    "Privacy and Security:",
+    "Your trust and security are our highest priorities.",
+    "Contact Us:",
+    "MemberID (11111111)",
+    "AlertID (2222222222)",
+    "ReferenceID (333333333)",
+  ].join("\n");
+
+describe("reading SoFi's Zelle email", () => {
+  it("reads the sender, the exact amount and the note", () => {
+    const parsed = parseSofi(sofiBody("JORDAN ALEMU", "199.99", "Guitar LessonMonthly"));
+    expect(parsed).toEqual({ method: "ZELLE", name: "JORDAN ALEMU", amountCents: 19999, memo: "Guitar LessonMonthly" });
+  });
+  it("has no note when the sender wrote none, and never mistakes SoFi's own wording for one", () => {
+    expect(parseSofi(sofiBody("JORDAN ALEMU", "199.99", null))?.memo).toBeNull();
+  });
+  it("does not need to know the subject line, whatever it says", () => {
+    for (const subject of ["You received money with Zelle", "JORDAN ALEMU sent you money", "Zelle deposit", ""]) {
+      expect(parsePaymentEmail(subject, sofiBody("JORDAN ALEMU", "1,250.00", "BNP-4K7Q2"))).toMatchObject({ name: "JORDAN ALEMU", amountCents: 125000, memo: "BNP-4K7Q2" });
+    }
+  });
+  it("copes with a name that wraps onto a second line", () => {
+    const wrapped = sofiBody("MARIA ANTOINETTE ALEMU", "199.99", null).replace("MARIA ANTOINETTE ALEMU will", "MARIA ANTOINETTE\nALEMU will");
+    expect(parseSofi(wrapped)?.name).toBe("MARIA ANTOINETTE ALEMU");
+  });
+  it("ignores SoFi emails that are not a payment", () => {
+    expect(parseSofi("Your statement is ready. Sign in to view it.")).toBeNull();
+    expect(parsePaymentEmail("Your SoFi statement", "Your statement is ready.")).toBeNull();
+  });
+  it("still reads the Bank of America wording", () => {
+    expect(parsePaymentEmail("Jordan Alemu sent you $25.00", "Jordan Alemu sent you $25.00\nBNP-4K7Q2\nView your balance")).toMatchObject({ name: "Jordan Alemu", amountCents: 2500, memo: "BNP-4K7Q2" });
+  });
+});
+
+describe("names as banks and people write them", () => {
+  it("ignores capitals, middle names and order of extra words", () => {
+    expect(namesMatch("Meshesha Tessema", "MESHESHA TESSEMA")).toBe(true);
+    expect(namesMatch("Meshesha Tessema", "MESHESHA T TESSEMA")).toBe(true);
+  });
+  it("lets an initial stand for the word it starts, but never two initials alone", () => {
+    expect(namesMatch("Meshesha T", "MESHESHA TESSEMA")).toBe(true);
+    expect(namesMatch("J A", "JORDAN ALEMU")).toBe(false);
+    expect(namesMatch("Jordan A", "JORDAN ALEMU")).toBe(true);
+  });
+  it("does not match a different person", () => {
+    expect(namesMatch("Meshesha Tessema", "MESHESHA ALEMU")).toBe(false);
+    expect(namesMatch("Meshesha", "MESHESHA TESSEMA")).toBe(false);
   });
 });

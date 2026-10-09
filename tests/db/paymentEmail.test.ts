@@ -4,6 +4,7 @@ import { ingestPaymentEmail } from "@/lib/paymentEmail";
 import { paymentReferenceCode } from "@/lib/paymentReference";
 import { forgetPayerName, listUnmatchedReceipts, matchReceiptToPayment } from "@/lib/paymentReceipts";
 import { checkPaymentPhone, getPaymentPhoneState, savePaymentPhone } from "@/lib/paymentPhone";
+import { resetSetting, saveSetting } from "@/lib/siteSettings";
 import { freshPhone, makeUser, newTag, prisma } from "./helpers";
 
 const tag = newTag("pe");
@@ -55,11 +56,14 @@ async function studentWithPhone(name: string, phone: string | null) {
 const status = async (id: string) => (await prisma.zellePayment.findUniqueOrThrow({ where: { id } })).status;
 
 beforeAll(async () => {
+  // The older tests below are about code, name and phone matching; the exact-amount rule has its own tests.
+  await saveSetting("payments.matchByAmount", false);
   const a = await makeUser(tag, "Teacher", { role: "ADMIN" });
   admin = { id: a.id, email: a.email };
   userIds.push(a.id);
 });
 afterAll(async () => {
+  await resetSetting("payments.matchByAmount");
   await prisma.processedPaymentEmail.deleteMany({ where: { messageId: { startsWith: tag } } });
   await prisma.creditGrant.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.mailMessage.deleteMany({ where: { userId: { in: userIds } } });
@@ -280,7 +284,11 @@ describe("the phone number asked when paying", () => {
     const u = await student("Sia Saver");
     const p = await openPayment(u.id, 15006, "AWAITING_TRANSFER");
     const phone = freshPhone();
-    expect(await getPaymentPhoneState(u.id, p.id)).toMatchObject({ ask: true, paymentPhone: null, hasAccountPhone: false, accountPhoneLast4: null });
+    // Off by default (bank emails carry no sender phone); the owner can switch it on.
+    expect(await getPaymentPhoneState(u.id, p.id)).toMatchObject({ ask: false, paymentPhone: null, hasAccountPhone: false, accountPhoneLast4: null });
+    await saveSetting("payments.askPhone", true);
+    expect(await getPaymentPhoneState(u.id, p.id)).toMatchObject({ ask: true });
+    await resetSetting("payments.askPhone");
     expect(await savePaymentPhone(u.id, p.id, phone)).toEqual({ ok: true, phone });
     expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: p.id } })).senderPhone).toBe(phone);
     expect((await prisma.user.findUniqueOrThrow({ where: { id: u.id } })).phone).toBe(phone);
@@ -330,5 +338,121 @@ describe("the phone number asked when paying", () => {
     await prisma.zellePayment.update({ where: { id: p.id }, data: { status: "REJECTED" } });
     expect((await savePaymentPhone(owner.id, p.id, freshPhone())).ok).toBe(false);
     expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: p.id } })).senderPhone).toBeNull();
+  });
+});
+
+/** A SoFi Zelle email: the real wording, with an invented sender. */
+function sofiEmail(sender: string, dollars: string, note?: string) {
+  return ingestPaymentEmail({
+    messageId: `${tag}-${++counter}`,
+    from: "SoFi <no-reply@sofi.com>",
+    subject: "You received money with Zelle",
+    body: [
+      "SoFi together with Zelle",
+      sender,
+      `The $${dollars} sent to you by ${sender} will be automatically deposited to your account.`,
+      note ?? "",
+      "SoFi is not responsible for the content of the personal message.",
+      "Privacy and Security:",
+      "ReferenceID (333333333)",
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  });
+}
+
+const row = async (id: string) => prisma.zellePayment.findUniqueOrThrow({ where: { id } });
+
+describe("clearing a payment by its exact amount", () => {
+  beforeAll(async () => {
+    await saveSetting("payments.matchByAmount", true);
+  });
+
+  it("reads a SoFi email and clears a name match as confirmed", async () => {
+    const u = await student("Selma Sofi");
+    const p = await openPayment(u.id, 19901, "AWAITING_TRANSFER");
+    expect(await sofiEmail("SELMA SOFI", "199.01")).toBe("approved");
+    const r = await row(p.id);
+    expect([r.status, r.matchedVia]).toEqual(["VERIFIED", "name"]);
+    expect(r.checkedAt).not.toBeNull();
+    expect(r.senderName).toBe("SELMA SOFI");
+  });
+
+  it("clears a payment by the code in the note, whatever the name", async () => {
+    const u = await student("Cody Coder");
+    const p = await openPayment(u.id, 19902, "AWAITING_TRANSFER");
+    expect(await sofiEmail("A PARENT", "199.02", `lessons ${paymentReferenceCode(p.id)}`)).toBe("approved");
+    expect((await row(p.id)).matchedVia).toBe("code");
+  });
+
+  it("clears the one open payment for an amount even when the name matches nobody, and leaves it to be checked", async () => {
+    const u = await student("Kiddo Student");
+    const p = await openPayment(u.id, 19903, "AWAITING_TRANSFER");
+    expect(await sofiEmail("SOME PARENT", "199.03", "Guitar LessonMonthly")).toBe("approved");
+    const r = await row(p.id);
+    expect([r.status, r.matchedVia, r.autoApproved, r.checkedAt]).toEqual(["VERIFIED", "amount", true, null]);
+  });
+
+  it("does nothing when two payments are open for the same amount and the name settles neither", async () => {
+    const a = await openPayment((await student("Twin Alpha")).id, 19904, "AWAITING_TRANSFER");
+    const b = await openPayment((await student("Twin Beta")).id, 19904, "AWAITING_TRANSFER");
+    expect(await sofiEmail("NOBODY KNOWN", "199.04")).toBe("stored");
+    expect([await status(a.id), await status(b.id)]).toEqual(["AWAITING_TRANSFER", "AWAITING_TRANSFER"]);
+  });
+
+  it("leaves it alone when the sender is a known person on a different account", async () => {
+    await student("Priya Known");
+    const owner = await student("Opal Opener");
+    const p = await openPayment(owner.id, 19905, "AWAITING_TRANSFER");
+    expect(await sofiEmail("PRIYA KNOWN", "199.05")).toBe("stored");
+    expect(await status(p.id)).toBe("AWAITING_TRANSFER");
+  });
+
+  it("also leaves it alone when the sender is a payer name an admin confirmed for someone else", async () => {
+    const holder = await student("Hana Holder");
+    await prisma.payerAlias.create({ data: { userId: holder.id, name: "Grandma Holder" } });
+    const owner = await student("Olaf Other");
+    const p = await openPayment(owner.id, 19906, "AWAITING_TRANSFER");
+    expect(await sofiEmail("GRANDMA HOLDER", "199.06")).toBe("stored");
+    expect(await status(p.id)).toBe("AWAITING_TRANSFER");
+  });
+
+  it("leaves it alone when the note names a different payment", async () => {
+    const u = await student("Nora Note");
+    const p = await openPayment(u.id, 19907, "AWAITING_TRANSFER");
+    expect(await sofiEmail("SOME PARENT", "199.07", "BNP-ZZZZZ")).toBe("stored");
+    expect(await status(p.id)).toBe("AWAITING_TRANSFER");
+  });
+
+  it("ignores a payment opened long ago, so a stale one is not claimed by chance", async () => {
+    const u = await student("Stella Stale");
+    const p = await openPayment(u.id, 19908, "AWAITING_TRANSFER");
+    await prisma.zellePayment.update({ where: { id: p.id }, data: { createdAt: new Date(Date.now() - 5 * 24 * 3600 * 1000) } });
+    expect(await sofiEmail("SOME PARENT", "199.08")).toBe("stored");
+    expect(await status(p.id)).toBe("AWAITING_TRANSFER");
+  });
+
+  it("never claims a payment of a different amount", async () => {
+    const u = await student("Amy Amount");
+    const p = await openPayment(u.id, 19909, "AWAITING_TRANSFER");
+    expect(await sofiEmail("SOME PARENT", "199.10")).toBe("stored");
+    expect(await status(p.id)).toBe("AWAITING_TRANSFER");
+  });
+
+  it("waits for the owner when the setting is off", async () => {
+    const u = await student("Ollie Off");
+    const p = await openPayment(u.id, 19911, "AWAITING_TRANSFER");
+    await saveSetting("payments.matchByAmount", false);
+    expect(await sofiEmail("SOME PARENT", "199.11")).toBe("stored");
+    await saveSetting("payments.matchByAmount", true);
+    expect(await status(p.id)).toBe("AWAITING_TRANSFER");
+  });
+
+  it("an email can only clear one payment", async () => {
+    const u = await student("Once Only");
+    const p = await openPayment(u.id, 19912, "AWAITING_TRANSFER");
+    expect(await sofiEmail("SOME PARENT", "199.12")).toBe("approved");
+    expect(await sofiEmail("SOME PARENT", "199.12")).toBe("stored"); // the second email has nothing left to clear
+    expect(await status(p.id)).toBe("VERIFIED");
   });
 });

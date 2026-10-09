@@ -82,6 +82,12 @@ function parseCore(subject: string, body: string): Omit<ParsedPaymentEmail, "sen
     .map((line) => line.trim())
     .filter(Boolean);
 
+  // SoFi: the body reads "The $199.99 sent to you by JORDAN ALEMU will be automatically deposited to your account.",
+  // then the sender's note, then a notice that SoFi is not responsible for it. The subject varies, so the body
+  // is what is read, and it is read first so the note comes through.
+  const sofi = parseSofi(body);
+  if (sofi) return sofi;
+
   // Bank alerts: "Jordan Alemu sent you $25.00"
   let match = cleanSubject.match(/^(.+?) sent you \$([\d,]+(?:\.\d{2})?)/i);
   if (match) {
@@ -113,6 +119,21 @@ function parseCore(subject: string, body: string): Omit<ParsedPaymentEmail, "sen
   return null;
 }
 
+/** SoFi's Zelle "money is on its way" email. Null when the text is not that email. */
+export function parseSofi(body: string): Omit<ParsedPaymentEmail, "senderPhone" | "senderPhoneLast4"> | null {
+  const text = body.replace(/\s+/g, " ").trim();
+  const headline = text.match(/\$([\d,]+(?:\.\d{2})?) sent to you by (.{2,80}?) (?:will be|has been|was|is) /i);
+  if (!headline) return null;
+  const amountCents = toCents(headline[1]);
+  if (!amountCents) return null;
+  // The note is whatever follows the end of that sentence, up to SoFi's disclaimer.
+  const afterHeadline = text.slice((headline.index ?? 0) + headline[0].length);
+  const sentenceEnd = afterHeadline.search(/\.(\s|$)/);
+  const rest = sentenceEnd >= 0 ? afterHeadline.slice(sentenceEnd + 1) : "";
+  const note = rest.split(/SoFi is not responsible|Privacy and Security|Contact Us/i)[0].trim();
+  return { method: "ZELLE", name: headline[2].trim(), amountCents, memo: note || null };
+}
+
 function nameTokens(value: string | null | undefined): string[] {
   return (value ?? "")
     .toLowerCase()
@@ -123,13 +144,20 @@ function nameTokens(value: string | null | undefined): string[] {
     .filter((token) => token.length > 0);
 }
 
+/** The same word, or a single letter that starts the other ("T" for "Tessema"), as banks and people shorten names. */
+function sameToken(a: string, b: string): boolean {
+  return a === b || (a.length === 1 && b.startsWith(a)) || (b.length === 1 && a.startsWith(b));
+}
+
 /** True when every word of the shorter name appears in the longer one (so "Jordan Alemu" matches "Jordan T Alemu"). */
 export function namesMatch(a: string | null | undefined, b: string | null | undefined): boolean {
   const first = nameTokens(a);
   const second = nameTokens(b);
   if (first.length < 2 || second.length < 2) return false;
   const [short, long] = first.length <= second.length ? [first, second] : [second, first];
-  return short.every((token) => long.includes(token));
+  // At least one whole word has to match as written, so two bare initials can never match a person by themselves.
+  const oneWholeWord = short.some((token) => token.length > 1 && long.includes(token));
+  return oneWholeWord && short.every((token) => long.some((other) => sameToken(token, other)));
 }
 
 type OpenPayment = {
@@ -169,7 +197,7 @@ function payerNames(user: OpenPayment["user"]): (string | null)[] {
   return [user.name, ...user.payerAliases.map((alias) => alias.name)];
 }
 
-export type MatchVia = "code" | "name" | "phone";
+export type MatchVia = "code" | "name" | "phone" | "amount";
 
 /**
  * How an email claims a payment, or null when it does not. The exact amount always has to match. On top of that:
@@ -213,7 +241,7 @@ export function pickMatchingPayment<T extends OpenPayment>(payments: T[], receip
   return pickMatch(payments, receipt)?.payment ?? null;
 }
 
-async function approveFromReceipt(paymentId: string, receipt: { id: string; senderName: string; method: PaymentMethod }, opts: { needsCheck?: boolean } = {}) {
+async function approveFromReceipt(paymentId: string, receipt: { id: string; senderName: string; method: PaymentMethod }, opts: { needsCheck?: boolean; via?: MatchVia } = {}) {
   // Claim the receipt first so two payments can never settle from one email.
   const claimed = await prisma.processedPaymentEmail.updateMany({
     where: { id: receipt.id, paymentId: null },
@@ -235,6 +263,7 @@ async function approveFromReceipt(paymentId: string, receipt: { id: string; send
     // The money is confirmed by the email itself, so nothing is left to check. Except a settlement that rested on
     // a typed-in phone number alone: that stays in the owner's "unchecked" list to be looked at.
     if (!opts.needsCheck) await prisma.zellePayment.update({ where: { id: paymentId }, data: { checkedAt: new Date() } });
+    if (opts.via) await prisma.zellePayment.update({ where: { id: paymentId }, data: { matchedVia: opts.via } });
     await notifyAutoApproved(paymentId);
     return true;
   } catch (err) {
@@ -256,6 +285,8 @@ const openPaymentSelect = {
   amountCents: true,
   senderName: true,
   senderPhone: true,
+  userId: true,
+  createdAt: true,
   user: { select: { name: true, phone: true, payerAliases: { select: { name: true } } } },
 } as const;
 
@@ -294,11 +325,58 @@ export async function ingestPaymentEmail(input: {
     where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: parsed.amountCents },
     select: openPaymentSelect,
   });
-  const picked = pickMatch(candidates as OpenPayment[], receipt);
+  let picked: { payment: OpenPayment & { id: string }; via: MatchVia } | null = pickMatch(candidates as OpenPayment[], receipt);
+  // Nothing matched by code, name or phone. If exactly one recent payment is open for this exact amount (prices end in
+  // .99, which nobody sends by accident) and the sender is not someone we know under another account, the money is
+  // almost certainly for that payment. It is approved but left in the owner's unchecked list.
+  if (!picked) {
+    const only = await pickByAmountAlone(candidates as (OpenPayment & { userId: string; createdAt: Date })[], receipt);
+    if (only) picked = { payment: only, via: "amount" };
+  }
   const match = picked?.payment ?? null;
-  if (picked && (await getBoolSetting("payments.emailAutoApprove")) && (await approveFromReceipt(picked.payment.id, receipt, { needsCheck: picked.via === "phone" }))) return "approved";
+  if (picked && (await getBoolSetting("payments.emailAutoApprove")) && (await approveFromReceipt(picked.payment.id, receipt, { needsCheck: picked.via === "phone" || picked.via === "amount", via: picked.via }))) return "approved";
   if (!match && (await getBoolSetting("payments.amountMismatchNotice"))) await warnAboutAmountMismatch(receipt).catch((err) => console.error("Amount mismatch notice failed (non-blocking):", err));
   return "stored";
+}
+
+/** An open payment older than this is not one a student is waiting on, so the exact amount alone does not claim it. */
+const AMOUNT_ALONE_MAX_AGE_MS = 3 * 24 * 60 * 60 * 1000;
+
+/** True when the sender's name is a name we know on a DIFFERENT account (their own, or one an admin confirmed). */
+async function senderBelongsToAnotherAccount(senderName: string, userId: string): Promise<boolean> {
+  const tokens = nameTokens(senderName);
+  if (tokens.length < 2) return false;
+  const [first, last] = [tokens[0], tokens[tokens.length - 1]];
+  const accounts = await prisma.user.findMany({
+    where: { id: { not: userId }, OR: [{ name: { contains: first, mode: "insensitive" } }, { name: { contains: last, mode: "insensitive" } }] },
+    select: { name: true },
+    take: 100,
+  });
+  if (accounts.some((account) => namesMatch(account.name, senderName))) return true;
+  const aliases = await prisma.payerAlias.findMany({
+    where: { userId: { not: userId }, OR: [{ name: { contains: first, mode: "insensitive" } }, { name: { contains: last, mode: "insensitive" } }] },
+    select: { name: true },
+    take: 100,
+  });
+  return aliases.some((alias) => namesMatch(alias.name, senderName));
+}
+
+/**
+ * The exact amount, by itself, claims a payment only when ALL of these hold: the owner has the setting on, exactly
+ * one payment is open for that amount, it was opened recently, the note does not name a different payment, and the
+ * sender is not a known person on another account (then they are probably paying for something else, so a person
+ * decides). The money did arrive in exactly that amount, so the worst case is a wrong attribution, which the owner
+ * sees in the unchecked list.
+ */
+async function pickByAmountAlone<T extends OpenPayment & { userId: string; createdAt: Date }>(candidates: T[], receipt: ReceiptFacts): Promise<T | null> {
+  if (candidates.length !== 1) return null;
+  const only = candidates[0];
+  if (only.amountCents !== receipt.amountCents) return null;
+  if (Date.now() - only.createdAt.getTime() > AMOUNT_ALONE_MAX_AGE_MS) return null;
+  if (memoHasOtherReference(receipt.memo, only.id)) return null;
+  if (!(await getBoolSetting("payments.matchByAmount"))) return null;
+  if (await senderBelongsToAnotherAccount(receipt.senderName, only.userId)) return null;
+  return only;
 }
 
 /**
