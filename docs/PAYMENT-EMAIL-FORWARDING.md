@@ -27,7 +27,7 @@ email's own Message-ID, so one email is only ever counted once.
    `pay-<PAYMENT_INBOX_TOKEN>@inbox.bassnotepiano.com`. Action: Forward to `https://bassnotepiano.com/api/inbound/payments`. Save.
 2. **Gmail** > Settings > Forwarding and POP/IMAP > Add a forwarding address: the same `pay-...@inbox.bassnotepiano.com`.
    Gmail sends a confirmation code to it. It appears in **Admin > Support Chat > Email tab** (the payments route hands it over). Enter it in Gmail.
-3. **Gmail filter** (search options): from `ealerts.bankofamerica.com OR venmo.com OR sofi.com` > Create filter > Forward it to the pay- address.
+3. **Gmail filter** (search options): from `ealerts.bankofamerica.com OR venmo.com OR sofi.org OR sofi.com` (SoFi's Zelle notices come from `no-reply@o.sofi.org`) > Create filter > Forward it to the pay- address.
    Add `"sent to you by"` for SoFi if you want only Zelle deposits.
 4. Make sure SoFi and the bank email **this** Gmail address (isaacberhanu777@gmail.com) in their notification settings.
 5. Change the Apps Script trigger to every 15 minutes.

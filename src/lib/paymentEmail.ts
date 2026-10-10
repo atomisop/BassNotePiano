@@ -17,7 +17,8 @@ import { normalizePhone } from "@/lib/phone";
 
 // Only emails from these senders are read. The Gmail script filters the same
 // way, this is the second check.
-const ALLOWED_SENDER_DOMAINS = ["bankofamerica.com", "venmo.com", "sofi.com"];
+// SoFi sends its Zelle notices from no-reply@o.sofi.org (note .org); sofi.com is kept for its other mail.
+const ALLOWED_SENDER_DOMAINS = ["bankofamerica.com", "venmo.com", "sofi.org", "sofi.com"];
 
 const RECEIPT_MAX_AGE_MS = 3 * 24 * 60 * 60 * 1000;
 /** How far back an open payment still counts as one a student is waiting on. */

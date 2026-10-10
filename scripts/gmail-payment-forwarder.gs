@@ -32,11 +32,11 @@ function forwardPaymentEmails() {
   try {
     const label = GmailApp.getUserLabelByName(DONE_LABEL) || GmailApp.createLabel(DONE_LABEL);
     // Bank of America and Venmo are found by their subject. SoFi's subject wording is not relied on: its Zelle
-    // emails are found by the sentence in the body ("... sent to you by NAME ..."), and the site ignores any
+    // emails come from no-reply@o.sofi.org (note .org) and are found by the sentence in the body ("... sent to you by NAME ..."), and the site ignores any
     // SoFi email that is not a payment, so a wider net costs nothing.
     const query =
       '((from:ealerts.bankofamerica.com OR from:venmo.com) (subject:"sent you" OR subject:"paid you" OR subject:"received") ' +
-      'OR (from:sofi.com "sent to you by")) ' + LOOKBACK + ' -label:' + DONE_LABEL;
+      'OR ((from:sofi.org OR from:sofi.com) "sent to you by")) ' + LOOKBACK + ' -label:' + DONE_LABEL;
 
     GmailApp.search(query, 0, 50).forEach(function (thread) {
       let allSent = true;
