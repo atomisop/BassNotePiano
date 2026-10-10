@@ -35,6 +35,12 @@ Sentry.init({
   // most of the event volume and are not read anywhere.
   tracesSampleRate: 0,
 
+  // Nothing but errors is sent. The SDK also sent a "session" report on every single page load and a "client report" when
+  // the tab closed; GlitchTip answered those with HTTP 429 (over its limit) on every visit, which also risked real
+  // errors being refused. Neither is read anywhere, so both are switched off.
+  sendClientReports: false,
+  integrations: (defaults) => defaults.filter((integration) => integration.name !== "BrowserSession"),
+
   // STEP 21 explicitly says "do not log sensitive values", Sentry's
   // default request-body/breadcrumb capture can otherwise pick up form
   // fields. `beforeSend` strips anything that looks like a credential or
