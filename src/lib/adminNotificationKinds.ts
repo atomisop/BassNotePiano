@@ -12,6 +12,7 @@ export const ADMIN_NOTIFICATION_KINDS = [
   { kind: "NEW_REGISTRATION", label: "New class registration", group: "People", defaultOn: true, ownerOnly: false },
   { kind: "NEW_SUBSCRIPTION", label: "New subscription and weekly time", group: "Payments", defaultOn: true, ownerOnly: false },
   { kind: "PAYMENT_REVIEW", label: "Payment to review", group: "Payments", defaultOn: true, ownerOnly: false },
+  { kind: "PAYMENT_EMAIL_REJECTED", label: "A forwarded bank email failed its sender check and was ignored", group: "Payments", defaultOn: true, ownerOnly: false },
   { kind: "PAYMENT_EMAIL_UNREADABLE", label: "A bank email that looks like a payment could not be read", group: "Payments", defaultOn: true, ownerOnly: false },
   { kind: "PAYMENT_AUTO_APPROVED", label: "Payment approved automatically", group: "Payments", defaultOn: false, ownerOnly: false },
   { kind: "PLAN_CANCEL_FEEDBACK", label: "Student canceled their plan", group: "Payments", defaultOn: true, ownerOnly: false },

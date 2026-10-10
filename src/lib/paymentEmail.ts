@@ -1,3 +1,4 @@
+import { normalizeMessageId } from "@/lib/paymentInbound";
 import { getBoolSetting } from "@/lib/siteSettings";
 import type { PaymentMethod } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -372,6 +373,28 @@ async function reportUnreadable(input: { messageId: string; from: string; subjec
   }
 }
 
+/** A forwarded bank email that failed its sender check: it is not used, and the owner is told once so a real payment is not missed. */
+export async function reportRejectedBankEmail(input: { messageId: string; from: string; subject: string; reason: string }): Promise<void> {
+  try {
+    const key = `payment-email-rejected:${normalizeMessageId(input.messageId).slice(0, 160)}`;
+    try {
+      await prisma.appSetting.create({ data: { key, value: String(Date.now()) } });
+    } catch (err) {
+      if ((err as { code?: string })?.code === "P2002") return; // already reported
+      throw err;
+    }
+    await prisma.appSetting.deleteMany({ where: { key: { startsWith: "payment-email-rejected:" }, updatedAt: { lt: new Date(Date.now() - 45 * 24 * 3600 * 1000) } } });
+    await notifyAdmins("PAYMENT_EMAIL_REJECTED", {
+      type: "ADMIN_ALERT",
+      title: "A forwarded payment email was ignored",
+      body: `An email from ${input.from.replace(/<.*>/, "").trim() || "your bank"} ("${input.subject.slice(0, 120)}") was ignored because ${input.reason}, so no payment was approved from it. If it was a real payment, approve it by hand in Admin > Payments.`,
+      cta: { label: "Open payments", path: "/admin/payments" },
+    });
+  } catch (err) {
+    console.error("Rejected payment email report failed (non-blocking):", err);
+  }
+}
+
 export async function ingestPaymentEmail(input: {
   messageId: string;
   from: string;
@@ -392,7 +415,7 @@ export async function ingestPaymentEmail(input: {
   try {
     receipt = await prisma.processedPaymentEmail.create({
       data: {
-        messageId: input.messageId.slice(0, 200),
+        messageId: normalizeMessageId(input.messageId),
         method: parsed.method,
         senderName: parsed.name.slice(0, 120),
         amountCents: parsed.amountCents,
