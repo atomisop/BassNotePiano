@@ -1,5 +1,6 @@
 "use client";
 
+import { OPEN_NOTIFICATIONS, UNREAD_COUNT, announce, listen } from "@/lib/topBarEvents";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -421,6 +422,10 @@ export function NotificationBell() {
       console.error("Notification poll failed (non-blocking, will retry):", err);
     }
   }
+
+  // The profile menu (the only way in on phones) opens this panel, and shows this count on the profile picture.
+  useEffect(() => listen(OPEN_NOTIFICATIONS, () => setOpen(true)), []);
+  useEffect(() => announce(UNREAD_COUNT, unreadCount + mailUnreadCount), [unreadCount, mailUnreadCount]);
 
   useEffect(() => {
     refresh();
