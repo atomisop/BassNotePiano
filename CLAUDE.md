@@ -232,7 +232,7 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
 
 ## Phone numbers (added 2026-10-09)
 
-Everyone is asked for a phone number (sign-up form, a 5-second popup for older accounts, Settings → Account).
+Everyone is asked for a phone number (sign-up form, a top-of-screen banner for older accounts at most once a day, Settings → Account).
 By default it is **kept as typed and not verified**: `assessPhone` (`src/lib/phoneValidity.ts`, libphonenumber
 metadata) checks it could really exist (real area code, right length, no filler or 555-01xx numbers). That
 proves nothing about the line being active or theirs; only a text code or a paid line lookup can.
@@ -267,6 +267,12 @@ proves nothing about the line being active or theirs; only a text code or a paid
 - Settings (`/account`) has one "Account" choice that holds every account item in groups (profile, contact,
   sign-in and security, connected accounts, privacy and data incl. download, delete). The content is rendered
   twice (desktop column and phone slide-over), so never use DOM ids inside it.
+
+Top-of-screen banners (`IosBanner`, `TopBanners` in `components/ui/`, mounted in `(dashboard)/layout.tsx`) look like an iPhone
+notification and show one at a time, only while the tab is visible and never over the tour or the "what's new" popup. The phone
+banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`). The Discord banner shows to anyone with no
+`discordId` and comes back after `discord.promptRepeatMinutes` (default 10) whenever it was ignored or closed
+(`bnp-discord-banner-next`); lengths and the on/off switch are owner settings (`phone.promptSeconds`, `discord.prompt*`, default 8 seconds).
 
 ## Sessions can now be invalidated server-side
 
