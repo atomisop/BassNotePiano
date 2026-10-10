@@ -18,7 +18,7 @@ import { OwnerStarProvider } from "@/components/ui/OwnerStar";
 import { isOwnerEmail, OWNER_EMAIL } from "@/lib/adminNotifications";
 import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { phoneVerifyMode } from "@/lib/phoneVerification";
-import { PhonePromptToast } from "@/components/account/PhonePromptToast";
+import { TopBanners } from "@/components/ui/TopBanners";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerAuthSession();
@@ -27,7 +27,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const [directUnreadCount, groupUnreadCount, user, activeAnnouncement] = await Promise.all([
     getTotalUnreadMessageCount(session.user.id),
     getTotalUnreadGroupMessageCount(session.user.id),
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { onboardingTourSeenAt: true, lastSeenPatchVersion: true, phone: true, phoneVerifiedAt: true, phoneRequired: true } }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { onboardingTourSeenAt: true, lastSeenPatchVersion: true, phone: true, phoneVerifiedAt: true, phoneRequired: true, discordId: true } }),
     getActiveAnnouncementForUser(session.user.id),
   ]);
   const unreadMessageCount = directUnreadCount + groupUnreadCount;
@@ -45,6 +45,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const needsPhone = verifyMode ? !user?.phoneVerifiedAt : !user?.phone;
   const promptPhone = needsPhone && !shouldShowTour && !showWhatsNew && (await getBoolSetting("phone.promptExisting"));
   const promptSeconds = promptPhone ? await getNumberSetting("phone.promptSeconds") : 0;
+  // Anyone who has not connected Discord is reminded (never over the tour or the "what's new" popup).
+  const promptDiscord = !user?.discordId && !shouldShowTour && !showWhatsNew && (await getBoolSetting("discord.promptEnabled"));
+  const discordPrompt = promptDiscord
+    ? { seconds: await getNumberSetting("discord.promptSeconds"), repeatMinutes: await getNumberSetting("discord.promptRepeatMinutes") }
+    : null;
   const isAdmin = session.user.role === "ADMIN";
   const isOwner = isAdmin && isOwnerEmail(session.user.email);
   const owner = await prisma.user.findUnique({ where: { email: OWNER_EMAIL }, select: { id: true } });
@@ -93,7 +98,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Suspense fallback={null}>
         <OnboardingTour autoShow={shouldShowTour} />
       </Suspense>
-      {promptPhone && <PhonePromptToast seconds={promptSeconds} verifying={verifyMode} />}
+      <TopBanners phone={promptPhone ? { seconds: promptSeconds, verifying: verifyMode } : null} discord={discordPrompt} />
     </div>
     </WhatsNewProvider>
     </OwnerStarProvider>

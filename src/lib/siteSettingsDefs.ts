@@ -82,8 +82,8 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "phone.verifyBySms", category: "phone", type: "toggle", default: false, label: "Confirm numbers with a 6-digit text", help: "Off: numbers are kept as typed. On: new accounts must confirm theirs by text before using the app. Needs a text-message service set up on the server (Plivo keys), so it costs money per text." },
   { key: "signup.blockDisposable", category: "signup", type: "toggle", default: true, label: "Block throwaway email addresses", help: "Refuses sign-ups from disposable email domains." },
 
-  { key: "phone.promptExisting", category: "phone", type: "toggle", default: true, label: "Ask existing students for a phone number", help: "Shows a short popup once per sign-in to anyone who has no number on file (or none confirmed, when text confirmation is on). They are never locked out." },
-  { key: "phone.promptSeconds", category: "phone", type: "number", default: 5, min: 3, max: 30, unit: "seconds", label: "How long the phone popup stays", help: "A bar on the popup runs out over this time, then it closes by itself." },
+  { key: "phone.promptExisting", category: "phone", type: "toggle", default: true, label: "Ask existing students for a phone number", help: "Shows a short banner at the top of the screen, at most once a day, to anyone who has no number on file (or none confirmed, when text confirmation is on). They are never locked out." },
+  { key: "phone.promptSeconds", category: "phone", type: "number", default: 8, min: 3, max: 30, unit: "seconds", label: "How long the phone banner stays", help: "It slides down from the top, stays this long, then slides away by itself." },
 
   // ---- Security
   { key: "security.loginMaxAttempts", category: "security", type: "number", default: 8, min: 3, max: 50, unit: "tries", label: "Wrong passwords before a lockout", help: "Counted per account over the window below." },
@@ -109,6 +109,9 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "discord.notifyOwner", category: "discord", type: "toggle", default: true, label: "Notify me with a join link when a call opens", help: "An in-app notice with a link straight to the call." },
   { key: "discord.notifyStudents", category: "discord", type: "toggle", default: true, label: "Notify students when their call opens", help: "The 'Your class call is open' notice with a join link." },
   { key: "discord.autoMove", category: "discord", type: "toggle", default: true, label: "Move people into the call if they are already in a voice channel", help: "Discord only lets the bot move someone who is already connected to voice." },
+  { key: "discord.promptEnabled", category: "discord", type: "toggle", default: true, label: "Remind students to connect Discord", help: "A banner at the top of the screen for anyone who has not connected Discord. It stops for good once they connect." },
+  { key: "discord.promptSeconds", category: "discord", type: "number", default: 8, min: 3, max: 30, unit: "seconds", label: "How long the Discord banner stays", help: "Then it slides away by itself." },
+  { key: "discord.promptRepeatMinutes", category: "discord", type: "number", default: 10, min: 1, max: 1440, unit: "minutes", label: "Show the Discord banner again after", help: "If it is ignored or closed, it comes back this many minutes later while they are still on the site." },
   { key: "discord.testChannelMinutes", category: "discord", type: "number", default: 10, min: 1, max: 60, unit: "minutes", label: "How long the test call stays", help: "For the test button on the Lessons page." },
 
   // ---- Payments
