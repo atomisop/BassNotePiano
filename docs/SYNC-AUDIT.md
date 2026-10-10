@@ -22,6 +22,10 @@ check showed it agreeing; "Fixed" means it did not, and what changed. Tests: `te
 | 14 | Messages, support chat, notification bell | Worked: each polls for itself. |
 | 15 | Scheduled jobs and the watchdog | Worked: all 11 are watched. The Discord job now runs every minute. |
 | 16 | Admin menu badges and counts | Worked with the above (refreshed by AutoRefresh and by action revalidation). |
+| 17 | Each person's notification switches and what the app actually sends or shows | **Fixed (2026-10-10, second pass).** The practice banner ignored "Practice reminders" being off (and the owner's own Practice reminders switch). Both now gate it. The "Social" switch was also governing class notices and the "Role updates" switch described only admin access. New switch **Class updates** (booking, cancel, move, attendance); **Account updates** covers Discord, phone and device notices (no more always-on email); **Social** now also covers studio messages and announcements; the payments switch says plainly that a payment you are waiting on is always emailed. One shared map (`emailPreferences.ts`) decides which switch governs which notice. |
+| 18 | Banned accounts and everything that emails or nudges | **Fixed.** A banned person still got practice nudges and announcement emails. Nothing is emailed to a banned account now (one check in `createNotification`, plus the announcement and practice jobs). |
+| 19 | Deleting an account and Discord | **Fixed.** A deleted account stayed in your Discord server and its private class call was never removed (the class job only knows calls through bookings, which deleting the account removes). Deleting now removes the person from the server and deletes calls only they were in. |
+| 20 | The phone banner and the number on the account | **Fixed.** Saving, confirming or removing a number refreshed only the Settings page; it refreshes the whole app now. |
 
 ## Events that used to be silent and now notify
 

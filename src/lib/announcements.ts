@@ -41,7 +41,7 @@ export async function createAnnouncement(adminId: string, title: string, body: s
     data: { title: trimmedTitle, body: trimmedBody, createdBy: adminId },
   });
 
-  const users = await prisma.user.findMany({ select: { id: true, email: true, name: true } });
+  const users = await prisma.user.findMany({ select: { id: true, email: true, name: true, notifyEmailSocial: true, bannedAt: true } });
   await Promise.all(
     users.map((u) =>
       createNotification({ userId: u.id, type: "ANNOUNCEMENT", title: trimmedTitle, body: trimmedBody }).catch((err) =>
@@ -56,7 +56,8 @@ export async function createAnnouncement(adminId: string, title: string, body: s
   // every other best-effort fan-out in this codebase (gamification
   // tracking, notification delivery above).
   if (sendEmail) {
-    for (const u of users) {
+    // Announcements are messages from the studio: a person who turned off "Social" (Settings > Notification settings) is not emailed.
+    for (const u of users.filter((user) => user.notifyEmailSocial && !user.bannedAt)) {
       try {
         await sendPersonalEmail(u.email, trimmedTitle, trimmedBody, { firstName: u.name?.trim().split(/\s+/)[0] });
       } catch (err) {

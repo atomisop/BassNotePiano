@@ -640,7 +640,7 @@ async function notifyAdminsOfBooking(
         type: "LESSON_BOOKING_RECEIVED",
         title: "New one-on-one booking",
         body: `${studentLabel} booked the ${classLabel} ${when} to ${endsAt} (${creditsLabelFromStored(creditsBooked)}).`,
-        emailCategory: "social",
+        emailCategory: "classes",
       }),
     ),
   );
@@ -668,7 +668,7 @@ async function notifyAdminsOfSelfChange(
       : `${who} canceled their ${formatEtDateTime(change.from)} class.`;
     await Promise.all(
       admins.map((admin) =>
-        createNotification({ userId: admin.id, type: "LESSON_BOOKING_RECEIVED", title, body, emailCategory: "social" }).catch((err) =>
+        createNotification({ userId: admin.id, type: "LESSON_BOOKING_RECEIVED", title, body, emailCategory: "classes" }).catch((err) =>
           console.error("Admin self-change notification failed (non-blocking):", err),
         ),
       ),
@@ -703,7 +703,7 @@ async function notifyAdminsOfFamilyBooking(
         type: "LESSON_BOOKING_RECEIVED",
         title: "New family booking",
         body: `${names} booked the ${classLabel} ${when} to ${endsAt} together (${creditsLabelFromStored(FAMILY_CREDITS_PER_STUDENT)} each).`,
-        emailCategory: "social",
+        emailCategory: "classes",
       }),
     ),
   );
@@ -1363,7 +1363,7 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
     type: "LESSON_BOOKING_CANCELED",
     title: "Class canceled",
     body: `Your ${formatEtDateTime(booking.scheduledAt)} class was canceled. No credits were charged.`,
-    emailCategory: "social",
+    emailCategory: "classes",
   });
 
   await notifyAdminsOfSelfChange(studentId, { from: booking.scheduledAt });
@@ -1562,7 +1562,7 @@ export async function rescheduleClassBooking(
     type: "LESSON_BOOKING_CANCELED",
     title: "Class rescheduled",
     body: `Your class moved to ${formatEtDateTime(newScheduledAt)}. No credits were charged for the change.`,
-    emailCategory: "social",
+    emailCategory: "classes",
   });
   await notifyAdminsOfSelfChange(studentId, { from: oldBooking.scheduledAt, to: newScheduledAt });
 

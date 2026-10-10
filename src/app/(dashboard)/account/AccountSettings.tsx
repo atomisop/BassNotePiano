@@ -1023,15 +1023,20 @@ function TutorialsSection() {
 const NOTIFICATION_TOGGLES: { key: keyof NotificationPreferencesInput; label: string; description: string }[] = [
   {
     key: "notifyEmailPayments",
-    label: "Payment approvals",
-    description: "Zelle payments verified or rejected, plus payment plan installment invoices and reminders.",
+    label: "Payments and invoices",
+    description: "Payment plan installment invoices, overdue reminders and credit expiry. Results you are waiting on (a payment approved, rejected or refunded) are always emailed.",
   },
-  { key: "notifyEmailRoleUpdates", label: "Role updates", description: "Granted Admin access." },
-  { key: "notifyEmailSocial", label: "Social", description: "Friend requests and new messages." },
+  { key: "notifyEmailRoleUpdates", label: "Account updates", description: "Admin access, and changes to your Discord, phone number and signed-in devices." },
+  { key: "notifyEmailSocial", label: "Social", description: "Friend requests, new messages, and messages and announcements from the studio." },
+  {
+    key: "notifyEmailClasses",
+    label: "Class updates",
+    description: "A class booked for you, canceled, moved or marked, and changes to your weekly time.",
+  },
   {
     key: "notifyEmailReminders",
-    label: "Practice reminders",
-    description: "Nudges after a few days away. Off means no bell and no email.",
+    label: "Practice and class reminders",
+    description: "The practice reminder banner at the top of the screen, practice nudges after days away, and the day-before and hour-before class reminder emails. Off means none of them.",
   },
 ];
 

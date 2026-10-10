@@ -362,7 +362,7 @@ export async function adminCancelClassBooking(bookingId: string, reason?: string
     body: trimmedReason
       ? `Your ${formatEtDateTime(booking.scheduledAt)} class was canceled by the studio (${trimmedReason}). No credits were charged.`
       : `Your ${formatEtDateTime(booking.scheduledAt)} class was canceled by the studio. No credits were charged.`,
-    emailCategory: "social",
+    emailCategory: "classes",
   });
 }
 

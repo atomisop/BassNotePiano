@@ -295,6 +295,7 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
   `revalidatePath("/", "layout")`; admin, payment, plan, credit and account actions do the same, so no screen keeps an old value.
   `staleTimes.dynamic = 0` stops the browser reusing a visited page.
 - **Closing a plan closes its unpaid bill** (admin cancel, self cancel, lapse, ban). A payment already submitted stays for review.
+- **User switches decide what they see.** `emailPreferences.ts` maps each kind of notice to its switch (payments, account updates, social, class updates, practice and class reminders); never send or show a notice around a switch (a payment result they are waiting on is the one documented exception). The practice banner is a practice reminder: it needs the owner's `reminders.practiceEnabled` and the person's own reminders switch. A banned account is sent nothing.
 - **New notices** live in `studentNotices.ts` (+ `trialNotices.ts`, run by the daily credit-expiry job). Add a new student-facing
   event there, with a `NotificationType` (enum migration), its CTA in `notifications.ts` and its category in `NotificationBell.tsx`.
 

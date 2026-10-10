@@ -16,7 +16,7 @@ export async function savePhoneAction(rawPhone: string): Promise<PhoneResult<{ p
   const id = await userId();
   if (!id) return SIGN_IN;
   const result = await savePhone(id, rawPhone);
-  if (result.ok) revalidatePath("/account");
+  if (result.ok) revalidatePath("/", "layout"); // the phone banner and the payment sheet read the number too
   return result;
 }
 
@@ -34,7 +34,7 @@ export async function confirmPhoneAction(code: string): Promise<PhoneResult<{ ph
   const id = await userId();
   if (!id) return SIGN_IN;
   const result = await confirmPhoneVerification(id, code);
-  if (result.ok) revalidatePath("/account");
+  if (result.ok) revalidatePath("/", "layout"); // the phone banner and the payment sheet read the number too
   return result;
 }
 
@@ -42,6 +42,6 @@ export async function removePhoneAction(): Promise<PhoneResult> {
   const id = await userId();
   if (!id) return SIGN_IN;
   const result = await removePhone(id);
-  if (result.ok) revalidatePath("/account");
+  if (result.ok) revalidatePath("/", "layout"); // the phone banner and the payment sheet read the number too
   return result;
 }

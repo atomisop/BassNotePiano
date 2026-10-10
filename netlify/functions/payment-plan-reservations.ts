@@ -76,7 +76,7 @@ export const handler = schedule("30 9 * * *", async () =>
           type: "ADMIN_ALERT",
           title: "A weekly time no longer exists",
           body: `${student?.name ?? student?.email ?? "A subscriber"} has a weekly time that is gone, so their classes are not being booked. Pick them a new time.`,
-          emailCategory: "social",
+          emailCategory: "classes",
           cta: { label: "Pick a new time", path: "/admin/schedule" },
         });
         await prisma.paymentPlan.update({ where: { id: plan.id }, data: { reservedSlotInactiveNotifiedAt: new Date() } });

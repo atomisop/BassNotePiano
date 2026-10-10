@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { MAIL_ROUTED_TYPES, createMailMessage } from "@/lib/mail";
 import { sendNotificationEmail, sendNotificationEmailWithCta, getAppUrl } from "@/lib/email";
 
-type EmailCategory = "payments" | "roleUpdates" | "social" | "reminders";
+import { EMAIL_PREF_SELECT, isEmailEnabled, type EmailCategory } from "@/lib/emailPreferences";
 type EmailKind = "default" | "notice";
 
 export interface CreateNotificationParams {
@@ -136,25 +136,11 @@ async function maybeSendEmail(
   cta?: NotificationCta,
   force = false,
 ) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      email: true,
-      notifyEmailPayments: true,
-      notifyEmailRoleUpdates: true,
-      notifyEmailSocial: true,
-      notifyEmailReminders: true,
-    },
-  });
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: EMAIL_PREF_SELECT });
   if (!user) return;
-
-  const enabled: Record<EmailCategory, boolean> = {
-    payments: user.notifyEmailPayments,
-    roleUpdates: user.notifyEmailRoleUpdates,
-    social: user.notifyEmailSocial,
-    reminders: user.notifyEmailReminders,
-  };
-  if (!enabled[category] && !force) return;
+  // A banned account is sent nothing, whatever its switches say.
+  if (user.bannedAt) return;
+  if (!isEmailEnabled(user, category) && !force) return;
 
   if (cta) {
     await sendNotificationEmailWithCta(user.email, title, body ?? "", { label: cta.label, url: cta.url }, cta.kind);

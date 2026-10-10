@@ -1,3 +1,4 @@
+import { practiceBannerAllowed } from "@/lib/emailPreferences";
 import { PullToRefreshMain } from "@/components/layout/PullToRefreshMain";
 import { AutoRefresh } from "@/components/layout/AutoRefresh";
 import { Suspense } from "react";
@@ -30,7 +31,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const [directUnreadCount, groupUnreadCount, user, activeAnnouncement, verifyMode, meStatus, owner] = await Promise.all([
     getTotalUnreadMessageCount(session.user.id),
     getTotalUnreadGroupMessageCount(session.user.id),
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { onboardingTourSeenAt: true, lastSeenPatchVersion: true, phone: true, phoneVerifiedAt: true, phoneRequired: true, discordId: true } }),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { onboardingTourSeenAt: true, lastSeenPatchVersion: true, phone: true, phoneVerifiedAt: true, phoneRequired: true, discordId: true, notifyEmailReminders: true } }),
     getActiveAnnouncementForUser(session.user.id),
     phoneVerifyMode(),
     getMeStatus(session.user.id),
@@ -56,7 +57,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const discordPrompt = promptDiscord
     ? { seconds: await getNumberSetting("discord.promptSeconds"), repeatMinutes: await getNumberSetting("discord.promptRepeatMinutes") }
     : null;
-  const promptPractice = !shouldShowTour && !showWhatsNew && (await getBoolSetting("practice.promptEnabled"));
+  // The practice banner is a practice reminder: it needs the owner's "Practice reminders" switch (Settings > Reminders) on AND the
+  // person's own "Practice and class reminders" switch (Settings > Notification settings) on.
+  const promptPractice =
+    !shouldShowTour &&
+    !showWhatsNew &&
+    practiceBannerAllowed({ ownerEnabled: await getBoolSetting("reminders.practiceEnabled"), prefs: { notifyEmailReminders: user?.notifyEmailReminders ?? false } });
   const practicePrompt = promptPractice
     ? { seconds: await getNumberSetting("practice.promptSeconds"), repeatMinutes: await getNumberSetting("practice.promptRepeatMinutes") }
     : null;

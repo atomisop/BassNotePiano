@@ -37,7 +37,7 @@ export const handler = schedule("0 15 * * *", async () =>
   const triggerDays = (await getTextSetting("reminders.practiceDays")).split(",").map((d) => Number(d.trim())).filter((d) => Number.isInteger(d) && d > 0);
   const now = new Date();
   const users = await prisma.user.findMany({
-    where: { onboardedAt: { not: null }, lastActivityDate: { not: null }, notifyEmailReminders: true },
+    where: { onboardedAt: { not: null }, lastActivityDate: { not: null }, notifyEmailReminders: true, bannedAt: null },
     select: { id: true, lastActivityDate: true },
   });
 

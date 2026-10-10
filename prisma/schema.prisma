@@ -817,6 +817,8 @@ model User {
   notifyEmailRoleUpdates Boolean @default(true)
   notifyEmailSocial      Boolean @default(true)
   notifyEmailReminders   Boolean @default(false)
+  // Class updates: a class booked for you, canceled, moved or marked, and the studio's class notices. On by default.
+  notifyEmailClasses     Boolean @default(true)
 
   // Drives the "What's new" popup, shown once per calendar day (compared
   // in UTC) the first time a signed-in user hits any dashboard page, not on

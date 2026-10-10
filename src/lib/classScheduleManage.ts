@@ -142,7 +142,7 @@ export async function setClassScheduleActive(scheduleId: string, active: boolean
         type: "ADMIN_ALERT",
         title: "A reserved weekly time was turned off",
         body: `${holders} subscriber${holders === 1 ? " holds" : "s hold"} the ${DAY_NAMES_LONG[schedule.dayOfWeek]} ${schedule.startTime} time you just turned off. They will not be booked until you pick them a new time.`,
-        emailCategory: "social",
+        emailCategory: "classes",
         cta: { label: "See subscribers", path: "/admin/payment-plans" },
       }).catch((err) => console.error("Slot-off alert failed (non-blocking):", err));
     }
