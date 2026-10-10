@@ -21,7 +21,7 @@ describe("the Notify button on the Discord page", () => {
     expect(await notifyToConnectDiscord(u.id)).toBe("sent");
     const note = await prisma.notification.findFirst({ where: { userId: u.id, title: "Connect your Discord" } });
     expect(note?.body).toMatch(/1\. Download the free Discord app on your phone\. 2\. Create a Discord account at discord\.com\/register\. 3\. Open Lessons/);
-    expect(note?.body).not.toMatch(/—|–/);
+    expect(note?.body).not.toMatch(new RegExp(`${String.fromCharCode(0x2014)}|${String.fromCharCode(0x2013)}`));
   });
   it("only leaves the in-app notice when they turned account update emails off", async () => {
     const u = await student("No Email", { notifyEmailRoleUpdates: false });
