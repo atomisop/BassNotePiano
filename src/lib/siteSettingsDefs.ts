@@ -62,7 +62,7 @@ export const SETTING_DEFS: SettingDef[] = [
 
   // ---- Cancel and reschedule
   { key: "cancel.studentCanCancel", category: "cancellation", type: "toggle", default: true, label: "Students can cancel their own classes", help: "Off: students must message you to cancel." },
-  { key: "cancel.cutoffHours", category: "cancellation", type: "number", default: 24, min: 0, max: 168, unit: "hours", label: "Cancel and reschedule cutoff", help: "A student can cancel or move a class only if it is at least this far away. The app and Atom follow this number; the public Terms and FAQ pages still say 24 hours." },
+  { key: "cancel.cutoffHours", category: "cancellation", type: "number", default: 6, min: 0, max: 168, unit: "hours", label: "Cancel and reschedule cutoff", help: "A student can cancel or move a class only if it is at least this far away. The app and Atom follow this number. The FAQ and Terms pages say 6 hours in fixed text, so change them too if you change this." },
   { key: "cancel.studentCanReschedule", category: "cancellation", type: "toggle", default: true, label: "Students can reschedule their own classes", help: "Off: students must message you to move a class." },
 
   // ---- Trial and access

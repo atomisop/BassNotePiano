@@ -22,8 +22,8 @@ describe("setting definitions", () => {
 describe("parse and serialize", () => {
   it("falls back to the default when nothing is stored or the stored number is out of range", () => {
     const hours = SETTING_BY_KEY["cancel.cutoffHours"];
-    expect(parseSetting(hours, undefined)).toBe(24);
-    expect(parseSetting(hours, "999999")).toBe(24);
+    expect(parseSetting(hours, undefined)).toBe(6);
+    expect(parseSetting(hours, "999999")).toBe(6);
     expect(parseSetting(hours, "12")).toBe(12);
   });
 

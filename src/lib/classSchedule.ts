@@ -29,7 +29,7 @@ export const FAMILY_CREDITS_PER_STUDENT = 2;
 export const GROUP_CAPACITY = 10;
 export const GROUP_CREDITS_PER_STUDENT = 2;
 
-export const CANCELLATION_CUTOFF_HOURS = 24;
+export const CANCELLATION_CUTOFF_HOURS = 6;
 // How many upcoming weeks of each weekly slot to surface as bookable,
 // a fixed planning horizon rather than an unbounded "forever" list, since
 // the schedule itself repeats indefinitely. Exported: the reservation-
@@ -1314,10 +1314,10 @@ export async function getWeeklyCreditUsage(studentId: string): Promise<WeeklyCre
 }
 
 /**
- * Self-serve cancellation, >=24h before the class start only. Always
+ * Self-serve cancellation, up to the cutoff (6 hours by default) before the class start. Always
  * refunds the spent credits and frees the seat (there's no other outcome:
  * self-cancel simply isn't offered once inside the window). A student who
- * needs to cancel inside 24h has to message support instead; any refund at
+ * needs to cancel inside the cutoff has to message support instead; any refund at
  * that point is a manual, discretionary admin credit adjustment, not
  * something this function grants automatically.
  */
@@ -1373,7 +1373,7 @@ export async function cancelClassBooking(bookingId: string, studentId: string): 
  * re-book a different open slot, two round trips with a real risk of
  * losing the old slot's credit hold before the new one is confirmed. This
  * does both atomically: same >=CANCELLATION_CUTOFF_HOURS eligibility as
- * cancelClassBooking (an inside-24h reschedule still isn't self-service,
+ * cancelClassBooking (an inside-the-cutoff reschedule still isn't self-service,
  * same reasoning, message us instead), then the target slot goes through
  * the exact same capacity/reserved-plan/one-class-a-day/credit checks
  * bookClass's own transaction runs, minus the Payment Plan self-book block

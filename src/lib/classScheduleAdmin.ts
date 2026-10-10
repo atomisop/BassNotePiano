@@ -334,7 +334,7 @@ export async function undoAttendance(bookingId: string): Promise<void> {
 
 /**
  * Admin-initiated cancel, unlike the student's self-serve cancelClassBooking,
- * this has no 24-hour cutoff (an admin can free a slot or fix a mistake any
+ * this has no cutoff (an admin can free a slot or fix a mistake any
  * time before the class happens). No credit mutation, same reasoning as
  * cancelClassBooking: the real charge waits for markAttendance, so a
  * booking that's still SCHEDULED was never actually charged in the first
