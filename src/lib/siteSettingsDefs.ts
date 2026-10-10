@@ -134,6 +134,15 @@ export const SETTING_DEFS: SettingDef[] = [
   // ---- Learning
 ];
 
+/**
+ * The definitions as the browser may receive them. A RegExp cannot cross from a server page to a client
+ * component (Next refuses to render the page), and the browser never checks it: the server does, on save.
+ */
+export const CLIENT_SETTING_DEFS: SettingDef[] = SETTING_DEFS.map((d) => {
+  const { pattern: _pattern, ...rest } = d as SettingDef & { pattern?: RegExp };
+  return rest as SettingDef;
+});
+
 export const SETTING_BY_KEY: Record<string, SettingDef> = Object.fromEntries(SETTING_DEFS.map((d) => [d.key, d]));
 
 export function storageKeyOf(def: SettingDef): string {
