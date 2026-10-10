@@ -16,7 +16,7 @@ import {
 import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { CheckIcon, XIcon } from "@/components/ui/icons";
-import { CLASS_MINUTES, CREDITS_PER_CLASS, EXTRA_CLASS_PRICE_CENTS, creditsLabelFromStored } from "@/lib/classCreditPricing";
+import { CLASS_MINUTES, CREDITS_PER_CLASS, EXTRA_CLASS_PRICE_CENTS, creditsLabelFromStored, formatCredits, storedToCredits } from "@/lib/classCreditPricing";
 import { errorNeedsTeam, weekRangeForOccurrence } from "@/lib/bookingRules";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { createExtraClassPaymentAction, submitClassCreditsPaymentAction } from "../billing/lessons/actions";
@@ -849,7 +849,7 @@ export function ClassBookingClient({
             {/* Credits: what a class costs and what the student has. No money here. */}
             <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-xl bg-neu-base px-4 py-3 shadow-pressed-low">
               <p className="text-small text-slate-400">
-                Your credits <span className="ml-1 text-body font-semibold tabular-nums text-slate-50">{credits}</span>
+                Your credits <span className="ml-1 text-body font-semibold tabular-nums text-slate-50">{formatCredits(storedToCredits(credits))}</span>
               </p>
               <p className="text-small text-slate-400">
                 Each class costs <span className="font-semibold text-slate-100">{creditsLabel(CREDITS_PER_CLASS)}</span> · {CLASS_MINUTES} min

@@ -26,17 +26,20 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
 
-  const [directUnreadCount, groupUnreadCount, user, activeAnnouncement] = await Promise.all([
+  // Everything the shell needs is asked for at once, not one after another (it ran on every page).
+  const [directUnreadCount, groupUnreadCount, user, activeAnnouncement, verifyMode, meStatus, owner] = await Promise.all([
     getTotalUnreadMessageCount(session.user.id),
     getTotalUnreadGroupMessageCount(session.user.id),
     prisma.user.findUnique({ where: { id: session.user.id }, select: { onboardingTourSeenAt: true, lastSeenPatchVersion: true, phone: true, phoneVerifiedAt: true, phoneRequired: true, discordId: true } }),
     getActiveAnnouncementForUser(session.user.id),
+    phoneVerifyMode(),
+    getMeStatus(session.user.id),
+    prisma.user.findUnique({ where: { email: OWNER_EMAIL }, select: { id: true } }),
   ]);
   const unreadMessageCount = directUnreadCount + groupUnreadCount;
 
   // Text confirmation is off by default. When the owner switches it on, an account made while it was on has to
   // finish confirming its number; older accounts are never blocked, they get a short popup (below) instead.
-  const verifyMode = await phoneVerifyMode();
   if (verifyMode && user?.phoneRequired && !user.phoneVerifiedAt) redirect("/verify-phone");
 
   const shouldShowTour = !user?.onboardingTourSeenAt;
@@ -57,10 +60,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const practicePrompt = promptPractice
     ? { seconds: await getNumberSetting("practice.promptSeconds"), repeatMinutes: await getNumberSetting("practice.promptRepeatMinutes") }
     : null;
-  const meStatus = await getMeStatus(session.user.id);
   const isAdmin = session.user.role === "ADMIN";
   const isOwner = isAdmin && isOwnerEmail(session.user.email);
-  const owner = await prisma.user.findUnique({ where: { email: OWNER_EMAIL }, select: { id: true } });
 
   return (
     <OwnerStarProvider ownerId={owner?.id ?? null}>
