@@ -24,7 +24,7 @@ export interface CustomerProfileProps {
   /** Frees this account's phone number (a number belongs to one account). */
   onClearPhone: (userId: string) => Promise<void>;
   /** Bans the account for good (it can never sign in). The reason is a private note. */
-  onBan: (userId: string, reason: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  onBan: (userId: string, reason: string) => Promise<{ ok: true; summary: string } | { ok: false; error: string }>;
   onUnban: (userId: string) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
@@ -109,6 +109,7 @@ export function CustomerProfile({
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const [confirmingBan, setConfirmingBan] = useState(false);
   const [banReason, setBanReason] = useState("");
+  const [banSummary, setBanSummary] = useState<string | null>(null);
   // Role, curriculum-access, and clear-history all used to fire on a single
   // click with no confirmation. "Make admin" is the highest-stakes action in
   // the whole admin panel, since an errant admin can then touch everything
@@ -188,6 +189,7 @@ export function CustomerProfile({
     if (!result.ok) return setError(result.error);
     setConfirmingBan(false);
     setBanReason("");
+    setBanSummary(result.summary);
     router.refresh();
   }
 
@@ -240,6 +242,7 @@ export function CustomerProfile({
             {user.bannedAt && (
               <div role="status" className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-small text-red-300">
                 <p className="font-semibold">Permanently banned on {formatDate(user.bannedAt)}. They cannot sign in.</p>
+                {banSummary && <p className="mt-1">Terminated: {banSummary}</p>}
                 {user.bannedReason && <p className="mt-1 text-red-300/80">Your note: {user.bannedReason}</p>}
               </div>
             )}
@@ -247,7 +250,7 @@ export function CustomerProfile({
               <div className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 p-4">
                 <p className="text-small font-semibold text-red-300">Permanently ban {user.name ?? user.email}?</p>
                 <p className="mt-1 text-small text-slate-300">
-                  They are signed out everywhere at once and can never sign in again. They will see a red notice that they have been permanently banned. You can lift the ban later.
+                  This is a termination. They are signed out everywhere and can never sign in again, their payment plan and every booked class are canceled, their trial and free access end, and they are removed from your Discord server. Money they already paid is not touched, and a payment waiting for your review is left for you. They will see a red notice that they have been permanently banned. You can lift the ban later, but the cancellations stay.
                 </p>
                 <label className="mt-3 block text-small text-slate-400" htmlFor="ban-reason">
                   Private note for yourself (optional)

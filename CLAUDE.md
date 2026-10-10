@@ -282,7 +282,7 @@ top right of the Account card on the student page, with a confirm step; "Lift ba
 `getServerAuthSession` also refuses a banned account on its next request. Every sign-in route ends in the credentials
 `authorize` in `auth.ts`, which throws `BANNED` for a banned account; `loginStepOneAction` says it after the right password
 only (so it cannot reveal which emails are banned). The sign-in screens show `BANNED_MESSAGE` (`src/lib/ban.ts`) in red.
-A ban does not cancel the person's booked classes or remove them from Discord: do those by hand.
+A ban is a termination (`banAccount` in `src/lib/accountBan.ts`, one transaction): it also cancels their active payment plans and every booked class (reason "Account banned", so no job re-books them), closes unpaid bills, ends complimentary access and the trial, clears and kicks their Discord link (best effort, after the transaction). Money paid is never touched, a payment waiting for review is left for the owner, and credits stay on the record. Lifting the ban does not undo any of it.
 
 ## Sessions can now be invalidated server-side
 

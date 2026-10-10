@@ -6,6 +6,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { forgetPayerName } from "@/lib/paymentReceipts";
+import { banAccount, describeBan } from "@/lib/accountBan";
 
 // Same pattern as every other admin actions.ts, the admin layout's
 // redirect only protects rendering, not these Server Actions, so this
@@ -58,26 +59,27 @@ export async function forgetPayerNameAction(targetUserId: string, aliasId: strin
 }
 
 /**
- * Bans an account for good: it can no longer sign in by any route, and every open session ends at once (sessionVersion
- * is bumped, and getServerAuthSession also refuses a banned account on its next request). Never for an admin, and never
- * for yourself. The reason is a private note for the owner. Reversible with unbanUserAction.
+ * Bans an account for good, which is a termination (see banAccount in accountBan.ts): it can no longer sign in by any
+ * route, every open session ends, its plans and booked classes are canceled and it is removed from Discord. Never for an
+ * admin, and never for yourself. The reason is a private note for the owner. The ban itself is reversible with
+ * unbanUserAction; the cancellations are not undone.
  */
-export async function banUserAction(targetUserId: string, reason: string): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function banUserAction(targetUserId: string, reason: string): Promise<{ ok: true; summary: string } | { ok: false; error: string }> {
   const admin = await requireAdmin();
   if (targetUserId === admin.id) return { ok: false, error: "You cannot ban your own account." };
-  const target = await prisma.user.findUnique({ where: { id: targetUserId }, select: { id: true, email: true, role: true, bannedAt: true } });
+  const target = await prisma.user.findUnique({ where: { id: targetUserId }, select: { id: true, email: true, role: true } });
   if (!target) return { ok: false, error: "That account no longer exists." };
   if (target.role === "ADMIN") return { ok: false, error: "An admin account cannot be banned. Remove its admin role first." };
-  if (target.bannedAt) return { ok: true };
   const note = reason.trim().slice(0, 500);
-  await prisma.user.update({
-    where: { id: target.id },
-    data: { bannedAt: new Date(), bannedReason: note || null, sessionVersion: { increment: 1 } },
-  });
-  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "user.ban", targetType: "User", targetId: target.id, detail: `Banned ${target.email}${note ? `: ${note}` : ""}` });
+  const outcome = await banAccount({ userId: target.id, adminId: admin.id, reason: note });
+  if (outcome.alreadyBanned) return { ok: true, summary: "Already banned." };
+  const summary = describeBan(outcome);
+  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "user.ban", targetType: "User", targetId: target.id, detail: `Banned ${target.email}${note ? ` (${note})` : ""}: ${summary}` });
   revalidatePath(`/admin/users/${target.id}`);
   revalidatePath("/admin/users");
-  return { ok: true };
+  revalidatePath("/admin/schedule");
+  revalidatePath("/admin/payment-plans");
+  return { ok: true, summary };
 }
 
 /** Lifts a ban, so the person can sign in again. */

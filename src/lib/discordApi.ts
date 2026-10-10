@@ -92,6 +92,13 @@ export async function createClassChannel(name: string, memberDiscordIds: string[
   throw new Error(lastError);
 }
 
+/** Removes a person from the Discord server (used when an account is banned). Not being in the server counts as done. */
+export async function removeFromGuild(discordId: string): Promise<"removed" | "not_member" | "failed"> {
+  const res = await discordFetch(`/guilds/${DISCORD_GUILD_ID}/members/${discordId}`, { method: "DELETE" });
+  if (res.status === 204 || res.ok) return "removed";
+  return res.status === 404 ? "not_member" : "failed";
+}
+
 /** Removes a class channel. Already gone counts as done. */
 export async function deleteChannel(channelId: string): Promise<void> {
   const res = await discordFetch(`/channels/${channelId}`, { method: "DELETE" });
