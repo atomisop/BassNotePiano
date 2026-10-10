@@ -54,3 +54,15 @@ describe("text settings with a format", () => {
     expect(SETTING_DEFS.length).toBeGreaterThanOrEqual(50);
   });
 });
+
+describe("settings sent to the browser", () => {
+  it("hold nothing a server page cannot pass to a client component (no RegExp, no functions)", async () => {
+    const { CLIENT_SETTING_DEFS } = await import("@/lib/siteSettingsDefs");
+    for (const d of CLIENT_SETTING_DEFS) {
+      for (const [k, v] of Object.entries(d)) {
+        expect(v instanceof RegExp || typeof v === "function", `${d.key}.${k}`).toBe(false);
+      }
+    }
+    expect(CLIENT_SETTING_DEFS).toHaveLength((await import("@/lib/siteSettingsDefs")).SETTING_DEFS.length);
+  });
+});

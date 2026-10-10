@@ -1,7 +1,7 @@
 import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { getAllSettings } from "@/lib/siteSettings";
-import { SETTING_CATEGORIES, SETTING_DEFS } from "@/lib/siteSettingsDefs";
+import { CLIENT_SETTING_DEFS, SETTING_CATEGORIES, SETTING_DEFS } from "@/lib/siteSettingsDefs";
 import { SettingsPanel } from "@/components/admin/SettingsPanel";
 import { saveSettingAction, resetSettingAction } from "./actions";
 
@@ -30,7 +30,7 @@ export default async function AdminSettingsPage() {
       </p>
       <div className="mt-6">
         <SettingsPanel
-          defs={SETTING_DEFS}
+          defs={CLIENT_SETTING_DEFS}
           categories={SETTING_CATEGORIES.map((c) => ({ id: c.id, label: c.label, blurb: c.blurb }))}
           initial={Object.fromEntries(values)}
           onSave={saveSettingAction}
