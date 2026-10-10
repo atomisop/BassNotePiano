@@ -194,6 +194,12 @@ one student's open payment but whose amount is different sends that student a
 payment-email pipeline (`findPaymentPipelineProblem`), with a constant line so it alerts once.
 Accounts now need a first and last name (`src/lib/studentName.ts`).
 
+**Payment emails arrive by forwarding** (added 2026-10-10, `docs/PAYMENT-EMAIL-FORWARDING.md`): Gmail forwards bank/SoFi/Venmo mail to
+the private address `pay-<PAYMENT_INBOX_TOKEN>@inbox.bassnotepiano.com`; a Mailgun route posts it to `/api/inbound/payments`, which
+checks the private address, Mailgun's signature, a bank sender domain and the bank's own DKIM signature aligned with the sender
+(`src/lib/paymentInbound.ts`), then calls `ingestPaymentEmail`. The Gmail script is the slow backup; both use the RFC Message-ID
+(`normalizeMessageId`), so an email is counted once.
+
 ## Curriculum access: live classes only (as of 2026-09-25)
 
 The curriculum is **not sold on its own anymore.** It comes with live

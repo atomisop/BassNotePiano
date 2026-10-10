@@ -1,3 +1,7 @@
+// Backup path. Payment emails are normally handled the moment they arrive, by Gmail forwarding them to the private address
+// described in docs/PAYMENT-EMAIL-FORWARDING.md. This script is the safety net: it finds any that were missed, and the site
+// counts an email once even if both paths send it. It can run every 15 minutes.
+//
 // Google Apps Script. Runs inside the owner's Gmail (isaacberhanu777@gmail.com),
 // sends Zelle and Venmo "you received money" emails to the site so matching
 // payments are approved automatically. See src/lib/paymentEmail.ts.
@@ -55,7 +59,8 @@ function forwardPaymentEmails() {
           contentType: 'application/json',
           headers: { 'x-ingest-secret': SECRET },
           payload: JSON.stringify({
-            messageId: message.getId(),
+            // The email's own Message-ID, the same one the forwarding route sees, so an email that arrives both ways is counted once.
+            messageId: message.getHeader('Message-ID') || message.getId(),
             from: message.getFrom(),
             subject: message.getSubject(),
             body: message.getPlainBody().slice(0, 6000),
