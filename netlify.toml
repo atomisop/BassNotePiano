@@ -1,6 +1,12 @@
 [build]
   command = "npm run build"
   publish = ".next"
+  # Builds are metered, so a push that changes only docs, tests, scripts or notes does not build or deploy. Netlify skips the
+  # build when this command exits 0, and git diff --quiet exits 0 only when NONE of the listed paths changed since the last
+  # deployed commit. Anything that can change the live app is listed: source, database migrations, the scheduled functions,
+  # public files, dependencies and the build and framework settings. If the command fails for any reason (no earlier commit
+  # to compare to, which makes the quoted value empty and git fail), it exits non-zero and the site builds as usual, so a mistake here can only cost a build, never skip one.
+  ignore = 'git diff --quiet "$CACHED_COMMIT_REF" "$COMMIT_REF" -- src prisma netlify public package.json package-lock.json next.config.mjs netlify.toml postcss.config.mjs tsconfig.json sentry.edge.config.ts sentry.server.config.ts .nvmrc .eslintrc.json'
 
 [build.environment]
   # Pinned to the current Active LTS line (Node 24, "Krypton"). Comfortably
