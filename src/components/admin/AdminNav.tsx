@@ -18,8 +18,8 @@ import Link from "next/link";
 // specific person's account (the registration queue, full account
 // management, who is ready for their next scale). Operations is everything else that
 // keeps the actual teaching running (the weekly schedule plus its own
-// booking/attendance tab, uploaded lesson content, live support, and
-// broadcast announcements), the one deliberately mixed bucket, since
+// booking/attendance tab, uploaded lesson content, live support, Discord
+// connections and broadcast announcements), the one deliberately mixed bucket, since
 // splitting communication out into its own 5th group would have broken
 // the 4-group cap this exists to satisfy.
 interface AdminNavLeaf {
@@ -62,7 +62,7 @@ const NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/lessons", label: "Lessons" },
       { href: "/admin/support", label: "Support Chat" },
       { href: "/admin/messages", label: "Messages" },
-      { href: "/admin/announcements", label: "Announcements" },
+      { href: "/admin/discord", label: "Discord" },
     ],
   },
 ];

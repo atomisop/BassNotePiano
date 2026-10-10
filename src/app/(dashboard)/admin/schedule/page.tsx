@@ -7,9 +7,6 @@ import { AdminAttendanceRoster } from "@/components/admin/AdminAttendanceRoster"
 import { AdminAttendanceByStudent } from "@/components/admin/AdminAttendanceByStudent";
 import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 import { teacherCalendarToken } from "@/lib/teacherCalendar";
-import { DiscordBotTest } from "@/components/admin/DiscordBotTest";
-import { getServerAuthSession } from "@/lib/auth";
-import { isOwnerEmail } from "@/lib/adminNotifications";
 import { AdminManualBooking } from "@/components/admin/AdminManualBooking";
 import {
   createClassScheduleAction,
@@ -20,8 +17,6 @@ import {
   adminCancelBookingAction,
   searchStudentsForBookingAction,
   adminBookClassAction,
-  testDiscordBotAction,
-  createVisibleTestChannelAction,
 } from "./actions";
 
 type ViewValue = "WINDOWS" | "BOOKINGS" | "ATTENDANCE";
@@ -137,8 +132,6 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
 
   const schedules = await getAllClassSchedules();
   const upcomingCounts = await countUpcomingBookingsBySchedule(schedules.map((s) => s.id));
-  const viewer = await getServerAuthSession();
-  const isOwner = isOwnerEmail(viewer?.user?.email);
   const calendarHost = (process.env.NEXTAUTH_URL ?? "").replace(/^https?:\/\//, "");
   const calendarLink = calendarHost ? `webcal://${calendarHost}/api/calendar/teacher?t=${teacherCalendarToken()}` : null;
 
@@ -154,8 +147,6 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
           Add my classes to my calendar
         </a>
       )}
-
-      {isOwner && <DiscordBotTest onRun={testDiscordBotAction} onVisible={createVisibleTestChannelAction} />}
 
       <div className="mt-6">
         <AdminScheduleManager
