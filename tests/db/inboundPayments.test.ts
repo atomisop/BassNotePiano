@@ -66,6 +66,18 @@ describe("bank emails forwarded to the private payments address", () => {
     expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: p.id } })).status).toBe("VERIFIED");
   });
 
+  it("reads SoFi's real notice: sent from no-reply@o.sofi.org, signed by sofi.org, the amount and name in the body", async () => {
+    const p = await openPayment("Jordan Rivera", 19999);
+    const res = await delivery({
+      from: "SoFi <no-reply@o.sofi.org>",
+      signedBy: "sofi.org",
+      subject: "Notification - JORDAN RIVERA sent you $199.99.",
+      body: "SoFi together with Zelle\nJORDAN RIVERA\nThe $199.99 sent to you by JORDAN RIVERA will be automatically deposited to your account.\nGuitar LessonMonthly\nSoFi is not responsible for the content of the personal message.\nReferenceID (333333333)",
+    });
+    expect(await json(res)).toEqual({ outcome: "approved" });
+    expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: p.id } })).status).toBe("VERIFIED");
+  });
+
   it("treats the same email as a duplicate however its id is written", async () => {
     await openPayment("Kim Alvarez", 24999);
     const id = `${tag}-same@ealerts.bankofamerica.com`;

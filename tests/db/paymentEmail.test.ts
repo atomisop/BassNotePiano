@@ -346,8 +346,8 @@ describe("the phone number asked when paying", () => {
 function sofiEmail(sender: string, dollars: string, note?: string) {
   return ingestPaymentEmail({
     messageId: `${tag}-${++counter}`,
-    from: "SoFi <no-reply@sofi.com>",
-    subject: "You received money with Zelle",
+    from: "SoFi <no-reply@o.sofi.org>",
+    subject: `Notification - ${sender} sent you $${dollars}.`,
     body: [
       "SoFi together with Zelle",
       sender,

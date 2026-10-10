@@ -31,6 +31,10 @@ describe("a forwarded bank email's own signature", () => {
     expect(domainAligned("evil.com", "sofi.com")).toBe(false);
     expect(domainAligned("sofi.com", "notsofi.com")).toBe(false);
   });
+  it("accepts SoFi's real sender, no-reply@o.sofi.org, signed by sofi.org", () => {
+    expect(checkForwardedBankMail({ fromEmail: "no-reply@o.sofi.org", dkimResult: "Pass", rawHeaders: headers("v=1; d=sofi.org; s=x") })).toEqual({ ok: true });
+    expect(domainAligned("sofi.org", "o.sofi.org")).toBe(true);
+  });
   it("passes only when Mailgun's check passed AND a signature belongs to the sender", () => {
     const good = headers("v=1; d=sofi.com; s=x");
     expect(checkForwardedBankMail({ fromEmail: "no-reply@sofi.com", dkimResult: "Pass", rawHeaders: good })).toEqual({ ok: true });
