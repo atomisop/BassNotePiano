@@ -37,15 +37,18 @@ export function UnmatchedEmailList({
   rows,
   onMatch,
   onDismiss,
+  onIgnoreSender,
 }: {
   rows: UnmatchedEmailRow[];
   onMatch: (receiptId: string, paymentId: string) => Promise<Result>;
   onDismiss: (receiptId: string) => Promise<Result>;
+  /** Owner only: skip every bank email from this sender's full name from now on (their own transfers). */
+  onIgnoreSender?: (receiptId: string) => Promise<Result>;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   // Attaching approves real money, so it takes a second click, like Approve in the payment list.
-  const [confirming, setConfirming] = useState<{ receiptId: string; paymentId: string | "dismiss" } | null>(null);
+  const [confirming, setConfirming] = useState<{ receiptId: string; paymentId: string | "dismiss" | "ignore" } | null>(null);
   const [error, setError] = useState<{ receiptId: string; message: string } | null>(null);
 
   async function run(receiptId: string, action: () => Promise<Result>) {
@@ -147,14 +150,43 @@ export function UnmatchedEmailList({
                   Cancel
                 </button>
               </>
+            ) : confirming?.receiptId === row.id && confirming.paymentId === "ignore" && onIgnoreSender ? (
+              <>
+                <span className="text-small text-slate-400">
+                  Every email from &ldquo;{row.senderName}&rdquo; is skipped from now on, and the ones waiting here are dismissed. No payment is touched. Undo it in Settings &gt; Payments.
+                </span>
+                <button
+                  type="button"
+                  disabled={busy === row.id}
+                  onClick={() => run(row.id, () => onIgnoreSender(row.id))}
+                  className="tap inline-flex items-center justify-center rounded-lg border border-red-500/30 px-3 py-1.5 text-small font-medium text-red-400 hover:bg-red-500/10 disabled:opacity-60"
+                >
+                  {busy === row.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
+                  {busy === row.id ? "Saving…" : "Yes, always ignore"}
+                </button>
+                <button type="button" onClick={() => setConfirming(null)} className="tap neu-btn rounded-lg px-3 py-1.5 text-small font-medium">
+                  Cancel
+                </button>
+              </>
             ) : (
-              <button
-                type="button"
-                onClick={() => setConfirming({ receiptId: row.id, paymentId: "dismiss" })}
-                className="tap neu-btn rounded-lg px-3 py-1.5 text-small font-medium"
-              >
-                Not a studio payment
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setConfirming({ receiptId: row.id, paymentId: "dismiss" })}
+                  className="tap neu-btn rounded-lg px-3 py-1.5 text-small font-medium"
+                >
+                  Not a studio payment
+                </button>
+                {onIgnoreSender && (
+                  <button
+                    type="button"
+                    onClick={() => setConfirming({ receiptId: row.id, paymentId: "ignore" })}
+                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small font-medium"
+                  >
+                    Always ignore this sender
+                  </button>
+                )}
+              </>
             )}
           </div>
         </li>

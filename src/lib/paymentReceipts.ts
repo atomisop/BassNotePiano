@@ -1,3 +1,6 @@
+import { addIgnoredName, isIgnoredSender, normalizeFullName } from "@/lib/ignoredSenders";
+import { getTextSetting, saveSetting } from "@/lib/siteSettings";
+import { SETTING_BY_KEY } from "@/lib/siteSettingsDefs";
 import { prisma } from "@/lib/prisma";
 import { approveZellePayment } from "@/lib/payments";
 import { logAudit } from "@/lib/audit";
@@ -128,6 +131,36 @@ export async function dismissReceipt(input: { receiptId: string; admin: { id: st
     targetId: receiptId,
     detail: "Dismissed a payment email that matched no payment",
   });
+}
+
+/**
+ * "Always ignore this sender": adds the sender's full name to the owner's ignore list (Settings > Payments) and dismisses every
+ * email already waiting from that exact name. For the owner's own transfers between their accounts. Never touches a payment.
+ */
+export async function ignoreSenderFromReceipt(input: { receiptId: string; admin: { id: string; email: string | null } }): Promise<{ name: string; dismissed: number }> {
+  const receipt = await prisma.processedPaymentEmail.findUnique({ where: { id: input.receiptId } });
+  if (!receipt) throw new ReceiptError("That email no longer exists.");
+  const name = receipt.senderName;
+  if (normalizeFullName(name).split(" ").length < 2) throw new ReceiptError("A single name is too loose to ignore. Use Not a studio payment for this one.");
+
+  const current = await getTextSetting("payments.ignoreSenderNames");
+  const max = (SETTING_BY_KEY["payments.ignoreSenderNames"] as { maxLength: number }).maxLength;
+  const next = addIgnoredName(current, name, max);
+  if (next === current && !isIgnoredSender(name, current)) throw new ReceiptError("The ignore list is full. Remove a name in Settings first.");
+  if (next !== current) await saveSetting("payments.ignoreSenderNames", next);
+
+  const waiting = await prisma.processedPaymentEmail.findMany({ where: { paymentId: null, dismissedAt: null }, select: { id: true, senderName: true } });
+  const ids = waiting.filter((r) => normalizeFullName(r.senderName) === normalizeFullName(name)).map((r) => r.id);
+  const dismissed = ids.length ? (await prisma.processedPaymentEmail.updateMany({ where: { id: { in: ids }, paymentId: null, dismissedAt: null }, data: { dismissedAt: new Date() } })).count : 0;
+  await logAudit({
+    actorId: input.admin.id,
+    actorEmail: input.admin.email,
+    action: "payment.ignore_sender",
+    targetType: "ProcessedPaymentEmail",
+    targetId: input.receiptId,
+    detail: `Will ignore bank emails from "${name}" from now on; dismissed ${dismissed} waiting`,
+  });
+  return { name, dismissed };
 }
 
 const MAX_ALIASES_PER_STUDENT = 5;

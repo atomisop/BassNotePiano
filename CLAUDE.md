@@ -200,6 +200,10 @@ checks the private address, Mailgun's signature, a bank sender domain and the ba
 (`src/lib/paymentInbound.ts`), then calls `ingestPaymentEmail`. The Gmail script is the slow backup; both use the RFC Message-ID
 (`normalizeMessageId`), so an email is counted once.
 
+The owner's own transfers between their accounts (SoFi writes "sent to you by <owner name>") are skipped: `payments.ignoreSenderNames`
+(Settings > Payments, full names only, exact match, a payment code in the note still wins), added to by "Always ignore this sender" on an
+unmatched email (owner only, `ignoreSenderFromReceipt`), `src/lib/ignoredSenders.ts`.
+
 ## Curriculum access: live classes only (as of 2026-09-25)
 
 The curriculum is **not sold on its own anymore.** It comes with live

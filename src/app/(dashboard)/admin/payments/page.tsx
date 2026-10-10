@@ -9,7 +9,7 @@ import { AdminCreditGrantPanel } from "@/components/admin/AdminCreditGrantPanel"
 import { searchUsersForCreditsAction, adjustUserCreditsAction, getUserCreditHistoryAction } from "./credit-actions";
 import { BulkConfirmButton } from "@/components/admin/BulkConfirmButton";
 import Link from "next/link";
-import { approvePaymentAction, checkAllPaymentsAction, checkPaymentAction, deletePaymentAction, dismissReceiptAction, matchReceiptAction, refundPaymentAction, rejectPaymentAction } from "./actions";
+import { approvePaymentAction, checkAllPaymentsAction, checkPaymentAction, deletePaymentAction, dismissReceiptAction, ignoreSenderAction, matchReceiptAction, refundPaymentAction, rejectPaymentAction } from "./actions";
 import { countUnmatchedReceipts, getPaymentPipelineHealth } from "@/lib/paymentPipelineStatus";
 import { listUnmatchedReceipts } from "@/lib/paymentReceipts";
 import { PaymentPipelineBanner } from "@/components/admin/PaymentPipelineBanner";
@@ -146,7 +146,8 @@ function TopTabs({ active, unmatched }: { active: "payments" | "emails" | "credi
 
 /** Bank and Venmo emails that matched no payment: attach each to a payment for the same amount, or dismiss it. */
 async function EmailsTab() {
-  const [rows, health] = await Promise.all([listUnmatchedReceipts(), getPaymentPipelineHealth()]);
+  const [rows, health, session] = await Promise.all([listUnmatchedReceipts(), getPaymentPipelineHealth(), getServerAuthSession()]);
+  const isOwner = isOwnerEmail(session?.user?.email);
   return (
     <div>
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
@@ -178,6 +179,7 @@ async function EmailsTab() {
           }))}
           onMatch={matchReceiptAction}
           onDismiss={dismissReceiptAction}
+          onIgnoreSender={isOwner ? ignoreSenderAction : undefined}
         />
       </div>
     </div>

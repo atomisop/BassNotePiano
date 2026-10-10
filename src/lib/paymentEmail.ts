@@ -1,5 +1,6 @@
+import { isIgnoredSender } from "@/lib/ignoredSenders";
 import { normalizeMessageId } from "@/lib/paymentInbound";
-import { getBoolSetting } from "@/lib/siteSettings";
+import { getBoolSetting, getTextSetting } from "@/lib/siteSettings";
 import type { PaymentMethod } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { approveZellePayment, notifyAutoApproved } from "@/lib/payments";
@@ -411,6 +412,9 @@ export async function ingestPaymentEmail(input: {
     }
     return "ignored";
   }
+
+  // The owner's own transfers (see Settings > Payments) are not student payments. A note that carries a payment code is still read.
+  if (!referenceInMemo(parsed.memo) && isIgnoredSender(parsed.name, await getTextSetting("payments.ignoreSenderNames"))) return "ignored";
 
   let receipt;
   try {
