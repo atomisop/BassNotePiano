@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { createAndSendCode, createSilentCode, RateLimitError as CodeRateLimitError } from "@/lib/verification";
 import { assertRateLimit, RateLimitError as LockoutError } from "@/lib/rateLimit";
 import { withTimingFloor } from "@/lib/timingSafe";
+import { BANNED_MESSAGE } from "@/lib/ban";
 
 export type LoginStepOneResult =
   | { ok: false; error: string }
@@ -91,6 +92,9 @@ async function loginStepOneWork(email: string, password: string): Promise<LoginS
     await recordFailedAttempt(normalizedEmail);
     return { ok: false, error: GENERIC_CREDENTIALS_ERROR };
   }
+
+  // Said only after the right password, so it cannot be used to find out which emails are banned.
+  if (user.bannedAt) return { ok: false, error: BANNED_MESSAGE };
 
   try {
     if (!user.emailVerified) {

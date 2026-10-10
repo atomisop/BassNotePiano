@@ -1,3 +1,4 @@
+import { BANNED_ERROR_CODE } from "@/lib/ban";
 import { cache } from "react";
 import type { NextAuthOptions } from "next-auth";
 import { getServerSession } from "next-auth";
@@ -188,6 +189,8 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.user.findUnique({ where: { id: result.userId } });
         if (!user) return null;
+        // A banned account can never get a session, whichever way it asks for one (password, emailed code, reset, verify).
+        if (user.bannedAt) throw new Error(BANNED_ERROR_CODE);
 
         return {
           id: user.id,
@@ -296,6 +299,7 @@ export const getServerAuthSession = cache(async () => {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return null;
 
-  const exists = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true } });
-  return exists ? session : null;
+  const exists = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true, bannedAt: true } });
+  // A ban takes effect on the very next request, not only when the old session's token is refreshed.
+  return exists && !exists.bannedAt ? session : null;
 });

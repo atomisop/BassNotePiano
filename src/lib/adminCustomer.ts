@@ -62,6 +62,8 @@ export interface CustomerProfile {
     primaryInstrument: string | null;
     currentStreak: number;
     lastActivityAt: Date | null;
+    bannedAt: Date | null;
+    bannedReason: string | null;
   };
   roadmap: ScaleAccessState[];
   payments: UserPaymentRecord[];
@@ -93,6 +95,8 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
       primaryInstrument: true,
       currentStreak: true,
       lastActivityDate: true,
+      bannedAt: true,
+      bannedReason: true,
     },
   });
   if (!user) return null;
@@ -131,6 +135,8 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
       primaryInstrument: user.primaryInstrument,
       currentStreak: user.currentStreak,
       lastActivityAt: user.lastActivityDate,
+      bannedAt: user.bannedAt,
+      bannedReason: user.bannedReason,
     },
     roadmap,
     payments,

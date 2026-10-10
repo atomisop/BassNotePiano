@@ -1,5 +1,6 @@
 "use client";
 
+import { BANNED_ERROR_CODE, BANNED_MESSAGE } from "@/lib/ban";
 import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -62,7 +63,7 @@ function ResetPasswordForm() {
 
     const signInResult = await signIn("credentials", { email, code: result.autoCode, redirect: false });
     if (signInResult?.error) {
-      setError("Password changed, but automatic login failed. Try logging in manually.");
+      setError(signInResult.error === BANNED_ERROR_CODE ? BANNED_MESSAGE : "Password changed, but automatic login failed. Try logging in manually.");
       setSubmitting(false);
       return;
     }

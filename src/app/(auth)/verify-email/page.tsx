@@ -1,5 +1,6 @@
 "use client";
 
+import { BANNED_ERROR_CODE, BANNED_MESSAGE } from "@/lib/ban";
 import { safeCallbackPath } from "@/lib/safeRedirect";
 import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -46,7 +47,7 @@ function VerifyEmailForm() {
 
     const signInResult = await signIn("credentials", { email, code: result.autoCode, redirect: false });
     if (signInResult?.error) {
-      setError("Verified, but automatic login failed. Try logging in manually.");
+      setError(signInResult.error === BANNED_ERROR_CODE ? BANNED_MESSAGE : "Verified, but automatic login failed. Try logging in manually.");
       setSubmitting(false);
       return;
     }
