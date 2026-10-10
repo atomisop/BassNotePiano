@@ -10,6 +10,7 @@ export interface DiscordMemberRow {
   name: string | null;
   email: string;
   isAdmin: boolean;
+  banned: boolean;
   /** The Discord name they connected, or null when they have not connected. */
   discordUsername: string | null;
 }
@@ -20,15 +21,19 @@ type Show = "ALL" | "CONNECTED" | "NOT_CONNECTED";
 export function DiscordMembersList({
   rows,
   onDisconnect,
+  onNotify,
 }: {
   rows: DiscordMemberRow[];
   onDisconnect: (userId: string) => Promise<{ ok: boolean; message: string }>;
+  /** Tells this person to connect Discord, with the steps. */
+  onNotify: (userId: string) => Promise<{ ok: boolean; message: string }>;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [show, setShow] = useState<Show>("ALL");
   const [asking, setAsking] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [notifying, setNotifying] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
 
   const connected = rows.filter((r) => r.discordUsername).length;
@@ -48,6 +53,19 @@ export function DiscordMembersList({
     } finally {
       setBusy(null);
       setAsking(null);
+    }
+  }
+
+  async function notify(id: string) {
+    setNotifying(id);
+    setNotice(null);
+    try {
+      const res = await onNotify(id);
+      setNotice({ ok: res.ok, text: res.message });
+    } catch {
+      setNotice({ ok: false, text: "That didn't go through. Please try again." });
+    } finally {
+      setNotifying(null);
     }
   }
 
@@ -118,7 +136,20 @@ export function DiscordMembersList({
                   )}
                 </>
               ) : (
-                <span className="shrink-0 text-small text-slate-500">Not connected</span>
+                <>
+                  <span className="shrink-0 text-small text-slate-500">Not connected</span>
+                  {!row.banned && (
+                    <button
+                      type="button"
+                      onClick={() => notify(row.id)}
+                      disabled={notifying === row.id}
+                      className="tap neu-btn inline-flex shrink-0 items-center rounded-lg px-3 py-1.5 text-small font-medium disabled:opacity-60"
+                    >
+                      {notifying === row.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                      {notifying === row.id ? "Sending…" : "Notify"}
+                    </button>
+                  )}
+                </>
               )}
             </li>
           ))}

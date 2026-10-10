@@ -240,6 +240,31 @@ export async function sendNotificationEmail(to: string, title: string, body: str
   await sendEmail({ to, subject: title, html, text });
 }
 
+/** Where to make a Discord account. */
+export const DISCORD_REGISTER_URL = "https://discord.com/register";
+
+/**
+ * Tells a student to connect Discord, in three short steps with the two links in the text. Sent by the owner from Admin >
+ * Discord (the Notify button). Direct on purpose: no extra information.
+ */
+export async function sendDiscordConnectEmail(to: string): Promise<void> {
+  const lessonsUrl = getAppUrl("/lessons");
+  const link = (url: string) => `<a href="${url}" style="color:#fb8a5c;text-decoration:underline;font-weight:bold;">here</a>`;
+  const html = emailShell(
+    "Connect your Discord",
+    `<p style="margin:0 0 14px;">Your class calls happen on Discord. Do these 3 steps:</p>
+     <p style="margin:0 0 10px;">1. Download the free Discord app on your phone.</p>
+     <p style="margin:0 0 10px;">2. Create a Discord account ${link(DISCORD_REGISTER_URL)}.</p>
+     <p style="margin:0;">3. Open Lessons and tap Connect Discord ${link(lessonsUrl)}.</p>`,
+  );
+  const text = `Your class calls happen on Discord. Do these 3 steps:
+
+1. Download the free Discord app on your phone.
+2. Create a Discord account here: ${DISCORD_REGISTER_URL}
+3. Open Lessons and tap Connect Discord here: ${lessonsUrl}`;
+  await sendEmail({ to, subject: "Connect your Discord", html, text });
+}
+
 /** Security notice after a password change or reset. Sent from the standard noreply sender. */
 export async function sendPasswordChangedEmail(to: string, name: string | null) {
   const greeting = name ? `Hi ${escapeHtml(name.split(" ")[0])},` : "Hi,";

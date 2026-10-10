@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { DiscordBotTest } from "@/components/admin/DiscordBotTest";
 import { DiscordMembersList } from "@/components/admin/DiscordMembersList";
 import { createVisibleTestChannelAction, testDiscordBotAction } from "../schedule/actions";
-import { disconnectDiscordForUserAction } from "./actions";
+import { disconnectDiscordForUserAction, notifyDiscordAction } from "./actions";
 
 export const metadata = { title: "Admin: Discord" };
 
@@ -12,7 +12,7 @@ export default async function AdminDiscordPage() {
   const session = await getServerAuthSession();
   const isOwner = isOwnerEmail(session?.user?.email);
   const users = await prisma.user.findMany({
-    select: { id: true, name: true, email: true, role: true, discordId: true, discordUsername: true },
+    select: { id: true, name: true, email: true, role: true, bannedAt: true, discordId: true, discordUsername: true },
     orderBy: [{ name: "asc" }, { email: "asc" }],
   });
 
@@ -34,9 +34,11 @@ export default async function AdminDiscordPage() {
             name: u.name,
             email: u.email,
             isAdmin: u.role === "ADMIN",
+            banned: Boolean(u.bannedAt),
             discordUsername: u.discordId ? (u.discordUsername ?? "Connected") : null,
           }))}
           onDisconnect={disconnectDiscordForUserAction}
+          onNotify={notifyDiscordAction}
         />
       </div>
     </div>
