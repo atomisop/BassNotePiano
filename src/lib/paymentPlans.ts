@@ -540,7 +540,7 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
         throw new PaymentPlanError("Someone already has a booking on one of this slot's upcoming weeks. Pick another time.");
       }
 
-      // Same 24-hour rule as cancelling a class: a class that starts within the
+      // Same cutoff as cancelling a class: a class that starts within the
       // cutoff has to be attended (or sorted out with support), so the standing
       // time cannot be moved out from under it.
       const startingSoon = await tx.classBooking.findFirst({

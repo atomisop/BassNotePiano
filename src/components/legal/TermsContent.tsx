@@ -45,7 +45,7 @@ export function TermsContent() {
           Every class is 45 minutes, one-on-one. Your weekly classes come from a Payment Plan: Monthly,
           3-Month, or 6-Month, paid one Zelle or Venmo installment at a time, longer terms at a lower rate. Enrolling
           reserves your weekly day and time exclusively and auto-books it every week for as long as the plan stays
-          active. You can skip or change a class up to 24 hours before it starts; inside 24 hours, please attend
+          active. You can skip or change a class up to 6 hours before it starts; inside 6 hours, please attend
           or message us. A skipped class stays on your account to rebook on another day, but it is forfeited if
           unused once that installment&apos;s monthly cycle expires.
         </p>
@@ -62,7 +62,7 @@ export function TermsContent() {
         </p>
         <p>
           <span className="font-medium text-[rgb(var(--c-s-50))]">Money spent on credits is non-refundable.</span> The only way
-          a credit itself comes back to your balance (never as cash) is by canceling a booking at least 24 hours
+          a credit itself comes back to your balance (never as cash) is by canceling a booking at least 6 hours
           before it starts. That&apos;s it; there&apos;s no other automatic refund path.
         </p>
       </TermsSection>
@@ -70,12 +70,12 @@ export function TermsContent() {
       <TermsSection title="Cancellations & no-shows">
         <p>
           A credit is never charged when you book. It&apos;s only charged once, at the lesson itself, when
-          attendance is marked, present or absent. Canceling at least 24 hours ahead removes the booking before
+          attendance is marked, present or absent. Canceling at least 6 hours ahead removes the booking before
           that ever happens, so nothing is charged.
         </p>
         <p>
           <span className="font-medium text-[rgb(var(--c-s-50))]">
-            Once you&apos;re inside that 24-hour window, self-cancellation is turned off.
+            Once you&apos;re inside that 6-hour window, self-cancellation is turned off.
           </span>{" "}
           There&apos;s no button for it, and simply not showing up doesn&apos;t stop the charge either, since that
           time was already held for you. If something genuinely comes up in that window, message us directly; an
