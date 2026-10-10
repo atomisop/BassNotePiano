@@ -1,5 +1,6 @@
 "use server";
 
+import { removeDiscordPresence } from "@/lib/discordCleanup";
 import { noticeAccountChange } from "@/lib/studentNotices";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
@@ -217,11 +218,14 @@ export interface NotificationPreferencesInput {
   notifyEmailRoleUpdates: boolean;
   notifyEmailSocial: boolean;
   notifyEmailReminders: boolean;
+  notifyEmailClasses: boolean;
 }
 
 export async function updateNotificationPreferencesAction(input: NotificationPreferencesInput) {
   const { id } = await requireSession();
   await prisma.user.update({ where: { id }, data: input });
+  // Practice reminders also decide the practice banner, and the shell is where the banners are decided.
+  revalidatePath("/", "layout");
   return { ok: true as const };
 }
 
@@ -325,6 +329,7 @@ export async function confirmAccountDeletionAction(currentPassword: string, code
     // blocks deletion with a foreign-key error for an admin who has
     // uploaded course content, caught below rather than left as a raw 500,
     // since there's no other admin here to reassign that content to.
+    await removeDiscordPresence(id);
     await prisma.user.delete({ where: { id } });
 
     if (upcomingClasses > 0) {

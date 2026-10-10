@@ -5,8 +5,9 @@ import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 
 // Notices a student should get and used not to: a booking made for them, what their attendance mark cost, a payment
 // received, a trial ending, a plan change, and changes to their account. Each one is an in-app notice and an email (the
-// category they can switch off, except account changes, which always email: they are security confirmations). None of
-// them can ever fail the action that triggers them.
+// category they can switch off). None of
+// them can ever fail the action that triggers them. Every email follows the matching switch in Settings > Notification settings
+// (emailPreferences.ts): turning a switch off turns that email off, with no exceptions.
 
 async function safely(what: string, work: () => Promise<unknown>): Promise<void> {
   try {
@@ -24,7 +25,7 @@ export function noticeBookingConfirmed(input: { studentId: string; scheduledAt: 
       type: "LESSON_BOOKING_CONFIRMED",
       title: input.byStudio ? "The studio booked a class for you" : "Class booked",
       body: `${input.label ?? "Your class"} on ${formatEtDateTime(input.scheduledAt)} (US Eastern) is booked. It uses ${creditsLabelFromStored(input.storedCredits)} when it takes place.`,
-      emailCategory: "social",
+      emailCategory: "classes",
     }),
   );
 }
@@ -39,7 +40,7 @@ export function noticeAttendanceRecorded(input: { studentId: string; present: bo
       body: input.present
         ? `Your ${formatEtDateTime(input.scheduledAt)} class is complete. ${creditsLabelFromStored(input.storedCredits)} used.`
         : `You did not attend your ${formatEtDateTime(input.scheduledAt)} class. ${creditsLabelFromStored(input.storedCredits)} used, as for any booked class.`,
-      emailCategory: input.present ? undefined : "social",
+      emailCategory: input.present ? undefined : "classes",
     }),
   );
 }
@@ -82,7 +83,7 @@ type AccountChange =
   | { kind: "phone-cleared" }
   | { kind: "signed-out-everywhere"; by: "you" | "admin" };
 
-/** Confirms a change to the account. Always emailed (a confirmation of a security-relevant change), whatever their preferences. */
+/** Confirms a change to the account. The in-app notice is always written; the email follows the "Account updates" switch. */
 export function noticeAccountChange(userId: string, change: AccountChange): Promise<void> {
   const text = (() => {
     switch (change.kind) {
@@ -99,7 +100,7 @@ export function noticeAccountChange(userId: string, change: AccountChange): Prom
         return { title: "You were signed out of your devices", body: change.by === "you" ? "You signed out of your other devices. Anyone using them must sign in again." : "The studio signed you out of all your devices. Sign in again to continue. If this is unexpected, change your password." };
     }
   })();
-  return safely("Account change", () => createNotification({ userId, type: "ACCOUNT_UPDATE", title: text.title, body: text.body, emailCategory: "roleUpdates", alwaysEmail: true }));
+  return safely("Account change", () => createNotification({ userId, type: "ACCOUNT_UPDATE", title: text.title, body: text.body, emailCategory: "roleUpdates" }));
 }
 
 /** Once per marker: used so a daily job never repeats a notice. Returns true the first time. */

@@ -32,6 +32,7 @@ export default async function AccountPage() {
         notifyEmailRoleUpdates: true,
         notifyEmailSocial: true,
         notifyEmailReminders: true,
+        notifyEmailClasses: true,
       },
     }),
     loadPersistedHistory(session.user.id),
@@ -62,6 +63,7 @@ export default async function AccountPage() {
         notifyEmailRoleUpdates: user.notifyEmailRoleUpdates,
         notifyEmailSocial: user.notifyEmailSocial,
         notifyEmailReminders: user.notifyEmailReminders,
+        notifyEmailClasses: user.notifyEmailClasses,
       }}
       assistantHistory={assistantHistory}
       activePlan={
