@@ -62,7 +62,6 @@ const NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/lessons", label: "Lessons" },
       { href: "/admin/support", label: "Support Chat" },
       { href: "/admin/messages", label: "Messages" },
-      { href: "/admin/announcements", label: "Announcements" },
     ],
   },
 ];
