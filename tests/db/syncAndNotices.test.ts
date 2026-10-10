@@ -10,7 +10,12 @@ import { makeUser, newTag, prisma } from "./helpers";
 const tag = newTag("sn");
 let admin: { id: string }, stu: { id: string }, mon: { id: string };
 const ids: string[] = [];
-const noMarkdownDashes = (s: string | null | undefined) => expect(s ?? "").not.toMatch(/—|–/);
+const EM = String.fromCharCode(0x2014);
+const EN = String.fromCharCode(0x2013);
+const noMarkdownDashes = (s: string | null | undefined) => {
+  expect(s ?? "").not.toContain(EM);
+  expect(s ?? "").not.toContain(EN);
+};
 
 beforeAll(async () => {
   admin = await makeUser(tag, "Teacher", { role: "ADMIN" });
