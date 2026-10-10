@@ -6,10 +6,13 @@ import { createNotification } from "../../src/lib/notifications";
 import { discordChannelUrl } from "../../src/lib/discord";
 import { classChannelName, createClassChannel, deleteChannel, isGuildMember, moveToVoiceChannel, TEST_CHANNEL_KEY } from "../../src/lib/discordApi";
 import { getBoolSetting, getNumberSetting } from "../../src/lib/siteSettings";
+import { movedMarker, peopleToMove } from "../../src/lib/discordMove";
 
 const MINUTE_MS = 60_000;
 // How early a call opens and how long it stays after class are admin settings (Settings → Discord live classes). Defaults: 5 and 5.
 const CLASS_MINUTES = 45;
+// Someone who joins voice late is still pulled into their call for this long after the class starts.
+const MOVE_RETRY_AFTER_START_MIN = 15;
 
 /**
  * One in-app notice to the owner per reason, so a job that runs every two minutes does not repeat itself.
@@ -24,9 +27,9 @@ async function tellOwnerOnce(ownerId: string | undefined, marker: string, title:
   await createNotification({ userId: ownerId, type: "CLASS_REMINDER", title, body }).catch((err) => console.error("Owner notice failed (non-blocking):", err));
 }
 
-// Every 2 minutes, so a call opens and closes within a couple of minutes of its time. Does nothing until the bot token is set, so it is safe to
+// Every minute, so a call opens and closes, and people are pulled into it, within a minute of their time. Does nothing until the bot token is set, so it is safe to
 // ship before Discord is fully set up.
-export const handler = schedule("*/2 * * * *", async () =>
+export const handler = schedule("* * * * *", async () =>
   runJob("discord-class-channels", async () => {
     if (!process.env.DISCORD_BOT_TOKEN) {
       console.log("Discord class channels: no bot token yet, nothing to do");
@@ -103,15 +106,6 @@ export const handler = schedule("*/2 * * * *", async () =>
         await prisma.classBooking.updateMany({ where: { id: { in: members.map((m) => m.id) } }, data: { discordChannelId: channelId } });
         created++;
 
-        // Discord cannot drag someone who is not on voice. For anyone already connected to a voice
-        // channel it can move them straight in; everyone else gets the link below.
-        if (autoMove) {
-          for (const id of ids) {
-            const result = await moveToVoiceChannel(id, channelId).catch(() => "failed" as const);
-            console.log(`Discord auto-move ${id}: ${result}`);
-          }
-        }
-
         if (notifyOwner && owner?.id) {
           await createNotification({
             userId: owner.id,
@@ -134,6 +128,42 @@ export const handler = schedule("*/2 * * * *", async () =>
         }
       } catch (err) {
         console.error("Discord class channel failed (non-blocking):", err);
+      }
+    }
+
+    // 1b. Pull people into their call. Discord only lets the bot move someone who is already on a voice channel somewhere in
+    // the server, so this is tried again on every run (every minute) from the moment the call opens until a little after
+    // class starts: whoever joins voice, at any point in that time, is put into the call within a minute. Each person is
+    // moved once and then left alone.
+    if (autoMove) {
+      const live = await prisma.classBooking.findMany({
+        where: {
+          status: "SCHEDULED",
+          discordChannelId: { not: null },
+          scheduledAt: { gte: new Date(now - MOVE_RETRY_AFTER_START_MIN * MINUTE_MS), lte: new Date(now + OPEN_BEFORE_MIN * MINUTE_MS) },
+        },
+        select: { discordChannelId: true, student: { select: { discordId: true } } },
+      });
+      const byChannel = new Map<string, string[]>();
+      for (const b of live) {
+        const channelId = b.discordChannelId as string;
+        byChannel.set(channelId, [...(byChannel.get(channelId) ?? []), ...(b.student.discordId ? [b.student.discordId] : [])]);
+      }
+      const calls = Array.from(byChannel.entries()).map(([channelId, studentDiscordIds]) => ({ channelId, studentDiscordIds }));
+      const markers = calls.length
+        ? await prisma.appSetting.findMany({ where: { key: { startsWith: "discord_moved:" }, updatedAt: { gt: new Date(now - 2 * 24 * 60 * MINUTE_MS) } }, select: { key: true } })
+        : [];
+      const targets = peopleToMove(calls, addOwner ? (owner?.discordId ?? null) : null, new Set(markers.map((m) => m.key)));
+      for (const t of targets) {
+        const result = await moveToVoiceChannel(t.discordId, t.channelId).catch(() => "failed" as const);
+        if (result === "moved") {
+          const key = movedMarker(t.channelId, t.discordId);
+          await prisma.appSetting.upsert({ where: { key }, update: { value: String(now) }, create: { key, value: String(now) } });
+          console.log(`Discord auto-move ${t.discordId}: moved`);
+        } else if (result === "failed") {
+          console.log(`Discord auto-move ${t.discordId}: failed`);
+        }
+        // "not_in_voice" is the normal wait: they have not opened Discord voice yet, so it is tried again next run.
       }
     }
 
@@ -179,7 +209,9 @@ export const handler = schedule("*/2 * * * *", async () =>
       }
     }
 
-    await prisma.appSetting.deleteMany({ where: { key: { startsWith: "discord_notice:" }, updatedAt: { lt: new Date(now - 2 * 24 * 60 * MINUTE_MS) } } });
+    await prisma.appSetting.deleteMany({
+      where: { OR: [{ key: { startsWith: "discord_notice:" } }, { key: { startsWith: "discord_moved:" } }], updatedAt: { lt: new Date(now - 2 * 24 * 60 * MINUTE_MS) } },
+    });
 
     console.log(`Discord class channels: ${created} created, ${removed} removed`);
     return { statusCode: 200 };
