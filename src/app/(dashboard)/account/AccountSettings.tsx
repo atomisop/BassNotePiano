@@ -1036,7 +1036,7 @@ const NOTIFICATION_TOGGLES: { key: keyof NotificationPreferencesInput; label: st
   {
     key: "notifyEmailReminders",
     label: "Practice and class reminders",
-    description: "The practice reminder banner at the top of the screen, practice nudges after days away, and the day-before and hour-before class reminder emails. Off means none of them.",
+    description: "The practice reminder banner at the top of the screen, practice nudges after days away, and the day-before and hour-before class reminder emails. Off means none of them. On by default when you subscribe to a class plan.",
   },
 ];
 

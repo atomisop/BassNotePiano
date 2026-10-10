@@ -158,6 +158,9 @@ export async function createPaymentPlan(
       { isolationLevel: "Serializable" },
     );
 
+    // Practice and class reminders are on for everyone who subscribes (the owner's rule). They can turn them off in Settings;
+    // this runs only when a plan is created, so it never overrides that later choice.
+    await prisma.user.update({ where: { id: userId }, data: { notifyEmailReminders: true } });
     await noticePlanUpdated({
       userId,
       title: "Your plan is set up",
