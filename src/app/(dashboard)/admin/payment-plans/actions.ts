@@ -23,7 +23,7 @@ export async function cancelPaymentPlanAction(planId: string, note: string) {
   const admin = await requireAdmin();
   await cancelPaymentPlan(planId, admin.id, note);
   await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "plan.cancel", targetType: "PaymentPlan", targetId: planId, detail: note });
-  revalidatePath("/admin/payment-plans");
+  revalidatePath("/", "layout");
 }
 
 // Owner only: this writes revenue and can open someone's access.
@@ -36,9 +36,7 @@ export async function recordPlanPaymentAction(planId: string): Promise<{ ok: boo
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Could not record the payment." };
   }
-  revalidatePath("/admin/payment-plans");
-  revalidatePath("/admin/payments");
-  revalidatePath("/admin");
+  revalidatePath("/", "layout");
   return { ok: true, error: null };
 }
 

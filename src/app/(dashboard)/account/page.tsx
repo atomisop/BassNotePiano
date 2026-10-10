@@ -1,3 +1,4 @@
+import { discordLinkState } from "@/lib/discordLinkState";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -25,6 +26,7 @@ export default async function AccountPage() {
         phoneVerifiedAt: true,
         pendingPhone: true,
         phoneRequired: true,
+        discordId: true,
         discordUsername: true,
         notifyEmailPayments: true,
         notifyEmailRoleUpdates: true,
@@ -52,7 +54,7 @@ export default async function AccountPage() {
           required: user.phoneRequired,
           verifyMode: await phoneVerifyMode(),
         },
-        discordUsername: user.discordUsername,
+        discordUsername: discordLinkState({ discordId: user.discordId, discordUsername: user.discordUsername }).name,
       }}
       hasCurriculumAccess={session.user.hasCurriculumAccess}
       initialNotificationPreferences={{

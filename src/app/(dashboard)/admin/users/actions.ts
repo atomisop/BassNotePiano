@@ -40,15 +40,14 @@ export async function setUserRoleAction(targetUserId: string, role: Role) {
   }
   await setUserRole(targetUserId, role);
   await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "user.role", targetType: "User", targetId: targetUserId, detail: `${target.email} is now ${role}` });
-  revalidatePath("/admin/users");
+  revalidatePath("/", "layout");
 }
 
 export async function setCurriculumAccessAction(targetUserId: string, hasAccess: boolean) {
   const admin = await requireAdmin();
   await setCurriculumAccess(targetUserId, hasAccess);
   await logAudit({ actorId: admin.id, actorEmail: admin.email, action: hasAccess ? "access.grant" : "access.revoke", targetType: "User", targetId: targetUserId });
-  revalidatePath("/admin/users");
-  revalidatePath("/admin");
+  revalidatePath("/", "layout");
 }
 
 export async function toggleScaleUnlockAction(targetUserId: string, scaleSlug: string, unlock: boolean) {
@@ -58,8 +57,7 @@ export async function toggleScaleUnlockAction(targetUserId: string, scaleSlug: s
   } else {
     await lockScaleForUser(targetUserId, scaleSlug);
   }
-  revalidatePath("/admin/users");
-  revalidatePath("/admin");
+  revalidatePath("/", "layout");
 }
 
 /**
@@ -75,8 +73,7 @@ export async function approveNextScaleAction(targetUserId: string, force: boolea
     if (err instanceof ScaleApprovalError) throw new Error(err.message);
     throw err;
   }
-  revalidatePath("/admin/users");
-  revalidatePath("/admin");
+  revalidatePath("/", "layout");
 }
 
 /**
@@ -99,8 +96,7 @@ export async function approveAllReadyScalesAction(): Promise<{ message: string }
       skipped++;
     }
   }
-  revalidatePath("/admin/users");
-  revalidatePath("/admin");
+  revalidatePath("/", "layout");
   const base = approved === 1 ? "Released the next scale for 1 student." : `Released the next scale for ${approved} students.`;
   return { message: skipped > 0 ? `${base} ${skipped} could not be released (see their row).` : base };
 }
@@ -111,5 +107,5 @@ export async function approveAllReadyScalesAction(): Promise<{ message: string }
 export async function clearAssistantHistoryAction(targetUserId: string) {
   await requireAdmin();
   await clearPersistedHistory(targetUserId);
-  revalidatePath("/admin/users");
+  revalidatePath("/", "layout");
 }

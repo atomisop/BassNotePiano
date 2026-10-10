@@ -11,8 +11,9 @@ const MIN_GAP_MS = 8_000;
 
 // Screens that must not be refreshed under the person: Messages and the top-bar
 // panels already poll for themselves; a lesson (video, quiz, notes) and the
-// account/profile/billing forms would be interrupted for no gain.
-const SKIP_PREFIXES = ["/messages", "/scales", "/account", "/profile", "/billing"];
+// profile and the buy-a-plan screens would be interrupted for no gain. Settings and
+// the payment history are refreshed too (a field being typed in is never refreshed).
+const SKIP_PREFIXES = ["/messages", "/scales", "/profile", "/billing/plans", "/billing/lessons"];
 
 function isTyping(): boolean {
   const el = document.activeElement as HTMLElement | null;

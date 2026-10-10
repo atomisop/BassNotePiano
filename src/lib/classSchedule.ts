@@ -1,10 +1,11 @@
+import { noticeBookingConfirmed } from "@/lib/studentNotices";
 import { getAdminRecipients } from "@/lib/adminNotifications";
 import { addMinutesToHHmm, formatEtDateTime } from "@/lib/classScheduleLabels";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
-import { PLAN_CADENCE_CREDITS_PER_WEEK, CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
+import { PLAN_CADENCE_CREDITS_PER_WEEK, CLASS_MINUTES, CREDITS_PER_CLASS, creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { SUBSCRIBER_CLASSES_PER_WEEK, weekRangeForOccurrence } from "@/lib/bookingRules";
 import { getBoolSetting, getNumberSetting, getTextSetting } from "@/lib/siteSettings";
 
@@ -530,7 +531,7 @@ export async function bookClass(
         const available = user.classCredits - (pending._sum.creditsSpent ?? 0);
         if (available < credits) {
           throw new ClassBookingError(
-            `You need ${credits} credit${credits === 1 ? "" : "s"} available. You have ${available} free right now.`,
+            `You need ${creditsLabelFromStored(credits)} available. You have ${creditsLabelFromStored(available)} free right now.`,
           );
         }
 
@@ -580,6 +581,8 @@ export async function bookClass(
       console.error("Admin booking notification failed (non-blocking):", err),
     );
   }
+  // The student is told too: a booking confirmation, or that the studio booked it for them.
+  await noticeBookingConfirmed({ studentId, scheduledAt, label: schedule.label, storedCredits: credits, byStudio: Boolean(options.isAdminAssisted) });
 
   return booking;
 }
@@ -636,7 +639,7 @@ async function notifyAdminsOfBooking(
         userId: admin.id,
         type: "LESSON_BOOKING_RECEIVED",
         title: "New one-on-one booking",
-        body: `${studentLabel} booked the ${classLabel} ${when} to ${endsAt} (${creditsBooked} credit${creditsBooked === 1 ? "" : "s"}).`,
+        body: `${studentLabel} booked the ${classLabel} ${when} to ${endsAt} (${creditsLabelFromStored(creditsBooked)}).`,
         emailCategory: "social",
       }),
     ),
@@ -699,7 +702,7 @@ async function notifyAdminsOfFamilyBooking(
         userId: admin.id,
         type: "LESSON_BOOKING_RECEIVED",
         title: "New family booking",
-        body: `${names} booked the ${classLabel} ${when} to ${endsAt} together (${FAMILY_CREDITS_PER_STUDENT} credits each).`,
+        body: `${names} booked the ${classLabel} ${when} to ${endsAt} together (${creditsLabelFromStored(FAMILY_CREDITS_PER_STUDENT)} each).`,
         emailCategory: "social",
       }),
     ),
@@ -1002,6 +1005,7 @@ export async function bookFamilyClass(
     schedule,
     scheduledAt,
   ).catch((err) => console.error("Admin family booking notification failed (non-blocking):", err));
+  await Promise.all(attendees.map((a) => noticeBookingConfirmed({ studentId: a.id, scheduledAt, label: schedule.label, storedCredits: FAMILY_CREDITS_PER_STUDENT })));
 
   return bookings;
 }
@@ -1492,7 +1496,7 @@ export async function rescheduleClassBooking(
         const available = user.classCredits - (pendingOthers._sum.creditsSpent ?? 0);
         if (available < credits) {
           throw new ClassBookingError(
-            `You need ${credits} credit${credits === 1 ? "" : "s"} available. You have ${available} free right now.`,
+            `You need ${creditsLabelFromStored(credits)} available. You have ${creditsLabelFromStored(available)} free right now.`,
           );
         }
 

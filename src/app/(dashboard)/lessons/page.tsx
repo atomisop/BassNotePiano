@@ -1,3 +1,4 @@
+import { discordLinkState } from "@/lib/discordLinkState";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -97,8 +98,8 @@ export default async function LessonsPage({ searchParams }: { searchParams: { ta
     />
   );
 
-  const me = await prisma.user.findUnique({ where: { id: session.user.id }, select: { discordUsername: true } });
-  const card = <DiscordConnectCard discordUsername={me?.discordUsername ?? null} flag={searchParams.discord} />;
+  const me = await prisma.user.findUnique({ where: { id: session.user.id }, select: { discordId: true, discordUsername: true } });
+  const card = <DiscordConnectCard link={discordLinkState({ discordId: me?.discordId ?? null, discordUsername: me?.discordUsername ?? null })} flag={searchParams.discord} />;
 
   if (!activePlan)
     return (

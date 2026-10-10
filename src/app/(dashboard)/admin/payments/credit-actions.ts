@@ -36,7 +36,7 @@ export async function adjustUserCreditsAction(targetUserId: string, amount: numb
   try {
     const result = await adjustUserCredits(admin.id, targetUserId, amount, reasonNote);
     await logAudit({ actorId: admin.id, actorEmail: admin.email, action: amount > 0 ? "credits.grant" : "credits.revoke", targetType: "User", targetId: targetUserId, detail: `${amount > 0 ? "+" : ""}${amount}. ${reasonNote}` });
-    revalidatePath("/admin/payments");
+    revalidatePath("/", "layout");
     return { ok: true as const, balance: result.balance };
   } catch (err) {
     if (err instanceof CreditAdjustmentError) {

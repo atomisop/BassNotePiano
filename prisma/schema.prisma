@@ -419,6 +419,12 @@ enum NotificationType {
   CLASS_REMINDER // to the student, a day before and shortly before a booked live class
   CURRICULUM_ACCESS_REVOKED // to the student, when an admin manually removes curriculum access outside the normal payment flow
   PAYMENT_AMOUNT_MISMATCH // to the student, when a bank or Venmo email under their name arrives for a different amount than their open payment
+  ACCOUNT_UPDATE // to the student, when something on their account changed (Discord connected or disconnected, phone cleared, signed out of devices)
+  LESSON_BOOKING_CONFIRMED // to the student, when a class is booked for them (by themselves, a family booking or the studio)
+  ATTENDANCE_RECORDED // to the student, when their class is marked present or a no-show, with the credit used
+  PAYMENT_RECEIVED // to the student, when they submit a payment that now waits for review
+  TRIAL_ENDING // to the student, a day before their free trial ends and when it has ended
+  PAYMENT_PLAN_UPDATED // to the student, when their plan starts or its term changes
 }
 
 // The in-app inbox is the source of truth, always written regardless of

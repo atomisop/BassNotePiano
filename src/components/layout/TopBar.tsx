@@ -9,6 +9,7 @@ import { LiveClassesTopLink } from "./LiveClassesTopLink";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { BrandMark } from "./BrandMark";
 import { AskAiButton } from "./AskAiButton";
+import { CreditsBadge } from "./CreditsBadge";
 
 /**
  * The user's real photo, fetched here rather than read off the session,
@@ -72,6 +73,7 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
       <div className="flex items-center gap-2 md:gap-3">
         {/* Leftmost of the right-hand cluster: Ask AI, admin, attendance, bell, profile. */}
         {/* The owner has two more icons (notes, attendance), so on phones Ask AI shrinks to its icon to keep the profile picture on screen. */}
+        <CreditsBadge />
         <AskAiButton compactOnPhones={isOwner} />
         {/* Owner only: the teacher's permanent notes on each student, right beside Ask AI. */}
         {isOwner && <StudentNotesPanel />}

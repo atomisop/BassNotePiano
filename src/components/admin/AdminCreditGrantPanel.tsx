@@ -1,5 +1,6 @@
 "use client";
 
+import { CREDITS_PER_CLASS, creditsLabelFromStored, creditsToStored, formatCredits, storedToCredits } from "@/lib/classCreditPricing";
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { CreditUserSearchRow, CreditAdjustmentRow } from "@/lib/creditAdjustments";
@@ -29,8 +30,9 @@ function initialsOf(name: string | null, email: string) {
   return (name ?? email).charAt(0).toUpperCase();
 }
 
+/** A signed amount in credits (already converted from the stored unit). */
 function formatSigned(amount: number) {
-  return amount > 0 ? `+${amount}` : `${amount}`;
+  return amount > 0 ? `+${formatCredits(amount)}` : `-${formatCredits(Math.abs(amount))}`;
 }
 
 export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearch, onAdjust, onGetHistory }: AdminCreditGrantPanelProps) {
@@ -97,13 +99,14 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
     setError(null);
     setSuccess(null);
 
+    // Typed in credits (1 credit = 1 class, 45 minutes); half credits are allowed.
     const parsed = Number(amount);
-    if (!Number.isInteger(parsed) || parsed <= 0) {
-      setError("Enter a whole number above 0.");
+    if (!Number.isFinite(parsed) || parsed <= 0 || !Number.isInteger(parsed * CREDITS_PER_CLASS)) {
+      setError("Enter a number above 0, in whole or half credits (for example 2 or 0.5).");
       return;
     }
-    if (mode === "revoke" && parsed > selected.classCredits) {
-      setError(`They only have ${selected.classCredits} credit${selected.classCredits === 1 ? "" : "s"}.`);
+    if (mode === "revoke" && creditsToStored(parsed) > selected.classCredits) {
+      setError(`They only have ${creditsLabelFromStored(selected.classCredits)}.`);
       return;
     }
     if (!reason.trim()) {
@@ -120,7 +123,8 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
 
   async function handleConfirm() {
     if (!selected) return;
-    const parsed = mode === "revoke" ? -Number(amount) : Number(amount);
+    // The server counts in stored half-classes; people type credits (see classCreditPricing).
+    const parsed = creditsToStored(mode === "revoke" ? -Number(amount) : Number(amount));
     setSubmitting(true);
     try {
       const result = await onAdjust(selected.id, parsed, reason.trim());
@@ -129,7 +133,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
         setConfirming(false);
         return;
       }
-      setSuccess(`Done. ${selected.name ?? selected.email} now has ${result.balance} credit${result.balance === 1 ? "" : "s"}.`);
+      setSuccess(`Done. ${selected.name ?? selected.email} now has ${creditsLabelFromStored(result.balance)}.`);
       setSelected({ ...selected, classCredits: result.balance });
       setUsers((prev) => prev.map((u) => (u.id === selected.id ? { ...u, classCredits: result.balance } : u)));
       setAmount("");
@@ -185,7 +189,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   <p className="truncate text-small text-slate-500">{user.email}</p>
                 </div>
                 <span className="shrink-0 rounded-full bg-neu-base shadow-pressed-low px-2.5 py-1 text-small font-medium text-slate-300">
-                  {user.classCredits} cr
+                  {formatCredits(storedToCredits(user.classCredits))} cr
                 </span>
               </button>
             );
@@ -196,7 +200,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
           <div className="glass-surface mt-5 p-5">
             <p className="text-small text-slate-100">{selected.name ?? selected.email}</p>
             <p className="mt-0.5 text-small text-slate-500">
-              Current balance: <span className="text-slate-300">{selected.classCredits} credits</span>
+              Current balance: <span className="text-slate-300">{creditsLabelFromStored(selected.classCredits)}</span> (1 credit = 1 class, 45 minutes)
             </p>
 
             <form onSubmit={handleReview} className="mt-4 space-y-3">
@@ -231,10 +235,10 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 {mode === "revoke" && selected.classCredits > 0 && !confirming && (
                   <button
                     type="button"
-                    onClick={() => setAmount(String(selected.classCredits))}
+                    onClick={() => setAmount(String(storedToCredits(selected.classCredits)))}
                     className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-1.5 inline-flex items-center"
                   >
-                    Revoke all {selected.classCredits}
+                    Revoke all {formatCredits(storedToCredits(selected.classCredits))}
                   </button>
                 )}
               </div>
@@ -263,7 +267,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 // part a typo hides right up until this step.
                 <div className="space-y-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] p-3">
                   <p className="text-small text-slate-200">
-                    {mode === "grant" ? "Grant" : "Revoke"} <span className="font-semibold text-slate-50">{Number(amount)} credit{Number(amount) === 1 ? "" : "s"}</span>{" "}
+                    {mode === "grant" ? "Grant" : "Revoke"} <span className="font-semibold text-slate-50">{formatCredits(Number(amount))} credit{Number(amount) === 1 ? "" : "s"}</span>{" "}
                     {mode === "grant" ? "to" : "from"} {selected.name ?? selected.email}?
                   </p>
                   <div className="flex gap-2">
@@ -305,7 +309,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   <div key={row.id} className="rounded-lg px-3 py-2 text-small bg-neu-base shadow-raised-low">
                     <div className="flex items-center justify-between gap-2">
                       <span className={row.amount > 0 ? "font-medium text-slate-100" : "font-medium text-red-300"}>
-                        {formatSigned(row.amount)} credits
+                        {formatSigned(storedToCredits(row.amount))} credits
                       </span>
                       <span className="text-slate-500">{new Date(row.createdAt).toLocaleString()}</span>
                     </div>
@@ -336,7 +340,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 <span className={`shrink-0 rounded-full px-2.5 py-1 text-small font-medium ${
                   row.amount > 0 ? "bg-slate-50/15 text-slate-100" : "bg-red-400/15 text-red-300"
                 }`}>
-                  {formatSigned(row.amount)}
+                  {formatSigned(storedToCredits(row.amount))}
                 </span>
               </div>
               <p className="mt-2 text-small text-slate-400">{row.reasonNote}</p>

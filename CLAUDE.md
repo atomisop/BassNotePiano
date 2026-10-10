@@ -284,6 +284,20 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
 `discordId` and comes back after `discord.promptRepeatMinutes` (default 10) whenever it was ignored or closed
 (`bnp-discord-banner-next`); lengths and the on/off switch are owner settings (`phone.promptSeconds`, `discord.prompt*`, default 8 seconds).
 
+## Staying in sync across the app (added 2026-10-10, `docs/SYNC-AUDIT.md`)
+
+- **One credit is one 45 minute class.** Balances are STORED in half-classes (`CREDITS_PER_CLASS`). Never show or accept a stored
+  number: convert with `storedToCredits`, `creditsToStored`, `creditsLabelFromStored`, `formatCredits` (`classCreditPricing.ts`).
+- **Shared live status:** the top bar credit badge (the 21st.dev "Bubble Button") and the Discord, practice and phone banners read
+  `useMeStatus()` (`MeStatusProvider`, `/api/me/status`). Anything that changes credits, the Discord link or practice can
+  `window.dispatchEvent(new Event("bnp:status-changed"))` to refresh it now.
+- **Discord connected = the stored `discordId`** (`discordLinkState`), never the name. Every connect, disconnect and ban calls
+  `revalidatePath("/", "layout")`; admin, payment, plan, credit and account actions do the same, so no screen keeps an old value.
+  `staleTimes.dynamic = 0` stops the browser reusing a visited page.
+- **Closing a plan closes its unpaid bill** (admin cancel, self cancel, lapse, ban). A payment already submitted stays for review.
+- **New notices** live in `studentNotices.ts` (+ `trialNotices.ts`, run by the daily credit-expiry job). Add a new student-facing
+  event there, with a `NotificationType` (enum migration), its CTA in `notifications.ts` and its category in `NotificationBell.tsx`.
+
 ## Account bans (added 2026-10-10)
 
 `User.bannedAt` (+ private `bannedReason`) is set by `banUserAction` (`admin/users/[userId]/actions.ts`, hammer "Ban" button

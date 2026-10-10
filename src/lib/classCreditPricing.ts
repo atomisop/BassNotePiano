@@ -22,6 +22,30 @@ export const CLASS_MINUTES = 45;
 export const CREDITS_PER_CLASS = 2;
 
 /**
+ * Credits as people count them: ONE CREDIT IS ONE 45 MINUTE CLASS. The booking engine stores balances in half-classes
+ * (CREDITS_PER_CLASS of them make a class), and every number a person reads or types is converted here, so no screen, email
+ * or message ever shows the stored unit. Always go through these four helpers, never divide by CREDITS_PER_CLASS inline.
+ */
+export const MINUTES_PER_CREDIT = CLASS_MINUTES;
+/** A stored amount as credits (one credit = one class). 9 stored is 4.5 credits. */
+export function storedToCredits(stored: number): number {
+  return stored / CREDITS_PER_CLASS;
+}
+/** Credits someone typed, as the stored amount. */
+export function creditsToStored(credits: number): number {
+  return Math.round(credits * CREDITS_PER_CLASS);
+}
+/** "4" or "4.5". */
+export function formatCredits(credits: number): string {
+  return Number.isInteger(credits) ? String(credits) : credits.toFixed(1);
+}
+/** "1 credit", "4.5 credits" from a STORED amount. */
+export function creditsLabelFromStored(stored: number): string {
+  const credits = storedToCredits(stored);
+  return `${formatCredits(credits)} credit${credits === 1 ? "" : "s"}`;
+}
+
+/**
  * What an extra class costs: a flat $55, no bundle tiers. Extra classes are for
  * extra time on top of a student's weekly class (and for anyone without a plan);
  * a plan's own weekly class is paid by the plan. Deliberately its own number,

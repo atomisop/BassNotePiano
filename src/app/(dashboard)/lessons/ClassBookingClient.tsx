@@ -16,7 +16,7 @@ import {
 import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { CheckIcon, XIcon } from "@/components/ui/icons";
-import { CLASS_MINUTES, CREDITS_PER_CLASS, EXTRA_CLASS_PRICE_CENTS } from "@/lib/classCreditPricing";
+import { CLASS_MINUTES, CREDITS_PER_CLASS, EXTRA_CLASS_PRICE_CENTS, creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { errorNeedsTeam, weekRangeForOccurrence } from "@/lib/bookingRules";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { createExtraClassPaymentAction, submitClassCreditsPaymentAction } from "../billing/lessons/actions";
@@ -88,7 +88,8 @@ function classCount(credits: number) {
   return Math.floor(credits / CREDITS_PER_CLASS);
 }
 const classWord = (n: number) => `class${n === 1 ? "" : "es"}`;
-const creditsLabel = (n: number) => `${n} credit${n === 1 ? "" : "s"}`;
+/** A stored amount as people count it: one credit is one class (45 minutes). */
+const creditsLabel = (n: number) => creditsLabelFromStored(n);
 const weekStartMs = (occurrenceDateMs: number) => weekRangeForOccurrence(new Date(occurrenceDateMs)).start.getTime();
 
 function formatOccurrenceTime(iso: string) {

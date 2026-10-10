@@ -1,3 +1,4 @@
+import { formatCredits, storedToCredits } from "@/lib/classCreditPricing";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
@@ -206,7 +207,7 @@ export default async function DashboardPage() {
           <Stat value={`${progress.completedScales}/${progress.totalScales}`} label="Scales" />
           <Stat value={`${earnedBadgeCodes.length}`} label="Badges" />
           <Stat value={`${streak}`} label="Day streak" />
-          <Stat value={`${user?.classCredits ?? 0}`} label="Credits" />
+          <Stat value={formatCredits(storedToCredits(user?.classCredits ?? 0))} label="Credits" />
         </div>
       </div>
     </Card>

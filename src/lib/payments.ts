@@ -1,3 +1,5 @@
+import { creditsLabelFromStored } from "@/lib/classCreditPricing";
+import { noticePaymentReceived } from "@/lib/studentNotices";
 import { getAdminRecipients, notifyAdmins } from "@/lib/adminNotifications";
 import { settleWithStoredReceipt } from "@/lib/paymentEmail";
 import { PaymentPlanCadence, PaymentPlanTerm, type PaymentPurpose, type Prisma, type ZellePaymentStatus } from "@prisma/client";
@@ -399,9 +401,11 @@ async function notifyAdminsIfStillPending(paymentId: string) {
   try {
     const payment = await prisma.zellePayment.findUnique({
       where: { id: paymentId },
-      select: { status: true, amountCents: true, method: true, paymentPlanId: true, installmentNumber: true, user: { select: { name: true, email: true } } },
+      select: { status: true, amountCents: true, method: true, paymentPlanId: true, installmentNumber: true, userId: true, user: { select: { name: true, email: true } } },
     });
     if (!payment || payment.status !== "PENDING_REVIEW") return;
+    // The student is told it arrived and is being checked.
+    await noticePaymentReceived({ userId: payment.userId, amountCents: payment.amountCents });
     const slot = payment.paymentPlanId ? await describeReservedSlot(payment.paymentPlanId) : null;
     const admins = await getAdminRecipients("PAYMENT_REVIEW");
     const amount = (payment.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -738,13 +742,13 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
     const classes = Math.max(1, Math.round(payment.lessonQuantity / CREDITS_PER_CLASS));
     notificationBody = `Your ${classes} extra class${classes === 1 ? "" : "es"} payment was verified. They are on your account, ready to book.`;
   } else if (payment.purpose === "FAMILY_BUNDLE" && payment.lessonQuantity) {
-    notificationBody = `Your family bundle payment was verified. ${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} each went out to everyone in the bundle.`;
+    notificationBody = `Your family bundle payment was verified. ${creditsLabelFromStored(payment.lessonQuantity)} each went out to everyone in the bundle.`;
   } else if (payment.purpose === "CURRICULUM_FAMILY_BUNDLE") {
     notificationBody = "Your curriculum family bundle payment was verified. Every scale is unlocked, for good, for everyone in the bundle.";
   } else if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId && payment.lessonQuantity) {
     const plan = await prisma.paymentPlan.findUnique({ where: { id: payment.paymentPlanId } });
     const ordinal = payment.installmentNumber ?? plan?.installmentsPaid ?? 1;
-    const creditsNote = `${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} ${payment.lessonQuantity === 1 ? "is" : "are"} on your account`;
+    const creditsNote = `${creditsLabelFromStored(payment.lessonQuantity)} ${payment.lessonQuantity === CREDITS_PER_CLASS ? "is" : "are"} on your account`;
     notificationBody = plan
       ? `Installment ${ordinal} of ${plan.termMonths} was verified. ${creditsNote}.`
       : `Your payment plan installment was verified. ${creditsNote}.`;
@@ -793,7 +797,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
         createNotification({
           userId: r.userId,
           type: "CREDIT_ADJUSTED",
-          title: `${payment.lessonQuantity} class credit${payment.lessonQuantity === 1 ? "" : "s"} added`,
+          title: `${creditsLabelFromStored(payment.lessonQuantity)} added`,
           body: "Someone bundled a family purchase that included your account. The credits are on your balance now.",
           emailCategory: "payments",
         }).catch((err) => console.error(`Failed to notify family bundle recipient ${r.userId} (non-blocking):`, err)),
@@ -883,7 +887,7 @@ export async function refundZellePayment(
     if (take > 0) await adjustUserCredits(admin.id, payment.userId, -take, `Refund: ${note}`);
     if (take < payment.lessonQuantity) {
       warnings.push(
-        `Only ${take} of ${payment.lessonQuantity} credits were taken back; the rest are held by this student's upcoming classes. Adjust them under Credits once those classes are done or canceled.`,
+        `Only ${creditsLabelFromStored(take)} of ${creditsLabelFromStored(payment.lessonQuantity)} were taken back; the rest are held by this student's upcoming classes. Adjust them under Credits once those classes are done or canceled.`,
       );
     }
   }

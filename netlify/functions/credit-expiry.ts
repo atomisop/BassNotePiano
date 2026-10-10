@@ -2,6 +2,8 @@ import { schedule } from "@netlify/functions";
 import { runJob } from "../../src/lib/jobRun";
 import { createNotification } from "../../src/lib/notifications";
 import { expireDueCreditGrants, warnExpiringSoonCreditGrants } from "../../src/lib/creditLedger";
+import { sendTrialNotices } from "../../src/lib/trialNotices";
+import { CREDITS_PER_CLASS, creditsLabelFromStored } from "../../src/lib/classCreditPricing";
 
 // Runs daily at 09:00 UTC, off-hours, and deliberately ahead of
 // payment-plan-reservations.ts (09:30) so a plan whose final cycle's
@@ -31,9 +33,9 @@ export const handler = schedule("0 9 * * *", async () =>
       userId: summary.userId,
       type: "CREDITS_EXPIRING_SOON",
       title: "Unused credits expiring soon",
-      body: `${summary.creditsRemaining} class credit${summary.creditsRemaining === 1 ? "" : "s"} from your payment plan ${
-        summary.creditsRemaining === 1 ? "expires" : "expire"
-      } in ${daysLeft} day${daysLeft === 1 ? "" : "s"}. Book a class before then to use ${summary.creditsRemaining === 1 ? "it" : "them"}.`,
+      body: `${creditsLabelFromStored(summary.creditsRemaining)} from your payment plan ${
+        summary.creditsRemaining === CREDITS_PER_CLASS ? "expires" : "expire"
+      } in ${daysLeft} day${daysLeft === 1 ? "" : "s"}. Book a class before then to use ${summary.creditsRemaining === CREDITS_PER_CLASS ? "it" : "them"}.`,
       emailCategory: "payments",
     }).catch((err) => console.error(`CREDITS_EXPIRING_SOON notification failed for user ${summary.userId} (non-blocking):`, err));
   }
@@ -44,10 +46,13 @@ export const handler = schedule("0 9 * * *", async () =>
       userId: summary.userId,
       type: "CREDITS_EXPIRED",
       title: "Unused credits expired",
-      body: `${summary.creditsExpired} class credit${summary.creditsExpired === 1 ? "" : "s"} expired at the end of its paid cycle.`,
+      body: `${creditsLabelFromStored(summary.creditsExpired)} expired at the end of its paid cycle.`,
       emailCategory: "payments",
     }).catch((err) => console.error(`CREDITS_EXPIRED notification failed for user ${summary.userId} (non-blocking):`, err));
   }
+
+  const trials = await sendTrialNotices(now);
+  console.log(`Trial notices: ${trials.ending} ending soon, ${trials.ended} ended.`);
 
   const totalExpired = expired.reduce((sum, s) => sum + s.creditsExpired, 0);
   console.log(
