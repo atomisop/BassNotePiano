@@ -28,6 +28,8 @@ export interface TextDef extends BaseDef {
   default: string;
   maxLength: number;
   multiline?: boolean;
+  /** True when saving nothing is fine (the setting is a list that can be empty). */
+  allowEmpty?: boolean;
   /** When set, a saved value must match this. `patternHint` is the message shown when it does not. */
   pattern?: RegExp;
   patternHint?: string;
@@ -120,6 +122,7 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "payments.amountMismatchNotice", category: "payments", type: "toggle", default: true, label: "Tell a student when their payment amount is wrong", help: "The notice sent when the money arrives under their name for a different amount." },
   { key: "payments.matchByAmount", category: "payments", type: "toggle", default: true, label: "Clear a payment by its exact amount when only one is open", help: "When nothing else matches (no code, name or phone) but exactly one recent payment is open for that exact amount, and the sender is not a known person on another account, it is approved and left in your unchecked list. Off: those wait for you." },
   { key: "payments.askPhone", category: "payments", type: "toggle", default: false, label: "Ask for a phone number when someone pays", help: "The payment sheet asks for the phone number they pay from, before showing the payment code, and it must match the number on their own account (green check). Off by default: SoFi and Bank of America emails do not show a sender phone, so it does not help match payments." },
+  { key: "payments.ignoreSenderNames", category: "payments", type: "text", default: "", allowEmpty: true, maxLength: 300, label: "Names to ignore in bank emails", help: "Your own transfers between your accounts, so they stop showing up as unmatched payments. Full names (first and last) separated by commas. An email from exactly one of these names is skipped, unless its note carries a payment code. You can also add a name with \"Always ignore\" on an unmatched email." },
   { key: "payments.lapseAfterDays", category: "payments", type: "number", default: 7, min: 1, max: 60, unit: "days", label: "Cancel an unpaid plan after", help: "A plan this many days past due with nothing in review is canceled." },
 
   // ---- Messaging
@@ -171,7 +174,7 @@ export function serializeSetting(def: SettingDef, value: unknown): string {
     return String(Math.round(n));
   }
   const text = String(value ?? "").trim();
-  if (!text) throw new Error(`${def.label} cannot be empty.`);
+  if (!text && !def.allowEmpty) throw new Error(`${def.label} cannot be empty.`);
   if (text.length > def.maxLength) throw new Error(`${def.label} can be ${def.maxLength} characters at most.`);
   if (def.pattern && !def.pattern.test(text)) throw new Error(def.patternHint ?? `${def.label} is not in the right format.`);
   return text;

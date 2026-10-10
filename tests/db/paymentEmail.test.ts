@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/auth", () => ({ getServerAuthSession: async () => null, authOptions: {} }));
 import { ingestPaymentEmail } from "@/lib/paymentEmail";
 import { paymentReferenceCode } from "@/lib/paymentReference";
-import { forgetPayerName, listUnmatchedReceipts, matchReceiptToPayment } from "@/lib/paymentReceipts";
+import { forgetPayerName, ignoreSenderFromReceipt, listUnmatchedReceipts, matchReceiptToPayment } from "@/lib/paymentReceipts";
 import { settleWithStoredReceipt } from "@/lib/paymentEmail";
 import { checkPaymentPhone, getPaymentPhoneState, savePaymentPhone } from "@/lib/paymentPhone";
 import { resetSetting, saveSetting } from "@/lib/siteSettings";
@@ -65,6 +65,7 @@ beforeAll(async () => {
 });
 afterAll(async () => {
   await resetSetting("payments.matchByAmount");
+  await resetSetting("payments.ignoreSenderNames");
   await prisma.processedPaymentEmail.deleteMany({ where: { messageId: { startsWith: tag } } });
   await prisma.creditGrant.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.mailMessage.deleteMany({ where: { userId: { in: userIds } } });
@@ -616,5 +617,41 @@ describe("a payment email that cannot be read", () => {
     expect(await ingestPaymentEmail({ messageId: `${tag}-s-${++counter}`, from: "Scammer <x@evil.example>", subject: `Zelle ${tag}-s`, body: "You were paid $75.00" })).toBe("ignored");
     expect(await noteCount(`${tag}-q`)).toBe(0);
     expect(await noteCount(`${tag}-s`)).toBe(0);
+  });
+});
+
+describe("ignoring the owner's own transfers", () => {
+  const own = `Owen Ignorable${tag.replace(/\d/g, "x")}`;
+
+  it("skips an email from a listed full name, but never someone who only shares a first name", async () => {
+    await saveSetting("payments.ignoreSenderNames", `${own}, Someone Else`);
+    expect(await sofiEmail(own.toUpperCase(), "40.00")).toBe("ignored");
+    expect(await prisma.processedPaymentEmail.count({ where: { senderName: own.toUpperCase() } })).toBe(0);
+    expect(await sofiEmail(`Owen Ignorablesame`, "40.00")).toBe("stored");
+  });
+
+  it("still reads an email whose note carries a payment code", async () => {
+    const stu = await student(own);
+    const p = await openPayment(stu.id, 4321, "AWAITING_TRANSFER");
+    expect(await sofiEmail(own, "43.21", paymentReferenceCode(p.id))).toBe("approved");
+  });
+
+  it("'Always ignore' adds the name, dismisses what is waiting from it, and touches no payment", async () => {
+    await resetSetting("payments.ignoreSenderNames");
+    const name = `Quinn Waiting${tag.replace(/\d/g, "y")}`;
+    await sofiEmail(name, "12.34");
+    await sofiEmail(name, "56.78");
+    const waiting = await prisma.processedPaymentEmail.findMany({ where: { senderName: name, dismissedAt: null } });
+    expect(waiting).toHaveLength(2);
+    const out = await ignoreSenderFromReceipt({ receiptId: waiting[0].id, admin });
+    expect(out).toEqual({ name, dismissed: 2 });
+    expect(await prisma.processedPaymentEmail.count({ where: { senderName: name, dismissedAt: null } })).toBe(0);
+    expect(await sofiEmail(name, "9.99")).toBe("ignored");
+    await expect(ignoreSenderFromReceipt({ receiptId: waiting[0].id, admin })).resolves.toMatchObject({ dismissed: 0 });
+  });
+
+  it("refuses a single-word sender", async () => {
+    const r = await prisma.processedPaymentEmail.create({ data: { messageId: `${tag}-one-${++counter}`, method: "ZELLE", senderName: "Madonna", amountCents: 100 } });
+    await expect(ignoreSenderFromReceipt({ receiptId: r.id, admin })).rejects.toThrow(/too loose/);
   });
 });

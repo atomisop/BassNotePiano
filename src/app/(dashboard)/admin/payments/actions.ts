@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { approveZellePayment, deleteZellePayment, markAllPaymentsChecked, markPaymentChecked, refundZellePayment, rejectZellePayment } from "@/lib/payments";
 import { isOwnerEmail } from "@/lib/adminNotifications";
-import { dismissReceipt, matchReceiptToPayment, ReceiptError } from "@/lib/paymentReceipts";
+import { dismissReceipt, ignoreSenderFromReceipt, matchReceiptToPayment, ReceiptError } from "@/lib/paymentReceipts";
 
 // The admin layout's redirect only protects rendering, Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
@@ -96,5 +96,20 @@ export async function dismissReceiptAction(receiptId: string): Promise<{ ok: boo
     return { ok: true, error: null };
   } catch {
     return { ok: false, error: "Something went wrong. Nothing was changed." };
+  }
+}
+
+/** Owner only: from now on, bank emails from this exact full name are skipped (the owner's own transfers). */
+export async function ignoreSenderAction(receiptId: string): Promise<{ ok: boolean; error: string | null }> {
+  const admin = await requireAdmin();
+  if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can change which senders are ignored." };
+  try {
+    await ignoreSenderFromReceipt({ receiptId, admin: { id: admin.id, email: admin.email ?? null } });
+    revalidatePath("/admin/payments");
+    revalidatePath("/admin");
+    revalidatePath("/admin/settings");
+    return { ok: true, error: null };
+  } catch (err) {
+    return { ok: false, error: err instanceof ReceiptError ? err.message : "Something went wrong. Nothing was changed." };
   }
 }
