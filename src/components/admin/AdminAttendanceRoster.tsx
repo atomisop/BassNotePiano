@@ -1,5 +1,6 @@
 "use client";
 
+import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
@@ -189,7 +190,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                 <p className="text-small text-slate-100">{entry.studentName ?? "Student"}</p>
                                 <p className="text-small text-slate-600">
                                   {entry.studentEmail} · until {formatEndTime(occ.scheduledAt, entry.creditsSpent)} (
-                                  {entry.creditsSpent} credit{entry.creditsSpent === 1 ? "" : "s"})
+                                  {creditsLabelFromStored(entry.creditsSpent)})
                                 </p>
                                 <p className="mt-0.5 text-small text-[rgb(var(--c-s-50))]">{entry.focus.action}</p>
                               </div>
@@ -221,7 +222,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                 {undoConfirmId === entry.bookingId ? (
                                   <div className="flex flex-wrap items-center justify-end gap-2 text-right">
                                     <span className="text-small text-slate-300">
-                                      Refund {entry.creditsSpent} credit{entry.creditsSpent === 1 ? "" : "s"} and put this
+                                      Refund {creditsLabelFromStored(entry.creditsSpent)} and put this
                                       class back on the schedule?
                                     </span>
                                     <button

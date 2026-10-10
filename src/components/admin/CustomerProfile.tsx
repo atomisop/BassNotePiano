@@ -1,5 +1,6 @@
 "use client";
 
+import { CREDITS_PER_CLASS, creditsLabelFromStored, creditsToStored, formatCredits } from "@/lib/classCreditPricing";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -134,9 +135,10 @@ export function CustomerProfile({
 
   function handleReviewCredits(e: FormEvent) {
     e.preventDefault();
+    // Typed in credits (1 credit = 1 class, 45 minutes); half credits are allowed.
     const amount = Number(creditAmount);
-    if (!Number.isInteger(amount) || amount === 0) {
-      setError("Enter a non-zero whole number (e.g. 4 or -2).");
+    if (!Number.isFinite(amount) || amount === 0 || !Number.isInteger(amount * CREDITS_PER_CLASS)) {
+      setError("Enter a non-zero number in whole or half credits (e.g. 4, 0.5 or -2).");
       return;
     }
     if (!creditReason.trim()) {
@@ -148,7 +150,8 @@ export function CustomerProfile({
   }
 
   async function handleConfirmCredits() {
-    const amount = Number(creditAmount);
+    // The server counts in stored half-classes; people type credits (see classCreditPricing).
+    const amount = creditsToStored(Number(creditAmount));
     setBusy(true);
     setError(null);
     setCreditSuccess(null);
@@ -158,7 +161,7 @@ export function CustomerProfile({
       setBusy(false);
       return;
     }
-    setCreditSuccess(`New balance: ${result.balance} credit${result.balance === 1 ? "" : "s"}.`);
+    setCreditSuccess(`New balance: ${creditsLabelFromStored(result.balance)}.`);
     setCreditAmount("");
     setCreditReason("");
     setCreditConfirming(false);
@@ -475,7 +478,7 @@ export function CustomerProfile({
           <NotesSection studentId={user.id} />
 
           {/* Credits + bookings */}
-          <SectionCard title={`Class credits · ${user.classCredits} available`}>
+          <SectionCard title={`Class credits · ${creditsLabelFromStored(user.classCredits)} available`}>
             <form onSubmit={handleReviewCredits} className="flex flex-wrap items-end gap-2">
               <div>
                 <label htmlFor="cp-amount" className="text-small font-medium uppercase tracking-wide text-slate-500">
@@ -520,7 +523,7 @@ export function CustomerProfile({
               <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-2 text-small text-slate-200">
                 {Number(creditAmount) > 0 ? "Grant" : "Deduct"}{" "}
                 <span className="font-semibold text-slate-50">
-                  {Math.abs(Number(creditAmount))} credit{Math.abs(Number(creditAmount)) === 1 ? "" : "s"}
+                  {formatCredits(Math.abs(Number(creditAmount)))} credit{Math.abs(Number(creditAmount)) === 1 ? "" : "s"}
                 </span>
                 ? Reason: &ldquo;{creditReason}&rdquo;
                 <button
@@ -549,7 +552,7 @@ export function CustomerProfile({
                       <div>
                         <p className="text-small text-slate-100">{b.schedule.label ?? "Class"}</p>
                         <p className="text-small text-slate-500">
-                          {formatDateTime(b.scheduledAt)} · {b.creditsSpent} credit{b.creditsSpent === 1 ? "" : "s"}
+                          {formatDateTime(b.scheduledAt)} · {creditsLabelFromStored(b.creditsSpent)}
                         </p>
                       </div>
                       {cancelingBookingId === b.id ? (

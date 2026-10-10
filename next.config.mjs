@@ -15,6 +15,10 @@ const nextConfig = {
   // unused optional dependency is simply never touched.
   experimental: {
     serverComponentsExternalPackages: ["resend"],
+    // Next keeps a visited page's data in the browser for 30 seconds and reuses it on the next click, which showed stale
+    // payment statuses, Discord buttons and balances after something changed. Pages that depend on who is signed in are
+    // fetched fresh on every visit now.
+    staleTimes: { dynamic: 0, static: 30 },
   },
 
   // Old URLs that no longer have a page of their own. Kept as redirects (in

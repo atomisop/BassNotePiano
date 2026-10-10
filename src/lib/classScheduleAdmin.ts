@@ -2,6 +2,8 @@
 // cancelling for a student. Split out of classSchedule.ts, which keeps booking and the shared
 // time and slot rules.
 
+import { noticeAttendanceRecorded } from "@/lib/studentNotices";
+import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { formatEtDateTime } from "@/lib/classScheduleLabels";
 import type { AttendanceStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -289,6 +291,7 @@ export async function markAttendance(bookingId: string, attendance: AttendanceSt
   // first call.
   if (charged) {
     await drawDownCredits(booking.studentId, booking.creditsSpent);
+    await noticeAttendanceRecorded({ studentId: booking.studentId, present: attendance === "PRESENT", scheduledAt: booking.scheduledAt, storedCredits: booking.creditsSpent });
   }
 }
 
@@ -326,7 +329,7 @@ export async function undoAttendance(bookingId: string): Promise<void> {
   await createNotification({
     userId: booking.studentId,
     type: "CREDIT_ADJUSTED",
-    title: `${booking.creditsSpent} class credit${booking.creditsSpent === 1 ? "" : "s"} refunded`,
+    title: `${creditsLabelFromStored(booking.creditsSpent)} refunded`,
     body: "An admin corrected an attendance mark on your account. This class is back on your schedule and the credit was refunded.",
     emailCategory: "payments",
   }).catch((err) => console.error(`Failed to notify user ${booking.studentId} of attendance-undo refund (non-blocking):`, err));

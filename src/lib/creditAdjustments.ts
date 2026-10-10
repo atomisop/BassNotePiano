@@ -5,6 +5,7 @@
 // "refund for a scheduling mistake", "goodwill credit", etc. Every change
 // is written to CreditAdjustment so the balance is always explainable.
 
+import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { recordCreditGrant, drawDownCredits } from "@/lib/creditLedger";
@@ -96,7 +97,7 @@ export async function adjustUserCredits(
     const newBalance = user.classCredits + amount;
     if (newBalance < 0) {
       throw new CreditAdjustmentError(
-        `That would take the balance below 0 (currently ${user.classCredits}, change is ${amount > 0 ? "+" : ""}${amount}).`,
+        `That would take the balance below 0 (currently ${creditsLabelFromStored(user.classCredits)}, change is ${amount > 0 ? "+" : "-"}${creditsLabelFromStored(Math.abs(amount))}).`,
       );
     }
 
@@ -122,8 +123,8 @@ export async function adjustUserCredits(
   await createNotification({
     userId,
     type: "CREDIT_ADJUSTED",
-    title: amount > 0 ? `${magnitude} class credit${magnitude === 1 ? "" : "s"} added` : `${magnitude} class credit${magnitude === 1 ? "" : "s"} removed`,
-    body: `${note}. New balance: ${balance} credit${balance === 1 ? "" : "s"}.`,
+    title: amount > 0 ? `${creditsLabelFromStored(magnitude)} added` : `${creditsLabelFromStored(magnitude)} removed`,
+    body: `${note}. New balance: ${creditsLabelFromStored(balance)}.`,
     emailCategory: "payments",
   });
 

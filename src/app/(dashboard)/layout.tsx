@@ -19,6 +19,8 @@ import { isOwnerEmail, OWNER_EMAIL } from "@/lib/adminNotifications";
 import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { phoneVerifyMode } from "@/lib/phoneVerification";
 import { TopBanners } from "@/components/ui/TopBanners";
+import { MeStatusProvider } from "@/components/layout/MeStatusProvider";
+import { getMeStatus } from "@/lib/meStatus";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerAuthSession();
@@ -46,16 +48,23 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const promptPhone = needsPhone && !shouldShowTour && !showWhatsNew && (await getBoolSetting("phone.promptExisting"));
   const promptSeconds = promptPhone ? await getNumberSetting("phone.promptSeconds") : 0;
   // Anyone who has not connected Discord is reminded (never over the tour or the "what's new" popup).
-  const promptDiscord = !user?.discordId && !shouldShowTour && !showWhatsNew && (await getBoolSetting("discord.promptEnabled"));
+  // Whether it still applies (connected or not) is decided live in the browser, so the server only says it is switched on.
+  const promptDiscord = !shouldShowTour && !showWhatsNew && (await getBoolSetting("discord.promptEnabled"));
   const discordPrompt = promptDiscord
     ? { seconds: await getNumberSetting("discord.promptSeconds"), repeatMinutes: await getNumberSetting("discord.promptRepeatMinutes") }
     : null;
+  const promptPractice = !shouldShowTour && !showWhatsNew && (await getBoolSetting("practice.promptEnabled"));
+  const practicePrompt = promptPractice
+    ? { seconds: await getNumberSetting("practice.promptSeconds"), repeatMinutes: await getNumberSetting("practice.promptRepeatMinutes") }
+    : null;
+  const meStatus = await getMeStatus(session.user.id);
   const isAdmin = session.user.role === "ADMIN";
   const isOwner = isAdmin && isOwnerEmail(session.user.email);
   const owner = await prisma.user.findUnique({ where: { email: OWNER_EMAIL }, select: { id: true } });
 
   return (
     <OwnerStarProvider ownerId={owner?.id ?? null}>
+    <MeStatusProvider initial={meStatus}>
     <WhatsNewProvider entry={LATEST_ENTRY} showInitially={showWhatsNew}>
     <div data-surface="app" className="fixed inset-0 flex overflow-hidden bg-neu-base">
       {/* No photographic backdrop behind the app shell, deliberately. The
@@ -98,9 +107,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Suspense fallback={null}>
         <OnboardingTour autoShow={shouldShowTour} />
       </Suspense>
-      <TopBanners phone={promptPhone ? { seconds: promptSeconds, verifying: verifyMode } : null} discord={discordPrompt} />
+      <TopBanners phone={promptPhone ? { seconds: promptSeconds, verifying: verifyMode } : null} discord={discordPrompt} practice={practicePrompt} />
     </div>
     </WhatsNewProvider>
+    </MeStatusProvider>
     </OwnerStarProvider>
   );
 }

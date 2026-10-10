@@ -1,5 +1,7 @@
 "use server";
 
+import { notifyAdmins } from "@/lib/adminNotifications";
+import { noticeAccountChange } from "@/lib/studentNotices";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
@@ -32,7 +34,8 @@ export async function adminForceSignOutAction(targetUserId: string) {
   const admin = await requireAdmin();
   await prisma.user.update({ where: { id: targetUserId }, data: { sessionVersion: { increment: 1 } } });
   await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "user.sign-out-everywhere", targetType: "User", targetId: targetUserId });
-  revalidatePath(`/admin/users/${targetUserId}`);
+  await noticeAccountChange(targetUserId, { kind: "signed-out-everywhere", by: "admin" });
+  revalidatePath("/", "layout");
 }
 
 /**
@@ -46,7 +49,8 @@ export async function adminClearPhoneAction(targetUserId: string) {
   if (!before?.phone) return;
   await prisma.user.update({ where: { id: targetUserId }, data: { phone: null, phoneVerifiedAt: null, pendingPhone: null } });
   await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "user.clear-phone", targetType: "User", targetId: targetUserId, detail: `Cleared the phone number ending ${before.phone.slice(-4)}` });
-  revalidatePath(`/admin/users/${targetUserId}`);
+  await noticeAccountChange(targetUserId, { kind: "phone-cleared" });
+  revalidatePath("/", "layout");
 }
 
 /** Stops a saved payer name from clearing this student's payments by itself. */
@@ -55,7 +59,7 @@ export async function forgetPayerNameAction(targetUserId: string, aliasId: strin
   // Scoped to this student, so an id from another page cannot remove someone else's.
   const alias = await prisma.payerAlias.findFirst({ where: { id: aliasId, userId: targetUserId }, select: { id: true } });
   if (alias) await forgetPayerName({ aliasId: alias.id, admin: { id: admin.id, email: admin.email ?? null } });
-  revalidatePath(`/admin/users/${targetUserId}`);
+  revalidatePath("/", "layout");
 }
 
 /**
@@ -74,11 +78,14 @@ export async function banUserAction(targetUserId: string, reason: string): Promi
   const outcome = await banAccount({ userId: target.id, adminId: admin.id, reason: note });
   if (outcome.alreadyBanned) return { ok: true, summary: "Already banned." };
   const summary = describeBan(outcome);
+  await notifyAdmins("ACCOUNT_BANNED", {
+    type: "ADMIN_ALERT",
+    title: "An account was banned",
+    body: `${target.email} was banned by ${admin.email ?? "an admin"}. ${summary}`,
+    cta: { label: "View account", path: `/admin/users/${target.id}` },
+  });
   await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "user.ban", targetType: "User", targetId: target.id, detail: `Banned ${target.email}${note ? ` (${note})` : ""}: ${summary}` });
-  revalidatePath(`/admin/users/${target.id}`);
-  revalidatePath("/admin/users");
-  revalidatePath("/admin/schedule");
-  revalidatePath("/admin/payment-plans");
+  revalidatePath("/", "layout");
   return { ok: true, summary };
 }
 
@@ -89,8 +96,13 @@ export async function unbanUserAction(targetUserId: string): Promise<{ ok: true 
   if (!target) return { ok: false, error: "That account no longer exists." };
   if (!target.bannedAt) return { ok: true };
   await prisma.user.update({ where: { id: target.id }, data: { bannedAt: null, bannedReason: null } });
+  await notifyAdmins("ACCOUNT_BANNED", {
+    type: "ADMIN_ALERT",
+    title: "A ban was lifted",
+    body: `${admin.email ?? "An admin"} lifted the ban on ${target.email}.`,
+    cta: { label: "View account", path: `/admin/users/${target.id}` },
+  });
   await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "user.unban", targetType: "User", targetId: target.id, detail: `Lifted the ban on ${target.email}` });
-  revalidatePath(`/admin/users/${target.id}`);
-  revalidatePath("/admin/users");
+  revalidatePath("/", "layout");
   return { ok: true };
 }

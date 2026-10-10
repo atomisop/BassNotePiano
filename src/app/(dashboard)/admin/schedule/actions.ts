@@ -26,7 +26,7 @@ export async function createClassScheduleAction(input: ClassScheduleInput) {
   await requireAdmin();
   try {
     await createClassSchedule(input);
-    revalidatePath("/admin/schedule");
+    revalidatePath("/", "layout");
     return { ok: true as const };
   } catch (err) {
     return { ok: false as const, error: err instanceof ClassScheduleError ? err.message : "Something went wrong." };
@@ -37,7 +37,7 @@ export async function updateClassScheduleAction(scheduleId: string, input: Class
   await requireAdmin();
   try {
     await updateClassSchedule(scheduleId, input);
-    revalidatePath("/admin/schedule");
+    revalidatePath("/", "layout");
     return { ok: true as const };
   } catch (err) {
     return { ok: false as const, error: err instanceof ClassScheduleError ? err.message : "Something went wrong." };
@@ -47,7 +47,7 @@ export async function updateClassScheduleAction(scheduleId: string, input: Class
 export async function setClassScheduleActiveAction(scheduleId: string, active: boolean, cancelUpcoming = false) {
   await requireAdmin();
   const canceled = await setClassScheduleActive(scheduleId, active, { cancelUpcoming });
-  revalidatePath("/admin/schedule");
+  revalidatePath("/", "layout");
   return { ok: true as const, canceled };
 }
 
@@ -58,7 +58,7 @@ export async function setClassScheduleActiveAction(scheduleId: string, active: b
 export async function markAttendanceAction(bookingId: string, attendance: AttendanceStatus) {
   await requireAdmin();
   await markAttendance(bookingId, attendance);
-  revalidatePath("/admin/schedule");
+  revalidatePath("/", "layout");
 }
 
 /**
@@ -72,7 +72,7 @@ export async function undoAttendanceAction(bookingId: string) {
   await requireAdmin();
   try {
     await undoAttendance(bookingId);
-    revalidatePath("/admin/schedule");
+    revalidatePath("/", "layout");
     return { ok: true as const };
   } catch (err) {
     return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
@@ -90,7 +90,7 @@ export async function adminCancelBookingAction(bookingId: string, reason?: strin
   await requireAdmin();
   try {
     await adminCancelClassBooking(bookingId, reason);
-    revalidatePath("/admin/schedule");
+    revalidatePath("/", "layout");
     return { ok: true as const };
   } catch (err) {
     return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
@@ -112,7 +112,7 @@ export async function adminBookClassAction(
   await requireAdmin();
   try {
     await adminBookClass(studentId, scheduleId, occurrenceDateMs, chunkIndex, creditsToBook);
-    revalidatePath("/admin/schedule");
+    revalidatePath("/", "layout");
     return { ok: true as const };
   } catch (err) {
     return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };

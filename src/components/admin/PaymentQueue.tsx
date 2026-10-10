@@ -1,5 +1,6 @@
 "use client";
 
+import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
 
 import { useState } from "react";
@@ -67,7 +68,7 @@ function describePayment(payment: PendingZellePayment): { eyebrow: string; title
     const recipientCount = payment.familyBundleRecipients.length;
     return {
       eyebrow: "Family bundle",
-      title: `${payment.lessonQuantity} credit${payment.lessonQuantity === 1 ? "" : "s"} × ${recipientCount} account${recipientCount === 1 ? "" : "s"}`,
+      title: `${creditsLabelFromStored(payment.lessonQuantity)} × ${recipientCount} account${recipientCount === 1 ? "" : "s"}`,
     };
   }
   if (payment.purpose === "CURRICULUM_FAMILY_BUNDLE") {

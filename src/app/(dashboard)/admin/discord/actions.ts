@@ -1,5 +1,6 @@
 "use server";
 
+import { noticeAccountChange } from "@/lib/studentNotices";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
@@ -26,8 +27,8 @@ export async function disconnectDiscordForUserAction(userId: string): Promise<{ 
     targetId: user.id,
     detail: `Disconnected ${user.email} from Discord (${user.discordUsername ?? "unknown name"})`,
   });
-  revalidatePath("/admin/discord");
-  revalidatePath("/lessons");
+  revalidatePath("/", "layout");
+  await noticeAccountChange(user.id, { kind: "discord-disconnected", by: "admin" });
   return { ok: true, message: "Disconnected." };
 }
 

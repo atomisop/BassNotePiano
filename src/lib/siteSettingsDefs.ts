@@ -101,6 +101,9 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "reminders.practiceEnabled", category: "reminders", type: "toggle", default: true, label: "Practice reminders", help: "Nudges students who have stopped practicing." },
   { key: "reminders.practiceDays", category: "reminders", type: "text", default: "1,3,7,14,30", maxLength: 40, pattern: /^\d{1,3}(\s*,\s*\d{1,3})*$/, patternHint: "Use whole numbers separated by commas, such as 1,3,7,14,30.", label: "Days of silence that trigger a practice reminder", help: "Comma-separated, such as 1,3,7,14,30." },
   { key: "reminders.creditExpiryWarningDays", category: "reminders", type: "number", default: 5, min: 1, max: 30, unit: "days", label: "Warn before credits expire", help: "How many days ahead a student is told their credits are about to expire." },
+  { key: "practice.promptEnabled", category: "reminders", type: "toggle", default: true, label: "Remind students to practice (top banner)", help: "A banner at the top of the screen, for anyone who has not done today's 10 minutes of finger practice. It stops the moment they finish." },
+  { key: "practice.promptSeconds", category: "reminders", type: "number", default: 10, min: 3, max: 30, unit: "seconds", label: "How long the practice banner stays", help: "Then it slides away by itself." },
+  { key: "practice.promptRepeatMinutes", category: "reminders", type: "number", default: 60, min: 5, max: 1440, unit: "minutes", label: "Show the practice banner again after", help: "If it is ignored or closed, it comes back this many minutes later while they are still on the site and have not practiced." },
   { key: "reminders.adminDailySummary", category: "reminders", type: "toggle", default: true, label: "Morning summary email to you", help: "The daily owner email." },
 
   // ---- Discord

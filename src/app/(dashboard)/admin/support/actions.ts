@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import type { AssistantEscalationStatus, SupportThreadSource } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import {
@@ -85,4 +86,6 @@ export async function resolveSupportThreadAction(escalationId: string): Promise<
 export async function deleteSupportThreadAction(escalationId: string): Promise<void> {
   await requireAdminId();
   await deleteSupportThread(escalationId);
+  revalidatePath("/admin/support");
+  revalidatePath("/admin");
 }

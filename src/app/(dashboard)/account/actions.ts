@@ -1,5 +1,6 @@
 "use server";
 
+import { noticeAccountChange } from "@/lib/studentNotices";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
@@ -37,6 +38,8 @@ export async function updateNameAction(newName: string) {
 
   const { id } = await requireSession();
   const updated = await prisma.user.update({ where: { id }, data: { name: trimmed }, select: { name: true } });
+  // The name shows in the top bar, the greeting and the lists: refresh the whole app shell, not one page.
+  revalidatePath("/", "layout");
   return { ok: true as const, name: updated.name };
 }
 
@@ -132,6 +135,7 @@ export async function updatePasswordAction(currentPassword: string, newPassword:
 export async function signOutOtherDevicesAction() {
   const { id } = await requireSession();
   await prisma.user.update({ where: { id }, data: { sessionVersion: { increment: 1 } } });
+  await noticeAccountChange(id, { kind: "signed-out-everywhere", by: "you" });
   return { ok: true as const };
 }
 
@@ -170,6 +174,7 @@ export async function updateAvatarAction(publicUrl: string) {
   const previousKey = previous?.image ? keyFromPublicUrl(previous.image) : null;
   if (previousKey) await deleteObject(previousKey);
 
+  revalidatePath("/", "layout"); // the photo is in the top bar menu
   return { ok: true as const, image: updated.image };
 }
 
@@ -199,6 +204,7 @@ export async function updateMusicProfileAction(input: MusicProfileInput) {
     },
   });
 
+  revalidatePath("/", "layout");
   return { ok: true as const };
 }
 
@@ -229,6 +235,7 @@ export async function updateUsernameAction(newUsername: string) {
   const { id } = await requireSession();
   try {
     const updated = await setUsername(id, newUsername);
+    revalidatePath("/", "layout");
     return { ok: true as const, username: updated.username };
   } catch (err) {
     return { ok: false as const, error: err instanceof SocialError ? err.message : "Something went wrong." };

@@ -1,4 +1,6 @@
+import { noticeAccountChange } from "@/lib/studentNotices";
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { addToGuild } from "@/lib/discordApi";
@@ -29,6 +31,8 @@ export async function GET(req: Request) {
     const taken = await prisma.user.findFirst({ where: { discordId: identity.id, id: { not: session.user.id } }, select: { id: true } });
     if (taken) return back("taken");
     await prisma.user.update({ where: { id: session.user.id }, data: { discordId: identity.id, discordUsername: identity.username } });
+    revalidatePath("/", "layout"); // every Connect / Disconnect button, the banner and the admin list now agree
+    await noticeAccountChange(session.user.id, { kind: "discord-connected", name: identity.username });
     // Put them in the server too, so they never need an invite. If that cannot be done they can still use the Join button.
     const joined = await addToGuild(identity.id, identity.accessToken).catch(() => "failed" as const);
     return back(joined === "failed" ? "linked-nojoin" : "linked");

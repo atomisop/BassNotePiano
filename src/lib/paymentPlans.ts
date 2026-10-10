@@ -1,3 +1,4 @@
+import { noticePlanUpdated } from "@/lib/studentNotices";
 import { getNumberSetting } from "@/lib/siteSettings";
 import { getAdminRecipients, notifyAdmins } from "@/lib/adminNotifications";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
@@ -157,6 +158,11 @@ export async function createPaymentPlan(
       { isolationLevel: "Serializable" },
     );
 
+    await noticePlanUpdated({
+      userId,
+      title: "Your plan is set up",
+      body: `${describePaymentPlan(cadence, term)} is set up. Send the first installment (${(created.installmentAmountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}) to start your classes.`,
+    });
     return created;
   } catch (err) {
     if (err instanceof PaymentPlanError) throw err;
@@ -383,6 +389,10 @@ export async function cancelPaymentPlan(planId: string, adminId: string, note: s
       data: { status: "CANCELED", refunded: true },
     });
 
+    // The plan's bill nobody paid is closed with it. Left open, it kept showing "awaiting payment" under a canceled plan.
+    // A payment the student already submitted (PENDING_REVIEW) is left for the owner: it may be real money.
+    await tx.zellePayment.updateMany({ where: { paymentPlanId: planId, status: "AWAITING_TRANSFER" }, data: { status: "EXPIRED" } });
+
     return current;
   });
 
@@ -474,6 +484,11 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
       creditsPerInstallment: rate.creditsPerInstallment,
       termMonths: rate.termMonths,
     },
+  });
+  await noticePlanUpdated({
+    userId,
+    title: "Your plan term changed",
+    body: `Your plan is now ${describePaymentPlan(plan.cadence, newTerm)}. Your next installment is ${(rate.installmentAmountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}.`,
   });
 }
 

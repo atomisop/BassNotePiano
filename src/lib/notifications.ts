@@ -74,6 +74,12 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   // actually use does.
   CURRICULUM_ACCESS_GRANTED: { label: "Go to your dashboard", url: getAppUrl("/dashboard"), kind: "default" },
   CURRICULUM_ACCESS_REVOKED: { label: "See class plans", url: getAppUrl("/billing/plans"), kind: "notice" },
+  ACCOUNT_UPDATE: { label: "Open settings", url: getAppUrl("/account"), kind: "notice" },
+  LESSON_BOOKING_CONFIRMED: { label: "See my classes", url: getAppUrl("/lessons"), kind: "default" },
+  ATTENDANCE_RECORDED: { label: "See my classes", url: getAppUrl("/lessons"), kind: "default" },
+  PAYMENT_RECEIVED: { label: "View your payments", url: getAppUrl("/billing/history"), kind: "default" },
+  TRIAL_ENDING: { label: "See class plans", url: getAppUrl("/billing/plans"), kind: "notice" },
+  PAYMENT_PLAN_UPDATED: { label: "View your plan", url: getAppUrl("/billing/plans"), kind: "default" },
 };
 
 /** The in-app path of a full link, or null if it can't be read (a notice must never fail over its link). */
