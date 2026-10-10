@@ -1,5 +1,6 @@
 "use client";
 
+import { OPEN_STUDENT_NOTES, listen } from "@/lib/topBarEvents";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowLeft, NotebookPen, Search } from "lucide-react";
@@ -28,6 +29,8 @@ export function StudentNotesPanel() {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setMounted(true), []);
+  // The profile menu (the only way in on phones) opens this panel.
+  useEffect(() => listen(OPEN_STUDENT_NOTES, () => setOpen(true)), []);
 
   useEffect(() => {
     if (!open) return;

@@ -7,6 +7,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { OwnerStarBadge } from "@/components/ui/OwnerStar";
 import { popoverVariants } from "@/lib/motionTokens";
 import { startNavigation } from "@/lib/navigationState";
+import { Bell, CalendarDays, ClipboardCheck, NotebookPen, Shield } from "lucide-react";
+import { ATTENDANCE_READY_COUNT, OPEN_ATTENDANCE, OPEN_NOTIFICATIONS, OPEN_STUDENT_NOTES, UNREAD_COUNT, announce, listen } from "@/lib/topBarEvents";
 
 // Same glyph AccountSettings.tsx's own "Sign out" row uses (TAB_ICONS.logout),
 // one logout icon across the app, not a second one invented here.
@@ -24,6 +26,12 @@ export interface ProfileMenuProps {
       its neighbors, `!`-prefixed the same way MarketingNav's own primary
       CTA already overrides shared button classes. */
   triggerClassName?: string;
+  /**
+   * The signed-in app's top bar. On phones it keeps only Atom, the credit badge and this picture, so everything else (Admin or
+   * Live classes, notifications and mail, and for the owner student notes and class attendance) is listed here, phones only.
+   * Tablets and computers keep their buttons in the bar and never see these rows.
+   */
+  appExtras?: { isAdmin: boolean };
 }
 
 /**
@@ -37,8 +45,14 @@ export interface ProfileMenuProps {
  * TopBar's ProfileAvatarLink) since `image` is deliberately kept out of the
  * JWT/session.
  */
-export function ProfileMenu({ name, username, email, image, isOwner = false, triggerClassName }: ProfileMenuProps) {
+export function ProfileMenu({ name, username, email, image, isOwner = false, triggerClassName, appExtras }: ProfileMenuProps) {
   const [open, setOpen] = useState(false);
+  // Counts the hidden top bar buttons announce, shown here and on the picture (phones only).
+  const [unread, setUnread] = useState(0);
+  const [activeBookings, setActiveBookings] = useState(0);
+  useEffect(() => (appExtras ? listen(UNREAD_COUNT, setUnread) : undefined), [appExtras]);
+  useEffect(() => (appExtras && isOwner ? listen(ATTENDANCE_READY_COUNT, setActiveBookings) : undefined), [appExtras, isOwner]);
+  const phoneBadge = unread + (isOwner ? activeBookings : 0);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -90,6 +104,12 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
           )}
         </span>
         {isOwner && <OwnerStarBadge />}
+        {appExtras && phoneBadge > 0 && (
+          // Phones only: the bell and the attendance button are in this menu there, so their counts show on the picture.
+          <span aria-hidden className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950 md:hidden">
+            {phoneBadge > 9 ? "9+" : phoneBadge}
+          </span>
+        )}
       </button>
 
       <AnimatePresence>
@@ -128,6 +148,24 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
           </div>
 
           <div className="my-1.5 border-t border-ink/10" />
+
+          {appExtras && (
+            <div className="md:hidden">
+              <MenuAction icon={<Bell className="h-4 w-4" strokeWidth={1.5} />} label="Notifications and mail" count={unread} onClick={() => { setOpen(false); announce(OPEN_NOTIFICATIONS); }} />
+              {appExtras.isAdmin ? (
+                <MenuLink href="/admin" icon={<Shield className="h-4 w-4" strokeWidth={1.5} />} label="Admin" onNavigate={() => setOpen(false)} />
+              ) : (
+                <MenuLink href="/lessons" icon={<CalendarDays className="h-4 w-4" strokeWidth={1.5} />} label="Live classes" onNavigate={() => setOpen(false)} />
+              )}
+              {isOwner && (
+                <>
+                  <MenuAction icon={<ClipboardCheck className="h-4 w-4" strokeWidth={1.5} />} label="Class bookings and attendance" count={activeBookings} onClick={() => { setOpen(false); announce(OPEN_ATTENDANCE); }} />
+                  <MenuAction icon={<NotebookPen className="h-4 w-4" strokeWidth={1.5} />} label="Student notes" onClick={() => { setOpen(false); announce(OPEN_STUDENT_NOTES); }} />
+                </>
+              )}
+              <div className="my-1.5 border-t border-ink/10" />
+            </div>
+          )}
 
           <Link
             href="/dashboard"
@@ -170,5 +208,31 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
       )}
       </AnimatePresence>
     </div>
+  );
+}
+
+const ROW = "tap flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100";
+
+function CountBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return <span className="ml-auto flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950">{count > 9 ? "9+" : count}</span>;
+}
+
+function MenuAction({ icon, label, count = 0, onClick }: { icon: React.ReactNode; label: string; count?: number; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className={ROW}>
+      <span className="text-slate-500">{icon}</span>
+      {label}
+      <CountBadge count={count} />
+    </button>
+  );
+}
+
+function MenuLink({ href, icon, label, onNavigate }: { href: string; icon: React.ReactNode; label: string; onNavigate: () => void }) {
+  return (
+    <Link href={href} onClick={onNavigate} className={ROW}>
+      <span className="text-slate-500">{icon}</span>
+      {label}
+    </Link>
   );
 }

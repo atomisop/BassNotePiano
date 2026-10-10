@@ -22,7 +22,7 @@ import { CreditsBadge } from "./CreditsBadge";
  * open/close state and outside-click handling can't live in a Server
  * Component.
  */
-async function ProfileAvatarLink() {
+async function ProfileAvatarLink({ isAdmin }: { isAdmin: boolean }) {
   const session = await getServerAuthSession();
   if (!session?.user) return null;
 
@@ -39,6 +39,7 @@ async function ProfileAvatarLink() {
       email={session.user.email ?? null}
       image={user.image}
       isOwner={isOwnerEmail(session.user.email)}
+      appExtras={{ isAdmin }}
     />
   );
 }
@@ -72,11 +73,17 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
       <BrandMark />
       <div className="flex items-center gap-2 md:gap-3">
         {/* Leftmost of the right-hand cluster: Ask AI, admin, attendance, bell, profile. */}
-        {/* The owner has two more icons (notes, attendance), so on phones Ask AI shrinks to its icon to keep the profile picture on screen. */}
+        {/* Phones (under 768px) show only the credit badge, Ask AI and the profile picture: every other button is in the profile
+            menu there (ProfileMenu appExtras). Tablets and computers show them all. The hidden buttons stay mounted
+            (md:contents just removes their wrapper from the layout), so their panels still open from the menu and keep counting. */}
         <CreditsBadge />
-        <AskAiButton compactOnPhones={isOwner} />
+        <AskAiButton />
         {/* Owner only: the teacher's permanent notes on each student, right beside Ask AI. */}
-        {isOwner && <StudentNotesPanel />}
+        {isOwner && (
+          <div className="hidden md:contents">
+            <StudentNotesPanel />
+          </div>
+        )}
         {/* Moved here from AppDock's own row of icons, by direct
             instruction, it was the one dock item that wasn't an everyday
             destination for every signed-in visitor (just the single admin
@@ -87,6 +94,7 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
             matched pair of icon buttons rather than two different styles. */}
         {/* Buttons sit in one pressed-in tray so they read as raised keys set into the bar. */}
         <div className="flex items-center gap-1.5 rounded-2xl bg-neu-base p-1 shadow-pressed-low">
+        <div className="hidden md:contents">
         {isAdmin ? <AdminTopLink /> : <LiveClassesTopLink />}
         {/* Owner only. Quick Present/No-show from anywhere, by direct instruction, the
             full roster at Schedule → Attendance still exists for
@@ -95,7 +103,8 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
             navigation first. */}
         {isOwner && <AdminAttendanceQuickPanel />}
         <NotificationBell />
-        <ProfileAvatarLink />
+        </div>
+        <ProfileAvatarLink isAdmin={isAdmin} />
         </div>
       </div>
     </header>

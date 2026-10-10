@@ -299,6 +299,14 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
 - **New notices** live in `studentNotices.ts` (+ `trialNotices.ts`, run by the daily credit-expiry job). Add a new student-facing
   event there, with a `NotificationType` (enum migration), its CTA in `notifications.ts` and its category in `NotificationBell.tsx`.
 
+## Top bar by screen size (added 2026-10-10)
+
+Under 768px (phones) the bar shows only the logo, the credit badge, Ask AI and the profile picture; every other button (Admin or
+Live classes, notifications and mail, and for the owner student notes and class attendance) is listed in the profile menu
+(`ProfileMenu` `appExtras`), with their counts on the picture. At 768px and up (tablets, computers) all buttons stay in the bar.
+It is pure CSS (`hidden md:contents`), so it follows the window as it is resized. The hidden buttons stay mounted: the menu opens
+their panels, and they report their counts, through window events (`topBarEvents.ts`).
+
 ## Account bans (added 2026-10-10)
 
 `User.bannedAt` (+ private `bannedReason`) is set by `banUserAction` (`admin/users/[userId]/actions.ts`, hammer "Ban" button

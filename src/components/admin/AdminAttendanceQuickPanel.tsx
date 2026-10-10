@@ -1,5 +1,6 @@
 "use client";
 
+import { ATTENDANCE_READY_COUNT, OPEN_ATTENDANCE, announce, listen } from "@/lib/topBarEvents";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
@@ -148,6 +149,9 @@ export function AdminAttendanceQuickPanel() {
 
   const isReady = (iso: string) => new Date(iso).getTime() - ATTENDANCE_OPENS_MIN_BEFORE * 60_000 <= now;
   const readyCount = rows.filter((r) => !r.awaitingPayment && isReady(r.scheduledAt)).length;
+  // The profile menu (the only way in on phones) opens this panel and shows this count.
+  useEffect(() => listen(OPEN_ATTENDANCE, () => setOpen(true)), []);
+  useEffect(() => announce(ATTENDANCE_READY_COUNT, rows.length), [rows.length]);
 
   const groups = useMemo<DayGroup[]>(() => {
     const map = new Map<string, DayGroup>();
