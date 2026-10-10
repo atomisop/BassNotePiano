@@ -154,6 +154,7 @@ export interface AdminUserRow {
   role: Role;
   hasCurriculumAccess: boolean;
   createdAt: Date;
+  bannedAt: Date | null;
   /** One entry per curriculum scale, in order, drives the per-scale unlock chips in the admin UI. */
   scaleUnlocks: { slug: string; unlocked: boolean; completed: boolean }[];
   /** How many Atom messages this account has stored, 0 means the "Clear Atom history" action has nothing to do. */
@@ -186,6 +187,7 @@ export async function searchUsers(query: string): Promise<AdminUserRow[]> {
     role: user.role,
     hasCurriculumAccess: user.hasCurriculumAccess,
     createdAt: user.createdAt,
+    bannedAt: user.bannedAt,
     scaleUnlocks: SCALE_SLUGS.map((slug) => {
       const progress = user.progress.find((p) => p.scaleGroup.slug === slug);
       return { slug, unlocked: Boolean(progress?.unlockedAt), completed: progress?.status === "COMPLETED" };

@@ -5,7 +5,7 @@ import { CustomerProfile } from "@/components/admin/CustomerProfile";
 import { setCurriculumAccessAction, toggleScaleUnlockAction, clearAssistantHistoryAction, setUserRoleAction } from "../actions";
 import { adjustUserCreditsAction } from "../../payments/credit-actions";
 import { adminCancelBookingAction } from "../../schedule/actions";
-import { adminClearPhoneAction, adminForceSignOutAction, forgetPayerNameAction } from "./actions";
+import { adminClearPhoneAction, adminForceSignOutAction, banUserAction, forgetPayerNameAction, unbanUserAction } from "./actions";
 
 export const metadata = { title: "Admin: Student" };
 
@@ -33,6 +33,8 @@ export default async function AdminCustomerPage({ params }: { params: { userId: 
           onForceSignOut={adminForceSignOutAction}
           onForgetPayerName={forgetPayerNameAction}
           onClearPhone={adminClearPhoneAction}
+          onBan={banUserAction}
+          onUnban={unbanUserAction}
         />
       </div>
     </div>

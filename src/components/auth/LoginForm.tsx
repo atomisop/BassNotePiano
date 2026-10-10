@@ -5,6 +5,7 @@ import { safeCallbackPath } from "@/lib/safeRedirect";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { BANNED_ERROR_CODE, BANNED_MESSAGE } from "@/lib/ban";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,22 @@ import { startNavigation } from "@/lib/navigationState";
  * the visitor was on, instead of navigating away. The page version goes to
  * `callbackUrl`.
  */
+/** A sign-in error in red; the ban notice gets a stronger red box so it cannot be missed. */
+function FormError({ message }: { message: string }) {
+  if (message === BANNED_MESSAGE) {
+    return (
+      <p role="alert" className="rounded-xl border border-red-500/50 bg-red-500/10 px-4 py-3 text-small font-semibold text-red-400">
+        {message}
+      </p>
+    );
+  }
+  return (
+    <p role="alert" className="text-small text-red-400">
+      {message}
+    </p>
+  );
+}
+
 export function LoginForm({
   callbackUrl,
   embedded = false,
@@ -99,7 +116,7 @@ export function LoginForm({
     setSubmitting(true);
     const result = await signIn("credentials", { email, code: value, redirect: false });
     if (result?.error) {
-      setError("That code didn't work. Check it and try again, or request a new one.");
+      setError(result.error === BANNED_ERROR_CODE ? BANNED_MESSAGE : "That code didn't work. Check it and try again, or request a new one.");
       setCode("");
       setSubmitting(false);
       return;
@@ -129,7 +146,7 @@ export function LoginForm({
 
     const signInResult = await signIn("credentials", { email, code: result.autoCode, redirect: false });
     if (signInResult?.error) {
-      setError("Something went wrong logging in. Try again.");
+      setError(signInResult.error === BANNED_ERROR_CODE ? BANNED_MESSAGE : "Something went wrong logging in. Try again.");
       setSubmitting(false);
       return;
     }
@@ -164,9 +181,7 @@ export function LoginForm({
                 />
               </div>
               {error && (
-                <p role="alert" className="text-small text-red-400">
-                  {error}
-                </p>
+                <FormError message={error} />
               )}
               <Button type="submit" loading={submitting} className="cta-sheen w-full">
                 {submitting ? "Sending…" : "Email me a code"}
@@ -209,9 +224,7 @@ export function LoginForm({
                 />
               </div>
               {error && (
-                <p role="alert" className="text-small text-red-400">
-                  {error}
-                </p>
+                <FormError message={error} />
               )}
               <Button type="submit" loading={submitting} disabled={code.length !== 6} className="cta-sheen w-full">
                 {submitting ? "Logging in…" : "Log in"}
@@ -314,9 +327,7 @@ export function LoginForm({
         </div>
 
         {error && (
-          <p role="alert" className="text-small text-red-400">
-            {error}
-          </p>
+          <FormError message={error} />
         )}
 
         <Button type="submit" loading={submitting} className="cta-sheen w-full">

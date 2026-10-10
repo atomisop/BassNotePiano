@@ -56,3 +56,39 @@ export async function forgetPayerNameAction(targetUserId: string, aliasId: strin
   if (alias) await forgetPayerName({ aliasId: alias.id, admin: { id: admin.id, email: admin.email ?? null } });
   revalidatePath(`/admin/users/${targetUserId}`);
 }
+
+/**
+ * Bans an account for good: it can no longer sign in by any route, and every open session ends at once (sessionVersion
+ * is bumped, and getServerAuthSession also refuses a banned account on its next request). Never for an admin, and never
+ * for yourself. The reason is a private note for the owner. Reversible with unbanUserAction.
+ */
+export async function banUserAction(targetUserId: string, reason: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const admin = await requireAdmin();
+  if (targetUserId === admin.id) return { ok: false, error: "You cannot ban your own account." };
+  const target = await prisma.user.findUnique({ where: { id: targetUserId }, select: { id: true, email: true, role: true, bannedAt: true } });
+  if (!target) return { ok: false, error: "That account no longer exists." };
+  if (target.role === "ADMIN") return { ok: false, error: "An admin account cannot be banned. Remove its admin role first." };
+  if (target.bannedAt) return { ok: true };
+  const note = reason.trim().slice(0, 500);
+  await prisma.user.update({
+    where: { id: target.id },
+    data: { bannedAt: new Date(), bannedReason: note || null, sessionVersion: { increment: 1 } },
+  });
+  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "user.ban", targetType: "User", targetId: target.id, detail: `Banned ${target.email}${note ? `: ${note}` : ""}` });
+  revalidatePath(`/admin/users/${target.id}`);
+  revalidatePath("/admin/users");
+  return { ok: true };
+}
+
+/** Lifts a ban, so the person can sign in again. */
+export async function unbanUserAction(targetUserId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const admin = await requireAdmin();
+  const target = await prisma.user.findUnique({ where: { id: targetUserId }, select: { id: true, email: true, bannedAt: true } });
+  if (!target) return { ok: false, error: "That account no longer exists." };
+  if (!target.bannedAt) return { ok: true };
+  await prisma.user.update({ where: { id: target.id }, data: { bannedAt: null, bannedReason: null } });
+  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "user.unban", targetType: "User", targetId: target.id, detail: `Lifted the ban on ${target.email}` });
+  revalidatePath(`/admin/users/${target.id}`);
+  revalidatePath("/admin/users");
+  return { ok: true };
+}

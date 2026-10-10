@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Hammer } from "lucide-react";
 import type { Role } from "@prisma/client";
 import type { CustomerProfile as CustomerProfileData } from "@/lib/adminCustomer";
 import { SCALE_GROUPS } from "@/lib/curriculum";
@@ -22,6 +23,9 @@ export interface CustomerProfileProps {
   onForgetPayerName: (userId: string, aliasId: string) => Promise<void>;
   /** Frees this account's phone number (a number belongs to one account). */
   onClearPhone: (userId: string) => Promise<void>;
+  /** Bans the account for good (it can never sign in). The reason is a private note. */
+  onBan: (userId: string, reason: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  onUnban: (userId: string) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
 function formatUsd(cents: number) {
@@ -85,6 +89,8 @@ export function CustomerProfile({
   onForceSignOut,
   onForgetPayerName,
   onClearPhone,
+  onBan,
+  onUnban,
 }: CustomerProfileProps) {
   const router = useRouter();
   const { user } = profile;
@@ -101,6 +107,8 @@ export function CustomerProfile({
   const [cancelingBookingId, setCancelingBookingId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
+  const [confirmingBan, setConfirmingBan] = useState(false);
+  const [banReason, setBanReason] = useState("");
   // Role, curriculum-access, and clear-history all used to fire on a single
   // click with no confirmation. "Make admin" is the highest-stakes action in
   // the whole admin panel, since an errant admin can then touch everything
@@ -172,6 +180,50 @@ export function CustomerProfile({
     router.refresh();
   }
 
+  async function handleBan() {
+    setBusy(true);
+    setError(null);
+    const result = await onBan(user.id, banReason);
+    setBusy(false);
+    if (!result.ok) return setError(result.error);
+    setConfirmingBan(false);
+    setBanReason("");
+    router.refresh();
+  }
+
+  async function handleUnban() {
+    setBusy(true);
+    setError(null);
+    const result = await onUnban(user.id);
+    setBusy(false);
+    if (!result.ok) return setError(result.error);
+    router.refresh();
+  }
+
+  const banButton = user.bannedAt ? (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={() => {
+        if (window.confirm("Lift this ban? They will be able to sign in again.")) void handleUnban();
+      }}
+      className="tap inline-flex items-center gap-1.5 rounded-lg bg-neu-base px-3 py-1.5 text-small font-medium text-slate-200 shadow-raised-low active:shadow-pressed-low disabled:opacity-50"
+    >
+      Lift ban
+    </button>
+  ) : user.role === "ADMIN" ? null : (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={() => setConfirmingBan((o) => !o)}
+      aria-expanded={confirmingBan}
+      className="tap inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-small font-semibold text-white shadow-raised-low hover:bg-red-500 active:shadow-pressed-low disabled:opacity-50"
+    >
+      <Hammer className="h-4 w-4" aria-hidden />
+      Ban
+    </button>
+  );
+
   const upcomingBookings = profile.bookings.filter((b) => b.status === "SCHEDULED");
   const pastBookings = profile.bookings.filter((b) => b.status !== "SCHEDULED");
 
@@ -184,7 +236,42 @@ export function CustomerProfile({
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
           {/* Identity + account-level quick actions */}
-          <SectionCard title="Account">
+          <SectionCard title="Account" action={banButton}>
+            {user.bannedAt && (
+              <div role="status" className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-small text-red-300">
+                <p className="font-semibold">Permanently banned on {formatDate(user.bannedAt)}. They cannot sign in.</p>
+                {user.bannedReason && <p className="mt-1 text-red-300/80">Your note: {user.bannedReason}</p>}
+              </div>
+            )}
+            {confirmingBan && !user.bannedAt && (
+              <div className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 p-4">
+                <p className="text-small font-semibold text-red-300">Permanently ban {user.name ?? user.email}?</p>
+                <p className="mt-1 text-small text-slate-300">
+                  They are signed out everywhere at once and can never sign in again. They will see a red notice that they have been permanently banned. You can lift the ban later.
+                </p>
+                <label className="mt-3 block text-small text-slate-400" htmlFor="ban-reason">
+                  Private note for yourself (optional)
+                </label>
+                <textarea
+                  id="ban-reason"
+                  value={banReason}
+                  onChange={(e) => setBanReason(e.target.value)}
+                  maxLength={500}
+                  rows={2}
+                  className="mt-1 w-full rounded-lg bg-neu-base px-3 py-2 text-base text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500"
+                  placeholder="Why, so you remember"
+                />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setConfirmingBan(false)} disabled={busy} className="tap rounded-lg bg-neu-base px-3 py-1.5 text-small font-medium text-slate-300 shadow-raised-low disabled:opacity-50">
+                    Not yet
+                  </button>
+                  <button type="button" onClick={handleBan} disabled={busy} className="tap inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-small font-semibold text-white hover:bg-red-500 disabled:opacity-50">
+                    {busy ? <MorphingSquare size={12} className="shrink-0" /> : <Hammer className="h-4 w-4" aria-hidden />}
+                    {busy ? "Banning…" : "Yes, ban this account"}
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div className="text-small text-slate-400">
                 <p>{user.email}</p>

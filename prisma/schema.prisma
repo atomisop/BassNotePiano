@@ -751,6 +751,11 @@ model User {
   // devices did nothing enforceable before this existed.
   sessionVersion Int @default(1)
 
+  // Set when the owner bans the account: it can no longer sign in, and every open session is ended. `bannedReason` is a
+  // private note for the owner, never shown to the person. Lifting the ban clears both.
+  bannedAt     DateTime?
+  bannedReason String?
+
   // Optional, nothing in the app requires it except the friends/messages
   // system, which prompts for it inline rather than forcing it through the
   // (already-shipped) onboarding wizard. Always stored lowercase so

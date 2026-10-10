@@ -274,6 +274,16 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
 `discordId` and comes back after `discord.promptRepeatMinutes` (default 10) whenever it was ignored or closed
 (`bnp-discord-banner-next`); lengths and the on/off switch are owner settings (`phone.promptSeconds`, `discord.prompt*`, default 8 seconds).
 
+## Account bans (added 2026-10-10)
+
+`User.bannedAt` (+ private `bannedReason`) is set by `banUserAction` (`admin/users/[userId]/actions.ts`, hammer "Ban" button
+top right of the Account card on the student page, with a confirm step; "Lift ban" reverses it; both audited as `user.ban` /
+`user.unban`). Never for an admin or for yourself. A ban bumps `sessionVersion` (ends every open session) and
+`getServerAuthSession` also refuses a banned account on its next request. Every sign-in route ends in the credentials
+`authorize` in `auth.ts`, which throws `BANNED` for a banned account; `loginStepOneAction` says it after the right password
+only (so it cannot reveal which emails are banned). The sign-in screens show `BANNED_MESSAGE` (`src/lib/ban.ts`) in red.
+A ban does not cancel the person's booked classes or remove them from Discord: do those by hand.
+
 ## Sessions can now be invalidated server-side
 
 `User.sessionVersion` (a plain incrementing int) plus a check in the NextAuth
