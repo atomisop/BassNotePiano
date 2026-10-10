@@ -49,6 +49,24 @@ describe("canceling a plan keeps the payments screen truthful", () => {
   });
 });
 
+describe("subscribers get reminders on", () => {
+  it("turns practice and class reminders on when a plan is created, and leaves a later choice alone", async () => {
+    const subscriber = await makeUser(tag, "Subscriber", { notifyEmailReminders: false });
+    ids.push(subscriber.id);
+    const { createPaymentPlan } = await import("@/lib/paymentPlans");
+    const { OFFERED_PLAN_CADENCE } = await import("@/lib/classCreditPricing");
+    const win = await prisma.classSchedule.create({ data: { dayOfWeek: 2, startTime: "10:00", durationMin: 45, creditCost: 2, label: `${tag} Tuesday` } });
+    try {
+      await createPaymentPlan(subscriber.id, OFFERED_PLAN_CADENCE, "MONTHLY", "pay@example.com", win.id, 0);
+      expect((await prisma.user.findUniqueOrThrow({ where: { id: subscriber.id } })).notifyEmailReminders).toBe(true);
+    } finally {
+      await prisma.paymentPlan.deleteMany({ where: { userId: subscriber.id } });
+      await prisma.zellePayment.deleteMany({ where: { userId: subscriber.id } });
+      await prisma.classSchedule.deleteMany({ where: { id: win.id } });
+    }
+  });
+});
+
 describe("notices a student now gets", () => {
   const latest = (title: string) => prisma.notification.findFirst({ where: { userId: stu.id, title }, orderBy: { createdAt: "desc" } });
 
