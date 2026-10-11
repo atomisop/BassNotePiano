@@ -34,4 +34,16 @@ export function maskPhone(e164: string): string {
   return `•••• ${e164.slice(-4)}`;
 }
 
+/** The line under the phone box on the sign-up page. A code is mentioned only when texting a code is really switched on. */
+export function signupPhoneNote(verifyBySms: boolean): string {
+  return verifyBySms
+    ? "We text you a 6-digit code to confirm it."
+    : "We do not send you a code. We keep it to help match your payments and reach you.";
+}
+
+/** The sign-up error for a missing or unusable number, same rule. */
+export function signupPhoneError(verifyBySms: boolean): string {
+  return verifyBySms ? "Enter a phone number we can text a code to." : "Enter a valid phone number.";
+}
+
 export const PHONE_HELP = "US and Canada numbers work as typed. Anywhere else, start with + and your country code.";

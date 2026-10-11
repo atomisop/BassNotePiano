@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
-import { normalizePhone, PHONE_HELP } from "@/lib/phone";
+import { normalizePhone, PHONE_HELP, signupPhoneError, signupPhoneNote } from "@/lib/phone";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -42,10 +42,15 @@ function RegisterForm() {
   const [phone, setPhone] = useState("");
   // Whether this sign-up asks for a phone number (it does whenever texts can be sent).
   const [phoneRequired, setPhoneRequired] = useState(false);
+  // Whether a text code is really sent. The words under the phone box depend on it.
+  const [verifyBySms, setVerifyBySms] = useState(false);
   useEffect(() => {
     fetch("/api/auth/signup-options")
       .then((r) => r.json())
-      .then((o) => setPhoneRequired(Boolean(o?.phoneRequired)))
+      .then((o) => {
+        setPhoneRequired(Boolean(o?.phoneRequired));
+        setVerifyBySms(Boolean(o?.verifyBySms));
+      })
       .catch(() => undefined);
   }, []);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -66,7 +71,7 @@ function RegisterForm() {
       return;
     }
     if (phoneRequired && !normalizePhone(phone)) {
-      setError("Enter a phone number we can text a code to.");
+      setError(signupPhoneError(verifyBySms));
       return;
     }
     if (password.length < MIN_PASSWORD_LENGTH) {
@@ -171,7 +176,7 @@ function RegisterForm() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
-            <p className="mt-1.5 text-small text-slate-500">We text you a 6-digit code to confirm it. {PHONE_HELP}</p>
+            <p className="mt-1.5 text-small text-slate-500">{signupPhoneNote(verifyBySms)} {PHONE_HELP}</p>
           </div>
         )}
         <div>
