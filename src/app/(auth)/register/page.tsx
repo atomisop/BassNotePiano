@@ -1,5 +1,7 @@
 "use client";
 
+import { MIN_PASSWORD_LENGTH, passwordRequirementError } from "@/lib/passwordRules";
+import { PasswordStrength } from "@/components/ui/password-strength";
 import { TurnstileWidget } from "@/components/security/TurnstileWidget";
 import { Suspense, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -22,7 +24,6 @@ const cardVariants = {
   visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", bounce: 0, duration: 0.4 } },
 };
 
-const MIN_PASSWORD_LENGTH = 8;
 
 function RegisterForm() {
   const router = useRouter();
@@ -74,8 +75,9 @@ function RegisterForm() {
       setError(signupPhoneError(verifyBySms));
       return;
     }
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+    const passwordError = passwordRequirementError(password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
     if (password !== confirmPassword) {
@@ -196,15 +198,8 @@ function RegisterForm() {
             }}
             className={cn(error && fieldInvalid)}
           />
-          {/* Live, not just a submit-time rejection: the length rule is the
-              one real requirement this form has, so it's shown as it's
-              being met instead of only as a reason the submit just failed. */}
-          {password.length > 0 && (
-            <p className={`mt-1.5 flex items-center gap-1.5 text-small ${password.length >= MIN_PASSWORD_LENGTH ? "text-slate-50" : "text-slate-500"}`}>
-              <CheckIcon size={11} className={password.length >= MIN_PASSWORD_LENGTH ? "opacity-100" : "opacity-30"} />
-              At least {MIN_PASSWORD_LENGTH} characters
-            </p>
-          )}
+          {/* Live while typing: the strength bars and the requirements, from the same rules the server enforces. */}
+          {password.length > 0 && <PasswordStrength value={password} className="mt-3" />}
         </div>
         <div>
           <Label htmlFor="confirmPassword" className={fieldLabel}>

@@ -299,6 +299,13 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
 - **New notices** live in `studentNotices.ts` (+ `trialNotices.ts`, run by the daily credit-expiry job). Add a new student-facing
   event there, with a `NotificationType` (enum migration), its CTA in `notifications.ts` and its category in `NotificationBell.tsx`.
 
+## Passwords (added 2026-10-11)
+
+New passwords need at least 8 characters and one special character (`src/lib/passwordRules.ts`); a number and mixed case only
+make the strength bar fuller. The sign-up, reset and change-password screens show the 21st.dev "Password Strength" bar and
+live checklist (`components/ui/password-strength.tsx`) from the same rules, and the register route, the reset action and the
+change-password action enforce them on the server. Older passwords are never rejected at sign-in.
+
 ## Top bar by screen size (added 2026-10-10)
 
 Under 768px (phones) the bar shows only the logo, the credit badge, Ask AI and the profile picture; every other button (Admin or

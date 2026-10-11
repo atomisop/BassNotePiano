@@ -1,5 +1,7 @@
 "use client";
 
+import { MIN_PASSWORD_LENGTH, passwordRequirementError } from "@/lib/passwordRules";
+import { PasswordStrength } from "@/components/ui/password-strength";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -639,7 +641,6 @@ function MembershipSection({
 }
 
 // Matches actions.ts's own constant of the same name (and the auth pages').
-const MIN_PASSWORD_LENGTH = 8;
 
 function PasswordSection() {
   const { update } = useSession();
@@ -663,8 +664,9 @@ function PasswordSection() {
     setError(null);
     setSuccess(false);
 
-    if (newPassword.length < MIN_PASSWORD_LENGTH) {
-      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+    const passwordError = passwordRequirementError(newPassword);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -727,12 +729,7 @@ function PasswordSection() {
               disabled={submitting || awaitingCode}
               className="w-full disabled:opacity-60"
             />
-            {newPassword.length > 0 && (
-              <p className={`mt-1.5 flex items-center gap-1.5 text-small ${newPassword.length >= MIN_PASSWORD_LENGTH ? "text-slate-50" : "text-slate-500"}`}>
-                <CheckIcon size={11} className={newPassword.length >= MIN_PASSWORD_LENGTH ? "opacity-100" : "opacity-30"} />
-                At least {MIN_PASSWORD_LENGTH} characters
-              </p>
-            )}
+            {newPassword.length > 0 && <PasswordStrength value={newPassword} className="mt-3" />}
           </div>
           <div>
             <PasswordInput
