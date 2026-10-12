@@ -1,5 +1,5 @@
-import { spellDegree, type RootKey } from "@/lib/music-theory";
-import { SCALE_CONTENT, tokenForRoot, type ScaleVariant } from "@/lib/scale-content";
+import { CHORD_QUALITIES, ROOT_KEYS, buildChordOnDegree, pitchClassOf, spellDegree, spellScale, type ChordQualityKey, type RootKey } from "@/lib/music-theory";
+import { SCALE_CONTENT, formulaForRoot, tokenForRoot, type ScaleVariant } from "@/lib/scale-content";
 
 // ============================================================================
 // Deterministic quiz generation, seeded. No randomness inside this file
@@ -40,8 +40,26 @@ export interface QuizQuestion {
 /** What the client actually receives, never the answer key. */
 export type PublicQuizQuestion = Omit<QuizQuestion, "correctIndex">;
 
-const QUESTIONS_PER_QUIZ = 6;
-const QUIZ_ROOTS_CYCLE: RootKey[] = ["G", "D", "Bb", "F#", "Eb", "A"];
+/** The exam length. Passing needs QUIZ_PASS_THRESHOLD of these (16 of 20 at 80%). */
+export const QUESTIONS_PER_QUIZ = 20;
+
+const TRIAD_FAMILY: ChordQualityKey[] = ["major", "minor", "diminished", "augmented"];
+const SEVENTH_FAMILY: ChordQualityKey[] = ["dominant7", "major7", "minor7", "halfDiminished7"];
+const OTHER_FAMILY: ChordQualityKey[] = ["major", "minor", "sus4", "add9"];
+const QUALITY_NAMES: Record<string, string> = {
+  major: "Major",
+  minor: "Minor",
+  diminished: "Diminished",
+  augmented: "Augmented",
+  dominant7: "Dominant 7th",
+  major7: "Major 7th",
+  minor7: "Minor 7th",
+  halfDiminished7: "Half-diminished 7th",
+  sus4: "Suspended 4th",
+  add9: "Add 9",
+};
+const CHROMATIC_TOKENS = ["b2", "2", "b3", "3", "4", "b5", "5", "b6", "6", "b7", "7"];
+const STRIDES = [7, 11, 13, 17, 19, 23, 29, 31, 37];
 
 function formatFormula(formula: string): string {
   return formula.split("-").join(" - ");
@@ -53,100 +71,217 @@ function slugify(text: string): string {
 
 /** Deterministically rotates `items` so the correct answer isn't always first. */
 function rotate<T>(items: T[], seed: number): T[] {
+  if (items.length === 0) return items;
   const shift = ((seed % items.length) + items.length) % items.length;
   return [...items.slice(shift), ...items.slice(0, shift)];
 }
 
-/** Deterministically samples up to `count` items from `pool`, spread out rather than consecutive. */
-function sample<T>(pool: T[], count: number, offset: number): T[] {
-  const result: T[] = [];
-  const seen = new Set<number>();
-  for (let i = 0; i < pool.length && result.length < count; i++) {
-    const idx = (offset + i * 7) % pool.length;
-    if (seen.has(idx)) continue;
-    seen.add(idx);
-    result.push(pool[idx]);
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b);
+}
+
+/** Deterministic spread-out order over `list` (a permutation, so no repeats). */
+function scatter<T>(list: T[], seed: number): T[] {
+  if (list.length < 2) return list;
+  const stride = STRIDES.find((s) => gcd(s, list.length) === 1) ?? 1;
+  const offset = ((seed * 5) % list.length + list.length) % list.length;
+  return list.map((_, i) => list[(offset + i * stride) % list.length]);
+}
+
+/** Four distinct choices, the correct one first-rotated. Null if there are not enough distinct wrong answers. */
+function assemble(id: string, prompt: string, correct: string, wrong: string[], seed: number): QuizQuestion | null {
+  const distractors = Array.from(new Set(wrong.filter((w) => w !== correct))).slice(0, 3);
+  if (distractors.length < 3) return null;
+  const choices = rotate([correct, ...distractors], seed + 1);
+  return { id, prompt, choices, correctIndex: choices.indexOf(correct) };
+}
+
+function keyNotes(variant: ScaleVariant, root: RootKey): string[] {
+  return spellScale(root, formulaForRoot(variant, root)).notes;
+}
+
+function chordFamily(quality: ChordQualityKey): ChordQualityKey[] {
+  if (TRIAD_FAMILY.includes(quality)) return TRIAD_FAMILY;
+  if (SEVENTH_FAMILY.includes(quality)) return SEVENTH_FAMILY;
+  return OTHER_FAMILY.includes(quality) ? OTHER_FAMILY : [quality, "major", "minor", "sus4"];
+}
+
+type Builder = () => QuizQuestion | null;
+
+/** Every question type for one scale, each a list of builders (cheap until called). */
+function candidatesFor(variant: ScaleVariant, seed: number): Builder[][] {
+  const name = variant.name;
+  const sid = slugify(name);
+  const tokens = variant.formula.split("-");
+  const scalePcsFor = (root: RootKey) => new Set(keyNotes(variant, root).map(pitchClassOf));
+
+  const formulaQ: Builder[] = [
+    () => {
+      const others = Array.from(new Set(Object.values(SCALE_CONTENT).flat().map((v) => v.formula))).filter((f) => f !== variant.formula);
+      return assemble(`formula-${sid}`, `What is the scale-degree formula for ${name}?`, formatFormula(variant.formula), scatter(others, seed).map(formatFormula), seed);
+    },
+  ];
+
+  const countQ: Builder[] = [
+    () => {
+      const n = tokens.length;
+      return assemble(`count-${sid}`, `How many different notes does ${name} have (not counting the repeated root at the top)?`, String(n), [n - 1, n + 1, n + 2, n - 2, 12].filter((x) => x > 1).map(String), seed);
+    },
+  ];
+
+  const degreeQ: Builder[] = [];
+  const reverseQ: Builder[] = [];
+  const outsiderQ: Builder[] = [];
+  const wholeScaleQ: Builder[] = [];
+  const chordNameQ: Builder[] = [];
+  const chordToneQ: Builder[] = [];
+  const semitoneQ: Builder[] = [];
+  const chordQualityQ: Builder[] = [];
+
+  for (const root of ROOT_KEYS) {
+    const spelled = tokens.map((t) => spellDegree(root, tokenForRoot(variant, t, root)));
+    tokens.forEach((token, i) => {
+      if (token === "1") return;
+      const shown = tokenForRoot(variant, token, root);
+      degreeQ.push(() =>
+        assemble(
+          `degree-${sid}-${token}-${root}`,
+          `In the key of ${root}, what is the ${shown} of ${name}?`,
+          spelled[i],
+          scatter(spelled.filter((_, j) => j !== i), seed + i),
+          seed + i,
+        ),
+      );
+      reverseQ.push(() =>
+        assemble(
+          `reverse-${sid}-${token}-${root}`,
+          `In the key of ${root}, ${name}: the note ${spelled[i]} is which scale degree?`,
+          shown,
+          scatter(Array.from(new Set([...tokens.map((t) => tokenForRoot(variant, t, root)), ...CHROMATIC_TOKENS])).filter((t) => t !== shown && t !== "1"), seed + i),
+          seed + i,
+        ),
+      );
+    });
+
+    outsiderQ.push(() => {
+      const pcs = scalePcsFor(root);
+      const outside = CHROMATIC_TOKENS.filter((t) => !pcs.has(pitchClassOf(spellDegree(root, t))));
+      if (outside.length === 0) return null;
+      const pick = outside[((seed % outside.length) + outside.length) % outside.length];
+      const wrong = scatter(spelled.filter((n) => n !== root), seed);
+      return assemble(`outsider-${sid}-${root}`, `Which of these notes is NOT in ${name} in the key of ${root}?`, spellDegree(root, pick), wrong, seed);
+    });
+
+    wholeScaleQ.push(() => {
+      const correct = spelled.join(" - ");
+      const wrong: string[] = [];
+      for (let i = 1; i < spelled.length && wrong.length < 6; i++) {
+        const alt = [...spelled];
+        const swap = CHROMATIC_TOKENS.map((t) => spellDegree(root, t)).find((n) => !spelled.includes(n) && Math.abs(pitchClassOf(n) - pitchClassOf(spelled[i])) <= 1);
+        if (!swap) continue;
+        alt[i] = swap;
+        wrong.push(alt.join(" - "));
+      }
+      return assemble(`scale-${sid}-${root}`, `Which line spells ${name} correctly in the key of ${root}?`, correct, scatter(wrong, seed), seed);
+    });
+
+    variant.nativeChords.forEach((spec) => {
+      const chord = buildChordOnDegree(root, tokenForRoot(variant, spec.degree, root), spec.quality, variant.chordSpelling === "scale" ? spelled : undefined);
+      const family = chordFamily(spec.quality);
+      chordNameQ.push(() => {
+        const wrong = family.filter((q) => q !== spec.quality).map((q) => `${chord.rootNote}${CHORD_QUALITIES[q].symbol}`);
+        return assemble(
+          `chordname-${sid}-${spec.degree}-${root}`,
+          `In the key of ${root}, ${name}: what is the chord built on the ${tokenForRoot(variant, spec.degree, root)}?`,
+          chord.symbol,
+          wrong,
+          seed,
+        );
+      });
+      chordToneQ.push(() => {
+        const wrong = family
+          .filter((q) => q !== spec.quality)
+          .map((q) => buildChordOnDegree(root, tokenForRoot(variant, spec.degree, root), q, variant.chordSpelling === "scale" ? spelled : undefined).notes.join(" - "));
+        return assemble(`chordtones-${sid}-${spec.degree}-${root}`, `Which notes make up ${chord.symbol} in ${name}?`, chord.notes.join(" - "), wrong, seed);
+      });
+    });
   }
-  return result;
-}
 
-const ALL_FORMULAS = Array.from(new Set(Object.values(SCALE_CONTENT).flat().map((v) => v.formula)));
+  // Questions that do not depend on the key.
+  variant.nativeChords.forEach((spec) => {
+    const family = chordFamily(spec.quality);
+    chordQualityQ.push(() =>
+      assemble(
+        `chordquality-${sid}-${spec.degree}`,
+        `In ${name}, what kind of chord is built on the ${spec.degree} (${spec.label})?`,
+        QUALITY_NAMES[spec.quality] ?? spec.quality,
+        family.filter((q) => q !== spec.quality).map((q) => QUALITY_NAMES[q] ?? q),
+        seed,
+      ),
+    );
+  });
+  tokens.forEach((token) => {
+    if (token === "1") return;
+    const semis = pitchClassOf(spellDegree("C", token));
+    semitoneQ.push(() =>
+      assemble(
+        `semitones-${sid}-${token}`,
+        `In ${name}, how many semitones (half steps) is it from the root up to the ${token}?`,
+        String(semis),
+        [semis - 1, semis + 1, semis + 2, semis - 2, semis + 3].filter((x) => x > 0 && x < 12).map(String),
+        seed,
+      ),
+    );
+  });
 
-function buildFormulaQuestion(variant: ScaleVariant, seed: number): QuizQuestion {
-  const correct = formatFormula(variant.formula);
-  const distractorPool = ALL_FORMULAS.filter((f) => f !== variant.formula);
-  const distractors = sample(distractorPool, 3, seed).map(formatFormula);
-  const choices = rotate([correct, ...distractors], seed + 1);
-  return {
-    id: `formula-${slugify(variant.name)}`,
-    prompt: `What is the scale-degree formula for ${variant.name}?`,
-    choices,
-    correctIndex: choices.indexOf(correct),
-  };
-}
-
-function buildDegreeQuestion(variant: ScaleVariant, degreeToken: string, root: RootKey, seed: number): QuizQuestion {
-  const shown = tokenForRoot(variant, degreeToken, root);
-  const correct = spellDegree(root, shown);
-  const otherTokens = variant.formula.split("-").filter((t) => t !== degreeToken);
-  const distractorNotes = otherTokens.map((t) => spellDegree(root, tokenForRoot(variant, t, root))).filter((n) => n !== correct);
-  const distractors = sample(distractorNotes, 3, seed);
-  const choices = rotate([correct, ...distractors], seed + 1);
-  return {
-    id: `degree-${slugify(variant.name)}-${degreeToken}-${root}`,
-    prompt: `In the key of ${root}, what is the ${shown} of ${variant.name}?`,
-    choices,
-    correctIndex: choices.indexOf(correct),
-  };
+  return [degreeQ, chordNameQ, reverseQ, outsiderQ, wholeScaleQ, chordToneQ, chordQualityQ, semitoneQ, formulaQ, countQ];
 }
 
 /**
- * Builds each variant's full candidate question list (1 formula-recall
- * question, then one degree-spelling question per non-tonic scale degree),
- * then round-robins across variants up to QUESTIONS_PER_QUIZ, so a
- * 3-variant chapter like Bati still gets a short, balanced quiz instead of
- * one variant dominating (or the quiz ballooning to 15 questions).
+ * The exam: QUESTIONS_PER_QUIZ questions for a scale, mixed across ten kinds
+ * (notes in a key, reverse lookups, odd-one-out, whole scales, chord names and
+ * chord tones, semitone distances, the formula). Questions are taken from the
+ * kinds in turn so no one kind dominates, and `seed` scatters which keys and
+ * degrees come up, so every retake is a genuinely different run.
  *
- * `seed` defaults to 0 (the original, always-the-same quiz) for any caller
- * that just wants a stable question count or doesn't care about variety,
- * see e.g. the scale page's own server-rendered "X/Y" score label, which
- * only ever reads `.length`. QuizModal is the one caller that rolls a real
- * random seed on every (re)start.
+ * Same (scaleSlug, seed) always gives the same questions, which is what lets
+ * grading regenerate the exam on the server from only the slug and the seed.
+ * `seed` defaults to 0 for callers that only read `.length`.
  */
 export function generateScaleQuiz(scaleSlug: string, seed = 0): QuizQuestion[] {
   const variants = SCALE_CONTENT[scaleSlug] ?? [];
   if (variants.length === 0) return [];
 
-  // Guards against a malformed/adversarial seed from a public server action
-  // (submitQuizAction) turning into NaN part-way through the modulo
-  // arithmetic below, which would otherwise surface as array[NaN] ->
-  // undefined -> a spellDegree() crash rather than a clean, safe fallback.
+  // A malformed seed from a public server action must not turn into NaN.
   const safeSeed = Number.isFinite(seed) ? Math.trunc(seed) : 0;
 
-  const pools: QuizQuestion[][] = variants.map((variant, variantIndex) => {
-    const allDegreeTokens = variant.formula.split("-").filter((t) => t !== "1");
-    // Seed rotates which degree tokens lead this variant's own pool, so a
-    // wider formula (more possible degree questions than fit in one quiz)
-    // can surface a different subset each attempt instead of always the
-    // same leading ones.
-    const degreeTokens = rotate(allDegreeTokens, safeSeed + variantIndex);
-    const pool = [buildFormulaQuestion(variant, safeSeed + variantIndex * 11)];
-    degreeTokens.forEach((token, degreeIndex) => {
-      const root = QUIZ_ROOTS_CYCLE[((safeSeed + variantIndex * 3 + degreeIndex) % QUIZ_ROOTS_CYCLE.length + QUIZ_ROOTS_CYCLE.length) % QUIZ_ROOTS_CYCLE.length];
-      pool.push(buildDegreeQuestion(variant, token, root, safeSeed + variantIndex * 11 + degreeIndex + 1));
+  const kinds: Builder[][] = [];
+  variants.forEach((variant, variantIndex) => {
+    candidatesFor(variant, safeSeed + variantIndex * 11).forEach((list, kind) => {
+      kinds[kind] = [...(kinds[kind] ?? []), ...scatter(list, safeSeed + kind)];
     });
-    return pool;
   });
 
   const questions: QuizQuestion[] = [];
-  for (let round = 0; questions.length < QUESTIONS_PER_QUIZ && pools.some((p) => round < p.length); round++) {
-    for (const pool of pools) {
-      if (round < pool.length && questions.length < QUESTIONS_PER_QUIZ) {
-        questions.push(pool[round]);
+  const seen = new Set<string>();
+  const cursor = kinds.map(() => 0);
+  let progressed = true;
+  while (questions.length < QUESTIONS_PER_QUIZ && progressed) {
+    progressed = false;
+    for (let k = 0; k < kinds.length && questions.length < QUESTIONS_PER_QUIZ; k++) {
+      while (cursor[k] < kinds[k].length) {
+        const q = kinds[k][cursor[k]++]();
+        if (q && !seen.has(q.id)) {
+          seen.add(q.id);
+          questions.push(q);
+          progressed = true;
+          break;
+        }
       }
     }
   }
-  return questions;
+  // A seed-dependent order, so the position of each kind changes too.
+  return scatter(questions, safeSeed);
 }
 
 export function stripAnswers(questions: QuizQuestion[]): PublicQuizQuestion[] {
