@@ -299,6 +299,12 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
 - **New notices** live in `studentNotices.ts` (+ `trialNotices.ts`, run by the daily credit-expiry job). Add a new student-facing
   event there, with a `NotificationType` (enum migration), its CTA in `notifications.ts` and its category in `NotificationBell.tsx`.
 
+## Abuse guards (added 2026-10-12, `docs/ABUSE-AUDIT.md`)
+
+One free trial per inbox forever (`trial-used:` marker, plus tags dropped at every domain); an unpaid first bill releases the weekly
+time after `payments.firstBillLapseDays`; new lesson files get a random key. Read `docs/ABUSE-AUDIT.md` before changing money,
+booking or access code: it lists what was checked and the business decisions left open.
+
 ## Passwords (added 2026-10-11)
 
 New passwords need at least 8 characters and one special character (`src/lib/passwordRules.ts`); a number and mixed case only

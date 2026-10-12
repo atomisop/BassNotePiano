@@ -22,6 +22,7 @@
 //      or a custom domain), lessons are served directly from this URL by
 //      <video>/<iframe>, so it has to be reachable without a signed request.
 
+import { randomBytes } from "crypto";
 import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
@@ -147,7 +148,8 @@ export async function createPresignedLessonUpload(
   assertValidUpload(contentType, fileSize, LESSON_CONTENT_TYPES, maxBytes, "lesson file");
 
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const key = `lessons/${scaleGroupSlug}/${Date.now()}-${safeName}`;
+  // A random token in the key: the file's public address cannot be guessed from the lesson's name and the upload time.
+  const key = `lessons/${scaleGroupSlug}/${randomBytes(16).toString("hex")}-${safeName}`;
 
   const command = new PutObjectCommand({
     Bucket: process.env.R2_BUCKET_NAME,
