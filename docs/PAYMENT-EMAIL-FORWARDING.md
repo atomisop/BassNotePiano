@@ -37,3 +37,12 @@ email's own Message-ID, so one email is only ever counted once.
 Walk the chain in order: the filter (Gmail), the route (Mailgun > Logs), the token (Netlify `PAYMENT_INBOX_TOKEN` must match the
 address in the route), then Netlify function logs for `inbound/payments`. The job watchdog's "payment emails have gone quiet"
 warning still applies.
+
+## Reversed Venmo payments (added 2026-10-13)
+
+Venmo emails whose subject says money went back (refund, reversed, cancelled, returned, dispute, declined, failed) with a dollar
+amount raise the admin alert "Venmo may have taken back $X" (`src/lib/paymentReversal.ts`), naming the approved payment of that exact
+amount in the last 4 months (narrowed by name when the email shows one). Nothing is changed automatically: open the payment in
+Admin > Payments and use Refund. Venmo's real wording has not been seen yet; when the first one arrives, check the alert and tell
+Claude the wording so the reader can be made exact. The Gmail script must be re-pasted to look for these subjects; the Gmail filter
+already forwards all venmo.com mail.
