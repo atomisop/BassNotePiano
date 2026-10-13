@@ -19,6 +19,7 @@ import {
   adminBookClassAction,
 } from "./actions";
 import { buttonVariants } from "@/components/ui/button";
+import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 
 type ViewValue = "WINDOWS" | "BOOKINGS" | "ATTENDANCE";
 
@@ -41,14 +42,12 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
   const activeView = VIEWS.find((v) => v.value === requested)?.value ?? "WINDOWS";
 
   const viewSwitcher = (
-    <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full p-1 bg-neu-base shadow-pressed-low">
+    <div className={`mt-6 ${TAB_TRACK}`}>
       {VIEWS.map((view) => (
         <Link
           key={view.value}
           href={view.value === "WINDOWS" ? "/admin/schedule" : `/admin/schedule?view=${view.value}`}
-          className={`tap inline-flex items-center rounded-full px-3 py-1.5 text-small font-medium transition ${
-            activeView === view.value ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
-          }`}
+          className={tabItem(activeView === view.value)}
         >
           {view.label}
         </Link>

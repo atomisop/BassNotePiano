@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 
 // Two-level nav now, by direct instruction ("keep maximum 4 main tabs with
 // multiple tabs inside them"), the previous flat 11-item version (already
@@ -110,7 +111,7 @@ function MobileAdminSelect({ badges }: { badges: AdminNavBadges }) {
       value={current}
       onChange={(e) => router.push(e.target.value)}
       aria-label="Admin section"
-      className="glass-surface-subtle w-full rounded-xl px-3 py-2.5 text-body font-medium text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] sm:hidden"
+      className="h-11 w-full rounded-control bg-neu-base px-4 text-body font-medium text-slate-100 shadow-pressed-low outline-none transition focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
     >
       {NAV_GROUPS.map((group) =>
         group.leaves.length === 1 ? (
@@ -145,16 +146,14 @@ function DesktopAdminPills({ badges }: { badges: AdminNavBadges }) {
 
   return (
     <nav className="hidden flex-col gap-2 sm:flex">
-      <div className="flex flex-wrap gap-1.5 rounded-2xl p-1.5 bg-neu-base shadow-raised-low">
+      <div className={`${TAB_TRACK} self-start`}>
         {NAV_GROUPS.map((g) => {
           const active = g.label === group.label;
           return (
             <Link
               key={g.label}
               href={g.leaves[0].href}
-              className={`tap inline-flex items-center shrink-0 rounded-full px-3.5 py-1.5 text-small font-medium transition ${
-                active ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
-              }`}
+              className={tabItem(active)}
             >
               {g.label}
               <Badge count={groupCount(g, badges)} />
@@ -163,16 +162,14 @@ function DesktopAdminPills({ badges }: { badges: AdminNavBadges }) {
         })}
       </div>
       {group.leaves.length > 1 && (
-        <div className="flex flex-wrap gap-1.5 rounded-2xl p-1.5 bg-neu-base shadow-raised-low">
+        <div className={`${TAB_TRACK} self-start`}>
           {group.leaves.map((leaf) => {
             const active = isLeafActive(leaf.href, pathname);
             return (
               <Link
                 key={leaf.href}
                 href={leaf.href}
-                className={`tap inline-flex items-center shrink-0 rounded-full px-3 py-1.5 text-small font-medium transition ${
-                  active ? "bg-[rgb(var(--c-s-50)/0.18)] text-[rgb(var(--c-s-50))]" : "text-slate-500 hover:text-slate-200"
-                }`}
+                className={tabItem(active)}
               >
                 {leaf.label}
                 <Badge count={badges[leaf.href] ?? 0} />

@@ -3,6 +3,7 @@ import type { ClassRegistrationStatus } from "@prisma/client";
 import { getAdminClassRegistrations } from "@/lib/classRegistration";
 import { StudentQueue } from "@/components/admin/StudentQueue";
 import { approveRegistrationAction, rejectRegistrationAction } from "./actions";
+import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 
 const FILTERS: { label: string; value: ClassRegistrationStatus | "ALL" }[] = [
   { label: "Pending", value: "PENDING" },
@@ -27,14 +28,12 @@ export default async function AdminStudentsPage({ searchParams }: { searchParams
         {registrations.length} registration{registrations.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
       </p>
 
-      <div className="mt-6 flex w-fit flex-wrap gap-1.5 rounded-full p-1 bg-neu-base shadow-pressed-low">
+      <div className={`mt-6 ${TAB_TRACK}`}>
         {FILTERS.map((filter) => (
           <Link
             key={filter.value}
             href={filter.value === "PENDING" ? "/admin/students" : `/admin/students?status=${filter.value}`}
-            className={`tap inline-flex items-center rounded-full px-3 py-1.5 text-small font-medium transition ${
-              activeFilter === filter.value ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
-            }`}
+            className={tabItem(activeFilter === filter.value)}
           >
             {filter.label}
           </Link>
