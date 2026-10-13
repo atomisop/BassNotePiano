@@ -20,6 +20,7 @@ export const ADMIN_NOTIFICATION_KINDS = [
   { kind: "PLAN_LAPSED", label: "Plan canceled for non-payment", group: "Payments", defaultOn: false, ownerOnly: false },
   { kind: "NEW_BOOKING", label: "New class booking", group: "Classes", defaultOn: true, ownerOnly: false },
   { kind: "SLOT_PROBLEM", label: "A subscriber's weekly time no longer exists", group: "Classes", defaultOn: true, ownerOnly: false },
+  { kind: "UNMARKED_CLASSES", label: "Classes nobody marked are about to be charged automatically", group: "Classes", defaultOn: false, ownerOnly: false },
   { kind: "SUPPORT_CHAT", label: "Support Chat handoffs and messages", group: "Messages", defaultOn: true, ownerOnly: false },
   { kind: "OWNER_MESSAGES", label: "Messages sent to the owner account", group: "Messages", defaultOn: false, ownerOnly: false },
   { kind: "MUSIC_INBOX", label: "New emails to music@bassnotepiano.com (Support Chat, Email tab)", group: "Messages", defaultOn: true, ownerOnly: false },

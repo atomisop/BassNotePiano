@@ -22,6 +22,7 @@ export const JOB_MAX_SILENCE_HOURS: Record<string, number> = {
   "practice-reminders": 30,
   "admin-daily-summary": 30,
   "class-reminders": 2,
+  "attendance-auto-charge": 3,
   "auto-approvals": 30,
   "discord-class-channels": 2,
   "mail-chain-probe": 30,
@@ -39,6 +40,7 @@ export const JOB_ADDED_AT: Record<string, string> = {
   "job-watchdog": "2026-10-08T00:00:00Z",
   "mail-chain-probe": "2026-10-09T00:00:00Z",
   "db-backup": "2026-10-09T00:00:00Z",
+  "attendance-auto-charge": "2026-10-13T00:00:00Z",
 };
 
 export type JobState = "ok" | "waiting" | "failed" | "late" | "never";
