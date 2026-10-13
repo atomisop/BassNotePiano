@@ -15,6 +15,7 @@ import {
 } from "./actions";
 import { TwoPaneLayout, WideLayout } from "@/components/layout/PageLayouts";
 import { OwnerStarBadge, useIsOwner } from "@/components/ui/OwnerStar";
+import { buttonVariants } from "@/components/ui/button";
 
 interface PublicProfile {
   id: string;
@@ -149,7 +150,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
         <SectionCard title="Set a username first">
           <Link
             href="/profile"
-            className="tap cta-sheen cta-fill inline-block rounded-lg px-4 py-2 text-small font-semibold"
+            className={buttonVariants({ variant: "primary", size: "sm", className: "inline-block" })}
           >
             Go to your profile
           </Link>
@@ -208,7 +209,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                       <div className="flex shrink-0 gap-2">
                         <Link
                           href={`/messages?with=${friend.id}`}
-                          className="tap inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                          className={buttonVariants({ variant: "secondary", size: "sm" })}
                         >
                           Message
                         </Link>
@@ -268,7 +269,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
               <button
                 type="submit"
                 disabled={action.pending || query.trim().length < 2}
-                className="tap cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                className={buttonVariants({ variant: "primary" })}
               >
                 {searching && spin}
                 {searching ? "Searching…" : "Search"}
@@ -289,7 +290,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                       type="button"
                       onClick={() => handleAddFriend(profile)}
                       disabled={sentTo.has(profile.id) || action.pending}
-                      className="tap flex shrink-0 items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
                     >
                       {action.isPending(`add:${profile.id}`) && spin}
                       {sentTo.has(profile.id) ? "Sent" : "Add friend"}
@@ -314,7 +315,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
                         type="button"
                         onClick={() => handleRespond(req.id, true)}
                         disabled={action.pending}
-                        className={`tap cta-sheen cta-fill flex items-center rounded-lg px-3 py-1.5 text-small font-semibold ${busy}`}
+                        className={buttonVariants({ variant: "primary", size: "sm", className: busy })}
                       >
                         {action.isPending(`accept:${req.id}`) && spin}
                         Accept

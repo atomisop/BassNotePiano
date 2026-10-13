@@ -380,6 +380,13 @@ export function AssistantWidget() {
     window.addEventListener("bnp:force-dock-visible", onTour);
     return () => window.removeEventListener("bnp:force-dock-visible", onTour);
   }, []);
+  // A top-of-screen banner (phone, Discord, practice) is showing: the greeting bubble waits for it to leave.
+  const [bannerOpen, setBannerOpen] = useState(false);
+  useEffect(() => {
+    const onBanner = (e: Event) => setBannerOpen(Boolean((e as CustomEvent<boolean>).detail));
+    window.addEventListener("bnp:top-banner", onBanner);
+    return () => window.removeEventListener("bnp:top-banner", onBanner);
+  }, []);
   // Model-predicted follow-ups for the chips; empty until the first answer
   // lands (the built-in SUGGESTIONS cover the empty chat).
   const [generatedSuggestions, setGeneratedSuggestions] = useState<string[]>([]);
@@ -1215,7 +1222,7 @@ export function AssistantWidget() {
           neumorphic fill). The three-dismissals-and-it-never-returns rule is the
           existing one, in dismissGreeting/greetingSuppressed. */}
       <AnimatePresence>
-        {showGreeting && !tourOpen && !open && hasTopBarTrigger && triggerAnchor && (
+        {showGreeting && !tourOpen && !bannerOpen && !open && hasTopBarTrigger && triggerAnchor && (
           <motion.div
             key="idea-bubble"
             initial={{ opacity: 0, y: -8, scale: 0.9 }}

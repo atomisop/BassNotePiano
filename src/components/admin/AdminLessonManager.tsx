@@ -8,6 +8,7 @@ import type { CourseLesson } from "@/lib/courseContent";
 import { Collapse } from "@/components/ui/Collapse";
 import { FileDropzone } from "@/components/ui/FileDropzone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { buttonVariants } from "@/components/ui/button";
 
 interface PresignedUpload {
   uploadUrl: string;
@@ -222,7 +223,7 @@ export function AdminLessonManager({
           type="button"
           onClick={() => setShowForm((v) => !v)}
           disabled={!storageConfigured}
-          className="tap cta-sheen cta-fill rounded-xl px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+          className={buttonVariants({ variant: "primary" })}
         >
           {showForm ? "Cancel" : "Upload a lesson"}
         </button>
@@ -270,7 +271,7 @@ export function AdminLessonManager({
           <button
             type="submit"
             disabled={uploading}
-            className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            className={buttonVariants({ variant: "primary", className: "flex w-full" })}
           >
             {uploading && <MorphingSquare size={14} className="mr-2 shrink-0" />}
             {uploading ? "Uploading…" : "Upload"}
@@ -299,7 +300,7 @@ export function AdminLessonManager({
                     type="button"
                     onClick={() => setDeletingId(null)}
                     disabled={busy}
-                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     Keep
                   </button>
@@ -307,7 +308,7 @@ export function AdminLessonManager({
                     type="button"
                     onClick={() => handleDelete(lesson.id)}
                     disabled={busy}
-                    className="tap flex items-center justify-center rounded-lg bg-red-500/95 px-3 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                    className={buttonVariants({ variant: "danger", size: "sm", className: "bg-red-500/95" })}
                   >
                     {busy && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                     {busy ? "Deleting…" : "Delete"}
@@ -320,7 +321,7 @@ export function AdminLessonManager({
                     onClick={() => handleMove(index, -1)}
                     disabled={busy || index === 0}
                     aria-label="Move up"
-                    className="tap flex h-9 w-9 items-center justify-center rounded-lg transition disabled:cursor-not-allowed disabled:opacity-30 neu-btn"
+                    className={buttonVariants({ variant: "secondary", size: "iconSm" })}
                   >
                     <ChevronUp className="h-4 w-4" />
                   </button>
@@ -329,7 +330,7 @@ export function AdminLessonManager({
                     onClick={() => handleMove(index, 1)}
                     disabled={busy || index === lessons.length - 1}
                     aria-label="Move down"
-                    className="tap flex h-9 w-9 items-center justify-center rounded-lg transition disabled:cursor-not-allowed disabled:opacity-30 neu-btn"
+                    className={buttonVariants({ variant: "secondary", size: "iconSm" })}
                   >
                     <ChevronDown className="h-4 w-4" />
                   </button>
@@ -337,7 +338,7 @@ export function AdminLessonManager({
                     type="button"
                     onClick={() => setDeletingId(lesson.id)}
                     aria-label={`Delete ${lesson.title}`}
-                    className="tap flex h-9 w-9 items-center justify-center rounded-lg transition neu-btn"
+                    className={buttonVariants({ variant: "secondary", size: "iconSm" })}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

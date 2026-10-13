@@ -159,7 +159,7 @@ export default async function DashboardPage() {
               )}
               <a
                 href={`/api/calendar/class?s=${encodeURIComponent(nextClass.scheduledAt.toISOString())}&m=${length}`}
-                className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium"
+                className={buttonVariants({ variant: "secondary", size: "sm" })}
               >
                 Add to calendar
               </a>

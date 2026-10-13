@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { RESEND_CLICKS_BEFORE_HELP, useResendCooldown } from "@/hooks/useResendCooldown";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -234,7 +234,7 @@ function ResetPasswordForm() {
         type="button"
         onClick={handleResend}
         disabled={cooldown.secondsLeft > 0}
-        className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-2 w-full sm:mt-4 disabled:cursor-not-allowed disabled:opacity-60"
+        className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-2 w-full sm:mt-4" })}
       >
         {cooldown.secondsLeft > 0 ? `You can ask again in ${cooldown.secondsLeft}s` : "Didn't get a code? Resend"}
       </button>

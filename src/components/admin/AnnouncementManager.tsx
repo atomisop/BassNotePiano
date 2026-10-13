@@ -9,6 +9,7 @@ import {
   setAnnouncementActiveAction,
   deleteAnnouncementAction,
 } from "@/app/(dashboard)/admin/announcements/actions";
+import { buttonVariants } from "@/components/ui/button";
 
 function relativeTime(iso: Date): string {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -133,7 +134,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
               type="button"
               onClick={() => void publish()}
               disabled={submitting}
-              className="tap cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-1.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+              className={buttonVariants({ variant: "primary", className: "flex-1" })}
             >
               {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
               {submitting ? "Sending…" : `Confirm: email ${totalUsers}`}
@@ -145,7 +146,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
           type="button"
           onClick={handlePublishClick}
           disabled={submitting || !title.trim() || !body.trim()}
-          className="tap cta-sheen cta-fill mt-4 flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className={buttonVariants({ variant: "primary", size: "sm", className: "mt-4 flex" })}
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Publishing…" : "Publish to everyone"}
@@ -227,7 +228,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
             type="button"
             onClick={handleToggleActive}
             disabled={busy}
-            className="tap inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+            className={buttonVariants({ variant: "secondary", size: "sm" })}
           >
             {busy && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
             {announcement.active ? "Deactivate" : "Reactivate"}
@@ -236,7 +237,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
             type="button"
             onClick={() => setDeleting(true)}
             disabled={busy}
-            className="tap rounded-lg border border-red-400/20 px-3 py-1.5 text-small font-medium text-red-400 transition hover:border-red-400/40 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+            className={buttonVariants({ variant: "secondary", size: "sm" })}
           >
             Delete
           </button>

@@ -4,6 +4,7 @@ import { classesInWindow } from "@/lib/classScheduleLabels";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { buttonVariants } from "@/components/ui/button";
 
 interface ScheduleRow {
   id: string;
@@ -142,7 +143,7 @@ function ScheduleForm({
         <button
           type="submit"
           disabled={submitting}
-          className="tap cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className={buttonVariants({ variant: "primary", size: "sm", className: "flex flex-1" })}
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Saving…" : "Save"}
@@ -254,7 +255,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                           setEditingId(row.id);
                           setFormError(null);
                         }}
-                        className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                        className={buttonVariants({ variant: "secondary", size: "sm" })}
                       >
                         Edit
                       </button>
@@ -278,13 +279,13 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                           bookings only. What should happen to the booked classes?
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
-                          <button type="button" onClick={() => handleToggleActive(row, true)} className="tap rounded-lg border border-red-400/30 px-3 py-1.5 font-medium text-red-300">
+                          <button type="button" onClick={() => handleToggleActive(row, true)} className={buttonVariants({ variant: "outline", size: "sm" })}>
                             Cancel them and tell the students
                           </button>
-                          <button type="button" onClick={() => handleToggleActive(row, false)} className="tap rounded-lg px-3 py-1.5 font-medium text-slate-100 bg-neu-base shadow-raised-low">
+                          <button type="button" onClick={() => handleToggleActive(row, false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                             Keep them, turn off new bookings
                           </button>
-                          <button type="button" onClick={() => setConfirmOffId(null)} className="tap rounded-lg px-3 py-1.5 text-slate-400">
+                          <button type="button" onClick={() => setConfirmOffId(null)} className={buttonVariants({ variant: "ghost", size: "sm" })}>
                             Back
                           </button>
                         </div>

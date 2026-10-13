@@ -4,6 +4,7 @@ import { useState } from "react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { openAtomWithCase } from "@/lib/atomTrigger";
 import { contactSupportFromMailAction } from "../actions";
+import { buttonVariants } from "@/components/ui/button";
 
 export function ContactSupportButton({ mailId, alreadyOpened }: { mailId: string; alreadyOpened: boolean }) {
   const [busy, setBusy] = useState(false);
@@ -29,7 +30,7 @@ export function ContactSupportButton({ mailId, alreadyOpened }: { mailId: string
         type="button"
         onClick={handleClick}
         disabled={busy}
-        className="tap inline-flex items-center justify-center gap-2 rounded-xl bg-neu-base px-4 py-2.5 text-small font-semibold text-slate-100 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-60"
+        className={buttonVariants({ variant: "secondary" })}
       >
         {busy && <MorphingSquare size={13} className="shrink-0" />}
         {opened ? "Open your support chat" : "Contact support"}

@@ -60,6 +60,14 @@ export function IosBanner({
     setTimeout(() => onCloseRef.current(reason), 280);
   }
 
+  // The Atom greeting bubble waits while a banner is on screen, so the two never overlap.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("bnp:top-banner", { detail: true }));
+    return () => {
+      window.dispatchEvent(new CustomEvent("bnp:top-banner", { detail: false }));
+    };
+  }, []);
+
   // Slide in a beat after mounting so the transition has a starting point, and leave on time.
   useEffect(() => {
     const enter = setTimeout(() => setShown(true), 30);

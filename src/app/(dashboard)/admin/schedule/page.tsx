@@ -18,6 +18,7 @@ import {
   searchStudentsForBookingAction,
   adminBookClassAction,
 } from "./actions";
+import { buttonVariants } from "@/components/ui/button";
 
 type ViewValue = "WINDOWS" | "BOOKINGS" | "ATTENDANCE";
 
@@ -143,7 +144,7 @@ export default async function AdminSchedulePage({ searchParams }: { searchParams
       {viewSwitcher}
 
       {calendarLink && (
-        <a href={calendarLink} className="tap neu-btn mt-6 inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
+        <a href={calendarLink} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-6" })}>
           Add my classes to my calendar
         </a>
       )}

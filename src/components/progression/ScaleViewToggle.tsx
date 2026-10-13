@@ -1,6 +1,7 @@
 "use client";
 
 import { LayoutGrid, List } from "lucide-react";
+import { Tabs } from "@/components/ui/Tabs";
 
 export type ScaleView = "grid" | "list";
 
@@ -18,22 +19,19 @@ export function ScaleViewToggle({ value, onChange }: { value: ScaleView; onChang
   ];
 
   return (
-    <div role="group" aria-label="Scale list layout" className="flex gap-1 rounded-full border border-ink/[0.08] bg-[rgb(var(--c-s-50)/0.04)] p-1">
-      {options.map(({ value: optionValue, label, Icon }) => (
-        <button
-          key={optionValue}
-          type="button"
-          onClick={() => onChange(optionValue)}
-          aria-pressed={value === optionValue}
-          title={label}
-          className={`tap flex h-9 w-9 cursor-pointer items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-            value === optionValue ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
-          }`}
-        >
-          <Icon size={16} aria-hidden />
-          <span className="sr-only">{label}</span>
-        </button>
-      ))}
-    </div>
+    <Tabs
+      label="Scale list layout"
+      items={options.map(({ value: optionValue, label, Icon }) => ({
+        id: optionValue,
+        label: (
+          <>
+            <Icon size={16} aria-hidden />
+            <span className="sr-only">{label}</span>
+          </>
+        ),
+      }))}
+      value={value}
+      onChange={onChange}
+    />
   );
 }

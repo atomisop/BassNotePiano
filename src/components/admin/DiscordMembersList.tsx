@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { buttonVariants } from "@/components/ui/button";
 
 export interface DiscordMemberRow {
   id: string;
@@ -121,16 +122,16 @@ export function DiscordMembersList({
                   </span>
                   {asking === row.id ? (
                     <span className="flex shrink-0 flex-wrap items-center gap-2">
-                      <button type="button" onClick={() => setAsking(null)} disabled={busy === row.id} className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 bg-neu-base shadow-raised-low disabled:opacity-50">
+                      <button type="button" onClick={() => setAsking(null)} disabled={busy === row.id} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                         Not yet
                       </button>
-                      <button type="button" onClick={() => disconnect(row.id)} disabled={busy === row.id} className="tap flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-1.5 text-small font-semibold text-white disabled:opacity-50">
+                      <button type="button" onClick={() => disconnect(row.id)} disabled={busy === row.id} className={buttonVariants({ variant: "danger", size: "sm" })}>
                         {busy === row.id && <MorphingSquare size={12} />}
                         {busy === row.id ? "Working…" : "Yes, disconnect"}
                       </button>
                     </span>
                   ) : (
-                    <button type="button" onClick={() => setAsking(row.id)} className="tap neu-btn shrink-0 rounded-lg px-3 py-1.5 text-small font-medium">
+                    <button type="button" onClick={() => setAsking(row.id)} className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}>
                       Disconnect
                     </button>
                   )}
@@ -143,7 +144,7 @@ export function DiscordMembersList({
                       type="button"
                       onClick={() => notify(row.id)}
                       disabled={notifying === row.id}
-                      className="tap neu-btn inline-flex shrink-0 items-center rounded-lg px-3 py-1.5 text-small font-medium disabled:opacity-60"
+                      className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
                     >
                       {notifying === row.id && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {notifying === row.id ? "Sending…" : "Notify"}

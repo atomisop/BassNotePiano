@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { AdminClassRegistration } from "@/lib/classRegistration";
 import { INSTRUMENT_LABEL, SKILL_LABEL } from "@/lib/classRegistrationLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { buttonVariants } from "@/components/ui/button";
 
 export interface StudentQueueProps {
   registrations: AdminClassRegistration[];
@@ -178,7 +179,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
                   type="button"
                   onClick={() => handleApprove(reg.id)}
                   disabled={busyId === reg.id}
-                  className="tap cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                  className={buttonVariants({ variant: "primary", className: "flex-1" })}
                 >
                   {busyId === reg.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                   {busyId === reg.id ? "Approving…" : "Confirm approve"}
@@ -199,7 +200,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
                 type="button"
                 onClick={() => setApprovingId(reg.id)}
                 disabled={busyId === reg.id}
-                className="tap cta-sheen cta-fill flex-1 rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                className={buttonVariants({ variant: "primary", className: "flex-1" })}
               >
                 Approve
               </button>

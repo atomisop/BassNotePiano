@@ -11,6 +11,7 @@ import { SCALE_GROUPS } from "@/lib/curriculum";
 import { StudentNotesEditor } from "@/components/admin/StudentNotesEditor";
 import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { buttonVariants } from "@/components/ui/button";
 
 export interface CustomerProfileProps {
   profile: CustomerProfileData;
@@ -64,7 +65,7 @@ function NotesSection({ studentId }: { studentId: string }) {
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
-          className="tap rounded-lg bg-neu-base px-3 py-1.5 text-small font-medium text-slate-200 shadow-raised-low active:shadow-pressed-low"
+          className={buttonVariants({ variant: "secondary", size: "sm" })}
         >
           {open ? "Close notes" : "Notes"}
         </button>
@@ -212,7 +213,7 @@ export function CustomerProfile({
       onClick={() => {
         if (window.confirm("Lift this ban? They will be able to sign in again.")) void handleUnban();
       }}
-      className="tap inline-flex items-center gap-1.5 rounded-lg bg-neu-base px-3 py-1.5 text-small font-medium text-slate-200 shadow-raised-low active:shadow-pressed-low disabled:opacity-50"
+      className={buttonVariants({ variant: "secondary", size: "sm" })}
     >
       Lift ban
     </button>
@@ -222,7 +223,7 @@ export function CustomerProfile({
       disabled={busy}
       onClick={() => setConfirmingBan((o) => !o)}
       aria-expanded={confirmingBan}
-      className="tap inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-small font-semibold text-white shadow-raised-low hover:bg-red-500 active:shadow-pressed-low disabled:opacity-50"
+      className={buttonVariants({ variant: "danger", size: "sm" })}
     >
       <Hammer className="h-4 w-4" aria-hidden />
       Ban
@@ -268,10 +269,10 @@ export function CustomerProfile({
                   placeholder="Why, so you remember"
                 />
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button type="button" onClick={() => setConfirmingBan(false)} disabled={busy} className="tap rounded-lg bg-neu-base px-3 py-1.5 text-small font-medium text-slate-300 shadow-raised-low disabled:opacity-50">
+                  <button type="button" onClick={() => setConfirmingBan(false)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                     Not yet
                   </button>
-                  <button type="button" onClick={handleBan} disabled={busy} className="tap inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-small font-semibold text-white hover:bg-red-500 disabled:opacity-50">
+                  <button type="button" onClick={handleBan} disabled={busy} className={buttonVariants({ variant: "danger", size: "sm" })}>
                     {busy ? <MorphingSquare size={12} className="shrink-0" /> : <Hammer className="h-4 w-4" aria-hidden />}
                     {busy ? "Banning…" : "Yes, ban this account"}
                   </button>
@@ -335,12 +336,12 @@ export function CustomerProfile({
                     type="button"
                     disabled={busy}
                     onClick={() => withBusy(() => onSetCurriculumAccess(user.id, !user.hasCurriculumAccess))}
-                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small inline-flex items-center"
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                     {busy ? "Applying…" : "Confirm"}
                   </button>
-                  <button type="button" onClick={() => setPendingAction(null)} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
+                  <button type="button" onClick={() => setPendingAction(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                     Never mind
                   </button>
                 </span>
@@ -349,7 +350,7 @@ export function CustomerProfile({
                   type="button"
                   disabled={busy}
                   onClick={() => setPendingAction("curriculum")}
-                  className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className={buttonVariants({ variant: "secondary", size: "sm" })}
                 >
                   {user.hasCurriculumAccess ? "Remove complimentary access" : "Grant complimentary access"}
                 </button>
@@ -364,12 +365,12 @@ export function CustomerProfile({
                     type="button"
                     disabled={busy}
                     onClick={() => withBusy(() => onSetRole(user.id, user.role === "ADMIN" ? "STUDENT" : "ADMIN"))}
-                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small inline-flex items-center"
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                     {busy ? "Applying…" : "Confirm"}
                   </button>
-                  <button type="button" onClick={() => setPendingAction(null)} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
+                  <button type="button" onClick={() => setPendingAction(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                     Never mind
                   </button>
                 </span>
@@ -378,7 +379,7 @@ export function CustomerProfile({
                   type="button"
                   disabled={busy}
                   onClick={() => setPendingAction("role")}
-                  className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className={buttonVariants({ variant: "secondary", size: "sm" })}
                 >
                   {user.role === "ADMIN" ? "Remove admin role" : "Make admin"}
                 </button>
@@ -391,12 +392,12 @@ export function CustomerProfile({
                     type="button"
                     disabled={busy}
                     onClick={() => withBusy(() => onClearAssistantHistory(user.id))}
-                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small inline-flex items-center"
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                     {busy ? "Deleting…" : "Confirm"}
                   </button>
-                  <button type="button" onClick={() => setPendingAction(null)} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
+                  <button type="button" onClick={() => setPendingAction(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                     Never mind
                   </button>
                 </span>
@@ -405,7 +406,7 @@ export function CustomerProfile({
                   type="button"
                   disabled={busy}
                   onClick={() => setPendingAction("history")}
-                  className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className={buttonVariants({ variant: "secondary", size: "sm" })}
                 >
                   Clear Atom history
                 </button>
@@ -416,7 +417,7 @@ export function CustomerProfile({
                   type="button"
                   disabled={busy}
                   onClick={() => setConfirmingSignOut(true)}
-                  className="tap rounded-lg border border-red-400/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-400/10 disabled:opacity-40 bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                  className={buttonVariants({ variant: "secondary", size: "sm" })}
                 >
                   Sign out everywhere
                 </button>
@@ -427,11 +428,11 @@ export function CustomerProfile({
                     type="button"
                     disabled={busy}
                     onClick={() => withBusy(() => onForceSignOut(user.id)).then(() => setConfirmingSignOut(false))}
-                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     Confirm
                   </button>
-                  <button type="button" onClick={() => setConfirmingSignOut(false)} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
+                  <button type="button" onClick={() => setConfirmingSignOut(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                     Never mind
                   </button>
                 </span>
@@ -513,7 +514,7 @@ export function CustomerProfile({
                 <button
                   type="submit"
                   disabled={busy}
-                  className="tap cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-small font-medium disabled:opacity-40"
+                  className={buttonVariants({ variant: "primary", size: "sm", className: "shrink-0" })}
                 >
                   Review
                 </button>
@@ -530,12 +531,12 @@ export function CustomerProfile({
                   type="button"
                   disabled={busy}
                   onClick={handleConfirmCredits}
-                  className="tap neu-btn rounded-lg px-3 py-1.5 text-small inline-flex items-center"
+                  className={buttonVariants({ variant: "secondary", size: "sm" })}
                 >
                   {busy && <MorphingSquare size={11} className="mr-1 shrink-0" />}
                   {busy ? "Applying…" : "Confirm"}
                 </button>
-                <button type="button" onClick={() => setCreditConfirming(false)} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
+                <button type="button" onClick={() => setCreditConfirming(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                   Edit
                 </button>
               </div>
@@ -590,7 +591,7 @@ export function CustomerProfile({
                         <button
                           type="button"
                           onClick={() => setCancelingBookingId(b.id)}
-                          className="tap shrink-0 rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                          className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
                         >
                           Cancel booking
                         </button>
@@ -682,7 +683,7 @@ export function CustomerProfile({
                         setBusy(false);
                       }
                     }}
-                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small font-medium disabled:opacity-60"
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     Forget
                   </button>

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { AdminPaymentPlan } from "@/lib/paymentPlans";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { buttonVariants } from "@/components/ui/button";
 
 export interface PaymentPlanListProps {
   plans: AdminPaymentPlan[];
@@ -192,7 +193,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                       type="button"
                       onClick={() => handleRecord(plan.id)}
                       disabled={busyId === plan.id}
-                      className="tap cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-2 text-small font-semibold disabled:opacity-60"
+                      className={buttonVariants({ variant: "primary", className: "flex-1" })}
                     >
                       {busyId === plan.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                       {busyId === plan.id ? "Recording…" : "Confirm"}
@@ -208,7 +209,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                       setRecordError(null);
                       setRecordingId(plan.id);
                     }}
-                    className="tap shrink-0 rounded-lg px-3 py-1.5 text-small font-medium text-slate-200 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
                   >
                     Record payment
                   </button>
@@ -259,7 +260,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                       type="button"
                       onClick={() => handleResend(plan.id)}
                       disabled={busyId === plan.id}
-                      className="tap neu-btn inline-flex items-center justify-center w-full rounded-lg py-2 text-small font-medium"
+                      className={buttonVariants({ variant: "secondary", className: "w-full" })}
                     >
                       {busyId === plan.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                       {busyId === plan.id ? "Sending…" : "Resend bill"}

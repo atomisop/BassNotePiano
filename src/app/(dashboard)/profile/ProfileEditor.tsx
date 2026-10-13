@@ -13,6 +13,7 @@ import {
   updateUsernameAction,
   requestAvatarUploadUrlAction,
 } from "../account/actions";
+import { buttonVariants } from "@/components/ui/button";
 
 interface MusicProfile {
   primaryInstrument: PrimaryInstrument | null;
@@ -274,7 +275,7 @@ function MusicProfileSection({ initial }: { initial: MusicProfile }) {
         type="button"
         onClick={handleSave}
         disabled={submitting}
-        className="tap cta-sheen cta-fill mt-4 flex items-center justify-center rounded-lg px-4 py-1.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        className={buttonVariants({ variant: "primary", size: "sm", className: "mt-4 flex" })}
       >
         {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
         {submitting ? "Saving…" : "Save"}
@@ -353,7 +354,7 @@ function AvatarSection({
             type="button"
             disabled={uploading || !storageConfigured}
             onClick={() => fileInputRef.current?.click()}
-            className="tap cta-sheen flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+            className={buttonVariants({ variant: "secondary", size: "sm", className: "cta-sheen" })}
           >
             {uploading && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {uploading ? "Uploading…" : "Choose new photo"}
@@ -404,7 +405,7 @@ function NameSection({ initialName, onDone }: { initialName: string | null; onDo
         <button
           type="submit"
           disabled={submitting || name.trim() === (initialName ?? "")}
-          className="tap cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className={buttonVariants({ variant: "primary", size: "sm", className: "flex" })}
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Saving…" : "Save"}
@@ -455,7 +456,7 @@ function UsernameSection({ initialUsername }: { initialUsername: string | null }
         <button
           type="submit"
           disabled={submitting || username.trim() === (initialUsername ?? "")}
-          className="tap cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className={buttonVariants({ variant: "primary", size: "sm", className: "flex" })}
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Saving…" : "Save"}

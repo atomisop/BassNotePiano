@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { buttonVariants } from "@/components/ui/button";
 
 export interface UnmatchedEmailRow {
   id: string;
@@ -103,12 +104,12 @@ export function UnmatchedEmailList({
                           type="button"
                           disabled={busy === row.id}
                           onClick={() => run(row.id, () => onMatch(row.id, c.id))}
-                          className="tap cta-sheen cta-fill inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-semibold disabled:opacity-60"
+                          className={buttonVariants({ variant: "primary", size: "sm" })}
                         >
                           {busy === row.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                           {busy === row.id ? "Approving…" : "Confirm: approve"}
                         </button>
-                        <button type="button" onClick={() => setConfirming(null)} className="tap neu-btn rounded-lg px-3 py-1.5 text-small font-medium">
+                        <button type="button" onClick={() => setConfirming(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                           Cancel
                         </button>
                       </span>
@@ -116,7 +117,7 @@ export function UnmatchedEmailList({
                       <button
                         type="button"
                         onClick={() => setConfirming({ receiptId: row.id, paymentId: c.id })}
-                        className="tap neu-btn rounded-lg px-3 py-1.5 text-small font-medium"
+                        className={buttonVariants({ variant: "secondary", size: "sm" })}
                       >
                         Attach and approve
                       </button>
@@ -141,12 +142,12 @@ export function UnmatchedEmailList({
                   type="button"
                   disabled={busy === row.id}
                   onClick={() => run(row.id, () => onDismiss(row.id))}
-                  className="tap inline-flex items-center justify-center rounded-lg border border-red-500/30 px-3 py-1.5 text-small font-medium text-red-400 hover:bg-red-500/10 disabled:opacity-60"
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
                 >
                   {busy === row.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                   {busy === row.id ? "Dismissing…" : "Dismiss it"}
                 </button>
-                <button type="button" onClick={() => setConfirming(null)} className="tap neu-btn rounded-lg px-3 py-1.5 text-small font-medium">
+                <button type="button" onClick={() => setConfirming(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                   Cancel
                 </button>
               </>
@@ -159,12 +160,12 @@ export function UnmatchedEmailList({
                   type="button"
                   disabled={busy === row.id}
                   onClick={() => run(row.id, () => onIgnoreSender(row.id))}
-                  className="tap inline-flex items-center justify-center rounded-lg border border-red-500/30 px-3 py-1.5 text-small font-medium text-red-400 hover:bg-red-500/10 disabled:opacity-60"
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
                 >
                   {busy === row.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                   {busy === row.id ? "Saving…" : "Yes, always ignore"}
                 </button>
-                <button type="button" onClick={() => setConfirming(null)} className="tap neu-btn rounded-lg px-3 py-1.5 text-small font-medium">
+                <button type="button" onClick={() => setConfirming(null)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                   Cancel
                 </button>
               </>
@@ -173,7 +174,7 @@ export function UnmatchedEmailList({
                 <button
                   type="button"
                   onClick={() => setConfirming({ receiptId: row.id, paymentId: "dismiss" })}
-                  className="tap neu-btn rounded-lg px-3 py-1.5 text-small font-medium"
+                  className={buttonVariants({ variant: "secondary", size: "sm" })}
                 >
                   Not a studio payment
                 </button>
@@ -181,7 +182,7 @@ export function UnmatchedEmailList({
                   <button
                     type="button"
                     onClick={() => setConfirming({ receiptId: row.id, paymentId: "ignore" })}
-                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small font-medium"
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
                   >
                     Always ignore this sender
                   </button>

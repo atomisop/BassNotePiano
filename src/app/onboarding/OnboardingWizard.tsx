@@ -9,6 +9,7 @@ import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { saveOnboardingAction, checkUsernameAvailableAction } from "./actions";
 import { Stepper } from "@/components/ui/Stepper";
+import { buttonVariants } from "@/components/ui/button";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -264,7 +265,7 @@ export function OnboardingWizard() {
             type="button"
             onClick={handleBack}
             disabled={submitting}
-            className="rounded-xl px-4 py-2.5 text-small font-medium text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+            className={buttonVariants({ variant: "secondary" })}
           >
             Back
           </button>
@@ -273,7 +274,7 @@ export function OnboardingWizard() {
           type="button"
           onClick={handleNext}
           disabled={!canAdvance || submitting || checkingUsername}
-          className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className={buttonVariants({ variant: "primary", size: "sm", className: "flex flex-1" })}
         >
           {(checkingUsername || submitting) && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
           {checkingUsername ? "Checking…" : submitting ? "Saving…" : step < lastStep ? "Next" : "Finish"}
@@ -283,7 +284,7 @@ export function OnboardingWizard() {
             type="button"
             onClick={handleSkip}
             disabled={submitting}
-            className="rounded-xl px-4 py-2.5 text-small font-medium text-slate-300 transition disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+            className={buttonVariants({ variant: "secondary" })}
           >
             Skip
           </button>

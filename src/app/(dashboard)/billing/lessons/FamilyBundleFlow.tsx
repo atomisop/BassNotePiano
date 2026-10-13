@@ -21,6 +21,7 @@ import {
   createFamilyBundlePaymentAction,
   submitClassCreditsPaymentAction,
 } from "./actions";
+import { buttonVariants } from "@/components/ui/button";
 
 interface PendingPayment {
   id: string;
@@ -184,7 +185,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         <button
           type="button"
           onClick={() => setPayment(null)}
-          className="tap neu-btn rounded-lg px-3 py-1.5 text-small mb-4"
+          className={buttonVariants({ variant: "secondary", size: "sm", className: "mb-4" })}
         >
           ← Change bundle
         </button>
@@ -225,11 +226,12 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                 key={option.value}
                 type="button"
                 onClick={() => setTerm(option.value)}
-                className={`rounded-lg border px-3 py-3 text-center transition ${
-                  active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-transparent bg-neu-base shadow-raised-low"
+                aria-pressed={active}
+                className={`tap rounded-control bg-neu-base px-3 py-3 text-center transition ${
+                  active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 }`}
               >
-                <p className={`text-small font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
+                <p className={`text-small font-medium ${active ? "text-signal" : "text-slate-100"}`}>{option.label}</p>
                 <p className="mt-0.5 text-small text-slate-500">
                   {optionRate.discountRate > 0 ? `−${Math.round(optionRate.discountRate * 100)}%` : "No commitment"}
                 </p>
@@ -323,7 +325,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
           type="button"
           onClick={addRecipient}
           disabled={emails.length >= MAX_FAMILY_BUNDLE_RECIPIENTS}
-          className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-3"
+          className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}
         >
           + Add another recipient
         </button>
@@ -370,7 +372,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         type="button"
         onClick={handleContinue}
         disabled={!canSubmit}
-        className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        className={buttonVariants({ variant: "primary", className: "flex w-full" })}
       >
         {loading && <MorphingSquare size={14} className="mr-2 shrink-0" />}
         {loading ? "Loading…" : `Continue to payment · ${formatUsd(total.totalCents)}`}

@@ -13,6 +13,7 @@ import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { WeeklyTimePicker } from "./WeeklyTimePicker";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 import { errorNeedsTeam } from "@/lib/bookingRules";
+import { buttonVariants } from "@/components/ui/button";
 
 interface UpcomingBooking {
   id: string;
@@ -192,7 +193,7 @@ export function ScheduleClient({
                         href={booking.discordUrl ?? DISCORD_INVITE_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="tap cta-sheen cta-fill inline-flex items-center rounded-lg px-3 py-1.5 text-small font-semibold"
+                        className={buttonVariants({ variant: "primary", size: "sm" })}
                       >
                         Join on Discord
                       </a>
@@ -200,7 +201,7 @@ export function ScheduleClient({
                     {hoursUntil > 0 && (
                       <a
                         href={`/api/calendar/class?s=${encodeURIComponent(booking.scheduledAt)}&m=${Math.round((booking.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES)}`}
-                        className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium"
+                        className={buttonVariants({ variant: "secondary", size: "sm" })}
                       >
                         Add to calendar
                       </a>
@@ -217,7 +218,7 @@ export function ScheduleClient({
                             type="button"
                             onClick={() => setConfirmSkipId(null)}
                             disabled={busy}
-                            className="tap rounded-lg px-3 py-2 text-small font-medium text-slate-300 bg-neu-base shadow-raised-low active:shadow-pressed-low disabled:opacity-50"
+                            className={buttonVariants({ variant: "secondary", size: "sm" })}
                           >
                             Keep it
                           </button>
@@ -225,7 +226,7 @@ export function ScheduleClient({
                             type="button"
                             onClick={() => handleSkip(booking.id)}
                             disabled={busy}
-                            className="tap flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-2 text-small font-semibold text-white shadow-raised-low hover:bg-red-400 disabled:opacity-50"
+                            className={buttonVariants({ variant: "danger", size: "sm" })}
                           >
                             {busy && <MorphingSquare size={12} />}
                             {busy ? "Skipping…" : "Skip this class"}
@@ -235,7 +236,7 @@ export function ScheduleClient({
                     ) : (
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         {canReschedule && (
-                          <Link href={`/lessons?tab=extra&move=${booking.id}`} className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
+                          <Link href={`/lessons?tab=extra&move=${booking.id}`} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                             Move this week
                           </Link>
                         )}
@@ -246,7 +247,7 @@ export function ScheduleClient({
                             setSkipError(null);
                             setConfirmSkipId(booking.id);
                           }}
-                          className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
+                          className={buttonVariants({ variant: "secondary", size: "sm" })}
                         >
                           Skip this class
                         </button>
@@ -293,7 +294,7 @@ export function ScheduleClient({
               <button
                 type="button"
                 onClick={() => setChangingTime(false)}
-                className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
+                className={buttonVariants({ variant: "secondary", size: "sm" })}
               >
                 Cancel
               </button>
@@ -315,7 +316,7 @@ export function ScheduleClient({
           <button
             type="button"
             onClick={openChangeTime}
-            className="mt-4 w-full rounded-lg px-3.5 py-2.5 text-left text-small text-slate-400 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+            className={buttonVariants({ variant: "secondary", className: "mt-4 w-full text-left" })}
           >
             Change weekly time →
           </button>

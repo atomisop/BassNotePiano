@@ -6,6 +6,7 @@ import { CLASS_MINUTES } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { BookingCalendar } from "../lessons/BookingCalendar";
+import { buttonVariants } from "@/components/ui/button";
 
 const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -101,11 +102,11 @@ export function WeeklyTimePicker({
                   setTimesOpen(false);
                 }}
                 aria-pressed={active}
-                className={`tap flex min-h-20 flex-col items-center justify-center gap-1 rounded-2xl px-3 py-3 text-center transition bg-neu-base ${
+                className={`tap flex min-h-20 flex-col items-center justify-center gap-1 rounded-control px-3 py-3 text-center transition bg-neu-base ${
                   active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 }`}
               >
-                <span className={`text-body font-semibold ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{formatTimeRange(slot.startTime, CLASS_MINUTES)}</span>
+                <span className={`text-body font-semibold ${active ? "text-signal" : "text-slate-100"}`}>{formatTimeRange(slot.startTime, CLASS_MINUTES)}</span>
                 <span className="text-small text-slate-500">{active ? "Selected" : slot.label ?? `${CLASS_MINUTES} min`}</span>
               </button>
             );
@@ -123,7 +124,7 @@ export function WeeklyTimePicker({
             type="button"
             onClick={() => onConfirm(selected)}
             disabled={busy}
-            className="tap mt-2.5 inline-flex items-center gap-2 rounded-lg bg-signal px-4 py-2 text-small font-semibold text-slate-950 shadow-raised-low disabled:cursor-not-allowed disabled:opacity-60"
+            className={buttonVariants({ variant: "primary", className: "mt-2.5" })}
           >
             {busy && <MorphingSquare size={13} className="shrink-0" />}
             {busy ? "Moving…" : "Confirm new time"}

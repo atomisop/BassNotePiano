@@ -5,6 +5,7 @@ import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { Avatar } from "@/components/messaging/Avatar";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { getFriendsListAction } from "../actions";
+import { buttonVariants } from "@/components/ui/button";
 
 interface Friend {
   id: string;
@@ -125,7 +126,7 @@ export function NewGroupPanel({
             type="button"
             onClick={handleCreate}
             disabled={submitting || selected.size === 0}
-            className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            className={buttonVariants({ variant: "primary", className: "flex w-full" })}
           >
             {submitting && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
             {submitting ? "Creating…" : `Create group${selected.size > 0 ? ` (${selected.size})` : ""}`}
