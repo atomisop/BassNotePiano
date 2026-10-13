@@ -23,7 +23,7 @@
 //      <video>/<iframe>, so it has to be reachable without a signed request.
 
 import { randomBytes } from "crypto";
-import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, HeadObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const REQUIRED_ENV = ["R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET_NAME", "R2_PUBLIC_URL"] as const;
@@ -60,6 +60,60 @@ function getClient(): S3Client {
     });
   }
   return client;
+}
+
+// ---------------------------------------------------------------------------
+// Private lesson files
+// ---------------------------------------------------------------------------
+//
+// Lesson PDFs and videos are paid content, so they are meant to live in a bucket with NO public access
+// (R2_PRIVATE_BUCKET_NAME) and are only ever handed to a signed-in student by /api/lessons/[lessonId]/file,
+// which checks access and stamps the student's name on every PDF page. A lesson stored there has
+// fileUrl "private:<key>". Until that bucket is set, new files keep going to the public bucket exactly as
+// before, and the same route serves them (the public address still works until the owner turns it off).
+
+const PRIVATE_REF = "private:";
+
+/** The bucket lesson files live in: the private one when it is configured, else the public one. */
+export function lessonBucketName(): string | undefined {
+  return process.env.R2_PRIVATE_BUCKET_NAME || process.env.R2_BUCKET_NAME;
+}
+
+export function isPrivateBucketConfigured(): boolean {
+  return Boolean(process.env.R2_PRIVATE_BUCKET_NAME);
+}
+
+/** Where a stored lesson fileUrl points: "private:<key>" or a public address in the public bucket. */
+export function resolveLessonFile(fileUrl: string): { bucket: string; key: string } | null {
+  if (fileUrl.startsWith(PRIVATE_REF)) {
+    const bucket = lessonBucketName();
+    return bucket ? { bucket, key: fileUrl.slice(PRIVATE_REF.length) } : null;
+  }
+  const key = keyFromPublicUrl(fileUrl);
+  return key && process.env.R2_BUCKET_NAME ? { bucket: process.env.R2_BUCKET_NAME, key } : null;
+}
+
+/** What a lesson row stores for a freshly uploaded key. */
+export function lessonFileRef(key: string): string {
+  return isPrivateBucketConfigured() ? `${PRIVATE_REF}${key}` : `${process.env.R2_PUBLIC_URL!.replace(/\/$/, "")}/${key}`;
+}
+
+/** Reads a lesson file (optionally a byte range) for the app to hand on. */
+export async function getLessonObject(fileUrl: string, range?: string) {
+  const where = resolveLessonFile(fileUrl);
+  if (!where) return null;
+  return getClient().send(new GetObjectCommand({ Bucket: where.bucket, Key: where.key, Range: range }));
+}
+
+/** Best-effort delete of a lesson's backing file, wherever it lives. */
+export async function deleteLessonFile(fileUrl: string): Promise<void> {
+  const where = resolveLessonFile(fileUrl);
+  if (!where) return;
+  try {
+    await getClient().send(new DeleteObjectCommand({ Bucket: where.bucket, Key: where.key }));
+  } catch (err) {
+    console.error(`Failed to delete lesson file "${where.key}" (non-blocking):`, err);
+  }
 }
 
 /** Cheap, callable before doing any real work, lets the admin UI show a clear "storage isn't set up" state instead of a raw upload failure. */
@@ -152,21 +206,16 @@ export async function createPresignedLessonUpload(
   const key = `lessons/${scaleGroupSlug}/${randomBytes(16).toString("hex")}-${safeName}`;
 
   const command = new PutObjectCommand({
-    Bucket: process.env.R2_BUCKET_NAME,
+    Bucket: lessonBucketName(),
     Key: key,
     ContentType: contentType,
     ContentLength: fileSize,
-    // STEP 22: no CacheControl was set at all before this, every request
-    // for a lesson video/PDF, including repeat views by the same student,
-    // hit R2 directly rather than the CDN edge cache in front of it. Safe
-    // to cache forever because the key already encodes a timestamp
-    // (Date.now() above), the object at this exact key never changes
-    // content, a re-upload gets a brand new key instead of overwriting.
-    CacheControl: "public, max-age=31536000, immutable",
+    // Served only through the app to a signed-in student, never cached by a shared cache.
+    CacheControl: "private, no-store",
   });
 
   const uploadUrl = await getSignedUrl(getClient(), command, { expiresIn: 600 });
-  const publicUrl = `${process.env.R2_PUBLIC_URL!.replace(/\/$/, "")}/${key}`;
+  const publicUrl = lessonFileRef(key);
 
   return { uploadUrl, key, publicUrl };
 }

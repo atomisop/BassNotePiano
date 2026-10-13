@@ -236,9 +236,10 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
 - **Yearly (`TERM_12`) is retired** for new enrollments
   (`isPlanTermOffered`), enum value kept for existing rows. Note that term
   discounts are still not a real commitment: a student can self-cancel.
-- Still open: lesson/PDF files live at public R2 URLs, so page gating doesn't
-  stop someone who has the URL. Watermarked, in-app-only PDFs are the planned
-  follow-up.
+- **Lesson files are served by the app** (added 2026-10-13, `docs/PRIVATE-LESSON-FILES.md`): the player and download links use
+  `/api/lessons/[lessonId]/file`, which checks access (trial slice included), stamps the student's name and email on every PDF page
+  (`lessonWatermark.ts`) and is never cached. Lessons live in a private bucket (`R2_PRIVATE_BUCKET_NAME`, `fileUrl` = `private:<key>`);
+  until that is set and `scripts/move-lessons-private.mjs` has run, the old public addresses still work through the same route.
 
 ## Phone numbers (added 2026-10-09)
 

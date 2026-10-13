@@ -8,7 +8,7 @@
 
 import type { LessonMediaType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { deleteObject, keyFromPublicUrl } from "@/lib/storage";
+import { deleteLessonFile } from "@/lib/storage";
 
 export interface CourseLesson {
   id: string;
@@ -104,8 +104,7 @@ export async function createLesson(input: CreateLessonInput): Promise<CourseLess
 /** Deletes the DB row and best-effort cleans up the backing file in object storage. */
 export async function deleteLesson(lessonId: string): Promise<void> {
   const lesson = await prisma.lesson.delete({ where: { id: lessonId } });
-  const key = keyFromPublicUrl(lesson.fileUrl);
-  if (key) await deleteObject(key);
+  await deleteLessonFile(lesson.fileUrl);
 }
 
 /**
