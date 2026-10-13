@@ -18,6 +18,7 @@ import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
 import { TypingIndicator } from "@/components/messaging/TypingIndicator";
 import { adminHandle, adminLabel, type MentionableAdmin } from "@/lib/supportCommands";
+import { buttonVariants } from "@/components/ui/button";
 
 const THREAD_POLL_MS = 2_500;
 
@@ -197,7 +198,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
                 type="button"
                 onClick={handleResolve}
                 disabled={resolving}
-                className="tap flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className={buttonVariants({ variant: "secondary", size: "sm" })}
               >
                 {resolving && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {resolving ? "Resolving…" : "Mark resolved"}
@@ -208,7 +209,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
             <button
               type="button"
               onClick={() => setConfirmingDelete(true)}
-              className="tap rounded-lg border border-red-500/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-500/10"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
             >
               Delete
             </button>
@@ -323,7 +324,7 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
           <button
             type="submit"
             disabled={sending || !reply.trim()}
-            className="tap cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-xl px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            className={buttonVariants({ variant: "primary", size: "sm", className: "flex shrink-0" })}
           >
             {sending && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {sending ? "Sending…" : slashQuery !== null || reply.startsWith("/") ? "Transfer" : isEmail ? "Send email" : "Send"}

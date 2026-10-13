@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 import type { OverviewStats as OverviewStatsData } from "@/lib/admin";
+import { buttonVariants } from "@/components/ui/button";
 
 export interface OverviewStatsProps {
   stats: OverviewStatsData;
@@ -48,19 +49,19 @@ export function OverviewStats({ stats, children }: OverviewStatsProps) {
       <motion.div variants={item} className="flex flex-wrap gap-3">
         <Link
           href="/admin/payments"
-          className="rounded-xl px-4 py-2.5 text-small font-medium text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+          className={buttonVariants({ variant: "secondary" })}
         >
           Review pending payments{stats.pendingPayments > 0 ? ` (${stats.pendingPayments})` : ""} →
         </Link>
         <Link
           href="/admin/schedule?view=ATTENDANCE"
-          className="rounded-xl px-4 py-2.5 text-small font-medium text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+          className={buttonVariants({ variant: "secondary" })}
         >
           Lesson bookings →
         </Link>
         <Link
           href="/admin/users"
-          className="rounded-xl px-4 py-2.5 text-small font-medium text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+          className={buttonVariants({ variant: "secondary" })}
         >
           Manage users →
         </Link>

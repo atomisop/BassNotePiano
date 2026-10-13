@@ -14,6 +14,7 @@ import { countUnmatchedReceipts, getPaymentPipelineHealth } from "@/lib/paymentP
 import { listUnmatchedReceipts } from "@/lib/paymentReceipts";
 import { PaymentPipelineBanner } from "@/components/admin/PaymentPipelineBanner";
 import { UnmatchedEmailList } from "@/components/admin/UnmatchedEmailList";
+import { buttonVariants } from "@/components/ui/button";
 
 const FILTERS: { label: string; value: ZellePaymentStatus | "ALL" | "UNCHECKED" }[] = [
   { label: "Pending", value: "PENDING_REVIEW" },
@@ -66,7 +67,7 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
       </div>
 
       {isOwner && (
-        <a href="/api/admin/export?type=payments" className="tap neu-btn mt-6 inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
+        <a href="/api/admin/export?type=payments" className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-6" })}>
           Export CSV
         </a>
       )}
@@ -99,7 +100,7 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
       {pageCount > 1 && (
         <nav aria-label="Pages" className="mt-6 flex items-center justify-between gap-3 text-small">
           {page > 1 ? (
-            <Link href={pageHref(activeFilter, page - 1)} className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 font-medium">
+            <Link href={pageHref(activeFilter, page - 1)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
               Newer
             </Link>
           ) : (
@@ -109,7 +110,7 @@ export default async function AdminPaymentsPage({ searchParams }: { searchParams
             Page {page} of {pageCount}
           </span>
           {page < pageCount ? (
-            <Link href={pageHref(activeFilter, page + 1)} className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 font-medium">
+            <Link href={pageHref(activeFilter, page + 1)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
               Older
             </Link>
           ) : (

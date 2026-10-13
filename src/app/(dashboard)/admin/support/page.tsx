@@ -4,6 +4,7 @@ import type { SupportThreadSource } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { getSupportThreads } from "@/lib/support";
 import { SupportThreadList, type SupportListFilter } from "@/components/admin/SupportThreadList";
+import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 
 const FILTERS: { label: string; value: SupportListFilter; param: string }[] = [
   { label: "Open", value: "OPEN", param: "open" },
@@ -62,28 +63,24 @@ export default async function AdminSupportPage({
         {threads.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
       </p>
 
-      <div className="mt-6 flex w-fit gap-1.5 rounded-full p-1 bg-neu-base shadow-pressed-low">
+      <div className={`mt-6 ${TAB_TRACK}`}>
         {SOURCES.map((source) => (
           <Link
             key={source.value}
             href={hrefFor(mine ? "OPEN" : activeFilter, source.value)}
-            className={`tap inline-flex items-center rounded-full px-4 py-1.5 text-small font-semibold transition ${
-              !mine && activeSource === source.value ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
-            }`}
+            className={tabItem(!mine && activeSource === source.value)}
           >
             {source.label}
           </Link>
         ))}
       </div>
 
-      <div className="mt-3 flex w-fit flex-wrap gap-1.5 rounded-full p-1 bg-neu-base shadow-pressed-low">
+      <div className={`mt-3 ${TAB_TRACK}`}>
         {FILTERS.map((filter) => (
           <Link
             key={filter.value}
             href={hrefFor(filter.value, activeSource)}
-            className={`tap inline-flex items-center rounded-full px-3 py-1.5 text-small font-medium transition ${
-              activeFilter === filter.value ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
-            }`}
+            className={tabItem(activeFilter === filter.value)}
           >
             {filter.label}
           </Link>

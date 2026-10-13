@@ -11,6 +11,7 @@ import { ComposerBar, DayDivider, THREAD_HEADER, ThreadBackButton, clockLabel, l
 import { GroupAvatar } from "./GroupAvatar";
 import type { GroupMessageRow } from "../actions";
 import { scrollWithin } from "@/lib/scrollWithin";
+import { buttonVariants } from "@/components/ui/button";
 
 function groupTitle(group: GroupSummary): string {
   if (group.name) return group.name;
@@ -165,7 +166,7 @@ export function GroupChatWindow({
               type="button"
               onClick={() => setConfirmingLeave(false)}
               disabled={leaving}
-              className="tap rounded-lg px-2.5 py-1.5 text-small text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+              className={buttonVariants({ variant: "secondary", size: "sm" })}
             >
               Cancel
             </button>
@@ -173,7 +174,7 @@ export function GroupChatWindow({
               type="button"
               onClick={handleLeave}
               disabled={leaving}
-              className="tap flex items-center justify-center rounded-lg bg-red-500/95 px-2.5 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:opacity-50"
+              className={buttonVariants({ variant: "danger", size: "sm", className: "bg-red-500/95" })}
             >
               {leaving && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
               {leaving ? "Leaving…" : "Leave group"}
@@ -183,7 +184,7 @@ export function GroupChatWindow({
           <button
             type="button"
             onClick={() => setConfirmingLeave(true)}
-            className="tap shrink-0 rounded-lg px-2.5 py-1.5 text-small text-slate-400 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+            className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
           >
             Leave
           </button>

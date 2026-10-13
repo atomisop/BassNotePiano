@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TOUR_STEPS } from "./tourSteps";
 import { markOnboardingTourSeenAction } from "@/app/(dashboard)/about/actions";
+import { buttonVariants } from "@/components/ui/button";
 
 interface Rect {
   top: number;
@@ -312,7 +313,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
               <button
                 type="button"
                 onClick={goBack}
-                className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className={buttonVariants({ variant: "secondary", size: "sm" })}
               >
                 Back
               </button>
@@ -320,7 +321,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
             <button
               type="button"
               onClick={goNext}
-              className="tap cta-sheen cta-fill rounded-lg px-4 py-1.5 text-small font-semibold"
+              className={buttonVariants({ variant: "primary", size: "sm" })}
             >
               {isLast ? "Finish" : "Next"}
             </button>

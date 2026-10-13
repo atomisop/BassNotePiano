@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { RESEND_CLICKS_BEFORE_HELP, useResendCooldown } from "@/hooks/useResendCooldown";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -170,7 +170,7 @@ function VerifyEmailForm() {
         type="button"
         onClick={handleResend}
         disabled={cooldown.secondsLeft > 0}
-        className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-4 w-full disabled:cursor-not-allowed disabled:opacity-60"
+        className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-4 w-full" })}
       >
         {cooldown.secondsLeft > 0 ? `You can ask again in ${cooldown.secondsLeft}s` : "Didn't get a code? Resend"}
       </button>

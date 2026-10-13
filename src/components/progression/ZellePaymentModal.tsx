@@ -13,6 +13,7 @@ import { paymentReferenceCode } from "@/lib/paymentReference";
 import { normalizePhone, PHONE_HELP } from "@/lib/phone";
 import { checkPaymentPhoneAction, getPaymentPhoneStateAction, savePaymentPhoneAction } from "@/app/(dashboard)/billing/payment-phone-actions";
 import type { PaymentPhoneCheck } from "@/lib/paymentPhone";
+import { buttonVariants } from "@/components/ui/button";
 
 export interface ZellePaymentModalProps {
   isOpen: boolean;
@@ -308,7 +309,7 @@ export function ZellePaymentModal({
                   onClick={handleClose}
                   disabled={submitting}
                   aria-label="Close"
-                  className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
+                  className={buttonVariants({ variant: "secondary", size: "sm" })}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M18 6 6 18M6 6l12 12" strokeLinecap="round" />
@@ -391,7 +392,7 @@ export function ZellePaymentModal({
                         type="button"
                         onClick={handlePhoneContinue}
                         disabled={phoneSaving || !phoneOk}
-                        className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                        className={buttonVariants({ variant: "primary", className: "flex w-full" })}
                       >
                         {phoneSaving && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                         {phoneSaving ? "Saving…" : "Continue to payment"}
@@ -418,7 +419,7 @@ export function ZellePaymentModal({
                       <>
                         <a
                           href={venmo.app}
-                          className="cta-sheen cta-fill mt-4 flex w-full items-center justify-center rounded-xl py-2.5 text-small font-semibold md:hidden"
+                          className={buttonVariants({ variant: "primary", className: "mt-4 flex w-full md:hidden" })}
                         >
                           Open Venmo
                         </a>
@@ -439,7 +440,7 @@ export function ZellePaymentModal({
                       <button
                         type="button"
                         onClick={handleCopyHandle}
-                        className="tap shrink-0 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] px-3 py-1.5 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:bg-[rgb(var(--c-s-50)/0.1)] bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                        className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-[rgb(var(--c-s-50))]" })}
                       >
                         {copied ? "Copied" : "Copy"}
                       </button>
@@ -453,7 +454,7 @@ export function ZellePaymentModal({
                       <button
                         type="button"
                         onClick={() => handleCopy("amount", (amountCents / 100).toFixed(2))}
-                        className="tap shrink-0 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] px-3 py-1.5 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:bg-[rgb(var(--c-s-50)/0.1)] bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                        className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-[rgb(var(--c-s-50))]" })}
                       >
                         {copiedWhat === "amount" ? "Copied" : "Copy"}
                       </button>
@@ -468,7 +469,7 @@ export function ZellePaymentModal({
                         <button
                           type="button"
                           onClick={() => handleCopy("code", reference)}
-                          className="tap shrink-0 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] px-3 py-1.5 text-small font-medium text-[rgb(var(--c-s-50))] transition hover:bg-[rgb(var(--c-s-50)/0.1)] bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                          className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-[rgb(var(--c-s-50))]" })}
                         >
                           {copiedWhat === "code" ? "Copied" : "Copy"}
                         </button>
@@ -499,7 +500,7 @@ export function ZellePaymentModal({
                       <button
                         type="button"
                         onClick={() => setStep("confirming")}
-                        className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-3 w-full"
+                        className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3 w-full" })}
                       >
                         Paid and not unlocked? Tell us
                       </button>
@@ -546,7 +547,7 @@ export function ZellePaymentModal({
                           type="button"
                           onClick={handleSubmit}
                           disabled={submitting}
-                          className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                          className={buttonVariants({ variant: "primary", size: "sm", className: "flex flex-1" })}
                         >
                           {submitting && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                           {submitting ? "Submitting…" : "Submit for review"}

@@ -61,7 +61,9 @@ export default async function ScalePage({ params }: { params: { scaleSlug: strin
   // here on the server so their file URLs never reach the browser.
   const isTrial = access.reason === "trial";
   const TRIAL_LESSON_COUNT = await getNumberSetting("trial.lessonCount");
-  const lessons = isTrial ? allLessons.slice(0, TRIAL_LESSON_COUNT) : allLessons;
+  // Files are never linked by their storage address: the app serves each one after checking access.
+  const visibleLessons = isTrial ? allLessons.slice(0, TRIAL_LESSON_COUNT) : allLessons;
+  const lessons = visibleLessons.map((lesson) => ({ ...lesson, fileUrl: `/api/lessons/${lesson.id}/file` }));
   const freeTrial = isTrial
     ? {
         endsAt: ((await getCurriculumEntitlement(session.user.id)).until ?? new Date()).toISOString(),

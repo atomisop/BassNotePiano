@@ -5,6 +5,7 @@ import { creditsToClasses } from "@/lib/classScheduleLabels";
 import { useEffect, useRef, useState } from "react";
 import { formatDateTime } from "@/lib/classScheduleLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { buttonVariants } from "@/components/ui/button";
 
 interface BookableStudent {
   id: string;
@@ -163,7 +164,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
                   key={s.id}
                   type="button"
                   onClick={() => pickStudent(s)}
-                  className="flex w-full items-center justify-between rounded-lg px-3.5 py-2.5 text-left text-small transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className={buttonVariants({ variant: "secondary", className: "w-full justify-between text-left" })}
                 >
                   <div>
                     <p className="text-slate-100">{s.name ?? "Unnamed"}</p>
@@ -187,7 +188,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
                 {student.email} · {creditsToClasses(student.classCredits)} class{creditsToClasses(student.classCredits) === 1 ? "" : "es"} available
               </p>
             </div>
-            <button type="button" onClick={reset} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
+            <button type="button" onClick={reset} className={buttonVariants({ variant: "secondary", size: "sm" })}>
               Change
             </button>
           </div>
@@ -234,7 +235,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
             type="button"
             onClick={handleBook}
             disabled={!selectedSlot || booking}
-            className="cta-sheen cta-fill mt-4 flex w-full items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-6"
+            className={buttonVariants({ variant: "primary", className: "mt-4 flex w-full sm:w-auto sm:px-6" })}
           >
             {booking && <MorphingSquare size={14} className="mr-2 shrink-0" />}
             {booking ? "Booking…" : "Book this class"}

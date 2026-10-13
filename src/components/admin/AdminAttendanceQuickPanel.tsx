@@ -8,6 +8,7 @@ import { Check, ChevronDown, ClipboardCheck, X as XIcon } from "lucide-react";
 import { adminCancelBookingAction, getBookingFeedAction, markAttendanceAction } from "@/app/(dashboard)/admin/schedule/actions";
 import { Collapse } from "@/components/ui/Collapse";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { buttonVariants } from "@/components/ui/button";
 
 const POLL_INTERVAL_MS = 30_000;
 // Present and Absent stay greyed out until this long before the class starts.
@@ -309,7 +310,7 @@ export function AdminAttendanceQuickPanel() {
                                   <Link
                                     href="/admin/payments"
                                     onClick={() => setOpen(false)}
-                                    className="tap shrink-0 rounded-lg bg-neu-base px-3 py-1.5 text-small font-medium text-[rgb(var(--signal))] shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
+                                    className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0 text-[rgb(var(--signal))]" })}
                                   >
                                     Review payment
                                   </Link>
@@ -368,7 +369,7 @@ export function AdminAttendanceQuickPanel() {
                                         type="button"
                                         onClick={() => setConfirmCancelId(null)}
                                         disabled={busy}
-                                        className="tap rounded-lg px-2.5 py-1.5 text-small font-medium text-slate-300 bg-neu-base shadow-raised-low active:shadow-pressed-low disabled:opacity-50"
+                                        className={buttonVariants({ variant: "secondary", size: "sm" })}
                                       >
                                         Keep
                                       </button>
@@ -376,7 +377,7 @@ export function AdminAttendanceQuickPanel() {
                                         type="button"
                                         onClick={() => handleCancel(r.bookingId)}
                                         disabled={busy}
-                                        className="tap flex items-center gap-1 rounded-lg bg-red-500 px-2.5 py-1.5 text-small font-semibold text-white shadow-raised-low hover:bg-red-400 disabled:opacity-50"
+                                        className={buttonVariants({ variant: "danger", size: "sm" })}
                                       >
                                         {busy && <MorphingSquare size={11} />}
                                         Cancel booking

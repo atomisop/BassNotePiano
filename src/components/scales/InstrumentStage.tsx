@@ -11,6 +11,7 @@ import type { ScalePlayer } from "@/components/scales/useScalePlayer";
 import { PianoKeyboard } from "@/components/scales/PianoKeyboard";
 import { Fretboard, GUITAR_STANDARD_TUNING, BASS_STANDARD_TUNING } from "@/components/scales/Fretboard";
 import { SPRING } from "@/lib/motionTokens";
+import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 
 export interface InstrumentStageProps {
   variant: ScaleVariant;
@@ -102,7 +103,7 @@ function InstrumentSwitcher({
 
   return (
     <div
-      className="flex gap-1 rounded-full border border-ink/[0.08] bg-[rgb(var(--c-s-50)/0.04)] p-1"
+      className={TAB_TRACK}
       role="group"
       aria-label="Instrument view"
     >
@@ -115,10 +116,7 @@ function InstrumentSwitcher({
             type="button"
             onClick={() => onChange(option.value)}
             aria-pressed={isActive}
-            className={cn(
-              "tap flex h-9 cursor-pointer items-center gap-1.5 rounded-full px-3 text-small font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              isActive ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100",
-            )}
+            className={tabItem(isActive)}
           >
             <Glyph />
             {option.label}

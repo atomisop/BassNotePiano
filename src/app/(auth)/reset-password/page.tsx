@@ -1,12 +1,14 @@
 "use client";
 
+import { MIN_PASSWORD_LENGTH, passwordRequirementError } from "@/lib/passwordRules";
+import { PasswordStrength } from "@/components/ui/password-strength";
 import { BANNED_ERROR_CODE, BANNED_MESSAGE } from "@/lib/ban";
 import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { RESEND_CLICKS_BEFORE_HELP, useResendCooldown } from "@/hooks/useResendCooldown";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -25,7 +27,6 @@ const cardVariants = {
 // Matches actions.ts's own constant of the same name (and register's). This
 // form used to enforce nothing client-side, so the length rule only ever
 // surfaced as a submit-time rejection.
-const MIN_PASSWORD_LENGTH = 8;
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -44,8 +45,9 @@ function ResetPasswordForm() {
     e.preventDefault();
     setError(null);
 
-    if (newPassword.length < MIN_PASSWORD_LENGTH) {
-      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+    const passwordError = passwordRequirementError(newPassword);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -184,12 +186,7 @@ function ResetPasswordForm() {
             }}
             className={cn(error && fieldInvalid)}
           />
-          {newPassword.length > 0 && (
-            <p className={`mt-1.5 flex items-center gap-1.5 text-small ${newPassword.length >= MIN_PASSWORD_LENGTH ? "text-slate-50" : "text-slate-500"}`}>
-              <CheckIcon size={11} className={newPassword.length >= MIN_PASSWORD_LENGTH ? "opacity-100" : "opacity-30"} />
-              At least {MIN_PASSWORD_LENGTH} characters
-            </p>
-          )}
+          {newPassword.length > 0 && <PasswordStrength value={newPassword} className="mt-3" />}
         </div>
 
         <div>
@@ -237,7 +234,7 @@ function ResetPasswordForm() {
         type="button"
         onClick={handleResend}
         disabled={cooldown.secondsLeft > 0}
-        className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-2 w-full sm:mt-4 disabled:cursor-not-allowed disabled:opacity-60"
+        className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-2 w-full sm:mt-4" })}
       >
         {cooldown.secondsLeft > 0 ? `You can ask again in ${cooldown.secondsLeft}s` : "Didn't get a code? Resend"}
       </button>

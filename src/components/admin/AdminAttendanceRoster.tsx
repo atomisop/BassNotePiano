@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { buttonVariants } from "@/components/ui/button";
 
 interface RosterFocus {
   scaleOrder: number | null;
@@ -212,7 +213,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                     setUndoConfirmId(null);
                                     setEditingId(entry.bookingId);
                                   }}
-                                  className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
+                                  className={buttonVariants({ variant: "secondary", size: "sm" })}
                                 >
                                   Edit
                                 </button>
@@ -229,7 +230,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => setUndoConfirmId(null)}
                                       disabled={busyId === entry.bookingId}
-                                      className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                                      className={buttonVariants({ variant: "secondary", size: "sm" })}
                                     >
                                       Never mind
                                     </button>
@@ -237,7 +238,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => handleUndo(entry.bookingId)}
                                       disabled={busyId === entry.bookingId}
-                                      className="tap flex items-center justify-center cta-fill rounded-lg px-3 py-1.5 text-small font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                                      className={buttonVariants({ variant: "primary", size: "sm" })}
                                     >
                                       {busyId === entry.bookingId && <MorphingSquare size={11} className="mr-1.5 shrink-0" />}
                                       {busyId === entry.bookingId ? "Refunding…" : "Confirm undo & refund"}
@@ -249,7 +250,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => handleMark(entry.bookingId, "PRESENT")}
                                       disabled={busyId === entry.bookingId || entry.attendance === "PRESENT"}
-                                      className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-100 transition hover:bg-slate-50/10 disabled:cursor-not-allowed disabled:opacity-40 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                                      className={buttonVariants({ variant: "secondary", size: "sm" })}
                                     >
                                       Present
                                     </button>
@@ -257,7 +258,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => handleMark(entry.bookingId, "NO_SHOW")}
                                       disabled={busyId === entry.bookingId || entry.attendance === "NO_SHOW"}
-                                      className="tap rounded-lg border border-red-400/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-40 bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                                      className={buttonVariants({ variant: "secondary", size: "sm" })}
                                     >
                                       No-show
                                     </button>
@@ -265,14 +266,14 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => setUndoConfirmId(entry.bookingId)}
                                       disabled={busyId === entry.bookingId}
-                                      className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-200 transition hover:bg-[rgb(var(--c-s-50)/0.06)] disabled:cursor-not-allowed disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                                      className={buttonVariants({ variant: "secondary", size: "sm" })}
                                     >
                                       Undo &amp; refund
                                     </button>
                                     <button
                                       type="button"
                                       onClick={() => setEditingId(null)}
-                                      className="tap neu-btn rounded-lg px-3 py-1.5 text-small"
+                                      className={buttonVariants({ variant: "secondary", size: "sm" })}
                                     >
                                       Done
                                     </button>
@@ -287,7 +288,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => handleMark(entry.bookingId, "PRESENT")}
                                       disabled={busyId === entry.bookingId}
-                                      className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-100 transition hover:bg-slate-50/10 disabled:cursor-not-allowed disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                                      className={buttonVariants({ variant: "secondary", size: "sm" })}
                                     >
                                       Present
                                     </button>
@@ -295,7 +296,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       type="button"
                                       onClick={() => handleMark(entry.bookingId, "NO_SHOW")}
                                       disabled={busyId === entry.bookingId}
-                                      className="tap rounded-lg border border-red-400/30 px-3 py-1.5 text-small font-medium text-red-400 transition hover:bg-red-400/10 disabled:cursor-not-allowed disabled:opacity-50 bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                                      className={buttonVariants({ variant: "secondary", size: "sm" })}
                                     >
                                       No-show
                                     </button>
@@ -315,7 +316,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                       setCancelingId(entry.bookingId);
                                     }}
                                     disabled={busyId === entry.bookingId}
-                                    className="tap rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                                    className={buttonVariants({ variant: "secondary", size: "sm" })}
                                   >
                                     Cancel booking
                                   </button>

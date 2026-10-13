@@ -31,3 +31,14 @@ describe("display helpers", () => {
     expect(maskPhone("+15552345678")).toBe("•••• 5678");
   });
 });
+
+describe("the words under the phone box on sign-up", () => {
+  it("never mention a code unless a code is really sent", async () => {
+    const { signupPhoneNote, signupPhoneError } = await import("@/lib/phone");
+    expect(signupPhoneNote(false)).not.toMatch(/6-digit|text you/i);
+    expect(signupPhoneNote(false)).toMatch(/do not send/i);
+    expect(signupPhoneError(false)).not.toMatch(/code/i);
+    expect(signupPhoneNote(true)).toMatch(/6-digit code/);
+    expect(signupPhoneError(true)).toMatch(/code/);
+  });
+});

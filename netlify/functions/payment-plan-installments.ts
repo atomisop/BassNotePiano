@@ -142,6 +142,16 @@ export const handler = schedule("0 16 * * *", async () =>
     if (await lapsePlanForNonPayment(plan.id).catch(() => false)) lapsed++;
   }
 
+  // A plan whose FIRST bill was never paid holds its weekly time for nobody: released much sooner than a late month.
+  const firstBillDays = await getNumberSetting("payments.firstBillLapseDays");
+  const unpaidNew = await prisma.paymentPlan.findMany({
+    where: { status: "ACTIVE", installmentsPaid: 0, createdAt: { lte: new Date(now.getTime() - firstBillDays * 24 * 60 * 60 * 1000) } },
+    select: { id: true },
+  });
+  for (const plan of unpaidNew) {
+    if (await lapsePlanForNonPayment(plan.id, { firstBill: true }).catch(() => false)) lapsed++;
+  }
+
   console.log(
     `Payment plan installments: lapsed ${lapsed}, opened ${opened} of ${duePlans.length} due plans, escalated ${escalated} of ${overduePayments.length} overdue installments`,
   );

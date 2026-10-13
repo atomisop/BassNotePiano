@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RESEND_CLICKS_BEFORE_HELP, useResendCooldown } from "@/hooks/useResendCooldown";
@@ -96,7 +96,7 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
           <Button type="button" onClick={sendCode} loading={busy} className="cta-sheen w-full">
             {busy ? "Sending…" : "Text me a code"}
           </Button>
-          <button type="button" onClick={() => { setError(null); setStep("number"); }} className="tap neu-btn w-full rounded-lg px-3 py-1.5 text-small">
+          <button type="button" onClick={() => { setError(null); setStep("number"); }} className={buttonVariants({ variant: "secondary", size: "sm", className: "w-full" })}>
             Use a different number
           </button>
         </div>
@@ -139,7 +139,7 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
               await sendCode();
             }}
             disabled={cooldown.secondsLeft > 0 || busy}
-            className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-4 w-full disabled:cursor-not-allowed disabled:opacity-60"
+            className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-4 w-full" })}
           >
             {cooldown.secondsLeft > 0 ? `You can ask again in ${cooldown.secondsLeft}s` : "Didn't get a text? Send it again"}
           </button>

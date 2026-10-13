@@ -1,5 +1,7 @@
 "use client";
 
+import { MIN_PASSWORD_LENGTH, passwordRequirementError } from "@/lib/passwordRules";
+import { PasswordStrength } from "@/components/ui/password-strength";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -28,6 +30,7 @@ import { startNavigation } from "@/lib/navigationState";
 import { PhoneCard, type PhoneState } from "@/components/account/PhoneCard";
 import { formatPhone } from "@/lib/phone";
 import { unlinkDiscordAction } from "../lessons/discordActions";
+import { buttonVariants } from "@/components/ui/button";
 
 /** What the Account section shows about the person. Plain data, chosen on the server. */
 export interface AccountOverview {
@@ -128,7 +131,7 @@ function ShopLink({ back }: { back: string }) {
   return (
     <Link
       href={`/shop?back=${encodeURIComponent(back)}`}
-      className="flex items-center gap-2.5 tap rounded-xl border border-transparent px-3 py-2.5 text-left text-small text-slate-400 transition hover:text-slate-200 hover:shadow-raised-low active:shadow-pressed-low"
+      className={buttonVariants({ variant: "outline", className: "text-left" })}
     >
       <TabIcon path={TAB_ICONS.shop} />
       Shop
@@ -140,7 +143,7 @@ function AboutLink() {
   return (
     <Link
       href="/about"
-      className="flex items-center gap-2.5 tap rounded-xl border border-transparent px-3 py-2.5 text-left text-small text-slate-400 transition hover:text-slate-200 hover:shadow-raised-low active:shadow-pressed-low"
+      className={buttonVariants({ variant: "outline", className: "text-left" })}
     >
       <TabIcon path={TAB_ICONS.about} />
       About
@@ -346,7 +349,7 @@ function DiscordAccountCard({ username }: { username: string | null }) {
         )}
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <a href="/api/discord/connect" className="tap inline-flex items-center rounded-lg bg-neu-base px-3 py-2 text-small font-medium text-slate-100 shadow-raised-low active:shadow-pressed-low">
+        <a href="/api/discord/connect" className={buttonVariants({ variant: "secondary", size: "sm" })}>
           {username ? "Reconnect" : "Connect Discord"}
         </a>
         {username && (
@@ -360,7 +363,7 @@ function DiscordAccountCard({ username }: { username: string | null }) {
               setBusy(false);
               router.refresh();
             }}
-            className="tap rounded-lg bg-neu-base px-3 py-2 text-small font-medium text-red-400 shadow-raised-low active:shadow-pressed-low disabled:opacity-50"
+            className={buttonVariants({ variant: "secondary", size: "sm" })}
           >
             Disconnect
           </button>
@@ -407,7 +410,7 @@ function AccountSection({ account, history }: { account: AccountOverview; histor
             <InfoRow label="Username">{account.username ? `@${account.username}` : "Not set"}</InfoRow>
             <InfoRow label="Member since">{new Date(account.createdAt).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}</InfoRow>
           </div>
-          <Link href="/profile" className="tap mt-3 inline-flex items-center rounded-lg bg-neu-base px-3 py-2 text-small font-medium text-slate-100 shadow-raised-low active:shadow-pressed-low">
+          <Link href="/profile" className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}>
             Edit name, photo and music profile
           </Link>
         </SectionCard>
@@ -438,7 +441,7 @@ function AccountSection({ account, history }: { account: AccountOverview; histor
           <p className="text-small text-slate-500">
             A copy of your account details, classes, payments, progress and any teacher notes shared with you, as one file.
           </p>
-          <a href="/api/account/export" download className="tap mt-3 inline-flex items-center rounded-lg bg-neu-base px-3 py-2 text-small font-medium text-slate-100 shadow-raised-low active:shadow-pressed-low">
+          <a href="/api/account/export" download className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}>
             Download my data
           </a>
         </SectionCard>
@@ -612,7 +615,7 @@ function MembershipSection({
             <p className="text-small text-slate-100">{hasCurriculumAccess ? "Curriculum included" : "No active class plan"}</p>
           </div>
           {!hasCurriculumAccess && (
-            <Link href="/billing/plans" className="tap inline-flex items-center cta-sheen cta-fill rounded-lg px-4 py-2 text-small font-semibold">
+            <Link href="/billing/plans" className={buttonVariants({ variant: "primary", size: "sm" })}>
               See class plans
             </Link>
           )}
@@ -639,7 +642,6 @@ function MembershipSection({
 }
 
 // Matches actions.ts's own constant of the same name (and the auth pages').
-const MIN_PASSWORD_LENGTH = 8;
 
 function PasswordSection() {
   const { update } = useSession();
@@ -663,8 +665,9 @@ function PasswordSection() {
     setError(null);
     setSuccess(false);
 
-    if (newPassword.length < MIN_PASSWORD_LENGTH) {
-      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+    const passwordError = passwordRequirementError(newPassword);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -727,12 +730,7 @@ function PasswordSection() {
               disabled={submitting || awaitingCode}
               className="w-full disabled:opacity-60"
             />
-            {newPassword.length > 0 && (
-              <p className={`mt-1.5 flex items-center gap-1.5 text-small ${newPassword.length >= MIN_PASSWORD_LENGTH ? "text-slate-50" : "text-slate-500"}`}>
-                <CheckIcon size={11} className={newPassword.length >= MIN_PASSWORD_LENGTH ? "opacity-100" : "opacity-30"} />
-                At least {MIN_PASSWORD_LENGTH} characters
-              </p>
-            )}
+            {newPassword.length > 0 && <PasswordStrength value={newPassword} className="mt-3" />}
           </div>
           <div>
             <PasswordInput
@@ -790,7 +788,7 @@ function PasswordSection() {
           <button
             type="submit"
             disabled={submitting || (awaitingCode && code.length !== 6)}
-            className="tap cta-sheen cta-fill flex w-full items-center justify-center rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            className={buttonVariants({ variant: "primary", className: "flex w-full" })}
           >
             {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {submitting ? (awaitingCode ? "Saving…" : "Sending code…") : awaitingCode ? "Confirm change" : "Send verification code"}
@@ -828,7 +826,7 @@ function SignOutOtherDevicesCard() {
         type="button"
         onClick={handleClick}
         disabled={submitting}
-        className="tap flex items-center justify-center rounded-lg px-4 py-2 text-small font-medium text-slate-200 transition hover:text-[rgb(var(--c-s-50))] disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+        className={buttonVariants({ variant: "secondary" })}
       >
         {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
         {submitting ? "Signing out other devices…" : "Sign out of all other devices"}
@@ -911,7 +909,7 @@ function DangerZoneSection() {
           <button
             type="button"
             onClick={() => setStage("password")}
-            className="tap mt-4 rounded-lg bg-red-600 px-4 py-2 text-small font-semibold text-white shadow-raised-low transition hover:bg-red-500 active:shadow-pressed-low"
+            className={buttonVariants({ variant: "danger", className: "mt-4" })}
           >
             Delete my account
           </button>
@@ -1012,7 +1010,7 @@ function TutorialsSection() {
       <button
         type="button"
         onClick={() => router.push("/dashboard?tour=1")}
-        className="tap cta-sheen cta-fill mt-4 rounded-lg px-4 py-2 text-small font-semibold"
+        className={buttonVariants({ variant: "primary", className: "mt-4" })}
       >
         Replay app tour
       </button>

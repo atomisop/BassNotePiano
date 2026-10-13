@@ -7,6 +7,7 @@ import { approveZellePayment, notifyAutoApproved } from "@/lib/payments";
 import { createNotification } from "@/lib/notifications";
 import { codesOneTypoApart, memoHasOtherReference, memoHasReferenceFor, normalizedCodeOf, referenceInMemo } from "@/lib/paymentReference";
 import { notifyAdmins } from "@/lib/adminNotifications";
+import { reportReversal } from "@/lib/paymentReversal";
 import { normalizePhone } from "@/lib/phone";
 
 /**
@@ -404,6 +405,8 @@ export async function ingestPaymentEmail(input: {
   body: string;
 }): Promise<IngestOutcome> {
   if (!isAllowedSender(input.from)) return "ignored";
+  // Money taken back by Venmo (a reversed or cancelled payment) is not a new payment; the admins are told instead.
+  if (await reportReversal(input)) return "ignored";
   const parsed = parsePaymentEmail(input.subject, input.body);
   if (!parsed) {
     if (looksLikePayment(input.subject, input.body)) {

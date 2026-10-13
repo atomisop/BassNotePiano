@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { SettingDef, SettingValue } from "@/lib/siteSettingsDefs";
+import { buttonVariants } from "@/components/ui/button";
 
 type SaveResult = { ok: true; value: SettingValue } | { ok: false; error: string };
 
@@ -89,7 +90,7 @@ function Row({ def, value, onSave, onReset }: { def: SettingDef; value: SettingV
             type="button"
             disabled={busy}
             onClick={() => run(onSave(def.key, def.type === "number" ? Number(draft) : draft))}
-            className="tap rounded-lg bg-signal px-3 py-2 text-small font-semibold text-slate-950 shadow-raised-low disabled:opacity-50"
+            className={buttonVariants({ variant: "primary", size: "sm" })}
           >
             Save
           </button>
@@ -100,7 +101,7 @@ function Row({ def, value, onSave, onReset }: { def: SettingDef; value: SettingV
             type="button"
             disabled={busy}
             onClick={() => run(onReset(def.key))}
-            className="tap rounded-lg px-2 py-2 text-small text-slate-400 hover:text-slate-100 disabled:opacity-50"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
             title={`Back to ${String(def.default)}`}
           >
             Reset

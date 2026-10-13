@@ -5,6 +5,7 @@ import { EyeOff, Eye, Pencil, Trash2 } from "lucide-react";
 import { deleteStudentNoteAction, listStudentNotesAction, saveStudentNoteAction } from "@/app/(dashboard)/admin/users/notes-actions";
 import type { StudentNoteRow } from "@/lib/studentNotes";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { buttonVariants } from "@/components/ui/button";
 
 function when(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -89,7 +90,7 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
                   setDraft("");
                   setHidden(false);
                 }}
-                className="tap rounded-lg bg-neu-base px-3 py-1.5 text-small font-medium text-slate-300 shadow-raised-low active:shadow-pressed-low"
+                className={buttonVariants({ variant: "secondary", size: "sm" })}
               >
                 Cancel
               </button>
@@ -98,7 +99,7 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
               type="button"
               onClick={save}
               disabled={busy || !draft.trim()}
-              className="tap inline-flex items-center gap-1.5 rounded-lg bg-signal px-3 py-1.5 text-small font-semibold text-slate-950 shadow-raised-low disabled:opacity-40"
+              className={buttonVariants({ variant: "primary", size: "sm" })}
             >
               {busy && <MorphingSquare size={11} />}
               {editingId ? "Save changes" : "Save note"}

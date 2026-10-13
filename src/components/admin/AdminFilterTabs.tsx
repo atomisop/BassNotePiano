@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 
 export interface AdminFilterItem {
   label: string;
@@ -38,9 +39,7 @@ export function AdminFilterTabs({
       key={item.href}
       href={item.href}
       aria-current={item.active ? "page" : undefined}
-      className={`tap inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-3 py-1.5 text-small font-medium transition ${
-        item.active ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
-      }`}
+      className={tabItem(item.active)}
     >
       {item.label}
     </Link>
@@ -53,7 +52,7 @@ export function AdminFilterTabs({
           value={current.href}
           onChange={(e) => router.push(e.target.value)}
           aria-label={label}
-          className={`glass-surface-subtle w-full rounded-xl px-3 py-2.5 text-body font-medium text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] ${desktop === "select" ? "sm:max-w-sm" : "sm:hidden"}`}
+          className={`h-11 w-full rounded-control bg-neu-base px-4 text-body font-medium text-slate-100 shadow-pressed-low outline-none transition focus-visible:ring-2 focus-visible:ring-ring ${desktop === "select" ? "sm:max-w-sm" : "sm:hidden"}`}
         >
           {items.map((item) => (
             <option key={item.href} value={item.href}>
@@ -66,11 +65,11 @@ export function AdminFilterTabs({
           aria-label={label}
           className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] sm:hidden [&::-webkit-scrollbar]:hidden"
         >
-          <div className="flex w-max gap-1 rounded-full bg-neu-base p-1 shadow-pressed-low">{pills}</div>
+          <div className={`${TAB_TRACK} w-max`}>{pills}</div>
         </nav>
       )}
       {desktop === "pills" && (
-        <nav aria-label={label} className="hidden w-fit flex-wrap gap-1.5 rounded-full bg-neu-base p-1 shadow-pressed-low sm:flex">
+        <nav aria-label={label} className={`${TAB_TRACK} max-sm:hidden`}>
           {pills}
         </nav>
       )}

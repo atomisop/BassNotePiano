@@ -712,7 +712,7 @@ export const LAPSE_AFTER_DAYS = 7;
  * reserved classes released) with the system as the actor. Returns false
  * when it should not lapse (already settled, or a payment is mid-review).
  */
-export async function lapsePlanForNonPayment(planId: string): Promise<boolean> {
+export async function lapsePlanForNonPayment(planId: string, options: { firstBill?: boolean } = {}): Promise<boolean> {
   const plan = await prisma.paymentPlan.findUnique({ where: { id: planId } });
   if (!plan || plan.status !== "ACTIVE") return false;
   const inReview = await prisma.zellePayment.findFirst({
@@ -740,7 +740,9 @@ export async function lapsePlanForNonPayment(planId: string): Promise<boolean> {
     userId: plan.userId,
     type: "PAYMENT_PLAN_CANCELED",
     title: "Your plan was canceled",
-    body: "Your payment is a week overdue, so your plan was canceled and your weekly time is open again. Start a new plan to come back.",
+    body: options.firstBill
+      ? "Your first payment did not arrive in time, so your plan was canceled and your weekly time is open to others again. Start a new plan whenever you are ready."
+      : "Your payment is a week overdue, so your plan was canceled and your weekly time is open again. Start a new plan to come back.",
     emailCategory: "payments",
   });
 
@@ -748,7 +750,9 @@ export async function lapsePlanForNonPayment(planId: string): Promise<boolean> {
   await notifyAdmins("PLAN_LAPSED", {
     type: "ADMIN_ALERT",
     title: "Plan canceled for non-payment",
-    body: `${student?.name ?? student?.email ?? "A student"} went a week past due, so their plan was canceled.`,
+    body: options.firstBill
+      ? `${student?.name ?? student?.email ?? "A student"} never paid their first bill, so their plan was canceled and the weekly time is free again.`
+      : `${student?.name ?? student?.email ?? "A student"} went a week past due, so their plan was canceled.`,
     emailCategory: "social",
     cta: { label: "See the plan", path: "/admin/payment-plans?status=CANCELED" },
   });

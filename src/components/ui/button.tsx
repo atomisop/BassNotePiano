@@ -28,7 +28,7 @@ const primary = cn(
 )
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control text-small font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "tap inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-control text-small font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
@@ -50,6 +50,8 @@ const buttonVariants = cva(
           lift,
         ),
         // Inline text link: tappable, so it carries the signal color.
+        // Solid red: only for the final, irreversible step of a destructive flow.
+        danger: cn("relative bg-red-600 text-white font-semibold shadow-raised-mid hover:brightness-110 active:brightness-95", lift),
         link: "text-signal underline-offset-4 hover:underline",
         glass: cn("bg-neu-base text-[rgb(var(--c-s-50))] shadow-raised-mid hover:brightness-110", lift),
       },
@@ -58,6 +60,7 @@ const buttonVariants = cva(
         sm: "h-9 px-3.5",
         lg: "h-12 px-6",
         icon: "h-11 w-11",
+        iconSm: "h-9 w-9 px-0",
       },
     },
     defaultVariants: {

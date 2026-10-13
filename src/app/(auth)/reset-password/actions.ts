@@ -1,12 +1,12 @@
 "use server";
 
+import { passwordRequirementError } from "@/lib/passwordRules";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { verifyCode, createSilentCode, createAndSendCode, RateLimitError, type VerifyCodeResult } from "@/lib/verification";
 import { withTimingFloor } from "@/lib/timingSafe";
 import { sendPasswordChangedEmail } from "@/lib/email";
 
-const MIN_PASSWORD_LENGTH = 8;
 
 const REASON_MESSAGES: Record<string, string> = {
   not_found: "We couldn't find an active code for this email. Request a new one.",
@@ -16,8 +16,9 @@ const REASON_MESSAGES: Record<string, string> = {
 };
 
 export async function resetPasswordAction(email: string, code: string, newPassword: string) {
-  if (newPassword.length < MIN_PASSWORD_LENGTH) {
-    return { ok: false as const, error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` };
+  const passwordError = passwordRequirementError(newPassword);
+  if (passwordError) {
+    return { ok: false as const, error: passwordError };
   }
 
   const result: VerifyCodeResult = await verifyCode(email, "PASSWORD_RESET", code);

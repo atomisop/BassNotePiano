@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 
 /**
  * App-wide 404.
@@ -28,7 +29,7 @@ export default function NotFound() {
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <Link
           href="/"
-          className="cta-sheen cta-fill rounded-full px-5 py-2.5 text-small font-semibold"
+          className={buttonVariants({ variant: "primary" })}
         >
           Back to the homepage
         </Link>

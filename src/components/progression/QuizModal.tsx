@@ -8,6 +8,7 @@ import { CountUpNumber } from "@/components/ui/CountUpNumber";
 import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { SPRING } from "@/lib/motionTokens";
+import { buttonVariants } from "@/components/ui/button";
 
 export interface QuizModalProps {
   isOpen: boolean;
@@ -263,7 +264,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                           type="button"
                           onClick={handleSubmit}
                           disabled={!hasSelected || step === "submitting"}
-                          className="cta-sheen cta-fill flex flex-1 items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                          className={buttonVariants({ variant: "primary", size: "sm", className: "flex flex-1" })}
                         >
                           {step === "submitting" && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                           {step === "submitting" ? "Grading…" : "Submit quiz"}
@@ -273,7 +274,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                           type="button"
                           onClick={() => setCurrentIndex((i) => i + 1)}
                           disabled={!hasSelected}
-                          className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                          className={buttonVariants({ variant: "primary", className: "flex-1" })}
                         >
                           Next
                         </button>
@@ -331,7 +332,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                         <button
                           type="button"
                           onClick={handleRetake}
-                          className="cta-sheen cta-fill flex-1 rounded-xl py-2.5 text-small font-semibold"
+                          className={buttonVariants({ variant: "primary", size: "sm", className: "flex-1" })}
                         >
                           Retake quiz
                         </button>

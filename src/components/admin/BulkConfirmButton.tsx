@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { buttonVariants } from "@/components/ui/button";
 
 /** A button for a change that touches many rows at once: the first press asks, the second does it. */
 export function BulkConfirmButton({
@@ -40,10 +41,10 @@ export function BulkConfirmButton({
       <div className="rounded-xl bg-neu-base px-4 py-3 shadow-pressed-low">
         <p className="text-small text-slate-300">{question}</p>
         <div className="mt-2 flex flex-wrap gap-2">
-          <button type="button" onClick={() => setAsking(false)} disabled={busy} className="tap rounded-lg px-3 py-2 text-small font-medium text-slate-300 bg-neu-base shadow-raised-low active:shadow-pressed-low disabled:opacity-50">
+          <button type="button" onClick={() => setAsking(false)} disabled={busy} className={buttonVariants({ variant: "secondary", size: "sm" })}>
             Not yet
           </button>
-          <button type="button" onClick={run} disabled={busy} className="tap flex items-center gap-1.5 rounded-lg bg-[rgb(var(--c-a-400))] px-3 py-2 text-small font-semibold text-black shadow-raised-low disabled:opacity-50">
+          <button type="button" onClick={run} disabled={busy} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>
             {busy && <MorphingSquare size={12} />}
             {busy ? "Working…" : confirmLabel}
           </button>
@@ -54,7 +55,7 @@ export function BulkConfirmButton({
 
   return (
     <div>
-      <button type="button" onClick={() => { setResult(null); setAsking(true); }} className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
+      <button type="button" onClick={() => { setResult(null); setAsking(true); }} className={buttonVariants({ variant: "secondary", size: "sm" })}>
         {label}
       </button>
       {result && (

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import type { SetupCheck } from "@/lib/discordApi";
+import { buttonVariants } from "@/components/ui/button";
 
 /** Owner-only: runs the bot through every step and shows which one fails. */
 export function DiscordBotTest({
@@ -32,7 +33,7 @@ export function DiscordBotTest({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-small font-semibold text-slate-50">Discord class calls</p>
         <div className="flex flex-wrap gap-2">
-          <a href="/api/discord/connect" className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
+          <a href="/api/discord/connect" className={buttonVariants({ variant: "secondary", size: "sm" })}>
             Connect my Discord
           </a>
           <button
@@ -46,12 +47,12 @@ export function DiscordBotTest({
               }
             }}
             disabled={making}
-            className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium"
+            className={buttonVariants({ variant: "secondary", size: "sm" })}
           >
             {making && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {making ? "Creating…" : "Make a test call I can see"}
           </button>
-          <button type="button" onClick={run} disabled={running} className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
+          <button type="button" onClick={run} disabled={running} className={buttonVariants({ variant: "secondary", size: "sm" })}>
             {running && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
             {running ? "Testing…" : "Test the bot"}
           </button>

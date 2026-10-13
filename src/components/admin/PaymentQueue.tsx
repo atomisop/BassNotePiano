@@ -10,6 +10,7 @@ import { CREDITS_PER_CLASS, describePaymentPlan } from "@/lib/classCreditPricing
 import { formatDateTime } from "@/lib/classScheduleLabels";
 import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { buttonVariants } from "@/components/ui/button";
 
 export interface PaymentQueueProps {
   payments: PendingZellePayment[];
@@ -274,7 +275,7 @@ export function PaymentQueue({
                       setBusyId(null);
                     }
                   }}
-                  className="tap inline-flex items-center justify-center shrink-0 rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
                 >
                   {busyId === payment.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
                   Mark checked
@@ -342,7 +343,7 @@ export function PaymentQueue({
                   type="button"
                   onClick={() => handleApprove(payment.id)}
                   disabled={busyId === payment.id}
-                  className="tap cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                  className={buttonVariants({ variant: "primary", className: "flex-1" })}
                 >
                   {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                   {busyId === payment.id ? "Approving…" : "Confirm approve"}
@@ -363,7 +364,7 @@ export function PaymentQueue({
                 type="button"
                 onClick={() => setApprovingId(payment.id)}
                 disabled={busyId === payment.id}
-                className="tap cta-sheen cta-fill flex-1 rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                className={buttonVariants({ variant: "primary", className: "flex-1" })}
               >
                 Approve
               </button>
@@ -461,7 +462,7 @@ export function PaymentQueue({
                 type="button"
                 onClick={() => setDeletingId(payment.id)}
                 disabled={busyId === payment.id}
-                className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-3 inline-flex items-center"
+                className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}
               >
                 Delete
               </button>

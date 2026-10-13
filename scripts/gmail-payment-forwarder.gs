@@ -35,7 +35,7 @@ function forwardPaymentEmails() {
     // emails come from no-reply@o.sofi.org (note .org) and are found by the sentence in the body ("... sent to you by NAME ..."), and the site ignores any
     // SoFi email that is not a payment, so a wider net costs nothing.
     const query =
-      '((from:ealerts.bankofamerica.com OR from:venmo.com) (subject:"sent you" OR subject:"paid you" OR subject:"received") ' +
+      '((from:ealerts.bankofamerica.com OR from:venmo.com) (subject:"sent you" OR subject:"paid you" OR subject:"received" OR subject:refund OR subject:refunded OR subject:reversed OR subject:canceled OR subject:cancelled OR subject:returned OR subject:dispute OR subject:declined OR subject:failed) ' +
       'OR ((from:sofi.org OR from:sofi.com) "sent to you by")) ' + LOOKBACK + ' -label:' + DONE_LABEL;
 
     GmailApp.search(query, 0, 50).forEach(function (thread) {

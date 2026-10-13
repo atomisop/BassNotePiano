@@ -1,3 +1,4 @@
+import { passwordRequirementError } from "@/lib/passwordRules";
 import { canonicalEmail } from "@/lib/canonicalEmail";
 import { notifyAdmins } from "@/lib/adminNotifications";
 import { hasApprovedRegistration, startTrialForEmail } from "@/lib/entitlement";
@@ -16,7 +17,6 @@ import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
 import { clientIpFrom, consumeRateLimit, RateLimitError as IpRateLimitError } from "@/lib/rateLimit";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MIN_PASSWORD_LENGTH = 8;
 
 // Sign-up costs a bcrypt hash, a row, and an outbound email per call, so it
 // is capped per IP before any of that runs.
@@ -55,12 +55,12 @@ export async function POST(req: NextRequest) {
   if ((await getBoolSetting("signup.requireFullName")) && !hasFirstAndLastName(name)) {
     return NextResponse.json({ error: FULL_NAME_MESSAGE }, { status: 400 });
   }
-  if (!name || !EMAIL_PATTERN.test(email) || password.length < MIN_PASSWORD_LENGTH) {
-    return NextResponse.json(
-      { error: `Enter a name, a valid email, and a password of at least ${MIN_PASSWORD_LENGTH} characters.` },
-      { status: 400 },
-    );
+  if (!name || !EMAIL_PATTERN.test(email)) {
+    return NextResponse.json({ error: "Enter a name and a valid email." }, { status: 400 });
   }
+  // The same rules the sign-up screen shows while typing (src/lib/passwordRules.ts): enforced here, not only in the browser.
+  const passwordError = passwordRequirementError(password);
+  if (passwordError) return NextResponse.json({ error: passwordError }, { status: 400 });
 
   // Checked after the format check (a well-formed but disposable address),
   // before anything is written: the verification code, payment receipts,

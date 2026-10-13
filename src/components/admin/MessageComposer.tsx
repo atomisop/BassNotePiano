@@ -11,6 +11,7 @@ import {
   sendMessageAction,
   type MessageRecipient,
 } from "@/app/(dashboard)/admin/messages/actions";
+import { buttonVariants } from "@/components/ui/button";
 
 interface SentRow {
   id: string;
@@ -127,7 +128,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
                     type="button"
                     onClick={() => setRecipients((current) => current.filter((c) => c.id !== r.id))}
                     aria-label={`Remove ${r.name ?? r.email}`}
-                    className="tap flex h-6 w-6 items-center justify-center transition neu-btn rounded-lg"
+                    className={buttonVariants({ variant: "secondary", size: "iconSm" })}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -160,7 +161,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
                       <button
                         type="button"
                         onClick={() => addRecipients(visibleResults)}
-                        className="tap neu-btn rounded-lg px-3 py-1.5 text-small inline-flex items-center"
+                        className={buttonVariants({ variant: "secondary", size: "sm" })}
                       >
                         Add all {visibleResults.length}
                       </button>
@@ -170,7 +171,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
                         key={r.id}
                         type="button"
                         onClick={() => addRecipients([r])}
-                        className="tap flex w-full flex-col rounded-lg bg-neu-base px-3 py-2 text-left shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
+                        className={buttonVariants({ variant: "secondary", size: "sm", className: "w-full flex-col text-left" })}
                       >
                         <span className="truncate text-small font-medium text-slate-100">{r.name ?? r.email}</span>
                         {r.name && <span className="truncate text-small text-slate-500">{r.email}</span>}
@@ -218,7 +219,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
           type="button"
           onClick={() => void send()}
           disabled={submitting || recipients.length === 0 || !title.trim() || !body.trim()}
-          className="tap cta-sheen cta-fill mt-4 flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+          className={buttonVariants({ variant: "primary", className: "mt-4" })}
         >
           {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
           {submitting ? "Sending…" : recipients.length > 1 ? `Send to ${recipients.length} people` : "Send message"}

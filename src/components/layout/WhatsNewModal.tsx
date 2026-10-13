@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { ChangelogEntry } from "@/lib/changelog";
 import { CheckIcon } from "@/components/ui/icons";
 import { FADE, SPRING } from "@/lib/motionTokens";
+import { buttonVariants } from "@/components/ui/button";
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -82,7 +83,7 @@ export function WhatsNewModal({ open, onClose, entry }: { open: boolean; onClose
               <button
                 type="button"
                 onClick={handleClose}
-                className="tap cta-sheen cta-fill shrink-0 rounded-lg px-4 py-2 text-small font-semibold"
+                className={buttonVariants({ variant: "primary", size: "sm", className: "shrink-0" })}
               >
                 Got it
               </button>

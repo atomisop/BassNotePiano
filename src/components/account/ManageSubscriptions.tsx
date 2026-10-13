@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import type { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason } from "@prisma/client";
 import { calculatePaymentPlanRate, FAMILY_BUNDLE_DISCOUNT_RATE, PLAN_CADENCE_CREDITS_PER_WEEK, isPlanTermOffered, OFFERED_PLAN_CADENCE, CLASS_MINUTES } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
+import { buttonVariants } from "@/components/ui/button";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -229,7 +230,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
         </div>
         <Link
           href="/billing/lessons"
-          className="tap inline-flex items-center shrink-0 rounded-lg px-4 py-2 text-small font-semibold text-slate-100 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+          className={buttonVariants({ variant: "secondary", className: "shrink-0" })}
         >
           Bundle &amp; save
         </Link>
@@ -238,7 +239,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
       {activePlan && (
         <div className="border-t border-ink/10 pt-4">
           {cancelStage === "idle" && (
-            <button type="button" onClick={startCancelFlow} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
+            <button type="button" onClick={startCancelFlow} className={buttonVariants({ variant: "secondary", size: "sm" })}>
               Cancel subscription
             </button>
           )}
@@ -251,7 +252,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   type="button"
                   onClick={() => handleChangeTerm("TERM_3")}
                   disabled={pendingTerm !== null}
-                  className="tap cta-sheen cta-fill flex items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:opacity-60"
+                  className={buttonVariants({ variant: "primary" })}
                 >
                   {pendingTerm === "TERM_3" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                   Switch to 3-Month
@@ -259,7 +260,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                 <button
                   type="button"
                   onClick={() => setCancelStage("reason")}
-                  className="tap rounded-lg px-4 py-2 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className={buttonVariants({ variant: "secondary" })}
                 >
                   No, cancel anyway
                 </button>
@@ -304,7 +305,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   type="button"
                   onClick={handleConfirmCancel}
                   disabled={!reason || cancelStage === "canceling"}
-                  className="tap flex items-center justify-center rounded-lg bg-red-600 px-4 py-2 text-small font-semibold text-white shadow-raised-low transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  className={buttonVariants({ variant: "danger" })}
                 >
                   {cancelStage === "canceling" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                   {cancelStage === "canceling" ? "Canceling…" : "Cancel my subscription"}
@@ -313,7 +314,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   type="button"
                   onClick={resetCancelFlow}
                   disabled={cancelStage === "canceling"}
-                  className="tap rounded-lg px-4 py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className={buttonVariants({ variant: "secondary" })}
                 >
                   Never mind
                 </button>

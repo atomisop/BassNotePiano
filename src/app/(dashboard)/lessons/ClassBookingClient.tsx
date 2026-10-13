@@ -26,6 +26,7 @@ import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { Tabs } from "@/components/ui/Tabs";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
+import { buttonVariants } from "@/components/ui/button";
 
 const NETWORK_ERROR = "That didn't go through. Check your connection and try again.";
 
@@ -235,7 +236,7 @@ function BookingCard({
               href={b.discordUrl ?? DISCORD_INVITE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="tap cta-sheen cta-fill inline-flex items-center rounded-lg px-3 py-1.5 text-small font-semibold"
+              className={buttonVariants({ variant: "primary", size: "sm" })}
             >
               Join on Discord
             </a>
@@ -259,7 +260,7 @@ function BookingCard({
               type="button"
               onClick={() => setConfirmingCancel(true)}
               disabled={canceling}
-              className="tap flex items-center justify-center rounded-lg px-3 py-1.5 text-small font-medium text-red-400 transition hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-60 bg-neu-base shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+              className={buttonVariants({ variant: "secondary", size: "sm" })}
             >
               {b.reserved ? "Skip" : "Cancel"}
             </button>
@@ -267,7 +268,7 @@ function BookingCard({
           {hoursUntil > 0 && (
             <a
               href={`/api/calendar/class?s=${encodeURIComponent(b.scheduledAt)}&m=${minutes}`}
-              className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium"
+              className={buttonVariants({ variant: "secondary", size: "sm" })}
             >
               Add to calendar
             </a>
@@ -286,7 +287,7 @@ function BookingCard({
               type="button"
               onClick={() => setConfirmingCancel(false)}
               disabled={canceling}
-              className="tap rounded-lg px-3 py-2 text-small font-medium text-slate-300 bg-neu-base shadow-raised-low active:shadow-pressed-low disabled:opacity-50"
+              className={buttonVariants({ variant: "secondary", size: "sm" })}
             >
               Keep it
             </button>
@@ -294,7 +295,7 @@ function BookingCard({
               type="button"
               onClick={() => onCancel(b)}
               disabled={canceling}
-              className="tap flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-2 text-small font-semibold text-white shadow-raised-low hover:bg-red-400 disabled:opacity-50"
+              className={buttonVariants({ variant: "danger", size: "sm" })}
             >
               {canceling && <MorphingSquare size={12} />}
               {canceling ? "Canceling…" : b.reserved ? "Yes, skip it" : "Yes, cancel it"}
@@ -345,7 +346,7 @@ function MonthGroup({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="tap neu-btn rounded-lg px-3 py-1.5 text-small flex w-full items-center justify-between gap-3"
+        className={buttonVariants({ variant: "secondary", size: "sm", className: "w-full justify-between" })}
       >
         <span className="text-small font-medium text-slate-200">{group.label}</span>
         <span className="flex items-center gap-2 text-small text-slate-500">
@@ -416,7 +417,7 @@ function AttendeeEmailRow({
           type="button"
           onClick={onRemove}
           aria-label="Remove this student"
-          className="tap neu-btn rounded-lg px-3 py-1.5 text-small flex shrink-0 items-center justify-center"
+          className={buttonVariants({ variant: "secondary", size: "sm", className: "flex shrink-0" })}
         >
           <XIcon size={12} />
         </button>
@@ -861,25 +862,20 @@ export function ClassBookingClient({
               </p>
             )}
 
-            <div className="mt-5 flex w-fit flex-wrap gap-1.5 rounded-full bg-neu-base p-1 shadow-pressed-low" role="group" aria-label="Who is this class for?">
-              {(["SOLO", "FAMILY"] as const).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => {
-                    setMode(m);
-                    setSelectedKeys(new Set());
-                    setFamilyRowKey(null);
-                  }}
-                  aria-pressed={mode === m}
-                  className={`tap rounded-full px-4 py-2 text-small font-medium transition ${
-                    mode === m ? "bg-[rgb(var(--signal)/0.14)] text-signal" : "text-slate-400 hover:text-slate-100"
-                  }`}
-                >
-                  {m === "SOLO" ? "Just me" : "Me and my family"}
-                </button>
-              ))}
-            </div>
+            <Tabs
+              className="mt-5"
+              label="Who is this class for?"
+              items={[
+                { id: "SOLO", label: "Just me" },
+                { id: "FAMILY", label: "Me and my family" },
+              ]}
+              value={mode}
+              onChange={(m) => {
+                setMode(m);
+                setSelectedKeys(new Set());
+                setFamilyRowKey(null);
+              }}
+            />
 
             {reschedulingBooking && (
               <div className="glass-surface-elevated mt-5 flex flex-wrap items-center justify-between gap-4 p-5">
@@ -887,7 +883,7 @@ export function ClassBookingClient({
                   Moving {reschedulingBooking.label ?? "your class"} · {formatDateTime(reschedulingBooking.scheduledAt)}
                   {reschedulingBooking.reserved && <span className="font-normal text-slate-500"> (this week only, your weekly time stays)</span>}
                 </p>
-                <button type="button" onClick={() => setReschedulingBooking(null)} className="tap neu-btn rounded-lg px-3 py-1.5 text-small shrink-0">
+                <button type="button" onClick={() => setReschedulingBooking(null)} className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}>
                   Never mind
                 </button>
               </div>
@@ -918,7 +914,7 @@ export function ClassBookingClient({
                   paymentId={extraPayment.id}
                   onSubmitPayment={submitClassCreditsPaymentAction.bind(null, extraPayment.id)}
                 />
-                <button type="button" onClick={() => setExtraPayment(null)} className="tap neu-btn mt-3 rounded-lg px-3 py-1.5 text-small">
+                <button type="button" onClick={() => setExtraPayment(null)} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}>
                   Back to times
                 </button>
               </div>
@@ -942,18 +938,18 @@ export function ClassBookingClient({
                   ))}
                 </div>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                  <button type="button" onClick={() => setFamilyEmails((prev) => [...prev, ""])} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
+                  <button type="button" onClick={() => setFamilyEmails((prev) => [...prev, ""])} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                     + Add another student
                   </button>
                   <div className="flex items-center gap-3">
-                    <button type="button" onClick={() => setFamilyRowKey(null)} disabled={familySubmitting} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
+                    <button type="button" onClick={() => setFamilyRowKey(null)} disabled={familySubmitting} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                       Cancel
                     </button>
                     <button
                       type="button"
                       onClick={handleBookFamily}
                       disabled={!familyAllVerified || familySubmitting}
-                      className="tap cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                      className={buttonVariants({ variant: "primary", size: "sm", className: "flex shrink-0" })}
                     >
                       {familySubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {familySubmitting ? "Booking…" : `Book for ${familyEmailsTrimmed.length || familyMinAttendees} students`}
@@ -1106,11 +1102,11 @@ export function ClassBookingClient({
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button type="button" onClick={() => setSelectedKeys(new Set())} disabled={bundleSubmitting} className="tap neu-btn rounded-lg px-3 py-1.5 text-small">
+                  <button type="button" onClick={() => setSelectedKeys(new Set())} disabled={bundleSubmitting} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                     Clear
                   </button>
                   {missingCredits > 0 ? (
-                    <Link href="/billing/plans" className="tap cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold">
+                    <Link href="/billing/plans" className={buttonVariants({ variant: "primary", size: "sm", className: "flex shrink-0" })}>
                       Get more credits
                     </Link>
                   ) : (
@@ -1118,7 +1114,7 @@ export function ClassBookingClient({
                       type="button"
                       onClick={handleBookSelected}
                       disabled={bundleSubmitting}
-                      className="tap cta-sheen cta-fill flex shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                      className={buttonVariants({ variant: "primary", size: "sm", className: "flex shrink-0" })}
                     >
                       {bundleSubmitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {bundleSubmitting ? "Booking…" : `Book ${selectedRows.length} class${selectedRows.length === 1 ? "" : "es"}`}

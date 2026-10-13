@@ -11,6 +11,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { BookingCalendar } from "../../lessons/BookingCalendar";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { enrollInPaymentPlanAction, getReservableSlotsAction, submitPlanInstallmentPaymentAction } from "./actions";
+import { buttonVariants } from "@/components/ui/button";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -247,11 +248,12 @@ export function PaymentPlanEnrollmentFlow({
                 key={option.value}
                 type="button"
                 onClick={() => setTerm(option.value)}
-                className={`rounded-lg border px-3 py-3 text-center transition ${
-                  active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-transparent bg-neu-base shadow-raised-low"
+                aria-pressed={active}
+                className={`tap rounded-control bg-neu-base px-3 py-3 text-center transition ${
+                  active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 }`}
               >
-                <p className={`text-small font-medium ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>{option.label}</p>
+                <p className={`text-small font-medium ${active ? "text-signal" : "text-slate-100"}`}>{option.label}</p>
                 <p className="mt-0.5 text-small text-slate-500">
                   {percentOff > 0 ? (
                     <>
@@ -320,11 +322,11 @@ export function PaymentPlanEnrollmentFlow({
                         setTimesOpen(false);
                       }}
                       aria-pressed={active}
-                      className={`tap flex min-h-20 flex-col items-center justify-center gap-1 rounded-2xl px-3 py-3 text-center transition bg-neu-base ${
+                      className={`tap flex min-h-20 flex-col items-center justify-center gap-1 rounded-control px-3 py-3 text-center transition bg-neu-base ${
                         active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                       }`}
                     >
-                      <span className={`text-body font-semibold ${active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}`}>
+                      <span className={`text-body font-semibold ${active ? "text-signal" : "text-slate-100"}`}>
                         {formatTimeRange(slot.startTime, classMinutes)}
                       </span>
                       <span className="text-small text-slate-500">{active ? "Selected" : slot.label ?? `${classMinutes} min`}</span>
@@ -407,7 +409,7 @@ export function PaymentPlanEnrollmentFlow({
         type="button"
         onClick={handleEnroll}
         disabled={loading || !acknowledged || !selectedSlot}
-        className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-2.5 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        className={buttonVariants({ variant: "primary", className: "flex w-full" })}
       >
         {loading && <MorphingSquare size={14} className="mr-2 shrink-0" />}
         {loading ? "Starting…" : "Start plan"}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 
 export type TabItem<T extends string> = { id: T; label: ReactNode; count?: number };
 
@@ -76,7 +77,8 @@ export function Tabs<const T extends string>({
       role="group"
       aria-label={label}
       className={cn(
-        "relative inline-flex max-w-full gap-1 overflow-x-auto rounded-full bg-neu-base p-1 shadow-pressed-low",
+        "relative",
+        TAB_TRACK,
         className,
       )}
     >
@@ -100,10 +102,7 @@ export function Tabs<const T extends string>({
             aria-pressed={active}
             onClick={() => onChange(item.id)}
             onKeyDown={(e) => onKeyDown(e, i)}
-            className={cn(
-              "tap relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-small font-semibold transition-colors duration-(--dur-fast) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              active ? "text-signal" : "text-slate-400 hover:text-slate-100",
-            )}
+            className={tabItem(active, { thumb: true })}
           >
             {item.label}
             {item.count !== undefined && item.count > 0 && (

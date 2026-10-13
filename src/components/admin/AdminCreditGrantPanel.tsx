@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { CreditUserSearchRow, CreditAdjustmentRow } from "@/lib/creditAdjustments";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { Tabs } from "@/components/ui/Tabs";
+import { buttonVariants } from "@/components/ui/button";
 
 interface RecentAdjustmentRow {
   id: string;
@@ -236,7 +237,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   <button
                     type="button"
                     onClick={() => setAmount(String(storedToCredits(selected.classCredits)))}
-                    className="tap neu-btn rounded-lg px-3 py-1.5 text-small mt-1.5 inline-flex items-center"
+                    className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-1.5" })}
                   >
                     Revoke all {formatCredits(storedToCredits(selected.classCredits))}
                   </button>
@@ -283,7 +284,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                       type="button"
                       onClick={handleConfirm}
                       disabled={submitting}
-                      className="tap cta-sheen cta-fill flex flex-1 items-center justify-center rounded-lg py-2 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                      className={buttonVariants({ variant: "primary", size: "sm", className: "flex flex-1" })}
                     >
                       {submitting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                       {submitting ? "Applying…" : "Confirm"}
@@ -293,7 +294,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
               ) : (
                 <button
                   type="submit"
-                  className="tap cta-sheen cta-fill w-full rounded-lg px-3 py-2 text-small font-medium disabled:opacity-40"
+                  className={buttonVariants({ variant: "primary", className: "w-full" })}
                 >
                   {mode === "grant" ? "Review grant" : "Review revoke"}
                 </button>

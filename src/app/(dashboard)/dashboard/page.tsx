@@ -58,7 +58,7 @@ function Stat({ value, label }: { value: string; label: string }) {
  *
  * Desktop: the full width. A band of cards (finger practice, next class, next
  * step, week, progress) sits on the same four columns as the scales below it.
- * Below lg the cards become one swipeable deck (CardDeck).
+ * Below md (phones) the cards become one swipeable deck (CardDeck); tablets get two columns.
  *
  * STEP 2C: the greeting is the one Hero; the student's progress ("3/14")
  * sits huge and faint behind it on the back plane; Continue is the one
@@ -159,7 +159,7 @@ export default async function DashboardPage() {
               )}
               <a
                 href={`/api/calendar/class?s=${encodeURIComponent(nextClass.scheduledAt.toISOString())}&m=${length}`}
-                className="tap neu-btn inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium"
+                className={buttonVariants({ variant: "secondary", size: "sm" })}
               >
                 Add to calendar
               </a>
@@ -267,7 +267,7 @@ export default async function DashboardPage() {
         {/* ---- Phones: the cards as one swipeable deck. Finger practice is
             first: it is the thing to do today, and it unlocks the scales. --- */}
         <CardDeck
-          className="lg:hidden"
+          className="md:hidden"
           label="Your home cards"
           labels={["Finger practice", "Next class", "Your next step", "This week", "Progress", "Badges"]}
         >
@@ -283,10 +283,10 @@ export default async function DashboardPage() {
             scales below. The next step is only as wide as it needs to be, and
             the week and progress cards take the space it used to leave empty,
             so there is no side column and the scales get the full width. ---- */}
-        <div className="hidden gap-3 lg:grid lg:grid-cols-4 [&>*>*]:h-full">
+        <div className="hidden gap-3 md:grid md:grid-cols-2 lg:grid-cols-4 [&>*>*]:h-full">
           <div className="lg:col-span-2">{practiceCard()}</div>
           <div className="lg:col-span-2">{nextClassCard()}</div>
-          <div className="lg:col-span-2">{nextStepCard()}</div>
+          <div className="md:col-span-2 lg:col-span-2">{nextStepCard()}</div>
           <div>{weekCard()}</div>
           <div>{progressCard()}</div>
         </div>

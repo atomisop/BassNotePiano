@@ -1,5 +1,6 @@
 "use server";
 
+import { passwordRequirementError } from "@/lib/passwordRules";
 import { removeDiscordPresence } from "@/lib/discordCleanup";
 import { noticeAccountChange } from "@/lib/studentNotices";
 import bcrypt from "bcryptjs";
@@ -16,7 +17,6 @@ import { sendPasswordChangedEmail } from "@/lib/email";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
 import { changePaymentPlanTerm, cancelPaymentPlanBySelf, PaymentPlanError } from "@/lib/paymentPlans";
 
-const MIN_PASSWORD_LENGTH = 8;
 
 /** Every action here operates on the signed-in user only, never on an email passed by the client. */
 async function requireSession() {
@@ -52,8 +52,9 @@ export async function updateNameAction(newName: string) {
 // ---------------------------------------------------------------------------
 
 async function checkPasswordChange(currentPassword: string, newPassword: string) {
-  if (newPassword.length < MIN_PASSWORD_LENGTH) {
-    return { ok: false as const, error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` };
+  const passwordError = passwordRequirementError(newPassword);
+  if (passwordError) {
+    return { ok: false as const, error: passwordError };
   }
   const { id } = await requireSession();
   const user = await prisma.user.findUnique({ where: { id }, select: { email: true, name: true, passwordHash: true } });

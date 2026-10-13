@@ -7,6 +7,7 @@ import type { PrimaryInstrument, SkillLevel } from "@prisma/client";
 import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { submitClassRegistrationAction } from "./actions";
+import { buttonVariants } from "@/components/ui/button";
 
 const INSTRUMENTS: { value: PrimaryInstrument; label: string }[] = [
   { value: "PIANO_KEYBOARD", label: "Piano / Keyboard" },
@@ -246,7 +247,7 @@ export function ClassRegistrationForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="cta-sheen cta-fill flex w-full items-center justify-center rounded-xl py-3 text-small font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+        className={buttonVariants({ variant: "primary", className: "flex w-full" })}
       >
         {submitting && <MorphingSquare size={14} className="mr-2 shrink-0" />}
         {submitting ? "Submitting…" : "Request to register"}

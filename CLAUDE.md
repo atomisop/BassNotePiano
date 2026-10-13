@@ -236,9 +236,10 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
 - **Yearly (`TERM_12`) is retired** for new enrollments
   (`isPlanTermOffered`), enum value kept for existing rows. Note that term
   discounts are still not a real commitment: a student can self-cancel.
-- Still open: lesson/PDF files live at public R2 URLs, so page gating doesn't
-  stop someone who has the URL. Watermarked, in-app-only PDFs are the planned
-  follow-up.
+- **Lesson files are served by the app** (added 2026-10-13, `docs/PRIVATE-LESSON-FILES.md`): the player and download links use
+  `/api/lessons/[lessonId]/file`, which checks access (trial slice included), stamps the student's name and email on every PDF page
+  (`lessonWatermark.ts`) and is never cached. Lessons live in a private bucket (`R2_PRIVATE_BUCKET_NAME`, `fileUrl` = `private:<key>`);
+  until that is set and `scripts/move-lessons-private.mjs` has run, the old public addresses still work through the same route.
 
 ## Phone numbers (added 2026-10-09)
 
@@ -298,6 +299,19 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
 - **User switches decide what they see.** `emailPreferences.ts` maps each kind of notice to its switch (payments, account updates, social, class updates, practice and class reminders); never send or show a notice around a switch (a payment result they are waiting on is the one documented exception). Practice and class reminders are turned on for everyone who subscribes (a data migration for those already subscribed, and `createPaymentPlan` for new ones, once, so a later opt-out sticks). The practice banner is a practice reminder: it needs the owner's `reminders.practiceEnabled` and the person's own reminders switch. A banned account is sent nothing.
 - **New notices** live in `studentNotices.ts` (+ `trialNotices.ts`, run by the daily credit-expiry job). Add a new student-facing
   event there, with a `NotificationType` (enum migration), its CTA in `notifications.ts` and its category in `NotificationBell.tsx`.
+
+## Abuse guards (added 2026-10-12, `docs/ABUSE-AUDIT.md`)
+
+One free trial per inbox forever (`trial-used:` marker, plus tags dropped at every domain); an unpaid first bill releases the weekly
+time after `payments.firstBillLapseDays`; new lesson files get a random key. Read `docs/ABUSE-AUDIT.md` before changing money,
+booking or access code: it lists what was checked and the business decisions left open.
+
+## Passwords (added 2026-10-11)
+
+New passwords need at least 8 characters and one special character (`src/lib/passwordRules.ts`); a number and mixed case only
+make the strength bar fuller. The sign-up, reset and change-password screens show the 21st.dev "Password Strength" bar and
+live checklist (`components/ui/password-strength.tsx`) from the same rules, and the register route, the reset action and the
+change-password action enforce them on the server. Older passwords are never rejected at sign-in.
 
 ## Top bar by screen size (added 2026-10-10)
 

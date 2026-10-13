@@ -5,6 +5,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { approveAllReadyScalesAction, approveNextScaleAction } from "./actions";
 import { BulkConfirmButton } from "@/components/admin/BulkConfirmButton";
+import { buttonVariants } from "@/components/ui/button";
 
 export const metadata = { title: "Admin: People" };
 
@@ -49,7 +50,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: {
       </div>
 
       {isOwner && (
-        <a href="/api/admin/export?type=people" className="tap neu-btn mt-6 inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium">
+        <a href="/api/admin/export?type=people" className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-6" })}>
           Export CSV
         </a>
       )}

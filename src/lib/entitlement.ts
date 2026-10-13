@@ -93,7 +93,21 @@ export async function startTrialForEmail(email: string, db: Db = prisma): Promis
     select: { id: true },
   });
   if (alreadyUsed) return false;
-  await db.user.update({ where: { id: user.id }, data: { trialEndsAt: new Date(Date.now() + (await getNumberSetting("trial.days")) * DAY_MS) } });
+  // Remembered for good, even if the account is deleted: without this, deleting an account and registering the same inbox
+  // again was a second free trial. Claimed atomically (the key is unique), so two quick sign-ups cannot both win it.
+  const marker = `trial-used:${canonical}`;
+  try {
+    await db.appSetting.create({ data: { key: marker, value: String(Date.now()) } });
+  } catch (err) {
+    if ((err as { code?: string })?.code === "P2002") return false;
+    throw err;
+  }
+  try {
+    await db.user.update({ where: { id: user.id }, data: { trialEndsAt: new Date(Date.now() + (await getNumberSetting("trial.days")) * DAY_MS) } });
+  } catch (err) {
+    await db.appSetting.deleteMany({ where: { key: marker } }).catch(() => undefined);
+    throw err;
+  }
   return true;
 }
 

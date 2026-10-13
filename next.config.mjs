@@ -140,7 +140,8 @@ const nextConfig = {
       "base-uri 'self'",
       "form-action 'self'",
       "frame-ancestors 'none'",
-      "upgrade-insecure-requests",
+      // Safari (unlike Chrome) also upgrades http://localhost, which leaves a local dev page with no styles or scripts.
+      ...(process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : []),
     ].join("; ");
 
     return [

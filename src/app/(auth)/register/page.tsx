@@ -1,5 +1,7 @@
 "use client";
 
+import { MIN_PASSWORD_LENGTH, passwordRequirementError } from "@/lib/passwordRules";
+import { PasswordStrength } from "@/components/ui/password-strength";
 import { TurnstileWidget } from "@/components/security/TurnstileWidget";
 import { Suspense, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -15,14 +17,13 @@ import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
-import { normalizePhone, PHONE_HELP } from "@/lib/phone";
+import { normalizePhone, PHONE_HELP, signupPhoneError, signupPhoneNote } from "@/lib/phone";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
   visible: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", bounce: 0, duration: 0.4 } },
 };
 
-const MIN_PASSWORD_LENGTH = 8;
 
 function RegisterForm() {
   const router = useRouter();
@@ -42,10 +43,15 @@ function RegisterForm() {
   const [phone, setPhone] = useState("");
   // Whether this sign-up asks for a phone number (it does whenever texts can be sent).
   const [phoneRequired, setPhoneRequired] = useState(false);
+  // Whether a text code is really sent. The words under the phone box depend on it.
+  const [verifyBySms, setVerifyBySms] = useState(false);
   useEffect(() => {
     fetch("/api/auth/signup-options")
       .then((r) => r.json())
-      .then((o) => setPhoneRequired(Boolean(o?.phoneRequired)))
+      .then((o) => {
+        setPhoneRequired(Boolean(o?.phoneRequired));
+        setVerifyBySms(Boolean(o?.verifyBySms));
+      })
       .catch(() => undefined);
   }, []);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -66,11 +72,12 @@ function RegisterForm() {
       return;
     }
     if (phoneRequired && !normalizePhone(phone)) {
-      setError("Enter a phone number we can text a code to.");
+      setError(signupPhoneError(verifyBySms));
       return;
     }
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+    const passwordError = passwordRequirementError(password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
     if (password !== confirmPassword) {
@@ -171,7 +178,7 @@ function RegisterForm() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
-            <p className="mt-1.5 text-small text-slate-500">We text you a 6-digit code to confirm it. {PHONE_HELP}</p>
+            <p className="mt-1.5 text-small text-slate-500">{signupPhoneNote(verifyBySms)} {PHONE_HELP}</p>
           </div>
         )}
         <div>
@@ -191,15 +198,8 @@ function RegisterForm() {
             }}
             className={cn(error && fieldInvalid)}
           />
-          {/* Live, not just a submit-time rejection: the length rule is the
-              one real requirement this form has, so it's shown as it's
-              being met instead of only as a reason the submit just failed. */}
-          {password.length > 0 && (
-            <p className={`mt-1.5 flex items-center gap-1.5 text-small ${password.length >= MIN_PASSWORD_LENGTH ? "text-slate-50" : "text-slate-500"}`}>
-              <CheckIcon size={11} className={password.length >= MIN_PASSWORD_LENGTH ? "opacity-100" : "opacity-30"} />
-              At least {MIN_PASSWORD_LENGTH} characters
-            </p>
-          )}
+          {/* Live while typing: the strength bars and the requirements, from the same rules the server enforces. */}
+          {password.length > 0 && <PasswordStrength value={password} className="mt-3" />}
         </div>
         <div>
           <Label htmlFor="confirmPassword" className={fieldLabel}>
