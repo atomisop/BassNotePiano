@@ -14,6 +14,7 @@ import { WeeklyTimePicker } from "./WeeklyTimePicker";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 import { errorNeedsTeam } from "@/lib/bookingRules";
 import { buttonVariants } from "@/components/ui/button";
+import { DiscordLink } from "@/components/ui/DiscordLink";
 
 interface UpcomingBooking {
   id: string;
@@ -189,14 +190,14 @@ export function ScheduleClient({
                   </div>
                   <div className="mt-2.5 flex flex-wrap gap-2">
                     {hoursUntil <= 0.5 && hoursUntil > -1 && (
-                      <a
+                      <DiscordLink
                         href={booking.discordUrl ?? DISCORD_INVITE_URL}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={buttonVariants({ variant: "primary", size: "sm" })}
                       >
                         Join on Discord
-                      </a>
+                      </DiscordLink>
                     )}
                     {hoursUntil > 0 && (
                       <a

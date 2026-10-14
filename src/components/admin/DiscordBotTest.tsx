@@ -4,6 +4,7 @@ import { useState } from "react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import type { SetupCheck } from "@/lib/discordApi";
 import { buttonVariants } from "@/components/ui/button";
+import { DiscordConnectLink } from "@/components/ui/DiscordLink";
 
 /** Owner-only: runs the bot through every step and shows which one fails. */
 export function DiscordBotTest({
@@ -33,9 +34,9 @@ export function DiscordBotTest({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-small font-semibold text-slate-50">Discord class calls</p>
         <div className="flex flex-wrap gap-2">
-          <a href="/api/discord/connect" className={buttonVariants({ variant: "secondary", size: "sm" })}>
+          <DiscordConnectLink className={buttonVariants({ variant: "secondary", size: "sm" })}>
             Connect my Discord
-          </a>
+          </DiscordConnectLink>
           <button
             type="button"
             onClick={async () => {
