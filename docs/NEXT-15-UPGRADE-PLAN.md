@@ -40,3 +40,22 @@ Revert the merge commit. There are no database changes in this upgrade, so rolli
 ## Risks
 - Anything reading `params` or `searchParams` without `await` fails at runtime only on that page, so the page walk in step 4 matters.
 - A library that does not support React 19 yet. Check before starting; stop and report if one blocks.
+
+## Compatibility audit and dry run (2026-10-14)
+A throwaway copy of main was upgraded to Next 15.5.27, React 19, @types/react 19, eslint-config-next 15.5.27 and
+@netlify/plugin-nextjs 5.16.2. Result: type check clean, `next lint` clean, 277 of 277 unit tests pass, and `next build` succeeds.
+
+What it took:
+- `npx @next/codemod@latest next-async-request-api .` rewrote 20 files (every `params` and `searchParams` read) with 0 errors.
+- `next.config.mjs`: move `experimental.serverComponentsExternalPackages` to top-level `serverExternalPackages`.
+- Five React 19 typing fixes: nullable `RefObject` in `threadUi.tsx` and `Hero.tsx`, `useRef` initial value in `TurnstileWidget.tsx`,
+  `cloneElement` typing in `ui/dock.tsx`.
+- No other tools need replacing. Peer ranges already allow Next 15 and React 19 for next-auth 4.24.15, @sentry/nextjs 10.70,
+  framer-motion 11.18, react-pdf 9.2, recharts 3, radix, cmdk, sonner, lucide, frimousse, lenis, qrcode.react, @tabler/icons-react.
+  Prisma, Tailwind 4, Resend, the AWS SDK, vitest and eslint 8 are unaffected. Middleware (next-auth `getToken` on the edge) is unchanged.
+- `next lint` still works in 15 but prints a deprecation notice; plan to move to the ESLint CLI before Next 16.
+
+Not covered by the dry run (needs the manual walk in step 4): runtime behavior of sign-in, payments, Discord, the PDF route, Atom.
+
+After the upgrade `npm audit` still shows postcss 8.4.31 (high, build-time CSS only, bundled inside Next) because the full fix needs Next 16.
+Try an `overrides` entry for next's postcss to 8.5.26 or newer; otherwise it waits for Next 16.
