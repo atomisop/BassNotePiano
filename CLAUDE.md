@@ -251,6 +251,13 @@ A subscribed payer switches in (`FamilyPlanGroup.replacesPlanId`): password plus
 approved and is then replaced in the same transaction. A member leaving one short of two bills the survivor at the solo price; the payer
 leaving ends the family (members keep the month paid). One family change per `family.changeCooldownDays`.
 
+## Daily practice in the admin (added 2026-10-14)
+
+The teacher sees each student's daily 10-minute finger practice (`FingerPracticeDay`) in two places, read only: a "Daily practice" card
+on `/admin/users/[id]` (30-day dot strip, streak, minutes this week) and an "x/7 practice" figure plus a "Not practicing" tab on the People
+list (`/admin/users`). Practice is only expected of people with full curriculum access who are not the admin. Logic is in
+`practiceActivityRules.ts` (pure) and `practiceActivity.ts` (queries).
+
 ## Phone numbers (added 2026-10-09)
 
 Everyone is asked for a phone number (sign-up form, a top-of-screen banner for older accounts at most once a day, Settings → Account).

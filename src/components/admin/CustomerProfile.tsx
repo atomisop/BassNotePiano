@@ -76,6 +76,47 @@ function NotesSection({ studentId }: { studentId: string }) {
   );
 }
 
+const PRACTICE_DOT: Record<"done" | "partial" | "missed", string> = {
+  done: "bg-emerald-400",
+  partial: "bg-amber-400/70",
+  missed: "bg-slate-700",
+};
+
+function formatPracticeDay(day: string) {
+  const [y, m, d] = day.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d, 12)).toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
+}
+
+/** Last 30 days of the daily 10-minute finger practice: a dot per day, oldest first. */
+function PracticeStrip({ practice }: { practice: CustomerProfileData["practice"] }) {
+  return (
+    <div>
+      <p className="text-small text-slate-400">
+        <span className="tabular-nums text-slate-50">{practice.doneLast7}/7</span> days this week ·{" "}
+        <span className="tabular-nums text-slate-50">{practice.minutesLast7}</span> min · streak{" "}
+        <span className="tabular-nums text-slate-50">{practice.streak}</span> · last full day{" "}
+        <span className="text-slate-50">{practice.lastDoneDay ? formatPracticeDay(practice.lastDoneDay) : "never"}</span>
+      </p>
+      <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Daily practice, last 30 days, oldest first">
+        {practice.strip.map((d) => (
+          <li
+            key={d.day}
+            title={`${formatPracticeDay(d.day)}: ${d.state === "done" ? "10 minutes done" : d.state === "partial" ? `${Math.floor(d.seconds / 60)} min` : "no practice"}`}
+            className={`h-4 w-4 rounded-full ${PRACTICE_DOT[d.state]}`}
+          >
+            <span className="sr-only">
+              {formatPracticeDay(d.day)} {d.state}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-small text-slate-500">
+        {practice.doneLast30} of 30 days done. Green is the full 10 minutes, yellow is part of it, grey is none.
+      </p>
+    </div>
+  );
+}
+
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-small text-slate-500">{children}</p>;
 }
@@ -441,6 +482,10 @@ export function CustomerProfile({
           </SectionCard>
 
           {/* Curriculum roadmap */}
+          <SectionCard title="Daily practice">
+            <PracticeStrip practice={profile.practice} />
+          </SectionCard>
+
           <SectionCard title="Curriculum">
             <div className="space-y-2">
               {profile.roadmap.map((scale) => (

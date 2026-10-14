@@ -6,6 +6,7 @@ import { isOwnerEmail } from "@/lib/adminNotifications";
 import { approveAllReadyScalesAction, approveNextScaleAction } from "./actions";
 import { BulkConfirmButton } from "@/components/admin/BulkConfirmButton";
 import { buttonVariants } from "@/components/ui/button";
+import { getDoneLast7ByUser } from "@/lib/practiceActivity";
 
 export const metadata = { title: "Admin: People" };
 
@@ -15,8 +16,15 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
   const session = await getServerAuthSession();
   const isOwner = isOwnerEmail(session?.user?.email);
   const needsApproval = searchParams.filter === "approval";
+  const notPracticing = searchParams.filter === "idle";
   const [users, progress] = await Promise.all([searchUsers(query), getAdminProgressOverview(query)]);
   const progressById = new Map(progress.map((p) => [p.id, p]));
+  // Practice is only expected from students with full access (not the admin, not a lapsed or never-paid account).
+  const expectedToPractice = (id: string) => {
+    const p = progressById.get(id);
+    return !!p && p.hasCurriculumAccess && p.accessKind !== "ADMIN";
+  };
+  const doneByUser = await getDoneLast7ByUser(users.filter((u) => expectedToPractice(u.id)).map((u) => u.id));
 
   const rows: UserListRow[] = users
     .map((u) => {
@@ -29,9 +37,11 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
         roleLabel: u.bannedAt ? "Banned" : u.role === "ADMIN" ? "Admin" : null,
         progress: p ? `${p.scalesCompleted}/${p.scales.length}` : null,
         readyScale: ready ? (p!.scales.find((s) => s.slug === ready)?.code ?? "next") : null,
+        practiceDays: expectedToPractice(u.id) ? (doneByUser.get(u.id) ?? 0) : null,
       };
     })
-    .filter((r) => !needsApproval || r.readyScale !== null);
+    .filter((r) => !needsApproval || r.readyScale !== null)
+    .filter((r) => !notPracticing || r.practiceDays === 0);
 
   const q = query.trim() ? `&q=${encodeURIComponent(query.trim())}` : "";
 
@@ -44,8 +54,9 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
         <AdminFilterTabs
           label="Show"
           items={[
-            { label: "Everyone", href: `/admin/users${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`, active: !needsApproval },
+            { label: "Everyone", href: `/admin/users${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`, active: !needsApproval && !notPracticing },
             { label: "Needs approval", href: `/admin/users?filter=approval${q}`, active: needsApproval },
+            { label: "Not practicing", href: `/admin/users?filter=idle${q}`, active: notPracticing },
           ]}
         />
       </div>
