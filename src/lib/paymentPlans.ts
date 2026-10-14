@@ -1293,3 +1293,27 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
     throw err;
   }
 }
+
+/** Who is in a family plan, who pays, and the weekly time, for the screens a member reads. Null for a plan that is not a family's. */
+export async function getFamilyDetails(userId: string, plan: { id: string; familyGroupId: string | null } | null) {
+  if (!plan?.familyGroupId) return null;
+  const group = await prisma.familyPlanGroup.findUnique({
+    where: { id: plan.familyGroupId },
+    select: {
+      payerId: true,
+      payer: { select: { name: true, email: true } },
+      plans: { where: { status: "ACTIVE" }, select: { userId: true, user: { select: { name: true, email: true } } } },
+    },
+  });
+  if (!group) return null;
+  const names = [
+    group.payer.name ?? group.payer.email,
+    ...group.plans.filter((p) => p.userId !== group.payerId).map((p) => p.user.name ?? p.user.email),
+  ];
+  return {
+    isPayer: group.payerId === userId,
+    payerName: group.payer.name ?? group.payer.email,
+    memberNames: Array.from(new Set(names)),
+    weeklyTime: await describeReservedSlot(plan.id),
+  };
+}

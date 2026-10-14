@@ -31,6 +31,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { markAllMailReadAction } from "@/app/(dashboard)/mail/actions";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { EASE_IOS, FADE, SPRING } from "@/lib/motionTokens";
+import { onChange } from "@/lib/liveEvents";
 
 const POLL_INTERVAL_MS = 30_000;
 
@@ -443,10 +444,12 @@ export function NotificationBell() {
       if (document.visibilityState === "visible") refresh();
     }
     document.addEventListener("visibilitychange", handleVisibility);
+    const stopListening = onChange("notifications", refresh);
 
     return () => {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", handleVisibility);
+      stopListening();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -72,6 +72,10 @@ export interface FamilyPlanInfo {
   memberCount: number;
   /** True until the family's combined first payment has been approved. */
   waitingForStart: boolean;
+  /** Everyone in the family, the payer first. */
+  memberNames?: string[];
+  /** e.g. "Wednesdays 6:30 PM to 7:15 PM". */
+  weeklyTime?: string | null;
 }
 
 /** One family member's monthly bill, shown to the family's payer. */
@@ -252,6 +256,14 @@ export function PaymentPlanEnrollmentFlow({
   const [enrolled, setEnrolled] = useState<{ plan: ActivePlanSummary; installment: OpenInstallmentSummary | null; family?: FamilyPlanInfo | null } | null>(
     initialPlan ? { plan: initialPlan, installment: initialInstallment, family } : null,
   );
+  // The page re-fetches its data when a payment clears or anything else changes. Local state started from the first copy of it, so
+  // it is replaced whenever the server's copy changes: what is shown is always the real state of the plan and its bills.
+  const serverCopy = JSON.stringify([initialPlan, initialInstallment, family, initialSwitch]);
+  useEffect(() => {
+    setEnrolled(initialPlan ? { plan: initialPlan, installment: initialInstallment, family } : null);
+    setPendingSwitch(initialSwitch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverCopy]);
 
   const baseRate = calculatePaymentPlanRate(cadence, term);
   const typedMembers = memberEmails.map((e) => e.trim()).filter(Boolean);
@@ -404,6 +416,8 @@ export function PaymentPlanEnrollmentFlow({
               : fam.waitingForStart
                 ? `Family plan for ${fam.memberCount} accounts. Everyone starts together when this combined first payment arrives, and it must come from your own bank account.`
                 : `Family plan for ${fam.memberCount} accounts. You pay every member's monthly bill from your own bank account.`}
+            {fam.memberNames && fam.memberNames.length > 0 && ` In this family: ${fam.memberNames.join(", ")}.`}
+            {fam.weeklyTime && ` Your weekly class together: ${fam.weeklyTime}.`}
           </p>
         )}
         {memberView && !fam.waitingForStart ? null : installment ? (

@@ -42,11 +42,22 @@ const CANCELLATION_REASONS: { value: PlanCancellationReason; label: string }[] =
   { value: "OTHER", label: "Other" },
 ];
 
+/** Set when the plan is one person's share of a family plan. */
+export interface FamilyPlanDetails {
+  isPayer: boolean;
+  payerName: string | null;
+  /** Everyone in the family, the payer first. */
+  memberNames: string[];
+  /** e.g. "Wednesdays 6:30 PM to 7:15 PM", when known. */
+  weeklyTime: string | null;
+}
+
 export interface ActivePlanInfo {
   cadence: PaymentPlanCadence;
   term: PaymentPlanTerm;
   installmentsPaid: number;
   termMonths: number;
+  family?: FamilyPlanDetails | null;
 }
 
 export interface ManageSubscriptionsProps {
@@ -139,17 +150,32 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
     <div className="space-y-6">
       <div>
         {activePlan ? (
-          <p className="text-small font-medium text-slate-400">
-            Your plan: {CADENCE_LABELS[activePlan.cadence]} · {activePlan.installmentsPaid} of {activePlan.termMonths}{" "}
-            installments paid
-          </p>
+          <>
+            <p className="text-small font-medium text-slate-400">
+              Your plan: {CADENCE_LABELS[activePlan.cadence]} · {activePlan.installmentsPaid} of {activePlan.termMonths}{" "}
+              installments paid
+            </p>
+            {activePlan.family && (
+              <div className="mt-3 rounded-xl bg-neu-base p-4 text-small text-slate-300 shadow-pressed-low">
+                <p className="font-semibold text-slate-50">Family plan</p>
+                <p className="mt-1">In this family: {activePlan.family.memberNames.join(", ")}.</p>
+                {activePlan.family.weeklyTime && <p className="mt-1">Weekly class together: {activePlan.family.weeklyTime}.</p>}
+                <p className="mt-1">
+                  {activePlan.family.isPayer
+                    ? "You pay everyone's monthly bill from your own bank account."
+                    : `${activePlan.family.payerName ?? "The person who set it up"} pays your monthly bill from their own bank account.`}
+                </p>
+                <p className="mt-1 text-slate-400">The length and weekly time of a family plan are changed by the teacher.</p>
+              </div>
+            )}
+          </>
         ) : (
           <>
             <p className="text-small font-medium text-slate-400">No active plan.</p>
           </>
         )}
 
-        <div className={`mt-3 grid gap-3 ${visibleTerms.length >= 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-1 sm:grid-cols-3"}`}>
+        <div className={`mt-3 grid gap-3 ${visibleTerms.length >= 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-1 sm:grid-cols-3"} ${activePlan?.family ? "hidden" : ""}`}>
           {visibleTerms.map((option) => {
             const rate = calculatePaymentPlanRate(cadence, option.value);
             const isCurrent = activePlan ? option.value === activePlan.term : false;
@@ -221,7 +247,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
       </div>
 
       {/* Family bundle: independent of a solo plan's own state, shown either way, same reasoning /pricing shows it alongside the term grid rather than gating it on anything. */}
-      <div className="glass-surface flex flex-col items-start gap-3 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className={`glass-surface flex flex-col items-start gap-3 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] p-4 sm:flex-row sm:items-center sm:justify-between ${activePlan?.family ? "hidden" : ""}`}>
         <div>
           <p className="text-small font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">Family bundle</p>
           <p className="mt-1 text-small text-slate-400">
@@ -238,6 +264,13 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
 
       {activePlan && (
         <div className="border-t border-ink/10 pt-4">
+          {activePlan.family && cancelStage === "idle" && (
+            <p className="mb-3 text-small text-slate-400">
+              {activePlan.family.isPayer
+                ? "You pay for this family. If you cancel, the family plan ends for everyone. Each person keeps the month already paid, with its credits and booked classes."
+                : "If you cancel, only you leave the family. If one person is left, they pay the solo price from their next bill."}
+            </p>
+          )}
           {cancelStage === "idle" && (
             <button type="button" onClick={startCancelFlow} className={buttonVariants({ variant: "secondary", size: "sm" })}>
               Cancel subscription

@@ -300,8 +300,9 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
 - **One credit is one 45 minute class.** Balances are STORED in half-classes (`CREDITS_PER_CLASS`). Never show or accept a stored
   number: convert with `storedToCredits`, `creditsToStored`, `creditsLabelFromStored`, `formatCredits` (`classCreditPricing.ts`).
 - **Shared live status:** the top bar credit badge (the 21st.dev "Bubble Button") and the Discord, practice and phone banners read
-  `useMeStatus()` (`MeStatusProvider`, `/api/me/status`). Anything that changes credits, the Discord link or practice can
-  `window.dispatchEvent(new Event("bnp:status-changed"))` to refresh it now.
+  `useMeStatus()` (`MeStatusProvider`, `/api/me/status`). Anything that changes credits, the Discord link, practice, a message or a
+  notification calls `announceChange(...)` from `src/lib/liveEvents.ts` right after its action (`messages`, `notifications`, `status`, `page`,
+  or the `payments` and `booking` shortcuts) so the badges and the page update at once; see the last section of `docs/SYNC-AUDIT.md`.
 - **Discord connected = the stored `discordId`** (`discordLinkState`), never the name. Every connect, disconnect and ban calls
   `revalidatePath("/", "layout")`; admin, payment, plan, credit and account actions do the same, so no screen keeps an old value.
   `staleTimes.dynamic = 0` stops the browser reusing a visited page.

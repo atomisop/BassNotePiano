@@ -34,6 +34,7 @@ import {
 import { TwoPaneLayout, WideLayout } from "@/components/layout/PageLayouts";
 import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
+import { announceChange } from "@/lib/liveEvents";
 
 const CONVERSATION_LIST_POLL_MS = 15_000;
 const ACTIVE_CONVERSATION_POLL_MS = 2_500;
@@ -114,7 +115,10 @@ function MessagesInner({
       setMessages(rows);
       // Seen means the chat is open AND on screen. A background tab keeps
       // polling but must not tell the sender "Seen" (see visibility effect below).
-      if (document.visibilityState === "visible") await markConversationReadAction(friendId);
+      if (document.visibilityState === "visible") {
+        await markConversationReadAction(friendId);
+        announceChange("messages");
+      }
       const nextConversations = await getConversationsAction();
       if (signal.aborted) return;
       setConversations(nextConversations);
@@ -139,7 +143,10 @@ function MessagesInner({
       previousGroupLastId.current = newest?.id ?? previous;
 
       setGroupMessages(rows);
-      if (document.visibilityState === "visible") await markGroupReadAction(groupId);
+      if (document.visibilityState === "visible") {
+        await markGroupReadAction(groupId);
+        announceChange("messages");
+      }
       const nextGroups = await getGroupsAction();
       if (signal.aborted) return;
       setGroups(nextGroups);

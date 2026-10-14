@@ -14,6 +14,7 @@ import {
   requestAvatarUploadUrlAction,
 } from "../account/actions";
 import { buttonVariants } from "@/components/ui/button";
+import { announceChange } from "@/lib/liveEvents";
 
 interface MusicProfile {
   primaryInstrument: PrimaryInstrument | null;
@@ -182,6 +183,7 @@ export function ProfileEditor({ initialName, initialImage, initialUsername, stor
   async function syncSession() {
     await update();
     router.refresh();
+    announceChange("status");
   }
 
   return (

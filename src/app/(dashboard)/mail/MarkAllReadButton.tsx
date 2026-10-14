@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { markAllMailReadAction } from "./actions";
+import { announceChange } from "@/lib/liveEvents";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -16,6 +17,7 @@ export function MarkAllReadButton() {
       onClick={() =>
         start(async () => {
           await markAllMailReadAction();
+          announceChange("notifications");
           router.refresh();
         })
       }

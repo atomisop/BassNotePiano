@@ -7,6 +7,7 @@ import { Card, Eyebrow } from "@/components/ui/Card";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ContactSupportButton } from "./ContactSupportButton";
+import { AnnounceOnMount } from "@/components/layout/AnnounceOnMount";
 
 const KIND_LABEL = { ADMIN_MESSAGE: "Message", PAYMENT: "Payment", BILLING: "Billing" } as const;
 const DEFAULT_ACTION = { ADMIN_MESSAGE: null, PAYMENT: { label: "View billing history", href: "/billing/history" }, BILLING: { label: "View your plan", href: "/billing/plans" } } as const;
@@ -25,6 +26,8 @@ export default async function MailDetailPage(props: { params: Promise<{ mailId: 
 
   return (
     <WideLayout>
+      {/* Opening a message marks it read: the bell and mail count drop right now. */}
+      <AnnounceOnMount kinds={["notifications"]} />
       <div className="mx-auto grid max-w-2xl gap-(--space-group)">
         <Link href="/mail" className="tap inline-flex items-center text-small font-medium text-slate-400 hover:text-slate-200">
           Back to Mail

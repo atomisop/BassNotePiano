@@ -32,6 +32,7 @@ import { formatPhone } from "@/lib/phone";
 import { unlinkDiscordAction } from "../lessons/discordActions";
 import { buttonVariants } from "@/components/ui/button";
 import { DiscordConnectLink } from "@/components/ui/DiscordLink";
+import { announceChange } from "@/lib/liveEvents";
 
 /** What the Account section shows about the person. Plain data, chosen on the server. */
 export interface AccountOverview {
@@ -363,6 +364,7 @@ function DiscordAccountCard({ username }: { username: string | null }) {
               await unlinkDiscordAction();
               setBusy(false);
               router.refresh();
+              announceChange("status");
             }}
             className={buttonVariants({ variant: "secondary", size: "sm" })}
           >

@@ -1079,13 +1079,18 @@ export async function rejectZellePayment(paymentId: string, reviewerId: string, 
 }
 
 /** The status of one of the caller's own payments, for the pay screen that waits for it to clear. */
+/** A payment is the caller's own, or one the caller pays as a family's payer (a member's monthly bill). */
+function ownOrFamilyPaid(userId: string): Prisma.ZellePaymentWhereInput {
+  return { OR: [{ userId }, { paymentPlan: { familyGroup: { payerId: userId } } }] };
+}
+
 export async function getOwnPaymentStatus(userId: string, paymentId: string): Promise<ZellePaymentStatus | null> {
-  const payment = await prisma.zellePayment.findFirst({ where: { id: paymentId, userId }, select: { status: true } });
+  const payment = await prisma.zellePayment.findFirst({ where: { id: paymentId, ...ownOrFamilyPaid(userId) }, select: { status: true } });
   return payment?.status ?? null;
 }
 
 
 /** When one of the caller's own payments was submitted, for the "how long has it been waiting" notice. */
 export async function getOwnPaymentWaitInfo(userId: string, paymentId: string): Promise<{ status: ZellePaymentStatus; submittedAt: Date | null; amountCents: number } | null> {
-  return prisma.zellePayment.findFirst({ where: { id: paymentId, userId }, select: { status: true, submittedAt: true, amountCents: true } });
+  return prisma.zellePayment.findFirst({ where: { id: paymentId, ...ownOrFamilyPaid(userId) }, select: { status: true, submittedAt: true, amountCents: true } });
 }

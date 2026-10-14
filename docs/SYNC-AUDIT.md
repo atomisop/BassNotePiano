@@ -37,3 +37,25 @@ check showed it agreeing; "Fixed" means it did not, and what changed. Tests: `te
 - Plan set up, or its term changed: in-app (Mail) and email.
 - Free trial ending tomorrow, and trial ended (daily job, once each, never for someone who pays): in-app and email.
 - Admins: an account banned or a ban lifted.
+
+## Live updates after "must update" actions (2026-10-14)
+
+Rule: after anything that changes what other parts of the screen show, the screen says so (`announceChange` in `src/lib/liveEvents.ts`)
+and every part that cares updates at once, not on its next timer. Kinds: `messages` (dock badge), `notifications` (bell, mail count, number
+on the profile picture), `status` (credit badge, Discord and practice banners), `page` (the page re-fetches its data). `payments` and
+`booking` are shortcuts for the usual set. The announcements are throttled (a chat polled every few seconds does not hammer the badge).
+
+| Where | What now happens at once |
+|---|---|
+| Opening a mail message (`AnnounceOnMount`), Mark all read | Bell and mail count drop right away. |
+| Reading a chat or group (marks it read) | Dock message badge drops right away. |
+| Pay screen (`ZelleUnlockGate`) | Checks the payment every 8 s while in view and the moment you return to the tab (coming back from the bank app), for every state, not only "waiting". Any change refreshes the page, the bell and the credit badge, so a payment that went through never keeps showing the old unpaid amount. A family payer can watch a member's bill too. |
+| Plan page local state | It follows the server's copy whenever that changes (it used to keep the first copy it was given) and refreshes like other pages now (`/billing/plans` is no longer skipped by `AutoRefresh`). |
+| Booking, cancelling, moving a class or weekly time | Credit badge, bell and page. Booking actions revalidate the whole app, not just `/lessons`. |
+| Cancel or change plan from Settings | Revalidates the whole app (it only did `/account`), so billing, lessons, dashboard and the top bar agree. |
+| Finishing today's practice | Practice banner and locked lessons update at once. |
+| Phone, name, photo, Discord, profile saved | Credit badge and banners (`status`). |
+| Friend requests sent, answered, blocked | Bell. |
+| Admin replying to, resolving or deleting a support thread | The waiting counts in the admin menu (the whole app is revalidated). |
+
+Still on a timer (by design): the admin menu counts when a STUDENT does something (30 s, `AutoRefresh`), the credit badge (60 s), the bell (30 s).

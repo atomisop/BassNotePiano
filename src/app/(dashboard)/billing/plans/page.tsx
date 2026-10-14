@@ -3,7 +3,7 @@ import Link from "next/link";
 import { PaymentPlanCadence, PaymentPlanTerm, type ZellePaymentStatus } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getActivePaymentPlan, getUserPaymentPlans, getOrCreateOpenInstallmentPayment } from "@/lib/paymentPlans";
+import { getFamilyDetails, getActivePaymentPlan, getUserPaymentPlans, getOrCreateOpenInstallmentPayment } from "@/lib/paymentPlans";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
@@ -46,7 +46,7 @@ export default async function BillingPlansPage(
 
   // A family plan: who pays, whether the family has started, and (for the payer) the combined first payment and the other
   // members' monthly bills.
-  let family: { isPayer: boolean; payerName: string | null; memberCount: number; waitingForStart: boolean } | null = null;
+  let family: { isPayer: boolean; payerName: string | null; memberCount: number; waitingForStart: boolean; memberNames: string[]; weeklyTime: string | null } | null = null;
   let startPayment: Awaited<ReturnType<typeof prisma.zellePayment.findFirst>> = null;
   const familyBills: { planId: string; memberName: string; payment: { id: string; status: ZellePaymentStatus; rejectionReason: string | null; amountCents: number; installmentNumber: number | null } }[] = [];
   if (activePlan?.familyGroupId) {
@@ -61,7 +61,8 @@ export default async function BillingPlansPage(
     if (group) {
       const isPayer = group.payerId === session.user.id;
       const waitingForStart = activePlan.installmentsPaid === 0;
-      family = { isPayer, payerName: group.payer.name ?? group.payer.email, memberCount: group.plans.length, waitingForStart };
+      const details = await getFamilyDetails(session.user.id, activePlan);
+      family = { isPayer, payerName: group.payer.name ?? group.payer.email, memberCount: group.plans.length, waitingForStart, memberNames: details?.memberNames ?? [], weeklyTime: details?.weeklyTime ?? null };
       if (isPayer && waitingForStart) {
         startPayment = await prisma.zellePayment.findFirst({
           where: { familyGroupId: activePlan.familyGroupId, purpose: "FAMILY_PLAN_START", status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW", "REJECTED"] } },

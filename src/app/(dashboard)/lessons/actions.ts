@@ -29,7 +29,7 @@ export async function bookClassAction(scheduleId: string, occurrenceDateMs: numb
 
   try {
     const booking = await bookClass(session.user.id, scheduleId, occurrenceDateMs, chunkIndex, creditsToBook);
-    revalidatePath("/lessons");
+    revalidatePath("/", "layout");
     return { ok: true as const, id: booking.id };
   } catch (err) {
     return { ok: false as const, error: err instanceof ClassBookingError || err instanceof RateLimitError ? err.message : "Something went wrong." };
@@ -44,7 +44,7 @@ export async function bookClassBundleAction(selections: BundleBookingSelection[]
   if (selections.length === 0) return { ok: false as const, error: "Select at least one class first." };
 
   const results = await bookClassBundle(session.user.id, selections);
-  revalidatePath("/lessons");
+  revalidatePath("/", "layout");
   return { ok: true as const, results };
 }
 
@@ -61,7 +61,7 @@ export async function bookFamilyClassAction(scheduleId: string, occurrenceDateMs
 
   try {
     const bookings = await bookFamilyClass(session.user.id, scheduleId, occurrenceDateMs, chunkIndex, attendeeEmails);
-    revalidatePath("/lessons");
+    revalidatePath("/", "layout");
     return { ok: true as const, ids: bookings.map((b) => b.id) };
   } catch (err) {
     return { ok: false as const, error: err instanceof ClassBookingError || err instanceof RateLimitError ? err.message : "Something went wrong." };
@@ -74,7 +74,7 @@ export async function cancelClassBookingAction(bookingId: string) {
 
   try {
     const result = await cancelClassBooking(bookingId, session.user.id);
-    revalidatePath("/lessons");
+    revalidatePath("/", "layout");
     return { ok: true as const, refunded: result.refunded };
   } catch (err) {
     return { ok: false as const, error: err instanceof ClassBookingError || err instanceof RateLimitError ? err.message : "Something went wrong." };
@@ -93,7 +93,7 @@ export async function rescheduleClassBookingAction(
 
   try {
     const booking = await rescheduleClassBooking(session.user.id, bookingId, newScheduleId, newOccurrenceDateMs, newChunkIndex, newCreditsToBook);
-    revalidatePath("/lessons");
+    revalidatePath("/", "layout");
     return { ok: true as const, id: booking.id, scheduledAt: booking.scheduledAt.toISOString() };
   } catch (err) {
     return { ok: false as const, error: err instanceof ClassBookingError || err instanceof RateLimitError ? err.message : "Something went wrong." };
@@ -117,7 +117,7 @@ export async function changeReservedSlotAction(newScheduleId: string, newChunkIn
 
   try {
     await changeReservedSlot(session.user.id, newScheduleId, newChunkIndex);
-    revalidatePath("/lessons");
+    revalidatePath("/", "layout");
     return { ok: true as const };
   } catch (err) {
     return { ok: false as const, error: err instanceof PaymentPlanError ? err.message : "Something went wrong." };

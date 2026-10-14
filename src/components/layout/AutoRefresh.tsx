@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { onChange } from "@/lib/liveEvents";
 
 // How often the signed-in pages quietly re-fetch their own data while the tab
 // is open and in view.
@@ -13,7 +14,7 @@ const MIN_GAP_MS = 8_000;
 // panels already poll for themselves; a lesson (video, quiz, notes) and the
 // profile and the buy-a-plan screens would be interrupted for no gain. Settings and
 // the payment history are refreshed too (a field being typed in is never refreshed).
-const SKIP_PREFIXES = ["/messages", "/scales", "/profile", "/billing/plans", "/billing/lessons"];
+const SKIP_PREFIXES = ["/messages", "/scales", "/profile"];
 
 function isTyping(): boolean {
   const el = document.activeElement as HTMLElement | null;
@@ -32,6 +33,14 @@ function isTyping(): boolean {
 export function AutoRefresh() {
   const router = useRouter();
   const pathname = usePathname();
+  // An action that changes what the page shows announces it ("page"): refresh now, whatever screen this is.
+  useEffect(
+    () =>
+      onChange("page", () => {
+        if (document.visibilityState === "visible") router.refresh();
+      }),
+    [router],
+  );
   const [isPending, startTransition] = useTransition();
   const lastRun = useRef(0);
   const pendingRef = useRef(false);

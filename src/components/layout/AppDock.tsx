@@ -8,6 +8,7 @@ import { Home, CalendarCheck, Users, MessageSquare, Settings, type LucideIcon } 
 import { Dock, DockIcon, DockItem } from "@/components/ui/dock";
 import { fetchUnreadMessageCountAction } from "@/app/(dashboard)/notification-actions";
 import { SPRING } from "@/lib/motionTokens";
+import { onChange } from "@/lib/liveEvents";
 
 // Same 30s cadence as NotificationBell's own poll, which this mirrors.
 const POLL_INTERVAL_MS = 30_000;
@@ -163,11 +164,13 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
       if (document.visibilityState === "visible") refresh();
     }
     document.addEventListener("visibilitychange", handleVisibility);
+    const stopListening = onChange("messages", refresh);
 
     return () => {
       cancelled = true;
       clearInterval(interval);
       document.removeEventListener("visibilitychange", handleVisibility);
+      stopListening();
     };
     // Deliberately re-runs on every pathname change (not just mount), see
     // the comment above.

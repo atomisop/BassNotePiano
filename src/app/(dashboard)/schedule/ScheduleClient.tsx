@@ -15,6 +15,7 @@ import { MessageSupportButton } from "@/components/lessons/MessageSupportButton"
 import { errorNeedsTeam } from "@/lib/bookingRules";
 import { buttonVariants } from "@/components/ui/button";
 import { DiscordLink } from "@/components/ui/DiscordLink";
+import { announceChange } from "@/lib/liveEvents";
 
 interface UpcomingBooking {
   id: string;
@@ -83,6 +84,7 @@ export function ScheduleClient({
     setSkippingId(bookingId);
     setSkipError(null);
     const result = await cancelClassBookingAction(bookingId);
+    announceChange("booking");
     setSkippingId(null);
     if (!result.ok) {
       setSkipError(result.error);
@@ -121,6 +123,7 @@ export function ScheduleClient({
     setChangingSlotKey(key);
     setChangeError(null);
     const result = await changeReservedSlotAction(slot.scheduleId, slot.chunkIndex);
+    announceChange("booking");
     setChangingSlotKey(null);
     if (!result.ok) {
       setChangeError(result.error);
