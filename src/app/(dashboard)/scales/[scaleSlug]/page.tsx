@@ -17,7 +17,8 @@ import { markLessonCompleteAction, markPracticeCompletedAction, saveScaleNoteAct
 
 export const metadata = { title: "Scale" };
 
-export default async function ScalePage({ params }: { params: { scaleSlug: string } }) {
+export default async function ScalePage(props: { params: Promise<{ scaleSlug: string }> }) {
+  const params = await props.params;
   const session = await getServerAuthSession();
   if (!session?.user) redirect(`/login?callbackUrl=/scales/${params.scaleSlug}`);
 

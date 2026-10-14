@@ -9,7 +9,8 @@ import { buttonVariants } from "@/components/ui/button";
 
 export const metadata = { title: "Admin: People" };
 
-export default async function AdminUsersPage({ searchParams }: { searchParams: { q?: string; filter?: string } }) {
+export default async function AdminUsersPage(props: { searchParams: Promise<{ q?: string; filter?: string }> }) {
+  const searchParams = await props.searchParams;
   const query = searchParams.q ?? "";
   const session = await getServerAuthSession();
   const isOwner = isOwnerEmail(session?.user?.email);

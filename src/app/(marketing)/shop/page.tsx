@@ -21,7 +21,8 @@ function safeBackPath(value: string | string[] | undefined): string | null {
   return value;
 }
 
-export default function ShopPage({ searchParams }: { searchParams: { back?: string | string[] } }) {
+export default async function ShopPage(props: { searchParams: Promise<{ back?: string | string[] }> }) {
+  const searchParams = await props.searchParams;
   const back = safeBackPath(searchParams.back);
 
   return (

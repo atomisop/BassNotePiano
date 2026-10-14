@@ -17,7 +17,8 @@ function resolveIdentifier(userId: string | undefined, forwardedFor: string | nu
 }
 
 /** Polls a support thread's live messages, the widget calls this on an interval while a handoff is active. */
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(_req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     const thread = await getThreadForVisitor(params.id);
     if (!thread) return NextResponse.json({ error: "Not found." }, { status: 404 });
@@ -29,7 +30,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 }
 
 /** Sends a visitor's follow-up message into an already-created support thread. */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   if (!isSameOriginJsonPost(req)) return NextResponse.json({ error: "Bad request." }, { status: 403 });
   try {
     const body = await req.json().catch(() => null);

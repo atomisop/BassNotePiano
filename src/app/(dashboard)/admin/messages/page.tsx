@@ -7,7 +7,8 @@ import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 
 export const metadata = { title: "Admin: Messages" };
 
-export default async function AdminMessagesPage({ searchParams }: { searchParams: { tab?: string } }) {
+export default async function AdminMessagesPage(props: { searchParams: Promise<{ tab?: string }> }) {
+  const searchParams = await props.searchParams;
   const announcementsTab = searchParams.tab === "announcements";
 
   return (

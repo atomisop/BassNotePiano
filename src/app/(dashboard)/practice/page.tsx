@@ -9,7 +9,8 @@ import { practiceBeatAction } from "./actions";
 
 export const metadata = { title: "Finger practice" };
 
-export default async function PracticePage({ searchParams }: { searchParams: { next?: string } }) {
+export default async function PracticePage(props: { searchParams: Promise<{ next?: string }> }) {
+  const searchParams = await props.searchParams;
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/practice");
 

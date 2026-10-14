@@ -29,7 +29,10 @@ const FILTERS: { label: string; value: ZellePaymentStatus | "ALL" | "UNCHECKED" 
 
 export const metadata = { title: "Admin: Payments" };
 
-export default async function AdminPaymentsPage({ searchParams }: { searchParams: { status?: string; tab?: string; page?: string } }) {
+export default async function AdminPaymentsPage(
+  props: { searchParams: Promise<{ status?: string; tab?: string; page?: string }> }
+) {
+  const searchParams = await props.searchParams;
   if (searchParams.tab === "credits") return <CreditsTab />;
   if (searchParams.tab === "emails") return <EmailsTab />;
   const requested = searchParams.status?.toUpperCase();

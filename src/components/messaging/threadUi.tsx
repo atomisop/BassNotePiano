@@ -108,8 +108,8 @@ export function ComposerBar({
   maxHeight,
   onFocusChange,
 }: {
-  formRef: RefObject<HTMLFormElement>;
-  textareaRef: RefObject<HTMLTextAreaElement>;
+  formRef: RefObject<HTMLFormElement | null>;
+  textareaRef: RefObject<HTMLTextAreaElement | null>;
   value: string;
   onChange: (value: string) => void;
   onKeyDown: (e: KeyboardEvent<HTMLTextAreaElement>) => void;

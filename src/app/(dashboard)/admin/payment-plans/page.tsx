@@ -28,7 +28,8 @@ const FILTERS: { label: string; value: FilterValue }[] = [
 
 export const metadata = { title: "Admin: Payment plans" };
 
-export default async function AdminPaymentPlansPage({ searchParams }: { searchParams: { status?: string } }) {
+export default async function AdminPaymentPlansPage(props: { searchParams: Promise<{ status?: string }> }) {
+  const searchParams = await props.searchParams;
   const requested = searchParams.status?.toUpperCase();
   const activeFilter = FILTERS.find((f) => f.value === requested)?.value ?? "ACTIVE";
   const activeLabel = FILTERS.find((f) => f.value === activeFilter)!.label;

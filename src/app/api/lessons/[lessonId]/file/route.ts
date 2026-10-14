@@ -12,7 +12,8 @@ export const maxDuration = 30;
 
 // The only way a lesson file reaches a browser. It checks the student's access the same way the lesson page does
 // (including the free trial's first few lessons), stamps their name on every PDF page, and is never cached.
-export async function GET(request: Request, { params }: { params: { lessonId: string } }) {
+export async function GET(request: Request, props: { params: Promise<{ lessonId: string }> }) {
+  const params = await props.params;
   const session = await getServerAuthSession();
   if (!session?.user) return new NextResponse("Sign in to open this file.", { status: 401 });
 

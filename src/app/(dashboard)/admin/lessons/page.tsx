@@ -7,7 +7,8 @@ import { requestLessonUploadUrlAction, createLessonAction, deleteLessonAction, r
 
 export const metadata = { title: "Admin: Lessons" };
 
-export default async function AdminLessonsPage({ searchParams }: { searchParams: { scale?: string } }) {
+export default async function AdminLessonsPage(props: { searchParams: Promise<{ scale?: string }> }) {
+  const searchParams = await props.searchParams;
   const activeSlug = SCALE_GROUPS.find((s) => s.slug === searchParams.scale)?.slug ?? SCALE_GROUPS[0].slug;
   const activeScale = SCALE_GROUPS.find((s) => s.slug === activeSlug)!;
   const [lessons, storageConfigured] = await Promise.all([

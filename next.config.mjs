@@ -13,8 +13,8 @@ const nextConfig = {
   // Marking resend external hands its `require` calls to Node directly at
   // runtime instead, the same as running outside a bundler, where an
   // unused optional dependency is simply never touched.
+  serverExternalPackages: ["resend"],
   experimental: {
-    serverComponentsExternalPackages: ["resend"],
     // Next keeps a visited page's data in the browser for 30 seconds and reuses it on the next click, which showed stale
     // payment statuses, Discord buttons and balances after something changed. Pages that depend on who is signed in are
     // fetched fresh on every visit now.
