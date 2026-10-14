@@ -41,6 +41,8 @@ function RegisterForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [phone, setPhone] = useState("");
+  // A child or sibling who has no number of their own can skip it (one number belongs to one account, so a shared family number cannot be used).
+  const [noPhone, setNoPhone] = useState(false);
   // Whether this sign-up asks for a phone number (it does whenever texts can be sent).
   const [phoneRequired, setPhoneRequired] = useState(false);
   // Whether a text code is really sent. The words under the phone box depend on it.
@@ -71,7 +73,7 @@ function RegisterForm() {
       setError(FULL_NAME_MESSAGE);
       return;
     }
-    if (phoneRequired && !normalizePhone(phone)) {
+    if (phoneRequired && !noPhone && !normalizePhone(phone)) {
       setError(signupPhoneError(verifyBySms));
       return;
     }
@@ -94,7 +96,7 @@ function RegisterForm() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, phone, password, website, turnstileToken }),
+      body: JSON.stringify({ name, email, phone: noPhone ? "" : phone, noPhone, password, website, turnstileToken }),
     });
 
     if (!res.ok) {
@@ -174,11 +176,16 @@ function RegisterForm() {
               inputMode="tel"
               autoComplete="tel"
               placeholder="(555) 123-4567"
-              required
-              value={phone}
+              required={!noPhone}
+              disabled={noPhone}
+              value={noPhone ? "" : phone}
               onChange={(e) => setPhone(e.target.value)}
             />
             <p className="mt-1.5 text-small text-slate-500">{signupPhoneNote(verifyBySms)} {PHONE_HELP}</p>
+            <label className="mt-2 flex cursor-pointer items-center gap-2 text-small text-slate-400">
+              <input type="checkbox" checked={noPhone} onChange={(e) => setNoPhone(e.target.checked)} className="h-4 w-4 cursor-pointer accent-[rgb(var(--c-s-50))]" />
+              I do not have my own phone number
+            </label>
           </div>
         )}
         <div>

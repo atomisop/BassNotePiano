@@ -247,6 +247,9 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
 stops everyone). The payer pays one combined `FAMILY_PLAN_START` first payment whose approval starts every plan at once; from month two each
 member has their own bill. Only the payer's bank account settles family money (`familyPayerOf`). A failed start lapses the whole group.
 The old one-payment `FAMILY_BUNDLE` page now redirects to `/billing/plans`.
+A subscribed payer switches in (`FamilyPlanGroup.replacesPlanId`): password plus emailed code, the old plan runs until the combined payment is
+approved and is then replaced in the same transaction. A member leaving one short of two bills the survivor at the solo price; the payer
+leaving ends the family (members keep the month paid). One family change per `family.changeCooldownDays`.
 
 ## Phone numbers (added 2026-10-09)
 

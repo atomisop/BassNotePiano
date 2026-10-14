@@ -1133,6 +1133,8 @@ export async function createReservedBookingIfAbsent(
   db: Prisma.TransactionClient | typeof prisma = prisma,
 ) {
   const { studentId, scheduleId, occurrenceDate, scheduledAt, creditsSpent, planId } = params;
+  // The members of a family plan share one weekly class: their rows form one booking party (one credit charge per row).
+  const familyGroupId = (await db.paymentPlan.findUnique({ where: { id: planId }, select: { familyGroupId: true } }))?.familyGroupId ?? null;
 
   const existing = await db.classBooking.findUnique({
     where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId, occurrenceDate } },
@@ -1156,7 +1158,14 @@ export async function createReservedBookingIfAbsent(
   // maintenance job from ever creating a second, silently conflicting
   // SCHEDULED row instead of just skipping and letting an admin notice.
   const conflict = await db.classBooking.findFirst({
-    where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED", studentId: { not: studentId } },
+    where: {
+      scheduleId,
+      occurrenceDate,
+      scheduledAt,
+      status: "SCHEDULED",
+      studentId: { not: studentId },
+      ...(familyGroupId ? { OR: [{ familyBookingGroupId: null }, { familyBookingGroupId: { not: familyGroupId } }] } : {}),
+    },
     select: { id: true },
   });
   if (conflict) {
@@ -1173,7 +1182,7 @@ export async function createReservedBookingIfAbsent(
     attendance: null,
     refunded: false,
     canceledReason: null,
-    familyBookingGroupId: null,
+    familyBookingGroupId: familyGroupId,
     reservedByPlanId: planId,
   };
 

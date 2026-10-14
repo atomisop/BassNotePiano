@@ -10,7 +10,14 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { BookingCalendar } from "../../lessons/BookingCalendar";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
-import { enrollFamilyPlanAction, enrollInPaymentPlanAction, getReservableSlotsAction, submitPlanInstallmentPaymentAction } from "./actions";
+import {
+  confirmSwitchToFamilyAction,
+  enrollFamilyPlanAction,
+  enrollInPaymentPlanAction,
+  getReservableSlotsAction,
+  requestSwitchToFamilyCodeAction,
+  submitPlanInstallmentPaymentAction,
+} from "./actions";
 import { Tabs } from "@/components/ui/Tabs";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -90,9 +97,122 @@ interface PaymentPlanEnrollmentFlowProps {
   nextInstallmentDueDate?: string;
   family?: FamilyPlanInfo | null;
   familyBills?: FamilyBillSummary[];
+  /** A switch to a family plan waiting for its combined first payment (the current plan keeps running until it is approved). */
+  pendingSwitch?: { payment: OpenInstallmentSummary; memberCount: number } | null;
   /** Preselects the picker from a specific marketing-page tile (PaymentPlanTierGrid's ?cadence=&term= links) instead of always defaulting. */
   initialCadence?: PaymentPlanCadence;
   initialTerm?: PaymentPlanTerm;
+}
+
+/**
+ * For someone already on a solo plan: add family members and switch. Nothing changes until the family's combined first payment is
+ * approved, and the switch needs the account password plus an emailed code.
+ */
+function SwitchToFamilyPanel({
+  term,
+  onStarted,
+}: {
+  term: PaymentPlanTerm;
+  onStarted: (payment: OpenInstallmentSummary, memberCount: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [emails, setEmails] = useState<string[]>([""]);
+  const [step, setStep] = useState<"people" | "confirm">("people");
+  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const typed = emails.map((e) => e.trim()).filter(Boolean);
+  const price = calculateFamilyBundleTotal(OFFERED_PLAN_CADENCE, term, Math.max(2, typed.length + 1));
+  const field = "h-11 w-full rounded-control bg-neu-base px-4 text-body text-slate-100 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
+  async function sendCode() {
+    setBusy(true);
+    setError(null);
+    const result = await requestSwitchToFamilyCodeAction(password).catch(() => ({ ok: false, error: "Something went wrong. Try again." }));
+    setBusy(false);
+    if (!result.ok) return setError(result.error ?? "Could not send the code.");
+    setStep("confirm");
+  }
+
+  async function confirm() {
+    setBusy(true);
+    setError(null);
+    const result = await confirmSwitchToFamilyAction(password, code, term, null, null, typed).catch(() => null);
+    setBusy(false);
+    if (!result || !result.ok || !result.startPaymentId || result.amountCents === null) return setError(result?.error ?? "Something went wrong. Try again.");
+    onStarted({ id: result.startPaymentId, status: "AWAITING_TRANSFER", rejectionReason: null, amountCents: result.amountCents, installmentNumber: 1 }, result.memberCount);
+  }
+
+  if (!open) {
+    return (
+      <div className="mt-6 rounded-xl bg-neu-base p-4 shadow-raised-low">
+        <p className="text-small font-semibold text-slate-50">Joining others? Switch to a family plan</p>
+        <p className="mt-1 text-small text-slate-400">Everyone gets the family price. Your current plan keeps running until the family&apos;s first payment is approved, then it is replaced with the same weekly time.</p>
+        <button type="button" onClick={() => setOpen(true)} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}>
+          Add family members
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6 space-y-3 rounded-xl bg-neu-base p-4 shadow-raised-low">
+      <p className="text-small font-semibold text-slate-50">Switch to a family plan</p>
+      {step === "people" ? (
+        <>
+          <p className="text-small text-slate-400">
+            Each person needs their own account first (their own name; a child can sign up without a phone number). You pay for everyone from your own bank
+            account. If anyone cannot start, nobody does, and your current plan is not touched.
+          </p>
+          {emails.map((email, i) => (
+            <input
+              key={i}
+              type="email"
+              inputMode="email"
+              autoComplete="off"
+              value={email}
+              onChange={(e) => setEmails((prev) => prev.map((v, j) => (j === i ? e.target.value : v)))}
+              placeholder="Family member's account email"
+              aria-label={`Family member ${i + 1} email`}
+              className={field}
+            />
+          ))}
+          {emails.length < 3 && (
+            <button type="button" onClick={() => setEmails((prev) => [...prev, ""])} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+              Add another person
+            </button>
+          )}
+          <div className="rounded-control bg-neu-base p-3 text-small text-slate-300 shadow-pressed-low">
+            <div className="flex justify-between"><span>Each person, each month</span><span>{formatUsd(price.perStudentMonthlyCents)}</span></div>
+            <div className="mt-1 flex justify-between font-semibold text-slate-50"><span>First payment, {Math.max(2, typed.length + 1)} people together</span><span>{formatUsd(price.perStudentMonthlyCents * Math.max(2, typed.length + 1))}</span></div>
+          </div>
+          <p className="text-small text-slate-400">To confirm, enter your password. We then email you a code.</p>
+          <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" aria-label="Your password" className={field} />
+          {error && <p className="text-small text-red-400">{error}</p>}
+          <div className="flex gap-2">
+            <button type="button" disabled={busy || typed.length === 0 || !password} onClick={sendCode} className={buttonVariants({ variant: "primary", size: "sm" })}>
+              {busy ? "Sending…" : "Email me a code"}
+            </button>
+            <button type="button" onClick={() => setOpen(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Cancel</button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="text-small text-slate-400">Enter the 6-digit code we emailed you.</p>
+          <input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} placeholder="123456" aria-label="Code" className={field} />
+          {error && <p className="text-small text-red-400">{error}</p>}
+          <div className="flex gap-2">
+            <button type="button" disabled={busy || code.length < 6} onClick={confirm} className={buttonVariants({ variant: "primary", size: "sm" })}>
+              {busy ? "Setting up…" : "Confirm switch"}
+            </button>
+            <button type="button" onClick={() => { setStep("people"); setCode(""); }} className={buttonVariants({ variant: "secondary", size: "sm" })}>Back</button>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -108,6 +228,7 @@ export function PaymentPlanEnrollmentFlow({
   nextInstallmentDueDate,
   family = null,
   familyBills = [],
+  pendingSwitch: initialSwitch = null,
   initialCadence,
   initialTerm,
 }: PaymentPlanEnrollmentFlowProps) {
@@ -121,6 +242,7 @@ export function PaymentPlanEnrollmentFlow({
   const [timesOpen, setTimesOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
   const [audience, setAudience] = useState<"SOLO" | "FAMILY">("SOLO");
+  const [pendingSwitch, setPendingSwitch] = useState(initialSwitch);
   const [memberEmails, setMemberEmails] = useState<string[]>([""]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -247,6 +369,25 @@ export function PaymentPlanEnrollmentFlow({
 
     return (
       <div>
+        {pendingSwitch && (
+          <div className="mb-6">
+            <p className="mb-3 rounded-xl bg-neu-base px-3.5 py-3 text-small text-slate-300 shadow-pressed-low">
+              Switching to a family plan of {pendingSwitch.memberCount} people. Your current plan below keeps running until this combined first payment is approved, then it
+              is replaced by the family plan at the same weekly time. If it does not arrive in time, nothing changes.
+            </p>
+            <ZelleUnlockGate
+              status={pendingSwitch.payment.status}
+              rejectionReason={pendingSwitch.payment.rejectionReason}
+              scaleCode={`First payment for ${pendingSwitch.memberCount} accounts`}
+              scaleTitle="Family plan"
+              eyebrowLabel="Family plan"
+              amountCents={pendingSwitch.payment.amountCents}
+              zelleHandle={zelleHandle}
+              paymentId={pendingSwitch.payment.id}
+              onSubmitPayment={submitPlanInstallmentPaymentAction.bind(null, pendingSwitch.payment.id)}
+            />
+          </div>
+        )}
         <div className="mb-4 rounded-xl p-4 bg-neu-base shadow-raised-low">
           <p className="text-small text-slate-100">{planLabel}</p>
           <p className="mt-1 text-small text-slate-500">
@@ -294,6 +435,9 @@ export function PaymentPlanEnrollmentFlow({
               </p>
             )}
           </div>
+        )}
+        {!fam && !pendingSwitch && plan.installmentsPaid >= 1 && (
+          <SwitchToFamilyPanel term={plan.term} onStarted={(payment, memberCount) => setPendingSwitch({ payment, memberCount })} />
         )}
         {familyBills.length > 0 && (
           <div className="mt-6 space-y-4">

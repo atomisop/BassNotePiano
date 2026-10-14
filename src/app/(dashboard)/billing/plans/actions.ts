@@ -1,5 +1,6 @@
 "use server";
 
+import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { PaymentPlanCadence, type PaymentPlanTerm } from "@prisma/client";
@@ -8,6 +9,7 @@ import { createFamilyPlans, createPaymentPlan, PaymentPlanError } from "@/lib/pa
 import { submitZellePaymentReference, type ZelleReferenceSubmission } from "@/lib/payments";
 import { getReservableSlots, type ReservableSlot } from "@/lib/classSchedule";
 import { RateLimitError, consumeRateLimit } from "@/lib/rateLimit";
+import { createAndSendCode, verifyCode, RateLimitError as CodeRateLimitError } from "@/lib/verification";
 import { prisma } from "@/lib/prisma";
 import { OFFERED_PLAN_CADENCE, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 
@@ -107,6 +109,77 @@ export async function enrollFamilyPlanAction(
     if (error instanceof PaymentPlanError) {
       return { ok: false, planId: null, startPaymentId: null, amountCents: null, memberCount: 0, error: error.message };
     }
+    throw error;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Switching a paid plan into a family plan. It ends the person's current plan once the family's first payment is approved, so it
+// takes their password and a code emailed to them, checked again here on the server each time.
+// ---------------------------------------------------------------------------
+
+async function checkPassword(userId: string, password: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, passwordHash: true } });
+  if (!user?.passwordHash) return { ok: false as const, error: "This account has no password set. Message the studio." };
+  if (!(await bcrypt.compare(password, user.passwordHash))) return { ok: false as const, error: "Password is incorrect." };
+  return { ok: true as const, email: user.email };
+}
+
+/** Step 1: checks the password and emails a code to the account's own address. */
+export async function requestSwitchToFamilyCodeAction(password: string): Promise<{ ok: boolean; error?: string }> {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  const check = await checkPassword(session.user.id, password);
+  if (!check.ok) return check;
+  try {
+    const sent = await createAndSendCode({ email: check.email, userId: session.user.id, purpose: "SWITCH_TO_FAMILY" });
+    if (!sent.ok) return { ok: false, error: "Could not send a code. Try again in a moment." };
+  } catch (error) {
+    if (error instanceof CodeRateLimitError) return { ok: false, error: error.message };
+    throw error;
+  }
+  return { ok: true };
+}
+
+/** Step 2: password and code again, then the family is set up. The current plan keeps running until the family's first payment is approved. */
+export async function confirmSwitchToFamilyAction(
+  password: string,
+  code: string,
+  term: PaymentPlanTerm,
+  reservedScheduleId: string | null,
+  reservedChunkIndex: number | null,
+  memberEmails: string[],
+): Promise<EnrollFamilyPlanResult> {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  const fail = (error: string): EnrollFamilyPlanResult => ({ ok: false, planId: null, startPaymentId: null, amountCents: null, memberCount: 0, error });
+  if (!Array.isArray(memberEmails) || memberEmails.length > 10 || memberEmails.some((e) => typeof e !== "string")) return fail("Check the email addresses and try again.");
+
+  const check = await checkPassword(session.user.id, password);
+  if (!check.ok) return fail(check.error);
+  const verified = await verifyCode(check.email, "SWITCH_TO_FAMILY", String(code).trim());
+  if (!verified.ok) {
+    const message = { not_found: "Request a code first.", expired: "That code expired. Request a new one.", too_many_attempts: "Too many wrong tries. Request a new code.", incorrect: "Incorrect code." }[verified.reason];
+    return fail(message);
+  }
+
+  try {
+    await consumeRateLimit(prisma, `family-plan:${session.user.id}`, { windowMinutes: 60, max: 8, message: "Too many tries. Please wait a while and try again." });
+    const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
+    const { plans, startPayment } = await createFamilyPlans({
+      payerId: session.user.id,
+      cadence: OFFERED_PLAN_CADENCE,
+      term,
+      zelleHandle,
+      reservedScheduleId: reservedScheduleId ?? undefined,
+      reservedChunkIndex: reservedChunkIndex ?? undefined,
+      memberEmails,
+      verifiedSwitch: true,
+    });
+    revalidatePath("/", "layout");
+    return { ok: true, planId: null, startPaymentId: startPayment.id, amountCents: startPayment.amountCents, memberCount: plans.length + 1, error: null };
+  } catch (error) {
+    if (error instanceof PaymentPlanError || error instanceof RateLimitError) return fail(error.message);
     throw error;
   }
 }

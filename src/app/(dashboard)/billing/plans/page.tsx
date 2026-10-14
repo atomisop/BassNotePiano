@@ -82,6 +82,27 @@ export default async function BillingPlansPage(
       }
     }
   }
+  // A switch from this solo plan to a family plan, waiting for its combined first payment.
+  let pendingSwitch: { payment: { id: string; status: ZellePaymentStatus; rejectionReason: string | null; amountCents: number; installmentNumber: number | null }; memberCount: number } | null = null;
+  if (activePlan && !activePlan.familyGroupId) {
+    const group = await prisma.familyPlanGroup.findFirst({
+      where: { payerId: session.user.id, replacesPlanId: activePlan.id, plans: { some: { status: "ACTIVE", installmentsPaid: 0 } } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, _count: { select: { plans: true } } },
+    });
+    if (group) {
+      const open = await prisma.zellePayment.findFirst({
+        where: { familyGroupId: group.id, purpose: "FAMILY_PLAN_START", status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW", "REJECTED"] } },
+        orderBy: { createdAt: "desc" },
+      });
+      if (open) {
+        pendingSwitch = {
+          payment: { id: open.id, status: open.status, rejectionReason: open.rejectionReason, amountCents: open.amountCents, installmentNumber: 1 },
+          memberCount: group._count.plans + 1,
+        };
+      }
+    }
+  }
   const shownInstallment = startPayment ?? openInstallmentResult?.payment ?? null;
 
   const pastPlans = allPlans.filter((plan) => plan.status !== "ACTIVE");
@@ -132,6 +153,7 @@ export default async function BillingPlansPage(
           }
           family={family}
           familyBills={familyBills}
+          pendingSwitch={pendingSwitch}
         />
       </div>
 

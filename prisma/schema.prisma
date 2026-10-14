@@ -139,6 +139,8 @@ model PaymentPlan {
   // Set when this plan is one member's plan inside a family plan (see FamilyPlanGroup).
   familyGroupId String?
   familyGroup   FamilyPlanGroup? @relation(fields: [familyGroupId], references: [id])
+  // Family plans created to replace this plan once their first payment is approved.
+  replacedByFamilies FamilyPlanGroup[] @relation("FamilySwitchReplaces")
 
   installmentPayments ZellePayment[]
   creditGrants        CreditGrant[]
@@ -160,10 +162,16 @@ model FamilyPlanGroup {
   payer     User     @relation("FamilyPlanPayer", fields: [payerId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
+  // When the payer was already on a solo plan: that plan keeps running untouched until the family's combined first payment is
+  // approved, and only then is it cancelled and replaced by the payer's family plan (same transaction, same weekly time).
+  replacesPlanId String?
+  replacesPlan   PaymentPlan? @relation("FamilySwitchReplaces", fields: [replacesPlanId], references: [id], onDelete: SetNull)
+
   plans         PaymentPlan[]
   startPayments ZellePayment[]
 
   @@index([payerId])
+  @@index([replacesPlanId])
 }
 
 // 4 or 8 credits per monthly installment (30 or 60 min/week), matching
@@ -329,6 +337,7 @@ enum VerificationPurpose {
   CHANGE_NAME // confirm a display name change
   CHANGE_AVATAR // confirm a profile photo change
   PHONE_VERIFY // confirm a phone number with a 6-digit text message (signup, or add/change in Settings); the number being confirmed rides in payload
+  SWITCH_TO_FAMILY // confirm turning a paid plan into a family plan (the old plan is cancelled when the family's first payment is approved)
   DELETE_ACCOUNT // confirm permanent account deletion from account settings, unlike CHANGE_*, still code-gated (see the 2026-08-07 decision note in account/actions.ts): deleting is irreversible, so it keeps the extra step the others dropped
 }
 

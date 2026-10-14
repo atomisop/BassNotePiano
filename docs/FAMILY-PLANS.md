@@ -21,6 +21,23 @@ A family plan is 2 to 4 existing accounts (the payer plus 1 to 3 others), set up
   admin's two checkboxes.
 - Revenue counts the combined payment once; members' first months have no payment rows of their own.
 
+## Switching from a plan of your own
+A payer who already has a paid solo plan switches, they do not cancel and re-subscribe:
+1. They add the others (accounts must already exist) and confirm with their password plus an emailed code (`SWITCH_TO_FAMILY`).
+2. Only the OTHER members get plans now. The payer's old plan keeps running, untouched, and its weekly time is the family's default.
+3. When the combined first payment is approved, in the same transaction: the old plan is cancelled (reason "Switched to a family
+   plan"), the payer's family plan is created at the same time, their booked classes at that time move across, and every plan starts.
+   Their unused credits stay until they expire; nothing is refunded. If the payment never arrives, the old plan was never changed.
+4. A subscribed sibling has to cancel their own plan first (nobody else's plan is cancelled for them).
+5. One family change per `family.changeCooldownDays` (default 60, Settings > Payments).
+
+## When someone leaves a started family
+- A member leaves and one person is left: that person pays the SOLO price from their next bill (told when it happens).
+- The payer leaves (cancel, admin cancel or lapse): the family ends. Each member keeps the month already paid (credits, booked
+  classes) and gets no new bills. Admins are alerted.
+- Members share one booking party in the weekly class (`familyBookingGroupId`), so the daily job books everyone into the same class.
+- A child can sign up without a phone number ("I do not have my own phone number"); one number still belongs to one account.
+
 ## Not stopped by the system
 One person can still make two accounts with two different names and start a family plan for the discount. The system makes that
 inconvenient (distinct names, one shared weekly time, one bank account paying) but cannot prove two accounts are two people.

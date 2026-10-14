@@ -2,7 +2,8 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/auth", () => ({ getServerSession: async () => null, getServerAuthSession: async () => null, authOptions: {} }));
 import { canonicalEmail } from "@/lib/canonicalEmail";
 import { OFFERED_PLAN_CADENCE, calculateFamilyBundleTotal } from "@/lib/classCreditPricing";
-import { createFamilyPlans, getOrCreateOpenInstallmentPayment, lapsePlanForNonPayment, changePaymentPlanTerm, PaymentPlanError } from "@/lib/paymentPlans";
+import { createFamilyPlans, getOrCreateOpenInstallmentPayment, lapsePlanForNonPayment, changePaymentPlanTerm, cancelPaymentPlan, PaymentPlanError } from "@/lib/paymentPlans";
+import { calculatePaymentPlanRate } from "@/lib/classCreditPricing";
 import { approveZellePayment, submitZellePaymentReference } from "@/lib/payments";
 import { ingestPaymentEmail } from "@/lib/paymentEmail";
 import { paymentReferenceCode } from "@/lib/paymentReference";
@@ -158,5 +159,121 @@ describe("members cannot change a family plan on their own", () => {
   it("refuses a term change", async () => {
     const { plans } = await family();
     await expect(changePaymentPlanTerm(plans[1].userId, "TERM_3")).rejects.toThrow(/family plan/i);
+  });
+});
+
+describe("everyone in a family is in the same class", () => {
+  it("books each member into the same weekly class as one party", async () => {
+    const { plans, startPayment, group } = await family();
+    await submitZellePaymentReference(group.payerId, startPayment.id, { senderName: "Parent Tester" });
+    await approveZellePayment(startPayment.id, null);
+    const bookings = await prisma.classBooking.findMany({ where: { studentId: { in: plans.map((p) => p.userId) }, status: "SCHEDULED" } });
+    expect(bookings.length).toBeGreaterThanOrEqual(2);
+    const first = bookings[0];
+    const sameClass = bookings.filter((b) => b.occurrenceDate.getTime() === first.occurrenceDate.getTime());
+    expect(new Set(sameClass.map((b) => b.studentId)).size).toBe(plans.length);
+    expect(new Set(sameClass.map((b) => b.familyBookingGroupId)).size).toBe(1);
+    expect(sameClass[0].familyBookingGroupId).toBe(group.id);
+  });
+});
+
+describe("switching from a plan of your own", () => {
+  async function subscriber(label: string, name: string, slotId: string) {
+    const adam = await account(label, name);
+    const plan = await prisma.paymentPlan.create({
+      data: { userId: adam.id, cadence: OFFERED_PLAN_CADENCE, term: "TERM_6", installmentAmountCents: 17999, creditsPerInstallment: 8, termMonths: 6, installmentsPaid: 2, nextDueDate: new Date(Date.now() + 10 * 86_400_000), status: "ACTIVE", reservedScheduleId: slotId, reservedChunkIndex: 0 },
+    });
+    return { adam, plan };
+  }
+  const switchOf = (adamId: string, emails: string[], extra: Partial<Parameters<typeof createFamilyPlans>[0]> = {}) =>
+    createFamilyPlans({ payerId: adamId, cadence: OFFERED_PLAN_CADENCE, term: "TERM_6", zelleHandle: "pay@example.com", memberEmails: emails, verifiedSwitch: true, ...extra });
+
+  it("needs the password-and-code check, and leaves the old plan alone until the family's first payment is approved", async () => {
+    const slot = await newSlot();
+    const { adam, plan } = await subscriber("adam1", "Adam Switcher", slot);
+    const emma = await account("emma1", "Emma Switcher");
+    await expect(switchOf(adam.id, [emma.email], { verifiedSwitch: false })).rejects.toThrow(/password/i);
+
+    const { group, plans, startPayment } = await switchOf(adam.id, [emma.email]);
+    expect(group.replacesPlanId).toBe(plan.id);
+    expect(plans).toHaveLength(1); // only Emma's plan exists now
+    expect((await prisma.paymentPlan.findUniqueOrThrow({ where: { id: plan.id } })).status).toBe("ACTIVE");
+    // The old plan's weekly time is the family's weekly time, with no second plan for Adam yet.
+    expect(plans[0].reservedScheduleId).toBe(slot);
+    expect(await prisma.paymentPlan.count({ where: { userId: adam.id, status: "ACTIVE" } })).toBe(1);
+
+    await submitZellePaymentReference(adam.id, startPayment.id, { senderName: "Adam Switcher" });
+    await approveZellePayment(startPayment.id, null);
+    expect((await prisma.paymentPlan.findUniqueOrThrow({ where: { id: plan.id } })).status).toBe("CANCELED");
+    const mine = await prisma.paymentPlan.findFirstOrThrow({ where: { userId: adam.id, status: "ACTIVE" } });
+    expect(mine.familyGroupId).toBe(group.id);
+    expect(mine.installmentsPaid).toBe(1);
+    expect(mine.reservedScheduleId).toBe(slot);
+    // The payer's first-month credits are on the ledger and linked to the new plan.
+    expect(await prisma.creditGrant.count({ where: { paymentPlanId: mine.id } })).toBe(1);
+    expect(await prisma.paymentPlan.count({ where: { familyGroupId: group.id, installmentsPaid: 1 } })).toBe(2);
+  });
+
+  it("changes nothing for Adam if the family never starts", async () => {
+    const slot = await newSlot();
+    const { adam, plan } = await subscriber("adam2", "Adam Stays", slot);
+    const emma = await account("emma2", "Emma Stays");
+    const { plans } = await switchOf(adam.id, [emma.email]);
+    expect(await lapsePlanForNonPayment(plans[0].id, { firstBill: true })).toBe(true);
+    expect((await prisma.paymentPlan.findUniqueOrThrow({ where: { id: plan.id } })).status).toBe("ACTIVE");
+  });
+
+  it("will not switch while an earlier payment is still being confirmed, and cancels nobody else's plan", async () => {
+    const slot = await newSlot();
+    const { adam, plan } = await subscriber("adam3", "Adam Waiting", slot);
+    const emma = await account("emma3", "Emma Subscribed");
+    await prisma.paymentPlan.create({
+      data: { userId: emma.id, cadence: OFFERED_PLAN_CADENCE, term: "MONTHLY", installmentAmountCents: 100, creditsPerInstallment: 8, termMonths: 1, nextDueDate: new Date(), status: "ACTIVE" },
+    });
+    await expect(switchOf(adam.id, [emma.email])).rejects.toThrow(/cannot start/);
+    await prisma.zellePayment.create({ data: { userId: adam.id, paymentPlanId: plan.id, purpose: "PAYMENT_PLAN_INSTALLMENT", amountCents: 17999, zelleHandle: "x", lessonQuantity: 8, installmentNumber: 3, status: "PENDING_REVIEW" } });
+    const kid = await account("kid3", "Jake Waiting");
+    await expect(switchOf(adam.id, [kid.email])).rejects.toThrow(/being confirmed/);
+  });
+
+  it("allows one family change per cooldown", async () => {
+    const { plans, startPayment, group } = await family();
+    await submitZellePaymentReference(group.payerId, startPayment.id, { senderName: "Parent Tester" });
+    await approveZellePayment(startPayment.id, null);
+    await prisma.paymentPlan.updateMany({ where: { familyGroupId: group.id }, data: { status: "CANCELED" } });
+    const another = await account("again", "Another Kid");
+    await expect(family("MONTHLY", [another.email], group.payerId)).rejects.toThrow(/recently/);
+    expect(plans.length).toBe(2);
+  });
+});
+
+describe("when someone leaves a started family", () => {
+  async function started() {
+    const f = await family("TERM_3");
+    await submitZellePaymentReference(f.group.payerId, f.startPayment.id, { senderName: "Parent Tester" });
+    await approveZellePayment(f.startPayment.id, null);
+    return f;
+  }
+
+  it("a member leaving: the one left pays the solo price on the next bill", async () => {
+    const f = await started();
+    const kid = f.plans.find((p) => p.userId !== f.group.payerId)!;
+    const parent = f.plans.find((p) => p.userId === f.group.payerId)!;
+    await cancelPaymentPlan(kid.id, f.group.payerId, "Left the family");
+    await prisma.paymentPlan.update({ where: { id: parent.id }, data: { nextDueDate: new Date() } });
+    const { payment } = await getOrCreateOpenInstallmentPayment(parent.id, "pay@example.com");
+    expect(payment!.amountCents).toBe(calculatePaymentPlanRate(OFFERED_PLAN_CADENCE, "TERM_3").installmentAmountCents);
+    expect(payment!.amountCents).toBeGreaterThan(parent.installmentAmountCents);
+  });
+
+  it("the payer leaving ends the family for everyone, and the others keep what they paid for", async () => {
+    const f = await started();
+    const parent = f.plans.find((p) => p.userId === f.group.payerId)!;
+    const kid = f.plans.find((p) => p.userId !== f.group.payerId)!;
+    const kidBefore = await prisma.user.findUniqueOrThrow({ where: { id: kid.userId } });
+    await cancelPaymentPlan(parent.id, f.group.payerId, "Payer left");
+    expect((await prisma.paymentPlan.findUniqueOrThrow({ where: { id: kid.id } })).status).toBe("CANCELED");
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: kid.userId } })).classCredits).toBe(kidBefore.classCredits);
+    expect(await prisma.zellePayment.count({ where: { paymentPlanId: kid.id, status: "AWAITING_TRANSFER" } })).toBe(0);
   });
 });
