@@ -177,7 +177,7 @@ function DockItem({ children, className, 'aria-label': ariaLabel }: DockItemProp
       aria-label={ariaLabel}
     >
       {Children.map(children, (child) =>
-        cloneElement(child as React.ReactElement, { width, isHovered })
+        cloneElement(child as React.ReactElement<{ width: unknown; isHovered: unknown }>, { width, isHovered })
       )}
     </motion.div>
   );

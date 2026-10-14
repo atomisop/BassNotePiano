@@ -20,11 +20,12 @@ const SOURCES: { label: string; value: SupportThreadSource; param: string }[] = 
 
 export const metadata = { title: "Admin: Support chat" };
 
-export default async function AdminSupportPage({
-  searchParams,
-}: {
-  searchParams: { filter?: string; status?: string; source?: string; thread?: string };
-}) {
+export default async function AdminSupportPage(
+  props: {
+    searchParams: Promise<{ filter?: string; status?: string; source?: string; thread?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   // Old links opened a conversation beside the list; every conversation has its own page now.
   if (searchParams.thread) redirect(`/admin/support/${encodeURIComponent(searchParams.thread)}`);
 

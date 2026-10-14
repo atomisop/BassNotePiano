@@ -7,13 +7,14 @@ const FILTER_PARAMS = new Set(["open", "resolved", "all", "mine"]);
 
 export const metadata = { title: "Admin: Support thread" };
 
-export default async function SupportThreadPage({
-  params,
-  searchParams,
-}: {
-  params: { id: string };
-  searchParams: { filter?: string; source?: string };
-}) {
+export default async function SupportThreadPage(
+  props: {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{ filter?: string; source?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const session = await getServerAuthSession();
   // The admin layout already redirects non-admins; this keeps the page safe on its own too.
   if (session?.user?.role !== "ADMIN") redirect("/dashboard");

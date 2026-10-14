@@ -9,11 +9,12 @@ import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
 
 export const metadata = { title: "Payment plans" };
 
-export default async function BillingPlansPage({
-  searchParams,
-}: {
-  searchParams: { cadence?: string; term?: string };
-}) {
+export default async function BillingPlansPage(
+  props: {
+    searchParams: Promise<{ cadence?: string; term?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
 

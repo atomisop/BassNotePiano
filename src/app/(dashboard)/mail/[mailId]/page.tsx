@@ -13,7 +13,8 @@ const DEFAULT_ACTION = { ADMIN_MESSAGE: null, PAYMENT: { label: "View billing hi
 
 export const metadata = { title: "Mail" };
 
-export default async function MailDetailPage({ params }: { params: { mailId: string } }) {
+export default async function MailDetailPage(props: { params: Promise<{ mailId: string }> }) {
+  const params = await props.params;
   const session = await getServerAuthSession();
   if (!session?.user) redirect(`/login?callbackUrl=/mail/${params.mailId}`);
   const mail = await openMail(session.user.id, params.mailId);

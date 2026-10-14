@@ -18,7 +18,7 @@ const SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render
 export function TurnstileWidget({ action, onToken, resetKey = 0 }: { action: string; onToken: (token: string) => void; resetKey?: number }) {
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const ref = useRef<HTMLDivElement>(null);
-  const widgetId = useRef<string>();
+  const widgetId = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (!siteKey || !ref.current) return;

@@ -21,7 +21,7 @@ const HERO_VIDEO_URL = "https://pub-0fe2f6dde02a45099c1719d7c4e554b5.r2.dev/mark
  * on load, when the tab becomes visible, and on the first touch, click, key
  * press or scroll, and quietly gives up if the browser still says no.
  */
-function useKeepPlaying(ref: React.RefObject<HTMLVideoElement>, enabled: boolean) {
+function useKeepPlaying(ref: React.RefObject<HTMLVideoElement | null>, enabled: boolean) {
   useEffect(() => {
     const video = ref.current;
     if (!video) return;

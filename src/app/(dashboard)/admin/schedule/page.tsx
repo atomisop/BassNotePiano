@@ -37,7 +37,8 @@ const VIEWS: { label: string; value: ViewValue }[] = [
 
 export const metadata = { title: "Admin: Schedule" };
 
-export default async function AdminSchedulePage({ searchParams }: { searchParams: { view?: string; group?: string } }) {
+export default async function AdminSchedulePage(props: { searchParams: Promise<{ view?: string; group?: string }> }) {
+  const searchParams = await props.searchParams;
   const requested = searchParams.view?.toUpperCase();
   const activeView = VIEWS.find((v) => v.value === requested)?.value ?? "WINDOWS";
 

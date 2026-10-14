@@ -34,7 +34,8 @@ import { DiscordConnectCard } from "@/components/lessons/DiscordConnectCard";
  */
 export const metadata = { title: "Online lessons" };
 
-export default async function LessonsPage({ searchParams }: { searchParams: { tab?: string; discord?: string } }) {
+export default async function LessonsPage(props: { searchParams: Promise<{ tab?: string; discord?: string }> }) {
+  const searchParams = await props.searchParams;
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
   // Booking a class requires curriculum access first, credits themselves

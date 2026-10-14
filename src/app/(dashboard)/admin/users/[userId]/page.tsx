@@ -9,7 +9,8 @@ import { adminClearPhoneAction, adminForceSignOutAction, banUserAction, forgetPa
 
 export const metadata = { title: "Admin: Student" };
 
-export default async function AdminCustomerPage({ params }: { params: { userId: string } }) {
+export default async function AdminCustomerPage(props: { params: Promise<{ userId: string }> }) {
+  const params = await props.params;
   const profile = await getCustomerProfile(params.userId);
   if (!profile) notFound();
 
