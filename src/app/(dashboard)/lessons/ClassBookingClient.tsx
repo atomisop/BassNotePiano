@@ -28,6 +28,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 import { buttonVariants } from "@/components/ui/button";
 import { DiscordLink } from "@/components/ui/DiscordLink";
+import { announceChange } from "@/lib/liveEvents";
 
 const NETWORK_ERROR = "That didn't go through. Check your connection and try again.";
 
@@ -580,6 +581,7 @@ export function ClassBookingClient({
     let result: Awaited<ReturnType<typeof bookClassBundleAction>>;
     try {
       result = await bookClassBundleAction(selections);
+      announceChange("booking");
     } catch {
       setError(NETWORK_ERROR);
       return;
@@ -637,6 +639,7 @@ export function ClassBookingClient({
     let result: Awaited<ReturnType<typeof cancelClassBookingAction>>;
     try {
       result = await cancelClassBookingAction(booking.id);
+      announceChange("booking");
     } catch {
       setError(NETWORK_ERROR);
       return;
@@ -678,6 +681,7 @@ export function ClassBookingClient({
     let result: Awaited<ReturnType<typeof rescheduleClassBookingAction>>;
     try {
       result = await rescheduleClassBookingAction(oldBooking.id, row.scheduleId, row.occurrenceDateMs, row.chunkIndex, chosen);
+      announceChange("booking");
     } catch {
       setError(NETWORK_ERROR);
       return;
@@ -727,6 +731,7 @@ export function ClassBookingClient({
     setPayBusyKey(rowKey(row));
     try {
       const result = await createExtraClassPaymentAction(row.scheduleId, row.occurrenceDateMs, row.chunkIndex);
+      announceChange("booking");
       if (!result.ok || !result.id || !result.status || result.amountCents === null) {
         setError(result.error ?? "Something went wrong. Please try again.");
         return;
@@ -788,6 +793,7 @@ export function ClassBookingClient({
     let result: Awaited<ReturnType<typeof bookFamilyClassAction>>;
     try {
       result = await bookFamilyClassAction(familyRow.scheduleId, familyRow.occurrenceDateMs, familyRow.chunkIndex, familyEmailsTrimmed);
+      announceChange("booking");
     } catch {
       setError(NETWORK_ERROR);
       return;

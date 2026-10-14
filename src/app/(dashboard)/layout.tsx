@@ -99,14 +99,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden pt-16">
         <TopBar isAdmin={isAdmin} isOwner={isOwner} />
         <AnnouncementBanner announcement={activeAnnouncement} />
-        {/* pb-28 at every width, not just md:, the floating AppDock now
+        {/* pb-32 at every width (the bottom padding used to be overridden by md:py-10, which left only 40px under the last content on a desktop, so the always-on dock covered it), the floating AppDock now
             covers phone widths too (fixed, not in flow), so this reserved
             clearance is no longer a desktop-only concern. overscroll-contain
             stops this scroll area's own momentum/rubber-banding from
             chaining up to the body once it hits the top/bottom, without
             it, an iOS overscroll bounce here could visibly tug at the fixed
             shell around it, the same "things move weird" complaint. */}
-        <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-6 pb-28 md:px-8 md:py-10">{children}</PullToRefreshMain>
+        <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pb-32 pt-6 md:px-8 md:pb-32 md:pt-10">{children}</PullToRefreshMain>
       </div>
       <AutoRefresh />
       <AppDock unreadMessageCount={unreadMessageCount} />

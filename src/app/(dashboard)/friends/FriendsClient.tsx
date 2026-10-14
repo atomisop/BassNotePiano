@@ -16,6 +16,7 @@ import {
 import { TwoPaneLayout, WideLayout } from "@/components/layout/PageLayouts";
 import { OwnerStarBadge, useIsOwner } from "@/components/ui/OwnerStar";
 import { buttonVariants } from "@/components/ui/button";
+import { announceChange } from "@/lib/liveEvents";
 
 interface PublicProfile {
   id: string;
@@ -115,6 +116,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
       }
       setSentTo((prev) => new Set(prev).add(profile.id));
       router.refresh();
+      announceChange("notifications");
     }, `add:${profile.id}`);
   }
 
@@ -122,6 +124,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
     await action.run(async () => {
       await respondToFriendRequestAction(requestId, accept);
       router.refresh();
+      announceChange("notifications");
     }, `${accept ? "accept" : "reject"}:${requestId}`);
   }
 
@@ -130,6 +133,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
       await blockUserAction(userId);
       setBlockingId(null);
       router.refresh();
+      announceChange("notifications");
     }, `block:${userId}`);
   }
 
@@ -137,6 +141,7 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
     await action.run(async () => {
       await unblockUserAction(userId);
       router.refresh();
+      announceChange("notifications");
     }, `unblock:${userId}`);
   }
 

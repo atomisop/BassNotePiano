@@ -6,6 +6,7 @@ import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { ShopBrowser } from "@/components/marketing/ShopBrowser";
 import { SHOP_PRODUCTS } from "@/lib/shopProducts";
+import { BackLink } from "@/components/ui/BackLink";
 
 export const metadata: Metadata = pageMetadata({
   title: "Shop",
@@ -32,15 +33,18 @@ export default async function ShopPage(props: { searchParams: Promise<{ back?: s
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section className="relative mx-auto max-w-6xl px-6 pb-24 pt-28 md:pt-36">
           {back && (
-            <Link
+            <BackLink
               href={back}
               className="tap mb-8 inline-flex items-center gap-2 rounded-full bg-black py-2 pl-3 pr-5 text-small font-medium text-[#E1E0CC] transition hover:opacity-80"
             >
               <ArrowLeft className="h-4 w-4" />
               Back
-            </Link>
+            </BackLink>
           )}
-          <h1 className="mb-8 text-2xl font-medium tracking-[-0.03em] text-[#E1E0CC] md:text-3xl">Gear that works for beginners</h1>
+          <h1 className="mb-4 text-2xl font-medium tracking-[-0.03em] text-[#E1E0CC] md:text-3xl">Gear that works for beginners</h1>
+          <p role="note" className="mb-8 max-w-2xl rounded-xl border border-[#E1E0CC]/15 bg-[#E1E0CC]/5 px-4 py-3 text-small text-[#E1E0CC]/80">
+            Prices shown here are a guide and might be different on Amazon when you look. Some items might not be available.
+          </p>
 
           <ShopBrowser products={SHOP_PRODUCTS} />
 

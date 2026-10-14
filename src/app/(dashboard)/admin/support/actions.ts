@@ -63,9 +63,11 @@ export async function sendSupportReplyAction(escalationId: string, body: string)
         return { ok: false as const, error: "Start your reply with a word. A leading / is for transfers like /isaac or /admin." };
       }
       const { label } = await transferSupportThread({ escalationId, fromAdminId: adminId, token: command.token, note: command.rest });
+      revalidatePath("/", "layout");
       return { ok: true as const, transferredTo: label };
     }
     await postAdminReply(escalationId, adminId, body);
+    revalidatePath("/", "layout"); // the unread and waiting counts in the admin menu
     return { ok: true as const, transferredTo: null };
   } catch (err) {
     return { ok: false as const, error: err instanceof AssistantEscalationError ? err.message : "Something went wrong." };
@@ -81,11 +83,11 @@ export async function setSupportTypingAction(escalationId: string, typing = true
 export async function resolveSupportThreadAction(escalationId: string): Promise<void> {
   const adminId = await requireAdminId();
   await resolveSupportThread(escalationId, adminId);
+  revalidatePath("/", "layout"); // the waiting count in the admin menu
 }
 
 export async function deleteSupportThreadAction(escalationId: string): Promise<void> {
   await requireAdminId();
   await deleteSupportThread(escalationId);
-  revalidatePath("/admin/support");
-  revalidatePath("/admin");
+  revalidatePath("/", "layout");
 }

@@ -53,6 +53,9 @@ enum PaymentPurpose {
   // this purpose); approveZellePayment's own branch keys off payment.purpose,
   // not that field, to decide what each recipient actually receives.
   CURRICULUM_FAMILY_BUNDLE
+  // The one combined first payment of a family plan (every member's first month, paid together by the one payer). Its approval
+  // starts every member's plan at once, so a family can never start with only some members. See FamilyPlanGroup.
+  FAMILY_PLAN_START
 }
 
 // A student's standing commitment to pay for class credits in periodic
@@ -133,13 +136,42 @@ model PaymentPlan {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Set when this plan is one member's plan inside a family plan (see FamilyPlanGroup).
+  familyGroupId String?
+  familyGroup   FamilyPlanGroup? @relation(fields: [familyGroupId], references: [id])
+  // Family plans created to replace this plan once their first payment is approved.
+  replacedByFamilies FamilyPlanGroup[] @relation("FamilySwitchReplaces")
+
   installmentPayments ZellePayment[]
   creditGrants        CreditGrant[]
   reservedBookings    ClassBooking[]
 
   @@index([userId])
+  @@index([familyGroupId])
   @@index([status, nextDueDate])
   @@index([reservedScheduleId, reservedChunkIndex, status])
+}
+
+// A family plan: 2 to 4 existing accounts, each with its own PaymentPlan at the family rate (FAMILY_BUNDLE_DISCOUNT_RATE off), all
+// reserving the same weekly time and all created in one transaction (any member that cannot start stops the whole family). The one
+// payer (a member) pays everything: the first month as ONE combined FAMILY_PLAN_START payment whose approval starts every member's
+// plan in the same transaction, then each member's own monthly bill, which only the payer's bank account may settle.
+model FamilyPlanGroup {
+  id        String   @id @default(cuid())
+  payerId   String
+  payer     User     @relation("FamilyPlanPayer", fields: [payerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  // When the payer was already on a solo plan: that plan keeps running untouched until the family's combined first payment is
+  // approved, and only then is it cancelled and replaced by the payer's family plan (same transaction, same weekly time).
+  replacesPlanId String?
+  replacesPlan   PaymentPlan? @relation("FamilySwitchReplaces", fields: [replacesPlanId], references: [id], onDelete: SetNull)
+
+  plans         PaymentPlan[]
+  startPayments ZellePayment[]
+
+  @@index([payerId])
+  @@index([replacesPlanId])
 }
 
 // 4 or 8 credits per monthly installment (30 or 60 min/week), matching
@@ -305,6 +337,7 @@ enum VerificationPurpose {
   CHANGE_NAME // confirm a display name change
   CHANGE_AVATAR // confirm a profile photo change
   PHONE_VERIFY // confirm a phone number with a 6-digit text message (signup, or add/change in Settings); the number being confirmed rides in payload
+  SWITCH_TO_FAMILY // confirm turning a paid plan into a family plan (the old plan is cancelled when the family's first payment is approved)
   DELETE_ACCOUNT // confirm permanent account deletion from account settings, unlike CHANGE_*, still code-gated (see the 2026-08-07 decision note in account/actions.ts): deleting is irreversible, so it keeps the extra step the others dropped
 }
 
@@ -866,6 +899,7 @@ model User {
   classBookings    ClassBooking[]  @relation("ClassBookingStudent")
 
   paymentPlans         PaymentPlan[] @relation("PaymentPlanStudent")
+  familyPlanGroupsPaid FamilyPlanGroup[] @relation("FamilyPlanPayer")
   paymentPlansCanceled PaymentPlan[] @relation("PaymentPlanCanceledBy") // admin side of an admin-canceled plan
 
   creditGrants CreditGrant[]
@@ -1383,6 +1417,10 @@ model ZellePayment {
   paymentPlan       PaymentPlan? @relation(fields: [paymentPlanId], references: [id])
   installmentNumber Int?
 
+  // Only set when purpose == FAMILY_PLAN_START: the family whose members' first months this one payment covers.
+  familyGroupId String?
+  familyGroup   FamilyPlanGroup? @relation(fields: [familyGroupId], references: [id])
+
   // Only set on a CLASS_CREDITS row created through the Schedule screen's
   // guided "buy an extra session" flow (getOrCreatePendingExtraSessionPayment
   // in payments.ts), the exact one-off occurrence the student picked before
@@ -1438,6 +1476,7 @@ model ZellePayment {
   familyBundleRecipients FamilyBundleRecipient[]
 
   @@index([status])
+  @@index([familyGroupId])
   @@index([userId])
   @@index([paymentPlanId])
 }

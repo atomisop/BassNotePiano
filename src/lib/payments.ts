@@ -50,7 +50,7 @@ async function expireStalePendingPayments() {
     // case this app's payment-plan reminders are built around, not
     // something that should silently become unpayable the next time anyone
     // loads a billing page.
-    where: { status: "AWAITING_TRANSFER", createdAt: { lt: cutoff }, purpose: { not: "PAYMENT_PLAN_INSTALLMENT" } },
+    where: { status: "AWAITING_TRANSFER", createdAt: { lt: cutoff }, purpose: { notIn: ["PAYMENT_PLAN_INSTALLMENT", "FAMILY_PLAN_START"] } },
     data: { status: "EXPIRED" },
   });
 }
@@ -345,7 +345,11 @@ export async function submitZellePaymentReference(
 ) {
   const payment = await prisma.zellePayment.findUniqueOrThrow({ where: { id: paymentId } });
   if (payment.userId !== userId) {
-    throw new AccessDeniedError(`Payment ${paymentId} does not belong to user ${userId}`);
+    // A family plan member's monthly bill is paid by the family's one payer, so the payer may submit it too.
+    const family = payment.paymentPlanId
+      ? await prisma.paymentPlan.findFirst({ where: { id: payment.paymentPlanId, familyGroup: { payerId: userId } }, select: { id: true } })
+      : null;
+    if (!family) throw new AccessDeniedError(`Payment ${paymentId} does not belong to user ${userId}`);
   }
   if (payment.status !== "AWAITING_TRANSFER" && payment.status !== "REJECTED") {
     throw new Error(`Payment ${paymentId} is not open for submission (status: ${payment.status})`);
@@ -597,9 +601,12 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
   // check before either commits. Caught below the same way those callers
   // already catch it, a friendly retry message instead of a raw P2034.
   let payment;
+  const approvalStartedAt = new Date();
+  let newPlanId: string | null = null;
   try {
     payment = await prisma.$transaction(
       async (tx) => {
+        newPlanId = null;
         const payment = await tx.zellePayment.findUniqueOrThrow({ where: { id: paymentId } });
         if (payment.status !== "PENDING_REVIEW") {
           throw new Error(`Payment ${paymentId} is not pending review (status: ${payment.status})`);
@@ -649,44 +656,55 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
             await grantCurriculumAccess(recipient.userId, tx);
           }
         } else if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId && payment.lessonQuantity) {
-          // Fetched before granting (unlike the other branches) because the
-          // grant's own expiresAt needs it: this installment's credits are good
-          // through the end of the cycle it's paying for, exactly when the
-          // *next* installment becomes due. cycleEnd is computed once and
-          // reused for both, below.
-          const plan = await tx.paymentPlan.findUnique({ where: { id: payment.paymentPlanId } });
-          // The first month starts when the first payment is approved, not when the plan was
-          // created, so a student who pays a few days after signing up still gets a full month.
-          const cycleStart = plan && plan.installmentsPaid === 0 && plan.nextDueDate < new Date() ? new Date() : plan?.nextDueDate;
-          const cycleEnd = plan && cycleStart ? addCalendarMonthsClamped(cycleStart, 1) : null;
-
-          // Quantity is snapshotted onto the payment row at installment-creation
-          // time (see createPaymentPlan/getOrCreateOpenInstallmentPayment in
-          // paymentPlans.ts).
-          await grantCredits(
-            payment.userId,
-            payment.lessonQuantity,
-            { source: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: payment.paymentPlanId, expiresAt: cycleEnd },
-            tx,
-          );
-
-          // The plan may have been canceled after this installment was created
-          // but before review cleared (an admin cancellation racing a student's
-          // in-flight Zelle transfer). Credits are still granted above, real
-          // money changed hands, and refusing them would just generate a
-          // support conversation, but a canceled plan's own progress is left
-          // alone rather than resurrected by a late approval.
-          if (plan && plan.status === "ACTIVE" && cycleEnd) {
-            const installmentsPaid = plan.installmentsPaid + 1;
-            const isComplete = installmentsPaid >= plan.termMonths;
-            await tx.paymentPlan.update({
-              where: { id: plan.id },
+          await applyPlanInstallment(tx, { userId: payment.userId, paymentPlanId: payment.paymentPlanId, lessonQuantity: payment.lessonQuantity });
+        } else if (payment.purpose === "FAMILY_PLAN_START" && payment.familyGroupId) {
+          // One payment starts every member's plan, in this same transaction, or none of them: if any member's plan is no
+          // longer waiting to start (canceled, lapsed), the whole approval fails and the payment stays for a person to refund.
+          const plans = await tx.paymentPlan.findMany({ where: { familyGroupId: payment.familyGroupId } });
+          const group = await tx.familyPlanGroup.findUniqueOrThrow({ where: { id: payment.familyGroupId } });
+          const waiting = plans.filter((plan) => plan.status === "ACTIVE" && plan.installmentsPaid === 0);
+          if (plans.length === 0 || waiting.length !== plans.length) {
+            throw new Error("This family can no longer start together: a member's plan is not waiting to start. Refund the payment and set the family up again.");
+          }
+          // A payer who switched in from a plan of their own: that plan is replaced here, in the same transaction, so there is
+          // no gap and no moment with two plans. Their unused credits stay until they expire; classes already on the calendar
+          // at the family's weekly time move to the new plan.
+          if (group.replacesPlanId) {
+            const old = await tx.paymentPlan.findUnique({ where: { id: group.replacesPlanId } });
+            const template = waiting[0];
+            if (old && old.status === "ACTIVE") {
+              await tx.paymentPlan.update({
+                where: { id: old.id },
+                data: { status: "CANCELED", canceledAt: new Date(), cancellationReason: "OTHER", cancellationReasonNote: "Switched to a family plan" },
+              });
+              await tx.zellePayment.updateMany({ where: { paymentPlanId: old.id, status: "AWAITING_TRANSFER" }, data: { status: "EXPIRED" } });
+            }
+            const mine = await tx.paymentPlan.create({
               data: {
-                installmentsPaid,
-                status: isComplete ? "COMPLETED" : "ACTIVE",
-                nextDueDate: isComplete ? plan.nextDueDate : cycleEnd,
+                userId: group.payerId,
+                cadence: template.cadence,
+                term: template.term,
+                installmentAmountCents: template.installmentAmountCents,
+                creditsPerInstallment: template.creditsPerInstallment,
+                termMonths: template.termMonths,
+                nextDueDate: new Date(),
+                reservedScheduleId: template.reservedScheduleId,
+                reservedChunkIndex: template.reservedChunkIndex,
+                familyGroupId: group.id,
               },
             });
+            if (old) {
+              const sameTime = old.reservedScheduleId === template.reservedScheduleId && old.reservedChunkIndex === template.reservedChunkIndex;
+              await tx.classBooking.updateMany({
+                where: { reservedByPlanId: old.id, status: "SCHEDULED", scheduledAt: { gt: new Date() } },
+                data: sameTime ? { reservedByPlanId: mine.id, familyBookingGroupId: group.id } : { status: "CANCELED", refunded: true },
+              });
+            }
+            waiting.unshift(mine);
+            newPlanId = mine.id;
+          }
+          for (const plan of waiting) {
+            await applyPlanInstallment(tx, { userId: plan.userId, paymentPlanId: plan.id, lessonQuantity: plan.creditsPerInstallment, planIsNew: plan.id === newPlanId });
           }
         } else if (payment.scaleGroupId) {
           // Legacy Pay-As-You-Go row from before per-scale purchase was retired.
@@ -703,6 +721,18 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
       throw new Error("That payment was just processed elsewhere, please try approving it again.");
     }
     throw err;
+  }
+
+  // A payer's family plan created inside the approval: its credit ledger row was written before the plan existed for good, so
+  // it is linked to the plan now.
+  if (newPlanId) {
+    const created = await prisma.paymentPlan.findUnique({ where: { id: newPlanId }, select: { id: true, userId: true } });
+    if (created) {
+      await prisma.creditGrant.updateMany({
+        where: { userId: created.userId, source: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: null, createdAt: { gte: approvalStartedAt } },
+        data: { paymentPlanId: created.id },
+      });
+    }
   }
 
   // The plan's weekly classes for the period just paid for go on the calendar
@@ -731,7 +761,44 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
     }
   }
 
-  let notificationBody = "Your payment was verified.";
+  // A family plan's combined first payment just started every member at once: put each member's weekly classes on the
+  // calendar, tell each member, and tell the admins once.
+  let familyStartBody: string | null = null;
+  if (payment.purpose === "FAMILY_PLAN_START" && payment.familyGroupId) {
+    const plans = await prisma.paymentPlan.findMany({
+      where: { familyGroupId: payment.familyGroupId },
+      select: { id: true, userId: true, cadence: true, term: true, creditsPerInstallment: true, user: { select: { name: true, email: true } } },
+    });
+    for (const plan of plans) await bookReservedWindowForPlan(plan.id);
+    familyStartBody = `Your family plan started for ${plans.length} accounts. Everyone's credits are on their accounts and the weekly classes are booked.`;
+    await Promise.all(
+      plans
+        .filter((plan) => plan.userId !== payment.userId)
+        .map((plan) =>
+          createNotification({
+            userId: plan.userId,
+            type: "PAYMENT_APPROVED",
+            title: "Your family plan started",
+            body: `${creditsLabelFromStored(plan.creditsPerInstallment)} ${plan.creditsPerInstallment === CREDITS_PER_CLASS ? "is" : "are"} on your account and your weekly classes are booked.`,
+            emailCategory: "payments",
+          }).catch((err) => console.error(`Failed to notify family member ${plan.userId} (non-blocking):`, err)),
+        ),
+    );
+    try {
+      const slot = plans[0] ? await describeReservedSlot(plans[0].id) : null;
+      await notifyAdmins("NEW_SUBSCRIPTION", {
+        type: "ADMIN_ALERT",
+        title: "New family plan",
+        body: `${plans.map((plan) => plan.user.name ?? plan.user.email).join(", ")} started a family plan${plans[0] ? ` (${describePaymentPlan(plans[0].cadence, plans[0].term)})` : ""}${slot ? `, ${slot}` : ""}.`,
+        emailCategory: "social",
+        cta: { label: "See the plans", path: "/admin/payment-plans" },
+      });
+    } catch (err) {
+      console.error("New family plan notification failed (non-blocking):", err);
+    }
+  }
+
+  let notificationBody = familyStartBody ?? "Your payment was verified.";
   if (payment.purpose === "CURRICULUM") {
     notificationBody = "Your curriculum payment was verified. Every scale is unlocked, for good.";
   } else if (payment.purpose === "CLASS_CREDITS" && payment.extraSessionScheduleId) {
@@ -827,6 +894,56 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
 }
 
 /**
+ * Credits one installment to a plan inside the approval transaction: grants the cycle's credits (good until the next one is
+ * due) and moves the plan forward (installments paid, next due date, completed). Used by an ordinary installment and,
+ * once per member, by a family plan's combined first payment.
+ */
+async function applyPlanInstallment(
+  tx: Prisma.TransactionClient,
+  args: { userId: string; paymentPlanId: string; lessonQuantity: number; /** True for a plan created inside this same transaction: the ledger row is written outside it, so the link is added after commit. */ planIsNew?: boolean },
+): Promise<void> {
+  // Fetched before granting (unlike the other branches) because the
+  // grant's own expiresAt needs it: this installment's credits are good
+  // through the end of the cycle it's paying for, exactly when the
+  // *next* installment becomes due. cycleEnd is computed once and
+  // reused for both, below.
+  const plan = await tx.paymentPlan.findUnique({ where: { id: args.paymentPlanId } });
+  // The first month starts when the first payment is approved, not when the plan was
+  // created, so a student who pays a few days after signing up still gets a full month.
+  const cycleStart = plan && plan.installmentsPaid === 0 && plan.nextDueDate < new Date() ? new Date() : plan?.nextDueDate;
+  const cycleEnd = plan && cycleStart ? addCalendarMonthsClamped(cycleStart, 1) : null;
+
+  // Quantity is snapshotted onto the payment row at installment-creation
+  // time (see createPaymentPlan/getOrCreateOpenInstallmentPayment in
+  // paymentPlans.ts).
+  await grantCredits(
+    args.userId,
+    args.lessonQuantity,
+    { source: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: args.planIsNew ? undefined : args.paymentPlanId, expiresAt: cycleEnd },
+    tx,
+  );
+
+  // The plan may have been canceled after this installment was created
+  // but before review cleared (an admin cancellation racing a student's
+  // in-flight Zelle transfer). Credits are still granted above, real
+  // money changed hands, and refusing them would just generate a
+  // support conversation, but a canceled plan's own progress is left
+  // alone rather than resurrected by a late approval.
+  if (plan && plan.status === "ACTIVE" && cycleEnd) {
+    const installmentsPaid = plan.installmentsPaid + 1;
+    const isComplete = installmentsPaid >= plan.termMonths;
+    await tx.paymentPlan.update({
+      where: { id: plan.id },
+      data: {
+        installmentsPaid,
+        status: isComplete ? "COMPLETED" : "ACTIVE",
+        nextDueDate: isComplete ? plan.nextDueDate : cycleEnd,
+      },
+    });
+  }
+}
+
+/**
  * Deletes one payment record and nothing else. Anything the payment already
  * gave (a plan's paid installments, credits, booked classes) stays as it is,
  * so this is for clearing test or mistaken rows, not for undoing a sale.
@@ -891,6 +1008,28 @@ export async function refundZellePayment(
       );
     }
   }
+  // A family's combined first payment covers every member: take back each member's first-month credits and end every plan.
+  if (payment.purpose === "FAMILY_PLAN_START" && payment.familyGroupId) {
+    const plans = await prisma.paymentPlan.findMany({
+      where: { familyGroupId: payment.familyGroupId },
+      select: { id: true, userId: true, status: true, creditsPerInstallment: true, user: { select: { classCredits: true } } },
+    });
+    for (const plan of plans) {
+      if (opts.removeCredits) {
+        const held = await prisma.classBooking.aggregate({ where: { studentId: plan.userId, status: "SCHEDULED" }, _sum: { creditsSpent: true } });
+        const free = Math.max(0, plan.user.classCredits - (held._sum.creditsSpent ?? 0));
+        const take = Math.min(free, plan.creditsPerInstallment);
+        if (take > 0) await adjustUserCredits(admin.id, plan.userId, -take, `Refund: ${note}`);
+        if (take < plan.creditsPerInstallment) warnings.push("Some of a family member's credits are held by their upcoming classes and were not taken back.");
+      }
+      if (opts.cancelPlan && plan.status === "ACTIVE") {
+        const { cancelPaymentPlan } = await import("@/lib/paymentPlans");
+        await cancelPaymentPlan(plan.id, admin.id, `Refund: ${note}`).catch((err) => {
+          warnings.push(`A family plan was not canceled: ${err instanceof Error ? err.message : "unknown error"}`);
+        });
+      }
+    }
+  }
   if (opts.cancelPlan && payment.paymentPlanId) {
     const { cancelPaymentPlan } = await import("@/lib/paymentPlans");
     await cancelPaymentPlan(payment.paymentPlanId, admin.id, `Refund: ${note}`).catch((err) => {
@@ -940,13 +1079,18 @@ export async function rejectZellePayment(paymentId: string, reviewerId: string, 
 }
 
 /** The status of one of the caller's own payments, for the pay screen that waits for it to clear. */
+/** A payment is the caller's own, or one the caller pays as a family's payer (a member's monthly bill). */
+function ownOrFamilyPaid(userId: string): Prisma.ZellePaymentWhereInput {
+  return { OR: [{ userId }, { paymentPlan: { familyGroup: { payerId: userId } } }] };
+}
+
 export async function getOwnPaymentStatus(userId: string, paymentId: string): Promise<ZellePaymentStatus | null> {
-  const payment = await prisma.zellePayment.findFirst({ where: { id: paymentId, userId }, select: { status: true } });
+  const payment = await prisma.zellePayment.findFirst({ where: { id: paymentId, ...ownOrFamilyPaid(userId) }, select: { status: true } });
   return payment?.status ?? null;
 }
 
 
 /** When one of the caller's own payments was submitted, for the "how long has it been waiting" notice. */
 export async function getOwnPaymentWaitInfo(userId: string, paymentId: string): Promise<{ status: ZellePaymentStatus; submittedAt: Date | null; amountCents: number } | null> {
-  return prisma.zellePayment.findFirst({ where: { id: paymentId, userId }, select: { status: true, submittedAt: true, amountCents: true } });
+  return prisma.zellePayment.findFirst({ where: { id: paymentId, ...ownOrFamilyPaid(userId) }, select: { status: true, submittedAt: true, amountCents: true } });
 }

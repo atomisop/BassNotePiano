@@ -368,7 +368,7 @@ export async function changePaymentPlanTermAction(newTerm: PaymentPlanTerm) {
   const { id } = await requireSession();
   try {
     await changePaymentPlanTerm(id, newTerm);
-    revalidatePath("/account");
+    revalidatePath("/", "layout"); // the plan shows on billing, lessons, the dashboard and the top bar too
     return { ok: true as const, error: null };
   } catch (err) {
     if (err instanceof PaymentPlanError) return { ok: false as const, error: err.message };
@@ -380,7 +380,7 @@ export async function cancelPaymentPlanBySelfAction(reason: PlanCancellationReas
   const { id } = await requireSession();
   try {
     await cancelPaymentPlanBySelf(id, reason, reasonNote);
-    revalidatePath("/account");
+    revalidatePath("/", "layout"); // the plan shows on billing, lessons, the dashboard and the top bar too
     return { ok: true as const, error: null };
   } catch (err) {
     if (err instanceof PaymentPlanError) return { ok: false as const, error: err.message };

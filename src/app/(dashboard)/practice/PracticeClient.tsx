@@ -15,6 +15,7 @@ import {
 } from "@/lib/fingerExercises";
 import { DAILY_GOAL_SECONDS, type FingerPracticeStatus } from "@/lib/fingerPracticeConstants";
 import { useWakeLock } from "@/hooks/useWakeLock";
+import { announceChange } from "@/lib/liveEvents";
 
 type Instrument = "PIANO" | "GUITAR";
 
@@ -244,7 +245,11 @@ export function PracticeClient({
       setPausedWhileAway(false);
       setLocalExtra(0);
       lastBeatRef.current = Date.now();
-      if (next.justCompleted) setJustCompleted(true);
+      if (next.justCompleted) {
+        setJustCompleted(true);
+        // The practice banner and the locked lessons depend on today's practice being done.
+        announceChange("status", "page");
+      }
     } catch (err) {
       console.error("Practice heartbeat failed (will retry):", err);
     }

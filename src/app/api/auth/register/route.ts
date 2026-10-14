@@ -80,7 +80,9 @@ export async function POST(req: NextRequest) {
   const askPhone = await getBoolSetting("phone.askAtSignup");
   const verifying = await phoneVerifyMode();
   let phone: string | null = null;
-  if (askPhone) {
+  // Someone with no number of their own (a child in a family) may skip it; one number still belongs to one account.
+  const skipPhone = body?.noPhone === true;
+  if (askPhone && !skipPhone) {
     const assessed = assessPhone(typeof body?.phone === "string" ? body.phone : "");
     if (!assessed.ok) return NextResponse.json({ error: assessed.error }, { status: 400 });
     phone = assessed.phone;

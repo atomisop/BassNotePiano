@@ -203,6 +203,12 @@ const PURPOSE_COPY: Record<VerificationPurpose, { subject: string; heading: stri
     heading: "Confirm your phone number",
     intro: "Enter this code to confirm your phone number.",
   },
+  SWITCH_TO_FAMILY: {
+    subject: "Confirm your switch to a family plan",
+    heading: "Confirm your switch to a family plan",
+    intro:
+      "Enter this code to switch your plan to a family plan. Your current plan is cancelled when the family's first payment is approved. If you didn't request this, do not share this code with anyone.",
+  },
   DELETE_ACCOUNT: {
     subject: "Confirm account deletion",
     heading: "Confirm account deletion",

@@ -241,6 +241,16 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
   (`lessonWatermark.ts`) and is never cached. Lessons live in a private bucket (`R2_PRIVATE_BUCKET_NAME`, `fileUrl` = `private:<key>`);
   until that is set and `scripts/move-lessons-private.mjs` has run, the old public addresses still work through the same route.
 
+## Family plans (added 2026-10-14, `docs/FAMILY-PLANS.md`)
+
+2 to 4 accounts, one `PaymentPlan` each at the family rate (`FamilyPlanGroup`), all created in one transaction (any member that cannot start
+stops everyone). The payer pays one combined `FAMILY_PLAN_START` first payment whose approval starts every plan at once; from month two each
+member has their own bill. Only the payer's bank account settles family money (`familyPayerOf`). A failed start lapses the whole group.
+The old one-payment `FAMILY_BUNDLE` page now redirects to `/billing/plans`.
+A subscribed payer switches in (`FamilyPlanGroup.replacesPlanId`): password plus emailed code, the old plan runs until the combined payment is
+approved and is then replaced in the same transaction. A member leaving one short of two bills the survivor at the solo price; the payer
+leaving ends the family (members keep the month paid). One family change per `family.changeCooldownDays`.
+
 ## Phone numbers (added 2026-10-09)
 
 Everyone is asked for a phone number (sign-up form, a top-of-screen banner for older accounts at most once a day, Settings → Account).
@@ -290,8 +300,9 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
 - **One credit is one 45 minute class.** Balances are STORED in half-classes (`CREDITS_PER_CLASS`). Never show or accept a stored
   number: convert with `storedToCredits`, `creditsToStored`, `creditsLabelFromStored`, `formatCredits` (`classCreditPricing.ts`).
 - **Shared live status:** the top bar credit badge (the 21st.dev "Bubble Button") and the Discord, practice and phone banners read
-  `useMeStatus()` (`MeStatusProvider`, `/api/me/status`). Anything that changes credits, the Discord link or practice can
-  `window.dispatchEvent(new Event("bnp:status-changed"))` to refresh it now.
+  `useMeStatus()` (`MeStatusProvider`, `/api/me/status`). Anything that changes credits, the Discord link, practice, a message or a
+  notification calls `announceChange(...)` from `src/lib/liveEvents.ts` right after its action (`messages`, `notifications`, `status`, `page`,
+  or the `payments` and `booking` shortcuts) so the badges and the page update at once; see the last section of `docs/SYNC-AUDIT.md`.
 - **Discord connected = the stored `discordId`** (`discordLinkState`), never the name. Every connect, disconnect and ban calls
   `revalidatePath("/", "layout")`; admin, payment, plan, credit and account actions do the same, so no screen keeps an old value.
   `staleTimes.dynamic = 0` stops the browser reusing a visited page.
@@ -312,6 +323,14 @@ New passwords need at least 8 characters and one special character (`src/lib/pas
 make the strength bar fuller. The sign-up, reset and change-password screens show the 21st.dev "Password Strength" bar and
 live checklist (`components/ui/password-strength.tsx`) from the same rules, and the register route, the reset action and the
 change-password action enforce them on the server. Older passwords are never rejected at sign-in.
+
+## Back buttons and the dock (added 2026-10-14)
+
+Every page-level Back button is a `BackLink` (`components/ui/BackLink.tsx`): it goes to the page the person was actually just on
+(`router.back()`), and uses its `href` only when there is no earlier page in the app (opened directly). `NavTracker` (in `providers.tsx`)
+records the visited pages (`lib/navHistory.ts`). Never hard-code a Back destination with a plain `Link`. The bottom dock is always visible on
+every device (the desktop proximity reveal is gone); the main scroll area keeps `pb-32` at every width so nothing is left under it (an
+`md:py-10` once overrode the bottom padding and let the dock cover the end of long pages).
 
 ## Top bar by screen size (added 2026-10-10)
 

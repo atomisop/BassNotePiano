@@ -8,6 +8,7 @@ import { ZellePaymentModal } from "@/components/progression/ZellePaymentModal";
 import type { ZelleReferenceSubmission } from "@/lib/payments";
 import { PaymentWaitNotice } from "@/components/billing/PaymentWaitNotice";
 import { buttonVariants } from "@/components/ui/button";
+import { announceChange } from "@/lib/liveEvents";
 
 export interface ZelleUnlockGateProps {
   status: ZellePaymentStatus;
@@ -38,18 +39,32 @@ export function ZelleUnlockGate({
 
   const checkStatus = useCallback(() => getPaymentStatusAction(paymentId), [paymentId]);
 
-  // A payment that was submitted and is waiting for review also clears by itself when the bank email arrives.
+  // The pay screen shows the real state of the payment, whatever happens elsewhere: the bank email can clear it while the
+  // person is still in their banking app, or an admin can approve it. It is checked every few seconds while the tab is in view
+  // and the moment they come back to it, so a payment that went through never keeps showing the old unpaid amount (and nobody
+  // pays twice). A change, to anything, refreshes the page and the counters.
   useEffect(() => {
-    if (status !== "PENDING_REVIEW") return;
-    const timer = window.setInterval(async () => {
+    let alive = true;
+    async function check() {
       if (document.visibilityState !== "visible") return;
-      if ((await checkStatus().catch(() => null)) === "VERIFIED") router.refresh();
-    }, 8_000);
-    return () => window.clearInterval(timer);
+      const now = await checkStatus().catch(() => null);
+      if (alive && now && now !== status) {
+        announceChange("payments");
+        router.refresh();
+      }
+    }
+    const timer = window.setInterval(check, 8_000);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", check);
+    };
   }, [status, checkStatus, router]);
 
   async function handleSubmit(payload: ZelleReferenceSubmission) {
     await onSubmitPayment(payload);
+    announceChange("payments");
     router.refresh();
   }
 
@@ -83,7 +98,10 @@ export function ZelleUnlockGate({
         paymentId={paymentId}
         onSubmit={handleSubmit}
         checkStatus={checkStatus}
-        onVerified={() => router.refresh()}
+        onVerified={() => {
+          announceChange("payments");
+          router.refresh();
+        }}
       />
     </>
   );

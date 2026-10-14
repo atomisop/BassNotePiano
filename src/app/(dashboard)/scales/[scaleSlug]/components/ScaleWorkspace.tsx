@@ -28,6 +28,7 @@ import { useMetronome } from "@/components/scales/useMetronome";
 import { LessonVideoPlayer } from "./LessonVideoPlayer";
 import { SectionCompleteCelebration } from "./SectionCompleteCelebration";
 import { FilesPanel, MetronomePanel, NotesPanel } from "./LessonTools";
+import { BackLink } from "@/components/ui/BackLink";
 
 // react-pdf/pdfjs-dist adds well over 100kB of first-load JS for a viewer
 // most scale pages never open, so it loads on demand, only once a PDF lesson
@@ -381,10 +382,10 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
   const center = (
     <div className="min-w-0">
       <div className="flex items-center justify-between gap-3">
-        <Link href="/dashboard" className="inline-flex min-h-11 items-center gap-1.5 text-small text-slate-400 transition-colors hover:text-slate-50">
+        <BackLink href="/dashboard" className="inline-flex min-h-11 items-center gap-1.5 text-small text-slate-400 transition-colors hover:text-slate-50">
           <ArrowLeft className="h-4 w-4" aria-hidden />
-          Home
-        </Link>
+          Back
+        </BackLink>
         <div className="flex items-center gap-2">
           {isDesktop && !outlineOpen && (
             <Button variant="ghost" size="sm" onClick={() => setOutlineOpen(true)}>

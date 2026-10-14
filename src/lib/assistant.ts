@@ -158,7 +158,7 @@ async function buildSystemPrompt(visitor: VisitorContext): Promise<string> {
       const total = calculateFamilyBundleTotal(cadence, term, MIN_FAMILY_BUNDLE_RECIPIENTS);
       return `      - ${describePaymentPlan(cadence, term)}: ${total.creditsPerRecipient / CREDITS_PER_CLASS} classes per recipient, ${formatUsd(
         total.totalCents,
-      )} total for ${MIN_FAMILY_BUNDLE_RECIPIENTS} recipients (one upfront payment, not recurring)`;
+      )} for the first month for ${MIN_FAMILY_BUNDLE_RECIPIENTS} people together (then the same monthly price per person)`;
     }).join("\n");
     return `    - ${label}:\n${rows}`;
   }).join("\n");
@@ -184,7 +184,8 @@ ${scaleList}
 Live classes (weekly, on Discord). Every class is one 45-minute lesson, one-on-one with the teacher, starting on the hour:
   - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a term (Monthly, no commitment, 3-Month, or 6-Month), paid one Zelle or Venmo installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active, nothing to book yourself. A plan is 4 classes a month. If a specific week doesn't work, the student can skip that class in the app up to ${cutoff} before it starts (see below); inside ${cutoff} they attend or message the studio. Longer terms cost less per month:
 ${planList}
-  - Family (2+ separate, already-existing accounts sharing the same cadence and term at once) is a different, separate purchase: the exact same per-month rate and term discount a solo Payment Plan gets, paid once upfront for the whole term instead of monthly installments, plus an extra ${FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total (these classes never expire):
+  - Family plan ("Me and my family" on the payment plan page, 2 to 4 existing accounts): each person gets their own plan at the same per-month rate and term discount as a solo plan, plus an extra ${FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off, all on the same weekly time. One person is the payer and pays for everyone from their own bank account: the first month is one combined payment that starts everybody together (if anyone cannot start, nobody does), then each person has their own monthly bill that the payer pays. Everyone needs their own account with their own first and last name first. Example prices for the first month together:
+${bundleList}
 ${bundleList}
   - Classes are one-on-one with the teacher. A family session is siblings with their own accounts taught together, one class for the whole family.
   - When someone starts a Payment Plan they pick their weekly day and time on a calendar of the open spots, and that time is locked in for them every week of the term and booked automatically, so a subscriber never has to buy anything or book their weekly class. The /lessons page has two tabs for them: "My weekly class" and "Extra sessions". Extra sessions is the booking calendar for extra time with the teacher on top of their weekly class, each extra class is booked and paid for one at a time at a flat ${formatUsd(EXTRA_CLASS_PRICE_CENTS)} (one 45-minute class), by Zelle or Venmo. Credits cannot be bought. They only come as a gift, a refund or an employee benefit, and a student with credits can tick "Use credits" when booking. Anyone without an active plan sees the same booking calendar directly (Family sessions, or a between-plans student).

@@ -7,6 +7,7 @@ import { formatPhone, PHONE_HELP } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { useResendCooldown } from "@/hooks/useResendCooldown";
 import { confirmPhoneAction, removePhoneAction, resendPhoneCodeAction, savePhoneAction, startPhoneAction } from "@/app/(dashboard)/account/phone-actions";
+import { announceChange } from "@/lib/liveEvents";
 
 export interface PhoneState {
   phone: string | null;
@@ -64,6 +65,7 @@ export function PhoneCard({ state }: { state: PhoneState }) {
     setDone(true);
     setMode("view");
     router.refresh();
+    announceChange("status");
   }
 
   async function send() {
@@ -98,6 +100,7 @@ export function PhoneCard({ state }: { state: PhoneState }) {
     setMode("view");
     setPending(null);
     router.refresh();
+    announceChange("status");
   }
 
   async function remove() {
@@ -110,6 +113,7 @@ export function PhoneCard({ state }: { state: PhoneState }) {
     setNumber("");
     setMode("number");
     router.refresh();
+    announceChange("status");
   }
 
   const shown = mode === "view" && state.phone ? formatPhone(state.phone) : null;
