@@ -6,6 +6,7 @@ import { setCurriculumAccessAction, toggleScaleUnlockAction, clearAssistantHisto
 import { adjustUserCreditsAction } from "../../payments/credit-actions";
 import { adminCancelBookingAction } from "../../schedule/actions";
 import { adminClearPhoneAction, adminForceSignOutAction, banUserAction, forgetPayerNameAction, unbanUserAction } from "./actions";
+import { BackLink } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Admin: Student" };
 
@@ -16,9 +17,9 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
 
   return (
     <div>
-      <Link href="/admin/users" className="tap inline-flex items-center text-small font-medium text-slate-500 transition hover:text-slate-300">
-        ← All users
-      </Link>
+      <BackLink href="/admin/users" className="tap inline-flex items-center text-small font-medium text-slate-500 transition hover:text-slate-300">
+        ← Back
+      </BackLink>
       <p className="mt-3 text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{profile.user.name ?? profile.user.email}</h1>
 

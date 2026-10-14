@@ -9,6 +9,7 @@ import { BADGES } from "@/lib/badges";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { ProfileEditButton } from "./ProfileEditButton";
 import { WideLayout } from "@/components/layout/PageLayouts";
+import { BackLink } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Profile" };
 
@@ -44,13 +45,13 @@ export default async function ProfilePage() {
           friend's own profile link, so there's no single page it "belongs"
           to. Back to the roadmap rather than guessing a referrer, so this
           never reads as a dead end reachable only via the dock icons. */}
-      <Link
+      <BackLink
         href="/dashboard"
         className="tap mb-4 flex w-fit items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100"
       >
         <ArrowLeftIcon size={16} />
-        Back to roadmap
-      </Link>
+        Back
+      </BackLink>
       <div className="flex items-center gap-4">
         <div className="h-16 w-16 overflow-hidden rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)]">
           {user.image ? (

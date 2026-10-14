@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { verifyEmailAction, resendVerificationEmailAction } from "./actions";
 import { startNavigation } from "@/lib/navigationState";
+import { BackLink } from "@/components/ui/BackLink";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -112,10 +113,10 @@ function VerifyEmailForm() {
       {/* Matches the "missing email" branch's own escape hatch below:
           register, not login, since there's no verified account to log
           into yet at this step. */}
-      <Link href="/register" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300">
+      <BackLink href="/register" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300">
         <ArrowLeftIcon size={16} />
         Back
-      </Link>
+      </BackLink>
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Almost there</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Verify your email</h1>
       <p className="mt-2 text-small text-slate-500">

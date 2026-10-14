@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { fieldInvalid, fieldLabel } from "@/lib/form-styles";
 import { useErrorShake } from "@/lib/useErrorShake";
 import { resetPasswordAction, resendResetCodeAction } from "./actions";
+import { BackLink } from "@/components/ui/BackLink";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.97 },
@@ -130,10 +131,10 @@ function ResetPasswordForm() {
           mind about which account to sign into. The only way out used to
           be the logo up in the layout header, which leaves the whole
           reset flow for the marketing homepage rather than back to login. */}
-      <Link href="/login" className="tap w-fit mb-3 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300 sm:mb-4">
+      <BackLink href="/login" className="tap w-fit mb-3 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300 sm:mb-4">
         <ArrowLeftIcon size={16} />
-        Back to login
-      </Link>
+        Back
+      </BackLink>
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Reset password</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Choose a new password</h1>
       <p className="mt-1.5 text-small text-slate-500 sm:mt-2">

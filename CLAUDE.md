@@ -324,6 +324,14 @@ make the strength bar fuller. The sign-up, reset and change-password screens sho
 live checklist (`components/ui/password-strength.tsx`) from the same rules, and the register route, the reset action and the
 change-password action enforce them on the server. Older passwords are never rejected at sign-in.
 
+## Back buttons and the dock (added 2026-10-14)
+
+Every page-level Back button is a `BackLink` (`components/ui/BackLink.tsx`): it goes to the page the person was actually just on
+(`router.back()`), and uses its `href` only when there is no earlier page in the app (opened directly). `NavTracker` (in `providers.tsx`)
+records the visited pages (`lib/navHistory.ts`). Never hard-code a Back destination with a plain `Link`. The bottom dock is always visible on
+every device (the desktop proximity reveal is gone); the main scroll area keeps `pb-32` at every width so nothing is left under it (an
+`md:py-10` once overrode the bottom padding and let the dock cover the end of long pages).
+
 ## Top bar by screen size (added 2026-10-10)
 
 Under 768px (phones) the bar shows only the logo, the credit badge, Ask AI and the profile picture; every other button (Admin or

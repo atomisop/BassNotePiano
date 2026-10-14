@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
@@ -29,25 +29,6 @@ const NAV_ICON: Record<string, LucideIcon> = {
 // again. Tall enough that hovering the dock itself (including a magnified
 // icon poking up toward the panel's own max height) never dips outside this
 // zone and causes a flicker-hide mid-interaction.
-const REVEAL_ZONE_PX = 170;
-const HIDE_DELAY_MS = 500;
-
-/**
- * iPad and iPhone, specifically excluded from auto-hide even when they'd
- * otherwise pass the `hover: hover` check below. iPadOS reports a real
- * `(hover: hover)` match whenever a trackpad or Magic Keyboard is attached,
- * since its cursor genuinely does hover, so the capability query alone
- * would treat a trackpad-equipped iPad as "a PC," the opposite of what was
- * asked for. iPadOS 13+ also disguises `navigator.platform` as "MacIntel"
- * (so sites don't serve it a cut-down mobile layout), which is why this
- * checks `maxTouchPoints` rather than platform alone: a real Mac reports 0
- * touch points, an iPad reports several, regardless of what's plugged in.
- */
-function isAppleTouchDevice(): boolean {
-  const iOSByUserAgent = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const iPadOS13Plus = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
-  return iOSByUserAgent || iPadOS13Plus;
-}
 
 export interface AppDockProps {
   unreadMessageCount: number;
@@ -115,19 +96,11 @@ const NAV_ITEMS = [
  * what replaced the caption's old job of marking which tab is active, a
  * spotlight glow plus a thin top line, not a label treatment at all.
  *
- * Auto-hide, macOS-Dock style, is desktop-only: on a real mouse it slides
- * fully off-screen and reveals again only once the cursor nears the bottom
- * edge, but iPad and phone always show it solid, by direct instruction.
- * A touch device has no cursor to approach the edge with, so hiding it
- * there would mean no way back short of a page reload. Three separate
- * overrides keep it visible regardless of cursor position: focus landing on
- * something inside it (so a keyboard user's focus ring is never hidden out
- * from under them), OnboardingTour spotlighting one of its icons, and
- * `!autoHideEnabled` itself (touch devices and reduced-motion).
+ * The dock is always on screen, on every device (it used to slide away on a desktop mouse and reappear near the bottom edge).
+ * The page reserves room under it so it never covers content (see the main area padding in `(dashboard)/layout.tsx`).
  */
 export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDockProps) {
   const pathname = usePathname();
-  const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Seeded from the layout's own server-rendered count (no flash of 0 on
   // first paint), then kept fresh client-side, this badge used to be that
@@ -196,101 +169,6 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
     };
   }, [pathname]);
 
-  // Auto-hide is a desktop-with-a-real-mouse thing only, by direct
-  // instruction. iPad and phone keep the dock solid, and this is computed
-  // from input capability (`hover`+`pointer:fine`) plus the explicit
-  // isAppleTouchDevice check above, not screen width, so a touchscreen
-  // laptop or a narrow desktop window still get the right answer. Defaults
-  // to false (i.e. "always visible") until this runs, the same
-  // safe-default-until-mounted shape SmoothScrollProvider already uses for
-  // its own matchMedia check: a form of "does this device have a real
-  // mouse" nobody expects to change mid-session, so read once, no live
-  // `change` subscription.
-  const [autoHideEnabled, setAutoHideEnabled] = useState(false);
-  useEffect(() => {
-    const hasMouse = window.matchMedia("(hover: hover) and (pointer: fine)").matches && !isAppleTouchDevice();
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    // Reduced-motion opts out of the hide/reveal slide entirely, not just a
-    // gentler version of it, same reasoning as SmoothScrollProvider next to
-    // this: a sliding primary-nav element is exactly the motion that setting
-    // exists to suppress, not something to tone down and keep anyway.
-    setAutoHideEnabled(hasMouse && !reducedMotion);
-  }, []);
-
-  // Visible until proven otherwise: a page that loads and is never touched
-  // keeps the dock on screen rather than yanking it away before the visitor
-  // has done anything.
-  const [visible, setVisible] = useState(true);
-  // Two independent reasons to override the proximity logic and stay shown
-  // regardless of cursor position: a keyboard user has tabbed a focus ring
-  // onto something inside the dock (hiding it out from under a visible
-  // focus ring would be its own bug), or OnboardingTour is mid-step and
-  // might need to spotlight a nav icon (see the CustomEvent listener below).
-  const [hasFocusWithin, setHasFocusWithin] = useState(false);
-  const [tourForcedVisible, setTourForcedVisible] = useState(false);
-
-  useEffect(() => {
-    if (!autoHideEnabled) return;
-
-    let hideTimer: ReturnType<typeof setTimeout> | null = null;
-    const clearHideTimer = () => {
-      if (hideTimer) {
-        clearTimeout(hideTimer);
-        hideTimer = null;
-      }
-    };
-
-    // Pointer Events, gated on pointerType === "mouse": same reasoning as
-    // dock.tsx's own magnify handler. Touchscreens synthesize compatibility
-    // mouse events, so filtering on the event *name* isn't enough to keep
-    // this mouse-only, but pointerType is the one place the browser tells
-    // the truth about what actually generated it. Listening on `window`
-    // rather than a hover target means proximity to the physical bottom
-    // edge reveals it, the same as the real macOS Dock, regardless of what
-    // element happens to be under the cursor there.
-    function handlePointerMove(e: PointerEvent) {
-      if (e.pointerType !== "mouse") return;
-      const nearBottom = window.innerHeight - e.clientY <= REVEAL_ZONE_PX;
-      if (nearBottom) {
-        clearHideTimer();
-        setVisible(true);
-      } else if (!hideTimer) {
-        hideTimer = setTimeout(() => setVisible(false), HIDE_DELAY_MS);
-      }
-    }
-
-    window.addEventListener("pointermove", handlePointerMove);
-    return () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      clearHideTimer();
-    };
-  }, [autoHideEnabled]);
-
-  useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) return;
-    const handleFocusIn = () => setHasFocusWithin(true);
-    const handleFocusOut = (e: FocusEvent) => {
-      if (e.relatedTarget instanceof Node && el.contains(e.relatedTarget)) return;
-      setHasFocusWithin(false);
-    };
-    el.addEventListener("focusin", handleFocusIn);
-    el.addEventListener("focusout", handleFocusOut);
-    return () => {
-      el.removeEventListener("focusin", handleFocusIn);
-      el.removeEventListener("focusout", handleFocusOut);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleTourVisibility = (e: Event) => {
-      setTourForcedVisible(Boolean((e as CustomEvent<boolean>).detail));
-    };
-    window.addEventListener("bnp:force-dock-visible", handleTourVisibility);
-    return () => window.removeEventListener("bnp:force-dock-visible", handleTourVisibility);
-  }, []);
-
-  const effectivelyVisible = !autoHideEnabled || visible || hasFocusWithin || tourForcedVisible;
 
   return (
     <>
@@ -307,12 +185,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
         aria-label="Primary"
         className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center pb-[env(safe-area-inset-bottom)]"
       >
-        <motion.div
-          ref={wrapperRef}
-          className="pointer-events-auto"
-          animate={{ y: effectivelyVisible ? 0 : "calc(100% + 24px)", opacity: effectivelyVisible ? 1 : 0 }}
-          transition={SPRING.smooth}
-        >
+        <motion.div className="pointer-events-auto">
           {/* No idle bob: the dock used to drift up and down by 2px on an
               endless loop, which read as the bar never sitting still. It now
               rests; the only things that move it are the deliberate

@@ -7,6 +7,7 @@ import { getFamilyDetails, getActivePaymentPlan, getUserPaymentPlans, getOrCreat
 import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
+import { BackLink } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Payment plans" };
 
@@ -113,10 +114,10 @@ export default async function BillingPlansPage(
   // screen. Stacks on smaller screens.
   return (
     <div className="lg:grid lg:grid-cols-12 lg:gap-12">
-      <Link href="/lessons" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100 lg:col-span-12">
+      <BackLink href="/lessons" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100 lg:col-span-12">
         <ArrowLeftIcon size={16} />
-        Back to classes
-      </Link>
+        Back
+      </BackLink>
       <div className="lg:col-span-5">
         <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment plan</h1>

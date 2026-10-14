@@ -9,6 +9,7 @@ import { PrivacyContent, PRIVACY_LAST_UPDATED } from "@/components/legal/Privacy
 import { CHANGELOG, CURRENT_VERSION } from "@/lib/changelog";
 import { CheckIcon, ArrowLeftIcon } from "@/components/ui/icons";
 import { WideLayout } from "@/components/layout/PageLayouts";
+import { BackLink } from "@/components/ui/BackLink";
 
 const TAB_ICONS = {
   about: "M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 7.5h.01",
@@ -181,10 +182,10 @@ function AboutClientInner() {
   return (
     <WideLayout>
       {/* Only ever linked from Settings, see AccountSettings.tsx. */}
-      <Link href="/account" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
+      <BackLink href="/account" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
         <ArrowLeftIcon size={16} />
-        Back to settings
-      </Link>
+        Back
+      </BackLink>
       <div>
         <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Info</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">About</h1>
