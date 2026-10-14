@@ -2,9 +2,11 @@ import { noticePlanUpdated } from "@/lib/studentNotices";
 import { getNumberSetting } from "@/lib/siteSettings";
 import { getAdminRecipients, notifyAdmins } from "@/lib/adminNotifications";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
-import { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason, type Prisma, type PaymentPlanStatus } from "@prisma/client";
+import { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason, type Prisma, type PaymentPlan, type PaymentPlanStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { calculatePaymentPlanRate, describePaymentPlan, isPlanTermOffered, isPlanCadenceOffered, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { hasFirstAndLastName } from "@/lib/studentName";
+import { namesMatch } from "@/lib/personNames";
+import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPlan, isPlanTermOffered, isPlanCadenceOffered, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import {
   chunksForSchedule,
   livePaymentPlanConditions,
@@ -29,6 +31,58 @@ export class PaymentPlanError extends Error {}
 // exact same /admin/payments queue, as any other purchase, see
 // approveZellePayment's PAYMENT_PLAN_INSTALLMENT branch in payments.ts.
 // ---------------------------------------------------------------------------
+
+/**
+ * Checks that a weekly time can be reserved for these students: it exists, is offered, is long enough, is not held by another
+ * live plan, and no one outside these students already has a booking on its coming weeks. Throws PaymentPlanError otherwise.
+ * Shared by a solo plan (one student) and a family plan (all members share the one time).
+ */
+async function assertSlotReservable(
+  tx: Prisma.TransactionClient,
+  scheduleId: string,
+  chunkIndex: number,
+  creditsPerWeek: number,
+  memberIds: string[],
+): Promise<void> {
+  const schedule = await tx.classSchedule.findUniqueOrThrow({ where: { id: scheduleId } });
+  if (!schedule.active) throw new PaymentPlanError("That class time is no longer offered. Pick another.");
+  const chunk = chunksForSchedule(schedule)[chunkIndex];
+  if (!chunk) throw new PaymentPlanError("That time slot doesn't exist.");
+  if (chunk.creditCost < creditsPerWeek) {
+    throw new PaymentPlanError("That time slot is too short for this cadence.");
+  }
+
+  const reservedByAnother = await tx.paymentPlan.findFirst({
+    where: { reservedScheduleId: scheduleId, reservedChunkIndex: chunkIndex, OR: livePaymentPlanConditions() },
+    select: { id: true },
+  });
+  if (reservedByAnother) throw new PaymentPlanError("That slot was just taken. Try again.");
+
+  // A chunk with no other PaymentPlan reservation can still have a
+  // pre-existing ordinary ClassBooking (from the self-serve bookClass/
+  // bookFamilyClass flow, made before this reservation existed) on
+  // one of its own upcoming OCCURRENCES_PER_SLOT occurrences,
+  // reserving over that would let the daily maintenance job silently
+  // create a second, conflicting booking for that same instant the
+  // next time it runs. Checked against the exact same rolling window
+  // the job itself maintains; excludes this same student's own
+  // pre-existing booking (nothing wrong with reserving over your own
+  // booking, the job's own existing-row check already handles that
+  // cleanly).
+  const occurrenceDates = nextOccurrenceDates(schedule.dayOfWeek, OCCURRENCES_PER_SLOT);
+  const conflictingBooking = await tx.classBooking.findFirst({
+    where: {
+      scheduleId: scheduleId,
+      status: "SCHEDULED",
+      studentId: { notIn: memberIds },
+      OR: occurrenceDates.map((occurrenceDate) => ({ occurrenceDate, scheduledAt: computeScheduledAt(schedule, occurrenceDate, chunk) })),
+    },
+    select: { id: true },
+  });
+  if (conflictingBooking) {
+    throw new PaymentPlanError("Someone already has a booking on one of this slot's upcoming weeks. Pick another time.");
+  }
+}
 
 /**
  * Starts a new payment plan against a specific reserved weekly slot. One
@@ -88,44 +142,7 @@ export async function createPaymentPlan(
           throw new PaymentPlanError("You already have an active payment plan. Finish or cancel it before starting another.");
         }
 
-        const schedule = await tx.classSchedule.findUniqueOrThrow({ where: { id: reservedScheduleId } });
-        if (!schedule.active) throw new PaymentPlanError("That class time is no longer offered. Pick another.");
-        const chunk = chunksForSchedule(schedule)[reservedChunkIndex];
-        if (!chunk) throw new PaymentPlanError("That time slot doesn't exist.");
-        if (chunk.creditCost < creditsPerWeek) {
-          throw new PaymentPlanError("That time slot is too short for this cadence.");
-        }
-
-        const reservedByAnother = await tx.paymentPlan.findFirst({
-          where: { reservedScheduleId, reservedChunkIndex, OR: livePaymentPlanConditions() },
-          select: { id: true },
-        });
-        if (reservedByAnother) throw new PaymentPlanError("That slot was just taken. Try again.");
-
-        // A chunk with no other PaymentPlan reservation can still have a
-        // pre-existing ordinary ClassBooking (from the self-serve bookClass/
-        // bookFamilyClass flow, made before this reservation existed) on
-        // one of its own upcoming OCCURRENCES_PER_SLOT occurrences,
-        // reserving over that would let the daily maintenance job silently
-        // create a second, conflicting booking for that same instant the
-        // next time it runs. Checked against the exact same rolling window
-        // the job itself maintains; excludes this same student's own
-        // pre-existing booking (nothing wrong with reserving over your own
-        // booking, the job's own existing-row check already handles that
-        // cleanly).
-        const occurrenceDates = nextOccurrenceDates(schedule.dayOfWeek, OCCURRENCES_PER_SLOT);
-        const conflictingBooking = await tx.classBooking.findFirst({
-          where: {
-            scheduleId: reservedScheduleId,
-            status: "SCHEDULED",
-            studentId: { not: userId },
-            OR: occurrenceDates.map((occurrenceDate) => ({ occurrenceDate, scheduledAt: computeScheduledAt(schedule, occurrenceDate, chunk) })),
-          },
-          select: { id: true },
-        });
-        if (conflictingBooking) {
-          throw new PaymentPlanError("Someone already has a booking on one of this slot's upcoming weeks. Pick another time.");
-        }
+        await assertSlotReservable(tx, reservedScheduleId, reservedChunkIndex, creditsPerWeek, [userId]);
 
         return tx.paymentPlan.create({
           data: {
@@ -242,6 +259,9 @@ export async function getOrCreateOpenInstallmentPayment(
 ): Promise<OpenInstallmentPayment> {
   const plan = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: planId } });
 
+  // A family member's first month is paid inside the family's one combined start payment, never as a bill of its own.
+  if (plan.familyGroupId && plan.installmentsPaid === 0) return { payment: null, wasCreated: false, nextDueDate: plan.nextDueDate };
+
   const existing = await prisma.zellePayment.findFirst({
     where: { paymentPlanId: planId, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } },
     orderBy: { createdAt: "desc" },
@@ -298,6 +318,7 @@ const adminPaymentPlanInclude = {
   user: { select: { id: true, name: true, email: true } },
   reservedSchedule: { select: { id: true, label: true, dayOfWeek: true, startTime: true, durationMin: true } },
   installmentPayments: { select: { id: true, status: true, amountCents: true } },
+  familyGroup: { select: { payer: { select: { name: true, email: true } }, _count: { select: { plans: true } } } },
 } satisfies Prisma.PaymentPlanInclude;
 
 export type AdminPaymentPlan = Prisma.PaymentPlanGetPayload<{ include: typeof adminPaymentPlanInclude }> & {
@@ -468,6 +489,7 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
 
   const plan = await prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
   if (!plan) throw new PaymentPlanError("You don't have an active payment plan.");
+  if (plan.familyGroupId) throw new PaymentPlanError("A family plan's length is changed by the teacher. Message us and we will help.");
   if (plan.term === newTerm) throw new PaymentPlanError("You're already on this term.");
 
   await assertNoOpenInstallment(plan.id);
@@ -522,6 +544,7 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
     async (tx) => {
       const plan = await tx.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
       if (!plan) throw new PaymentPlanError("You don't have an active payment plan.");
+      if (plan.familyGroupId) throw new PaymentPlanError("A family plan's weekly time is moved by the teacher so everyone stays together. Message us and we will help.");
       if (!plan.reservedScheduleId || plan.reservedChunkIndex === null) {
         throw new PaymentPlanError("Your plan doesn't have a reserved slot yet. Message us and we'll help.");
       }
@@ -689,6 +712,16 @@ export async function cancelPaymentPlanBySelf(
     emailCategory: "payments",
   });
 
+  if (plan.familyGroupId) {
+    await notifyAdmins("PLAN_CANCEL_FEEDBACK", {
+      type: "ADMIN_ALERT",
+      title: "A family plan member canceled",
+      body: "One member of a family plan canceled. The other members keep the family rate until you decide what to do. Open Payment Plans to review that family.",
+      emailCategory: "social",
+      cta: { label: "See the plans", path: "/admin/payment-plans" },
+    }).catch((err) => console.error("Family cancel alert failed (non-blocking):", err));
+  }
+
   const admins = await getAdminRecipients("PLAN_CANCEL_FEEDBACK");
   await Promise.all(
     admins.map((admin) =>
@@ -712,14 +745,16 @@ export const LAPSE_AFTER_DAYS = 7;
  * reserved classes released) with the system as the actor. Returns false
  * when it should not lapse (already settled, or a payment is mid-review).
  */
-export async function lapsePlanForNonPayment(planId: string, options: { firstBill?: boolean } = {}): Promise<boolean> {
+export async function lapsePlanForNonPayment(planId: string, options: { firstBill?: boolean; quietAdmin?: boolean } = {}): Promise<boolean> {
   const plan = await prisma.paymentPlan.findUnique({ where: { id: planId } });
   if (!plan || plan.status !== "ACTIVE") return false;
   const inReview = await prisma.zellePayment.findFirst({
-    where: { paymentPlanId: planId, status: "PENDING_REVIEW" },
+    where: { OR: [{ paymentPlanId: planId }, ...(plan.familyGroupId && plan.installmentsPaid === 0 ? [{ familyGroupId: plan.familyGroupId }] : [])], status: "PENDING_REVIEW" },
     select: { id: true },
   });
   if (inReview) return false;
+  // A family that never started (its combined first payment did not arrive) ends together: no member is left half started.
+  const failedFamilyStart = Boolean(plan.familyGroupId) && plan.installmentsPaid === 0;
 
   await prisma.$transaction(async (tx) => {
     await tx.paymentPlan.update({
@@ -727,7 +762,7 @@ export async function lapsePlanForNonPayment(planId: string, options: { firstBil
       data: { status: "CANCELED", canceledAt: new Date(), cancellationReason: "NON_PAYMENT" },
     });
     await tx.zellePayment.updateMany({
-      where: { paymentPlanId: planId, status: "AWAITING_TRANSFER" },
+      where: { OR: [{ paymentPlanId: planId }, ...(failedFamilyStart ? [{ familyGroupId: plan.familyGroupId }] : [])], status: "AWAITING_TRANSFER" },
       data: { status: "EXPIRED" },
     });
     await tx.classBooking.updateMany({
@@ -735,6 +770,14 @@ export async function lapsePlanForNonPayment(planId: string, options: { firstBil
       data: { status: "CANCELED", refunded: true },
     });
   });
+
+  if (failedFamilyStart) {
+    const siblings = await prisma.paymentPlan.findMany({
+      where: { familyGroupId: plan.familyGroupId, id: { not: planId }, status: "ACTIVE", installmentsPaid: 0 },
+      select: { id: true },
+    });
+    for (const sibling of siblings) await lapsePlanForNonPayment(sibling.id, { firstBill: true, quietAdmin: true });
+  }
 
   await createNotification({
     userId: plan.userId,
@@ -746,11 +789,14 @@ export async function lapsePlanForNonPayment(planId: string, options: { firstBil
     emailCategory: "payments",
   });
 
+  if (options.quietAdmin) return true;
   const student = await prisma.user.findUnique({ where: { id: plan.userId }, select: { name: true, email: true } });
   await notifyAdmins("PLAN_LAPSED", {
     type: "ADMIN_ALERT",
     title: "Plan canceled for non-payment",
-    body: options.firstBill
+    body: failedFamilyStart
+      ? `${student?.name ?? student?.email ?? "A family"} and the rest of their family never paid the combined first bill, so every member's plan was canceled and the weekly time is free again.`
+      : options.firstBill
       ? `${student?.name ?? student?.email ?? "A student"} never paid their first bill, so their plan was canceled and the weekly time is free again.`
       : `${student?.name ?? student?.email ?? "A student"} went a week past due, so their plan was canceled.`,
     emailCategory: "social",
@@ -987,4 +1033,141 @@ export async function resendPlanInvoice(planId: string): Promise<"sent" | "opted
     overdueDays,
   });
   return "sent";
+}
+
+// ---------------------------------------------------------------------------
+// Family plans
+//
+// 2 to MAX_FAMILY_MEMBERS existing accounts, each with its own PaymentPlan at the family rate, all on the same weekly time.
+// Everything is created in ONE transaction: if any member cannot start (already on a plan, banned, a name that is not a real
+// first and last name, the same person typed twice, the time taken), nothing is created for anyone. The one payer is a member;
+// the first month is a single combined FAMILY_PLAN_START payment whose approval starts every member's plan at once
+// (startFamilyPlans in payments.ts), so a family can never start with only some members. From month two each member has
+// their own bill, and only the payer's account can settle them (see familyPayerOf in paymentEmail.ts).
+// ---------------------------------------------------------------------------
+
+export const MIN_FAMILY_MEMBERS = 2;
+export const MAX_FAMILY_MEMBERS = 4;
+
+export interface CreateFamilyPlansInput {
+  payerId: string;
+  cadence: PaymentPlanCadence;
+  term: PaymentPlanTerm;
+  zelleHandle: string;
+  reservedScheduleId: string;
+  reservedChunkIndex: number;
+  /** The other members' account emails (the payer is added automatically). */
+  memberEmails: string[];
+}
+
+export async function createFamilyPlans(input: CreateFamilyPlansInput) {
+  const { payerId, cadence, term, zelleHandle, reservedScheduleId, reservedChunkIndex } = input;
+  if (!Object.values(PaymentPlanCadence).includes(cadence)) throw new PaymentPlanError(`"${cadence}" isn't a valid cadence.`);
+  if (!Object.values(PaymentPlanTerm).includes(term)) throw new PaymentPlanError(`"${term}" isn't a valid term.`);
+  if (!isPlanCadenceOffered(cadence)) throw new PaymentPlanError("That weekly length isn't offered anymore. Classes are 45 minutes a week.");
+  if (!isPlanTermOffered(term)) throw new PaymentPlanError("That plan length is no longer offered. Pick Monthly, 3-Month, or 6-Month.");
+
+  const payer = await prisma.user.findUnique({ where: { id: payerId }, select: { id: true, name: true, email: true, role: true, bannedAt: true } });
+  if (!payer) throw new PaymentPlanError("Your account was not found.");
+
+  const typed = Array.from(new Set(input.memberEmails.map((e) => e.trim().toLowerCase()).filter(Boolean))).filter((e) => e !== payer.email.toLowerCase());
+  if (typed.length + 1 < MIN_FAMILY_MEMBERS) throw new PaymentPlanError(`A family plan needs at least ${MIN_FAMILY_MEMBERS} accounts, you and one more.`);
+  if (typed.length + 1 > MAX_FAMILY_MEMBERS) throw new PaymentPlanError(`A family plan can have up to ${MAX_FAMILY_MEMBERS} accounts.`);
+
+  const others = await prisma.user.findMany({ where: { email: { in: typed } }, select: { id: true, name: true, email: true, role: true, bannedAt: true } });
+  const missing = typed.filter((email) => !others.some((u) => u.email.toLowerCase() === email));
+  if (missing.length > 0) {
+    throw new PaymentPlanError(`These emails do not have a Bass Note Piano account yet. Everyone needs to register first: ${missing.join(", ")}`);
+  }
+  const members = [payer, ...others];
+  for (const member of members) {
+    const who = member.id === payer.id ? "Your account" : member.email;
+    if (member.bannedAt) throw new PaymentPlanError(`${who} cannot start a plan.`);
+    if (member.role !== "STUDENT") throw new PaymentPlanError(`${who} is not a student account.`);
+    if (!hasFirstAndLastName(member.name)) throw new PaymentPlanError(`${who} needs a first and last name on the account before a family plan can start.`);
+  }
+  // Each member has to be a different person, not one person with two accounts.
+  for (let i = 0; i < members.length; i++) {
+    for (let j = i + 1; j < members.length; j++) {
+      if (namesMatch(members[i].name, members[j].name)) {
+        throw new PaymentPlanError(`${members[i].email} and ${members[j].email} have the same name. A family plan is for different people, each with their own account.`);
+      }
+    }
+  }
+
+  const perMemberCents = calculateFamilyBundleTotal(cadence, term, members.length).perStudentMonthlyCents;
+  const rate = calculatePaymentPlanRate(cadence, term);
+  const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
+  const memberIds = members.map((m) => m.id);
+
+  try {
+    const created = await prisma.$transaction(
+      async (tx) => {
+        // Every member must be able to start: none may already be on a plan.
+        const busy = await tx.paymentPlan.findFirst({ where: { userId: { in: memberIds }, status: "ACTIVE" }, select: { userId: true } });
+        if (busy) {
+          // Another person's plan status is not told to the payer: only that someone cannot start.
+          const who = busy.userId === payerId ? "You already have an active payment plan" : "One of the accounts cannot start a family plan right now";
+          throw new PaymentPlanError(`${who}. Nobody was signed up. Finish or cancel the plan first, then start the family plan.`);
+        }
+        const payingAlready = await tx.familyPlanGroup.findFirst({ where: { payerId, plans: { some: { status: "ACTIVE" } } }, select: { id: true } });
+        if (payingAlready) throw new PaymentPlanError("You already pay for a family plan. One family plan per payer.");
+
+        await assertSlotReservable(tx, reservedScheduleId, reservedChunkIndex, creditsPerWeek, memberIds);
+
+        const group = await tx.familyPlanGroup.create({ data: { payerId } });
+        const plans: PaymentPlan[] = [];
+        for (const member of members) {
+          plans.push(
+            await tx.paymentPlan.create({
+              data: {
+                userId: member.id,
+                cadence,
+                term,
+                installmentAmountCents: perMemberCents,
+                creditsPerInstallment: rate.creditsPerInstallment,
+                termMonths: rate.termMonths,
+                nextDueDate: new Date(),
+                reservedScheduleId,
+                reservedChunkIndex,
+                familyGroupId: group.id,
+              },
+            }),
+          );
+        }
+        const startPayment = await tx.zellePayment.create({
+          data: {
+            userId: payerId,
+            purpose: "FAMILY_PLAN_START",
+            amountCents: perMemberCents * members.length,
+            zelleHandle,
+            familyGroupId: group.id,
+            status: "AWAITING_TRANSFER",
+          },
+        });
+        return { group, plans, startPayment };
+      },
+      { isolationLevel: "Serializable" },
+    );
+
+    await prisma.user.updateMany({ where: { id: { in: memberIds } }, data: { notifyEmailReminders: true } });
+    const money = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+    await noticePlanUpdated({
+      userId: payerId,
+      title: "Your family plan is set up",
+      body: `${describePaymentPlan(cadence, term)} for ${members.length} accounts is set up. Send the combined first payment (${money(created.startPayment.amountCents)}) from your own bank account to start everyone's classes together.`,
+    });
+    for (const other of others) {
+      await noticePlanUpdated({
+        userId: other.id,
+        title: "You were added to a family plan",
+        body: `${payer.name ?? payer.email} set up a family plan that includes you. Your classes start when their first payment arrives, and they pay for your monthly bills.`,
+      }).catch((err) => console.error("Family member notice failed (non-blocking):", err));
+    }
+    return created;
+  } catch (err) {
+    if (err instanceof PaymentPlanError) throw err;
+    if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2034") throw new PaymentPlanError("That slot was just taken. Try again.");
+    throw err;
+  }
 }

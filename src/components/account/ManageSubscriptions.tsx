@@ -229,7 +229,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
           </p>
         </div>
         <Link
-          href="/billing/lessons"
+          href="/billing/plans"
           className={buttonVariants({ variant: "secondary", className: "shrink-0" })}
         >
           Bundle &amp; save

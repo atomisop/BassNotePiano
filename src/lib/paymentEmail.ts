@@ -1,3 +1,5 @@
+import { namesMatch, nameTokens } from "@/lib/personNames";
+export { namesMatch } from "@/lib/personNames";
 import { isIgnoredSender } from "@/lib/ignoredSenders";
 import { normalizeMessageId } from "@/lib/paymentInbound";
 import { getBoolSetting, getTextSetting } from "@/lib/siteSettings";
@@ -156,31 +158,6 @@ function venmoNote(lines: string[]): string | null {
   return null;
 }
 
-function nameTokens(value: string | null | undefined): string[] {
-  return (value ?? "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z\s]/g, " ")
-    .split(/\s+/)
-    .filter((token) => token.length > 0);
-}
-
-/** The same word, or a single letter that starts the other ("A" for "Alemu"), as banks and people shorten names. */
-function sameToken(a: string, b: string): boolean {
-  return a === b || (a.length === 1 && b.startsWith(a)) || (b.length === 1 && a.startsWith(b));
-}
-
-/** True when every word of the shorter name appears in the longer one (so "Jordan Alemu" matches "Jordan T Alemu"). */
-export function namesMatch(a: string | null | undefined, b: string | null | undefined): boolean {
-  const first = nameTokens(a);
-  const second = nameTokens(b);
-  if (first.length < 2 || second.length < 2) return false;
-  const [short, long] = first.length <= second.length ? [first, second] : [second, first];
-  // At least one whole word has to match as written, so two bare initials can never match a person by themselves.
-  const oneWholeWord = short.some((token) => token.length > 1 && long.includes(token));
-  return oneWholeWord && short.every((token) => long.some((other) => sameToken(token, other)));
-}
 
 type OpenPayment = {
   id: string;
@@ -193,7 +170,17 @@ type OpenPayment = {
   userId?: string;
   createdAt?: Date;
   user: { name: string | null; phone?: string | null; payerAliases: { name: string }[] };
+  /** FAMILY_PLAN_START payments belong to the family's payer, who is also the only account that may settle them. */
+  purpose?: string;
+  /** Set on a monthly bill of a family plan member: only the family's one payer may settle it. */
+  paymentPlan?: { familyGroup?: { payer: { name: string | null; payerAliases: { name: string }[] } } | null } | null;
 };
+
+/** The one payer of the family this payment belongs to, or null for any other payment. */
+export function familyPayerOf(payment: Pick<OpenPayment, "paymentPlan" | "purpose" | "user">): { name: string | null; payerAliases: { name: string }[] } | null {
+  if (payment.purpose === "FAMILY_PLAN_START") return payment.user;
+  return payment.paymentPlan?.familyGroup?.payer ?? null;
+}
 
 type ReceiptFacts = { senderName: string; amountCents: number; memo: string | null; senderPhone?: string | null; senderPhoneLast4?: string | null };
 
@@ -238,10 +225,15 @@ export type MatchVia = "code" | "codeTypo" | "name" | "phone" | "amount";
  */
 export function receiptMatchVia(payment: OpenPayment, receipt: ReceiptFacts): MatchVia | null {
   if (payment.amountCents !== receipt.amountCents) return null;
+  // A family member's bill is paid by the family's one payer. A matching code or amount from any other account is
+  // left for a person to look at, so a second account cannot quietly pay for (or share in) the family rate.
+  const familyPayer = familyPayerOf(payment);
+  if (familyPayer && !payerNames(familyPayer).some((name) => namesMatch(name, receipt.senderName))) return null;
   if (memoHasReferenceFor(receipt.memo, payment.id)) return "code";
   if (memoHasOtherReference(receipt.memo, payment.id)) return null;
-  if (payerNames(payment.user).some((name) => namesMatch(name, receipt.senderName))) {
+  if (payerNames(familyPayer ?? payment.user).some((name) => namesMatch(name, receipt.senderName))) {
     // The number typed for this payment is the best one to compare; the account's number is the fallback.
+    if (familyPayer) return "name"; // the member's own phone says nothing about the payer
     return phoneConflicts(payment.senderPhone ?? payment.user.phone, receipt) ? null : "name";
   }
   if (payment.senderPhone && receipt.senderPhone && payment.senderPhone === receipt.senderPhone) return "phone";
@@ -283,7 +275,7 @@ export function pickNearMissCode<T extends OpenPayment>(candidates: T[], receipt
   const typed = referenceInMemo(receipt.memo);
   if (!typed) return null;
   if (allOpenCodes.has(typed)) return null; // a real code for some payment: not a typo
-  const near = candidates.filter((payment) => payment.amountCents === receipt.amountCents && codesOneTypoApart(typed, normalizedCodeOf(payment.id)));
+  const near = candidates.filter((payment) => !familyPayerOf(payment) && payment.amountCents === receipt.amountCents && codesOneTypoApart(typed, normalizedCodeOf(payment.id)));
   return near.length === 1 ? near[0] : null;
 }
 
@@ -332,6 +324,7 @@ async function approveFromReceipt(paymentId: string, receipt: { id: string; send
 
 const openPaymentSelect = {
   id: true,
+  purpose: true,
   status: true,
   amountCents: true,
   senderName: true,
@@ -339,6 +332,7 @@ const openPaymentSelect = {
   userId: true,
   createdAt: true,
   user: { select: { name: true, phone: true, payerAliases: { select: { name: true } } } },
+  paymentPlan: { select: { familyGroup: { select: { payer: { select: { name: true, payerAliases: { select: { name: true } } } } } } } },
 } as const;
 
 export type IngestOutcome = "ignored" | "duplicate" | "approved" | "stored" | "unreadable";
@@ -505,6 +499,7 @@ async function pickByAmountAlone<T extends OpenPayment & { userId: string; creat
   if (candidates.length === 0) return null;
   const only = candidates.length === 1 ? candidates[0] : oldestOfSameStudent(candidates);
   if (!only || only.amountCents !== receipt.amountCents) return null;
+  if (familyPayerOf(only)) return null; // a family bill is only ever settled by the family's payer, never by amount alone
   if (Date.now() - only.createdAt.getTime() > AMOUNT_ALONE_MAX_AGE_MS) return null;
   if (memoHasOtherReference(receipt.memo, only.id)) return null;
   if (!(await getBoolSetting("payments.matchByAmount"))) return null;
@@ -574,6 +569,8 @@ export async function settleWithStoredReceipt(paymentId: string): Promise<boolea
     return approveFromReceipt(payment.id, certain[0], { via, needsCheck: via === "phone" });
   }
   if (certain.length > 1) return false;
+  // A family member's bill has no softer rules: only the family's payer can settle it, by name or code.
+  if (familyPayerOf(payment as OpenPayment)) return false;
 
   // Nothing certain by code, name or phone. The same two softer rules the arriving email gets, so the order in which
   // the money and the student's "I've sent it" happen does not decide whether it clears.

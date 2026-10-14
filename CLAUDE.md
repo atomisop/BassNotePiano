@@ -241,6 +241,13 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
   (`lessonWatermark.ts`) and is never cached. Lessons live in a private bucket (`R2_PRIVATE_BUCKET_NAME`, `fileUrl` = `private:<key>`);
   until that is set and `scripts/move-lessons-private.mjs` has run, the old public addresses still work through the same route.
 
+## Family plans (added 2026-10-14, `docs/FAMILY-PLANS.md`)
+
+2 to 4 accounts, one `PaymentPlan` each at the family rate (`FamilyPlanGroup`), all created in one transaction (any member that cannot start
+stops everyone). The payer pays one combined `FAMILY_PLAN_START` first payment whose approval starts every plan at once; from month two each
+member has their own bill. Only the payer's bank account settles family money (`familyPayerOf`). A failed start lapses the whole group.
+The old one-payment `FAMILY_BUNDLE` page now redirects to `/billing/plans`.
+
 ## Phone numbers (added 2026-10-09)
 
 Everyone is asked for a phone number (sign-up form, a top-of-screen banner for older accounts at most once a day, Settings → Account).

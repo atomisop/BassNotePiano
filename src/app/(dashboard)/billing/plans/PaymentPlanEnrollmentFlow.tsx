@@ -3,14 +3,15 @@
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { useEffect, useMemo, useState } from "react";
 import type { PaymentPlanCadence, PaymentPlanTerm, ZellePaymentStatus } from "@prisma/client";
-import { calculatePaymentPlanRate, describePaymentPlan, CLASS_MINUTES, OFFERED_PLAN_CADENCE, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { calculateFamilyBundleTotal, MAX_FAMILY_BUNDLE_RECIPIENTS, calculatePaymentPlanRate, describePaymentPlan, CLASS_MINUTES, OFFERED_PLAN_CADENCE, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { BookingCalendar } from "../../lessons/BookingCalendar";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
-import { enrollInPaymentPlanAction, getReservableSlotsAction, submitPlanInstallmentPaymentAction } from "./actions";
+import { enrollFamilyPlanAction, enrollInPaymentPlanAction, getReservableSlotsAction, submitPlanInstallmentPaymentAction } from "./actions";
+import { Tabs } from "@/components/ui/Tabs";
 import { buttonVariants } from "@/components/ui/button";
 
 function formatUsd(cents: number) {
@@ -57,6 +58,22 @@ export interface ActivePlanSummary {
   termMonths: number;
 }
 
+/** What a family plan changes on this page. Null for a solo plan. */
+export interface FamilyPlanInfo {
+  isPayer: boolean;
+  payerName: string | null;
+  memberCount: number;
+  /** True until the family's combined first payment has been approved. */
+  waitingForStart: boolean;
+}
+
+/** One family member's monthly bill, shown to the family's payer. */
+export interface FamilyBillSummary {
+  planId: string;
+  memberName: string;
+  payment: OpenInstallmentSummary;
+}
+
 export interface OpenInstallmentSummary {
   id: string;
   status: ZellePaymentStatus;
@@ -71,6 +88,8 @@ interface PaymentPlanEnrollmentFlowProps {
   openInstallment: OpenInstallmentSummary | null;
   /** ISO date string. Set only when activePlan exists but openInstallment doesn't yet: the next installment isn't payable until it's within INSTALLMENT_OPEN_LEAD_DAYS of this date (see getOrCreateOpenInstallmentPayment). Renders as a "your next installment opens on X" state instead of a payable invoice. */
   nextInstallmentDueDate?: string;
+  family?: FamilyPlanInfo | null;
+  familyBills?: FamilyBillSummary[];
   /** Preselects the picker from a specific marketing-page tile (PaymentPlanTierGrid's ?cadence=&term= links) instead of always defaulting. */
   initialCadence?: PaymentPlanCadence;
   initialTerm?: PaymentPlanTerm;
@@ -87,6 +106,8 @@ export function PaymentPlanEnrollmentFlow({
   activePlan: initialPlan,
   openInstallment: initialInstallment,
   nextInstallmentDueDate,
+  family = null,
+  familyBills = [],
   initialCadence,
   initialTerm,
 }: PaymentPlanEnrollmentFlowProps) {
@@ -99,16 +120,24 @@ export function PaymentPlanEnrollmentFlow({
   const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
   const [timesOpen, setTimesOpen] = useState(false);
   const [acknowledged, setAcknowledged] = useState(false);
+  const [audience, setAudience] = useState<"SOLO" | "FAMILY">("SOLO");
+  const [memberEmails, setMemberEmails] = useState<string[]>([""]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // installment is nullable now: an active plan can have nothing payable yet
   // (see nextInstallmentDueDate above), that's still "enrolled", just
   // between installments, not the picker below.
-  const [enrolled, setEnrolled] = useState<{ plan: ActivePlanSummary; installment: OpenInstallmentSummary | null } | null>(
-    initialPlan ? { plan: initialPlan, installment: initialInstallment } : null,
+  const [enrolled, setEnrolled] = useState<{ plan: ActivePlanSummary; installment: OpenInstallmentSummary | null; family?: FamilyPlanInfo | null } | null>(
+    initialPlan ? { plan: initialPlan, installment: initialInstallment, family } : null,
   );
 
-  const rate = calculatePaymentPlanRate(cadence, term);
+  const baseRate = calculatePaymentPlanRate(cadence, term);
+  const typedMembers = memberEmails.map((e) => e.trim()).filter(Boolean);
+  const memberTotal = 1 + typedMembers.length;
+  const familyPrice = calculateFamilyBundleTotal(cadence, term, Math.max(2, memberTotal));
+  const isFamily = audience === "FAMILY";
+  // A family member's monthly price is the family rate; everything else about the plan is the same.
+  const rate = isFamily ? { ...baseRate, installmentAmountCents: familyPrice.perStudentMonthlyCents, totalCommittedCents: familyPrice.perStudentMonthlyCents * baseRate.termMonths } : baseRate;
   // Credits are internal bookkeeping now, by direct instruction: a student
   // never sees a raw credit count, just how many classes a month and how
   // long each one is. Both cadences work out to the same 4 classes a
@@ -155,7 +184,32 @@ export function PaymentPlanEnrollmentFlow({
     };
   }, [cadence]);
 
+  async function handleEnrollFamily() {
+    if (!selectedSlot) return;
+    setLoading(true);
+    setError(null);
+    let result: Awaited<ReturnType<typeof enrollFamilyPlanAction>>;
+    try {
+      result = await enrollFamilyPlanAction(term, selectedSlot.scheduleId, selectedSlot.chunkIndex, typedMembers);
+    } catch {
+      setLoading(false);
+      setError("Something went wrong starting the family plan. Please try again.");
+      return;
+    }
+    setLoading(false);
+    if (!result.ok || !result.planId || !result.startPaymentId || result.amountCents === null) {
+      setError(result.error ?? "Something went wrong starting the family plan.");
+      return;
+    }
+    setEnrolled({
+      plan: { id: result.planId, cadence, term, installmentsPaid: 0, termMonths: rate.termMonths },
+      installment: { id: result.startPaymentId, status: "AWAITING_TRANSFER", rejectionReason: null, amountCents: result.amountCents, installmentNumber: 1 },
+      family: { isPayer: true, payerName: null, memberCount: result.memberCount, waitingForStart: true },
+    });
+  }
+
   async function handleEnroll() {
+    if (isFamily) return handleEnrollFamily();
     if (!selectedSlot) return;
     setLoading(true);
     setError(null);
@@ -186,6 +240,8 @@ export function PaymentPlanEnrollmentFlow({
 
   if (enrolled) {
     const { plan, installment } = enrolled;
+    const fam = enrolled.family ?? null;
+    const memberView = fam !== null && !fam.isPayer;
     const planLabel = describePaymentPlan(plan.cadence, plan.term);
     const progressPercent = Math.min(100, (plan.installmentsPaid / plan.termMonths) * 100);
 
@@ -198,13 +254,24 @@ export function PaymentPlanEnrollmentFlow({
           </p>
           <ProgressBar className="mt-2" value={progressPercent} label="Installments paid" />
         </div>
-        {installment ? (
+        {fam && (
+          <p className="mb-4 rounded-xl bg-neu-base px-3.5 py-3 text-small text-slate-300 shadow-pressed-low">
+            {memberView
+              ? fam.waitingForStart
+                ? `This is a family plan for ${fam.memberCount} accounts. Your classes start when ${fam.payerName ?? "the person who set it up"} sends the combined first payment. There is nothing for you to pay.`
+                : `This is a family plan for ${fam.memberCount} accounts. ${fam.payerName ?? "The person who set it up"} pays your monthly bill from their own bank account.`
+              : fam.waitingForStart
+                ? `Family plan for ${fam.memberCount} accounts. Everyone starts together when this combined first payment arrives, and it must come from your own bank account.`
+                : `Family plan for ${fam.memberCount} accounts. You pay every member's monthly bill from your own bank account.`}
+          </p>
+        )}
+        {memberView && !fam.waitingForStart ? null : installment ? (
           <ZelleUnlockGate
             status={installment.status}
             rejectionReason={installment.rejectionReason}
-            scaleCode={`Installment ${installment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`}
+            scaleCode={fam?.waitingForStart ? `First payment for ${fam.memberCount} accounts` : `Installment ${installment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`}
             scaleTitle={planLabel}
-            eyebrowLabel="Payment Plan"
+            eyebrowLabel={fam ? "Family plan" : "Payment Plan"}
             amountCents={installment.amountCents}
             zelleHandle={zelleHandle}
             paymentId={installment.id}
@@ -228,12 +295,85 @@ export function PaymentPlanEnrollmentFlow({
             )}
           </div>
         )}
+        {familyBills.length > 0 && (
+          <div className="mt-6 space-y-4">
+            <p className="text-small font-medium text-slate-400">Other members&apos; monthly bills</p>
+            {familyBills.map((bill) => (
+              <ZelleUnlockGate
+                key={bill.payment.id}
+                status={bill.payment.status}
+                rejectionReason={bill.payment.rejectionReason}
+                scaleCode={`${bill.memberName}: installment ${bill.payment.installmentNumber ?? "?"}`}
+                scaleTitle={planLabel}
+                eyebrowLabel="Family plan"
+                amountCents={bill.payment.amountCents}
+                zelleHandle={zelleHandle}
+                paymentId={bill.payment.id}
+                onSubmitPayment={submitPlanInstallmentPaymentAction.bind(null, bill.payment.id)}
+              />
+            ))}
+          </div>
+        )}
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      <Tabs
+        label="Who is this plan for?"
+        items={[
+          { id: "SOLO", label: "Just me" },
+          { id: "FAMILY", label: "Me and my family" },
+        ]}
+        value={audience}
+        onChange={(next) => {
+          setAudience(next);
+          setError(null);
+        }}
+      />
+
+      {isFamily && (
+        <div className="rounded-xl bg-neu-base p-4 shadow-raised-low">
+          <p className="text-small font-semibold text-slate-50">Who is in the family?</p>
+          <p className="mt-1 text-small text-slate-400">
+            Each person needs their own Bass Note Piano account first, with their own name. You pay for everyone from your own bank
+            account: one combined first payment starts everyone together, then each person has their own monthly bill. If anyone
+            cannot start, nobody does.
+          </p>
+          <div className="mt-3 space-y-2">
+            {memberEmails.map((email, i) => (
+              <div key={i} className="flex gap-2">
+                <input
+                  type="email"
+                  inputMode="email"
+                  autoComplete="off"
+                  value={email}
+                  onChange={(e) => setMemberEmails((prev) => prev.map((v, j) => (j === i ? e.target.value : v)))}
+                  placeholder="Family member's account email"
+                  aria-label={`Family member ${i + 1} email`}
+                  className="h-11 min-w-0 flex-1 rounded-control bg-neu-base px-4 text-body text-slate-100 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+                {memberEmails.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setMemberEmails((prev) => prev.filter((_, j) => j !== i))}
+                    className={buttonVariants({ variant: "secondary", size: "sm" })}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          {memberEmails.length < Math.min(3, MAX_FAMILY_BUNDLE_RECIPIENTS - 1) && (
+            <button type="button" onClick={() => setMemberEmails((prev) => [...prev, ""])} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}>
+              Add another person
+            </button>
+          )}
+        </div>
+      )}
+
       <div>
         <p className="mb-2 text-small font-medium text-slate-400">Term</p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -361,9 +501,15 @@ export function PaymentPlanEnrollmentFlow({
           <NumberTicker value={rate.totalCommittedCents} format={formatUsd} />
         </div>
         <div className="mt-2 flex items-center justify-between border-t border-ink/10 pt-2 text-body font-semibold text-slate-50">
-          <span>{rate.termMonths === 1 ? "Due now" : "Due each month"}</span>
+          <span>{isFamily ? "Each person, each month" : rate.termMonths === 1 ? "Due now" : "Due each month"}</span>
           <NumberTicker value={rate.installmentAmountCents} format={formatUsd} />
         </div>
+        {isFamily && (
+          <div className="mt-1 flex items-center justify-between text-small text-slate-300">
+            <span>First payment, all {Math.max(2, memberTotal)} people together</span>
+            <NumberTicker value={rate.installmentAmountCents * Math.max(2, memberTotal)} format={formatUsd} />
+          </div>
+        )}
         <div className="mt-1 flex items-center justify-between text-small text-slate-500">
           <span>{classMinutes}-min classes</span>
           <span>
@@ -408,11 +554,11 @@ export function PaymentPlanEnrollmentFlow({
       <button
         type="button"
         onClick={handleEnroll}
-        disabled={loading || !acknowledged || !selectedSlot}
+        disabled={loading || !acknowledged || !selectedSlot || (isFamily && typedMembers.length === 0)}
         className={buttonVariants({ variant: "primary", className: "flex w-full" })}
       >
         {loading && <MorphingSquare size={14} className="mr-2 shrink-0" />}
-        {loading ? "Starting…" : "Start plan"}
+        {loading ? "Starting…" : isFamily ? "Start family plan" : "Start plan"}
       </button>
     </div>
   );

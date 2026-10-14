@@ -174,7 +174,7 @@ export function PaymentPlanTierGrid() {
                 </ul>
 
                 <Link
-                  href={isFamily ? "/billing/lessons" : `/billing/plans?cadence=${cadence}&term=${option.value}`}
+                  href={isFamily ? "/billing/plans" : `/billing/plans?cadence=${cadence}&term=${option.value}`}
                   className={`flex h-12 items-center justify-center rounded-xl text-small font-semibold transition ${
                     featured
                       ? "bg-[rgb(var(--c-a-400))] text-black shadow-raised-mid hover:brightness-110 active:shadow-pressed-low"

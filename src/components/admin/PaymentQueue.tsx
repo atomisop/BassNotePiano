@@ -79,6 +79,9 @@ function describePayment(payment: PendingZellePayment): { eyebrow: string; title
       title: `Full curriculum × ${recipientCount} account${recipientCount === 1 ? "" : "s"}`,
     };
   }
+  if (payment.purpose === "FAMILY_PLAN_START") {
+    return { eyebrow: "Family plan", title: "Combined first payment for the whole family" };
+  }
   if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlan) {
     return {
       eyebrow: describePaymentPlan(payment.paymentPlan.cadence, payment.paymentPlan.term),

@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
+import { PaymentPlanCadence, PaymentPlanTerm, type ZellePaymentStatus } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { getActivePaymentPlan, getUserPaymentPlans, getOrCreateOpenInstallmentPayment } from "@/lib/paymentPlans";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { ArrowLeftIcon } from "@/components/ui/icons";
@@ -43,6 +44,46 @@ export default async function BillingPlansPage(
     ? await getOrCreateOpenInstallmentPayment(activePlan.id, zelleHandle)
     : null;
 
+  // A family plan: who pays, whether the family has started, and (for the payer) the combined first payment and the other
+  // members' monthly bills.
+  let family: { isPayer: boolean; payerName: string | null; memberCount: number; waitingForStart: boolean } | null = null;
+  let startPayment: Awaited<ReturnType<typeof prisma.zellePayment.findFirst>> = null;
+  const familyBills: { planId: string; memberName: string; payment: { id: string; status: ZellePaymentStatus; rejectionReason: string | null; amountCents: number; installmentNumber: number | null } }[] = [];
+  if (activePlan?.familyGroupId) {
+    const group = await prisma.familyPlanGroup.findUnique({
+      where: { id: activePlan.familyGroupId },
+      select: {
+        payerId: true,
+        payer: { select: { name: true, email: true } },
+        plans: { where: { status: "ACTIVE" }, select: { id: true, userId: true, user: { select: { name: true, email: true } } } },
+      },
+    });
+    if (group) {
+      const isPayer = group.payerId === session.user.id;
+      const waitingForStart = activePlan.installmentsPaid === 0;
+      family = { isPayer, payerName: group.payer.name ?? group.payer.email, memberCount: group.plans.length, waitingForStart };
+      if (isPayer && waitingForStart) {
+        startPayment = await prisma.zellePayment.findFirst({
+          where: { familyGroupId: activePlan.familyGroupId, purpose: "FAMILY_PLAN_START", status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW", "REJECTED"] } },
+          orderBy: { createdAt: "desc" },
+        });
+      }
+      if (isPayer && !waitingForStart) {
+        for (const member of group.plans.filter((plan) => plan.userId !== session.user.id)) {
+          const { payment } = await getOrCreateOpenInstallmentPayment(member.id, zelleHandle);
+          if (payment) {
+            familyBills.push({
+              planId: member.id,
+              memberName: member.user.name ?? member.user.email,
+              payment: { id: payment.id, status: payment.status, rejectionReason: payment.rejectionReason, amountCents: payment.amountCents, installmentNumber: payment.installmentNumber },
+            });
+          }
+        }
+      }
+    }
+  }
+  const shownInstallment = startPayment ?? openInstallmentResult?.payment ?? null;
+
   const pastPlans = allPlans.filter((plan) => plan.status !== "ACTIVE");
 
   // Same split as the family bundle page (STEP 4): the explanation on the
@@ -76,19 +117,21 @@ export default async function BillingPlansPage(
               : null
           }
           openInstallment={
-            openInstallmentResult?.payment
+            shownInstallment
               ? {
-                  id: openInstallmentResult.payment.id,
-                  status: openInstallmentResult.payment.status,
-                  rejectionReason: openInstallmentResult.payment.rejectionReason,
-                  amountCents: openInstallmentResult.payment.amountCents,
-                  installmentNumber: openInstallmentResult.payment.installmentNumber,
+                  id: shownInstallment.id,
+                  status: shownInstallment.status,
+                  rejectionReason: shownInstallment.rejectionReason,
+                  amountCents: shownInstallment.amountCents,
+                  installmentNumber: shownInstallment.installmentNumber,
                 }
               : null
           }
           nextInstallmentDueDate={
-            activePlan && !openInstallmentResult?.payment ? (openInstallmentResult?.nextDueDate ?? activePlan.nextDueDate).toISOString() : undefined
+            activePlan && !shownInstallment ? (openInstallmentResult?.nextDueDate ?? activePlan.nextDueDate).toISOString() : undefined
           }
+          family={family}
+          familyBills={familyBills}
         />
       </div>
 

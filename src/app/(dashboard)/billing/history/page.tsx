@@ -38,6 +38,9 @@ function describePayment(payment: {
   if (payment.purpose === "CURRICULUM") {
     return { eyebrow: "Curriculum", title: "Full platform unlock" };
   }
+  if (payment.purpose === "FAMILY_PLAN_START") {
+    return { eyebrow: "Family plan", title: "Combined first payment" };
+  }
   if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlan) {
     return {
       eyebrow: describePaymentPlan(payment.paymentPlan.cadence, payment.paymentPlan.term),

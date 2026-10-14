@@ -130,6 +130,11 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                 {describePaymentPlan(plan.cadence, plan.term)}
               </p>
               <h3 className="mt-1 text-body text-slate-50 font-semibold">{plan.user.name ?? plan.user.email}</h3>
+              {plan.familyGroup && (
+                <p className="mt-1 text-small text-slate-400">
+                  Family plan of {plan.familyGroup._count.plans}, paid by {plan.familyGroup.payer.name ?? plan.familyGroup.payer.email}
+                </p>
+              )}
               <p className="mt-1 text-small text-slate-500">
                 {plan.installmentsPaid} of {plan.termMonths} installments paid · {formatUsd(plan.installmentAmountCents)}/mo
               </p>
