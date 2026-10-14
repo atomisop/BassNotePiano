@@ -31,6 +31,7 @@ import { getUserPaymentHistory, type UserPaymentRecord } from "@/lib/payments";
 import { getUserClassBookings } from "@/lib/classSchedule";
 import { getSupportThreads, type AdminThreadSummary } from "@/lib/support";
 import { getUserCreditHistory, type CreditAdjustmentRow } from "@/lib/creditAdjustments";
+import { getStudentPracticeDetail, type StudentPracticeDetail } from "@/lib/practiceActivity";
 
 const scaleProgressWithGroupInclude = {
   scaleGroup: { select: { code: true, kinitName: true, title: true } },
@@ -72,6 +73,8 @@ export interface CustomerProfile {
   bookings: Awaited<ReturnType<typeof getUserClassBookings>>;
   supportThreads: AdminThreadSummary[];
   creditHistory: CreditAdjustmentRow[];
+  /** Daily finger practice, last 30 days. */
+  practice: StudentPracticeDetail;
   timeline: CustomerActivityEvent[];
 }
 
@@ -101,7 +104,7 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
   });
   if (!user) return null;
 
-  const [roadmap, scaleProgressRows, payments, payerAliases, bookings, supportThreads, creditHistory] = await Promise.all([
+  const [roadmap, scaleProgressRows, payments, payerAliases, bookings, supportThreads, creditHistory, practice] = await Promise.all([
     getRoadmap(userId),
     // getRoadmap's own ScaleAccessState is a processed *current* snapshot
     // (status/canAccess), not the raw timestamps a timeline needs, pulled
@@ -113,6 +116,7 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
     getUserClassBookings(userId),
     getSupportThreads(undefined, userId),
     getUserCreditHistory(userId, 100),
+    getStudentPracticeDetail(userId),
   ]);
 
   const timeline = buildTimeline({ scaleProgressRows, payments, bookings, supportThreads, creditHistory });
@@ -144,6 +148,7 @@ export async function getCustomerProfile(userId: string): Promise<CustomerProfil
     bookings,
     supportThreads,
     creditHistory,
+    practice,
     timeline,
   };
 }

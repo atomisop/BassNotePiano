@@ -18,6 +18,8 @@ export interface UserListRow {
   progress: string | null;
   /** Code of the scale the teacher can release right now, e.g. "S4". */
   readyScale: string | null;
+  /** Days of the last 7 with the full 10 minutes of finger practice; null when practice is not expected of them. */
+  practiceDays: number | null;
 }
 
 /**
@@ -77,6 +79,14 @@ export function UserList({
                   {row.name && <p className="truncate text-small text-slate-500">{row.email}</p>}
                 </div>
                 {row.roleLabel && <span className="shrink-0 text-small text-slate-400">{row.roleLabel}</span>}
+                {row.practiceDays !== null && (
+                  <span
+                    title="Days this week with the full 10 minutes of practice"
+                    className={`shrink-0 text-small tabular-nums ${row.practiceDays === 0 ? "text-amber-400" : "text-slate-400"}`}
+                  >
+                    {row.practiceDays}/7 practice
+                  </span>
+                )}
                 {row.progress && <span className="shrink-0 text-small tabular-nums text-slate-400">{row.progress}</span>}
                 {!row.readyScale && <ChevronRight className="h-4 w-4 shrink-0 text-slate-600" aria-hidden />}
               </Link>
