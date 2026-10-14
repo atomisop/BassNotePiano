@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
+import { DiscordConnectLink } from "@/components/ui/DiscordLink";
 
 /**
  * A notification banner in the style of the iPhone's: it drops in from the top edge over everything, sits on frosted
@@ -16,6 +17,13 @@ const TAP_CLASS = "block rounded-[26px] px-4 pb-5 pt-3 focus-visible:outline-2 f
 
 /** A normal link inside the app, a plain one for the /api routes (they redirect off the site, so they must not be prefetched). */
 function Tap({ href, onClick, children }: { href: string; onClick: () => void; children: React.ReactNode }) {
+  if (href === "/api/discord/connect") {
+    return (
+      <DiscordConnectLink href={href} onClick={onClick} className={TAP_CLASS}>
+        {children}
+      </DiscordConnectLink>
+    );
+  }
   if (href.startsWith("/api/")) {
     return (
       <a href={href} onClick={onClick} className={TAP_CLASS}>

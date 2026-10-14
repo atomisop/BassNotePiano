@@ -4,6 +4,7 @@ import { DiscordIcon } from "@/components/ui/icons";
 import { unlinkDiscordAction } from "@/app/(dashboard)/lessons/discordActions";
 import type { DiscordLinkState } from "@/lib/discordLinkState";
 import { buttonVariants } from "@/components/ui/button";
+import { DiscordConnectLink, DiscordLink } from "@/components/ui/DiscordLink";
 
 const MESSAGES: Record<string, { text: string; good: boolean }> = {
   linked: { text: "Discord connected, and you are in the server. Your private class call opens a few minutes before each class.", good: true },
@@ -35,15 +36,15 @@ export function DiscordConnectCard({ link, flag }: { link: DiscordLinkState; fla
               </button>
             </form>
           ) : (
-            <a href="/api/discord/connect" className={buttonVariants({ variant: "primary", size: "sm" })}>
+            <DiscordConnectLink className={buttonVariants({ variant: "primary", size: "sm" })}>
               Connect Discord
-            </a>
+            </DiscordConnectLink>
           )}
           {/* Connecting already puts you in the server. The invite is only for someone connected who is not in it yet. */}
           {link.connected && flag === "linked-nojoin" && (
-            <Link href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "secondary", size: "sm" })}>
+            <DiscordLink href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "secondary", size: "sm" })}>
               Join the server
-            </Link>
+            </DiscordLink>
           )}
         </div>
       </div>

@@ -23,6 +23,7 @@ import { WideLayout } from "@/components/layout/PageLayouts";
 import { formatEtDateTime } from "@/lib/classScheduleLabels";
 import { DISCORD_INVITE_URL, discordChannelUrl } from "@/lib/discord";
 import { CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
+import { DiscordLink } from "@/components/ui/DiscordLink";
 
 function ArrowIcon() {
   return (
@@ -147,7 +148,7 @@ export default async function DashboardPage() {
             <p className="mt-1 text-small text-slate-400">{untilLabel(nextClass.scheduledAt)}</p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               {canJoin && (
-                <a
+                <DiscordLink
                   href={nextClass.discordChannelId ? discordChannelUrl(nextClass.discordChannelId) : DISCORD_INVITE_URL}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -155,7 +156,7 @@ export default async function DashboardPage() {
                 >
                   Join on Discord
                   <ArrowIcon />
-                </a>
+                </DiscordLink>
               )}
               <a
                 href={`/api/calendar/class?s=${encodeURIComponent(nextClass.scheduledAt.toISOString())}&m=${length}`}

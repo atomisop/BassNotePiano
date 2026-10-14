@@ -27,6 +27,7 @@ import { WideLayout } from "@/components/layout/PageLayouts";
 import { Tabs } from "@/components/ui/Tabs";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 import { buttonVariants } from "@/components/ui/button";
+import { DiscordLink } from "@/components/ui/DiscordLink";
 
 const NETWORK_ERROR = "That didn't go through. Check your connection and try again.";
 
@@ -232,14 +233,14 @@ function BookingCard({
       {scheduled && hoursUntil > -1 && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {hoursUntil <= 0.5 && (
-            <a
+            <DiscordLink
               href={b.discordUrl ?? DISCORD_INVITE_URL}
               target="_blank"
               rel="noopener noreferrer"
               className={buttonVariants({ variant: "primary", size: "sm" })}
             >
               Join on Discord
-            </a>
+            </DiscordLink>
           )}
           {rescheduleEligible && (
             <button

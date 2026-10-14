@@ -31,6 +31,7 @@ import { PhoneCard, type PhoneState } from "@/components/account/PhoneCard";
 import { formatPhone } from "@/lib/phone";
 import { unlinkDiscordAction } from "../lessons/discordActions";
 import { buttonVariants } from "@/components/ui/button";
+import { DiscordConnectLink } from "@/components/ui/DiscordLink";
 
 /** What the Account section shows about the person. Plain data, chosen on the server. */
 export interface AccountOverview {
@@ -349,9 +350,9 @@ function DiscordAccountCard({ username }: { username: string | null }) {
         )}
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <a href="/api/discord/connect" className={buttonVariants({ variant: "secondary", size: "sm" })}>
+        <DiscordConnectLink className={buttonVariants({ variant: "secondary", size: "sm" })}>
           {username ? "Reconnect" : "Connect Discord"}
-        </a>
+        </DiscordConnectLink>
         {username && (
           <button
             type="button"
