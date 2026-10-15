@@ -16,6 +16,9 @@
   # Before this, Netlify's build image used its own unpinned default, which
   # could silently drift from whatever a developer's local machine runs.
   NODE_VERSION = "24"
+  # Netlify fails a build when the value of an environment variable appears in a committed file. A bucket name is not a secret
+  # and the setup doc (docs/PRIVATE-LESSON-FILES.md) names it, so this one key is exempt. Real secrets stay scanned.
+  SECRETS_SCAN_OMIT_KEYS = "R2_PRIVATE_BUCKET_NAME"
 
 [functions]
   directory = "netlify/functions"
