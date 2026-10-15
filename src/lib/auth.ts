@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyCode } from "@/lib/verification";
 import { getCurriculumEntitlement } from "@/lib/entitlement";
 import { isFullAccess } from "@/lib/entitlementRules";
+import { tokenWhenEntitlementsUnknown } from "@/lib/tokenFallback";
 
 type Entitlements = {
   role: "STUDENT" | "ADMIN";
@@ -111,14 +112,23 @@ async function loadEntitlements(userId: string): Promise<Entitlements> {
 // on every subsequent session touch), a slow Postgres round trip here
 // would otherwise block a login that already passed the real credential
 // check, so it gets a hard cap rather than being trusted to always be fast.
-async function loadEntitlementsBounded(userId: string): Promise<Entitlements> {
-  return Promise.race([
-    loadEntitlements(userId),
-    new Promise<Entitlements>((resolve) => setTimeout(() => resolve(DEFAULT_ENTITLEMENTS), 3000)),
-  ]).catch((err) => {
-    console.error("loadEntitlements failed, using defaults for this session:", err);
-    return DEFAULT_ENTITLEMENTS;
-  });
+async function loadEntitlementsBounded(userId: string, attempts = 2): Promise<Entitlements | null> {
+  // A slow first query (a cold Neon database) is retried once before giving up.
+  // Returning null means "unknown": the caller keeps what the token already
+  // says instead of overwriting it with least-privilege defaults, which is
+  // what used to send finished accounts back to the onboarding wizard.
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const result = await Promise.race([
+        loadEntitlements(userId),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
+      ]);
+      if (result) return result;
+    } catch (err) {
+      console.error("loadEntitlements failed:", err);
+    }
+  }
+  return null;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -198,6 +208,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           role: user.role,
           hasCurriculumAccess: user.hasCurriculumAccess,
+          onboarded: Boolean(user.onboardedAt),
         };
       },
     }),
@@ -212,7 +223,15 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger }) {
       if (!token.sub) return token;
 
-      const entitlements = await loadEntitlementsBounded(token.sub);
+      const loaded = await loadEntitlementsBounded(token.sub);
+      if (!loaded) {
+        // Database did not answer: keep the last known values (or, on a fresh
+        // sign-in, what authorize just read), they are corrected on the next
+        // touch that does get an answer.
+        const kept = tokenWhenEntitlementsUnknown(token, user);
+        if (kept) return kept;
+      }
+      const entitlements = loaded ?? DEFAULT_ENTITLEMENTS;
 
       // Real "sign out other devices" enforcement, not just the UI copy
       // claiming it: every already-open session's token carries whatever

@@ -37,5 +37,7 @@ declare module "next-auth" {
   interface User {
     role: "STUDENT" | "ADMIN";
     hasCurriculumAccess: boolean;
+    /** Set by authorize at sign-in so the token is right even if the entitlements query is slow. */
+    onboarded?: boolean;
   }
 }
