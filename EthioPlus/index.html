@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EthioPlus: Learn Amharic</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Ethio<span>Plus</span></h1>
+  <p>Learn Amharic (አማርኛ) one step at a time</p>
+  <nav>
+    <button data-tab="alphabet" class="on">Alphabet</button>
+    <button data-tab="words">Words</button>
+    <button data-tab="quiz">Quiz</button>
+  </nav>
+</header>
+<main>
+  <section id="alphabet">
+    <h2>The Fidel (ፊደል)</h2>
+    <p class="hint">Each row is one consonant in its seven vowel forms. Tap a letter to hear it, if your device has an Amharic voice.</p>
+    <div class="scroll"><table id="fidel"></table></div>
+  </section>
+  <section id="words" hidden>
+    <h2>Words and phrases</h2>
+    <div id="cats" class="chips"></div>
+    <div id="cards" class="grid"></div>
+  </section>
+  <section id="quiz" hidden>
+    <h2>Quiz</h2>
+    <p class="hint">What does this word mean?</p>
+    <div id="q"></div>
+    <p id="score"></p>
+  </section>
+</main>
+<footer>EthioPlus</footer>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

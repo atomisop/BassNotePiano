@@ -1,0 +1,22 @@
+:root{--g:#078930;--y:#fcdd09;--r:#da121a;--bg:#fffdf5;--ink:#1d1d1b}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,"Noto Sans Ethiopic",sans-serif;background:var(--bg);color:var(--ink)}
+header{text-align:center;padding:24px 16px 0;border-bottom:6px solid;border-image:linear-gradient(90deg,var(--g) 33%,var(--y) 33% 66%,var(--r) 66%) 1}
+h1{margin:0;font-size:2.2rem}h1 span{color:var(--g)}
+nav{display:flex;gap:8px;justify-content:center;margin-top:12px}
+nav button,.chips button,.opt{font:inherit;padding:10px 16px;border:2px solid var(--g);background:#fff;border-radius:999px;cursor:pointer;min-height:44px}
+nav button.on,.chips button.on{background:var(--g);color:#fff}
+main{max-width:900px;margin:0 auto;padding:16px}
+.hint{color:#555}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;margin:auto}
+th,td{padding:6px 10px;text-align:center;border-bottom:1px solid #eee}
+td{font-size:1.6rem;cursor:pointer}td:hover{background:var(--y)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.card{background:#fff;border:1px solid #ddd;border-radius:12px;padding:14px;text-align:center;cursor:pointer}
+.card b{display:block;font-size:1.8rem}.card i{color:var(--g)}
+#q .word{font-size:2.6rem;text-align:center;margin:12px 0}
+#q .opts{display:grid;gap:8px}
+.opt.ok{background:var(--g);color:#fff}.opt.bad{background:var(--r);color:#fff;border-color:var(--r)}
+footer{text-align:center;padding:24px;color:#777}
