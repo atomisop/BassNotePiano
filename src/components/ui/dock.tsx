@@ -26,6 +26,8 @@ const DOCK_HEIGHT = 128;
 const DEFAULT_MAGNIFICATION = 80;
 const DEFAULT_DISTANCE = 150;
 const DEFAULT_PANEL_HEIGHT = 64;
+/** Resting width of one dock item, in px. */
+const REST_SIZE = 36;
 
 type DockProps = {
   children: React.ReactNode;
@@ -86,8 +88,8 @@ function Dock({
   const isHovered = useMotionValue(0);
 
   const maxHeight = useMemo(() => {
-    // No magnification (<= resting 40px width): the bar never grows.
-    if (magnification <= 40) return panelHeight;
+    // No magnification (<= resting width): the bar never grows.
+    if (magnification <= REST_SIZE) return panelHeight;
     return Math.max(DOCK_HEIGHT, magnification + magnification / 2 + 4);
   }, [magnification, panelHeight]);
 
@@ -154,7 +156,7 @@ function DockItem({ children, className, 'aria-label': ariaLabel }: DockItemProp
   const widthTransform = useTransform(
     mouseDistance,
     [-distance, 0, distance],
-    [40, magnification, 40]
+    [REST_SIZE, magnification, REST_SIZE]
   );
 
   const width = useSpring(widthTransform, spring);
@@ -222,7 +224,7 @@ function DockIcon({ children, className, ...rest }: DockIconProps) {
   const restProps = rest as Record<string, unknown>;
   const width = restProps['width'] as MotionValue<number>;
 
-  const widthTransform = useTransform(width, (val) => val / 2);
+  const widthTransform = useTransform(width, (val) => val * 0.6);
 
   return (
     <motion.div
