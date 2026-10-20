@@ -35,6 +35,12 @@ describe("a forwarded bank email's own signature", () => {
     expect(checkForwardedBankMail({ fromEmail: "no-reply@o.sofi.org", dkimResult: "Pass", rawHeaders: headers("v=1; d=sofi.org; s=x") })).toEqual({ ok: true });
     expect(domainAligned("sofi.org", "o.sofi.org")).toBe(true);
   });
+  it("says what Mailgun reported and which signatures the message carried when the check fails", () => {
+    const fail = checkForwardedBankMail({ fromEmail: "no-reply@o.sofi.org", dkimResult: "Fail", rawHeaders: headers("v=1; d=o.sofi.org; s=x") });
+    expect(fail.reason).toBe('its signature check did not pass (Mailgun reported "Fail"; signed by o.sofi.org)');
+    const missing = checkForwardedBankMail({ fromEmail: "no-reply@o.sofi.org", dkimResult: undefined, rawHeaders: "[]" });
+    expect(missing.reason).toBe("its signature check did not pass (Mailgun reported no result; no DKIM signature on the message)");
+  });
   it("passes only when Mailgun's check passed AND a signature belongs to the sender", () => {
     const good = headers("v=1; d=sofi.com; s=x");
     expect(checkForwardedBankMail({ fromEmail: "no-reply@sofi.com", dkimResult: "Pass", rawHeaders: good })).toEqual({ ok: true });
