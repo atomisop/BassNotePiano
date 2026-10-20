@@ -1,31 +1,36 @@
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
+import {
+  Briefcase,
+  CalendarDays,
+  ClipboardList,
+  CreditCard,
+  Headphones,
+  LayoutDashboard,
+  LifeBuoy,
+  Megaphone,
+  BookOpen,
+  Repeat,
+  Settings,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 
-// Two-level nav now, by direct instruction ("keep maximum 4 main tabs with
-// multiple tabs inside them"), the previous flat 11-item version (already
-// trimmed down once from 15, see the fold-history notes on each page this
-// grouping now contains) still read as too many top-level buttons at a
-// glance, even wrapped onto two rows. Every leaf page keeps its own real
-// URL exactly as before (nothing here changes routing or breaks a
-// bookmark/notification deep-link), this only changes how those same
-// pages are grouped and presented.
-//
-// Grouping rationale: Billing is every page that touches money (a Zelle
-// queue, standing installment plans plus their own cancellation-feedback
-// tab, manual credit corrections). Students is every page about a
-// specific person's account (the registration queue, full account
-// management, who is ready for their next scale). Operations is everything else that
-// keeps the actual teaching running (the weekly schedule plus its own
-// booking/attendance tab, uploaded lesson content, live support, Discord
-// connections and broadcast announcements), the one deliberately mixed bucket, since
-// splitting communication out into its own 5th group would have broken
-// the 4-group cap this exists to satisfy.
+/**
+ * The one admin menu. Every admin page is a single entry in one grouped list,
+ * the way YouTube Studio and Google's admin consoles lay theirs out: nothing is
+ * hidden behind a second row of tabs or a dropdown, and each name matches the
+ * heading of the page it opens. From md up it is a list on the left (Settings
+ * pinned underneath); on phones the same entries are one swipeable row.
+ * Pages keep their own tabs for what is inside them (statuses, filters).
+ */
 interface AdminNavLeaf {
   href: string;
   label: string;
+  icon: LucideIcon;
 }
 
 interface AdminNavGroup {
@@ -34,191 +39,144 @@ interface AdminNavGroup {
 }
 
 const NAV_GROUPS: AdminNavGroup[] = [
-  {
-    label: "Overview",
-    leaves: [
-      { href: "/admin", label: "Overview" },
-      { href: "/admin/settings", label: "Settings" },
-    ],
-  },
+  { label: "Overview", leaves: [{ href: "/admin", label: "Overview", icon: LayoutDashboard }] },
   {
     label: "Billing",
     leaves: [
-      { href: "/admin/payments", label: "Payments" },
-      { href: "/admin/payment-plans", label: "Payment Plans" },
+      { href: "/admin/payments", label: "Payments", icon: CreditCard },
+      { href: "/admin/payment-plans", label: "Payment Plans", icon: Repeat },
     ],
   },
   {
-    label: "Students",
+    label: "People",
     leaves: [
-      { href: "/admin/students", label: "Students" },
-      { href: "/admin/employees", label: "Employees" },
-      { href: "/admin/users", label: "People" },
+      { href: "/admin/students", label: "Applications", icon: ClipboardList },
+      { href: "/admin/users", label: "Accounts", icon: Users },
+      { href: "/admin/employees", label: "Employees", icon: Briefcase },
     ],
   },
   {
-    label: "Operations",
+    label: "Teaching",
     leaves: [
-      { href: "/admin/schedule", label: "Schedule" },
-      { href: "/admin/lessons", label: "Lessons" },
-      { href: "/admin/support", label: "Support Chat" },
-      { href: "/admin/messages", label: "Messages" },
-      { href: "/admin/discord", label: "Discord" },
+      { href: "/admin/schedule", label: "Schedule", icon: CalendarDays },
+      { href: "/admin/lessons", label: "Lessons", icon: BookOpen },
+      { href: "/admin/discord", label: "Discord", icon: Headphones },
+    ],
+  },
+  {
+    label: "Inbox",
+    leaves: [
+      { href: "/admin/support", label: "Support Chat", icon: LifeBuoy },
+      { href: "/admin/messages", label: "Messages", icon: Megaphone },
     ],
   },
 ];
 
-const ALL_LEAVES = NAV_GROUPS.flatMap((g) => g.leaves);
+/** Pinned under the groups, set apart, like the settings entry in Google's consoles. */
+const SETTINGS_LEAF: AdminNavLeaf = { href: "/admin/settings", label: "Settings", icon: Settings };
 
 /** What is waiting, by page address. Pages with nothing waiting have no entry. */
 export type AdminNavBadges = Record<string, number>;
-
-function groupCount(group: AdminNavGroup, badges: AdminNavBadges): number {
-  return group.leaves.reduce((sum, leaf) => sum + (badges[leaf.href] ?? 0), 0);
-}
-
-function Badge({ count }: { count: number }) {
-  if (count <= 0) return null;
-  return (
-    <span className="ml-1.5 rounded-full bg-[rgb(var(--signal)/0.18)] px-1.5 text-small font-semibold tabular-nums text-signal" aria-label={`${count} waiting`}>
-      {count > 99 ? "99+" : count}
-    </span>
-  );
-}
 
 function isLeafActive(href: string, pathname: string): boolean {
   return href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
 }
 
-function activeGroup(pathname: string): AdminNavGroup {
-  return NAV_GROUPS.find((g) => g.leaves.some((leaf) => isLeafActive(leaf.href, pathname))) ?? NAV_GROUPS[0];
-}
-
-/**
- * Below sm: a single native <select>, same reasoning (and same iOS-zoom
- * text-body fix) as the flat version this replaces, a phone has no room
- * for a real two-level control, so every leaf page is still one flat list,
- * just visually grouped via <optgroup> so the same four buckets are still
- * legible instead of eleven undifferentiated rows.
- */
-function MobileAdminSelect({ badges }: { badges: AdminNavBadges }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const current = ALL_LEAVES.find((leaf) => isLeafActive(leaf.href, pathname))?.href ?? ALL_LEAVES[0].href;
-
+function Count({ count, className = "" }: { count: number; className?: string }) {
+  if (count <= 0) return null;
   return (
-    <select
-      value={current}
-      onChange={(e) => router.push(e.target.value)}
-      aria-label="Admin section"
-      className="h-11 w-full rounded-control bg-neu-base px-4 text-body font-medium text-slate-100 shadow-pressed-low outline-none transition focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
+    <span
+      className={`rounded-full bg-[rgb(var(--signal)/0.18)] px-1.5 text-small font-semibold tabular-nums text-signal ${className}`}
+      aria-label={`${count} waiting`}
     >
-      {NAV_GROUPS.map((group) =>
-        group.leaves.length === 1 ? (
-          <option key={group.leaves[0].href} value={group.leaves[0].href}>
-            {group.leaves[0].label}
-            {badges[group.leaves[0].href] ? ` (${badges[group.leaves[0].href]})` : ""}
-          </option>
-        ) : (
-          <optgroup key={group.label} label={group.label}>
-            {group.leaves.map((leaf) => (
-              <option key={leaf.href} value={leaf.href}>
-                {leaf.label}
-                {badges[leaf.href] ? ` (${badges[leaf.href]})` : ""}
-              </option>
-            ))}
-          </optgroup>
-        ),
-      )}
-    </select>
+      {count > 99 ? "99+" : count}
+    </span>
   );
 }
 
-/**
- * sm and up: the real two-level nav, four group pills, and (for whichever
- * group the current page belongs to) a second row of that group's own
- * leaf pills right below. A single-leaf group (just Overview) never grows
- * a second row at all, nothing to switch between.
- */
-function DesktopAdminPills({ badges }: { badges: AdminNavBadges }) {
+/** md and up: the grouped list on the left. */
+function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
   const pathname = usePathname();
-  const group = activeGroup(pathname);
+
+  function Item({ leaf }: { leaf: AdminNavLeaf }) {
+    const active = isLeafActive(leaf.href, pathname);
+    const Icon = leaf.icon;
+    return (
+      <Link
+        href={leaf.href}
+        aria-current={active ? "page" : undefined}
+        className={`press-soft flex h-9 items-center gap-2.5 rounded-control px-2.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+          active ? "bg-neu-lift text-slate-50 shadow-pressed-low" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
+        }`}
+      >
+        <Icon className={`h-4 w-4 shrink-0 ${active ? "text-signal" : ""}`} strokeWidth={active ? 2.1 : 1.75} aria-hidden />
+        <span className="truncate">{leaf.label}</span>
+        <Count count={badges[leaf.href] ?? 0} className="ml-auto" />
+      </Link>
+    );
+  }
 
   return (
-    <nav className="hidden flex-col gap-2 sm:flex lg:hidden">
-      <div className={`${TAB_TRACK} self-start`}>
-        {NAV_GROUPS.map((g) => {
-          const active = g.label === group.label;
-          return (
-            <Link
-              key={g.label}
-              href={g.leaves[0].href}
-              className={tabItem(active)}
-            >
-              {g.label}
-              <Badge count={groupCount(g, badges)} />
-            </Link>
-          );
-        })}
-      </div>
-      {group.leaves.length > 1 && (
-        <div className={`${TAB_TRACK} self-start`}>
-          {group.leaves.map((leaf) => {
-            const active = isLeafActive(leaf.href, pathname);
-            return (
-              <Link
-                key={leaf.href}
-                href={leaf.href}
-                className={tabItem(active)}
-              >
-                {leaf.label}
-                <Badge count={badges[leaf.href] ?? 0} />
-              </Link>
-            );
-          })}
+    <nav aria-label="Admin sections" className="hidden w-48 shrink-0 flex-col gap-4 md:sticky md:top-0 md:flex md:self-start">
+      {NAV_GROUPS.map((group) => (
+        <div key={group.label}>
+          {/* A lone entry that shares its group's name needs no heading. */}
+          {!(group.leaves.length === 1 && group.leaves[0].label === group.label) && (
+            <p className="px-2.5 pb-1 text-small font-medium text-slate-500">{group.label}</p>
+          )}
+          <ul className="grid gap-0.5">
+            {group.leaves.map((leaf) => (
+              <li key={leaf.href}>
+                <Item leaf={leaf} />
+              </li>
+            ))}
+          </ul>
         </div>
-      )}
+      ))}
+      <div className="border-t border-(--neu-edge) pt-3">
+        <Item leaf={SETTINGS_LEAF} />
+      </div>
     </nav>
   );
 }
 
-/**
- * lg and up: every admin page in a vertical list on the left, grouped under
- * the same four headings, so nothing hides behind a second row of pills.
- */
-function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
+/** Phones: the same entries in one row you swipe, the current one scrolled into view. A thin divider marks each group. */
+function AdminSwipeRow({ badges }: { badges: AdminNavBadges }) {
   const pathname = usePathname();
+  const activeRef = useRef<HTMLAnchorElement | null>(null);
+
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ inline: "center", block: "nearest" });
+  }, [pathname]);
+
+  const groups = [...NAV_GROUPS, { label: "Settings", leaves: [SETTINGS_LEAF] }];
+
   return (
-    <nav aria-label="Admin sections" className="hidden w-44 shrink-0 flex-col gap-4 lg:flex">
-      {NAV_GROUPS.map((group) => (
-        <div key={group.label}>
-          <p className="px-2.5 pb-1.5 text-small font-semibold uppercase tracking-[0.16em] text-slate-500">{group.label}</p>
-          <ul className="grid gap-0.5">
-            {group.leaves.map((leaf) => {
-              const active = isLeafActive(leaf.href, pathname);
-              const count = badges[leaf.href] ?? 0;
-              return (
-                <li key={leaf.href}>
-                  <Link
-                    href={leaf.href}
-                    aria-current={active ? "page" : undefined}
-                    className={`press-soft flex h-8 items-center rounded-control px-2.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                      active ? "bg-neu-lift text-slate-50 shadow-pressed-low" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
-                    }`}
-                  >
-                    <span className="truncate">{leaf.label}</span>
-                    {count > 0 && (
-                      <span className="ml-auto rounded-full bg-[rgb(var(--signal)/0.18)] px-1.5 text-small font-semibold tabular-nums text-signal" aria-label={`${count} waiting`}>
-                        {count > 99 ? "99+" : count}
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ))}
+    <nav aria-label="Admin sections" className="-mx-4 mb-4 overflow-x-auto px-4 [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden">
+      <ul className="flex w-max items-center gap-1.5">
+        {groups.map((group, gi) =>
+          group.leaves.map((leaf, li) => {
+            const active = isLeafActive(leaf.href, pathname);
+            const Icon = leaf.icon;
+            return (
+              <li key={leaf.href} className={`flex items-center ${li === 0 && gi > 0 ? "ml-1.5 border-l border-(--neu-edge) pl-3" : ""}`}>
+                <Link
+                  href={leaf.href}
+                  ref={active ? activeRef : undefined}
+                  aria-current={active ? "page" : undefined}
+                  className={`press-soft flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    active ? "bg-neu-lift text-signal shadow-pressed-low" : "bg-neu-base text-slate-300 shadow-raised-low"
+                  }`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" strokeWidth={active ? 2.1 : 1.75} aria-hidden />
+                  {leaf.label}
+                  <Count count={badges[leaf.href] ?? 0} />
+                </Link>
+              </li>
+            );
+          }),
+        )}
+      </ul>
     </nav>
   );
 }
@@ -226,8 +184,7 @@ function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
 export function AdminNav({ badges = {} }: { badges?: AdminNavBadges }) {
   return (
     <>
-      <MobileAdminSelect badges={badges} />
-      <DesktopAdminPills badges={badges} />
+      <AdminSwipeRow badges={badges} />
       <AdminSideRail badges={badges} />
     </>
   );

@@ -12,7 +12,7 @@ const FILTERS: { label: string; value: ClassRegistrationStatus | "ALL" }[] = [
   { label: "All", value: "ALL" },
 ];
 
-export const metadata = { title: "Admin: Students" };
+export const metadata = { title: "Admin: Applications" };
 
 export default async function AdminStudentsPage(props: { searchParams: Promise<{ status?: string }> }) {
   const searchParams = await props.searchParams;
@@ -24,7 +24,7 @@ export default async function AdminStudentsPage(props: { searchParams: Promise<{
   return (
     <div>
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Students</h1>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Applications</h1>
       <p className="mt-2 text-small text-slate-500">
         {registrations.length} registration{registrations.length === 1 ? "" : "s"} · {activeLabel.toLowerCase()}
       </p>

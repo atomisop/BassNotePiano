@@ -53,10 +53,7 @@ days. A daily `mail-chain-probe` job sends a test email to music@ (subject `BNP 
   (tabbed settings, password, notifications, appearance, tutorials,
   **Delete Account** danger zone), `/profile`, `/about`.
 - `src/app/(dashboard)/admin`, the sole admin's console. Nav is
-  `src/components/admin/AdminNav.tsx` (a `<select>` on mobile, pills on
-  desktop), grouped as Overview / Billing (Payments, Payment Plans) / Students
-  (Students, Employees, People) / Operations (**Schedule**, Lessons, **Support
-  Chat**, Messages, Announcements), with small count badges for what is waiting.
+  `src/components/admin/AdminNav.tsx`: one grouped list on the left from md up (icons, count badges, Settings pinned underneath), one swipeable row on phones. Groups: Overview / Billing (Payments, Payment Plans) / People (**Applications**, **Accounts**, Employees) / Teaching (Schedule, Lessons, Discord) / Inbox (Support Chat, Messages). Each label matches its page heading; pages keep their own tabs only for statuses and filters.
 - Booking code: `src/lib/classSchedule.ts` (booking, cancel, reschedule and the
   shared time and slot rules), `classScheduleAdmin.ts` (roster, attendance),
   `classScheduleManage.ts` (adding and retiring weekly slots), `bookingRules.ts`
