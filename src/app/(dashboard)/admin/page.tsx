@@ -125,8 +125,8 @@ export default async function AdminOverviewPage() {
               </ul>
             )}
           </section>
-          <section className="glass-surface p-5">
-            <h2 className="text-body font-semibold text-slate-50">Scheduled jobs</h2>
+          <section id="tasks" className="glass-surface scroll-mt-20 p-5">
+            <h2 className="text-body font-semibold text-slate-50">Automatic tasks</h2>
             <ul className="mt-3 divide-y divide-slate-50/10">
               {jobs.map((job) => {
                 const bad = isStopped(job.state);

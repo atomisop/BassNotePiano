@@ -31,7 +31,7 @@ type ViewValue = "WINDOWS" | "BOOKINGS" | "ATTENDANCE";
 // page, not one task, and scrolling past a growing attendance history to
 // reach the booking tool (or vice versa) got in the way of both.
 const VIEWS: { label: string; value: ViewValue }[] = [
-  { label: "Weekly windows", value: "WINDOWS" },
+  { label: "Weekly times", value: "WINDOWS" },
   { label: "Bookings", value: "BOOKINGS" },
   { label: "Attendance", value: "ATTENDANCE" },
 ];

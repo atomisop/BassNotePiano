@@ -248,6 +248,15 @@ A subscribed payer switches in (`FamilyPlanGroup.replacesPlanId`): password plus
 approved and is then replaced in the same transaction. A member leaving one short of two bills the survivor at the solo price; the payer
 leaving ends the family (members keep the month paid). One family change per `family.changeCooldownDays`.
 
+## Contacts and soft holds (added 2026-10-20)
+
+Admin > People > Contacts (`src/lib/contacts.ts`, `src/app/(dashboard)/admin/contacts/`) is one list of everyone: accounts (classes taken, next class,
+the weekly time a payment plan reserves), applicants with no account (`ClassRegistration`), and people added by hand (`Contact`, with a status, notes
+and a `ContactSession` log of the days they took a class). A `SlotHold` keeps one weekly hour (schedule + `chunkIndex`, optional `until`) for a
+contact. It is a reminder only: nothing in `classSchedule.ts` reads it, so it never blocks a booking. The admin booking screen
+(`AdminManualBooking`) asks "This slot is reserved for X" before booking over one (`holdAppliesTo` in `slotHolds.ts`). The popup is admin only;
+students never see a contact's name.
+
 ## Daily practice in the admin (added 2026-10-14)
 
 The teacher sees each student's daily 10-minute finger practice (`FingerPracticeDay`) in two places, read only: a "Daily practice" card

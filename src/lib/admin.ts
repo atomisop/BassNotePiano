@@ -506,18 +506,16 @@ export async function getAttentionItems(): Promise<AttentionItem[]> {
     { label: payments === 1 ? "Payment to review" : "Payments to review", count: payments, href: "/admin/payments" },
     { label: uncheckedAuto === 1 ? "Auto-approved payment to check" : "Auto-approved payments to check", count: uncheckedAuto, href: "/admin/payments?status=UNCHECKED" },
     { label: unmatchedEmails === 1 ? "Payment email that matched no one" : "Payment emails that matched no one", count: unmatchedEmails, href: "/admin/payments?tab=emails" },
-    { label: "Bank emails have stopped arriving while payments wait", count: pipeline.status === "quiet" ? 1 : 0, href: "/admin/payments" },
+    { label: "No bank emails lately, but payments are waiting", count: pipeline.status === "quiet" ? 1 : 0, href: "/admin/payments" },
     {
       label:
-        stoppedJobs.length === 1
-          ? `Scheduled job stopped: ${stoppedJobs[0]}`
-          : `${stoppedJobs.length} scheduled jobs stopped: ${stoppedJobs.slice(0, 3).join(", ")}${stoppedJobs.length > 3 ? ` and ${stoppedJobs.length - 3} more` : ""}`,
+        stoppedJobs.length === 1 ? "An automatic task stopped" : `${stoppedJobs.length} automatic tasks stopped`,
       count: stoppedJobs.length,
-      href: "/admin",
+      href: "/admin#tasks",
     },
-    { label: "Studio email (music@) is not reaching the site: check the forwarding chain", count: mailProblem ? 1 : 0, href: "/admin/support?source=email" },
+    { label: "Studio email is not arriving", count: mailProblem ? 1 : 0, href: "/admin/support?source=email" },
     {
-      label: atom?.note === "busy" ? "Atom keeps failing (Google may be slow)" : "Atom can't answer: check Gemini credits and the key",
+      label: atom?.note === "busy" ? "The assistant keeps failing (Google may be slow)" : "The assistant is down: check Gemini credits",
       count: atom ? 1 : 0,
       href: atom?.note === "busy" ? "/admin" : GEMINI_BILLING_URL,
     },

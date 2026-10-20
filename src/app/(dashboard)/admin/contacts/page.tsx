@@ -76,7 +76,7 @@ export default async function AdminContactsPage(props: { searchParams: Promise<{
           const sub = [person.detail ? (INSTRUMENT_LABEL[person.detail as keyof typeof INSTRUMENT_LABEL] ?? null) : null, person.phone, person.email].filter(Boolean).join(" · ");
           return (
             <li key={person.key}>
-              <Link href={person.href} className="press-soft flex items-center justify-between gap-4 rounded-card bg-neu-base px-4 py-3 shadow-raised-low hover:shadow-raised-mid">
+              <Link href={person.href} className="press-soft flex flex-col gap-1.5 rounded-card bg-neu-base px-4 py-3 shadow-raised-low hover:shadow-raised-mid sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 <div className="min-w-0">
                   <p className="flex items-center gap-2">
                     <span className="truncate text-body font-semibold text-slate-50">{person.name}</span>
@@ -84,7 +84,7 @@ export default async function AdminContactsPage(props: { searchParams: Promise<{
                   </p>
                   {sub && <p className="truncate text-small text-slate-400">{sub}</p>}
                 </div>
-                <div className="shrink-0 text-right text-small text-slate-400">
+                <div className="shrink-0 text-small text-slate-400 sm:text-right">
                   {person.reserved && <p className="font-medium text-signal">{person.reserved}</p>}
                   <p>
                     {person.classesTaken > 0 ? `${person.classesTaken} ${person.classesTaken === 1 ? "class" : "classes"}` : "No classes yet"}

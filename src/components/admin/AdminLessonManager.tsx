@@ -289,8 +289,9 @@ export function AdminLessonManager({
               <div className="min-w-0 flex-1">
                 <h3 className="truncate text-body text-slate-50">{lesson.title}</h3>
                 <p className="truncate text-small text-slate-500">
-                  {lesson.type === "VIDEO" ? "Video" : "PDF"} · {formatBytes(lesson.fileSizeBytes)}
-                  {lesson.type === "VIDEO" && ` · ${formatDuration(lesson.durationSeconds)}`}
+                  {lesson.type === "VIDEO" ? "Video" : "PDF"}
+                  {lesson.fileSizeBytes != null && ` · ${formatBytes(lesson.fileSizeBytes)}`}
+                  {lesson.type === "VIDEO" && lesson.durationSeconds != null && ` · ${formatDuration(lesson.durationSeconds)}`}
                 </p>
               </div>
 
