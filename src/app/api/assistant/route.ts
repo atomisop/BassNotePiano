@@ -7,10 +7,10 @@ import { prisma } from "@/lib/prisma";
 import { reportError } from "@/lib/reportError";
 import { ATOM_UNAVAILABLE_MESSAGE, GeminiError } from "@/lib/atomFailure";
 import { noteAtomSuccess, recordAtomFailure } from "@/lib/atomHealth";
-import { askAssistant, assertAssistantRateLimit, appendPersistedMessages, RateLimitError, type AssistantMessage } from "@/lib/assistant";
+import { askAssistant, assertAssistantRateLimit, appendPersistedMessages, RateLimitError } from "@/lib/assistant";
+import { MAX_BODY_CHARS, clientAddress, sanitizeAssistantHistory } from "@/lib/assistantInput";
 
 // How many recent messages are read is an admin setting (Settings → Atom and support).
-const MAX_MESSAGE_LENGTH = 2000;
 
 /**
  * A real route handler, not a Server Action, the widget is reachable from
@@ -38,22 +38,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: ATOM_UNAVAILABLE_MESSAGE, code: "atom_unavailable" }, { status: 503 });
     }
     const maxMessages = await getNumberSetting("atom.maxConversationMessages");
-    const body = await req.json().catch(() => null);
-    const rawHistory = Array.isArray(body?.messages) ? body.messages : null;
-    if (!rawHistory || rawHistory.length === 0) {
+    // Read the body as text first so an oversized one is refused before it is parsed.
+    const text = await req.text().catch(() => "");
+    if (text.length > MAX_BODY_CHARS) return NextResponse.json({ error: "That message is too long." }, { status: 413 });
+    let body: { messages?: unknown } | null = null;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = null;
+    }
+    if (!Array.isArray(body?.messages) || body.messages.length === 0) {
       return NextResponse.json({ error: "No message provided." }, { status: 400 });
     }
 
-    const history: AssistantMessage[] = rawHistory
-      .slice(-maxMessages)
-      .filter(
-        (m: unknown): m is AssistantMessage =>
-          typeof m === "object" &&
-          m !== null &&
-          (("role" in m && (m as { role: unknown }).role === "user") || (m as { role: unknown }).role === "assistant") &&
-          typeof (m as { content: unknown }).content === "string",
-      )
-      .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_MESSAGE_LENGTH) }));
+    // Only role and content are read; any other field in the body (a user id, an admin flag) is ignored.
+    const history = sanitizeAssistantHistory(body.messages, maxMessages);
 
     if (history.length === 0 || history[history.length - 1].role !== "user") {
       return NextResponse.json({ error: "No message provided." }, { status: 400 });
@@ -67,7 +66,7 @@ export async function POST(req: Request) {
     // behind.
     const identifier = session?.user
       ? `user:${session.user.id}`
-      : (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+      : clientAddress(await headers());
 
     try {
       await assertAssistantRateLimit(identifier, Boolean(session?.user));

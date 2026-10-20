@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clientAddress } from "@/lib/assistantInput";
 import { isSameOriginJsonPost } from "@/lib/preferenceCookies";
 import { headers } from "next/headers";
 import { getServerAuthSession } from "@/lib/auth";
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
     const session = await getServerAuthSession();
     const identifier = session?.user
       ? `user:${session.user.id}`
-      : ((await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown");
+      : (clientAddress(await headers()));
 
     try {
       await assertSuggestionRateLimit(identifier, Boolean(session?.user));
