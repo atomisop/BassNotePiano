@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import localFont from "next/font/local";
 import { Providers } from "./providers";
 import { LOGGED_OUT_THEME, THEME_BOOT_SCRIPT, themeGroundColor } from "@/lib/themes";
@@ -136,7 +137,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // The per-request nonce set by the middleware, so the inline theme script is allowed by the stricter policy.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     // suppressHydrationWarning: the boot script below rewrites data-theme /
     // data-mode on this element before React hydrates, so the server-
@@ -152,7 +155,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             renders in the default theme and then snaps to the stored one,
             the classic dark-mode flash. Has to be inline and synchronous;
             anything deferred is already too late. */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body className="min-h-screen bg-neu-base font-sans text-slate-100 antialiased">
         {/* No flat ambient wash here by design, each area (marketing sections,
