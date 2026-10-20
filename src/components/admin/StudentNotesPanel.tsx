@@ -1,6 +1,7 @@
 "use client";
 
 import { OPEN_STUDENT_NOTES, listen } from "@/lib/topBarEvents";
+import { PulsatingDots } from "@/components/ui/pulsating-loader";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowLeft, NotebookPen, Search } from "lucide-react";
@@ -106,7 +107,7 @@ export function StudentNotesPanel() {
                 <p className="px-1 text-small text-slate-500">Booked today</p>
                 <div className="mt-2 space-y-1.5">
                   {roster === null ? (
-                    <p className="px-1 text-small text-slate-500">Loading…</p>
+                    <PulsatingDots className="justify-start px-1" />
                   ) : roster.length === 0 ? (
                     <p className="px-1 text-small text-slate-500">Nobody is booked today. Search for a student below.</p>
                   ) : (

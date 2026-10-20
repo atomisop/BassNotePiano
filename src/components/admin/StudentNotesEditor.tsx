@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PulsatingDots } from "@/components/ui/pulsating-loader";
 import { EyeOff, Eye, Pencil, Trash2 } from "lucide-react";
 import { deleteStudentNoteAction, listStudentNotesAction, saveStudentNoteAction } from "@/app/(dashboard)/admin/users/notes-actions";
 import type { StudentNoteRow } from "@/lib/studentNotes";
@@ -111,7 +112,7 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
 
       <div className="mt-3 space-y-2">
         {notes === null ? (
-          <p className="text-small text-slate-500">Loading…</p>
+          <PulsatingDots className="justify-start" />
         ) : notes.length === 0 ? (
           <p className="text-small text-slate-500">No notes yet.</p>
         ) : (

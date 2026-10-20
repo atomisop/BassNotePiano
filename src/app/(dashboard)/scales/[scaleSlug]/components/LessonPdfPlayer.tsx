@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { PageLoader } from "@/components/ui/PageLoader";
 import { Document, Page, pdfjs } from "react-pdf";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -88,7 +89,7 @@ export function LessonPdfPlayer({ src, title }: { src: string; title: string }) 
           file={src}
           onLoadSuccess={handleLoadSuccess}
           onLoadError={() => setLoadError(true)}
-          loading={<div className="flex h-[60vh] w-full items-center justify-center text-small text-slate-500">Loading PDF…</div>}
+          loading={<PageLoader label="Loading PDF" className="h-[60vh] w-full" />}
         >
           {containerWidth > 0 && (
             <Page
@@ -96,7 +97,7 @@ export function LessonPdfPlayer({ src, title }: { src: string; title: string }) 
               width={containerWidth * scale}
               renderTextLayer
               renderAnnotationLayer
-              loading={<div className="flex h-[60vh] w-full items-center justify-center text-small text-slate-500">Loading page…</div>}
+              loading={<PageLoader label="Loading page" className="h-[60vh] w-full" />}
             />
           )}
         </Document>

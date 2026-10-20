@@ -1,6 +1,7 @@
 "use client";
 
 import { CREDITS_PER_CLASS, creditsLabelFromStored, creditsToStored, formatCredits, storedToCredits } from "@/lib/classCreditPricing";
+import { PulsatingDots } from "@/components/ui/pulsating-loader";
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { CreditUserSearchRow, CreditAdjustmentRow } from "@/lib/creditAdjustments";
@@ -304,7 +305,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
             <div className="mt-5">
               <p className="text-small font-medium uppercase tracking-wide text-slate-500">History for this student</p>
               <div className="mt-2 space-y-2">
-                {historyLoading && <p className="text-small text-slate-500">Loading…</p>}
+                {historyLoading && <PulsatingDots className="justify-start" />}
                 {!historyLoading && history.length === 0 && <p className="text-small text-slate-500">No adjustments yet.</p>}
                 {history.map((row) => (
                   <div key={row.id} className="rounded-lg px-3 py-2 text-small bg-neu-base shadow-raised-low">

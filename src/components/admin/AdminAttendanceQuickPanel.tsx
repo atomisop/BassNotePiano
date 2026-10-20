@@ -1,6 +1,7 @@
 "use client";
 
 import { ATTENDANCE_READY_COUNT, OPEN_ATTENDANCE, announce, listen } from "@/lib/topBarEvents";
+import { PulsatingDots } from "@/components/ui/pulsating-loader";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
@@ -259,7 +260,7 @@ export function AdminAttendanceQuickPanel() {
             {error && <p className="mt-2 px-1 text-small text-red-400">{error}</p>}
 
             {loading && rows.length === 0 ? (
-              <p className="mt-3 px-1 text-small text-slate-500">Loading…</p>
+              <PulsatingDots className="mt-3 justify-start px-1" />
             ) : groups.length === 0 ? (
               <p className="mt-3 px-1 text-small text-slate-500">No bookings left this week.</p>
             ) : (

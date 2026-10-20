@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PulsatingDots } from "@/components/ui/pulsating-loader";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { Avatar } from "@/components/messaging/Avatar";
 import { MorphingSquare } from "@/components/ui/morphing-square";
@@ -78,7 +79,7 @@ export function NewGroupPanel({
 
         <div className="flex-1 overflow-y-auto px-4">
           {friends === null ? (
-            <p className="text-small text-slate-500">Loading friends…</p>
+            <PulsatingDots className="justify-start" label="Loading friends" />
           ) : friends.length === 0 ? (
             <p className="text-small text-slate-500">
               You don&apos;t have any friends yet.
