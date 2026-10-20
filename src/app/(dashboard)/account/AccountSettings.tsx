@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminTwoStepCard } from "./AdminTwoStepCard";
 import { MIN_PASSWORD_LENGTH, passwordRequirementError } from "@/lib/passwordRules";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -52,6 +53,8 @@ interface AccountSettingsProps {
   initialNotificationPreferences: NotificationPreferencesInput;
   assistantHistory: AssistantMessage[];
   activePlan: ActivePlanInfo | null;
+  /** Set for the admin only (students never see two-step sign-in). */
+  twoStep: { enabled: boolean; backupLeft: number } | null;
 }
 
 const TAB_ICONS = {
@@ -291,6 +294,7 @@ function TabContent({
   initialNotificationPreferences,
   assistantHistory,
   activePlan,
+  twoStep,
 }: {
   tab: TabId;
   account: AccountOverview;
@@ -298,12 +302,13 @@ function TabContent({
   initialNotificationPreferences: NotificationPreferencesInput;
   assistantHistory: AssistantMessage[];
   activePlan: ActivePlanInfo | null;
+  twoStep: AccountSettingsProps["twoStep"];
 }) {
   if (tab === "notifications") return <NotificationSettingsSection initial={initialNotificationPreferences} />;
   if (tab === "membership") return <MembershipSection hasCurriculumAccess={hasCurriculumAccess} activePlan={activePlan} />;
   if (tab === "appearance") return <AppearanceSection />;
   if (tab === "tutorials") return <TutorialsSection />;
-  return <AccountSection account={account} history={assistantHistory} />;
+  return <AccountSection account={account} history={assistantHistory} twoStep={twoStep} />;
 }
 
 function AccountGroup({ id, title, blurb, danger, children }: { id: string; title: string; blurb?: string; danger?: boolean; children: React.ReactNode }) {
@@ -388,7 +393,7 @@ const ACCOUNT_JUMPS = [
 // Everything about the person and their sign-in, in one place and in groups, so nothing account-related is
 // scattered across tabs: who you are, how we reach you, how you sign in, what is connected, what we keep, and
 // the one irreversible action last.
-function AccountSection({ account, history }: { account: AccountOverview; history: AssistantMessage[] }) {
+function AccountSection({ account, history, twoStep }: { account: AccountOverview; history: AssistantMessage[]; twoStep: AccountSettingsProps["twoStep"] }) {
   // Looked up inside this copy only: Settings renders the section twice (desktop column, phone panel), so ids would clash.
   const root = useRef<HTMLDivElement>(null);
   return (
@@ -432,6 +437,7 @@ function AccountSection({ account, history }: { account: AccountOverview; histor
 
       <AccountGroup id="security" title="Sign-in & security" blurb="Your password, and where you are signed in.">
         <PasswordSection />
+        {twoStep && <AdminTwoStepCard enabled={twoStep.enabled} backupLeft={twoStep.backupLeft} />}
       </AccountGroup>
 
       <AccountGroup id="connections" title="Connected accounts">
@@ -514,6 +520,7 @@ function AccountSettingsInner({
   initialNotificationPreferences,
   assistantHistory,
   activePlan,
+  twoStep,
 }: AccountSettingsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -571,6 +578,7 @@ function AccountSettingsInner({
             initialNotificationPreferences={initialNotificationPreferences}
             assistantHistory={assistantHistory}
             activePlan={activePlan}
+            twoStep={twoStep}
           />
         </div>
       </SettingsLayout>
@@ -588,6 +596,7 @@ function AccountSettingsInner({
             initialNotificationPreferences={initialNotificationPreferences}
             assistantHistory={assistantHistory}
             activePlan={activePlan}
+            twoStep={twoStep}
           />
         )}
       </SlideOverPanel>

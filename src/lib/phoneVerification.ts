@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { sendPhoneChangedEmail } from "@/lib/email";
 import { createAndSendCode, RateLimitError, verifyCode } from "@/lib/verification";
 import { assessPhone } from "@/lib/phoneValidity";
 import { checkVerifySession, isSmsConfigured, smsAvailable, startVerifySession } from "@/lib/sms";
@@ -127,6 +128,16 @@ export async function startPhoneVerification(userId: string, rawPhone: string): 
   return sent.ok ? { ok: true, phone } : sent;
 }
 
+/** Tells the account's owner (by email, never blocking the change) that the number on their account changed. */
+async function tellPhoneChanged(userId: string, change: "changed" | "removed"): Promise<void> {
+  try {
+    const u = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } });
+    if (u) await sendPhoneChangedEmail(u.email, u.name, change);
+  } catch (err) {
+    console.error("Phone change notice failed (non-blocking):", err);
+  }
+}
+
 /** Texts a fresh code to the number already waiting for confirmation. */
 export async function resendPhoneCode(userId: string): Promise<PhoneResult> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, pendingPhone: true } });
@@ -135,7 +146,7 @@ export async function resendPhoneCode(userId: string): Promise<PhoneResult> {
 }
 
 export async function confirmPhoneVerification(userId: string, code: string): Promise<PhoneResult<{ phone: string }>> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, pendingPhone: true } });
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true, pendingPhone: true, phone: true } });
   if (!user) return { ok: false, error: "Account not found." };
   let phone: string | undefined;
   if (isSmsConfigured()) {
@@ -152,6 +163,7 @@ export async function confirmPhoneVerification(userId: string, code: string): Pr
   if (await isTaken(phone, userId)) return { ok: false, error: TAKEN };
   try {
     await prisma.user.update({ where: { id: userId }, data: { phone, phoneVerifiedAt: new Date(), pendingPhone: null } });
+    if (user.phone && user.phone !== phone) await tellPhoneChanged(userId, "changed");
   } catch (err) {
     if (isPhoneConflict(err)) return { ok: false, error: TAKEN };
     throw err;
@@ -173,6 +185,7 @@ export async function savePhone(userId: string, rawPhone: string): Promise<Phone
     if (await isTaken(assessed.phone, userId)) return { ok: false, error: TAKEN };
     try {
       await prisma.user.update({ where: { id: userId }, data: { phone: assessed.phone, phoneVerifiedAt: null, pendingPhone: null } });
+      if (user.phone) await tellPhoneChanged(userId, "changed");
     } catch (err) {
       if (isPhoneConflict(err)) return { ok: false, error: TAKEN };
       throw err;
@@ -186,6 +199,8 @@ export async function removePhone(userId: string): Promise<PhoneResult> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { phoneRequired: true } });
   if (!user) return { ok: false, error: "Account not found." };
   if (user.phoneRequired) return { ok: false, error: "A phone number is required on your account. You can change it to a different number instead." };
+  const had = await prisma.user.findUnique({ where: { id: userId }, select: { phone: true } });
   await prisma.user.update({ where: { id: userId }, data: { phone: null, phoneVerifiedAt: null, pendingPhone: null } });
+  if (had?.phone) await tellPhoneChanged(userId, "removed");
   return { ok: true };
 }

@@ -61,6 +61,9 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Admins with two-step sign-in on are asked for a code after the right password.
+  const [needsSecondStep, setNeedsSecondStep] = useState(false);
+  const [secondStep, setSecondStep] = useState("");
   const shakeControls = useErrorShake(error);
 
   // "Email me a code instead": enter your email, we send a 6-digit code, type
@@ -129,10 +132,16 @@ export function LoginForm({
     setError(null);
     setSubmitting(true);
 
-    const result = await loginStepOneAction(email, password);
+    const result = await loginStepOneAction(email, password, needsSecondStep ? secondStep : undefined);
 
     if (!result.ok) {
       setError(result.error);
+      setSubmitting(false);
+      return;
+    }
+
+    if ("needsSecondStep" in result) {
+      setNeedsSecondStep(true);
       setSubmitting(false);
       return;
     }
@@ -144,7 +153,7 @@ export function LoginForm({
       return;
     }
 
-    const signInResult = await signIn("credentials", { email, code: result.autoCode, redirect: false });
+    const signInResult = await signIn("credentials", { email, code: result.autoCode, secondStep: needsSecondStep ? secondStep : undefined, redirect: false });
     if (signInResult?.error) {
       setError(signInResult.error === BANNED_ERROR_CODE ? BANNED_MESSAGE : "Something went wrong logging in. Try again.");
       setSubmitting(false);
@@ -325,6 +334,28 @@ export function LoginForm({
             className={cn(error && fieldInvalid)}
           />
         </div>
+
+        {needsSecondStep && (
+          <div>
+            <Label htmlFor={embedded ? "panel-second-step" : "second-step"} className={fieldLabel}>
+              Authenticator code
+            </Label>
+            <Input
+              id={embedded ? "panel-second-step" : "second-step"}
+              name="one-time-code"
+              autoComplete="one-time-code"
+              autoFocus
+              required
+              placeholder="6 digits, or a backup code"
+              value={secondStep}
+              onChange={(e) => {
+                setSecondStep(e.target.value);
+                setError(null);
+              }}
+            />
+            <p className="mt-1 text-small text-slate-500">Open your authenticator app. Lost your phone? Type one of your backup codes instead.</p>
+          </div>
+        )}
 
         {error && (
           <FormError message={error} />

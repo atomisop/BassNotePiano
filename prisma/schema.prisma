@@ -789,6 +789,12 @@ model User {
   // account-settings password form's claim that changing it signs out other
   // devices did nothing enforceable before this existed.
   sessionVersion Int @default(1)
+  // Admin two-step sign-in (TOTP). The secret is stored encrypted (AES-256-GCM, src/lib/totp.ts); students never have one.
+  totpSecretEnc    String?
+  totpEnabledAt    DateTime?
+  totpLastStep     Int? // the last 30 second step accepted, so one code cannot be used twice
+  adminBackupCodes AdminBackupCode[]
+  knownDevices     KnownDevice[]
 
   // Set when the owner bans the account: it can no longer sign in, and every open session is ended. `bannedReason` is a
   // private note for the owner, never shown to the person. Lifting the ban clears both.
@@ -1048,12 +1054,39 @@ model LoginEvent {
 // bcrypt, and writes a row here on every failure. Rows are never deleted
 // on success; the sliding time window (see assertRateLimit) is what lets a
 // legitimate user recover, not a manual reset.
+// Single-use recovery codes for an admin who has lost their authenticator. Only a hash is stored.
+model AdminBackupCode {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, codeHash])
+}
+
+// A browser and device an account has signed in from (a short code of the browser and system, never the address),
+// so a sign-in from a new one can be emailed to the owner of the account.
+model KnownDevice {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceHash  String
+  label       String
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  @@unique([userId, deviceHash])
+}
+
 model FailedLoginAttempt {
   id        String   @id @default(cuid())
   email     String
   createdAt DateTime @default(now())
 
   @@index([email, createdAt])
+  @@index([createdAt])
 }
 
 // Rate-limit ledger for checkFamilyBundleRecipientsAction (billing/lessons).
