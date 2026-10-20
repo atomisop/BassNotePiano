@@ -9,6 +9,8 @@ import { playNotificationSound } from "@/lib/notification-sound";
 import { ConversationSidebar } from "./components/ConversationSidebar";
 import { ChatWindow } from "@/components/messaging/ChatWindow";
 import { EmptyState } from "@/components/messaging/EmptyState";
+import { EmptyState as StartState } from "@/components/ui/EmptyState";
+import { MessageSquare } from "lucide-react";
 import { GroupChatWindow } from "./components/GroupChatWindow";
 import { NewGroupPanel } from "./components/NewGroupPanel";
 import {
@@ -257,9 +259,14 @@ function MessagesInner({
       <WideLayout>
         <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Messages</h1>
-        <p className="mt-4 text-small text-slate-500">
-          No conversations yet.
-        </p>
+        <StartState
+          className="mt-6"
+          icon={<MessageSquare className="h-5 w-5" strokeWidth={1.75} aria-hidden />}
+          title="No messages yet"
+          description="Add a friend to start a conversation."
+          actionLabel="Find friends"
+          actionHref="/friends"
+        />
       </WideLayout>
     );
   }
