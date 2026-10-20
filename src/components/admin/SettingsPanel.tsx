@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Switch as UiSwitch } from "@/components/ui/switch";
 import type { SettingDef, SettingValue } from "@/lib/siteSettingsDefs";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -15,19 +16,7 @@ interface Props {
 }
 
 function Switch({ checked, onChange, label, disabled }: { checked: boolean; onChange: (next: boolean) => void; label: string; disabled?: boolean }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      disabled={disabled}
-      onClick={() => onChange(!checked)}
-      className={`tap relative h-7 w-12 shrink-0 rounded-full transition disabled:opacity-50 ${checked ? "bg-signal shadow-pressed-low" : "bg-neu-base shadow-pressed-low"}`}
-    >
-      <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-slate-100 shadow-raised-low transition-all ${checked ? "left-[1.4rem]" : "left-0.5"}`} />
-    </button>
-  );
+  return <UiSwitch checked={checked} onCheckedChange={onChange} aria-label={label} disabled={disabled} />;
 }
 
 function Row({ def, value, onSave, onReset }: { def: SettingDef; value: SettingValue; onSave: Props["onSave"]; onReset: Props["onReset"] }) {
