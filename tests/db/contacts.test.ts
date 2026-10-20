@@ -103,3 +103,31 @@ describe("holds", () => {
     expect(await prisma.contactSession.count({ where: { contactId: c.id } })).toBe(0);
   });
 });
+
+describe("the combined list of everyone", () => {
+  it("shows accounts with their classes and reserved time, applications without an account, and people added by hand", async () => {
+    const { listDirectory } = await import("@/lib/contacts");
+    const s = await schedule(120);
+    const accountUser = await prisma.user.create({ data: { email: `${tag}-acct@example.com`, name: `${tag} Account`, passwordHash: "x" } });
+    const appliedOnly = await prisma.classRegistration.create({ data: { fullName: `${tag} Applied`, email: `${tag}-applied@example.com`, phone: "+12125550111", instrument: "BASS", skillLevel: "BEGINNER" } });
+    const appliedWithAccount = await prisma.classRegistration.create({ data: { fullName: `${tag} Account`, email: `${tag}-acct@example.com`, phone: "+12125550112", instrument: "GUITAR", skillLevel: "BEGINNER" } });
+    const plan = await prisma.paymentPlan.create({
+      data: { userId: accountUser.id, cadence: "MIN_60_WEEKLY", term: "MONTHLY", installmentAmountCents: 1000, creditsPerInstallment: 4, termMonths: 1, nextDueDate: new Date(), reservedScheduleId: s.id, reservedChunkIndex: 1 },
+    });
+    await prisma.classBooking.create({
+      data: { studentId: accountUser.id, scheduleId: s.id, occurrenceDate: new Date(Date.UTC(2026, 9, 5)), scheduledAt: new Date(Date.UTC(2026, 9, 5, 21)), creditsSpent: 2, status: "COMPLETED", attendance: "PRESENT" },
+    });
+    const added = await contact("Handwritten");
+    const all = (await listDirectory(tag)).filter((r) => r.name.startsWith(tag));
+    const account = all.find((r) => r.kind === "ACCOUNT")!;
+    expect(account).toMatchObject({ classesTaken: 1, href: `/admin/users/${accountUser.id}` });
+    expect(account.reserved).toContain("Monday");
+    expect(all.filter((r) => r.kind === "APPLICATION").map((r) => r.name)).toEqual([`${tag} Applied`]);
+    expect(all.find((r) => r.kind === "ADDED")!.href).toBe(`/admin/contacts/${added.id}`);
+    expect((await listDirectory(tag, "ACCOUNT")).every((r) => r.kind === "ACCOUNT")).toBe(true);
+    await prisma.classBooking.deleteMany({ where: { studentId: accountUser.id } });
+    await prisma.paymentPlan.delete({ where: { id: plan.id } });
+    await prisma.classRegistration.deleteMany({ where: { id: { in: [appliedOnly.id, appliedWithAccount.id] } } });
+    await prisma.user.delete({ where: { id: accountUser.id } });
+  });
+});

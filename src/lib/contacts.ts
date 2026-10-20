@@ -198,3 +198,123 @@ export async function getHoldChoices(): Promise<HoldChoice[]> {
     })),
   );
 }
+
+export type PersonKind = "ACCOUNT" | "APPLICATION" | "ADDED";
+
+export interface DirectoryRow {
+  key: string;
+  kind: PersonKind;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  /** Instrument for contacts and applications; empty for accounts. */
+  detail: string | null;
+  /** Status in the person's own list (an application's review state, a contact's stage). */
+  status: string | null;
+  href: string;
+  classesTaken: number;
+  lastClass: Date | null;
+  nextClass: Date | null;
+  /** The weekly time kept for them: a plan's reserved hour, or the contact's holds. */
+  reserved: string | null;
+}
+
+/**
+ * Everyone the teacher deals with, in one list: accounts (with the classes they took and booked and any reserved
+ * weekly time), people who applied through the form and have no account yet, and people added by hand.
+ */
+export async function listDirectory(query = "", kind: PersonKind | "ALL" = "ALL"): Promise<DirectoryRow[]> {
+  const q = query.trim();
+  const choices = await getHoldChoices();
+  const slotLabel = (scheduleId: string | null, chunk: number | null) =>
+    scheduleId === null || chunk === null ? null : (choices.find((c) => c.scheduleId === scheduleId && c.chunkIndex === chunk)?.label ?? null);
+  const like = q ? { contains: q, mode: "insensitive" as const } : undefined;
+  const rows: DirectoryRow[] = [];
+  const accountEmails = new Set<string>();
+
+  if (kind === "ALL" || kind === "ACCOUNT") {
+    const users = await prisma.user.findMany({
+      where: { role: "STUDENT", ...(like ? { OR: [{ name: like }, { email: like }, { phone: { contains: q } }] } : {}) },
+      select: { id: true, name: true, email: true, phone: true },
+      orderBy: { createdAt: "desc" },
+      take: 300,
+    });
+    const ids = users.map((u) => u.id);
+    const [bookings, plans] = await Promise.all([
+      prisma.classBooking.findMany({ where: { studentId: { in: ids }, status: { not: "CANCELED" } }, select: { studentId: true, scheduledAt: true, attendance: true } }),
+      prisma.paymentPlan.findMany({ where: { userId: { in: ids }, status: "ACTIVE", reservedScheduleId: { not: null } }, select: { userId: true, reservedScheduleId: true, reservedChunkIndex: true } }),
+    ]);
+    const now = Date.now();
+    for (const user of users) {
+      accountEmails.add(user.email.toLowerCase());
+      const mine = bookings.filter((b) => b.studentId === user.id);
+      const taken = mine.filter((b) => b.attendance === "PRESENT");
+      const upcoming = mine.filter((b) => b.scheduledAt.getTime() > now && b.attendance === null).map((b) => b.scheduledAt.getTime());
+      const plan = plans.find((p) => p.userId === user.id);
+      rows.push({
+        key: `account:${user.id}`,
+        kind: "ACCOUNT",
+        name: user.name ?? user.email,
+        email: user.email,
+        phone: user.phone,
+        detail: null,
+        status: null,
+        href: `/admin/users/${user.id}`,
+        classesTaken: taken.length,
+        lastClass: taken.length ? new Date(Math.max(...taken.map((b) => b.scheduledAt.getTime()))) : null,
+        nextClass: upcoming.length ? new Date(Math.min(...upcoming)) : null,
+        reserved: plan ? slotLabel(plan.reservedScheduleId, plan.reservedChunkIndex) : null,
+      });
+    }
+  }
+
+  if (kind === "ALL" || kind === "APPLICATION") {
+    const applications = await prisma.classRegistration.findMany({
+      where: { status: { not: "REJECTED" }, ...(like ? { OR: [{ fullName: like }, { email: like }, { phone: { contains: q } }] } : {}) },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    });
+    const emails = await prisma.user.findMany({ where: { email: { in: applications.map((a) => a.email) } }, select: { email: true } });
+    for (const e of emails) accountEmails.add(e.email.toLowerCase());
+    for (const app of applications) {
+      // Someone who already has an account is listed once, as that account.
+      if (accountEmails.has(app.email.toLowerCase())) continue;
+      rows.push({
+        key: `application:${app.id}`,
+        kind: "APPLICATION",
+        name: app.fullName,
+        email: app.email,
+        phone: app.phone,
+        detail: app.instrument,
+        status: app.status,
+        href: "/admin/students",
+        classesTaken: 0,
+        lastClass: null,
+        nextClass: null,
+        reserved: null,
+      });
+    }
+  }
+
+  if (kind === "ALL" || kind === "ADDED") {
+    const added = await listContacts(q);
+    for (const c of added) {
+      rows.push({
+        key: `added:${c.id}`,
+        kind: "ADDED",
+        name: c.name,
+        email: c.email,
+        phone: c.phone,
+        detail: c.instrument,
+        status: c.status,
+        href: `/admin/contacts/${c.id}`,
+        classesTaken: c.sessionCount,
+        lastClass: c.lastSession,
+        nextClass: null,
+        reserved: c.activeHolds > 0 ? `${c.activeHolds} reserved` : null,
+      });
+    }
+  }
+
+  return rows.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+}
