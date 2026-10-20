@@ -1451,3 +1451,78 @@
   .link-dot { opacity: 0.8; }
   .link-star { opacity: 0.4; }
 }
+
+/* ==========================================================================
+   iPhone look (signed-in app, phone widths)
+   Flat grouped surfaces on a darker ground (hairline edges instead of
+   neumorphic shadows), system font, a translucent tab bar. Desktop and the
+   public pages keep the raised neumorphic style.
+   ========================================================================== */
+.ios-tabbar {
+  background: rgb(var(--neu-base) / 0.78);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(180%) blur(24px);
+}
+.ios-tab {
+  -webkit-tap-highlight-color: transparent;
+  transition: color 160ms var(--ease-ios);
+}
+.ios-tab .ios-tab-icon {
+  transition: scale 420ms var(--ease-spring);
+}
+.ios-tab:active .ios-tab-icon {
+  scale: 0.86;
+  transition-duration: 90ms;
+}
+@media (max-width: 767px) {
+  html[data-mode]:has([data-surface="app"]) {
+    --neu-raised-low: 0 0 0 0.5px var(--neu-edge);
+    --neu-raised-mid: 0 0 0 0.5px var(--neu-edge);
+    --neu-raised-high: 0 0 0 0.5px var(--neu-edge), 0 10px 30px rgb(0 0 0 / 0.4);
+    --neu-pressed-low: inset 0 0 0 0.5px var(--neu-edge);
+    --neu-pressed-mid: inset 0 0 0 0.5px var(--neu-edge);
+    --neu-pressed-high: inset 0 0 0 0.5px var(--neu-edge);
+    --plane-mid-shadow: var(--neu-raised-mid);
+    --plane-front-shadow: var(--neu-raised-high);
+    --radius-card: 1rem;
+    --radius-control: 0.75rem;
+  }
+  /* iOS sets small labels in sentence case, not wide-tracked capitals. */
+  [data-surface="app"] .uppercase {
+    text-transform: none;
+  }
+  [data-surface="app"] [class*="tracking-"] {
+    letter-spacing: normal;
+  }
+  /* Tab-like controls become iOS segmented controls. */
+  [data-surface="app"] .ios-seg {
+    gap: 0;
+    padding: 2px;
+    border-radius: 9px;
+    background: rgb(118 118 128 / 0.24);
+    box-shadow: none;
+  }
+  [data-surface="app"] .ios-seg-item {
+    height: 32px;
+    border-radius: 7px;
+    font-weight: 500;
+  }
+  [data-surface="app"] .ios-seg-item.ios-seg-on {
+    background: rgb(99 99 102 / 0.95);
+    color: #fff;
+    box-shadow: 0 3px 8px rgb(0 0 0 / 0.25), 0 0 0 0.5px rgb(0 0 0 / 0.04);
+  }
+  [data-surface="app"] {
+    background-color: rgb(22 22 21);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ios-tab .ios-tab-icon {
+    transition: none;
+  }
+  .ios-tab:active .ios-tab-icon {
+    scale: 1;
+  }
+}

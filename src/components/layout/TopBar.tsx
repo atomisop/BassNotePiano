@@ -9,6 +9,7 @@ import { LiveClassesTopLink } from "./LiveClassesTopLink";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { AskAiButton } from "./AskAiButton";
 import { CreditsBadge } from "./CreditsBadge";
+import { BrandMark } from "./BrandMark";
 import { SidebarToggle } from "./SidebarToggle";
 
 /**
@@ -72,6 +73,10 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
     <header className="pointer-events-none fixed inset-x-0 top-0 z-[45] flex h-12 items-center justify-between px-3 md:px-4">
       {/* No bar and no logo: only the controls float. The header ignores the mouse so it never blocks the page; its two groups take it back. */}
       <div className="pointer-events-auto flex items-center gap-2">
+        {/* The logo is shown on phones only; from md up the sidebar and toggle take its place. */}
+        <div className="md:hidden">
+          <BrandMark />
+        </div>
         <SidebarToggle />
       </div>
       <div className="pointer-events-auto flex items-center gap-2 md:gap-3">
