@@ -1429,17 +1429,21 @@ export async function rescheduleClassBooking(
   newOccurrenceDateMs: number,
   newChunkIndex: number,
   newCreditsToBook?: number,
+  /** byAdmin: the studio moves the class for the student. The student-facing switch, the cancellation cutoff, the booking-request mode and the weekly limit do not apply. */
+  options: { byAdmin?: boolean } = {},
 ) {
+  const byAdmin = Boolean(options.byAdmin);
   const oldBooking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
   if (oldBooking.studentId !== studentId) throw new ClassBookingError("Not your booking.");
   if (oldBooking.status !== "SCHEDULED") throw new ClassBookingError("This booking isn't active.");
+  if (byAdmin && oldBooking.scheduledAt.getTime() <= Date.now()) throw new ClassBookingError("That class has already started or passed.");
 
-  if (!(await getBoolSetting("cancel.studentCanReschedule"))) {
+  if (!byAdmin && !(await getBoolSetting("cancel.studentCanReschedule"))) {
     throw new ClassBookingError("Classes can't be rescheduled in the app right now. Message us and we'll help.");
   }
   const rescheduleCutoffHours = await getNumberSetting("cancel.cutoffHours");
   const hoursUntil = (oldBooking.scheduledAt.getTime() - Date.now()) / 3_600_000;
-  if (hoursUntil < rescheduleCutoffHours) {
+  if (!byAdmin && hoursUntil < rescheduleCutoffHours) {
     throw new ClassBookingError(
       `Too close to class time to reschedule yourself (inside ${rescheduleCutoffHours} hours). Message us and we'll help.`,
     );
@@ -1461,7 +1465,7 @@ export async function rescheduleClassBooking(
   if (newScheduledAt.getTime() <= Date.now()) {
     throw new ClassBookingError("That class has already started or passed.");
   }
-  await assertBookingAllowed(newScheduledAt);
+  if (!byAdmin) await assertBookingAllowed(newScheduledAt);
   if (
     newScheduleId === oldBooking.scheduleId &&
     newOccurrenceDate.getTime() === oldBooking.occurrenceDate.getTime() &&
@@ -1511,7 +1515,7 @@ export async function rescheduleClassBooking(
           throw new ClassBookingError("You can only book one class per day, message support if you need a second class on the same day.");
         }
 
-        await assertWithinSubscriberWeeklyLimit(tx, studentId, newOccurrenceDate, { bookingId: oldBooking.id });
+        if (!byAdmin) await assertWithinSubscriberWeeklyLimit(tx, studentId, newOccurrenceDate, { bookingId: oldBooking.id });
 
         const [user, pendingOthers] = await Promise.all([
           tx.user.findUniqueOrThrow({ where: { id: studentId }, select: { classCredits: true } }),
@@ -1587,11 +1591,13 @@ export async function rescheduleClassBooking(
   await createNotification({
     userId: studentId,
     type: "LESSON_BOOKING_CANCELED",
-    title: "Class rescheduled",
-    body: `Your class moved to ${formatEtDateTime(newScheduledAt)}. No credits were charged for the change.`,
+    title: byAdmin ? "Your class was moved" : "Class rescheduled",
+    body: byAdmin
+      ? `The studio moved your ${formatEtDateTime(oldBooking.scheduledAt)} class to ${formatEtDateTime(newScheduledAt)}. No credits were charged for the change.`
+      : `Your class moved to ${formatEtDateTime(newScheduledAt)}. No credits were charged for the change.`,
     emailCategory: "classes",
   });
-  await notifyAdminsOfSelfChange(studentId, { from: oldBooking.scheduledAt, to: newScheduledAt });
+  if (!byAdmin) await notifyAdminsOfSelfChange(studentId, { from: oldBooking.scheduledAt, to: newScheduledAt });
 
   return newBooking;
 }

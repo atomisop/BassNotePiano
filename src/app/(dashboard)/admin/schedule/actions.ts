@@ -10,7 +10,7 @@ import { checkBotSetup, createLingeringTestChannel, isGuildMember, TEST_CHANNEL_
 import { discordChannelUrl } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { getNumberSetting } from "@/lib/siteSettings";
-import { adminBookClass, ClassBookingError } from "@/lib/classSchedule";
+import { adminBookClass, rescheduleClassBooking, ClassBookingError } from "@/lib/classSchedule";
 import { markAttendance, undoAttendance, adminCancelClassBooking, getPendingAttendanceBookings, getBookingFeed, type PendingAttendanceRow, type BookingFeedRow } from "@/lib/classScheduleAdmin";
 import { createClassSchedule, updateClassSchedule, setClassScheduleActive, ClassScheduleError, type ClassScheduleInput } from "@/lib/classScheduleManage";
 import { searchStudentsForBooking, type BookableStudent } from "@/lib/admin";
@@ -90,6 +90,19 @@ export async function adminCancelBookingAction(bookingId: string, reason?: strin
   await requireAdmin();
   try {
     await adminCancelClassBooking(bookingId, reason);
+    revalidatePath("/", "layout");
+    return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+  }
+}
+
+/** Moves a student's class to another open time in one step: the old class is freed and the new one booked together, or nothing changes. */
+export async function adminMoveBookingAction(bookingId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number) {
+  await requireAdmin();
+  try {
+    const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId }, select: { studentId: true } });
+    await rescheduleClassBooking(booking.studentId, bookingId, scheduleId, occurrenceDateMs, chunkIndex, undefined, { byAdmin: true });
     revalidatePath("/", "layout");
     return { ok: true as const };
   } catch (err) {

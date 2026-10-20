@@ -16,6 +16,7 @@ import {
   markAttendanceAction,
   undoAttendanceAction,
   adminCancelBookingAction,
+  adminMoveBookingAction,
   searchStudentsForBookingAction,
   adminBookClassAction,
 } from "./actions";
@@ -90,6 +91,10 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
   if (activeView === "ATTENDANCE") {
     const occurrences = await getAdminOccurrences();
+    // Open times a class can be moved to, in the same one screen as the roster.
+    const openSlots = (await getUpcomingOccurrences())
+      .filter((o) => !o.isBooked)
+      .map((o) => ({ scheduleId: o.scheduleId, occurrenceDateMs: o.occurrenceDate.getTime(), chunkIndex: o.chunkIndex, label: o.label, scheduledAt: o.scheduledAt.toISOString() }));
     const byStudent = searchParams.group === "student";
 
     return (
@@ -126,6 +131,8 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
             }))}
             onMarkAttendance={markAttendanceAction}
             onCancelBooking={adminCancelBookingAction}
+            openSlots={openSlots}
+            onMoveBooking={adminMoveBookingAction}
             onUndoAttendance={undoAttendanceAction}
           />
           )}
