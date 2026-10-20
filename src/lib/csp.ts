@@ -65,7 +65,7 @@ export function summarizeCspReport(body: unknown): string | null {
   const pick = (...keys: string[]) => {
     for (const k of keys) {
       const v = (r as Record<string, unknown>)[k];
-      if (typeof v === "string" && v) return v.split("?")[0].slice(0, 200);
+      if (typeof v === "string" && v) return v.split("?")[0].replace(/[\r\n]+/g, " ").slice(0, 200);
     }
     return "-";
   };

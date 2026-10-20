@@ -58,7 +58,11 @@ export async function middleware(req: NextRequest) {
   return next();
 }
 
-// Every page, so each one gets a nonce. Static files and API routes (no HTML) are skipped.
+// Every page, so each one gets a nonce. Static files and API routes (no HTML) are skipped, but the signed-in areas are
+// matched again by prefix so a path ending in a file extension (such as /admin/x.json) still goes through the sign-in check.
 export const config = {
-  matcher: ["/((?!api/|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|css|js|map|woff2?|pdf|txt|xml|json|mp3|mp4)$).*)"],
+  matcher: [
+    "/((?!api/|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|css|js|map|woff2?|pdf|txt|xml|json|mp3|mp4)$).*)",
+    "/(dashboard|scales|admin|billing|account|friends|messages|lessons|practice|profile|mail)/:path*",
+  ],
 };

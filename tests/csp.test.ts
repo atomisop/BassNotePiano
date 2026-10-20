@@ -29,6 +29,7 @@ describe("stricter CSP", () => {
     expect(legacy).not.toContain("token");
     expect(legacy).not.toContain("secret");
     expect(summarizeCspReport([{ body: { effectiveDirective: "script-src", blockedURL: "inline" } }])).toContain("directive=script-src blocked=inline");
+    expect(summarizeCspReport({ "csp-report": { "blocked-uri": "a\nCSP violation: forged" } })).not.toContain("\n");
     expect(summarizeCspReport("nope")).toBeNull();
   });
 });
