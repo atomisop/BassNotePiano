@@ -31,7 +31,9 @@ export async function middleware(req: NextRequest) {
 
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-  if (!token) {
+  // A session that was ended on the server (a demotion, a password change, "sign out other devices") leaves a cookie that
+  // still decodes, but to an empty token with no user id. That is signed out, not an unfinished profile.
+  if (!token?.sub) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
