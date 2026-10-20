@@ -1,6 +1,7 @@
 "use client";
 
 import { CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
+import { PulsatingDots } from "@/components/ui/pulsating-loader";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -305,7 +306,7 @@ export function ScheduleClient({
             </div>
             {changeError && <p className="mt-2 text-small text-red-400">{changeError}</p>}
             {loadingSlots ? (
-              <p className="mt-3 text-small text-slate-500">Loading open times…</p>
+              <PulsatingDots className="mt-3 justify-start" label="Loading open times" />
             ) : !reservableSlots || reservableSlots.length === 0 ? (
               <p className="mt-3 text-small text-slate-500">
                 Nothing open right now.

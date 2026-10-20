@@ -1,6 +1,7 @@
 "use client";
 
 import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
+import { Avatar as UiAvatar } from "@/components/ui/Avatar";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -29,18 +30,7 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 function Avatar({ image, name }: { image: string | null | undefined; name: string }) {
-  return (
-    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-neu-base shadow-raised-low">
-      {image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt="" className="h-full w-full object-cover" />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-body text-[rgb(var(--c-s-50))] font-semibold">
-          {name.charAt(0).toUpperCase()}
-        </div>
-      )}
-    </div>
-  );
+  return <UiAvatar image={image ?? null} label={name} size="lg" className="h-12 w-12" />;
 }
 
 export function StudentQueue({ registrations, onApprove, onReject, emptyMessage = "No registrations yet." }: StudentQueueProps) {

@@ -8,14 +8,15 @@ import { cn } from "@/lib/utils";
  * a 21st.dev loader; the dots use the brand signal color instead of red, and
  * reduced motion is handled app-wide by MotionConfig.
  */
-export default function PulsatingDots({ className }: { className?: string }) {
+export default function PulsatingDots({ className, label = "Loading" }: { className?: string; label?: string }) {
   return (
-    <div className={cn("flex items-center justify-center", className)} aria-hidden>
-      <div className="flex space-x-2">
+    <div role="status" className={cn("flex items-center justify-center", className)}>
+      <span className="sr-only">{label}</span>
+      <div className="flex space-x-1.5" aria-hidden>
         {[0, 0.3, 0.6].map((delay) => (
           <motion.div
             key={delay}
-            className="h-3 w-3 rounded-full bg-signal"
+            className="h-2 w-2 rounded-full bg-signal"
             animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
             transition={{ duration: 1, ease: "easeInOut", repeat: Infinity, delay }}
           />

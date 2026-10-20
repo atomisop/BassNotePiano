@@ -1,6 +1,7 @@
 "use client";
 
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
+import { Avatar as UiAvatar } from "@/components/ui/Avatar";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
@@ -69,18 +70,7 @@ export interface AdminAttendanceRosterProps {
 }
 
 function Avatar({ image, name }: { image: string | null; name: string }) {
-  return (
-    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-neu-base shadow-raised-low">
-      {image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt="" className="h-full w-full object-cover" />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-small text-[rgb(var(--c-s-50))]">
-          {name.charAt(0).toUpperCase()}
-        </div>
-      )}
-    </div>
-  );
+  return <UiAvatar image={image} label={name} size="sm" className="h-9 w-9" />;
 }
 
 export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelBooking, onUndoAttendance }: AdminAttendanceRosterProps) {

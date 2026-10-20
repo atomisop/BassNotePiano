@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { Avatar as UiAvatar } from "@/components/ui/Avatar";
 import Link from "next/link";
 import { Ban } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -37,16 +38,7 @@ function Avatar({ profile }: { profile: PublicProfile }) {
   const isOwner = useIsOwner(profile.id);
   return (
     <div className="relative shrink-0">
-      <div className="h-9 w-9 overflow-hidden rounded-full bg-neu-base shadow-raised-low">
-        {profile.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={profile.image} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-small text-slate-500">
-            {(profile.name ?? profile.username ?? "?").charAt(0).toUpperCase()}
-          </div>
-        )}
-      </div>
+      <UiAvatar image={profile.image} label={profile.name ?? profile.username ?? "?"} size="md" className="h-9 w-9" />
       {isOwner && <OwnerStarBadge />}
     </div>
   );
