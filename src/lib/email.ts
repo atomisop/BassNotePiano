@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { tagAppLinks } from "@/lib/recipientTag";
 import type { VerificationPurpose } from "@prisma/client";
 import { SCALE_GROUPS } from "@/lib/curriculum";
 
@@ -51,7 +52,11 @@ interface SendEmailParams {
  * logs the email to the server console instead of sending, the whole
  * verification/2FA/reset flow is fully testable without real credentials.
  */
-async function sendEmail({ to, subject, html, text, from }: SendEmailParams): Promise<void> {
+async function sendEmail({ to, subject, html: rawHtml, text: rawText, from }: SendEmailParams): Promise<void> {
+  // Every link into the app is tagged with who the email is for, so opening it signed in as someone else is caught
+  // (see recipientTag.ts and the middleware) instead of showing that other account's screen.
+  const html = await tagAppLinks(rawHtml, to);
+  const text = await tagAppLinks(rawText, to);
   const client = getResendClient();
 
   if (!client) {
