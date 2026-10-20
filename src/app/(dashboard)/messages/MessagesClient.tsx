@@ -11,6 +11,8 @@ import { ChatWindow } from "@/components/messaging/ChatWindow";
 import { EmptyState } from "@/components/messaging/EmptyState";
 import { EmptyState as StartState } from "@/components/ui/EmptyState";
 import { MessageSquare } from "lucide-react";
+import type { SupportChat } from "@/lib/messagesSupport";
+import { SupportChatWindow } from "./components/SupportChatWindow";
 import { GroupChatWindow } from "./components/GroupChatWindow";
 import { NewGroupPanel } from "./components/NewGroupPanel";
 import {
@@ -30,6 +32,9 @@ import {
   createGroupAction,
   leaveGroupAction,
   reactToGroupMessageAction,
+  getSupportChatAction,
+  sendSupportChatMessageAction,
+  markSupportChatReadAction,
   type MessageRow,
   type GroupMessageRow,
 } from "./actions";
@@ -44,15 +49,19 @@ const ACTIVE_CONVERSATION_POLL_MS = 2_500;
 function MessagesInner({
   initialConversations,
   initialGroups,
+  initialSupport,
 }: {
   initialConversations: ConversationSummary[];
   initialGroups: GroupSummary[];
+  initialSupport: SupportChat | null;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const activeFriendId = searchParams.get("with");
   const activeGroupId = searchParams.get("group");
+  const supportOpen = searchParams.get("support") === "1" && initialSupport !== null;
+  const [support, setSupport] = useState(initialSupport);
 
   const [conversations, setConversations] = useState(initialConversations);
   const [groups, setGroups] = useState(initialGroups);
@@ -66,7 +75,7 @@ function MessagesInner({
   // sidebar/chat split meaningful.
   const active = conversations.find((c) => c.friendId === activeFriendId) ?? null;
   const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
-  const hasActivePane = Boolean(activeFriendId || activeGroupId);
+  const hasActivePane = Boolean(activeFriendId || activeGroupId || supportOpen);
   // Captured as their own primitives so the two polling effects below can
   // depend on (and reference) only these, never `active`/`activeGroup`
   // themselves, both are recomputed fresh every render, so depending on
@@ -78,10 +87,28 @@ function MessagesInner({
   const listPoll = usePoll(async (signal) => {
     const nextConversations = await getConversationsAction();
     const nextGroups = await getGroupsAction();
+    const nextSupport = support ? await getSupportChatAction() : null;
     if (signal.aborted) return;
     setConversations(nextConversations);
     setGroups(nextGroups);
+    if (nextSupport) setSupport(nextSupport);
   }, CONVERSATION_LIST_POLL_MS);
+
+  // Open Support: refresh quickly and mark the team's replies read while it is on screen.
+  const supportPoll = usePoll(
+    async (signal) => {
+      const next = await getSupportChatAction();
+      if (signal.aborted) return;
+      if (document.visibilityState === "visible" && next.unread > 0) {
+        await markSupportChatReadAction();
+        announceChange("messages");
+        next.unread = 0;
+      }
+      setSupport(next);
+    },
+    ACTIVE_CONVERSATION_POLL_MS,
+    { enabled: supportOpen, resetKey: supportOpen ? "support" : null },
+  );
 
   // null = haven't loaded this conversation yet, so don't chime on first load.
   const previousConversationLastId = useRef<string | null>(null);
@@ -157,7 +184,7 @@ function MessagesInner({
     { enabled: Boolean(activeGroupPollId), resetKey: activeGroupPollId },
   );
 
-  const pollFailed = listPoll.failed || conversationPoll.failed || groupPoll.failed;
+  const pollFailed = listPoll.failed || conversationPoll.failed || groupPoll.failed || supportPoll.failed;
   // Coming back to the tab with a chat open is the moment those messages are
   // actually seen, so run a tick right away instead of waiting out the interval.
   useEffect(() => {
@@ -175,6 +202,7 @@ function MessagesInner({
     listPoll.retry();
     conversationPoll.retry();
     groupPoll.retry();
+    supportPoll.retry();
   }
 
   function handleSelect(friendId: string) {
@@ -183,6 +211,16 @@ function MessagesInner({
 
   function handleSelectGroup(groupId: string) {
     router.push(`/messages?group=${groupId}`);
+  }
+
+  function handleSelectSupport() {
+    router.push("/messages?support=1");
+  }
+
+  async function handleSendSupport(body: string) {
+    const result = await sendSupportChatMessageAction(body);
+    if (result.ok) setSupport(await getSupportChatAction());
+    return result;
   }
 
   function handleMinimize() {
@@ -254,7 +292,7 @@ function MessagesInner({
     router.push("/messages");
   }
 
-  if (conversations.length === 0 && groups.length === 0) {
+  if (conversations.length === 0 && groups.length === 0 && !support) {
     return (
       <WideLayout>
         <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
@@ -304,6 +342,9 @@ function MessagesInner({
             onTogglePin={handleTogglePin}
             onSelectGroup={handleSelectGroup}
             onNewGroup={() => setNewGroupOpen(true)}
+            support={support ? { preview: support.messages.at(-1)?.body ?? null, unread: support.unread } : null}
+            supportActive={supportOpen}
+            onSelectSupport={handleSelectSupport}
           />
         }
         detail={
@@ -331,6 +372,8 @@ function MessagesInner({
               typingNames={groupTypers}
               onTyping={(groupId, typing) => void setGroupTypingAction(groupId, typing)}
             />
+          ) : supportOpen && support ? (
+            <SupportChatWindow chat={support} onSend={handleSendSupport} onMinimize={handleMinimize} />
           ) : (
             <EmptyState />
           )
@@ -358,13 +401,15 @@ function MessagesInner({
 export function MessagesClient({
   initialConversations,
   initialGroups,
+  initialSupport,
 }: {
   initialConversations: ConversationSummary[];
   initialGroups: GroupSummary[];
+  initialSupport: SupportChat | null;
 }) {
   return (
     <Suspense fallback={null}>
-      <MessagesInner initialConversations={initialConversations} initialGroups={initialGroups} />
+      <MessagesInner initialConversations={initialConversations} initialGroups={initialGroups} initialSupport={initialSupport} />
     </Suspense>
   );
 }
