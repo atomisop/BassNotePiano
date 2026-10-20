@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LifeBuoy } from "lucide-react";
 import type { ConversationSummary } from "@/lib/messages";
 import type { GroupSummary } from "@/lib/groupMessages";
 import { PinnedGrid } from "@/components/messaging/PinnedGrid";
@@ -17,6 +18,9 @@ export function ConversationSidebar({
   onTogglePin,
   onSelectGroup,
   onNewGroup,
+  support,
+  supportActive,
+  onSelectSupport,
 }: {
   conversations: ConversationSummary[];
   groups: GroupSummary[];
@@ -26,6 +30,10 @@ export function ConversationSidebar({
   onTogglePin: (friendId: string) => void;
   onSelectGroup: (groupId: string) => void;
   onNewGroup: () => void;
+  /** The person's Support conversation, pinned above the rest. Null for the admin. */
+  support: { preview: string | null; unread: number } | null;
+  supportActive: boolean;
+  onSelectSupport: () => void;
 }) {
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
@@ -51,6 +59,27 @@ export function ConversationSidebar({
           className="mt-3 h-11 w-full rounded-full border border-(--neu-edge) bg-neu-base px-4 text-body text-slate-100 shadow-pressed-low outline-none transition placeholder:text-slate-500 focus:border-signal"
         />
       </div>
+      {support && (!q || "support".includes(q)) && (
+        <button
+          type="button"
+          onClick={onSelectSupport}
+          aria-current={supportActive ? "true" : undefined}
+          className={`tap mx-3 mb-2 flex w-[calc(100%-1.5rem)] items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition ${
+            supportActive ? "bg-neu-base shadow-pressed-low" : "hover:bg-neu-base/60"
+          }`}
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neu-base text-signal shadow-raised-low">
+            <LifeBuoy className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-body font-semibold text-slate-50">Support</span>
+            <span className="block truncate text-small text-slate-500">{support.preview ?? "Message the Bass Note Piano team"}</span>
+          </span>
+          {support.unread > 0 && (
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-signal px-1.5 text-[11px] font-semibold text-slate-950">{support.unread}</span>
+          )}
+        </button>
+      )}
       <PinnedGrid pinned={pinned} activeFriendId={activeFriendId} onSelect={onSelect} onTogglePin={onTogglePin} />
       <ConversationList conversations={rest} activeFriendId={activeFriendId} onSelect={onSelect} onTogglePin={onTogglePin} />
       {nothingFound && <p className="px-4 py-6 text-center text-small text-slate-500">Nothing matches that search.</p>}
