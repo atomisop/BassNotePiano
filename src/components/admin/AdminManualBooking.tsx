@@ -5,7 +5,9 @@ import { creditsToClasses } from "@/lib/classScheduleLabels";
 import { useEffect, useRef, useState } from "react";
 import { formatDateTime } from "@/lib/classScheduleLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/Dialog";
+import { holdAppliesTo, holdSlotKey } from "@/lib/slotHolds";
 
 interface BookableStudent {
   id: string;
@@ -24,12 +26,23 @@ export interface OpenOccurrence {
   creditCost: number;
 }
 
+/** A weekly time being kept for a contact (see Contacts). Only a reminder: it never blocks a booking. */
+export interface SlotHoldInfo {
+  contactId: string;
+  contactName: string;
+  scheduleId: string;
+  chunkIndex: number;
+  untilMs: number | null;
+}
+
 function occurrenceKey(o: OpenOccurrence) {
   return `${o.scheduleId}:${o.occurrenceDateMs}:${o.chunkIndex}`;
 }
 
 export interface AdminManualBookingProps {
   openOccurrences: OpenOccurrence[];
+  /** Weekly times reserved for contacts; booking over one asks first. */
+  holds?: SlotHoldInfo[];
   onSearchStudents: (query: string) => Promise<BookableStudent[]>;
   onBook: (
     studentId: string,
@@ -52,7 +65,7 @@ export interface AdminManualBookingProps {
  * shows, just without the self-service restriction (see adminBookClass in
  * classSchedule.ts).
  */
-export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }: AdminManualBookingProps) {
+export function AdminManualBooking({ openOccurrences, holds = [], onSearchStudents, onBook }: AdminManualBookingProps) {
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<BookableStudent[]>([]);
@@ -63,6 +76,19 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
   const [booking, setBooking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [askingHold, setAskingHold] = useState(false);
+
+  /** The contact, if any, this exact weekly hour is reserved for on that date. */
+  function heldFor(slot: OpenOccurrence): SlotHoldInfo | null {
+    const key = holdSlotKey(slot.scheduleId, slot.chunkIndex);
+    return (
+      holds.find(
+        (hold) =>
+          holdSlotKey(hold.scheduleId, hold.chunkIndex) === key &&
+          holdAppliesTo({ until: hold.untilMs === null ? null : new Date(hold.untilMs), releasedAt: null }, new Date(slot.occurrenceDateMs)),
+      ) ?? null
+    );
+  }
 
   // Live, as-you-type, debounced, no more "remember their exact name or
   // email and hit search." An empty query still runs (see
@@ -109,8 +135,16 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
     setError(null);
   }
 
+  /** The Book button: a reserved time asks first (the popup below), anything else books straight away. */
+  function requestBook() {
+    if (!student || !selectedSlot) return;
+    if (heldFor(selectedSlot)) setAskingHold(true);
+    else void handleBook();
+  }
+
   async function handleBook() {
     if (!student || !selectedSlot) return;
+    setAskingHold(false);
     setBooking(true);
     setError(null);
     const result = await onBook(student.id, selectedSlot.scheduleId, selectedSlot.occurrenceDateMs, selectedSlot.chunkIndex, creditsToBook);
@@ -217,6 +251,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
                   >
                     <span className={active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}>{formatDateTime(slot.scheduledAt)}</span>
                     <span className="text-small text-slate-500">
+                      {heldFor(slot) ? <span className="mr-2 font-medium text-signal">Reserved for {heldFor(slot)!.contactName}</span> : null}
                       {slot.label ?? "Class"} · {CLASS_MINUTES} min
                     </span>
                   </button>
@@ -233,7 +268,7 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
 
           <button
             type="button"
-            onClick={handleBook}
+            onClick={requestBook}
             disabled={!selectedSlot || booking}
             className={buttonVariants({ variant: "primary", className: "mt-4 flex w-full sm:w-auto sm:px-6" })}
           >
@@ -242,6 +277,27 @@ export function AdminManualBooking({ openOccurrences, onSearchStudents, onBook }
           </button>
         </div>
       )}
+
+      <Dialog
+        open={askingHold}
+        onOpenChange={setAskingHold}
+        title="This time is reserved"
+        description={
+          selectedSlot && heldFor(selectedSlot)
+            ? `This slot is reserved for ${heldFor(selectedSlot)!.contactName}${heldFor(selectedSlot)!.untilMs !== null ? ` until ${new Date(heldFor(selectedSlot)!.untilMs!).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}` : ""}. Book ${student?.name ?? student?.email ?? "this student"} anyway?`
+            : undefined
+        }
+        footer={
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setAskingHold(false)}>
+              Pick another time
+            </Button>
+            <Button type="button" onClick={() => void handleBook()}>
+              Book anyway
+            </Button>
+          </div>
+        }
+      />
     </div>
   );
 }

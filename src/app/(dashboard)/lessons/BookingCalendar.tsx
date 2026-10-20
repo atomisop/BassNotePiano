@@ -54,15 +54,16 @@ export function BookingCalendar({
   // multiple schedules landing on the same day just add to the day's own
   // count rather than producing duplicate dots.
   const dayInfo = useMemo(() => {
-    const map = new Map<string, { count: number; hasOpenSlot: boolean; ms: number }>();
+    const map = new Map<string, { count: number; open: number; hasOpenSlot: boolean; ms: number }>();
     for (const o of occurrences) {
       const key = dayKey(o.occurrenceDateMs);
       const existing = map.get(key);
       if (existing) {
         existing.count += 1;
+        existing.open += o.isBooked ? 0 : 1;
         existing.hasOpenSlot = existing.hasOpenSlot || !o.isBooked;
       } else {
-        map.set(key, { count: 1, hasOpenSlot: !o.isBooked, ms: o.occurrenceDateMs });
+        map.set(key, { count: 1, open: o.isBooked ? 0 : 1, hasOpenSlot: !o.isBooked, ms: o.occurrenceDateMs });
       }
     }
     return map;
@@ -110,8 +111,28 @@ export function BookingCalendar({
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
 
+  // The one thing a customer needs first: is anything open, and when.
+  const openDays = Array.from(dayInfo.values()).filter((info) => info.hasOpenSlot && info.ms >= todayMidnight).sort((a, b) => a.ms - b.ms);
+  const openTotal = openDays.reduce((sum, info) => sum + info.open, 0);
+  const nextOpen = openDays[0] ?? null;
+
   return (
     <div className="glass-surface p-5">
+      <div className="mb-4 flex items-center justify-between gap-3 rounded-control bg-[rgb(var(--signal)/0.1)] px-3.5 py-2.5">
+        {nextOpen ? (
+          <>
+            <p className="text-small text-slate-100">
+              <span className="font-semibold text-signal">{openTotal} open {openTotal === 1 ? "time" : "times"}</span>
+              <span className="text-slate-300"> · next {new Date(nextOpen.ms).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })}</span>
+            </p>
+            <button type="button" onClick={() => onSelectDate(dayKey(nextOpen.ms))} className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}>
+              See times
+            </button>
+          </>
+        ) : (
+          <p className="text-small font-medium text-slate-300">Fully booked for now. Check back soon.</p>
+        )}
+      </div>
       <div className="flex items-center justify-between">
         <p className="text-body text-slate-100 font-semibold">{monthLabel}</p>
         <div className="flex items-center gap-1">
@@ -154,7 +175,8 @@ export function BookingCalendar({
           const isPast = ms < todayMidnight;
           const isToday = ms === todayMidnight;
           const isSelected = selectedDateKey === key;
-          const clickable = !!info && !isPast;
+          const clickable = !!info && !isPast && info.hasOpenSlot;
+          const isFull = !!info && !isPast && !info.hasOpenSlot;
 
           return (
             <button
@@ -162,25 +184,27 @@ export function BookingCalendar({
               type="button"
               disabled={!clickable}
               onClick={() => onSelectDate(isSelected ? null : key)}
-              title={info ? `${info.count} class${info.count === 1 ? "" : "es"}` : undefined}
-              className={`relative mx-auto flex h-8 w-8 pointer-coarse:h-11 pointer-coarse:w-full flex-col items-center justify-center rounded-full text-small transition ${
+              aria-label={info && !isPast ? `${day}, ${info.hasOpenSlot ? `${info.open} open` : "full"}` : undefined}
+              title={info && !isPast ? (info.hasOpenSlot ? `${info.open} open` : "Full") : undefined}
+              className={`relative mx-auto flex h-10 w-10 pointer-coarse:h-12 pointer-coarse:w-full flex-col items-center justify-center rounded-full text-small transition ${
                 isSelected
-                  ? "bg-amber-400 font-semibold text-slate-950"
+                  ? "bg-signal font-semibold text-slate-950"
                   : clickable
-                    ? info?.hasOpenSlot
-                      ? "font-medium text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.15)]"
-                      : "font-medium text-slate-500 hover:bg-ink/5"
-                    : isToday
-                      ? "text-slate-300 ring-1 ring-inset ring-ink/15"
-                      : "text-slate-700"
+                    ? "bg-[rgb(var(--signal)/0.14)] font-semibold text-slate-50 ring-1 ring-inset ring-[rgb(var(--signal)/0.45)] hover:bg-[rgb(var(--signal)/0.24)]"
+                    : isFull
+                      ? "text-slate-600 line-through decoration-slate-600/60"
+                      : isToday
+                        ? "text-slate-300 ring-1 ring-inset ring-ink/15"
+                        : "text-slate-700"
               }`}
             >
               {day}
-              {info && !isSelected && (
-                <span
-                  className={`absolute bottom-1 h-1 w-1 rounded-full ${info.hasOpenSlot ? "bg-[rgb(var(--c-s-50))]" : "bg-slate-600"}`}
-                  aria-hidden
-                />
+              {clickable && (
+                <span className="absolute bottom-1 flex gap-0.5" aria-hidden>
+                  {Array.from({ length: Math.min(info!.open, 3) }).map((_, n) => (
+                    <span key={n} className={`h-1 w-1 rounded-full ${isSelected ? "bg-slate-950" : "bg-signal"}`} />
+                  ))}
+                </span>
               )}
             </button>
           );
@@ -188,11 +212,15 @@ export function BookingCalendar({
       </div>
 
       <div className="mt-4 flex items-center justify-between border-t border-ink/10 pt-3">
-        <p className="flex items-center gap-1.5 text-small text-slate-600">
-          <span className="h-1.5 w-1.5 rounded-full bg-[rgb(var(--c-s-50))]" aria-hidden />
-          Available
-          <span className="ml-2 h-1.5 w-1.5 rounded-full bg-slate-600" aria-hidden />
-          Booked
+        <p className="flex items-center gap-4 text-small text-slate-400">
+          <span className="flex items-center gap-1.5">
+            <span className="h-3.5 w-3.5 rounded-full bg-[rgb(var(--signal)/0.14)] ring-1 ring-inset ring-[rgb(var(--signal)/0.45)]" aria-hidden />
+            Open
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="text-slate-600 line-through">12</span>
+            Full
+          </span>
         </p>
         {selectedDateKey && (
           <button

@@ -1565,6 +1565,7 @@ model ClassSchedule {
   bookings             ClassBooking[]
   reservedByPlans      PaymentPlan[]
   extraSessionPayments ZellePayment[]
+  slotHolds            SlotHold[]
 
   @@index([dayOfWeek, active])
 }
@@ -1841,4 +1842,73 @@ model StudentNote {
   updatedAt         DateTime @updatedAt
 
   @@index([studentId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Contacts: people the teacher keeps track of who do not have an account,
+// with an optional soft hold on a weekly time. Info only: a hold never blocks
+// a booking, it makes the admin booking screen ask before booking over it.
+// ---------------------------------------------------------------------------
+
+enum ContactStatus {
+  INTERESTED
+  TRIAL
+  ACTIVE
+  PAUSED
+}
+
+model Contact {
+  id         String             @id @default(cuid())
+  name       String
+  phone      String?
+  email      String?
+  instrument PrimaryInstrument?
+  skillLevel SkillLevel?
+  // Where they came from ("friend of a student", "walked in").
+  source     String?
+  notes      String?            @db.Text
+  status     ContactStatus      @default(INTERESTED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  holds    SlotHold[]
+  sessions ContactSession[]
+
+  @@index([status, createdAt])
+  @@index([name])
+}
+
+// A note on one weekly time (a window and which hour of it) saying it is
+// being kept for this contact. `until` is the last date it applies to; null
+// means until released. Released holds are kept as history.
+model SlotHold {
+  id         String        @id @default(cuid())
+  contactId  String
+  contact    Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  scheduleId String
+  schedule   ClassSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  chunkIndex Int
+  until      DateTime?     @db.Date
+  note       String?
+
+  releasedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([scheduleId, chunkIndex])
+  @@index([contactId])
+}
+
+// One day a contact took a class (or was booked and did not come).
+model ContactSession {
+  id        String   @id @default(cuid())
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  attended  Boolean  @default(true)
+  note      String?
+
+  createdAt DateTime @default(now())
+
+  @@index([contactId, date])
 }
