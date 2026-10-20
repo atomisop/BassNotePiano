@@ -18,7 +18,7 @@ afterAll(async () => {
   await prisma.assistantEscalation.deleteMany({ where: { userId: { in: [a.id, b.id] } } });
   await prisma.notification.deleteMany({ where: { userId: { in: [admin.id, a.id, b.id] } } });
   await prisma.appSetting.deleteMany({ where: { key: { in: [`support-read:${a.id}`, `support-read:${b.id}`] } } });
-  await prisma.rateLimit?.deleteMany?.({ where: { key: { contains: a.id } } }).catch(() => undefined);
+  await prisma.rateLimitEvent.deleteMany({ where: { OR: [{ key: { contains: a.id } }, { key: { contains: b.id } }] } });
   await prisma.user.deleteMany({ where: { id: { in: [admin.id, a.id, b.id] } } });
 });
 
