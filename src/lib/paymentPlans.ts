@@ -9,6 +9,7 @@ import { namesMatch } from "@/lib/personNames";
 import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPlan, isPlanTermOffered, isPlanCadenceOffered, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import {
   chunksForSchedule,
+  classesInWindow,
   livePaymentPlanConditions,
   nextOccurrenceDates,
   computeScheduledAt,
@@ -16,6 +17,7 @@ import {
   getEffectiveClassCredits,
   OCCURRENCES_PER_SLOT, CANCELLATION_CUTOFF_HOURS } from "@/lib/classSchedule";
 import { createNotification } from "@/lib/notifications";
+import { grantCredits } from "@/lib/creditLedger";
 
 export class PaymentPlanError extends Error {}
 
@@ -840,12 +842,68 @@ export async function describeReservedSlot(planId: string): Promise<string | nul
   return `${DAY_NAMES[plan.reservedSchedule.dayOfWeek]} ${formatClock(addMinutesToHHmm(plan.reservedSchedule.startTime, chunk.offsetMin))}`;
 }
 
+/** The paid month this plan is in: from one billing date to the next. */
+function paidMonthOf(plan: { status: PaymentPlanStatus; nextDueDate: Date }): { monthStart: Date; paidUntil: Date } {
+  const paidUntil = plan.status === "COMPLETED" ? addCalendarMonthsClamped(plan.nextDueDate, 1) : plan.nextDueDate;
+  return { monthStart: addCalendarMonthsClamped(paidUntil, -1), paidUntil };
+}
+
 /**
- * How many more weekly classes this plan may book inside the paid month. A
- * month pays for creditsPerInstallment / creditsPerClass classes (4 for the
- * 45-minute plan) no matter how many of that weekday fall inside it, so a
- * month with five Thursdays still gets four. Classes the student skipped or
- * canceled do not count against it.
+ * How many weekly classes the paid month holds. A month is paid for four classes (creditsPerInstallment / creditsPerClass),
+ * but the billing cycle runs from one payment date to the next, so it can hold FIVE of the student's weekday. The
+ * subscriber gets every one of their weekdays inside the cycle they paid for: this counts them (never fewer than the four
+ * they paid for). A plan with no reserved time keeps the plain four.
+ */
+export async function classesInPaidMonth(plan: {
+  cadence: PaymentPlanCadence;
+  status: PaymentPlanStatus;
+  nextDueDate: Date;
+  creditsPerInstallment: number;
+  reservedScheduleId?: string | null;
+  reservedChunkIndex?: number | null;
+}): Promise<{ allowed: number; base: number }> {
+  const base = Math.floor(plan.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
+  if (!plan.reservedScheduleId || plan.reservedChunkIndex === null || plan.reservedChunkIndex === undefined) return { allowed: base, base };
+  const schedule = await prisma.classSchedule.findUnique({ where: { id: plan.reservedScheduleId } });
+  const chunk = schedule ? chunksForSchedule(schedule)[plan.reservedChunkIndex] : undefined;
+  if (!schedule || !chunk) return { allowed: base, base };
+  const { monthStart, paidUntil } = paidMonthOf(plan);
+  return { allowed: Math.max(base, classesInWindow(schedule, chunk, monthStart, paidUntil)), base };
+}
+
+/**
+ * The credit for a fifth class in a paid month. The installment grants four classes' worth; when the cycle holds a fifth of
+ * the student's weekday, this adds one class's credit, once per cycle (a marker row makes it safe to call again), good until
+ * the next billing date, so the fifth class books and is charged like any other. Returns true when the credit is there.
+ */
+export async function ensureFifthClassCredit(plan: { id: string; userId: string; status: PaymentPlanStatus; nextDueDate: Date }, creditsPerClass: number): Promise<void> {
+  const { monthStart, paidUntil } = paidMonthOf(plan);
+  const key = `plan-fifth-class:${plan.id}:${monthStart.toISOString().slice(0, 10)}`;
+  try {
+    await prisma.appSetting.create({ data: { key, value: "1" } });
+  } catch {
+    return; // already granted for this paid month
+  }
+  await grantCredits(plan.userId, creditsPerClass, { source: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: plan.id, expiresAt: paidUntil });
+}
+
+/** Before a booking: when this would be the fifth class of the paid month, make sure its credit is there. */
+export async function topUpIfFifth(
+  plan: { id: string; userId: string; cadence: PaymentPlanCadence; status: PaymentPlanStatus; nextDueDate: Date; creditsPerInstallment: number; reservedScheduleId?: string | null; reservedChunkIndex?: number | null },
+  creditsPerClass: number,
+): Promise<void> {
+  const { monthStart, paidUntil } = paidMonthOf(plan);
+  const { allowed, base } = await classesInPaidMonth(plan);
+  if (allowed <= base) return;
+  const used = await prisma.classBooking.count({
+    where: { reservedByPlanId: plan.id, status: { in: ["SCHEDULED", "COMPLETED"] }, scheduledAt: { gte: monthStart, lt: paidUntil } },
+  });
+  if (used >= base) await ensureFifthClassCredit(plan, creditsPerClass);
+}
+
+/**
+ * How many more weekly classes this plan may book inside the paid month: every one of the student's weekdays in the cycle
+ * they paid for (four or five, see classesInPaidMonth). Classes the student skipped or canceled do not count against it.
  */
 export async function classesLeftInPaidMonth(plan: {
   id: string;
@@ -853,10 +911,11 @@ export async function classesLeftInPaidMonth(plan: {
   status: PaymentPlanStatus;
   nextDueDate: Date;
   creditsPerInstallment: number;
+  reservedScheduleId?: string | null;
+  reservedChunkIndex?: number | null;
 }): Promise<number> {
-  const paidUntil = plan.status === "COMPLETED" ? addCalendarMonthsClamped(plan.nextDueDate, 1) : plan.nextDueDate;
-  const monthStart = addCalendarMonthsClamped(paidUntil, -1);
-  const allowed = Math.floor(plan.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
+  const { monthStart, paidUntil } = paidMonthOf(plan);
+  const { allowed } = await classesInPaidMonth(plan);
   const used = await prisma.classBooking.count({
     where: {
       reservedByPlanId: plan.id,
@@ -887,8 +946,9 @@ export async function bookReservedWindowForPlan(planId: string): Promise<void> {
     for (const occurrenceDate of nextOccurrenceDates(plan.reservedSchedule.dayOfWeek, OCCURRENCES_PER_SLOT)) {
       const scheduledAt = computeScheduledAt(plan.reservedSchedule, occurrenceDate, chunk);
       if (scheduledAt.getTime() <= Date.now() || scheduledAt.getTime() >= paidUntil.getTime()) continue;
-      if ((await getEffectiveClassCredits(plan.userId)) < creditsPerClass) continue;
       if ((await classesLeftInPaidMonth(plan)) <= 0) break;
+      await topUpIfFifth(plan, creditsPerClass);
+      if ((await getEffectiveClassCredits(plan.userId)) < creditsPerClass) continue;
       await createReservedBookingIfAbsent({
         studentId: plan.userId,
         scheduleId: plan.reservedSchedule.id,
@@ -934,7 +994,7 @@ export async function bookMissingReservedWindows(): Promise<void> {
     for (const plan of live) {
       const paidUntil = plan.status === "COMPLETED" ? addCalendarMonthsClamped(plan.nextDueDate, 1) : plan.nextDueDate;
       const monthStart = addCalendarMonthsClamped(paidUntil, -1);
-      const allowed = Math.floor(plan.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
+      const { allowed } = await classesInPaidMonth(plan);
       const inMonth = await prisma.classBooking.findMany({
         where: { reservedByPlanId: plan.id, status: { in: ["SCHEDULED", "COMPLETED"] }, scheduledAt: { gte: monthStart, lt: paidUntil } },
         orderBy: { scheduledAt: "asc" },

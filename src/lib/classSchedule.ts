@@ -228,6 +228,24 @@ export function computeScheduledAt(schedule: { startTime: string }, occurrenceDa
   );
 }
 
+/**
+ * How many classes a weekly slot holds between two moments: every date with this weekday whose class starts at or after
+ * `from` and before `until`. A paid month of 28 to 31 days holds four or five of any weekday, depending on where it starts.
+ * The dates are UTC-midnight stand-ins for ET calendar days, like everywhere else in this file.
+ */
+export function classesInWindow(schedule: { dayOfWeek: number; startTime: string }, chunk: ScheduleChunk, from: Date, until: Date): number {
+  let count = 0;
+  const first = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate()) - 86_400_000;
+  const last = until.getTime() + 86_400_000;
+  for (let t = first; t <= last; t += 86_400_000) {
+    const date = new Date(t);
+    if (date.getUTCDay() !== schedule.dayOfWeek) continue;
+    const at = computeScheduledAt(schedule, date, chunk).getTime();
+    if (at >= from.getTime() && at < until.getTime()) count++;
+  }
+  return count;
+}
+
 /** Every active weekly slot's next OCCURRENCES_PER_SLOT bookable chunks, with live availability. */
 export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
   const schedules = await prisma.classSchedule.findMany({ where: { active: true }, orderBy: { dayOfWeek: "asc" } });
