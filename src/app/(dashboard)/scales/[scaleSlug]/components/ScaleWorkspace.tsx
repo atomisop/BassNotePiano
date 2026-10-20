@@ -382,7 +382,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
   const center = (
     <div className="min-w-0">
       <div className="flex items-center justify-between gap-3">
-        <BackLink href="/dashboard" className="inline-flex min-h-11 items-center gap-1.5 text-small text-slate-400 transition-colors hover:text-slate-50">
+        <BackLink href="/dashboard" className="inline-flex min-h-9 items-center gap-1.5 text-small text-slate-400 transition-colors hover:text-slate-50">
           <ArrowLeft className="h-4 w-4" aria-hidden />
           Back
         </BackLink>
@@ -624,7 +624,7 @@ function OutlineItem({
       aria-current={active ? "step" : undefined}
       title={disabled ? lockedReason : undefined}
       className={cn(
-        "flex min-h-11 w-full items-start gap-3 rounded-control px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed",
+        "flex min-h-9 w-full items-start gap-3 rounded-control px-2.5 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed",
         active ? "bg-[rgb(var(--signal)/0.1)] shadow-[inset_3px_0_0_rgb(var(--signal))]" : "hover:bg-[rgb(var(--c-s-50)/0.05)] disabled:hover:bg-transparent",
       )}
     >

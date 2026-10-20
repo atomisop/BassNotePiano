@@ -82,7 +82,7 @@ export function StudentNotesPanel() {
             ref={panelRef}
             role="dialog"
             aria-label="Student notes"
-            className="fixed right-3 top-16 z-[60] max-h-[80vh] w-[min(28rem,calc(100vw-1.5rem))] overflow-y-auto rounded-2xl bg-neu-base p-3 shadow-raised-high sm:right-8"
+            className="fixed right-3 top-12 z-[60] max-h-[80vh] w-[min(28rem,calc(100vw-1.5rem))] overflow-y-auto rounded-2xl bg-neu-base p-3 shadow-raised-high sm:right-8"
           >
             {selected ? (
               <>

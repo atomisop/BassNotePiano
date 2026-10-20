@@ -9,7 +9,7 @@ export const TAB_TRACK =
 
 export function tabItem(active: boolean, opts?: { thumb?: boolean }): string {
   return cn(
-    "tap relative inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-small font-semibold transition-colors duration-(--dur-fast) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4",
+    "tap press relative inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-small font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4",
     active ? cn("text-signal", !opts?.thumb && "bg-neu-base shadow-raised-low") : "text-slate-400 hover:text-slate-100",
   );
 }

@@ -44,9 +44,9 @@
   --c-s-500: 153 153 153;   /* mono labels          6.5:1 */
   --c-s-600: 120 120 120;   /* disabled             4.4:1, non-text, always */
   --c-s-700: 66 66 66;      /* hairlines, rules */
-  --c-s-800: 51 51 51;      /* raised surface */
-  --c-s-900: 41 41 41;      /* recessed surface */
-  --c-s-950: 43 43 45;      /* the ground = the neumorphic base */
+  --c-s-800: 58 58 55;      /* raised surface */
+  --c-s-900: 48 48 46;      /* recessed surface */
+  --c-s-950: 38 38 36;      /* the ground = the neumorphic base, Claude dark grey #262624 */
 
   /* ---- Accent ramp: signal green, back again -----------------------------
      Same values as `[data-mode="dark"]` in themes.css, see that file's

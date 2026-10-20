@@ -235,7 +235,7 @@ export function AdminAttendanceQuickPanel() {
         createPortal(
           <div
             ref={panelRef}
-            className="fixed right-3 top-16 z-[60] max-h-[75vh] w-[min(26rem,calc(100vw-1.5rem))] overflow-y-auto rounded-2xl bg-neu-base p-3 shadow-raised-high sm:right-8"
+            className="fixed right-3 top-12 z-[60] max-h-[75vh] w-[min(26rem,calc(100vw-1.5rem))] overflow-y-auto rounded-2xl bg-neu-base p-3 shadow-raised-high sm:right-8"
             role="dialog"
             aria-label="Class bookings"
           >

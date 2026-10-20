@@ -7,9 +7,9 @@ import { ProfileMenu } from "./ProfileMenu";
 import { AdminTopLink } from "./AdminTopLink";
 import { LiveClassesTopLink } from "./LiveClassesTopLink";
 import { isOwnerEmail } from "@/lib/adminNotifications";
-import { BrandMark } from "./BrandMark";
 import { AskAiButton } from "./AskAiButton";
 import { CreditsBadge } from "./CreditsBadge";
+import { SidebarToggle } from "./SidebarToggle";
 
 /**
  * The user's real photo, fetched here rather than read off the session,
@@ -69,9 +69,12 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
   // `(dashboard)/layout.tsx` adds `pt-16` to this header's old flex parent
   // to reserve the 64px this now paints over instead of occupying in flow.
   return (
-    <header className="fixed inset-x-0 top-0 z-[45] flex h-16 items-center justify-between bg-neu-base px-4 shadow-raised-mid md:px-8">
-      <BrandMark />
-      <div className="flex items-center gap-2 md:gap-3">
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-[45] flex h-12 items-center justify-between px-3 md:px-4">
+      {/* No bar and no logo: only the controls float. The header ignores the mouse so it never blocks the page; its two groups take it back. */}
+      <div className="pointer-events-auto flex items-center gap-2">
+        <SidebarToggle />
+      </div>
+      <div className="pointer-events-auto flex items-center gap-2 md:gap-3">
         {/* Leftmost of the right-hand cluster: Ask AI, admin, attendance, bell, profile. */}
         {/* Phones (under 768px) show only the credit badge, Ask AI and the profile picture: every other button is in the profile
             menu there (ProfileMenu appExtras). Tablets and computers show them all. The hidden buttons stay mounted

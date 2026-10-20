@@ -60,10 +60,15 @@ export interface ForwardCheck {
  * domain, with a forged From, is refused). The private address and Mailgun's request signature stand in front of this.
  */
 export function checkForwardedBankMail(input: { fromEmail: string; dkimResult: string | undefined; rawHeaders: string | null | undefined }): ForwardCheck {
-  if (input.dkimResult?.trim().toLowerCase() !== "pass") return { ok: false, reason: "its signature check did not pass" };
+  const signed = dkimSignatureDomains(input.rawHeaders);
+  if (input.dkimResult?.trim().toLowerCase() !== "pass") {
+    // Say what Mailgun reported and which signatures the message carried, so a failure can be traced without a lookup.
+    const reported = input.dkimResult?.trim() ? `Mailgun reported "${input.dkimResult.trim().slice(0, 40)}"` : "Mailgun reported no result";
+    const carried = signed.length > 0 ? `signed by ${signed.slice(0, 5).join(", ")}` : "no DKIM signature on the message";
+    return { ok: false, reason: `its signature check did not pass (${reported}; ${carried})` };
+  }
   const fromDomain = input.fromEmail.split("@")[1]?.toLowerCase();
   if (!fromDomain) return { ok: false, reason: "it has no sender address" };
-  const signed = dkimSignatureDomains(input.rawHeaders);
   if (!signed.some((d) => domainAligned(d, fromDomain))) return { ok: false, reason: `no signature belongs to ${fromDomain}` };
   return { ok: true };
 }

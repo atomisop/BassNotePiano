@@ -385,7 +385,7 @@ Don't reintroduce a separate ad-hoc "kill this session" mechanism; bump
   pattern in `/account`), red button, explicit irreversibility copy,
   password + emailed code re-verified server-side on the final step
   regardless of what the client claims already happened.
-- Touch targets: any button or link shorter than 44px gets the `tap` utility
+- Touch targets: any button or link shorter than 36px gets the `tap` utility
   (`globals.css`), which enforces a 44px minimum on touch devices only, so
   desktop is unchanged. Links need `inline-flex items-center` for it to apply.
   Sits next to the 16px-input rule: both exist because the app is used mostly
