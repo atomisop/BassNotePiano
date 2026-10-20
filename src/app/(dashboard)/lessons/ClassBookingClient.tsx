@@ -42,6 +42,8 @@ interface OccurrenceRow {
   occurrenceDateMs: number;
   scheduledAt: string;
   isBooked: boolean;
+  /** Held by someone's payment plan (not yet an actual booking). Shown as Reserved, not Taken. */
+  heldByPlan?: boolean;
 }
 
 interface BookingRow {
@@ -1023,7 +1025,7 @@ export function ClassBookingClient({
                       return card(
                         <>
                           {time}
-                          <span className="shrink-0 text-small font-medium text-slate-500">{isCurrentRescheduleSlot ? "Your time" : "Taken"}</span>
+                          <span className="shrink-0 text-small font-medium text-slate-500">{isCurrentRescheduleSlot ? "Your time" : row.heldByPlan ? "Reserved" : "Taken"}</span>
                         </>,
                         undefined,
                         "opacity-60",

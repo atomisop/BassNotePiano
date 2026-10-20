@@ -63,6 +63,8 @@ export interface ActivePlanSummary {
   term: PaymentPlanTerm;
   installmentsPaid: number;
   termMonths: number;
+  /** While the first payment is still missing: when the held weekly time would be released (ISO). */
+  heldUntil?: string | null;
 }
 
 /** What a family plan changes on this page. Null for a solo plan. */
@@ -394,7 +396,7 @@ export function PaymentPlanEnrollmentFlow({
             : {
                 label: "Waiting for your first payment",
                 tone: "bg-amber-400/15 text-amber-300",
-                note: `Your weekly time is held for you. Your plan, credits and classes start when your first payment${firstAmount ? ` of ${firstAmount}` : ""} arrives. Send it below.`,
+                note: `Your weekly time is held for you${plan.heldUntil ? ` until ${new Date(plan.heldUntil).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}` : ""}. Your plan, credits and classes start when your first payment${firstAmount ? ` of ${firstAmount}` : ""} arrives. Send it below, or the time is released to someone else.`,
               };
 
     return (

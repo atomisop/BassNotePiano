@@ -5,6 +5,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getFamilyDetails, getActivePaymentPlan, getUserPaymentPlans, getOrCreateOpenInstallmentPayment } from "@/lib/paymentPlans";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
+import { getNumberSetting } from "@/lib/siteSettings";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
 import { BackLink } from "@/components/ui/BackLink";
@@ -41,6 +42,7 @@ export default async function BillingPlansPage(
   // getOrCreateOpenInstallmentPayment itself now, shared with the scheduled
   // reminder function, so a student can't pay ahead of schedule installment
   // after installment in one sitting (see that function's own comment).
+  const firstBillLapseDays = await getNumberSetting("payments.firstBillLapseDays");
   const openInstallmentResult = activePlan
     ? await getOrCreateOpenInstallmentPayment(activePlan.id, zelleHandle)
     : null;
@@ -136,6 +138,8 @@ export default async function BillingPlansPage(
                   term: activePlan.term,
                   installmentsPaid: activePlan.installmentsPaid,
                   termMonths: activePlan.termMonths,
+                  // Until the first payment arrives the weekly time is only held: when it would be let go.
+                  heldUntil: activePlan.installmentsPaid === 0 ? new Date(activePlan.createdAt.getTime() + firstBillLapseDays * 86_400_000).toISOString() : null,
                 }
               : null
           }

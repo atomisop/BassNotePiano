@@ -182,6 +182,8 @@ export interface ClassOccurrence {
       start time is gone once anyone has claimed it. A different chunk of
       the same window (a different start time) is unaffected. */
   isBooked: boolean;
+  /** A live payment plan holds this weekly hour (even before its first payment clears), so nobody else can book it. */
+  isReserved: boolean;
 }
 
 /**
@@ -280,6 +282,14 @@ export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
   const bookedKeys = new Set(
     bookedCounts.filter((s) => s._count._all > 0).map((s) => `${s.scheduleId}:${s.occurrenceDate.getTime()}:${s.scheduledAt.getTime()}`),
   );
+  // A live payment plan holds its weekly hour from the moment it is set up, before the first payment clears and
+  // before any booking exists. bookClass already refuses everyone else; this lets the booking screen say so instead
+  // of showing the hour as open and failing when someone taps it.
+  const heldByPlans = await prisma.paymentPlan.findMany({
+    where: { reservedScheduleId: { not: null }, OR: livePaymentPlanConditions() },
+    select: { reservedScheduleId: true, reservedChunkIndex: true },
+  });
+  const reservedKeys = new Set(heldByPlans.map((p) => `${p.reservedScheduleId}:${p.reservedChunkIndex}`));
 
   return candidates
     .map(
@@ -293,6 +303,7 @@ export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
         occurrenceDate: c.occurrenceDate,
         scheduledAt: c.scheduledAt,
         isBooked: bookedKeys.has(`${c.schedule.id}:${c.occurrenceDate.getTime()}:${c.scheduledAt.getTime()}`),
+        isReserved: reservedKeys.has(`${c.schedule.id}:${c.chunk.chunkIndex}`),
       }),
     )
     .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());

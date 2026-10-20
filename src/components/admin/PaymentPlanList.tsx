@@ -16,6 +16,8 @@ export interface PaymentPlanListProps {
   onRecordPayment?: (planId: string) => Promise<{ ok: boolean; error: string | null }>;
   /** Sends the open bill to the student again. */
   onResendBill?: (planId: string) => Promise<{ ok: boolean; message: string }>;
+  /** Days a plan's weekly time stays held while its first payment is missing (Settings > Payments). */
+  firstPaymentHoldDays?: number;
   emptyMessage?: string;
 }
 
@@ -74,7 +76,7 @@ function formatTimeLabel(hhmm: string): string {
  * payment happens entirely through the existing /admin/payments queue,
  * unchanged, this list is read-mostly by design.
  */
-export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill, emptyMessage = "No plans to show." }: PaymentPlanListProps) {
+export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill, firstPaymentHoldDays, emptyMessage = "No plans to show." }: PaymentPlanListProps) {
   const [query, setQuery] = useState("");
   const shown = plans.filter((item) => matchesQuery(item, query));
   const router = useRouter();
@@ -159,6 +161,11 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
               >
                 {planBadge(plan).label}
               </span>
+              {plan.status === "ACTIVE" && plan.installmentsPaid === 0 && firstPaymentHoldDays !== undefined && (
+                <span className="text-small text-slate-400">
+                  Time held until {new Date(new Date(plan.createdAt).getTime() + firstPaymentHoldDays * 86_400_000).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                </span>
+              )}
               {plan.isOverdue && (
                 <span className="inline-block rounded-full bg-red-400/15 px-2.5 py-1 text-small font-medium uppercase tracking-wide text-red-300">
                   Overdue

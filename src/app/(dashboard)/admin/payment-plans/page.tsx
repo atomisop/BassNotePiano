@@ -5,6 +5,7 @@ import { PaymentPlanList } from "@/components/admin/PaymentPlanList";
 import { PlanCancellationFeedbackList } from "@/components/admin/PlanCancellationFeedbackList";
 import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
+import { getNumberSetting } from "@/lib/siteSettings";
 import { cancelPaymentPlanAction, recordPlanPaymentAction, resendBillAction } from "./actions";
 
 // "Overdue" isn't a real PaymentPlanStatus, it's derived (ACTIVE && past its
@@ -30,6 +31,7 @@ export const metadata = { title: "Admin: Payment plans" };
 
 export default async function AdminPaymentPlansPage(props: { searchParams: Promise<{ status?: string }> }) {
   const searchParams = await props.searchParams;
+  const firstBillLapseDays = await getNumberSetting("payments.firstBillLapseDays");
   const requested = searchParams.status?.toUpperCase();
   const activeFilter = FILTERS.find((f) => f.value === requested)?.value ?? "ACTIVE";
   const activeLabel = FILTERS.find((f) => f.value === activeFilter)!.label;
@@ -90,6 +92,7 @@ export default async function AdminPaymentPlansPage(props: { searchParams: Promi
       <div className="mt-6">
         <PaymentPlanList
           plans={plans}
+          firstPaymentHoldDays={firstBillLapseDays}
           onCancel={cancelPaymentPlanAction}
           onRecordPayment={isOwner ? recordPlanPaymentAction : undefined}
           onResendBill={resendBillAction}

@@ -81,7 +81,9 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
         creditCost: o.creditCost,
         occurrenceDateMs: o.occurrenceDate.getTime(),
         scheduledAt: o.scheduledAt.toISOString(),
-        isBooked: o.isBooked,
+        // An hour a payment plan holds counts as taken, so the calendar and the times never offer it.
+        isBooked: o.isBooked || o.isReserved,
+        heldByPlan: o.isReserved && !o.isBooked,
       }))}
       initialBookings={bookings.map((b) => ({
         id: b.id,
