@@ -29,6 +29,19 @@ const STATUS_LABEL: Record<string, string> = {
   CANCELED: "Canceled",
 };
 
+/**
+ * A plan is "Active" the moment it is set up (its weekly time is held), but nothing has been paid until the first
+ * installment is approved. Say that plainly instead of showing a green Active badge on an unpaid plan.
+ */
+function planBadge(plan: AdminPaymentPlan): { label: string; style: string } {
+  if (plan.status === "ACTIVE" && plan.installmentsPaid === 0) {
+    const first = plan.installmentPayments.find((p) => p.status === "PENDING_REVIEW" || p.status === "AWAITING_TRANSFER" || p.status === "REJECTED");
+    if (first?.status === "PENDING_REVIEW") return { label: "First payment to review", style: "bg-amber-400/15 text-amber-300" };
+    return { label: "Waiting for first payment", style: "bg-amber-400/15 text-amber-300" };
+  }
+  return { label: STATUS_LABEL[plan.status], style: STATUS_STYLE[plan.status] };
+}
+
 const STATUS_STYLE: Record<string, string> = {
   ACTIVE: "bg-emerald-400/15 text-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.45)]",
   COMPLETED: "bg-slate-50/15 text-slate-100",
@@ -142,9 +155,9 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
             </div>
             <div className="flex flex-col items-end gap-1.5 text-right">
               <span
-                className={`inline-block rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[plan.status]}`}
+                className={`inline-block rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${planBadge(plan).style}`}
               >
-                {STATUS_LABEL[plan.status]}
+                {planBadge(plan).label}
               </span>
               {plan.isOverdue && (
                 <span className="inline-block rounded-full bg-red-400/15 px-2.5 py-1 text-small font-medium uppercase tracking-wide text-red-300">
