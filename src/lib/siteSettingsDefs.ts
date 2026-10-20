@@ -54,6 +54,8 @@ export type SettingCategory = (typeof SETTING_CATEGORIES)[number]["id"];
 export const SETTING_DEFS: SettingDef[] = [
   // ---- Booking
   { key: "booking.paused", category: "booking", type: "toggle", default: false, label: "Pause all new bookings", help: "Students cannot book any class while this is on. Existing bookings are untouched." },
+  { key: "booking.requestMode", category: "booking", type: "toggle", default: false, label: "Students request times, I confirm", help: "On: students cannot book by themselves. They send a request, and you confirm or decline it in Schedule, Requests. The earliest request for a time is first in line. Off: students book their own times." },
+  { key: "booking.emailOwnerOnRequest", category: "booking", type: "toggle", default: true, label: "Email me each new request", help: "Only when students request times: an email to you (the owner) for every new request." },
   { key: "booking.pausedMessage", category: "booking", type: "text", default: "Booking is paused for now. Please check back soon.", maxLength: 200, label: "Message shown while paused", help: "What a student sees when they try to book during a pause." },
   { key: "booking.allowSameDay", category: "booking", type: "toggle", default: true, label: "Allow same-day booking", help: "Off: a class can only be booked for a later calendar day (US Eastern)." },
   { key: "booking.minNoticeHours", category: "booking", type: "number", default: 0, min: 0, max: 168, unit: "hours", label: "Minimum notice to book", help: "A class must start at least this many hours from now. 0 means no minimum." },

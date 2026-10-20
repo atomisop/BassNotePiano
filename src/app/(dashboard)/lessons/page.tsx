@@ -1,4 +1,5 @@
 import { discordLinkState } from "@/lib/discordLinkState";
+import { getMyBookingRequests, getRequestHints, isRequestMode } from "@/lib/bookingRequests";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -49,7 +50,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
     getBoolSetting("cancel.studentCanReschedule"),
   ]);
 
-  const [credits, occurrences, bookings, supportContactId, weeklyLimited] = await Promise.all([
+  const [credits, occurrences, bookings, supportContactId, weeklyLimited, requestMode, myRequests, requestHints] = await Promise.all([
     // Effective, not raw: a credit already reserved by another SCHEDULED
     // booking isn't actually free to spend again, even though the real
     // charge for it hasn't landed yet, see getEffectiveClassCredits.
@@ -58,10 +59,16 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
     getUserClassBookings(session.user.id),
     getSupportContactId(),
     hasLivePaymentPlan(session.user.id),
+    isRequestMode(),
+    getMyBookingRequests(session.user.id),
+    getRequestHints(session.user.id),
   ]);
 
   const bookingClient = (
     <ClassBookingClient
+      requestMode={requestMode}
+      myRequests={myRequests.map((r) => ({ id: r.id, label: r.label, scheduledAt: r.scheduledAt.toISOString(), status: r.status, ahead: r.ahead }))}
+      requestHints={requestHints}
       extraMode={Boolean(activePlan)}
       weeklyLimited={weeklyLimited}
       initialCredits={credits}

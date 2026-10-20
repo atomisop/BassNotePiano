@@ -9,6 +9,11 @@ import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 import { teacherCalendarToken } from "@/lib/teacherCalendar";
 import { AdminManualBooking } from "@/components/admin/AdminManualBooking";
 import { getActiveHolds } from "@/lib/contacts";
+import { getAdminBookingRequests } from "@/lib/bookingRequests";
+import { AdminBookingRequests } from "@/components/admin/AdminBookingRequests";
+import { getBoolSetting } from "@/lib/siteSettings";
+import { getServerAuthSession } from "@/lib/auth";
+import { isOwnerEmail } from "@/lib/adminNotifications";
 import {
   createClassScheduleAction,
   updateClassScheduleAction,
@@ -18,11 +23,13 @@ import {
   adminCancelBookingAction,
   searchStudentsForBookingAction,
   adminBookClassAction,
+  confirmBookingRequestAction,
+  declineBookingRequestAction,
 } from "./actions";
 import { buttonVariants } from "@/components/ui/button";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 
-type ViewValue = "WINDOWS" | "BOOKINGS" | "ATTENDANCE";
+type ViewValue = "WINDOWS" | "REQUESTS" | "BOOKINGS" | "ATTENDANCE";
 
 // Bookings and attendance used to be one combined view here (and, before
 // that, their own top-level /admin/bookings tab), split into their own
@@ -32,6 +39,7 @@ type ViewValue = "WINDOWS" | "BOOKINGS" | "ATTENDANCE";
 // reach the booking tool (or vice versa) got in the way of both.
 const VIEWS: { label: string; value: ViewValue }[] = [
   { label: "Weekly times", value: "WINDOWS" },
+  { label: "Requests", value: "REQUESTS" },
   { label: "Bookings", value: "BOOKINGS" },
   { label: "Attendance", value: "ATTENDANCE" },
 ];
@@ -56,6 +64,34 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
       ))}
     </div>
   );
+
+  if (activeView === "REQUESTS") {
+    const [groups, requestMode, session] = await Promise.all([getAdminBookingRequests(), getBoolSetting("booking.requestMode"), getServerAuthSession()]);
+    return (
+      <div>
+        <p className="text-small font-medium text-slate-400">Admin</p>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Weekly schedule</h1>
+
+        {viewSwitcher}
+
+        <div className="mt-6">
+          <AdminBookingRequests
+            groups={groups.map((g) => ({
+              key: g.key,
+              scheduledAt: g.scheduledAt.toISOString(),
+              label: g.label,
+              alreadyBooked: g.alreadyBooked,
+              requests: g.requests.map((r) => ({ id: r.id, studentName: r.studentName, email: r.email, createdAt: r.createdAt.toISOString() })),
+            }))}
+            requestMode={requestMode}
+            showSettingsLink={isOwnerEmail(session?.user?.email)}
+            onConfirm={confirmBookingRequestAction}
+            onDecline={declineBookingRequestAction}
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (activeView === "BOOKINGS") {
     const upcoming = await getUpcomingOccurrences();

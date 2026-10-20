@@ -14,6 +14,7 @@ import { adminBookClass, ClassBookingError } from "@/lib/classSchedule";
 import { markAttendance, undoAttendance, adminCancelClassBooking, getPendingAttendanceBookings, getBookingFeed, type PendingAttendanceRow, type BookingFeedRow } from "@/lib/classScheduleAdmin";
 import { createClassSchedule, updateClassSchedule, setClassScheduleActive, ClassScheduleError, type ClassScheduleInput } from "@/lib/classScheduleManage";
 import { searchStudentsForBooking, type BookableStudent } from "@/lib/admin";
+import { BookingRequestError, confirmBookingRequest, declineBookingRequest } from "@/lib/bookingRequests";
 
 async function requireAdmin() {
   const session = await getServerAuthSession();
@@ -116,6 +117,29 @@ export async function adminBookClassAction(
     return { ok: true as const };
   } catch (err) {
     return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+  }
+}
+
+/** Request mode: books the requested time for the student and answers the others who asked for it. */
+export async function confirmBookingRequestAction(requestId: string) {
+  const admin = await requireAdmin();
+  try {
+    await confirmBookingRequest(requestId, admin.id);
+    revalidatePath("/", "layout");
+    return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof BookingRequestError || err instanceof ClassBookingError ? err.message : "Something went wrong." };
+  }
+}
+
+export async function declineBookingRequestAction(requestId: string, reason?: string) {
+  const admin = await requireAdmin();
+  try {
+    await declineBookingRequest(requestId, admin.id, reason);
+    revalidatePath("/", "layout");
+    return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof BookingRequestError ? err.message : "Something went wrong." };
   }
 }
 

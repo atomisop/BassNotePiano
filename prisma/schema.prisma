@@ -458,6 +458,8 @@ enum NotificationType {
   PAYMENT_RECEIVED // to the student, when they submit a payment that now waits for review
   TRIAL_ENDING // to the student, a day before their free trial ends and when it has ended
   PAYMENT_PLAN_UPDATED // to the student, when their plan starts or its term changes
+  BOOKING_REQUEST_RECEIVED // to the student, when the request they sent is waiting for the teacher to confirm
+  BOOKING_REQUEST_DECLINED // to the student, when a requested time was not given to them
 }
 
 // The in-app inbox is the source of truth, always written regardless of
@@ -759,6 +761,7 @@ model GroupMessageReaction {
 
 model User {
   id            String    @id @default(cuid())
+  bookingRequests BookingRequest[] @relation("BookingRequestStudent")
   name          String?
   email         String    @unique
   emailCanonical String? // the email with Gmail dots and plus tags removed, so one inbox is one person for the free trial
@@ -1566,6 +1569,7 @@ model ClassSchedule {
   reservedByPlans      PaymentPlan[]
   extraSessionPayments ZellePayment[]
   slotHolds            SlotHold[]
+  bookingRequests      BookingRequest[]
 
   @@index([dayOfWeek, active])
 }
@@ -1911,4 +1915,40 @@ model ContactSession {
   createdAt DateTime @default(now())
 
   @@index([contactId, date])
+}
+
+// ---------------------------------------------------------------------------
+// Booking requests: when Settings > Booking > "Students request times" is on, a
+// student asks for a time instead of booking it. The teacher confirms (which
+// books it) or declines. The earliest request for an hour is first in line.
+// ---------------------------------------------------------------------------
+
+enum BookingRequestStatus {
+  PENDING
+  CONFIRMED
+  DECLINED
+  CANCELED
+}
+
+model BookingRequest {
+  id             String               @id @default(cuid())
+  studentId      String
+  student        User                 @relation("BookingRequestStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  scheduleId     String
+  schedule       ClassSchedule        @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  // The ET calendar day of the class (stored at UTC midnight, like ClassBooking) and the exact start instant.
+  occurrenceDate DateTime
+  scheduledAt    DateTime
+  chunkIndex     Int
+  status         BookingRequestStatus @default(PENDING)
+
+  // The moment the request was sent: the order requests are served in.
+  createdAt     DateTime  @default(now())
+  decidedAt     DateTime?
+  decidedById   String?
+  declineReason String?
+
+  @@index([status, createdAt])
+  @@index([scheduleId, scheduledAt, status])
+  @@index([studentId, status])
 }
