@@ -90,6 +90,7 @@ export const SETTING_DEFS: SettingDef[] = [
   // ---- Security
   { key: "security.loginMaxAttempts", category: "security", type: "number", default: 8, min: 3, max: 50, unit: "tries", label: "Wrong passwords before a lockout", help: "Counted per account over the window below." },
   { key: "security.loginLockoutMinutes", category: "security", type: "number", default: 15, min: 1, max: 240, unit: "minutes", label: "Sign-in lockout window", help: "How long wrong passwords are counted, and how long a lockout lasts." },
+  { key: "security.failedLoginAlertThreshold", category: "security", type: "number", default: 30, min: 0, max: 1000, unit: "tries", label: "Failed sign-ins in an hour that alert you", help: "Across the whole site. You are told at most once an hour. 0 turns the alert off." },
   { key: "security.codeExpiryMinutes", category: "security", type: "number", default: 10, min: 2, max: 60, unit: "minutes", label: "Emailed code lifetime", help: "How long a 6-digit code works." },
   { key: "security.maxCodeAttempts", category: "security", type: "number", default: 5, min: 1, max: 20, unit: "tries", label: "Wrong tries per code", help: "A code is canceled after this many wrong entries." },
   { key: "security.codeIssueLimit", category: "security", type: "number", default: 5, min: 1, max: 30, unit: "codes", label: "Codes that can be requested per window", help: "Per email address and purpose." },

@@ -8,6 +8,7 @@ import { assertRateLimit, RateLimitError as LockoutError } from "@/lib/rateLimit
 import { withTimingFloor } from "@/lib/timingSafe";
 import { BANNED_MESSAGE } from "@/lib/ban";
 import { peekSecondStep } from "@/lib/adminTwoStep";
+import { maybeAlertFailedLogins } from "@/lib/loginAlerts";
 
 export type LoginStepOneResult =
   | { ok: false; error: string }
@@ -29,6 +30,7 @@ const LOCKOUT_MESSAGE = "Too many failed attempts on this account. Wait a little
 async function recordFailedAttempt(email: string): Promise<void> {
   try {
     await prisma.failedLoginAttempt.create({ data: { email } });
+    await maybeAlertFailedLogins();
   } catch (err) {
     // Never let a failure to log the attempt block the (correct) error
     // response the user is about to get, same "non-blocking" posture as

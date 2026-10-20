@@ -794,6 +794,7 @@ model User {
   totpEnabledAt    DateTime?
   totpLastStep     Int? // the last 30 second step accepted, so one code cannot be used twice
   adminBackupCodes AdminBackupCode[]
+  knownDevices     KnownDevice[]
 
   // Set when the owner bans the account: it can no longer sign in, and every open session is ended. `bannedReason` is a
   // private note for the owner, never shown to the person. Lifting the ban clears both.
@@ -1065,12 +1066,27 @@ model AdminBackupCode {
   @@index([userId, codeHash])
 }
 
+// A browser and device an account has signed in from (a short code of the browser and system, never the address),
+// so a sign-in from a new one can be emailed to the owner of the account.
+model KnownDevice {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceHash  String
+  label       String
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  @@unique([userId, deviceHash])
+}
+
 model FailedLoginAttempt {
   id        String   @id @default(cuid())
   email     String
   createdAt DateTime @default(now())
 
   @@index([email, createdAt])
+  @@index([createdAt])
 }
 
 // Rate-limit ledger for checkFamilyBundleRecipientsAction (billing/lessons).

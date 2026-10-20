@@ -285,6 +285,41 @@ export async function sendPasswordChangedEmail(to: string, name: string | null) 
 }
 
 /**
+ * One security notice. Sent only to the address of an account after something real happened on it, from the standard
+ * noreply sender, and not tied to any notification switch (a person cannot opt out of being told their account changed).
+ * Every one ends with the "wasn't you" reset link. Nothing in it says whether any other account exists.
+ */
+async function sendSecurityNotice(to: string, name: string | null, subject: string, what: string) {
+  const greeting = name ? `Hi ${escapeHtml(name.split(" ")[0])},` : "Hi,";
+  const resetUrl = getAppUrl("/forgot-password");
+  const html = emailShell(
+    subject,
+    `<p style="margin:0 0 12px;">${greeting}</p><p style="margin:0 0 12px;">${escapeHtml(what)}</p><p style="margin:0;">If this was you, nothing more to do. If it wasn't, <a href="${resetUrl}">reset your password now</a> and reply to the studio so we can look into it.</p>`,
+    { kind: "notice" },
+  );
+  const text = `${name ? `Hi ${name.split(" ")[0]},` : "Hi,"}\n\n${what}\n\nIf this was you, nothing more to do. If it wasn't, reset your password now: ${resetUrl}\nand reply to the studio so we can look into it.`;
+  await sendEmail({ to, subject, html, text });
+}
+
+export async function sendPhoneChangedEmail(to: string, name: string | null, change: "changed" | "removed") {
+  await sendSecurityNotice(
+    to,
+    name,
+    change === "removed" ? "The phone number on your account was removed" : "The phone number on your account was changed",
+    change === "removed" ? "The phone number on your Bass Note Piano account was just removed." : "The phone number on your Bass Note Piano account was just changed.",
+  );
+}
+
+/** Goes to the OLD address, so the person who owns it can object. For when changing an account's email is possible. */
+export async function sendEmailChangedEmail(oldAddress: string, name: string | null, newAddressHint: string) {
+  await sendSecurityNotice(oldAddress, name, "The email on your account was changed", `The email on your Bass Note Piano account was just changed to ${newAddressHint}.`);
+}
+
+export async function sendNewDeviceEmail(to: string, name: string | null, deviceLabel: string, whenText: string) {
+  await sendSecurityNotice(to, name, "New sign-in to your account", `Your Bass Note Piano account was just signed in to from a browser or device we haven't seen before: ${deviceLabel}, ${whenText}.`);
+}
+
+/**
  * A message from a person, not a template. Used for announcements and for the
  * messages the owner types to students: plain paragraphs, a greeting by name,
  * one plain link at most, no logo, colours or buttons. Gmail files heavily

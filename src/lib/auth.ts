@@ -11,6 +11,8 @@ import { getCurriculumEntitlement } from "@/lib/entitlement";
 import { isFullAccess } from "@/lib/entitlementRules";
 import { tokenWhenEntitlementsUnknown } from "@/lib/tokenFallback";
 import { consumeSecondStep } from "@/lib/adminTwoStep";
+import { recordSignInDevice } from "@/lib/deviceAlerts";
+import { maybeAlertFailedLogins } from "@/lib/loginAlerts";
 
 type Entitlements = {
   role: "STUDENT" | "ADMIN";
@@ -174,7 +176,7 @@ export const authOptions: NextAuthOptions = {
         code: { label: "Code", type: "text" },
         secondStep: { label: "Second step", type: "text" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials.code) return null;
 
         // Guess limit for the code itself. Codes used to be issued only after a
@@ -194,6 +196,7 @@ export const authOptions: NextAuthOptions = {
           where: { email: normalizedEmail, createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) } },
         });
         if (recentTries > 8) return null;
+        await maybeAlertFailedLogins();
 
         // Admin two-step sign-in. Every route to a session ends here (password, reset, verify), so this is the one
         // place that cannot be skipped. Checked before the sign-in code is used up, so a missing second step does not
@@ -211,6 +214,9 @@ export const authOptions: NextAuthOptions = {
         if (!user) return null;
         // A banned account can never get a session, whichever way it asks for one (password, emailed code, reset, verify).
         if (user.bannedAt) throw new Error(BANNED_ERROR_CODE);
+
+        // A sign-in from a browser or device this account has not used before is emailed to its owner.
+        await recordSignInDevice(user, req?.headers?.["user-agent"]);
 
         return {
           id: user.id,
