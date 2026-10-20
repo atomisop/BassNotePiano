@@ -36,9 +36,12 @@ function forwardPaymentEmails() {
     // SoFi email that is not a payment, so a wider net costs nothing.
     const query =
       '((from:ealerts.bankofamerica.com OR from:venmo.com) (subject:"sent you" OR subject:"paid you" OR subject:"received" OR subject:refund OR subject:refunded OR subject:reversed OR subject:canceled OR subject:cancelled OR subject:returned OR subject:dispute OR subject:declined OR subject:failed) ' +
-      'OR ((from:sofi.org OR from:sofi.com) "sent to you by")) ' + LOOKBACK + ' -label:' + DONE_LABEL;
+      'OR (from:(sofi.org OR o.sofi.org OR sofi.com) ("sent to you by" OR subject:"sent you"))) ' + LOOKBACK + ' -label:' + DONE_LABEL;
 
-    GmailApp.search(query, 0, 50).forEach(function (thread) {
+    const threads = GmailApp.search(query, 0, 50);
+    // Shows in the Execution log, so a run that finds nothing can be told apart from one that never looked.
+    console.log('Found ' + threads.length + ' unsent payment threads.');
+    threads.forEach(function (thread) {
       let allSent = true;
       thread.getMessages().forEach(function (message) {
         // Gmail records whether the sender really owns the domain. A forged
@@ -67,6 +70,7 @@ function forwardPaymentEmails() {
           }),
           muteHttpExceptions: true,
         });
+        console.log('Sent "' + message.getSubject() + '": the site answered ' + response.getResponseCode() + ' ' + response.getContentText().slice(0, 100));
         if (response.getResponseCode() !== 200) {
           allSent = false;
           problems.push('The site answered ' + response.getResponseCode() + ' for "' + message.getSubject() + '".');
