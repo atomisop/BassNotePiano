@@ -145,7 +145,7 @@ function DesktopAdminPills({ badges }: { badges: AdminNavBadges }) {
   const group = activeGroup(pathname);
 
   return (
-    <nav className="hidden flex-col gap-2 sm:flex">
+    <nav className="hidden flex-col gap-2 sm:flex lg:hidden">
       <div className={`${TAB_TRACK} self-start`}>
         {NAV_GROUPS.map((g) => {
           const active = g.label === group.label;
@@ -182,11 +182,53 @@ function DesktopAdminPills({ badges }: { badges: AdminNavBadges }) {
   );
 }
 
+/**
+ * lg and up: every admin page in a vertical list on the left, grouped under
+ * the same four headings, so nothing hides behind a second row of pills.
+ */
+function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
+  const pathname = usePathname();
+  return (
+    <nav aria-label="Admin sections" className="hidden w-44 shrink-0 flex-col gap-4 lg:flex">
+      {NAV_GROUPS.map((group) => (
+        <div key={group.label}>
+          <p className="px-2.5 pb-1.5 text-small font-semibold uppercase tracking-[0.16em] text-slate-500">{group.label}</p>
+          <ul className="grid gap-0.5">
+            {group.leaves.map((leaf) => {
+              const active = isLeafActive(leaf.href, pathname);
+              const count = badges[leaf.href] ?? 0;
+              return (
+                <li key={leaf.href}>
+                  <Link
+                    href={leaf.href}
+                    aria-current={active ? "page" : undefined}
+                    className={`press-soft flex h-8 items-center rounded-control px-2.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                      active ? "bg-neu-lift text-slate-50 shadow-pressed-low" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
+                    }`}
+                  >
+                    <span className="truncate">{leaf.label}</span>
+                    {count > 0 && (
+                      <span className="ml-auto rounded-full bg-[rgb(var(--signal)/0.18)] px-1.5 text-small font-semibold tabular-nums text-signal" aria-label={`${count} waiting`}>
+                        {count > 99 ? "99+" : count}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  );
+}
+
 export function AdminNav({ badges = {} }: { badges?: AdminNavBadges }) {
   return (
     <>
       <MobileAdminSelect badges={badges} />
       <DesktopAdminPills badges={badges} />
+      <AdminSideRail badges={badges} />
     </>
   );
 }

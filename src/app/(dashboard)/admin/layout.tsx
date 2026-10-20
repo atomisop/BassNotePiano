@@ -12,9 +12,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const badges = await getAdminNavBadges().catch(() => ({}));
 
   return (
-    <WideLayout>
+    <WideLayout className="lg:flex lg:items-start lg:gap-6">
       <AdminNav badges={badges} />
-      <div className="mt-8">{children}</div>
+      <div className="mt-6 min-w-0 flex-1 lg:mt-0">{children}</div>
     </WideLayout>
   );
 }

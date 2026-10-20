@@ -128,6 +128,9 @@
   --shadow-signal: var(--signal-glow);
 
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+  /* Release curve for pressable things: overshoots, then settles. The
+     linear() form is a real spring; older browsers get the one-bounce bezier. */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* Every Tailwind `transition*` utility without its own duration/curve now
      uses the same iOS ease, so hover, press and toggle changes all settle the
@@ -138,7 +141,7 @@
   /* Page widths for the four shared page layouts in
      components/layout/PageLayouts.tsx. Pages never set their own width;
      they pick a layout, and the layout reads these. */
-  --container-wide: 90rem;
+  --container-wide: 110rem;
   --container-settings: 72rem;
   --container-narrow: 27.5rem;
   --container-pane: 21.25rem;
@@ -522,8 +525,8 @@
  */
 @utility tap {
   @media (pointer: coarse) {
-    min-height: 44px;
-    min-width: 44px;
+    min-height: 36px;
+    min-width: 36px;
   }
 }
 
@@ -849,12 +852,10 @@
    ========================================================================== */
   @keyframes page-enter {
     from {
-      opacity: 0;
-      transform: translateY(8px);
+      transform: translateY(14px) scale(0.985);
     }
     to {
-      opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
   }
 
@@ -867,8 +868,22 @@
     }
   }
 
+  /* Springy arrival: opacity eases out while the page rises and settles
+     with the same spring as button presses. Fill is `backwards` (not `both`)
+     so no transform is left on the page afterwards, which would otherwise
+     become the containing block for fixed-position children. */
   .page-enter {
-    animation: page-enter 380ms var(--ease-ios) both;
+    animation:
+      page-enter-opacity 260ms var(--ease-ios) backwards,
+      page-enter 560ms var(--ease-spring) backwards;
+  }
+  @keyframes page-enter-opacity {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .page-enter-fade {
@@ -982,8 +997,8 @@
   :root {
     /* Spacing rhythm. Generous between sections, tight inside cards. */
     --space-section: 3rem;
-    --space-group: 1.5rem;
-    --space-card: 1.25rem;
+    --space-group: 1rem;
+    --space-card: 1rem;
     --space-inline: 0.75rem;
 
     /* Layering for the three planes plus app chrome. */
@@ -1004,8 +1019,8 @@
      (not black) so the light-side shadow has room to show. Light is a soft
      gray, darker than paper white, for the same reason. */
   [data-mode="dark"] {
-    --neu-base: 43 43 45;
-    --neu-lift: 62 62 66;
+    --neu-base: 38 38 36; /* Claude dark grey #262624 */
+    --neu-lift: 50 50 48;
     --neu-hi: rgb(255 255 255 / 0.065);
     --neu-lo: rgb(0 0 0 / 0.55);
     --neu-edge: rgb(255 255 255 / 0.1);
@@ -1271,4 +1286,168 @@
     animation: none;
     opacity: 0;
   }
+}
+
+/* Desktop sidebar hidden by the top-bar toggle (SidebarToggle.tsx). It slides
+   out and fades while the page area glides over to fill the space. The
+   transitions only switch on after the saved choice has been applied
+   (`data-sidebar-anim`), so a page load never animates a sidebar that was
+   left closed. `visibility` flips at the end of the slide so a hidden
+   sidebar can never be tabbed into. */
+@media (min-width: 1024px) {
+  html[data-sidebar-anim] .app-sidebar {
+    transition:
+      translate 380ms var(--ease-ios),
+      opacity 260ms var(--ease-ios),
+      visibility 0s linear 0s;
+  }
+  html[data-sidebar-anim] .app-shell-col {
+    transition: padding-left 380ms var(--ease-ios);
+  }
+  html[data-sidebar="collapsed"] .app-sidebar {
+    translate: -100% 0;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  html[data-sidebar-anim][data-sidebar="collapsed"] .app-sidebar {
+    transition:
+      translate 380ms var(--ease-ios),
+      opacity 260ms var(--ease-ios),
+      visibility 0s linear 380ms;
+  }
+  html[data-sidebar="collapsed"] .app-shell-col {
+    padding-left: 0;
+  }
+
+  /* Peek: while hidden, pointing at the sidebar toggle floats the sidebar out
+     over the page (no layout shift). It stays while the pointer is on the
+     toggle or the sidebar, and tucks away when it leaves both. */
+  html[data-sidebar="collapsed"]:has(.sidebar-toggle:hover) .app-sidebar,
+  html[data-sidebar="collapsed"] .app-sidebar:hover {
+    translate: 0 0;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    box-shadow: 0 16px 48px rgb(0 0 0 / 0.55);
+  }
+  html[data-sidebar-anim][data-sidebar="collapsed"]:has(.sidebar-toggle:hover) .app-sidebar,
+  html[data-sidebar-anim][data-sidebar="collapsed"] .app-sidebar:hover {
+    transition:
+      translate 380ms var(--ease-ios),
+      opacity 260ms var(--ease-ios),
+      box-shadow 260ms var(--ease-ios),
+      visibility 0s linear 0s;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-sidebar-anim] .app-sidebar,
+  html[data-sidebar-anim] .app-shell-col {
+    transition: none;
+  }
+}
+
+/* Spring press feedback (Apple-style): the control dips under the finger
+   quickly, then springs back past rest and settles. Uses the individual
+   `scale` property so it never fights a `transform` set by framer-motion or
+   Tailwind translate. `press` also grows a touch on hover (mouse only);
+   `press-soft` is for large surfaces (cards) and only dips. */
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --ease-spring: linear(0, 0.02 1.5%, 0.12 4%, 0.4 9%, 0.78 15%, 1.08 21%, 1.28 27%, 1.34 31%, 1.28 36%, 1.1 44%, 0.97 53%, 0.94 60%, 0.98 72%, 1.01 84%, 1);
+  }
+}
+@utility press {
+  transition-property: scale, filter, box-shadow, background-color, color, opacity, border-color;
+  transition-duration: 480ms;
+  transition-timing-function: var(--ease-spring);
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      scale: 1.025;
+    }
+  }
+  &:active:not(:disabled) {
+    scale: 0.94;
+    transition-duration: 90ms;
+    transition-timing-function: var(--ease-ios);
+  }
+}
+@utility press-soft {
+  transition-property: scale, box-shadow, background-color, color, opacity, border-color;
+  transition-duration: 420ms;
+  transition-timing-function: var(--ease-spring);
+  &:active:not(:disabled) {
+    scale: 0.985;
+    transition-duration: 90ms;
+    transition-timing-function: var(--ease-ios);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .press,
+  .press-soft {
+    transition-property: filter, box-shadow, background-color, color, opacity, border-color;
+    transition-duration: 120ms;
+    transition-timing-function: var(--ease-ios);
+  }
+  .press:hover:not(:disabled),
+  .press:active:not(:disabled),
+  .press-soft:active:not(:disabled) {
+    scale: 1;
+  }
+}
+
+/* Safety net: every other raw button inside the app shell still dips when
+   pressed. In the base layer, so a component's own transition or `press`
+   class always wins. Full-screen scrims (inset-0) are left alone. */
+@layer base {
+  [data-surface="app"] :is(button, [role="button"]):not(:disabled):not(.press):not(.press-soft):not([class*="inset-0"]) {
+    transition: scale 420ms var(--ease-spring);
+  }
+  [data-surface="app"] :is(button, [role="button"]):not(:disabled):not(.press):not(.press-soft):not([class*="inset-0"]):active {
+    scale: 0.96;
+    transition-duration: 90ms;
+    transition-timing-function: var(--ease-ios);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-surface="app"] :is(button, [role="button"]):active {
+      scale: 1;
+    }
+  }
+}
+
+/* Discord link scene in the sidebar card: two logos joined by a pulse that
+   travels from one to the other, with a few twinkling stars behind. */
+@keyframes link-dot {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  35% { opacity: 1; transform: scale(1.35); }
+}
+@keyframes link-tile {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+@keyframes link-star {
+  0%, 100% { opacity: 0.15; transform: scale(0.7); }
+  50% { opacity: 0.9; transform: scale(1.2); }
+}
+.link-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: rgb(var(--signal));
+  animation: link-dot 1.6s var(--ease-ios) infinite;
+}
+.link-tile-a { animation: link-tile 3.2s ease-in-out infinite; }
+.link-tile-b { animation: link-tile 3.2s ease-in-out 0.4s infinite; }
+.link-star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.8);
+  animation: link-star 2.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .link-dot, .link-tile-a, .link-tile-b, .link-star { animation: none; }
+  .link-dot { opacity: 0.8; }
+  .link-star { opacity: 0.4; }
 }

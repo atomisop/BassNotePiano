@@ -10,6 +10,7 @@ import { getTotalUnreadGroupMessageCount } from "@/lib/groupMessages";
 import { getActiveAnnouncementForUser } from "@/lib/announcements";
 import { LATEST_ENTRY } from "@/lib/changelog";
 import { AppDock } from "@/components/layout/AppDock";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { WhatsNewProvider } from "@/components/layout/WhatsNewProvider";
 import { AnnouncementBanner } from "@/components/layout/AnnouncementBanner";
@@ -96,7 +97,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           64px here by sitting in flow. This padding reserves that same
           64px so AnnouncementBanner/main start right below it instead of
           rendering underneath it. */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden pt-16">
+      <div className="app-shell-col flex min-w-0 flex-1 flex-col overflow-hidden pt-12 lg:pl-52">
         <TopBar isAdmin={isAdmin} isOwner={isOwner} />
         <AnnouncementBanner announcement={activeAnnouncement} />
         {/* pb-32 at every width (the bottom padding used to be overridden by md:py-10, which left only 40px under the last content on a desktop, so the always-on dock covered it), the floating AppDock now
@@ -106,10 +107,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
             chaining up to the body once it hits the top/bottom, without
             it, an iOS overscroll bounce here could visibly tug at the fixed
             shell around it, the same "things move weird" complaint. */}
-        <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pb-32 pt-6 md:px-8 md:pb-32 md:pt-10">{children}</PullToRefreshMain>
+        <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pb-32 pt-4 md:px-6 md:pb-32 md:pt-5 lg:pb-8">{children}</PullToRefreshMain>
       </div>
       <AutoRefresh />
-      <AppDock unreadMessageCount={unreadMessageCount} />
+      <div className="lg:hidden">
+        <AppDock unreadMessageCount={unreadMessageCount} />
+      </div>
+      <AppSidebar unreadMessageCount={unreadMessageCount} />
       <CommandMenu isAdmin={isAdmin} />
             <Suspense fallback={null}>
         <OnboardingTour autoShow={shouldShowTour} />

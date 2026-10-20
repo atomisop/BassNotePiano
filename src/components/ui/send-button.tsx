@@ -16,7 +16,7 @@ export function SendButton({ state }: SendButtonProps) {
 
   if (isStreaming) {
     return (
-      <div className="flex size-11 items-center justify-center rounded-full bg-slate-100 shadow-raised-low">
+      <div className="flex size-9 items-center justify-center rounded-full bg-slate-100 shadow-raised-low">
         <IconPlayerStopFilled className="size-5 text-slate-950" />
       </div>
     );
@@ -25,7 +25,7 @@ export function SendButton({ state }: SendButtonProps) {
   return (
     <div
       className={cn(
-        "flex size-11 items-center justify-center rounded-full transition-colors",
+        "flex size-9 items-center justify-center rounded-full transition-colors",
         isTyping ? "bg-signal shadow-raised-low" : "bg-neu-base shadow-pressed-low",
       )}
     >

@@ -18,9 +18,9 @@ import { MorphingSquare } from "@/components/ui/morphing-square"
  * banner). Everything else is ink and paper, never green.
  */
 // Neumorphic press: raised at rest, the same shape pushes IN (pressed
-// shadow) while held. No movement, so nothing shifts under the finger.
-const lift =
-  "transition-[filter,box-shadow,background-color,color] duration-(--dur-fast) ease-(--ease-ios) active:shadow-pressed-low"
+// shadow) and dips (scale, from the center, so layout never shifts) while
+// held, then springs back (see `press` in globals.css).
+const lift = "press active:shadow-pressed-low"
 
 const primary = cn(
   "relative bg-[rgb(var(--cta-bg,var(--primary)))] text-[rgb(var(--cta-ink,var(--primary-foreground)))] font-semibold shadow-raised-mid hover:brightness-110 active:brightness-95",
@@ -56,11 +56,11 @@ const buttonVariants = cva(
         glass: cn("bg-neu-base text-[rgb(var(--c-s-50))] shadow-raised-mid hover:brightness-110", lift),
       },
       size: {
-        default: "h-11 px-5",
-        sm: "h-9 px-3.5",
-        lg: "h-12 px-6",
-        icon: "h-11 w-11",
-        iconSm: "h-9 w-9 px-0",
+        default: "h-9 px-4",
+        sm: "h-8 px-3",
+        lg: "h-10 px-5",
+        icon: "h-9 w-9",
+        iconSm: "h-8 w-8 px-0",
       },
     },
     defaultVariants: {

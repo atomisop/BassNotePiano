@@ -211,7 +211,7 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
   );
 }
 
-const ROW = "tap flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100";
+const ROW = "tap press-soft flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-small text-slate-300 hover:bg-slate-800/60 hover:text-slate-100";
 
 function CountBadge({ count }: { count: number }) {
   if (count <= 0) return null;

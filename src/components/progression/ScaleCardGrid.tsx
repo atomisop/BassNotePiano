@@ -54,7 +54,7 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick }: ScaleCardGr
               onClick={() => onCardClick(scale)}
               aria-current={isCurrent ? "step" : undefined}
               className={cn(
-                "group flex h-full w-full cursor-pointer flex-col rounded-card bg-neu-base p-(--space-card) text-left shadow-raised-mid transition-[box-shadow] duration-(--dur-base) ease-(--ease-ios) hover:shadow-raised-high active:shadow-pressed-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "group press-soft flex h-full w-full cursor-pointer flex-col rounded-card bg-neu-base p-(--space-card) text-left shadow-raised-mid hover:shadow-raised-high active:shadow-pressed-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 isCurrent && "shadow-pressed-mid ring-1 ring-signal",
                 locked && "shadow-pressed-low",
               )}

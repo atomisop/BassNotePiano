@@ -134,7 +134,7 @@ export function ComposerBar({
         maxLength={2000}
         rows={1}
         enterKeyHint="send"
-        className="min-h-11 min-w-0 flex-1 resize-none overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-3xl border border-(--neu-edge) bg-neu-base px-4 py-2.5 text-body text-slate-100 shadow-pressed-low outline-none transition placeholder:text-slate-500 focus:border-signal"
+        className="min-h-9 min-w-0 flex-1 resize-none overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-3xl border border-(--neu-edge) bg-neu-base px-4 py-2.5 text-body text-slate-100 shadow-pressed-low outline-none transition placeholder:text-slate-500 focus:border-signal"
         style={{ maxHeight }}
       />
       <button

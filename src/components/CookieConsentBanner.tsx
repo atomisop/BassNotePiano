@@ -116,27 +116,27 @@ export function CookieConsentBanner() {
         )}
 
         {/* `size="sm"` for the compact padding/text this banner wants, plus an
-            explicit `min-h-11` (44px) override, `sm`'s own height (36px)
-            is fine for dense in-app UI but falls short of the 44px touch
+            explicit `min-h-9` (36px) override, `sm`'s own height (36px)
+            is fine for dense in-app UI and meets the 36px touch
             target minimum, which matters more here than almost anywhere
             else in the app: this is the first interactive thing many
             visitors touch, often on the smallest screens. */}
         <div className="mt-4 flex flex-wrap gap-2">
           {customizing ? (
-            <Button size="sm" variant="paper" className="min-h-11" onClick={() => decide(analyticsChoice)}>
+            <Button size="sm" variant="paper" className="min-h-9" onClick={() => decide(analyticsChoice)}>
               Save preferences
             </Button>
           ) : (
             <>
               {/* Neutral `paper`, not the green primary: a consent choice must
                   not be nudged toward "accept". */}
-              <Button size="sm" variant="paper" className="min-h-11" onClick={() => decide(true)}>
+              <Button size="sm" variant="paper" className="min-h-9" onClick={() => decide(true)}>
                 Accept all
               </Button>
-              <Button size="sm" variant="outline" className="min-h-11" onClick={() => decide(false)}>
+              <Button size="sm" variant="outline" className="min-h-9" onClick={() => decide(false)}>
                 Reject non-essential
               </Button>
-              <Button size="sm" variant="ghost" className="min-h-11" onClick={() => setCustomizing(true)}>
+              <Button size="sm" variant="ghost" className="min-h-9" onClick={() => setCustomizing(true)}>
                 Customize
               </Button>
             </>

@@ -260,7 +260,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
               className="items-center !rounded-full !bg-neu-lift !bg-none !border-transparent !backdrop-blur-none !shadow-float"
               magnification={40}
               distance={140}
-              panelHeight={60}
+              panelHeight={52}
             >
               {/* Icon-only now, by direct instruction ("remove the texts"),
                   the permanent-caption layout (`flex-col`, a bottom-anchored
