@@ -180,7 +180,10 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
         <div className="space-y-6">
           <SectionCard title={`Friends (${friends.length})`}>
             {friends.length === 0 ? (
-              <p className="text-small text-slate-500">No friends yet.</p>
+              <div className="flex flex-col items-center gap-1 py-6 text-center">
+                <p className="text-body font-semibold text-slate-100">No friends yet</p>
+                <p className="max-w-[32ch] text-small text-slate-400">Search a username above to send a friend request.</p>
+              </div>
             ) : (
               <div className="space-y-2">
                 {friends.map((friend) => (

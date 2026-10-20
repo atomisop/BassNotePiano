@@ -1021,8 +1021,9 @@
   [data-mode="dark"] {
     --neu-base: 38 38 36; /* Claude dark grey #262624 */
     --neu-lift: 50 50 48;
-    --neu-hi: rgb(255 255 255 / 0.065);
-    --neu-lo: rgb(0 0 0 / 0.55);
+    --neu-hi: rgb(255 255 255 / 0.045);
+    --neu-lo: rgb(0 0 0 / 0.42);
+    --neu-top: rgb(255 255 255 / 0.04);
     --neu-edge: rgb(255 255 255 / 0.1);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
@@ -1033,7 +1034,8 @@
     --neu-base: 229 229 233;
     --neu-lift: 244 244 248;
     --neu-hi: rgb(255 255 255 / 0.95);
-    --neu-lo: rgb(140 140 158 / 0.5);
+    --neu-lo: rgb(140 140 158 / 0.38);
+    --neu-top: rgb(255 255 255 / 0.9);
     --neu-edge: rgb(0 0 0 / 0.1);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
@@ -1052,15 +1054,15 @@
   :root,
   [data-mode="dark"],
   [data-mode="light"] {
-    --neu-raised-low: -3px -3px 7px var(--neu-hi), 3px 3px 7px var(--neu-lo);
-    --neu-raised-mid: -6px -6px 14px var(--neu-hi), 6px 6px 14px var(--neu-lo);
-    --neu-raised-high: -10px -10px 22px var(--neu-hi), 10px 10px 22px var(--neu-lo);
+    --neu-raised-low: -2px -2px 5px var(--neu-hi), 2px 2px 6px var(--neu-lo), inset 0 1px 0 var(--neu-top);
+    --neu-raised-mid: -4px -4px 10px var(--neu-hi), 4px 4px 11px var(--neu-lo), inset 0 1px 0 var(--neu-top);
+    --neu-raised-high: -6px -6px 16px var(--neu-hi), 7px 7px 18px var(--neu-lo), inset 0 1px 0 var(--neu-top);
     /* Floating depth for the dock: the high raised shape plus a long ambient
        shadow underneath, so it reads as hovering above the page. */
     --neu-float: var(--neu-raised-high), inset 0 1px 0 var(--neu-edge), 0 22px 36px -14px var(--neu-lo);
-    --neu-pressed-low: inset -2px -2px 5px var(--neu-hi), inset 2px 2px 5px var(--neu-lo);
-    --neu-pressed-mid: inset -4px -4px 9px var(--neu-hi), inset 4px 4px 9px var(--neu-lo);
-    --neu-pressed-high: inset -6px -6px 14px var(--neu-hi), inset 6px 6px 14px var(--neu-lo);
+    --neu-pressed-low: inset -1px -1px 3px var(--neu-hi), inset 2px 2px 4px var(--neu-lo);
+    --neu-pressed-mid: inset -2px -2px 6px var(--neu-hi), inset 3px 3px 7px var(--neu-lo);
+    --neu-pressed-high: inset -3px -3px 8px var(--neu-hi), inset 4px 4px 10px var(--neu-lo);
 
     /* Existing plane tokens now read from the neumorphic ones, so every
        card and button that used them follows without editing call sites. */
@@ -1453,76 +1455,20 @@
 }
 
 /* ==========================================================================
-   iPhone look (signed-in app, phone widths)
-   Flat grouped surfaces on a darker ground (hairline edges instead of
-   neumorphic shadows), system font, a translucent tab bar. Desktop and the
-   public pages keep the raised neumorphic style.
+   Clean modern polish (signed-in app, every width)
+   Keeps the soft neumorphic surfaces (tuned finer in the shadow tokens above)
+   and cleans up the type: the system font like native iOS apps, small labels
+   in sentence case instead of wide-tracked capitals.
    ========================================================================== */
-.ios-tabbar {
-  background: rgb(var(--neu-base) / 0.78);
-  -webkit-backdrop-filter: saturate(180%) blur(24px);
-  backdrop-filter: saturate(180%) blur(24px);
+[data-surface="app"] .uppercase {
+  text-transform: none;
+  font-weight: 500;
 }
-.ios-tab {
-  -webkit-tap-highlight-color: transparent;
-  transition: color 160ms var(--ease-ios);
+[data-surface="app"] [class*="tracking-"] {
+  letter-spacing: normal;
 }
-.ios-tab .ios-tab-icon {
-  transition: scale 420ms var(--ease-spring);
-}
-.ios-tab:active .ios-tab-icon {
-  scale: 0.86;
-  transition-duration: 90ms;
-}
-@media (max-width: 767px) {
-  html[data-mode]:has([data-surface="app"]) {
-    --neu-raised-low: 0 0 0 0.5px var(--neu-edge);
-    --neu-raised-mid: 0 0 0 0.5px var(--neu-edge);
-    --neu-raised-high: 0 0 0 0.5px var(--neu-edge), 0 10px 30px rgb(0 0 0 / 0.4);
-    --neu-pressed-low: inset 0 0 0 0.5px var(--neu-edge);
-    --neu-pressed-mid: inset 0 0 0 0.5px var(--neu-edge);
-    --neu-pressed-high: inset 0 0 0 0.5px var(--neu-edge);
-    --plane-mid-shadow: var(--neu-raised-mid);
-    --plane-front-shadow: var(--neu-raised-high);
-    --radius-card: 1rem;
-    --radius-control: 0.75rem;
-  }
-  /* iOS sets small labels in sentence case, not wide-tracked capitals. */
-  [data-surface="app"] .uppercase {
-    text-transform: none;
-  }
-  [data-surface="app"] [class*="tracking-"] {
-    letter-spacing: normal;
-  }
-  /* Tab-like controls become iOS segmented controls. */
-  [data-surface="app"] .ios-seg {
-    gap: 0;
-    padding: 2px;
-    border-radius: 9px;
-    background: rgb(118 118 128 / 0.24);
-    box-shadow: none;
-  }
-  [data-surface="app"] .ios-seg-item {
-    height: 32px;
-    border-radius: 7px;
-    font-weight: 500;
-  }
-  [data-surface="app"] .ios-seg-item.ios-seg-on {
-    background: rgb(99 99 102 / 0.95);
-    color: #fff;
-    box-shadow: 0 3px 8px rgb(0 0 0 / 0.25), 0 0 0 0.5px rgb(0 0 0 / 0.04);
-  }
-  [data-surface="app"] {
-    background-color: rgb(22 22 21);
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .ios-tab .ios-tab-icon {
-    transition: none;
-  }
-  .ios-tab:active .ios-tab-icon {
-    scale: 1;
-  }
+[data-surface="app"] {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }

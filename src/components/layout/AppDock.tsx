@@ -183,7 +183,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
       <div
         role="navigation"
         aria-label="Primary"
-        className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center pb-[env(safe-area-inset-bottom)]"
+        className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center pb-[env(safe-area-inset-bottom)]"
       >
         <motion.div className="pointer-events-auto">
           {/* No idle bob: the dock used to drift up and down by 2px on an
@@ -257,10 +257,10 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                 here removes the conflict outright instead of relying on a
                 tiebreak this file never actually chose. */}
             <Dock
-              className="items-center !rounded-full !bg-neu-lift !bg-none !border-transparent !backdrop-blur-none !shadow-float"
-              magnification={40}
+              className="items-center !gap-1 !rounded-full !bg-neu-lift !bg-none !border-transparent !px-2 !backdrop-blur-none !shadow-[0_8px_24px_rgb(0_0_0/0.4),0_0_0_0.5px_var(--neu-edge)]"
+              magnification={36}
               distance={140}
-              panelHeight={52}
+              panelHeight={44}
             >
               {/* Icon-only now, by direct instruction ("remove the texts"),
                   the permanent-caption layout (`flex-col`, a bottom-anchored
@@ -337,7 +337,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                       <motion.div
                         layoutId="dock-active-line"
                         transition={SPRING.lively}
-                        className="pointer-events-none absolute left-1/2 top-0 h-[2px] w-8 -translate-x-1/2 -translate-y-2 rounded-full bg-signal"
+                        className="pointer-events-none absolute bottom-[3px] left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-signal"
                       />
                     )}
                     <motion.div whileTap={{ scale: 0.9 }} className="relative">
@@ -356,7 +356,9 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                       >
                         <DockIcon>
                           <Icon
-                            strokeWidth={active ? 2.5 : 2}
+                            strokeWidth={active ? 2.2 : 1.75}
+                            fill={active ? "currentColor" : "none"}
+                            fillOpacity={active ? 0.2 : 0}
                             className={`h-full w-full transition-[color,filter] duration-200 ${
                               active
                                 ? "text-signal"
