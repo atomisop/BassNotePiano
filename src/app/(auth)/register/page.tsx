@@ -7,7 +7,7 @@ import { Suspense, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -29,12 +29,24 @@ function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-  const { status } = useSession();
+  const { data: session, status } = useSession();
 
   // Already signed in: nothing to create, go straight into the app.
   useEffect(() => {
-    if (status === "authenticated") router.replace("/dashboard");
-  }, [status, router]);
+    if (status !== "authenticated" || !session?.user?.id) return;
+    let cancelled = false;
+    // Only a session the server still accepts counts (see the login page).
+    fetch("/api/me/status", { cache: "no-store" })
+      .then((res) => {
+        if (cancelled) return;
+        if (res.ok) router.replace("/dashboard");
+        else void signOut({ redirect: false });
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [status, session, router]);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
