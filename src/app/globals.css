@@ -1458,22 +1458,6 @@
    neumorphic shadows), system font, a translucent tab bar. Desktop and the
    public pages keep the raised neumorphic style.
    ========================================================================== */
-.ios-tabbar {
-  background: rgb(var(--neu-base) / 0.78);
-  -webkit-backdrop-filter: saturate(180%) blur(24px);
-  backdrop-filter: saturate(180%) blur(24px);
-}
-.ios-tab {
-  -webkit-tap-highlight-color: transparent;
-  transition: color 160ms var(--ease-ios);
-}
-.ios-tab .ios-tab-icon {
-  transition: scale 420ms var(--ease-spring);
-}
-.ios-tab:active .ios-tab-icon {
-  scale: 0.86;
-  transition-duration: 90ms;
-}
 @media (max-width: 767px) {
   html[data-mode]:has([data-surface="app"]) {
     --neu-raised-low: 0 0 0 0.5px var(--neu-edge);
@@ -1516,13 +1500,5 @@
     background-color: rgb(22 22 21);
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .ios-tab .ios-tab-icon {
-    transition: none;
-  }
-  .ios-tab:active .ios-tab-icon {
-    scale: 1;
   }
 }
