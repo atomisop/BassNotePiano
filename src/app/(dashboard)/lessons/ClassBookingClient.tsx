@@ -480,8 +480,13 @@ export function ClassBookingClient({
   const [reschedulingKey, setReschedulingKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  // Set by tapping a day on the calendar: the times for that day appear below it.
-  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  // Set by tapping a day on the calendar: the times for that day appear below it. It starts on the first day
+  // with an open time, so the list of open and taken times is on screen the moment the page opens.
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(() => {
+    const first = occurrences.filter((o) => !o.isBooked).sort((a, b) => a.occurrenceDateMs - b.occurrenceDateMs)[0];
+    return first ? dayKey(first.occurrenceDateMs) : null;
+  });
+  const firstDayRef = useRef(true);
   // Every time the student has tapped, across days. Keyed `scheduleId:occurrenceDateMs:chunkIndex`.
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const timesRef = useRef<HTMLDivElement>(null);
@@ -524,6 +529,11 @@ export function ClassBookingClient({
 
   // Tapping a day jumps straight to that day's times.
   useEffect(() => {
+    // Not on the first paint: the page should open at the top, not jump down to the times.
+    if (firstDayRef.current) {
+      firstDayRef.current = false;
+      return;
+    }
     if (!selectedDateKey) return;
     scrollWithin(timesRef.current, "start");
   }, [selectedDateKey]);
@@ -898,7 +908,7 @@ export function ClassBookingClient({
 
             {rows.length > 0 ? (
               <div id="booking-calendar" className="mt-5 scroll-mt-20">
-                <p className="mb-3 text-small font-medium uppercase tracking-wide text-slate-500">Pick a day, then pick one or more times</p>
+                <p className="mb-3 text-small font-medium text-slate-400">Tap a highlighted day, then pick your times</p>
                 <BookingCalendar occurrences={rows} selectedDateKey={selectedDateKey} onSelectDate={setSelectedDateKey} />
               </div>
             ) : (
@@ -1013,7 +1023,7 @@ export function ClassBookingClient({
                       return card(
                         <>
                           {time}
-                          <span className="shrink-0 text-small text-red-400">{isCurrentRescheduleSlot ? "Your time" : "Booked"}</span>
+                          <span className="shrink-0 text-small font-medium text-slate-500">{isCurrentRescheduleSlot ? "Your time" : "Taken"}</span>
                         </>,
                         undefined,
                         "opacity-60",
@@ -1080,8 +1090,11 @@ export function ClassBookingClient({
                     return card(
                       <>
                         {time}
-                        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isSelected ? "bg-[rgb(var(--signal))] text-black" : "bg-ink/10 text-transparent"}`}>
-                          <CheckIcon size={12} />
+                        <span className="flex shrink-0 items-center gap-2">
+                          {!isSelected && <span className="text-small font-medium text-signal">Open</span>}
+                          <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isSelected ? "bg-[rgb(var(--signal))] text-black" : "bg-ink/10 text-transparent"}`}>
+                            <CheckIcon size={12} />
+                          </span>
                         </span>
                       </>,
                       () => toggleSelected(row),
