@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   Briefcase,
+  BookUser,
   CalendarDays,
   ClipboardList,
   CreditCard,
@@ -52,6 +53,7 @@ const NAV_GROUPS: AdminNavGroup[] = [
     leaves: [
       { href: "/admin/students", label: "Applications", icon: ClipboardList },
       { href: "/admin/users", label: "Accounts", icon: Users },
+      { href: "/admin/contacts", label: "Contacts", icon: BookUser },
       { href: "/admin/employees", label: "Employees", icon: Briefcase },
     ],
   },

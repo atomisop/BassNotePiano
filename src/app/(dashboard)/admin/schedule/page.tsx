@@ -8,6 +8,7 @@ import { AdminAttendanceByStudent } from "@/components/admin/AdminAttendanceBySt
 import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 import { teacherCalendarToken } from "@/lib/teacherCalendar";
 import { AdminManualBooking } from "@/components/admin/AdminManualBooking";
+import { getActiveHolds } from "@/lib/contacts";
 import {
   createClassScheduleAction,
   updateClassScheduleAction,
@@ -59,6 +60,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
   if (activeView === "BOOKINGS") {
     const upcoming = await getUpcomingOccurrences();
     const openOccurrences = upcoming.filter((o) => !o.isBooked);
+    const holds = await getActiveHolds();
 
     return (
       <div>
@@ -69,6 +71,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
         <div className="mt-6">
           <AdminManualBooking
+            holds={holds.map((h) => ({ contactId: h.contactId, contactName: h.contactName, scheduleId: h.scheduleId, chunkIndex: h.chunkIndex, untilMs: h.untilMs }))}
             openOccurrences={openOccurrences.map((o) => ({
               scheduleId: o.scheduleId,
               occurrenceDateMs: o.occurrenceDate.getTime(),
