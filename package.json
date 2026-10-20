@@ -44,6 +44,8 @@
     "@sentry/nextjs": "^10.70.0",
     "@tabler/icons-react": "^3.48.0",
     "@tailwindcss/postcss": "^4.3.3",
+    "@upstash/ratelimit": "^2.2.0",
+    "@upstash/redis": "^1.39.0",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
