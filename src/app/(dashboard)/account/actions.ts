@@ -13,6 +13,8 @@ import { prisma } from "@/lib/prisma";
 import { setUsername, SocialError } from "@/lib/social";
 import { createPresignedAvatarUpload, deleteObject, keyFromPublicUrl, isObjectStorageConfigured } from "@/lib/storage";
 import { createAndSendCode, verifyCode, RateLimitError } from "@/lib/verification";
+import { consumeRateLimit, RateLimitError as RateLimitErr } from "@/lib/rateLimit";
+import { TwoStepError, beginSetup, confirmSetup, disableTwoStep, regenerateBackupCodes } from "@/lib/adminTwoStep";
 import { sendPasswordChangedEmail } from "@/lib/email";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
 import { changePaymentPlanTerm, cancelPaymentPlanBySelf, PaymentPlanError } from "@/lib/paymentPlans";
@@ -386,4 +388,47 @@ export async function cancelPaymentPlanBySelfAction(reason: PlanCancellationReas
     if (err instanceof PaymentPlanError) return { ok: false as const, error: err.message };
     throw err;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Admin two-step sign-in (authenticator app). Admin only; the library refuses anyone else.
+// ---------------------------------------------------------------------------
+
+export type TwoStepResult<T = object> = ({ ok: true } & T) | { ok: false; error: string };
+
+async function twoStepCall<T extends object>(work: (userId: string) => Promise<T>): Promise<TwoStepResult<T>> {
+  try {
+    const { id } = await requireSession();
+    await consumeRateLimit(prisma, `admin-2fa:${id}`, { windowMinutes: 15, max: 12, message: "Too many tries. Wait a few minutes." });
+    return { ok: true, ...(await work(id)) };
+  } catch (err) {
+    if (err instanceof TwoStepError || err instanceof RateLimitError || err instanceof RateLimitErr) return { ok: false, error: err.message };
+    const message = err instanceof Error ? err.message : "";
+    if (message.includes("ADMIN_TOTP_ENCRYPTION_KEY")) return { ok: false, error: "Two-step sign-in is not set up on the server yet (the encryption key is missing)." };
+    console.error("Admin two-step action failed:", err);
+    return { ok: false, error: "Something went wrong. Try again." };
+  }
+}
+
+export async function twoStepBeginAction() {
+  return twoStepCall((id) => beginSetup(id));
+}
+
+export async function twoStepConfirmAction(code: string) {
+  const result = await twoStepCall(async (id) => ({ backupCodes: await confirmSetup(id, code) }));
+  if (result.ok) revalidatePath("/account");
+  return result;
+}
+
+export async function twoStepDisableAction(password: string, code: string) {
+  const result = await twoStepCall(async (id) => {
+    await disableTwoStep(id, password, code);
+    return {};
+  });
+  if (result.ok) revalidatePath("/account");
+  return result;
+}
+
+export async function twoStepRegenerateAction(code: string) {
+  return twoStepCall(async (id) => ({ backupCodes: await regenerateBackupCodes(id, code) }));
 }

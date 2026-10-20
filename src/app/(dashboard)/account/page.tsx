@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getActivePaymentPlan, getFamilyDetails } from "@/lib/paymentPlans";
 import { loadPersistedHistory } from "@/lib/assistant";
 import { phoneVerifyMode } from "@/lib/phoneVerification";
+import { unusedBackupCodeCount } from "@/lib/adminTwoStep";
 import { AccountSettings } from "./AccountSettings";
 
 export const metadata = { title: "Settings" };
@@ -33,6 +34,8 @@ export default async function AccountPage() {
         notifyEmailSocial: true,
         notifyEmailReminders: true,
         notifyEmailClasses: true,
+        role: true,
+        totpEnabledAt: true,
       },
     }),
     loadPersistedHistory(session.user.id),
@@ -59,6 +62,7 @@ export default async function AccountPage() {
         discordUsername: discordLinkState({ discordId: user.discordId, discordUsername: user.discordUsername }).name,
       }}
       hasCurriculumAccess={session.user.hasCurriculumAccess}
+      twoStep={user.role === "ADMIN" ? { enabled: Boolean(user.totpEnabledAt), backupLeft: user.totpEnabledAt ? await unusedBackupCodeCount(session.user.id) : 0 } : null}
       initialNotificationPreferences={{
         notifyEmailPayments: user.notifyEmailPayments,
         notifyEmailRoleUpdates: user.notifyEmailRoleUpdates,

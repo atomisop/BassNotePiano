@@ -10,6 +10,7 @@ import { verifyCode } from "@/lib/verification";
 import { getCurriculumEntitlement } from "@/lib/entitlement";
 import { isFullAccess } from "@/lib/entitlementRules";
 import { tokenWhenEntitlementsUnknown } from "@/lib/tokenFallback";
+import { consumeSecondStep } from "@/lib/adminTwoStep";
 
 type Entitlements = {
   role: "STUDENT" | "ADMIN";
@@ -171,6 +172,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         code: { label: "Code", type: "text" },
+        secondStep: { label: "Second step", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials.code) return null;
@@ -192,6 +194,14 @@ export const authOptions: NextAuthOptions = {
           where: { email: normalizedEmail, createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) } },
         });
         if (recentTries > 8) return null;
+
+        // Admin two-step sign-in. Every route to a session ends here (password, reset, verify), so this is the one
+        // place that cannot be skipped. Checked before the sign-in code is used up, so a missing second step does not
+        // burn a code. The try recorded above stays counted when it fails, so wrong codes feed the same lockout.
+        const candidate = await prisma.user.findUnique({ where: { email: normalizedEmail }, select: { id: true, role: true, totpEnabledAt: true } });
+        if (candidate?.role === "ADMIN" && candidate.totpEnabledAt) {
+          if (!credentials.secondStep || !(await consumeSecondStep(candidate.id, credentials.secondStep))) return null;
+        }
 
         const result = await verifyCode(normalizedEmail, "LOGIN_2FA", credentials.code);
         if (!result.ok || !result.userId) return null;

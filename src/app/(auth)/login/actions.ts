@@ -7,10 +7,12 @@ import { createAndSendCode, createSilentCode, RateLimitError as CodeRateLimitErr
 import { assertRateLimit, RateLimitError as LockoutError } from "@/lib/rateLimit";
 import { withTimingFloor } from "@/lib/timingSafe";
 import { BANNED_MESSAGE } from "@/lib/ban";
+import { peekSecondStep } from "@/lib/adminTwoStep";
 
 export type LoginStepOneResult =
   | { ok: false; error: string }
   | { ok: true; needsEmailVerification: true }
+  | { ok: true; needsSecondStep: true }
   | { ok: true; needsEmailVerification: false; autoCode: string };
 
 const GENERIC_CREDENTIALS_ERROR = "Invalid email or password.";
@@ -55,11 +57,13 @@ async function recordFailedAttempt(email: string): Promise<void> {
  * measurable in response time even though every branch's response body
  * already treats both cases identically.
  */
-export async function loginStepOneAction(email: string, password: string): Promise<LoginStepOneResult> {
-  return withTimingFloor(() => loginStepOneWork(email, password));
+export async function loginStepOneAction(email: string, password: string, secondStep?: string): Promise<LoginStepOneResult> {
+  return withTimingFloor(() => loginStepOneWork(email, password, secondStep));
 }
 
-async function loginStepOneWork(email: string, password: string): Promise<LoginStepOneResult> {
+const SECOND_STEP_ERROR = "That code didn't work. Check it, or use one of your backup codes.";
+
+async function loginStepOneWork(email: string, password: string, secondStep?: string): Promise<LoginStepOneResult> {
   const normalizedEmail = email.trim().toLowerCase();
 
   // Checked before the user lookup or any bcrypt work, so a locked-out
@@ -95,6 +99,18 @@ async function loginStepOneWork(email: string, password: string): Promise<LoginS
 
   // Said only after the right password, so it cannot be used to find out which emails are banned.
   if (user.bannedAt) return { ok: false, error: BANNED_MESSAGE };
+
+  // An admin with two-step sign-in on is asked for the second step only AFTER the right password, so nothing
+  // here tells anyone whether an account exists. No sign-in code is issued until the second step is right, and the
+  // sign-in itself (auth.ts authorize) checks it again, so no other route can skip it. A wrong code counts toward
+  // the same lockout as a wrong password.
+  if (user.role === "ADMIN" && user.totpEnabledAt) {
+    if (!secondStep?.trim()) return { ok: true, needsSecondStep: true };
+    if (!(await peekSecondStep(user.id, secondStep))) {
+      await recordFailedAttempt(normalizedEmail);
+      return { ok: false, error: SECOND_STEP_ERROR };
+    }
+  }
 
   try {
     if (!user.emailVerified) {
