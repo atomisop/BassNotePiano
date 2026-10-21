@@ -25,13 +25,16 @@ import { TopBanners } from "@/components/ui/TopBanners";
 import { MeStatusProvider } from "@/components/layout/MeStatusProvider";
 import { getMeStatus } from "@/lib/meStatus";
 import { getSidebarCards } from "@/lib/sidebarCards";
+import { getPricingConfig } from "@/lib/pricing";
+import { getDiscountPercent } from "@/lib/accountDiscounts";
+import { PricingProvider } from "@/components/billing/PricingContext";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
 
   // Everything the shell needs is asked for at once, not one after another (it ran on every page).
-  const [directUnreadCount, groupUnreadCount, supportUnreadCount, user, activeAnnouncement, verifyMode, meStatus, owner, sidebarCards] = await Promise.all([
+  const [directUnreadCount, groupUnreadCount, supportUnreadCount, user, activeAnnouncement, verifyMode, meStatus, owner, sidebarCards, pricing, personalDiscountPercent] = await Promise.all([
     getTotalUnreadMessageCount(session.user.id),
     getTotalUnreadGroupMessageCount(session.user.id),
     getSupportUnreadCount(session.user.id),
@@ -41,6 +44,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     getMeStatus(session.user.id),
     prisma.user.findUnique({ where: { email: OWNER_EMAIL }, select: { id: true } }),
     getSidebarCards(session.user.id, session.user.role ?? "STUDENT", session.user.role === "ADMIN" && isOwnerEmail(session.user.email)).catch(() => []),
+    getPricingConfig(),
+    getDiscountPercent(session.user.id),
   ]);
   const unreadMessageCount = directUnreadCount + groupUnreadCount + supportUnreadCount;
 
@@ -77,6 +82,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <OwnerStarProvider ownerId={owner?.id ?? null}>
     <MeStatusProvider initial={meStatus}>
+    <PricingProvider pricing={pricing} personalDiscountPercent={personalDiscountPercent}>
     <WhatsNewProvider entry={LATEST_ENTRY} showInitially={showWhatsNew}>
     <div data-surface="app" className="fixed inset-0 flex overflow-hidden bg-neu-base">
       {/* No photographic backdrop behind the app shell, deliberately. The
@@ -125,6 +131,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <TopBanners phone={promptPhone ? { seconds: promptSeconds, verifying: verifyMode } : null} discord={discordPrompt} practice={practicePrompt} />
     </div>
     </WhatsNewProvider>
+    </PricingProvider>
     </MeStatusProvider>
     </OwnerStarProvider>
   );

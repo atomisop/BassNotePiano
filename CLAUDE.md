@@ -353,6 +353,18 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
   Custom modals must use `useDialogFocus` (focus in, Tab trapped, Escape, focus back). Never put `aria-label` on a bare `p`/`span` without a role; icon targets are at
   least 24px; links inside running text are underlined.
 
+## Pricing and personal discounts (added 2026-10-21)
+
+- **Prices are the owner's numbers** (Admin > Pricing, owner only, `src/app/(dashboard)/admin/pricing/`): monthly plan price, 3 and 6 month discount %, family extra %, extra class price,
+  fifth class price. They are settings (`pricing.*`, plus `payments.fifthClassPriceDollars`), read with `getPricingConfig()` (`src/lib/pricing.ts`). The math is still the pure
+  `calculatePaymentPlanRate` / `calculateFamilyBundleTotal` in `classCreditPricing.ts`, which take a `PricingConfig` (default `DEFAULT_PRICING` = today's prices): never hard-code a price,
+  pass the config. Server pages hand it to client components as a prop, or through `PricingProvider` / `usePricing()` in the signed-in layout. A plan keeps the price it enrolled at, so a
+  price change affects new plans and plan changes only.
+- **Personal discount** (`AccountDiscount`, one row per account, `src/lib/accountDiscounts.ts`): 1 to 90 percent off a SOLO plan. `discountedPlanPriceCents` (nearest dollar, a cent under). Setting,
+  changing or removing it rewrites the account's running solo plan (`installmentAmountCents`, the one price bills read) and its unpaid, not-yet-submitted bill, and tells the student; the
+  price before the discount is kept in `PaymentPlan.listAmountCents` so removing it restores the signed-up price exactly. New plans and term changes apply it (`createPaymentPlan`,
+  `changePaymentPlanTerm`). Family plans keep the family rate and are left alone. All of it is audited (`pricing.update`, `pricing.discount.set/clear`).
+
 - **Emailed links are for one person**: `tagAppLinks` tags every page link in an email (only `/api` and files are left alone, sign-in and reset steps included) and
   the middleware stops a different signed-in account on ANY tagged page, public ones like `/unsubscribe` too, with the "Sign in with the right account" screen
   (`/wrong-account`; a public target simply opens once they sign out). Any link the app builds from inside a page that is about another person (such as the

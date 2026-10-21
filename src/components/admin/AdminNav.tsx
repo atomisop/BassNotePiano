@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { History,
+import { BadgePercent,
+  History,
   Briefcase,
   BookUser,
   CalendarDays,
@@ -52,6 +53,7 @@ const NAV_GROUPS: AdminNavGroup[] = [
     leaves: [
       { href: "/admin/payments", label: "Payments", icon: CreditCard },
       { href: "/admin/payment-plans", label: "Payment Plans", icon: Repeat },
+      { href: "/admin/pricing", label: "Pricing", icon: BadgePercent },
     ],
   },
   {

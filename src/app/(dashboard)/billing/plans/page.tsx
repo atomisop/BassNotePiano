@@ -8,6 +8,8 @@ import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
 import { MyPlanSummary } from "@/components/billing/MyPlanSummary";
+import { getPricingConfig } from "@/lib/pricing";
+import { getDiscountPercent } from "@/lib/accountDiscounts";
 import { BackLink } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Payment plans" };
@@ -31,9 +33,11 @@ export default async function BillingPlansPage(
   const initialCadence = Object.values(PaymentPlanCadence).find((c) => c === searchParams.cadence);
   const initialTerm = Object.values(PaymentPlanTerm).find((t) => t === searchParams.term);
 
-  const [activePlan, allPlans] = await Promise.all([
+  const [activePlan, allPlans, pricing, personalDiscountPercent] = await Promise.all([
     getActivePaymentPlan(session.user.id),
     getUserPaymentPlans(session.user.id),
+    getPricingConfig(),
+    getDiscountPercent(session.user.id),
   ]);
 
   // Ensures the current installment exists (idempotent) the moment an
@@ -130,6 +134,8 @@ export default async function BillingPlansPage(
           zelleHandle={zelleHandle}
           initialCadence={initialCadence}
           initialTerm={initialTerm}
+          pricing={pricing}
+          personalDiscountPercent={personalDiscountPercent}
           activePlan={
             activePlan
               ? {
