@@ -22,6 +22,7 @@ import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { LessonsHub } from "./LessonsHub";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 import { discordChannelUrl } from "@/lib/discord";
+import { getPricingConfig } from "@/lib/pricing";
 import { MyPlanSummary } from "@/components/billing/MyPlanSummary";
 import { DiscordConnectCard } from "@/components/lessons/DiscordConnectCard";
 
@@ -50,7 +51,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
     getBoolSetting("cancel.studentCanReschedule"),
   ]);
 
-  const [credits, occurrences, bookings, supportContactId, weeklyLimited] = await Promise.all([
+  const [credits, occurrences, bookings, supportContactId, weeklyLimited, pricing] = await Promise.all([
     // Effective, not raw: a credit already reserved by another SCHEDULED
     // booking isn't actually free to spend again, even though the real
     // charge for it hasn't landed yet, see getEffectiveClassCredits.
@@ -59,6 +60,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
     getUserClassBookings(session.user.id),
     getSupportContactId(),
     hasLivePaymentPlan(session.user.id),
+    getPricingConfig(),
   ]);
 
   // A Monthly subscriber whose billing month holds a fifth class day can add it for a set price.
@@ -66,6 +68,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
 
   const bookingClient = (
     <ClassBookingClient
+      extraClassCents={pricing.extraClassCents}
       fifthClassOffer={fifthOffer ? { scheduledAt: fifthOffer.scheduledAt.toISOString(), priceCents: fifthOffer.priceCents } : null}
       extraMode={Boolean(activePlan)}
       weeklyLimited={weeklyLimited}

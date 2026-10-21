@@ -445,7 +445,10 @@ export function ClassBookingClient({
   extraMode = false,
   weeklyLimited = false,
   fifthClassOffer = null,
+  extraClassCents = EXTRA_CLASS_PRICE_CENTS,
 }: {
+  /** What one extra class costs now (Admin > Pricing). */
+  extraClassCents?: number;
   /** A Monthly subscriber's optional fifth class (their cycle holds five of their weekday): when it is, and the price. */
   fifthClassOffer?: { scheduledAt: string; priceCents: number } | null;
   /** A student on a payment plan: this is where they book EXTRA sessions on top of their weekly class. */
@@ -1119,7 +1122,7 @@ export function ClassBookingClient({
                           {time}
                           <button type="button" onClick={() => startExtraPayment(row)} disabled={payBusyKey !== null} className={actionClass}>
                             {payBusyKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                            Buy extra · ${(EXTRA_CLASS_PRICE_CENTS / 100).toFixed(0)}
+                            Buy extra · ${(extraClassCents / 100).toFixed(0)}
                           </button>
                         </div>
                       );
