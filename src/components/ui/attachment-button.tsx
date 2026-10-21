@@ -5,7 +5,7 @@
 // emoji" trigger.
 import * as React from "react";
 import { memo, type ReactNode } from "react";
-import { IconPaperclip, IconPlus } from "@tabler/icons-react";
+import { Paperclip, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type AttachmentButtonIcon = "plus" | "paperclip";
@@ -32,9 +32,9 @@ export const AttachmentButton = memo(function AttachmentButton({
   if (isIconName(icon)) {
     iconNode =
       icon === "paperclip" ? (
-        <IconPaperclip className={iconClassName} strokeWidth={2} />
+        <Paperclip className={iconClassName} strokeWidth={2} />
       ) : (
-        <IconPlus className={iconClassName} strokeWidth={2} />
+        <Plus className={iconClassName} strokeWidth={2} />
       );
   } else {
     iconNode = icon;
