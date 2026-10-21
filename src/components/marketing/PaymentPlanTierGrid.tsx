@@ -114,6 +114,11 @@ export function PaymentPlanTierGrid() {
                 </>,
                 "Your weekly time reserved",
                 isMonthly ? (
+                  "In a five-class-day month, add the fifth class at a member price"
+                ) : (
+                  "A free bonus class in any month with five of your class day"
+                ),
+                isMonthly ? (
                   "No commitment, pay month to month"
                 ) : (
                   <>

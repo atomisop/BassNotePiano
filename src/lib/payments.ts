@@ -17,7 +17,7 @@ import {
   MIN_FAMILY_BUNDLE_RECIPIENTS,
   describePaymentPlan,
 } from "@/lib/classCreditPricing";
-import { addCalendarMonthsClamped, bookReservedWindowForPlan, describeReservedSlot, fifthClassReceiptNote } from "@/lib/paymentPlans";
+import { addCalendarMonthsClamped, bookReservedWindowForPlan, describeReservedSlot, fifthClassReceiptNote, getFifthClassOffer } from "@/lib/paymentPlans";
 import { createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
 import { adjustUserCredits } from "@/lib/creditAdjustments";
@@ -106,6 +106,43 @@ async function getOrCreatePendingZellePayment({ userId, purpose, amountCents, ze
 }
 
 export class ExtraCreditsError extends Error {}
+
+/**
+ * The optional fifth class for a MONTHLY subscriber (see getFifthClassOffer): one payment at the owner's price for the last
+ * class of a five-weekday cycle. The offer is worked out from the plan here, never from what the browser sends. Paying and
+ * approving it books the class through the same extra-session path (credit granted and spent in one step). Asking again
+ * before paying returns the same open payment.
+ */
+export async function createFifthClassPayment(userId: string, zelleHandle: string) {
+  await expireStalePendingPayments();
+  const offer = await getFifthClassOffer(userId);
+  if (!offer) throw new ExtraCreditsError("There is no fifth class to add right now.");
+  const existing = await prisma.zellePayment.findFirst({
+    where: {
+      userId,
+      purpose: "CLASS_CREDITS",
+      extraSessionScheduleId: offer.scheduleId,
+      extraSessionOccurrenceDate: offer.occurrenceDate,
+      extraSessionScheduledAt: offer.scheduledAt,
+      status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  if (existing) return existing;
+  return prisma.zellePayment.create({
+    data: {
+      userId,
+      purpose: "CLASS_CREDITS",
+      amountCents: offer.priceCents,
+      zelleHandle,
+      lessonQuantity: CREDITS_PER_CLASS,
+      extraSessionScheduleId: offer.scheduleId,
+      extraSessionOccurrenceDate: offer.occurrenceDate,
+      extraSessionScheduledAt: offer.scheduledAt,
+      status: "AWAITING_TRANSFER",
+    },
+  });
+}
 
 /**
  * One extra class paid for directly: the student picks a specific open time and
@@ -799,6 +836,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
   }
 
   let notificationBody = familyStartBody ?? "Your payment was verified.";
+  let fifthClass: Awaited<ReturnType<typeof fifthClassReceiptNote>> = null;
   if (payment.purpose === "CURRICULUM") {
     notificationBody = "Your curriculum payment was verified. Every scale is unlocked, for good.";
   } else if (payment.purpose === "CLASS_CREDITS" && payment.extraSessionScheduleId) {
@@ -820,8 +858,8 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
       ? `Installment ${ordinal} of ${plan.termMonths} was verified. ${creditsNote}.`
       : `Your payment plan installment was verified. ${creditsNote}.`;
     // A cycle that holds five of the student's weekday includes the fifth class free: say so on the receipt.
-    const freeClass = await fifthClassReceiptNote(payment.paymentPlanId);
-    if (freeClass) notificationBody += ` ${freeClass}`;
+    fifthClass = await fifthClassReceiptNote(payment.paymentPlanId);
+    if (fifthClass) notificationBody += ` ${fifthClass.text}`;
   } else if (payment.scaleGroupId) {
     const scaleGroup = await prisma.scaleGroup.findUniqueOrThrow({ where: { id: payment.scaleGroupId } });
     notificationBody = `Your payment for ${scaleGroup.code}: ${scaleGroup.title} was verified. It's unlocked now.`;
@@ -834,6 +872,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
     body: notificationBody,
     emailCategory: "payments",
     alwaysEmail: true,
+    ...(fifthClass?.offerPath ? { cta: { label: "Add the fifth class", path: fifthClass.offerPath } } : {}),
   });
 
   // A completed plan is a distinct milestone worth its own bell entry, on

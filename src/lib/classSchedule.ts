@@ -239,14 +239,19 @@ export function classesInWindow(schedule: { dayOfWeek: number; startTime: string
 
 /** The start time of every class a weekly slot holds between two moments (see classesInWindow). */
 export function classStartsInWindow(schedule: { dayOfWeek: number; startTime: string }, chunk: ScheduleChunk, from: Date, until: Date): Date[] {
-  const starts: Date[] = [];
+  return classOccurrencesInWindow(schedule, chunk, from, until).map((o) => o.scheduledAt);
+}
+
+/** Like classStartsInWindow, with each class's occurrence date (the UTC-midnight stand-in for its ET day) too. */
+export function classOccurrencesInWindow(schedule: { dayOfWeek: number; startTime: string }, chunk: ScheduleChunk, from: Date, until: Date): { occurrenceDate: Date; scheduledAt: Date }[] {
+  const starts: { occurrenceDate: Date; scheduledAt: Date }[] = [];
   const first = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate()) - 86_400_000;
   const last = until.getTime() + 86_400_000;
   for (let t = first; t <= last; t += 86_400_000) {
     const date = new Date(t);
     if (date.getUTCDay() !== schedule.dayOfWeek) continue;
     const at = computeScheduledAt(schedule, date, chunk).getTime();
-    if (at >= from.getTime() && at < until.getTime()) starts.push(new Date(at));
+    if (at >= from.getTime() && at < until.getTime()) starts.push({ occurrenceDate: date, scheduledAt: new Date(at) });
   }
   return starts;
 }

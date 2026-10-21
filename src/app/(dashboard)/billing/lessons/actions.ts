@@ -9,6 +9,7 @@ import {
   checkFamilyBundleRecipients,
   createFamilyBundlePayment,
   createExtraClassPayment,
+  createFifthClassPayment,
   getOwnPaymentStatus,
   ExtraCreditsError,
   FamilyBundleError,
@@ -125,6 +126,22 @@ export async function createExtraClassPaymentAction(
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
   try {
     const payment = await createExtraClassPayment(session.user.id, scheduleId, occurrenceDateMs, chunkIndex, zelleHandle);
+    revalidatePath("/lessons");
+    return { ok: true, id: payment.id, status: payment.status, amountCents: payment.amountCents, error: null };
+  } catch (err) {
+    if (err instanceof ExtraCreditsError) return { ok: false, id: null, status: null, amountCents: null, error: err.message };
+    throw err;
+  }
+}
+
+/** The optional fifth class for a Monthly subscriber: same pay screen as an extra class, at the owner's price. */
+export async function createFifthClassPaymentAction(): Promise<ExtraClassPaymentResult> {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/lessons");
+
+  const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
+  try {
+    const payment = await createFifthClassPayment(session.user.id, zelleHandle);
     revalidatePath("/lessons");
     return { ok: true, id: payment.id, status: payment.status, amountCents: payment.amountCents, error: null };
   } catch (err) {

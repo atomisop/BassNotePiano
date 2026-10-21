@@ -20,9 +20,9 @@ afterAll(async () => {
   await prisma.user.deleteMany({ where: { id: stu.id } });
 });
 
-async function plan(nextDueDate: Date) {
+async function plan(nextDueDate: Date, term: "MONTHLY" | "TERM_3" | "TERM_6" = "TERM_3") {
   const p = await prisma.paymentPlan.create({
-    data: { userId: stu.id, cadence: "MIN_60_WEEKLY", term: "MONTHLY", installmentAmountCents: 24000, creditsPerInstallment: 8, termMonths: 1, installmentsPaid: 1, nextDueDate, status: "ACTIVE", reservedScheduleId: sched.id, reservedChunkIndex: 0 },
+    data: { userId: stu.id, cadence: "MIN_60_WEEKLY", term, installmentAmountCents: 24000, creditsPerInstallment: 8, termMonths: 1, installmentsPaid: 1, nextDueDate, status: "ACTIVE", reservedScheduleId: sched.id, reservedChunkIndex: 0 },
   });
   plans.push(p.id);
   return p;
@@ -30,10 +30,18 @@ async function plan(nextDueDate: Date) {
 const monday = (m: number, day: number) => new Date(Date.UTC(2026, m - 1, day, 22));
 
 describe("a paid month holds every one of the student's weekdays", () => {
-  it("allows five when the cycle holds five Mondays, four when it holds four", async () => {
+  it("a Monthly plan covers four even when the cycle holds five Mondays", async () => {
+    const monthly = await plan(new Date(Date.UTC(2026, 11, 2)), "MONTHLY");
+    expect(await classesInPaidMonth(monthly)).toEqual({ allowed: 4, base: 4 });
+    expect(await classesLeftInPaidMonth(monthly)).toBe(4);
+  });
+
+  it("a 3-month or 6-month plan gets every Monday: five when the cycle holds five, four when it holds four", async () => {
     const five = await plan(new Date(Date.UTC(2026, 11, 2))); // Nov 2 to Dec 2
     expect(await classesInPaidMonth(five)).toEqual({ allowed: 5, base: 4 });
     expect(await classesLeftInPaidMonth(five)).toBe(5);
+    const sixMonth = await plan(new Date(Date.UTC(2026, 11, 2)), "TERM_6");
+    expect((await classesInPaidMonth(sixMonth)).allowed).toBe(5);
     const four = await plan(new Date(Date.UTC(2027, 0, 2))); // Dec 2 to Jan 2
     expect(await classesInPaidMonth(four)).toEqual({ allowed: 4, base: 4 });
   });
