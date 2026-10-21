@@ -11,6 +11,7 @@ import { formatDateTime } from "@/lib/classScheduleLabels";
 import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
 
 export interface PaymentQueueProps {
   payments: PendingZellePayment[];
@@ -123,6 +124,19 @@ export function PaymentQueue({
   const shown = payments.filter((item) => matchesQuery(item, query));
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const toggle = (id: string, on: boolean) =>
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  // Only what is waiting on you can be ticked: payments to approve, and auto-approved ones not yet checked.
+  const canTick = (p: PendingZellePayment) => p.status === "PENDING_REVIEW" || (!!onCheck && p.autoApproved && !p.checkedAt);
+  const pickedList = [...picked].filter((id) => payments.some((p) => p.id === id));
+  const pickedPending = pickedList.filter((id) => payments.find((p) => p.id === id)?.status === "PENDING_REVIEW");
+  const pickedUnchecked = pickedList.filter((id) => { const p = payments.find((x) => x.id === id); return !!p && p.autoApproved && !p.checkedAt; });
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   // Approve used to fire on a single click while Reject already required a
@@ -206,12 +220,42 @@ export function PaymentQueue({
     <div className="space-y-3">
       <AdminListSearch value={query} onChange={setQuery} placeholder="Search name, email, reference code" shown={shown.length} total={payments.length} />
       {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
+      {shown.filter(canTick).length > 1 && (
+        <label className="tap flex items-center gap-2 text-small text-slate-400">
+          <input
+            type="checkbox"
+            className="h-4 w-4 accent-[rgb(var(--signal))]"
+            checked={shown.filter(canTick).every((p) => picked.has(p.id))}
+            onChange={(e) => setPicked(e.target.checked ? new Set(shown.filter(canTick).map((p) => p.id)) : new Set())}
+          />
+          Select all {shown.filter(canTick).length} waiting on you
+        </label>
+      )}
+      <BulkBar
+        ids={pickedList}
+        onClear={() => setPicked(new Set())}
+        onDone={(ok) => {
+          setPicked((prev) => new Set([...prev].filter((id) => !ok.includes(id))));
+          router.refresh();
+        }}
+        actions={[
+          ...(pickedPending.length === pickedList.length && pickedList.length > 0
+            ? [{ label: "Approve selected", question: `Approve ${pickedList.length} payment${pickedList.length === 1 ? "" : "s"}? Each one grants its credits or starts its plan right away.`, confirmLabel: "Yes, approve", run: (id: string) => onApprove(id) }]
+            : []),
+          ...(onCheck && pickedUnchecked.length === pickedList.length && pickedList.length > 0
+            ? [{ label: "Mark selected checked", run: (id: string) => onCheck(id) }]
+            : []),
+        ]}
+        extra={pickedList.length > 0 && pickedPending.length !== pickedList.length && pickedUnchecked.length !== pickedList.length ? <span className="text-small text-slate-500">Pick only one kind to act on them together.</span> : null}
+      />
       {shown.map((payment) => {
         const { eyebrow, title } = describePayment(payment);
         return (
         <div key={payment.id} className="glass-surface p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
+            <div className="flex items-start gap-2">
+              {canTick(payment) && <RowCheck checked={picked.has(payment.id)} onChange={(on) => toggle(payment.id, on)} label={`Select ${payment.user.name ?? payment.user.email}`} />}
+              <div>
               <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">{eyebrow}</p>
               <h3 className="mt-1 text-body text-slate-50 font-semibold">{title}</h3>
               <p className="mt-1 text-small text-slate-500">{payment.user.name ?? payment.user.email}</p>
@@ -220,6 +264,7 @@ export function PaymentQueue({
                   Credits go to: {payment.familyBundleRecipients.map((r) => r.user.name ?? r.user.email).join(", ")}
                 </p>
               )}
+              </div>
             </div>
             <div className="text-right">
               <p className="text-body text-[rgb(var(--c-s-50))] font-semibold">{formatUsd(payment.amountCents)}</p>
