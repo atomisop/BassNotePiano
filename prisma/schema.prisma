@@ -101,6 +101,9 @@ model PaymentPlan {
   term    PaymentPlanTerm
 
   installmentAmountCents Int
+  // The price before a personal discount (see AccountDiscount); null while no discount is applied. Lets the owner change or remove the
+  // discount later without recomputing from today's list prices, so the plan's locked price stays a promise.
+  listAmountCents        Int?
   creditsPerInstallment  Int
   termMonths             Int
 
@@ -137,8 +140,8 @@ model PaymentPlan {
   updatedAt DateTime @updatedAt
 
   // Set when this plan is one member's plan inside a family plan (see FamilyPlanGroup).
-  familyGroupId String?
-  familyGroup   FamilyPlanGroup? @relation(fields: [familyGroupId], references: [id])
+  familyGroupId      String?
+  familyGroup        FamilyPlanGroup?  @relation(fields: [familyGroupId], references: [id])
   // Family plans created to replace this plan once their first payment is approved.
   replacedByFamilies FamilyPlanGroup[] @relation("FamilySwitchReplaces")
 
@@ -758,11 +761,11 @@ model GroupMessageReaction {
 // ---------------------------------------------------------------------------
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
   emailCanonical String? // the email with Gmail dots and plus tags removed, so one inbox is one person for the free trial
-  emailVerified DateTime?
+  emailVerified  DateTime?
 
   // Phone number the person typed in. It is checked to be a real-looking number but is NOT proof of ownership
   // unless `phoneVerifiedAt` is set, which only happens when text-message verification is switched on and a
@@ -777,9 +780,9 @@ model User {
   phoneVerifiedAt DateTime?
   pendingPhone    String?
   phoneRequired   Boolean   @default(false)
-  image         String?
-  passwordHash  String? // set only for credentials-based signup
-  role          Role      @default(STUDENT)
+  image           String?
+  passwordHash    String? // set only for credentials-based signup
+  role            Role      @default(STUDENT)
 
   // Bumped by a password change or an explicit "sign out of all other
   // devices" (see src/lib/auth.ts's jwt callback and
@@ -788,7 +791,7 @@ model User {
   // at sign-in, so a mismatch here is what actually invalidates it, the
   // account-settings password form's claim that changing it signs out other
   // devices did nothing enforceable before this existed.
-  sessionVersion Int @default(1)
+  sessionVersion   Int               @default(1)
   // Admin two-step sign-in (TOTP). The secret is stored encrypted (AES-256-GCM, src/lib/totp.ts); students never have one.
   totpSecretEnc    String?
   totpEnabledAt    DateTime?
@@ -864,9 +867,9 @@ model User {
   // every login. Null means "never seen one," which also shows it.
   lastSeenPatchNotesAt DateTime?
   lastSeenPatchVersion String? // the last What's new version this account has been shown
-  passwordChangedAt DateTime? // when they last changed or reset their password, null if never
-  discordId       String?   @unique // the Discord account they connected, used to give them access to their private class call
-  discordUsername String?
+  passwordChangedAt    DateTime? // when they last changed or reset their password, null if never
+  discordId            String?   @unique // the Discord account they connected, used to give them access to their private class call
+  discordUsername      String?
 
   // Drives the interactive spotlight walkthrough, shown automatically
   // exactly once (right after onboarding wizard + first login), never
@@ -904,9 +907,9 @@ model User {
   lessonBookings   LessonBooking[] @relation("LessonBookingStudent") // historical, see LessonBooking model comment
   classBookings    ClassBooking[]  @relation("ClassBookingStudent")
 
-  paymentPlans         PaymentPlan[] @relation("PaymentPlanStudent")
+  paymentPlans         PaymentPlan[]     @relation("PaymentPlanStudent")
   familyPlanGroupsPaid FamilyPlanGroup[] @relation("FamilyPlanPayer")
-  paymentPlansCanceled PaymentPlan[] @relation("PaymentPlanCanceledBy") // admin side of an admin-canceled plan
+  paymentPlansCanceled PaymentPlan[]     @relation("PaymentPlanCanceledBy") // admin side of an admin-canceled plan
 
   creditGrants CreditGrant[]
 
@@ -917,9 +920,9 @@ model User {
   lessonProgress  LessonProgress[]
   scaleNotes      ScaleNote[]
 
-  verificationCodes VerificationCode[]
-  loginEvents       LoginEvent[]
-  badges            UserBadge[]
+  verificationCodes  VerificationCode[]
+  loginEvents        LoginEvent[]
+  badges             UserBadge[]
   fingerPracticeDays FingerPracticeDay[]
   mailMessages       MailMessage[]       @relation("MailRecipient")
 
@@ -952,8 +955,10 @@ model User {
   groupMessagesSent     GroupMessage[]         @relation("GroupMessageSender")
   groupMessageReactions GroupMessageReaction[] @relation("GroupMessageReactionUser")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  accountDiscount       AccountDiscount?
+  accountDiscountsGiven AccountDiscount[] @relation("AccountDiscountGivenBy")
 
   @@index([emailCanonical])
 }
@@ -1253,19 +1258,19 @@ enum SupportMessageSender {
 // generic "Support" role, which is the whole point (no personal admin
 // identity leaks to a visitor).
 model SupportMessage {
-  id           String               @id @default(cuid())
-  escalationId String
-  escalation   AssistantEscalation  @relation(fields: [escalationId], references: [id], onDelete: Cascade)
-  sender       SupportMessageSender
-  body         String               @db.Text
+  id             String               @id @default(cuid())
+  escalationId   String
+  escalation     AssistantEscalation  @relation(fields: [escalationId], references: [id], onDelete: Cascade)
+  sender         SupportMessageSender
+  body           String               @db.Text
   // Same `user:<id>` / IP convention as elsewhere, set only on VISITOR rows, for rate-limiting/abuse trail only.
-  identifier   String?
-  sentById     String?
-  sentBy       User?                @relation("SupportMessageSentBy", fields: [sentById], references: [id], onDelete: SetNull)
+  identifier     String?
+  sentById       String?
+  sentBy         User?                @relation("SupportMessageSentBy", fields: [sentById], references: [id], onDelete: SetNull)
   // The email's own Message-ID header, for EMAIL threads: dedupes a retried
   // delivery and lets a customer's reply be matched to its thread.
-  emailMessageId String?            @unique
-  createdAt    DateTime             @default(now())
+  emailMessageId String?              @unique
+  createdAt      DateTime             @default(now())
 
   @@index([escalationId, createdAt])
 }
@@ -1652,19 +1657,19 @@ model ClassBooking {
   reservedByPlanId String?
   reservedByPlan   PaymentPlan? @relation(fields: [reservedByPlanId], references: [id])
 
-  status         ClassBookingStatus @default(SCHEDULED)
+  status           ClassBookingStatus @default(SCHEDULED)
   // True when the studio teaches this class in person: no Discord call is made for it, and the student is told it is in person.
-  inPerson       Boolean            @default(false)
-  attendance     AttendanceStatus? // set by admin after the class happens; null until marked
+  inPerson         Boolean            @default(false)
+  attendance       AttendanceStatus? // set by admin after the class happens; null until marked
   // True once this booking was actually canceled before ever being charged,
   // which, now that the real charge waits for attendance, is every
   // cancellation that reaches this state at all (a booking already marked
   // COMPLETED can't be canceled, see cancelClassBooking's own guard).
-  refunded       Boolean            @default(false)
-  canceledReason String?
+  refunded         Boolean            @default(false)
+  canceledReason   String?
   // When the student was last reminded about this class, so each reminder goes out once.
-  reminder24At   DateTime?
-  reminder1hAt   DateTime?
+  reminder24At     DateTime?
+  reminder1hAt     DateTime?
   // The private Discord voice channel made for this class, until it is removed after the class.
   discordChannelId String?
 
@@ -1774,21 +1779,21 @@ model PayerAlias {
 }
 
 model ProcessedPaymentEmail {
-  id          String        @id @default(cuid())
-  messageId   String        @unique
-  method      PaymentMethod
-  senderName  String
-  amountCents Int
-  memo        String?       @db.Text
-  paymentId   String?
+  id               String        @id @default(cuid())
+  messageId        String        @unique
+  method           PaymentMethod
+  senderName       String
+  amountCents      Int
+  memo             String?       @db.Text
+  paymentId        String?
   // A phone number the email showed for the sender, when the bank includes one: the whole number (E.164), or
   // only its last four digits when the bank masks it. A cross-check against the student's number, never a
   // claim on money by itself.
   senderPhone      String?
   senderPhoneLast4 String?
   // Set when an admin says this email is nothing to do with a payment (a personal transfer, say), so it stops being counted as unmatched.
-  dismissedAt DateTime?
-  createdAt   DateTime      @default(now())
+  dismissedAt      DateTime?
+  createdAt        DateTime      @default(now())
 
   @@index([amountCents, createdAt])
 }
@@ -1858,7 +1863,7 @@ model MailMessage {
 // simply means "not typing".
 model SupportTypingStatus {
   escalationId String
-  escalation   AssistantEscalation @relation(fields: [escalationId], references: [id], onDelete: Cascade)
+  escalation   AssistantEscalation  @relation(fields: [escalationId], references: [id], onDelete: Cascade)
   side         SupportMessageSender
   updatedAt    DateTime             @updatedAt
 
@@ -1951,4 +1956,18 @@ model ContactSession {
   createdAt DateTime @default(now())
 
   @@index([contactId, date])
+}
+
+// A percentage off ONE account's plan price, set by the owner on Admin > Pricing. One row per account; changing the percent updates the row and
+// the account's running solo plan (see src/lib/accountDiscounts.ts). Family plans keep the family rate.
+model AccountDiscount {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  percent     Int
+  note        String?
+  createdById String?
+  createdBy   User?    @relation("AccountDiscountGivenBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

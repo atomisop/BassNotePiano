@@ -1493,3 +1493,39 @@
   60% { opacity: 1; }
   100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) + 180px)) rotate(var(--rot)) scale(1); }
 }
+
+/* Pull to refresh (components/layout/PullToRefreshMain.tsx): twelve spokes that light up one by one as you pull, then turn into the
+   classic fading ring while it refreshes. The ring idea is the "iOS Spinner" on 21st.dev (yadwinder); the pull-driven fill is ours.
+   --p is the pull progress (0 to 1) and --i the spoke number, both set from the component. */
+.ptr-spoke {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 7px;
+  margin: -12px 0 0 -1px;
+  border-radius: 2px;
+  background: currentColor;
+  transform-origin: 50% 12px;
+  transform: rotate(calc(var(--i) * 30deg));
+  opacity: calc(var(--p, 0) * 12 - var(--i));
+}
+.ptr-well[data-phase="refreshing"] .ptr-spoke {
+  opacity: 1;
+  animation: ptr-fade 0.9s linear infinite;
+  animation-delay: calc(var(--i) * -0.075s);
+}
+@keyframes ptr-fade {
+  from { opacity: 1; }
+  to { opacity: 0.15; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ptr-well[data-phase="refreshing"] .ptr-spoke {
+    animation: ptr-pulse 1.4s ease-in-out infinite;
+    animation-delay: 0s;
+  }
+}
+@keyframes ptr-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}

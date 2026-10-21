@@ -5,6 +5,7 @@ import { MarketingNav } from "@/components/marketing/MarketingNav";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { PaymentPlanTierGrid } from "@/components/marketing/PaymentPlanTierGrid";
 import { SPRING } from "@/lib/motionTokens";
+import type { PricingConfig } from "@/lib/classCreditPricing";
 
 const container = {
   hidden: {},
@@ -16,7 +17,7 @@ const item = {
   visible: { opacity: 1, y: 0, transition: SPRING.smooth },
 };
 
-export function PricingPageContent() {
+export function PricingPageContent({ pricing }: { pricing?: PricingConfig }) {
   return (
     <div className="relative min-h-screen overflow-hidden">
       <MarketingNav />
@@ -53,7 +54,7 @@ export function PricingPageContent() {
         </div>
 
         <div className="mt-10">
-          <PaymentPlanTierGrid />
+          <PaymentPlanTierGrid pricing={pricing} />
         </div>
       </motion.section>
       </main>

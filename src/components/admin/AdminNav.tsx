@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import {
+import { BadgePercent,
+  History,
   Briefcase,
   BookUser,
   CalendarDays,
@@ -40,12 +41,19 @@ interface AdminNavGroup {
 }
 
 const NAV_GROUPS: AdminNavGroup[] = [
-  { label: "Overview", leaves: [{ href: "/admin", label: "Overview", icon: LayoutDashboard }] },
+  {
+    label: "Overview",
+    leaves: [
+      { href: "/admin", label: "Overview", icon: LayoutDashboard },
+      { href: "/admin/activity", label: "Activity", icon: History },
+    ],
+  },
   {
     label: "Billing",
     leaves: [
       { href: "/admin/payments", label: "Payments", icon: CreditCard },
       { href: "/admin/payment-plans", label: "Payment Plans", icon: Repeat },
+      { href: "/admin/pricing", label: "Pricing", icon: BadgePercent },
     ],
   },
   {

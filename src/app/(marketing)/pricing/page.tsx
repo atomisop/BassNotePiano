@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/site";
 import { PricingPageContent } from "@/components/marketing/PricingPageContent";
+import { getPricingConfig } from "@/lib/pricing";
 
 export const metadata: Metadata = pageMetadata({
   title: "Pricing",
@@ -9,6 +10,6 @@ export const metadata: Metadata = pageMetadata({
   path: "/pricing",
 });
 
-export default function Page() {
-  return <PricingPageContent />;
+export default async function Page() {
+  return <PricingPageContent pricing={await getPricingConfig()} />;
 }

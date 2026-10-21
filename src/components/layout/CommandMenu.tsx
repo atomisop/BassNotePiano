@@ -147,6 +147,9 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
             <CommandItem value="admin accounts people users" onSelect={() => go("/admin/users")}>
               Accounts
             </CommandItem>
+            <CommandItem value="admin pricing prices discount percent off plan" onSelect={() => go("/admin/pricing")}>
+              Pricing and discounts
+            </CommandItem>
             <CommandItem value="admin credits grant adjust" onSelect={() => go("/admin/payments?tab=credits")}>
               Grant or take credits
             </CommandItem>
