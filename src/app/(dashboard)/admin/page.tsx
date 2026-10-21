@@ -8,6 +8,8 @@ import { prisma } from "@/lib/prisma";
 import { getAdminPayments } from "@/lib/payments";
 import { PaymentQueue } from "@/components/admin/PaymentQueue";
 import { approvePaymentAction, checkPaymentAction, rejectPaymentAction } from "./payments/actions";
+import { RemindButton } from "@/components/admin/RemindButton";
+import { REMINDER_KINDS } from "@/lib/followUpReminders";
 import { getFollowUps } from "@/lib/adminFollowUps";
 import { getJobStatuses, isStopped } from "@/lib/jobRun";
 import { OverviewStats } from "@/components/admin/OverviewStats";
@@ -87,9 +89,12 @@ export default async function AdminOverviewPage() {
                 {f.people.length > 0 && (
                   <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
                     {f.people.map((p) => (
-                      <Link key={p.id} href={`/admin/users/${p.id}`} className="tap inline-flex items-center text-slate-300 underline decoration-slate-600 underline-offset-2 hover:text-slate-50">
-                        {p.name}
-                      </Link>
+                      <span key={p.id} className="inline-flex flex-wrap items-center gap-2">
+                        <Link href={`/admin/users/${p.id}`} className="tap inline-flex items-center text-slate-300 underline decoration-slate-600 underline-offset-2 hover:text-slate-50">
+                          {p.name}
+                        </Link>
+                        {(REMINDER_KINDS as string[]).includes(f.key) && <RemindButton kind={f.key} userId={p.id} name={p.name} />}
+                      </span>
                     ))}
                     {f.total > f.people.length && <span className="text-slate-500">and {f.total - f.people.length} more</span>}
                   </p>
