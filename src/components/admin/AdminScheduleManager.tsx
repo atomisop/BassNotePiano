@@ -245,7 +245,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                       </p>
                       <p className="mt-0.5 text-small text-slate-500">
                         {row.durationMin} min · {classesInWindow(row.durationMin)} {classesInWindow(row.durationMin) === 1 ? "slot" : "slots"} ·{" "}
-                        <span className={row.active ? "font-medium text-signal" : "text-slate-500"}>{row.active ? "Open for booking" : "Off"}</span>
+                        <span className={row.active ? "font-medium text-signal-fg" : "text-slate-500"}>{row.active ? "Open for booking" : "Off"}</span>
                         {row.upcomingBookings > 0 && ` · ${row.upcomingBookings} booked`}
                       </p>
                     </div>

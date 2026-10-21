@@ -123,14 +123,14 @@ export function PhoneCard({ state }: { state: PhoneState }) {
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-body font-semibold text-slate-50">Phone number</h2>
         {mode === "view" && state.phone && (
-          <span className={`rounded-full px-2.5 py-0.5 text-small font-medium ${state.verified ? "bg-[rgb(var(--signal)/0.16)] text-signal" : "bg-slate-700/60 text-slate-300"}`}>
+          <span className={`rounded-full px-2.5 py-0.5 text-small font-medium ${state.verified ? "bg-[rgb(var(--signal)/0.16)] text-signal-fg" : "bg-slate-700/60 text-slate-300"}`}>
             {state.verified ? "Verified" : "Saved"}
           </span>
         )}
       </div>
 
       <div className="mt-4 space-y-3">
-          {done && <p role="status" className="text-small text-signal">{plain ? "Your phone number is saved." : "Your phone number is verified."}</p>}
+          {done && <p role="status" className="text-small text-signal-fg">{plain ? "Your phone number is saved." : "Your phone number is verified."}</p>}
 
           {mode === "view" && (
             <>

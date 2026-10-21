@@ -51,7 +51,7 @@ export default async function AdminOverviewPage() {
               <li key={`${item.href}|${item.label}`}>
                 <Link href={item.href} className="tap flex items-center justify-between gap-3 py-2.5 text-small transition hover:opacity-80">
                   <span className="text-slate-200">{item.label}</span>
-                  <span className="rounded-full bg-[rgb(var(--signal)/0.14)] px-2.5 py-0.5 font-semibold tabular-nums text-signal">{item.count}</span>
+                  <span className="rounded-full bg-[rgb(var(--signal)/0.14)] px-2.5 py-0.5 font-semibold tabular-nums text-signal-fg">{item.count}</span>
                 </Link>
               </li>
             ))}
@@ -83,7 +83,7 @@ export default async function AdminOverviewPage() {
                   <Link href={f.href} className="font-medium text-slate-200 hover:underline">
                     {f.title}
                   </Link>
-                  <span className="rounded-full bg-[rgb(var(--signal)/0.14)] px-2.5 py-0.5 font-semibold tabular-nums text-signal">{f.total}</span>
+                  <span className="rounded-full bg-[rgb(var(--signal)/0.14)] px-2.5 py-0.5 font-semibold tabular-nums text-signal-fg">{f.total}</span>
                 </div>
                 <p className="mt-0.5 text-slate-500">{f.hint}</p>
                 {f.people.length > 0 && (

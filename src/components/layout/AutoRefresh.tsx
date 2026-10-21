@@ -6,7 +6,7 @@ import { onChange } from "@/lib/liveEvents";
 
 // How often the signed-in pages quietly re-fetch their own data while the tab
 // is open and in view.
-const INTERVAL_MS = 30_000;
+const INTERVAL_MS = 90_000;
 // Coming back to the tab or reconnecting refreshes at once, unless one just ran.
 const MIN_GAP_MS = 8_000;
 
@@ -24,8 +24,8 @@ function isTyping(): boolean {
 
 /**
  * Keeps every signed-in page current without a manual reload: it re-runs the
- * page's server data fetch (`router.refresh()`) every 30 seconds while the tab
- * is visible and online, and straight away when you return to the tab or the
+ * page's server data fetch (`router.refresh()`) every 90 seconds while the tab
+ * is visible and online (every 90 seconds: each refresh is a full server render of the page), and straight away when you return to the tab or the
  * connection comes back. Client state (selected day, open tabs, scroll) is
  * kept; only the server data underneath is replaced. It holds off while you
  * are typing in a field, and on the screens listed above.

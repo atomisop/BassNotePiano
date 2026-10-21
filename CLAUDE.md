@@ -353,6 +353,10 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
   Custom modals must use `useDialogFocus` (focus in, Tab trapped, Escape, focus back). Never put `aria-label` on a bare `p`/`span` without a role; icon targets are at
   least 24px; links inside running text are underlined.
 
+- **Polling budget** (each open tab costs server work): one shared status poll a minute (`MeStatusProvider` / `/api/me/status`, now also carrying `unreadMessages` for the dock and sidebar badge, so there is no separate unread poll),
+  the sidebar cards every 3 minutes and only at lg width, `AutoRefresh` every 90 seconds (a full server render each time). Every timer skips a background tab. A new poller should join the shared status or follow the same rules.
+- **Orange text** is `text-signal-fg`, never `text-signal` (that class no longer exists): it is darker in the light theme so it passes contrast. Backgrounds and borders stay `bg-signal` / `border-signal`.
+
 - **Pull to refresh** (`PullToRefreshMain`, touch screens only): the finger drives the page and the spinner through refs (no React state per touch move), on a rubber-band curve, with the
   browser's own bounce switched off while pulling (a non-passive `touchmove`). Twelve spokes light up as you pull and become the fading ring while it refreshes (the "iOS Spinner" idea from
   21st.dev, which has no pull-to-refresh component of its own). It refreshes the page's data in place (`router.refresh`) and tells the badges to look again. Always check a screen built for

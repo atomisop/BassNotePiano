@@ -1,38 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
-import { fetchUnreadMessageCountAction } from "@/app/(dashboard)/notification-actions";
-import { onChange } from "@/lib/liveEvents";
+import { useMeStatus } from "@/components/layout/MeStatusProvider";
 
-const POLL_INTERVAL_MS = 30_000;
-
-/** Unread message count, seeded from the server and kept fresh (30s poll, route changes, live "messages" events). */
+/**
+ * Unread message count for the dock and sidebar badge: the server's count at page load until the shared status (MeStatusProvider, one poll
+ * a minute plus a look on every page change and every "messages" announcement) has one. It used to poll on its own, twice (sidebar and dock).
+ */
 export function useUnreadMessages(initial: number): number {
-  const pathname = usePathname();
-  const [unread, setUnread] = useState(initial);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function refresh() {
-      try {
-        const count = await fetchUnreadMessageCountAction();
-        if (!cancelled) setUnread(count);
-      } catch (err) {
-        console.error("Unread message count refresh failed (non-blocking, will retry):", err);
-      }
-    }
-    refresh();
-    const interval = setInterval(() => {
-      if (document.visibilityState === "visible") refresh();
-    }, POLL_INTERVAL_MS);
-    const stop = onChange("messages", refresh);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-      stop();
-    };
-  }, [pathname]);
-
-  return unread;
+  const status = useMeStatus();
+  return status ? status.unreadMessages : initial;
 }

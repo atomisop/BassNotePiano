@@ -122,7 +122,7 @@ export function BookingCalendar({
         {nextOpen ? (
           <>
             <p className="text-small text-slate-100">
-              <span className="font-semibold text-signal">{openTotal} open {openTotal === 1 ? "time" : "times"}</span>
+              <span className="font-semibold text-signal-fg">{openTotal} open {openTotal === 1 ? "time" : "times"}</span>
               <span className="text-slate-300"> · next {new Date(nextOpen.ms).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })}</span>
             </p>
             <button type="button" onClick={() => onSelectDate(dayKey(nextOpen.ms))} className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}>

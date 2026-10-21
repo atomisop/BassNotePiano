@@ -89,7 +89,7 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
                         : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
                     }`}
                   >
-                    <Icon className={`h-4 w-4 shrink-0 ${active ? "text-signal" : ""}`} strokeWidth={active ? 2.25 : 1.75} aria-hidden />
+                    <Icon className={`h-4 w-4 shrink-0 ${active ? "text-signal-fg" : ""}`} strokeWidth={active ? 2.25 : 1.75} aria-hidden />
                     <span className="truncate">{item.label}</span>
                     {badge > 0 && (
                       <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950">

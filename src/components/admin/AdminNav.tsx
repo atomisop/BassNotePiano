@@ -96,7 +96,7 @@ function Count({ count, className = "" }: { count: number; className?: string })
   if (count <= 0) return null;
   return (
     <span
-      className={`rounded-full bg-[rgb(var(--signal)/0.18)] px-1.5 text-small font-semibold tabular-nums text-signal ${className}`}
+      className={`rounded-full bg-[rgb(var(--signal)/0.18)] px-1.5 text-small font-semibold tabular-nums text-signal-fg ${className}`}
       aria-label={`${count} waiting`}
     >
       {count > 99 ? "99+" : count}
@@ -120,7 +120,7 @@ function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
           active ? "bg-neu-lift text-slate-50 shadow-pressed-low" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
         }`}
       >
-        <Icon className={`h-4 w-4 shrink-0 ${active ? "text-signal" : ""}`} strokeWidth={active ? 2.1 : 1.75} aria-hidden />
+        <Icon className={`h-4 w-4 shrink-0 ${active ? "text-signal-fg" : ""}`} strokeWidth={active ? 2.1 : 1.75} aria-hidden />
         <span className="truncate">{leaf.label}</span>
         <Count count={badges[leaf.href] ?? 0} className="ml-auto" />
       </Link>
@@ -177,7 +177,7 @@ function AdminSwipeRow({ badges }: { badges: AdminNavBadges }) {
                   ref={active ? activeRef : undefined}
                   aria-current={active ? "page" : undefined}
                   className={`press-soft flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                    active ? "bg-neu-lift text-signal shadow-pressed-low" : "bg-neu-base text-slate-300 shadow-raised-low"
+                    active ? "bg-neu-lift text-signal-fg shadow-pressed-low" : "bg-neu-base text-slate-300 shadow-raised-low"
                   }`}
                 >
                   <Icon className="h-4 w-4 shrink-0" strokeWidth={active ? 2.1 : 1.75} aria-hidden />

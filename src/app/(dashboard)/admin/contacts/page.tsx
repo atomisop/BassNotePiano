@@ -17,7 +17,7 @@ const FILTERS: { label: string; value: PersonKind | "ALL" }[] = [
 ];
 
 const KIND_TAG: Record<PersonKind, { label: string; className: string }> = {
-  ACCOUNT: { label: "Account", className: "bg-[rgb(var(--signal)/0.16)] text-signal" },
+  ACCOUNT: { label: "Account", className: "bg-[rgb(var(--signal)/0.16)] text-signal-fg" },
   APPLICATION: { label: "Applied", className: "bg-slate-700/40 text-slate-200" },
   ADDED: { label: "Added", className: "bg-slate-700/40 text-slate-200" },
 };
@@ -85,7 +85,7 @@ export default async function AdminContactsPage(props: { searchParams: Promise<{
                   {sub && <p className="truncate text-small text-slate-400">{sub}</p>}
                 </div>
                 <div className="shrink-0 text-small text-slate-400 sm:text-right">
-                  {person.reserved && <p className="font-medium text-signal">{person.reserved}</p>}
+                  {person.reserved && <p className="font-medium text-signal-fg">{person.reserved}</p>}
                   <p>
                     {person.classesTaken > 0 ? `${person.classesTaken} ${person.classesTaken === 1 ? "class" : "classes"}` : "No classes yet"}
                     {person.nextClass ? ` · next ${day(person.nextClass)}` : person.lastClass ? ` · last ${day(person.lastClass)}` : ""}

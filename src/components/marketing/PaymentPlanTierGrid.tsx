@@ -219,7 +219,7 @@ function Segmented({
           onClick={() => onChange(option.value)}
           className={`tap rounded-full px-4 py-1.5 text-small font-medium transition ${
             value === option.value
-              ? "bg-neu-base text-signal shadow-raised-low"
+              ? "bg-neu-base text-signal-fg shadow-raised-low"
               : "text-slate-400 hover:text-slate-200"
           }`}
         >

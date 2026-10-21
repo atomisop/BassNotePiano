@@ -1142,7 +1142,7 @@ export function ClassBookingClient({
                       <>
                         {time}
                         <span className="flex shrink-0 items-center gap-2">
-                          {!isSelected && <span className="text-small font-medium text-signal">Open</span>}
+                          {!isSelected && <span className="text-small font-medium text-signal-fg">Open</span>}
                           <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isSelected ? "bg-[rgb(var(--signal))] text-black" : "bg-ink/10 text-transparent"}`}>
                             <CheckIcon size={12} />
                           </span>

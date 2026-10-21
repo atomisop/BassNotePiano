@@ -563,7 +563,7 @@ export function PaymentPlanEnrollmentFlow({
                   active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 }`}
               >
-                <p className={`text-small font-medium ${active ? "text-signal" : "text-slate-100"}`}>{option.label}</p>
+                <p className={`text-small font-medium ${active ? "text-signal-fg" : "text-slate-100"}`}>{option.label}</p>
                 <p className="mt-0.5 text-small text-slate-500">
                   {percentOff > 0 ? (
                     <>
@@ -636,7 +636,7 @@ export function PaymentPlanEnrollmentFlow({
                         active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                       }`}
                     >
-                      <span className={`text-body font-semibold ${active ? "text-signal" : "text-slate-100"}`}>
+                      <span className={`text-body font-semibold ${active ? "text-signal-fg" : "text-slate-100"}`}>
                         {formatTimeRange(slot.startTime, classMinutes)}
                       </span>
                       <span className="text-small text-slate-500">{active ? "Selected" : slot.label ?? `${classMinutes} min`}</span>

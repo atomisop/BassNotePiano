@@ -34,7 +34,7 @@ export function MetricCard({
   variant?: "area" | "bar";
   tone?: "accent" | "success";
 }) {
-  const colorClass = "text-signal";
+  const colorClass = "text-signal-fg";
   const hasSeries = data.length > 1;
 
   return (

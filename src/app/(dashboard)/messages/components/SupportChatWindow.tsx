@@ -52,7 +52,7 @@ export function SupportChatWindow({
         <button type="button" onClick={onMinimize} aria-label="Back to messages" className="tap -ml-2 flex h-9 w-9 items-center justify-center rounded-full text-slate-300 md:hidden">
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-neu-base text-signal shadow-raised-low">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-neu-base text-signal-fg shadow-raised-low">
           <LifeBuoy className="h-4.5 w-4.5" strokeWidth={1.75} aria-hidden />
         </span>
         <div className="min-w-0">

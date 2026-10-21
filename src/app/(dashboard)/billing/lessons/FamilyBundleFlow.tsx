@@ -231,7 +231,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
                   active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 }`}
               >
-                <p className={`text-small font-medium ${active ? "text-signal" : "text-slate-100"}`}>{option.label}</p>
+                <p className={`text-small font-medium ${active ? "text-signal-fg" : "text-slate-100"}`}>{option.label}</p>
                 <p className="mt-0.5 text-small text-slate-500">
                   {optionRate.discountRate > 0 ? `−${Math.round(optionRate.discountRate * 100)}%` : "No commitment"}
                 </p>
