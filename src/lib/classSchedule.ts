@@ -234,16 +234,21 @@ export function computeScheduledAt(schedule: { startTime: string }, occurrenceDa
  * The dates are UTC-midnight stand-ins for ET calendar days, like everywhere else in this file.
  */
 export function classesInWindow(schedule: { dayOfWeek: number; startTime: string }, chunk: ScheduleChunk, from: Date, until: Date): number {
-  let count = 0;
+  return classStartsInWindow(schedule, chunk, from, until).length;
+}
+
+/** The start time of every class a weekly slot holds between two moments (see classesInWindow). */
+export function classStartsInWindow(schedule: { dayOfWeek: number; startTime: string }, chunk: ScheduleChunk, from: Date, until: Date): Date[] {
+  const starts: Date[] = [];
   const first = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate()) - 86_400_000;
   const last = until.getTime() + 86_400_000;
   for (let t = first; t <= last; t += 86_400_000) {
     const date = new Date(t);
     if (date.getUTCDay() !== schedule.dayOfWeek) continue;
     const at = computeScheduledAt(schedule, date, chunk).getTime();
-    if (at >= from.getTime() && at < until.getTime()) count++;
+    if (at >= from.getTime() && at < until.getTime()) starts.push(new Date(at));
   }
-  return count;
+  return starts;
 }
 
 /** Every active weekly slot's next OCCURRENCES_PER_SLOT bookable chunks, with live availability. */

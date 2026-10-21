@@ -10,6 +10,7 @@ import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPl
 import {
   chunksForSchedule,
   classesInWindow,
+  classStartsInWindow,
   livePaymentPlanConditions,
   nextOccurrenceDates,
   computeScheduledAt,
@@ -885,6 +886,33 @@ export async function ensureFifthClassCredit(plan: { id: string; userId: string;
     return; // already granted for this paid month
   }
   await grantCredits(plan.userId, creditsPerClass, { source: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: plan.id, expiresAt: paidUntil });
+}
+
+/**
+ * For the payment receipt: when the cycle this installment just paid for holds five of the student's weekday, make sure the
+ * fifth class's credit is on the account now (not only when the class books) and return the sentence that says so, so the
+ * receipt tells the truth. Null for an ordinary four-class cycle. Never throws.
+ */
+export async function fifthClassReceiptNote(planId: string): Promise<string | null> {
+  try {
+    const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, include: { reservedSchedule: true } });
+    if (!plan || !plan.reservedSchedule || plan.reservedChunkIndex === null) return null;
+    const chunk = chunksForSchedule(plan.reservedSchedule)[plan.reservedChunkIndex];
+    if (!chunk) return null;
+    const { allowed, base } = await classesInPaidMonth(plan);
+    if (allowed <= base) return null;
+    await ensureFifthClassCredit(plan, PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
+    const { monthStart, paidUntil } = paidMonthOf(plan);
+    const day = (d: Date, opts: Intl.DateTimeFormatOptions) => d.toLocaleDateString("en-US", { timeZone: "America/New_York", ...opts });
+    const starts = classStartsInWindow(plan.reservedSchedule, chunk, monthStart, paidUntil);
+    const weekday = starts[0] ? day(starts[0], { weekday: "long" }) : "class day";
+    const dates = starts.map((d) => day(d, { month: "short", day: "numeric" })).join(", ");
+    const lastDay = new Date(paidUntil.getTime() - 86_400_000);
+    return `A free class: this billing cycle (${day(monthStart, { month: "short", day: "numeric" })} to ${day(lastDay, { month: "short", day: "numeric" })}) has ${starts.length} ${weekday}s instead of 4 (${dates}), so one extra class credit was added to your account at no charge. All ${starts.length} classes are yours.`;
+  } catch (err) {
+    console.error("Fifth class receipt note failed (non-blocking):", err);
+    return null;
+  }
 }
 
 /** Before a booking: when this would be the fifth class of the paid month, make sure its credit is there. */

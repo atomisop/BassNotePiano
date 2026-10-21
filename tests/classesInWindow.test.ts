@@ -25,4 +25,27 @@ describe("how many classes a paid month holds", () => {
     // Monday Nov 2 17:00 ET is 22:00Z: a cycle that starts after it does not hold it.
     expect(classesInWindow(monday, chunk, new Date(Date.UTC(2026, 10, 2, 23)), d(2026, 12, 2))).toBe(4);
   });
+
+  it("agrees with a plain day-by-day count for every start date in a year and every weekday", () => {
+    const addMonth = (from: Date, n: number) => {
+      const y = from.getUTCFullYear() + Math.floor((from.getUTCMonth() + n) / 12);
+      const m = (from.getUTCMonth() + n + 12 * 10) % 12;
+      const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+      return new Date(Date.UTC(y, m, Math.min(from.getUTCDate(), last)));
+    };
+    let fives = 0;
+    for (let dayOffset = 0; dayOffset < 366; dayOffset += 1) {
+      const start = new Date(Date.UTC(2026, 0, 1) + dayOffset * 86_400_000);
+      const end = addMonth(start, 1);
+      for (let weekday = 0; weekday < 7; weekday++) {
+        let expected = 0;
+        for (let t = start.getTime(); t < end.getTime(); t += 86_400_000) if (new Date(t).getUTCDay() === weekday) expected++;
+        const got = classesInWindow({ dayOfWeek: weekday, startTime: "17:00" }, chunk, start, end);
+        expect(got).toBe(expected);
+        expect([4, 5]).toContain(got);
+        if (got === 5) fives++;
+      }
+    }
+    expect(fives).toBeGreaterThan(0);
+  });
 });
