@@ -365,6 +365,11 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
   price before the discount is kept in `PaymentPlan.listAmountCents` so removing it restores the signed-up price exactly. New plans and term changes apply it (`createPaymentPlan`,
   `changePaymentPlanTerm`). Family plans keep the family rate and are left alone. All of it is audited (`pricing.update`, `pricing.discount.set/clear`).
 
+- **Emailed links are for one person**: `tagAppLinks` tags every page link in an email (only `/api` and files are left alone, sign-in and reset steps included) and
+  the middleware stops a different signed-in account on ANY tagged page, public ones like `/unsubscribe` too, with the "Sign in with the right account" screen
+  (`/wrong-account`; a public target simply opens once they sign out). Any link the app builds from inside a page that is about another person (such as the
+  unsubscribe confirmation's settings link) must carry their tag too (`settingsLinkFor`).
+
 ## Abuse guards (added 2026-10-12, `docs/ABUSE-AUDIT.md`)
 
 One free trial per inbox forever (`trial-used:` marker, plus tags dropped at every domain); an unpaid first bill releases the weekly
@@ -473,3 +478,9 @@ sessions are JWT), `LoginEvent` and `LessonBooking` (historical) are not read or
 written by any code. They stay in the schema on purpose: dropping a table is
 irreversible, so do it only in its own migration, after confirming with the owner
 that nothing in production needs the rows.
+
+## Activity log (added 2026-10-21)
+
+Admin > Overview > Activity (`/admin/activity`, owner only) is a searchable view of `AuditLog`: text search over action, details and actor email, a kind filter
+(the part of the action before the dot), a date range (30 days by default) and `?user=<id>` for one account's changes. 50 per page. Plain-English action names
+live in `src/lib/auditView.ts`; an action not listed there shows as its code, so add a label when you add a new audited action. The student page's change log links to it.

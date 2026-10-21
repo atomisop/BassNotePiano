@@ -39,9 +39,10 @@ export function maskEmail(email: string): string {
   return `${head}***${tail}@${domain}`;
 }
 
-// Links that are not a signed-in screen: public auth steps (already tied to their own one-time token), API routes
-// and files. They are left alone.
-const UNTAGGED_PATHS = /^\/(api|login|register|forgot-password|reset-password|verify-email|verify-phone)(\/|$|\?)/;
+// Only API routes (no screen, no account) and files are left alone. Every page link is tagged, the sign-in and reset steps included:
+// someone signed in as a different account who opens "create your account" or "reset your password" for another person is told
+// to sign in with the right account (a public page then opens once they are signed out) rather than being waved into their own.
+const UNTAGGED_PATHS = /^\/api(\/|$|\?)/;
 
 /** Adds the recipient tag to every in-app link in an email's HTML or text. */
 export async function tagAppLinks(content: string, to: string): Promise<string> {
