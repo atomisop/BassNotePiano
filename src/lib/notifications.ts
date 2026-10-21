@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { MAIL_ROUTED_TYPES, createMailMessage } from "@/lib/mail";
 import { sendNotificationEmail, sendNotificationEmailWithCta, getAppUrl } from "@/lib/email";
 
+import { sendPushToUser } from "@/lib/webPush";
+import { categoryIsPushed } from "@/lib/pushRules";
 import { EMAIL_PREF_SELECT, isEmailEnabled, type EmailCategory } from "@/lib/emailPreferences";
 type EmailKind = "default" | "notice";
 
@@ -125,7 +127,22 @@ export async function createNotification(params: CreateNotificationParams) {
     );
   }
 
+  // Class and practice reminders also go to the person's phone or browser when they turned push on, under the same switch as the email.
+  if (params.emailCategory && categoryIsPushed(params.emailCategory)) {
+    await maybePush(params.userId, params.emailCategory, params.title, params.body, (cta ? pathOf(cta.url) : null) ?? undefined);
+  }
+
   return notification;
+}
+
+async function maybePush(userId: string, category: EmailCategory, title: string, body: string | undefined, path: string | undefined) {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: EMAIL_PREF_SELECT });
+    if (!user || user.bannedAt || !isEmailEnabled(user, category)) return;
+    await sendPushToUser(userId, { title, body: body ?? "", url: path });
+  } catch (err) {
+    console.error("Notification push failed (non-blocking):", err);
+  }
 }
 
 async function maybeSendEmail(
