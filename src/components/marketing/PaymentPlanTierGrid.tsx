@@ -7,7 +7,8 @@ import type { PaymentPlanCadence, PaymentPlanTerm } from "@prisma/client";
 import {
   calculateFamilyBundleTotal,
   calculatePaymentPlanRate,
-  FAMILY_BUNDLE_DISCOUNT_RATE,
+  DEFAULT_PRICING,
+  type PricingConfig,
   MIN_FAMILY_BUNDLE_RECIPIENTS,
   PLAN_CADENCE_CREDITS_PER_WEEK,
   OFFERED_PLAN_CADENCE,
@@ -53,11 +54,11 @@ const cardItem = {
  * the same cadence and term with an extra FAMILY_BUNDLE_DISCOUNT_RATE off
  * the combined total, so it is cheaper than the solo price at every term.
  */
-export function PaymentPlanTierGrid() {
+export function PaymentPlanTierGrid({ pricing = DEFAULT_PRICING }: { pricing?: PricingConfig }) {
   // One plan on offer: a 45-minute class a week.
   const cadence: PaymentPlanCadence = OFFERED_PLAN_CADENCE;
   const [audience, setAudience] = useState<Audience>("solo");
-  const monthlyBaseline = calculatePaymentPlanRate(cadence, "MONTHLY").installmentAmountCents;
+  const monthlyBaseline = calculatePaymentPlanRate(cadence, "MONTHLY", pricing).installmentAmountCents;
   const isFamily = audience === "family";
 
   return (
@@ -74,7 +75,7 @@ export function PaymentPlanTierGrid() {
         />
         {isFamily && (
           <p className="text-small text-slate-400">
-            Extra {Math.round(FAMILY_BUNDLE_DISCOUNT_RATE * 100)}% off every plan below, per student.
+            Extra {Math.round(pricing.familyDiscountRate * 100)}% off every plan below, per student.
           </p>
         )}
       </div>
@@ -88,8 +89,8 @@ export function PaymentPlanTierGrid() {
         className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-3"
       >
         {TERM_OPTIONS.map((option) => {
-          const rate = calculatePaymentPlanRate(cadence, option.value);
-          const family = calculateFamilyBundleTotal(cadence, option.value, MIN_FAMILY_BUNDLE_RECIPIENTS);
+          const rate = calculatePaymentPlanRate(cadence, option.value, pricing);
+          const family = calculateFamilyBundleTotal(cadence, option.value, MIN_FAMILY_BUNDLE_RECIPIENTS, pricing);
           const isMonthly = option.value === "MONTHLY";
           const featured = option.value === FEATURED_TERM;
 
@@ -218,7 +219,7 @@ function Segmented({
           onClick={() => onChange(option.value)}
           className={`tap rounded-full px-4 py-1.5 text-small font-medium transition ${
             value === option.value
-              ? "bg-neu-base text-signal shadow-raised-low"
+              ? "bg-neu-base text-signal-fg shadow-raised-low"
               : "text-slate-400 hover:text-slate-200"
           }`}
         >

@@ -11,9 +11,7 @@ Cover: every signed-out page, Home, Lessons, Practice, Friends, Messages, Settin
 tab of the admin student page, and every overlay (Atom, the payment sheet, What's new, the tour, the command menu, the inbox, the profile menu).
 Also repeat Home, Lessons, Settings and Billing with `data-theme="paper"` and `data-mode="light"` set on `<html>`.
 
-Last run (2026-10-21): zero findings in the dark theme everywhere above. Known open item in the light theme: orange text (`text-signal`, #d65c2c)
-is 3.1 to 3.5:1 on the light surfaces, under the 4.5:1 that small text needs. Fixing it means a darker orange for light mode and white text on
-orange buttons there, which is a brand decision.
+Last run (2026-10-21): zero findings in the dark theme everywhere above, and in the light theme on Home, Lessons, Settings and Practice. Orange TEXT uses `text-signal-fg` (the logo orange in the dark theme, a deeper burnt orange, #9c3612, in the light theme, where the logo orange is only 3 to 3.5:1); backgrounds and buttons keep the exact brand orange (`bg-signal`).
 
 ## Keyboard (done by hand)
 

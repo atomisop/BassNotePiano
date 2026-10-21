@@ -520,7 +520,7 @@ export function NotificationBell() {
         data-tour="notification-bell"
         className={`tap relative flex h-9 w-9 items-center justify-center rounded-lg bg-neu-base transition ${
           open
-            ? "text-signal shadow-pressed-low"
+            ? "text-signal-fg shadow-pressed-low"
             : "text-slate-400 shadow-raised-low hover:text-slate-200 hover:shadow-raised-mid active:shadow-pressed-low"
         }`}
       >

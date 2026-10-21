@@ -52,7 +52,7 @@ const buttonVariants = cva(
         // Inline text link: tappable, so it carries the signal color.
         // Solid red: only for the final, irreversible step of a destructive flow.
         danger: cn("relative bg-red-600 text-white font-semibold shadow-raised-mid hover:brightness-110 active:brightness-95", lift),
-        link: "text-signal underline-offset-4 hover:underline",
+        link: "text-signal-fg underline-offset-4 hover:underline",
         glass: cn("bg-neu-base text-[rgb(var(--c-s-50))] shadow-raised-mid hover:brightness-110", lift),
       },
       size: {

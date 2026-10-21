@@ -18,7 +18,7 @@ const TONES = {
   none: { bar: "bg-slate-50/20", text: "text-slate-400" },
   danger: { bar: "bg-red-500", text: "text-red-400" },
   caution: { bar: "bg-amber-500", text: "text-amber-400" },
-  safe: { bar: "bg-signal", text: "text-signal" },
+  safe: { bar: "bg-signal", text: "text-signal-fg" },
 } as const;
 
 function toneFor(score: number, max: number) {

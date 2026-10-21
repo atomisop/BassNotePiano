@@ -54,7 +54,7 @@ const STATE_LABEL: Record<ClassState, string> = {
 const STATE_STYLE: Record<ClassState, string> = {
   PRESENT: "bg-emerald-400/15 text-emerald-300",
   NO_SHOW: "bg-red-400/15 text-red-300",
-  UPCOMING: "bg-[rgb(var(--signal)/0.14)] text-signal",
+  UPCOMING: "bg-[rgb(var(--signal)/0.14)] text-signal-fg",
   WAITING: "bg-amber-400/15 text-amber-300",
   CANCELED: "bg-neu-base text-slate-500 shadow-pressed-low",
 };

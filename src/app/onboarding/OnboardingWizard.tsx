@@ -78,7 +78,7 @@ function OptionButton({
       disabled={comingSoon}
       className={`flex w-full items-center justify-between gap-2 rounded-xl bg-neu-base px-4 py-3 text-left text-small font-medium transition-shadow disabled:cursor-not-allowed disabled:opacity-50 ${
         selected
-          ? "text-signal shadow-pressed-low ring-1 ring-signal"
+          ? "text-signal-fg shadow-pressed-low ring-1 ring-signal"
           : "text-slate-300 shadow-raised-low hover:text-slate-50"
       }`}
     >

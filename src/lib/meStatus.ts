@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
 import { hasCompletedFingerPracticeToday } from "@/lib/fingerPractice";
+import { getTotalUnreadMessageCount } from "@/lib/messages";
+import { getTotalUnreadGroupMessageCount } from "@/lib/groupMessages";
+import { getSupportUnreadCount } from "@/lib/messagesSupport";
 
 /**
  * The few facts about the signed-in person that several parts of the screen show at once (the credit badge in the top bar,
@@ -15,13 +18,18 @@ export interface MeStatus {
   heldCredits: number;
   discordConnected: boolean;
   practicedToday: boolean;
+  /** Unread direct, group and support messages: the dock and sidebar badge. One poll serves them all (it used to be two more). */
+  unreadMessages: number;
 }
 
 export async function getMeStatus(userId: string): Promise<MeStatus> {
-  const [user, held, practicedToday] = await Promise.all([
+  const [user, held, practicedToday, direct, group, support] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { classCredits: true, discordId: true } }),
     prisma.classBooking.aggregate({ where: { studentId: userId, status: "SCHEDULED" }, _sum: { creditsSpent: true } }),
     hasCompletedFingerPracticeToday(userId),
+    getTotalUnreadMessageCount(userId),
+    getTotalUnreadGroupMessageCount(userId),
+    getSupportUnreadCount(userId),
   ]);
   const heldUnits = held._sum.creditsSpent ?? 0;
   const freeUnits = Math.max(0, (user?.classCredits ?? 0) - heldUnits);
@@ -30,5 +38,6 @@ export async function getMeStatus(userId: string): Promise<MeStatus> {
     heldCredits: heldUnits / CREDITS_PER_CLASS,
     discordConnected: Boolean(user?.discordId),
     practicedToday,
+    unreadMessages: direct + group + support,
   };
 }

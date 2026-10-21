@@ -42,7 +42,7 @@ describe("who an emailed link is for", () => {
     expect(out).toContain(`https://app.example.test/lessons?tab=extra&r=${tag}&rm=`);
     expect(out).toContain('src="https://app.example.test/logo-mark.png"');
     expect(out).toContain("https://app.example.test/api/reminders/installment?d=1&a=2");
-    expect(out).toContain("https://app.example.test/reset-password?token=abc");
+    expect(out).toContain(`https://app.example.test/reset-password?token=abc&r=${tag}&rm=`);
     expect(out).toContain('href="https://elsewhere.test/billing/plans"');
     expect(out).toContain('href="mailto:music@bassnotepiano.com"');
     expect(await tagAppLinks("Open: https://app.example.test/dashboard", sean)).toMatch(/dashboard\?r=[0-9a-f]{16}&rm=/);

@@ -126,7 +126,7 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
                 </span>
                 <span
                   className={`rounded-full px-2 py-0.5 text-small font-medium ${
-                    n.hiddenFromStudent ? "bg-slate-700/60 text-slate-300" : "bg-[rgb(var(--signal)/0.16)] text-signal"
+                    n.hiddenFromStudent ? "bg-slate-700/60 text-slate-300" : "bg-[rgb(var(--signal)/0.16)] text-signal-fg"
                   }`}
                 >
                   {n.hiddenFromStudent ? "Private" : "Student can see"}

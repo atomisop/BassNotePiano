@@ -445,7 +445,10 @@ export function ClassBookingClient({
   extraMode = false,
   weeklyLimited = false,
   fifthClassOffer = null,
+  extraClassCents = EXTRA_CLASS_PRICE_CENTS,
 }: {
+  /** What one extra class costs now (Admin > Pricing). */
+  extraClassCents?: number;
   /** A Monthly subscriber's optional fifth class (their cycle holds five of their weekday): when it is, and the price. */
   fifthClassOffer?: { scheduledAt: string; priceCents: number } | null;
   /** A student on a payment plan: this is where they book EXTRA sessions on top of their weekly class. */
@@ -1119,7 +1122,7 @@ export function ClassBookingClient({
                           {time}
                           <button type="button" onClick={() => startExtraPayment(row)} disabled={payBusyKey !== null} className={actionClass}>
                             {payBusyKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                            Buy extra · ${(EXTRA_CLASS_PRICE_CENTS / 100).toFixed(0)}
+                            Buy extra · ${(extraClassCents / 100).toFixed(0)}
                           </button>
                         </div>
                       );
@@ -1139,7 +1142,7 @@ export function ClassBookingClient({
                       <>
                         {time}
                         <span className="flex shrink-0 items-center gap-2">
-                          {!isSelected && <span className="text-small font-medium text-signal">Open</span>}
+                          {!isSelected && <span className="text-small font-medium text-signal-fg">Open</span>}
                           <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isSelected ? "bg-[rgb(var(--signal))] text-black" : "bg-ink/10 text-transparent"}`}>
                             <CheckIcon size={12} />
                           </span>

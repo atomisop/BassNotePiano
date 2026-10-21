@@ -9,7 +9,7 @@ function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
-const FAQS = [
+const faqs = (extraClassCents: number) => [
   {
     q: "Do I need to already know music theory?",
     a: "No. The curriculum starts with a real Foundation stage, the diatonic scale, the chromatic scale, and the seven modes, before any scale-specific material.",
@@ -24,7 +24,7 @@ const FAQS = [
   },
   {
     q: "How do live lessons work?",
-    a: `Every class is ${CLASS_MINUTES} minutes, one-on-one with your teacher, live on Discord. Start a Payment Plan (Monthly, 3-Month, or 6-Month, paid one Zelle or Venmo installment at a time) and you pick your weekly day and time on a calendar of open spots. It is yours every week, booked for you automatically. Want more time? Book an extra class for ${formatUsd(EXTRA_CLASS_PRICE_CENTS)} whenever there is an open spot. Siblings learning together can use a family bundle instead.`,
+    a: `Every class is ${CLASS_MINUTES} minutes, one-on-one with your teacher, live on Discord. Start a Payment Plan (Monthly, 3-Month, or 6-Month, paid one Zelle or Venmo installment at a time) and you pick your weekly day and time on a calendar of open spots. It is yours every week, booked for you automatically. Want more time? Book an extra class for ${formatUsd(extraClassCents)} whenever there is an open spot. Siblings learning together can use a family bundle instead.`,
   },
   {
     q: "What if my month has five of my class day?",
@@ -40,7 +40,8 @@ const FAQS = [
   },
 ];
 
-export function FAQ() {
+export function FAQ({ extraClassCents = EXTRA_CLASS_PRICE_CENTS }: { extraClassCents?: number }) {
+  const FAQS = faqs(extraClassCents);
   return (
     <section className="px-2 sm:px-3">
       <div className="mx-auto max-w-[96rem] rounded-2xl bg-black px-6 py-16 md:rounded-[2rem] md:px-14 md:py-28">
