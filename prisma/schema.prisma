@@ -1648,6 +1648,8 @@ model ClassBooking {
   reservedByPlan   PaymentPlan? @relation(fields: [reservedByPlanId], references: [id])
 
   status         ClassBookingStatus @default(SCHEDULED)
+  // True when the studio teaches this class in person: no Discord call is made for it, and the student is told it is in person.
+  inPerson       Boolean            @default(false)
   attendance     AttendanceStatus? // set by admin after the class happens; null until marked
   // True once this booking was actually canceled before ever being charged,
   // which, now that the real charge waits for attendance, is every

@@ -54,6 +54,7 @@ export const handler = schedule("* * * * *", async () =>
       where: {
         status: "SCHEDULED",
         discordChannelId: null,
+        inPerson: false, // an in-person class has no call
         scheduledAt: { gt: new Date(now - 10 * MINUTE_MS), lte: new Date(now + OPEN_BEFORE_MIN * MINUTE_MS) },
       },
       select: {

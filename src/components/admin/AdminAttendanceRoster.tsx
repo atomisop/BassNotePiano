@@ -8,6 +8,7 @@ import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/Dialog";
+import { Switch } from "@/components/ui/switch";
 
 interface RosterFocus {
   scaleOrder: number | null;
@@ -25,6 +26,8 @@ interface RosterEntry {
   attendance: "PRESENT" | "NO_SHOW" | null;
   /** Credits this booking costs once attendance is taken. */
   creditsSpent: number;
+  /** Taught in person: no Discord call is made for it. */
+  inPerson: boolean;
   /** Shared across every row from the same family booking, null for a solo booking. */
   familyBookingGroupId: string | null;
   focus: RosterFocus;
@@ -79,16 +82,21 @@ export interface AdminAttendanceRosterProps {
   openSlots?: MoveSlot[];
   onMoveBooking?: (bookingId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number) => Promise<{ ok: true } | { ok: false; error: string }>;
   onUndoAttendance: (bookingId: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  /** The Online / In person switch: in person means no Discord call for that class. */
+  onSetInPerson?: (bookingId: string, inPerson: boolean) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
 function Avatar({ image, name }: { image: string | null; name: string }) {
   return <UiAvatar image={image} label={name} size="sm" className="h-9 w-9" />;
 }
 
-export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelBooking, openSlots = [], onMoveBooking, onUndoAttendance }: AdminAttendanceRosterProps) {
+export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelBooking, openSlots = [], onMoveBooking, onUndoAttendance, onSetInPerson }: AdminAttendanceRosterProps) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const [modeBusyId, setModeBusyId] = useState<string | null>(null);
+  // What the switch shows while the change is being saved.
+  const [modeShown, setModeShown] = useState<Record<string, boolean>>({});
   // The class being moved, and the open time picked for it.
   const [moving, setMoving] = useState<{ entry: RosterEntry; from: string } | null>(null);
   const [moveTo, setMoveTo] = useState<MoveSlot | null>(null);
@@ -201,6 +209,38 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                   {creditsLabelFromStored(entry.creditsSpent)})
                                 </p>
                                 <p className="mt-0.5 text-small text-[rgb(var(--c-s-50))]">{entry.focus.action}</p>
+                                {onSetInPerson && entry.status === "SCHEDULED" && !entry.attendance && Date.now() < new Date(occ.scheduledAt).getTime() + 45 * 60_000 && (
+                                  <div className="mt-1.5 flex items-center gap-2 text-small">
+                                    {(() => {
+                                      const inPerson = modeShown[entry.bookingId] ?? entry.inPerson;
+                                      return (
+                                        <>
+                                          <span className={inPerson ? "text-slate-500" : "font-medium text-slate-50"}>Online</span>
+                                          <Switch
+                                            checked={inPerson}
+                                            disabled={modeBusyId === entry.bookingId}
+                                            aria-label={`${entry.studentName ?? "Student"}: in person, no Discord call`}
+                                            onCheckedChange={async (next) => {
+                                              setError(null);
+                                              setModeBusyId(entry.bookingId);
+                                              setModeShown((prev) => ({ ...prev, [entry.bookingId]: next }));
+                                              const result = await onSetInPerson(entry.bookingId, next);
+                                              setModeBusyId(null);
+                                              if (!result.ok) {
+                                                setModeShown((prev) => ({ ...prev, [entry.bookingId]: !next }));
+                                                setError(result.error);
+                                                return;
+                                              }
+                                              router.refresh();
+                                            }}
+                                          />
+                                          <span className={inPerson ? "font-medium text-slate-50" : "text-slate-500"}>In person</span>
+                                          {inPerson && <span className="text-slate-600">no Discord call</span>}
+                                        </>
+                                      );
+                                    })()}
+                                  </div>
+                                )}
                               </div>
                             </div>
 

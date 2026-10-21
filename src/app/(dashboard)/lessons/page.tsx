@@ -98,6 +98,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
         attendance: b.attendance,
         canceledReason: b.canceledReason,
         reserved: Boolean(b.reservedByPlanId),
+        inPerson: b.inPerson,
         discordUrl: b.discordChannelId ? discordChannelUrl(b.discordChannelId) : null,
       }))}
     />
@@ -155,6 +156,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
             label: b.schedule.label,
             scheduledAt: b.scheduledAt.toISOString(),
             creditsSpent: b.creditsSpent,
+            inPerson: b.inPerson,
             discordUrl: b.discordChannelId ? discordChannelUrl(b.discordChannelId) : null,
           }))}
         />

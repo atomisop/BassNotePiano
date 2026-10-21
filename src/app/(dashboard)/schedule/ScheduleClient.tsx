@@ -25,6 +25,8 @@ interface UpcomingBooking {
   creditsSpent: number;
   /** The private Discord call for this class, once it exists. */
   discordUrl?: string | null;
+  /** Taught in person: there is no Discord call. */
+  inPerson?: boolean;
 }
 
 // "HH:mm" -> "2:00 PM", shown as the raw ET wall-clock digits with no
@@ -193,7 +195,8 @@ export function ScheduleClient({
                     <span className="shrink-0 text-small text-slate-500">{Math.round((booking.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES)} min</span>
                   </div>
                   <div className="mt-2.5 flex flex-wrap gap-2">
-                    {hoursUntil <= 0.5 && hoursUntil > -1 && (
+                    {booking.inPerson && <span className="rounded-full bg-neu-base px-2.5 py-1 text-small font-medium text-slate-200 shadow-raised-low">In person</span>}
+                    {hoursUntil <= 0.5 && hoursUntil > -1 && !booking.inPerson && (
                       <DiscordLink
                         href={booking.discordUrl ?? DISCORD_INVITE_URL}
                         target="_blank"
