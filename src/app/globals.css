@@ -88,6 +88,8 @@
   /* Signal orange (the logo color). `--signal` / `--signal-ink` are set per data-mode below. */
   --color-signal: rgb(var(--signal));
   --color-signal-ink: rgb(var(--signal-ink));
+  /* The signal orange AS TEXT. Same as --signal in the dark theme; a deeper burnt orange in the light theme, where the logo orange is only 3 to 3.5:1 on light grounds. */
+  --color-signal-fg: rgb(var(--signal-fg));
   --color-danger: rgb(var(--c-rd-400));
 
   /* The one display face, used only for each screen's Hero element. */
@@ -1028,6 +1030,7 @@
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
     --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.35), 0 10px 28px -8px rgb(var(--c-a-400) / 0.45);
+    --signal-fg: var(--c-a-400);
   }
 
   [data-mode="light"] {
@@ -1040,6 +1043,7 @@
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
     --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.3), 0 10px 24px -10px rgb(var(--c-a-400) / 0.5);
+    --signal-fg: 156 54 18; /* #9c3612: 4.7:1 or better on every light surface, including the orange-tinted ones */
   }
 
   /* Shapes are two shadows: light from the top-left, shade to the

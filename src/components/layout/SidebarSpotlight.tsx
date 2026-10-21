@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AlertTriangle, ArrowRight, CalendarCheck, CalendarDays, Flame, Hourglass, Inbox, PlayCircle, Plus, Sparkles, Ticket, Users, type LucideIcon } from "lucide-react";
 import { useMeStatus } from "@/components/layout/MeStatusProvider";
 import { DiscordIcon } from "@/components/ui/icons";
 import { DAILY_GOAL_SECONDS } from "@/lib/fingerPracticeConstants";
 import type { SidebarCard } from "@/lib/sidebarCards";
 
-const POLL_MS = 60_000;
+// The cards change slowly (the countdown ticks in the browser), so the server is asked every 3 minutes, and only while the tab is in view
+// on a screen wide enough to show the sidebar.
+const POLL_MS = 180_000;
 
 /** "in 2 days", "in 3h 20m", "in 12 min", "Starting now". Only called in the browser (after mount). */
 function countdown(target: number, now: number, durationMinutes: number): string {
@@ -33,13 +35,13 @@ function Shell({ href, icon: Icon, label, tone = "signal", children, cta }: { hr
   const body = (
     <>
       <span className="flex items-center gap-1.5 px-3 pt-3 text-small font-semibold uppercase tracking-[0.14em] text-slate-500">
-        <Icon className={`h-3.5 w-3.5 ${tone === "warn" ? "text-red-300" : "text-signal"}`} aria-hidden />
+        <Icon className={`h-3.5 w-3.5 ${tone === "warn" ? "text-red-300" : "text-signal-fg"}`} aria-hidden />
         {label}
       </span>
       <span className="block px-3 pb-3 pt-1.5">
         {children}
         {cta && (
-          <span className="mt-2 inline-flex items-center gap-1 text-small font-semibold text-signal">
+          <span className="mt-2 inline-flex items-center gap-1 text-small font-semibold text-signal-fg">
             {cta}
             <ArrowRight className="h-3.5 w-3.5" aria-hidden />
           </span>
@@ -95,7 +97,7 @@ function DiscordCard() {
       <span className="block p-3">
         <span className="block text-small font-semibold text-slate-50">Link your Discord</span>
         <span className="mt-0.5 block text-small text-slate-400">Your private class call opens there before each lesson.</span>
-        <span className="mt-2 inline-flex items-center gap-1 text-small font-semibold text-signal">
+        <span className="mt-2 inline-flex items-center gap-1 text-small font-semibold text-signal-fg">
           Connect Discord
           <ArrowRight className="h-3.5 w-3.5" aria-hidden />
         </span>
@@ -206,7 +208,7 @@ function slotFor(card: SidebarCard): Slot {
                 <li key={item.href + item.label}>
                   <Link href={item.href} prefetch className="tap flex items-center justify-between gap-2 rounded-control px-1.5 py-1 text-small text-slate-200 hover:bg-slate-800/50">
                     <span className="truncate">{item.label}</span>
-                    <span className="rounded-full bg-[rgb(var(--signal)/0.14)] px-2 font-semibold tabular-nums text-signal">{item.count}</span>
+                    <span className="rounded-full bg-[rgb(var(--signal)/0.14)] px-2 font-semibold tabular-nums text-signal-fg">{item.count}</span>
                   </Link>
                 </li>
               ))}
@@ -268,12 +270,15 @@ export function SidebarSpotlight({ initial, isAdmin }: { initial: SidebarCard[];
   const [cards, setCards] = useState<SidebarCard[]>(initial);
   const [index, setIndex] = useState(0);
   const [now, setNow] = useState<number | null>(null);
+  const firstRun = useRef(true);
 
   useEffect(() => setCards(initial), [initial]);
 
   useEffect(() => {
     let alive = true;
     async function load() {
+      // The sidebar only exists from lg up: on a phone there is nothing to update, so nothing is asked.
+      if (!window.matchMedia("(min-width: 1024px)").matches) return;
       try {
         const res = await fetch("/api/me/sidebar", { cache: "no-store", credentials: "same-origin" });
         if (res.ok && alive) setCards(((await res.json()) as { cards: SidebarCard[] }).cards);
@@ -281,13 +286,17 @@ export function SidebarSpotlight({ initial, isAdmin }: { initial: SidebarCard[];
         // Offline or a hiccup: keep the last cards.
       }
     }
-    const timer = setInterval(load, POLL_MS);
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, POLL_MS);
     const onVisible = () => {
       if (document.visibilityState === "visible") void load();
     };
     window.addEventListener("bnp:status-changed", load);
     document.addEventListener("visibilitychange", onVisible);
-    void load();
+    // The server already sent the cards with the page, so the first look waits for a page change or the timer.
+    if (!firstRun.current) void load();
+    firstRun.current = false;
     return () => {
       alive = false;
       clearInterval(timer);

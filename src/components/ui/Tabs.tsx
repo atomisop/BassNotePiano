@@ -119,7 +119,7 @@ export function Tabs<const T extends string>({
           >
             {item.label}
             {item.count !== undefined && item.count > 0 && (
-              <span className={cn("tabular-nums", active ? "text-signal" : "text-slate-500")}>{item.count > 9 ? "9+" : item.count}</span>
+              <span className={cn("tabular-nums", active ? "text-signal-fg" : "text-slate-500")}>{item.count > 9 ? "9+" : item.count}</span>
             )}
           </button>
         );

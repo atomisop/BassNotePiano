@@ -250,7 +250,7 @@ export function ScaleChart({ variant, root, player }: { variant: ScaleVariant; r
                   : "border-transparent bg-[rgb(var(--c-s-50)/0.04)] shadow-raised-low",
               )}
             >
-              <span className={cn("text-body font-semibold", isActive ? "text-signal" : "text-slate-50")}>{note}</span>
+              <span className={cn("text-body font-semibold", isActive ? "text-signal-fg" : "text-slate-50")}>{note}</span>
               <span className="text-small text-slate-400">{spelled.degrees[i]}</span>
             </button>
           );

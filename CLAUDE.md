@@ -353,6 +353,10 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
   Custom modals must use `useDialogFocus` (focus in, Tab trapped, Escape, focus back). Never put `aria-label` on a bare `p`/`span` without a role; icon targets are at
   least 24px; links inside running text are underlined.
 
+- **Polling budget** (each open tab costs server work): one shared status poll a minute (`MeStatusProvider` / `/api/me/status`, now also carrying `unreadMessages` for the dock and sidebar badge, so there is no separate unread poll),
+  the sidebar cards every 3 minutes and only at lg width, `AutoRefresh` every 90 seconds (a full server render each time). Every timer skips a background tab. A new poller should join the shared status or follow the same rules.
+- **Orange text** is `text-signal-fg`, never `text-signal` (that class no longer exists): it is darker in the light theme so it passes contrast. Backgrounds and borders stay `bg-signal` / `border-signal`.
+
 ## Abuse guards (added 2026-10-12, `docs/ABUSE-AUDIT.md`)
 
 One free trial per inbox forever (`trial-used:` marker, plus tags dropped at every domain); an unpaid first bill releases the weekly

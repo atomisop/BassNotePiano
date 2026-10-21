@@ -20,7 +20,7 @@ export function AdminTopLink() {
       aria-current={active ? "page" : undefined}
       className={`tap flex h-9 w-9 items-center justify-center rounded-lg bg-neu-base transition ${
         active
-          ? "text-signal shadow-pressed-low"
+          ? "text-signal-fg shadow-pressed-low"
           : "text-slate-400 shadow-raised-low hover:text-slate-200 hover:shadow-raised-mid active:shadow-pressed-low"
       }`}
     >

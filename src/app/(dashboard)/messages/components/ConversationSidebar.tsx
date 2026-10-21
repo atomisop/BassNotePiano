@@ -68,7 +68,7 @@ export function ConversationSidebar({
             supportActive ? "bg-neu-base shadow-pressed-low" : "hover:bg-neu-base/60"
           }`}
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neu-base text-signal shadow-raised-low">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neu-base text-signal-fg shadow-raised-low">
             <LifeBuoy className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
           <span className="min-w-0 flex-1">

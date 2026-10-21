@@ -106,7 +106,7 @@ export function WeeklyTimePicker({
                   active ? "shadow-pressed-low" : "shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 }`}
               >
-                <span className={`text-body font-semibold ${active ? "text-signal" : "text-slate-100"}`}>{formatTimeRange(slot.startTime, CLASS_MINUTES)}</span>
+                <span className={`text-body font-semibold ${active ? "text-signal-fg" : "text-slate-100"}`}>{formatTimeRange(slot.startTime, CLASS_MINUTES)}</span>
                 <span className="text-small text-slate-500">{active ? "Selected" : slot.label ?? `${CLASS_MINUTES} min`}</span>
               </button>
             );

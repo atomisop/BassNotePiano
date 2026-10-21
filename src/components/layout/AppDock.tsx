@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { Home, CalendarCheck, Users, MessageSquare, Settings, type LucideIcon } from "lucide-react";
 import { Dock, DockIcon, DockItem } from "@/components/ui/dock";
-import { fetchUnreadMessageCountAction } from "@/app/(dashboard)/notification-actions";
+import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { SPRING } from "@/lib/motionTokens";
 import { onChange } from "@/lib/liveEvents";
 
@@ -102,53 +102,9 @@ const NAV_ITEMS = [
 export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDockProps) {
   const pathname = usePathname();
 
-  // Seeded from the layout's own server-rendered count (no flash of 0 on
-  // first paint), then kept fresh client-side, this badge used to be that
-  // static prop alone, which only ever changed on a full re-run of the
-  // dashboard layout's data fetch (a hard reload), not a client-side route
-  // change within it. Reported live: reading every message in /messages
-  // left the dock's badge showing the old count until a manual refresh.
-  // Same 30s-poll-plus-visibilitychange shape as NotificationBell's own
-  // unread count, and additionally refetched on every pathname change
-  // (below) so leaving /messages after reading something updates it
-  // immediately rather than waiting out the rest of the interval.
-  const [unreadMessageCount, setUnreadMessageCount] = useState(initialUnreadMessageCount);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function refresh() {
-      try {
-        const count = await fetchUnreadMessageCountAction();
-        if (!cancelled) setUnreadMessageCount(count);
-      } catch (err) {
-        // Same non-blocking posture as NotificationBell's own poll, a
-        // backgrounded tab killing this request mid-flight is routine, and
-        // the next poll or pathname change just tries again.
-        console.error("Unread message count refresh failed (non-blocking, will retry):", err);
-      }
-    }
-
-    refresh();
-    const interval = setInterval(() => {
-      if (document.visibilityState === "visible") refresh();
-    }, POLL_INTERVAL_MS);
-
-    function handleVisibility() {
-      if (document.visibilityState === "visible") refresh();
-    }
-    document.addEventListener("visibilitychange", handleVisibility);
-    const stopListening = onChange("messages", refresh);
-
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibility);
-      stopListening();
-    };
-    // Deliberately re-runs on every pathname change (not just mount), see
-    // the comment above.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+  // The unread badge: the server's count at page load, then the shared live status (one poll a minute for the whole app, a look on every
+  // page change and every "messages" announcement), the same one the sidebar uses. It used to run its own timer.
+  const unreadMessageCount = useUnreadMessages(initialUnreadMessageCount);
 
   // Opening a chat focuses its input, and iOS Safari answers by scrolling the
   // whole document to keep the input above the keyboard. The shell is a fixed
@@ -360,7 +316,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                             fillOpacity={active ? 0.2 : 0}
                             className={`h-full w-full transition-[color,filter] duration-200 ${
                               active
-                                ? "text-signal"
+                                ? "text-signal-fg"
                                 : "text-slate-400 hover:text-slate-50"
                             }`}
                           />
