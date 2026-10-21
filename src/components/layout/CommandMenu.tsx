@@ -11,6 +11,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { quickFindPeopleAction, type QuickFindPerson } from "@/app/(dashboard)/admin/quick-find-actions";
 
 /**
  * ⌘K / Ctrl-K navigation for the signed-in app.
@@ -26,6 +27,24 @@ import {
 export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState("");
+  const [people, setPeople] = React.useState<QuickFindPerson[]>([]);
+
+  // Admin: typing a name or email finds the person, so their account is one keystroke away.
+  React.useEffect(() => {
+    if (!isAdmin || search.trim().length < 2) {
+      setPeople([]);
+      return;
+    }
+    let alive = true;
+    const t = setTimeout(() => {
+      quickFindPeopleAction(search).then((rows) => alive && setPeople(rows)).catch(() => alive && setPeople([]));
+    }, 200);
+    return () => {
+      alive = false;
+      clearTimeout(t);
+    };
+  }, [search, isAdmin]);
 
   React.useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -48,9 +67,26 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Search scales and pages…" />
+      <CommandInput placeholder={isAdmin ? "Search a person, a scale or a page…" : "Search scales and pages…"} value={search} onValueChange={setSearch} />
       <CommandList>
         <CommandEmpty>Nothing matches that.</CommandEmpty>
+
+        {isAdmin && people.length > 0 && (
+          <CommandGroup heading="People">
+            {people.map((p) => (
+              <CommandItem
+                key={p.id}
+                // cmdk filters on `value`; the server already matched, so the typed text is part of it to keep every result visible.
+                value={`${search} ${p.name ?? ""} ${p.email}`}
+                onSelect={() => go(`/admin/users/${p.id}`)}
+              >
+                <span className="truncate">{p.name ?? p.email}</span>
+                {p.name && <span className="ml-2 truncate text-small text-slate-500">{p.email}</span>}
+                {p.banned && <span className="ml-auto text-small text-red-300">Banned</span>}
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
 
         <CommandGroup heading="Go to">
           <CommandItem value="dashboard roadmap home" onSelect={() => go("/dashboard")}>
@@ -104,6 +140,18 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
             </CommandItem>
             <CommandItem value="admin bookings roster schedule" onSelect={() => go("/admin/schedule?view=ATTENDANCE")}>
               Class bookings
+            </CommandItem>
+            <CommandItem value="admin support chat inbox" onSelect={() => go("/admin/support")}>
+              Support chat
+            </CommandItem>
+            <CommandItem value="admin accounts people users" onSelect={() => go("/admin/users")}>
+              Accounts
+            </CommandItem>
+            <CommandItem value="admin credits grant adjust" onSelect={() => go("/admin/payments?tab=credits")}>
+              Grant or take credits
+            </CommandItem>
+            <CommandItem value="admin settings owner switches" onSelect={() => go("/admin/settings")}>
+              Settings
             </CommandItem>
           </CommandGroup>
         )}
