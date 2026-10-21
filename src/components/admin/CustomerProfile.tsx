@@ -16,6 +16,8 @@ import { Tabs } from "@/components/ui/Tabs";
 
 export interface CustomerProfileProps {
   profile: CustomerProfileData;
+  /** Shown at the bottom of the Support tab (the changes admins made on this account). */
+  changeLog?: React.ReactNode;
   onSetCurriculumAccess: (userId: string, hasAccess: boolean) => Promise<void>;
   onToggleScale: (userId: string, scaleSlug: string, unlock: boolean) => Promise<void>;
   onClearAssistantHistory: (userId: string) => Promise<void>;
@@ -133,6 +135,7 @@ function Empty({ children }: { children: React.ReactNode }) {
 
 export function CustomerProfile({
   profile,
+  changeLog,
   onSetCurriculumAccess,
   onToggleScale,
   onClearAssistantHistory,
@@ -154,9 +157,13 @@ export function CustomerProfile({
   // open confirmation survives a change of tab. The tab is kept in the address (#money) so a link or a refresh returns to it.
   const [tab, setTab] = useState<ProfileTab>("overview");
   useEffect(() => {
-    const fromHash = window.location.hash.replace("#", "");
-    const match = PROFILE_TABS.find((t) => t.id === fromHash);
-    if (match) setTab(match.id);
+    const fromAddress = () => {
+      const match = PROFILE_TABS.find((t) => t.id === window.location.hash.replace("#", ""));
+      if (match) setTab(match.id);
+    };
+    fromAddress();
+    window.addEventListener("hashchange", fromAddress);
+    return () => window.removeEventListener("hashchange", fromAddress);
   }, []);
   function chooseTab(next: ProfileTab) {
     setTab(next);
@@ -811,6 +818,7 @@ export function CustomerProfile({
               ))}
             </div>
           </SectionCard>
+          {changeLog}
         </div>
       </div>
     </div>

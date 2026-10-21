@@ -57,6 +57,26 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
       <div className="mt-6">
         <CustomerProfile
           profile={profile}
+          changeLog={
+            changes.length > 0 ? (
+              <section className="glass-surface p-5">
+                <h2 className="text-body font-semibold text-slate-50">Changes made on this account</h2>
+                <ul className="mt-3 divide-y divide-slate-50/10">
+                  {changes.map((c) => (
+                    <li key={c.id} className="py-2.5 text-small">
+                      <p className="text-slate-200">
+                        <span className="font-medium">{c.action}</span>
+                        {c.detail ? <span className="text-slate-400"> · {c.detail}</span> : null}
+                      </p>
+                      <p className="mt-0.5 text-slate-500">
+                        {c.actorEmail ?? "System"} · {when(c.createdAt)}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null
+          }
           onSetCurriculumAccess={setCurriculumAccessAction}
           onToggleScale={toggleScaleUnlockAction}
           onClearAssistantHistory={clearAssistantHistoryAction}
@@ -71,24 +91,6 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
         />
       </div>
 
-      {changes.length > 0 && (
-        <section className="glass-surface mt-5 p-5">
-          <h2 className="text-body font-semibold text-slate-50">Changes made on this account</h2>
-          <ul className="mt-3 divide-y divide-slate-50/10">
-            {changes.map((c) => (
-              <li key={c.id} className="py-2.5 text-small">
-                <p className="text-slate-200">
-                  <span className="font-medium">{c.action}</span>
-                  {c.detail ? <span className="text-slate-400"> · {c.detail}</span> : null}
-                </p>
-                <p className="mt-0.5 text-slate-500">
-                  {c.actorEmail ?? "System"} · {when(c.createdAt)}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </div>
   );
 }
