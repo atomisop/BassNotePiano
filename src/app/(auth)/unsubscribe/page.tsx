@@ -1,9 +1,24 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { buttonVariants } from "@/components/ui/button";
+import { prisma } from "@/lib/prisma";
+import { maskEmail, recipientTag, RECIPIENT_HINT_PARAM, RECIPIENT_PARAM } from "@/lib/recipientTag";
 import { isEmailCategory, UNSUBSCRIBE_CATEGORY_LABEL, UNSUBSCRIBE_CATEGORY_NOTE, verifyUnsubscribeToken } from "@/lib/unsubscribe";
 
 export const metadata = { title: "Unsubscribe", robots: { index: false, follow: false } };
+
+/**
+ * The link to this person's notification settings, made for THEIR address (the same "who is this for" tag every emailed link
+ * carries), so whoever clicks it while signed in as someone else is stopped with the "sign in with the right account" screen
+ * instead of being shown that other account's settings.
+ */
+async function settingsLinkFor(userId: string): Promise<string> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+  const tag = user ? await recipientTag(user.email) : null;
+  if (!user || !tag) return "/account?tab=notifications";
+  const q = new URLSearchParams({ tab: "notifications", [RECIPIENT_PARAM]: tag, [RECIPIENT_HINT_PARAM]: maskEmail(user.email) });
+  return `/account?${q.toString()}`;
+}
 
 /**
  * Where the "Unsubscribe" link in an email lands. It only ASKS: nothing changes until the button is pressed (a mail scanner that
@@ -13,6 +28,7 @@ export default async function UnsubscribePage(props: { searchParams: Promise<{ u
   const { u = "", c = "", t = "", done, bad } = await props.searchParams;
 
   if (done && isEmailCategory(done)) {
+    const settingsHref = verifyUnsubscribeToken(u, done, t) ? await settingsLinkFor(u) : "/account?tab=notifications";
     return (
       <Card className="mx-auto max-w-md">
         <h1 className="text-body font-semibold text-slate-50">You are unsubscribed</h1>
@@ -20,7 +36,7 @@ export default async function UnsubscribePage(props: { searchParams: Promise<{ u
         <p className="mt-2 text-small text-slate-400">
           Changed your mind? You can turn any email back on under Settings, Notification settings. Sign-in codes and security alerts are always sent.
         </p>
-        <Link href="/account?tab=notifications" className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-4" })}>
+        <Link href={settingsHref} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-4" })}>
           Open notification settings
         </Link>
       </Card>

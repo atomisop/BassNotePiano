@@ -353,6 +353,11 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
   Custom modals must use `useDialogFocus` (focus in, Tab trapped, Escape, focus back). Never put `aria-label` on a bare `p`/`span` without a role; icon targets are at
   least 24px; links inside running text are underlined.
 
+- **Emailed links are for one person**: `tagAppLinks` tags every page link in an email (only `/api` and files are left alone, sign-in and reset steps included) and
+  the middleware stops a different signed-in account on ANY tagged page, public ones like `/unsubscribe` too, with the "Sign in with the right account" screen
+  (`/wrong-account`; a public target simply opens once they sign out). Any link the app builds from inside a page that is about another person (such as the
+  unsubscribe confirmation's settings link) must carry their tag too (`settingsLinkFor`).
+
 ## Abuse guards (added 2026-10-12, `docs/ABUSE-AUDIT.md`)
 
 One free trial per inbox forever (`trial-used:` marker, plus tags dropped at every domain); an unpaid first bill releases the weekly
