@@ -57,7 +57,7 @@ describe("the optional fifth class for a Monthly subscriber", () => {
     const offer = await getFifthClassOffer(stu.id);
     expect(offer).not.toBeNull();
     expect(offer!.scheduledAt.getTime()).toBe(monday(11, 30).getTime());
-    expect(offer!.priceCents).toBe(3000);
+    expect(offer!.priceCents).toBe(5500);
   });
 
   it("is not offered to a 6-month plan (it gets that class free) or before the four are booked", async () => {
@@ -71,7 +71,7 @@ describe("the optional fifth class for a Monthly subscriber", () => {
     const { stu } = await subscriber("Monthly C", "MONTHLY");
     const payment = await createFifthClassPayment(stu.id, "pay@example.com");
     paymentIds.push(payment.id);
-    expect(payment.amountCents).toBe(3000);
+    expect(payment.amountCents).toBe(5500);
     expect(payment.extraSessionScheduledAt?.getTime()).toBe(monday(11, 30).getTime());
     await prisma.zellePayment.update({ where: { id: payment.id }, data: { status: "PENDING_REVIEW", submittedAt: new Date() } });
     await approveZellePayment(payment.id, admin.id);
