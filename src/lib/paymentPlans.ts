@@ -11,6 +11,7 @@ import {
   chunksForSchedule,
   classesInWindow,
   classStartsInWindow,
+  classOccurrencesInWindow,
   livePaymentPlanConditions,
   nextOccurrenceDates,
   computeScheduledAt,
@@ -856,6 +857,8 @@ function paidMonthOf(plan: { status: PaymentPlanStatus; nextDueDate: Date }): { 
  * they paid for). A plan with no reserved time keeps the plain four.
  */
 export async function classesInPaidMonth(plan: {
+  id: string;
+  term: PaymentPlanTerm;
   cadence: PaymentPlanCadence;
   status: PaymentPlanStatus;
   nextDueDate: Date;
@@ -869,7 +872,24 @@ export async function classesInPaidMonth(plan: {
   const chunk = schedule ? chunksForSchedule(schedule)[plan.reservedChunkIndex] : undefined;
   if (!schedule || !chunk) return { allowed: base, base };
   const { monthStart, paidUntil } = paidMonthOf(plan);
-  return { allowed: Math.max(base, classesInWindow(schedule, chunk, monthStart, paidUntil)), base };
+  const inCycle = classesInWindow(schedule, chunk, monthStart, paidUntil);
+  // A 3-month or 6-month plan includes every weekday in its cycle. A Monthly plan covers four; it gets the fifth only when it was
+  // already given (the free credit went out before this rule, or the student bought the class), so nothing given is taken back.
+  if (isCommitmentTerm(plan.term) || (await fifthClassGiven(plan.id, monthStart))) return { allowed: Math.max(base, inCycle), base };
+  return { allowed: base, base };
+}
+
+/** 3-month and 6-month plans (and the retired yearly one) are commitments; Monthly is not. */
+export function isCommitmentTerm(term: PaymentPlanTerm): boolean {
+  return term !== "MONTHLY";
+}
+
+function fifthClassKey(planId: string, monthStart: Date): string {
+  return `plan-fifth-class:${planId}:${monthStart.toISOString().slice(0, 10)}`;
+}
+
+async function fifthClassGiven(planId: string, monthStart: Date): Promise<boolean> {
+  return Boolean(await prisma.appSetting.findUnique({ where: { key: fifthClassKey(planId, monthStart) }, select: { key: true } }));
 }
 
 /**
@@ -879,7 +899,7 @@ export async function classesInPaidMonth(plan: {
  */
 export async function ensureFifthClassCredit(plan: { id: string; userId: string; status: PaymentPlanStatus; nextDueDate: Date }, creditsPerClass: number): Promise<void> {
   const { monthStart, paidUntil } = paidMonthOf(plan);
-  const key = `plan-fifth-class:${plan.id}:${monthStart.toISOString().slice(0, 10)}`;
+  const key = fifthClassKey(plan.id, monthStart);
   try {
     await prisma.appSetting.create({ data: { key, value: "1" } });
   } catch {
@@ -889,35 +909,94 @@ export async function ensureFifthClassCredit(plan: { id: string; userId: string;
 }
 
 /**
- * For the payment receipt: when the cycle this installment just paid for holds five of the student's weekday, make sure the
- * fifth class's credit is on the account now (not only when the class books) and return the sentence that says so, so the
- * receipt tells the truth. Null for an ordinary four-class cycle. Never throws.
+ * For the payment receipt: when the cycle this installment just paid for holds five of the student's weekday, a 3-month or
+ * 6-month plan gets the fifth class free (its credit is added now, so the receipt tells the truth), and a Monthly plan is told
+ * it can add that class for the owner's price. Null for an ordinary four-class cycle. Never throws.
  */
-export async function fifthClassReceiptNote(planId: string): Promise<string | null> {
+export async function fifthClassReceiptNote(planId: string): Promise<{ text: string; offerPath: string | null } | null> {
   try {
     const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, include: { reservedSchedule: true } });
     if (!plan || !plan.reservedSchedule || plan.reservedChunkIndex === null) return null;
     const chunk = chunksForSchedule(plan.reservedSchedule)[plan.reservedChunkIndex];
     if (!chunk) return null;
-    const { allowed, base } = await classesInPaidMonth(plan);
-    if (allowed <= base) return null;
-    await ensureFifthClassCredit(plan, PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
+    const base = Math.floor(plan.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
     const { monthStart, paidUntil } = paidMonthOf(plan);
-    const day = (d: Date, opts: Intl.DateTimeFormatOptions) => d.toLocaleDateString("en-US", { timeZone: "America/New_York", ...opts });
     const starts = classStartsInWindow(plan.reservedSchedule, chunk, monthStart, paidUntil);
-    const weekday = starts[0] ? day(starts[0], { weekday: "long" }) : "class day";
+    if (starts.length <= base) return null;
+
+    const day = (d: Date, opts: Intl.DateTimeFormatOptions) => d.toLocaleDateString("en-US", { timeZone: "America/New_York", ...opts });
+    const weekday = day(starts[0], { weekday: "long" });
     const dates = starts.map((d) => day(d, { month: "short", day: "numeric" })).join(", ");
     const lastDay = new Date(paidUntil.getTime() - 86_400_000);
-    return `A free class: this billing cycle (${day(monthStart, { month: "short", day: "numeric" })} to ${day(lastDay, { month: "short", day: "numeric" })}) has ${starts.length} ${weekday}s instead of 4 (${dates}), so one extra class credit was added to your account at no charge. All ${starts.length} classes are yours.`;
+    const cycle = `${day(monthStart, { month: "short", day: "numeric" })} to ${day(lastDay, { month: "short", day: "numeric" })}`;
+
+    if (isCommitmentTerm(plan.term)) {
+      await ensureFifthClassCredit(plan, PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
+      return {
+        text: `A free class: this billing cycle (${cycle}) has ${starts.length} ${weekday}s instead of 4 (${dates}). Because you are on a ${plan.term === "TERM_3" ? "3-month" : plan.term === "TERM_6" ? "6-month" : "long-term"} plan, one extra class credit was added to your account at no charge. All ${starts.length} classes are yours.`,
+        offerPath: null,
+      };
+    }
+    if (await fifthClassGiven(plan.id, monthStart)) return null; // the free credit already went out for this cycle
+    const price = (await getNumberSetting("payments.fifthClassPriceDollars")) * 100;
+    return {
+      text: `This billing cycle (${cycle}) has ${starts.length} ${weekday}s instead of 4 (${dates}). Your plan covers 4 classes. You can add the last one for ${formatUsdCents(price)} under Lessons, Extra sessions. It is optional, and nothing changes if you skip it. (3-month and 6-month plans include it free.)`,
+      offerPath: "/lessons?tab=extra",
+    };
   } catch (err) {
     console.error("Fifth class receipt note failed (non-blocking):", err);
     return null;
   }
 }
 
+function formatUsdCents(cents: number): string {
+  const dollars = cents / 100;
+  return `$${Number.isInteger(dollars) ? dollars : dollars.toFixed(2)}`;
+}
+
+export interface FifthClassOffer {
+  planId: string;
+  scheduleId: string;
+  chunkIndex: number;
+  occurrenceDate: Date;
+  scheduledAt: Date;
+  priceCents: number;
+}
+
+/**
+ * The optional fifth class a MONTHLY subscriber can add: their cycle holds five of their weekday, the plan covers four (all
+ * booked), the last one is still ahead and unbooked, and it was not already given free. Always worked out here from the
+ * plan, never from what the browser sends. Null when there is no offer.
+ */
+export async function getFifthClassOffer(userId: string): Promise<FifthClassOffer | null> {
+  const plan = await prisma.paymentPlan.findFirst({
+    where: { userId, term: "MONTHLY", reservedScheduleId: { not: null }, OR: livePaymentPlanConditions() },
+    include: { reservedSchedule: true },
+  });
+  if (!plan || !plan.reservedSchedule || !plan.reservedSchedule.active || plan.reservedChunkIndex === null) return null;
+  const chunk = chunksForSchedule(plan.reservedSchedule)[plan.reservedChunkIndex];
+  if (!chunk) return null;
+  const base = Math.floor(plan.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]);
+  const { monthStart, paidUntil } = paidMonthOf(plan);
+  const occurrences = classOccurrencesInWindow(plan.reservedSchedule, chunk, monthStart, paidUntil);
+  if (occurrences.length <= base) return null;
+  if (await fifthClassGiven(plan.id, monthStart)) return null;
+  if ((await classesLeftInPaidMonth(plan)) > 0) return null; // the plan's own four are not all booked yet
+
+  const last = occurrences[occurrences.length - 1];
+  if (last.scheduledAt.getTime() <= Date.now()) return null;
+  const booked = await prisma.classBooking.findFirst({
+    where: { studentId: userId, scheduleId: plan.reservedSchedule.id, occurrenceDate: last.occurrenceDate, status: { in: ["SCHEDULED", "COMPLETED"] } },
+    select: { id: true },
+  });
+  if (booked) return null;
+  const priceCents = Math.round((await getNumberSetting("payments.fifthClassPriceDollars")) * 100);
+  return { planId: plan.id, scheduleId: plan.reservedSchedule.id, chunkIndex: plan.reservedChunkIndex, occurrenceDate: last.occurrenceDate, scheduledAt: last.scheduledAt, priceCents };
+}
+
 /** Before a booking: when this would be the fifth class of the paid month, make sure its credit is there. */
 export async function topUpIfFifth(
-  plan: { id: string; userId: string; cadence: PaymentPlanCadence; status: PaymentPlanStatus; nextDueDate: Date; creditsPerInstallment: number; reservedScheduleId?: string | null; reservedChunkIndex?: number | null },
+  plan: { id: string; userId: string; term: PaymentPlanTerm; cadence: PaymentPlanCadence; status: PaymentPlanStatus; nextDueDate: Date; creditsPerInstallment: number; reservedScheduleId?: string | null; reservedChunkIndex?: number | null },
   creditsPerClass: number,
 ): Promise<void> {
   const { monthStart, paidUntil } = paidMonthOf(plan);
@@ -935,6 +1014,7 @@ export async function topUpIfFifth(
  */
 export async function classesLeftInPaidMonth(plan: {
   id: string;
+  term: PaymentPlanTerm;
   cadence: PaymentPlanCadence;
   status: PaymentPlanStatus;
   nextDueDate: Date;

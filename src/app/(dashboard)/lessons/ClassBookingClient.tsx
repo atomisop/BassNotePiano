@@ -19,7 +19,7 @@ import { CheckIcon, XIcon } from "@/components/ui/icons";
 import { CLASS_MINUTES, CREDITS_PER_CLASS, EXTRA_CLASS_PRICE_CENTS, creditsLabelFromStored, formatCredits, storedToCredits } from "@/lib/classCreditPricing";
 import { errorNeedsTeam, weekRangeForOccurrence } from "@/lib/bookingRules";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
-import { createExtraClassPaymentAction, submitClassCreditsPaymentAction } from "../billing/lessons/actions";
+import { createExtraClassPaymentAction, createFifthClassPaymentAction, submitClassCreditsPaymentAction } from "../billing/lessons/actions";
 import type { ZellePaymentStatus } from "@prisma/client";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
@@ -441,7 +441,10 @@ export function ClassBookingClient({
   zelleHandle,
   extraMode = false,
   weeklyLimited = false,
+  fifthClassOffer = null,
 }: {
+  /** A Monthly subscriber's optional fifth class (their cycle holds five of their weekday): when it is, and the price. */
+  fifthClassOffer?: { scheduledAt: string; priceCents: number } | null;
   /** A student on a payment plan: this is where they book EXTRA sessions on top of their weekly class. */
   extraMode?: boolean;
   /** A subscriber: credits book one class a week, anything more that week is paid extra time. */
@@ -759,6 +762,32 @@ export function ClassBookingClient({
     }
   }
 
+  /** The optional fifth class: same pay screen as extra time, at the owner's price. */
+  async function startFifthClassPayment() {
+    if (!fifthClassOffer) return;
+    setError(null);
+    setSuccess(null);
+    setPayBusyKey("fifth");
+    try {
+      const result = await createFifthClassPaymentAction();
+      announceChange("booking");
+      if (!result.ok || !result.id || !result.status || result.amountCents === null) {
+        setError(result.error ?? "Something went wrong. Please try again.");
+        return;
+      }
+      setExtraPayment({
+        id: result.id,
+        status: result.status as ZellePaymentStatus,
+        amountCents: result.amountCents,
+        when: `${formatOccurrenceDay(fifthClassOffer.scheduledAt)}, ${formatOccurrenceTime(fifthClassOffer.scheduledAt)}`,
+      });
+    } catch {
+      setError(NETWORK_ERROR);
+    } finally {
+      setPayBusyKey(null);
+    }
+  }
+
   function openFamilyBooking(row: OccurrenceRow) {
     setFamilyRowKey(rowKey(row));
     setFamilyEmails(["", ""]);
@@ -873,6 +902,22 @@ export function ClassBookingClient({
                 Each class costs <span className="font-semibold text-slate-100">{creditsLabel(CREDITS_PER_CLASS)}</span> · {CLASS_MINUTES} min
               </p>
             </div>
+            {fifthClassOffer && !extraPayment && (
+              <div className="glass-surface mt-4 flex flex-wrap items-center justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <p className="text-body font-semibold text-slate-50">
+                    A fifth class this cycle: {formatOccurrenceDay(fifthClassOffer.scheduledAt)}, {formatOccurrenceTime(fifthClassOffer.scheduledAt)}
+                  </p>
+                  <p className="text-small text-slate-500">
+                    Your billing cycle holds five of your class day and your plan covers four. Add the last one for ${(fifthClassOffer.priceCents / 100).toFixed(fifthClassOffer.priceCents % 100 === 0 ? 0 : 2)}, or skip it, nothing changes.
+                  </p>
+                </div>
+                <button type="button" onClick={startFifthClassPayment} disabled={payBusyKey !== null} className={actionClass}>
+                  {payBusyKey === "fifth" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
+                  Add it · ${(fifthClassOffer.priceCents / 100).toFixed(fifthClassOffer.priceCents % 100 === 0 ? 0 : 2)}
+                </button>
+              </div>
+            )}
             {weeklyLimited && (
               <p className="mt-2 text-small text-slate-500">
                 Your plan covers one class a week. A second class in the same week is extra time, paid separately.

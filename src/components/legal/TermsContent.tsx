@@ -6,7 +6,7 @@
 
 import { FAMILY_BUNDLE_DISCOUNT_RATE } from "@/lib/classCreditPricing";
 
-export const TERMS_LAST_UPDATED = "October 5, 2026";
+export const TERMS_LAST_UPDATED = "October 21, 2026";
 
 function TermsSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -48,6 +48,11 @@ export function TermsContent() {
           active. You can skip or change a class up to 6 hours before it starts; inside 6 hours, please attend
           or message us. A skipped class stays on your account to rebook on another day, but it is forfeited if
           unused once that installment&apos;s monthly cycle expires.
+        </p>
+        <p>
+          Each installment pays for 4 classes. A billing month runs from one payment date to the next, so about four times a
+          year it holds five of your weekday. On a 3-Month or 6-Month plan, the fifth class is included at no charge. On a
+          Monthly plan, it is optional and can be added for a set price; nothing changes if you do not add it.
         </p>
         <p>
           Extra classes are $55 each, booked and paid for one at a time on the Lessons page, for more time on top of

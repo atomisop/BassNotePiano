@@ -14,7 +14,7 @@ import {
   FAMILY_MIN_ATTENDEES,
   FAMILY_CREDITS_PER_STUDENT,
 } from "@/lib/classSchedule";
-import { getActivePaymentPlan } from "@/lib/paymentPlans";
+import { getActivePaymentPlan, getFifthClassOffer } from "@/lib/paymentPlans";
 import { getSupportContactId } from "@/lib/admin";
 import { ClassBookingClient } from "./ClassBookingClient";
 import { ScheduleClient } from "../schedule/ScheduleClient";
@@ -60,8 +60,12 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
     hasLivePaymentPlan(session.user.id),
   ]);
 
+  // A Monthly subscriber whose billing month holds a fifth class day can add it for a set price.
+  const fifthOffer = activePlan ? await getFifthClassOffer(session.user.id) : null;
+
   const bookingClient = (
     <ClassBookingClient
+      fifthClassOffer={fifthOffer ? { scheduledAt: fifthOffer.scheduledAt.toISOString(), priceCents: fifthOffer.priceCents } : null}
       extraMode={Boolean(activePlan)}
       weeklyLimited={weeklyLimited}
       initialCredits={credits}
