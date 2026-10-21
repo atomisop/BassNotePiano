@@ -465,6 +465,7 @@ enum NotificationType {
   PAYMENT_RECEIVED // to the student, when they submit a payment that now waits for review
   TRIAL_ENDING // to the student, a day before their free trial ends and when it has ended
   PAYMENT_PLAN_UPDATED // to the student, when their plan starts or its term changes
+  SLOT_WAITLIST_OPENED // to the student, when a weekly time they were waiting for is free to take
 }
 
 // The in-app inbox is the source of truth, always written regardless of
@@ -805,6 +806,7 @@ model User {
   adminBackupCodes  AdminBackupCode[]
   knownDevices      KnownDevice[]
   pushSubscriptions PushSubscription[]
+  slotWaitlist      SlotWaitlist[]
   // Referral program: the code this person shares, and the referral rows they made / came in through.
   referralCode      String?            @unique
   referralsMade     Referral[]         @relation("ReferrerRel")
@@ -1620,6 +1622,7 @@ model ClassSchedule {
   reservedByPlans      PaymentPlan[]
   extraSessionPayments ZellePayment[]
   slotHolds            SlotHold[]
+  slotWaitlist         SlotWaitlist[]
 
   @@index([dayOfWeek, active])
 }
@@ -2027,4 +2030,19 @@ model Referral {
   rewardedAt DateTime?
 
   @@index([referrerId])
+}
+
+// Someone waiting for a weekly time that other plans hold. The hourly slot-waitlist job tells the first person in line when it frees up.
+model SlotWaitlist {
+  id         String        @id @default(cuid())
+  userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduleId String
+  schedule   ClassSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  chunkIndex Int
+  createdAt  DateTime      @default(now())
+  notifiedAt DateTime?
+
+  @@unique([userId, scheduleId, chunkIndex])
+  @@index([scheduleId, chunkIndex, createdAt])
 }

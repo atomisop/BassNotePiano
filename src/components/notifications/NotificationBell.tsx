@@ -148,6 +148,7 @@ const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>
   RESERVED_SLOT_UNAVAILABLE: { key: "billing", label: "Billing" },
   PAYMENT_RECEIVED: { key: "billing", label: "Billing" },
   PAYMENT_PLAN_UPDATED: { key: "billing", label: "Billing" },
+  SLOT_WAITLIST_OPENED: { key: "billing", label: "Billing" },
   TRIAL_ENDING: { key: "billing", label: "Billing" },
   ROLE_UPDATED: { key: "account", label: "Account" },
   ACCOUNT_UPDATE: { key: "account", label: "Account" },

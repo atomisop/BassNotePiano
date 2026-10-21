@@ -8,6 +8,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { createFamilyPlans, createPaymentPlan, PaymentPlanError } from "@/lib/paymentPlans";
 import { submitZellePaymentReference, type ZelleReferenceSubmission } from "@/lib/payments";
 import { getReservableSlots, type ReservableSlot } from "@/lib/classSchedule";
+import { getMyWaitlist, getTakenSlots, joinWaitlist, leaveWaitlist, WaitlistError } from "@/lib/slotWaitlist";
 import { RateLimitError, consumeRateLimit } from "@/lib/rateLimit";
 import { createAndSendCode, verifyCode, RateLimitError as CodeRateLimitError } from "@/lib/verification";
 import { prisma } from "@/lib/prisma";
@@ -27,6 +28,27 @@ export async function getReservableSlotsAction(cadence: PaymentPlanCadence): Pro
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
   if (!Object.values(PaymentPlanCadence).includes(cadence)) return [];
   return getReservableSlots(PLAN_CADENCE_CREDITS_PER_WEEK[cadence]);
+}
+
+/** Weekly times other plans hold, and which of them this person is waiting for. */
+export async function getWaitlistAction(): Promise<{ taken: ReservableSlot[]; mine: string[] }> {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  const [taken, mine] = await Promise.all([getTakenSlots(), getMyWaitlist(session.user.id)]);
+  return { taken, mine };
+}
+
+export async function setWaitlistAction(scheduleId: string, chunkIndex: number, join: boolean): Promise<{ ok: boolean; error: string | null }> {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  try {
+    if (join) await joinWaitlist(session.user.id, String(scheduleId), Number(chunkIndex));
+    else await leaveWaitlist(session.user.id, String(scheduleId), Number(chunkIndex));
+    return { ok: true, error: null };
+  } catch (err) {
+    if (err instanceof WaitlistError) return { ok: false, error: err.message };
+    throw err;
+  }
 }
 
 export async function enrollInPaymentPlanAction(

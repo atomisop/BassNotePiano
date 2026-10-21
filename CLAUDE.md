@@ -533,3 +533,10 @@ puts the running plan back to its list price. Audited as `referral.reward`.
 
 Admin > Teaching > Today (`/admin/today`, `src/lib/teachingToday.ts`): today's classes (Eastern day) grouped by start time, one row per student with the facts a teacher wants before class: first class flag, in person flag,
 plan, current open scale, days practiced out of 7, credits left, Discord linked, overdue bill, and the newest teacher note. Read only; the sidebar "Today" card for admins opens it. Marking attendance stays on Schedule > Attendance.
+
+## Weekly time waitlist (added 2026-10-21)
+
+On Billing > Plans, under "Your weekly time", a collapsed "Want a time that is taken?" lists the weekly times other plans hold (`getTakenSlots`, the chunks `getReservableSlots` does not return) and lets a student wait for up to 5 (`SlotWaitlist`,
+`slotWaitlist.ts`). The hourly `slot-waitlist` job (`netlify/functions/slot-waitlist.ts`, in `JOB_MAX_SILENCE_HOURS`) runs `notifyOpenedSlots`: for each waitlisted time that is open again it tells ONLY the first person in line
+(`SLOT_WAITLIST_OPENED`, class-updates switch, so it also pushes), then waits 24 hours before offering it to the next; a time that is taken again resets the offer; entries older than 90 days, for a retired schedule, or for someone who now holds
+that very time are cleared. Nothing is reserved for the person told: the time still goes to whoever starts a plan first.
