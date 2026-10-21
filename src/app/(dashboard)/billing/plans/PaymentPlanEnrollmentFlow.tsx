@@ -3,7 +3,7 @@
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { useEffect, useMemo, useState } from "react";
 import type { PaymentPlanCadence, PaymentPlanTerm, ZellePaymentStatus } from "@prisma/client";
-import { calculateFamilyBundleTotal, MAX_FAMILY_BUNDLE_RECIPIENTS, calculatePaymentPlanRate, describePaymentPlan, CLASS_MINUTES, OFFERED_PLAN_CADENCE, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { calculateFamilyBundleTotal, MAX_FAMILY_BUNDLE_RECIPIENTS, calculatePaymentPlanRate, describePaymentPlan, discountedPlanPriceCents, type PricingConfig, CLASS_MINUTES, OFFERED_PLAN_CADENCE, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -106,6 +106,10 @@ interface PaymentPlanEnrollmentFlowProps {
   /** Preselects the picker from a specific marketing-page tile (PaymentPlanTierGrid's ?cadence=&term= links) instead of always defaulting. */
   initialCadence?: PaymentPlanCadence;
   initialTerm?: PaymentPlanTerm;
+  /** The owner's current prices (Admin > Pricing). */
+  pricing: PricingConfig;
+  /** This account's personal percent off a solo plan (set by the owner), 0 when none. */
+  personalDiscountPercent?: number;
 }
 
 /**
@@ -114,9 +118,11 @@ interface PaymentPlanEnrollmentFlowProps {
  */
 function SwitchToFamilyPanel({
   term,
+  pricing,
   onStarted,
 }: {
   term: PaymentPlanTerm;
+  pricing: PricingConfig;
   onStarted: (payment: OpenInstallmentSummary, memberCount: number) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -128,7 +134,7 @@ function SwitchToFamilyPanel({
   const [error, setError] = useState<string | null>(null);
 
   const typed = emails.map((e) => e.trim()).filter(Boolean);
-  const price = calculateFamilyBundleTotal(OFFERED_PLAN_CADENCE, term, Math.max(2, typed.length + 1));
+  const price = calculateFamilyBundleTotal(OFFERED_PLAN_CADENCE, term, Math.max(2, typed.length + 1), pricing);
   const field = "h-11 w-full rounded-control bg-neu-base px-4 text-body text-slate-100 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
   async function sendCode() {
@@ -235,6 +241,8 @@ export function PaymentPlanEnrollmentFlow({
   pendingSwitch: initialSwitch = null,
   initialCadence,
   initialTerm,
+  pricing,
+  personalDiscountPercent = 0,
 }: PaymentPlanEnrollmentFlowProps) {
   // One plan: a 45-minute class a week. (initialCadence from old links is ignored.)
   const cadence: PaymentPlanCadence = OFFERED_PLAN_CADENCE;
@@ -265,11 +273,15 @@ export function PaymentPlanEnrollmentFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverCopy]);
 
-  const baseRate = calculatePaymentPlanRate(cadence, term);
+  const listRate = calculatePaymentPlanRate(cadence, term, pricing);
   const typedMembers = memberEmails.map((e) => e.trim()).filter(Boolean);
   const memberTotal = 1 + typedMembers.length;
-  const familyPrice = calculateFamilyBundleTotal(cadence, term, Math.max(2, memberTotal));
+  const familyPrice = calculateFamilyBundleTotal(cadence, term, Math.max(2, memberTotal), pricing);
   const isFamily = audience === "FAMILY";
+  // The owner's personal discount applies to a solo plan (a family keeps the family rate): the same rule the server charges by.
+  const personalOff = !isFamily && personalDiscountPercent > 0;
+  const soloCents = personalOff ? discountedPlanPriceCents(listRate.installmentAmountCents, personalDiscountPercent) : listRate.installmentAmountCents;
+  const baseRate = { ...listRate, installmentAmountCents: soloCents, totalCommittedCents: soloCents * listRate.termMonths };
   // A family member's monthly price is the family rate; everything else about the plan is the same.
   const rate = isFamily ? { ...baseRate, installmentAmountCents: familyPrice.perStudentMonthlyCents, totalCommittedCents: familyPrice.perStudentMonthlyCents * baseRate.termMonths } : baseRate;
   // Credits are internal bookkeeping now, by direct instruction: a student
@@ -451,7 +463,7 @@ export function PaymentPlanEnrollmentFlow({
           </div>
         )}
         {!fam && !pendingSwitch && plan.installmentsPaid >= 1 && (
-          <SwitchToFamilyPanel term={plan.term} onStarted={(payment, memberCount) => setPendingSwitch({ payment, memberCount })} />
+          <SwitchToFamilyPanel term={plan.term} pricing={pricing} onStarted={(payment, memberCount) => setPendingSwitch({ payment, memberCount })} />
         )}
         {familyBills.length > 0 && (
           <div className="mt-6 space-y-4">
@@ -539,7 +551,7 @@ export function PaymentPlanEnrollmentFlow({
             const active = term === option.value;
             // Off the Monthly rate, from the real (rounded) prices, so the badge can't disagree with them.
             const percentOff = Math.round(
-              (1 - calculatePaymentPlanRate(cadence, option.value).installmentAmountCents / calculatePaymentPlanRate(cadence, "MONTHLY").installmentAmountCents) * 100,
+              (1 - calculatePaymentPlanRate(cadence, option.value, pricing).installmentAmountCents / calculatePaymentPlanRate(cadence, "MONTHLY", pricing).installmentAmountCents) * 100,
             );
             return (
               <button
@@ -658,6 +670,15 @@ export function PaymentPlanEnrollmentFlow({
           </span>
           <NumberTicker value={rate.totalCommittedCents} format={formatUsd} />
         </div>
+        {personalOff && (
+          <div className="mt-1 flex items-center justify-between text-small text-signal">
+            <span>Your discount, {personalDiscountPercent}% off</span>
+            <span>
+              <span className="mr-2 text-slate-500 line-through">{formatUsd(listRate.installmentAmountCents)}</span>
+              {formatUsd(rate.installmentAmountCents)}
+            </span>
+          </div>
+        )}
         <div className="mt-2 flex items-center justify-between border-t border-ink/10 pt-2 text-body font-semibold text-slate-50">
           <span>{isFamily ? "Each person, each month" : rate.termMonths === 1 ? "Due now" : "Due each month"}</span>
           <NumberTicker value={rate.installmentAmountCents} format={formatUsd} />

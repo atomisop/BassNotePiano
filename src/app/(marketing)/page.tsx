@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/site";
 import { LandingPage } from "@/components/marketing/LandingPage";
+import { getPricingConfig } from "@/lib/pricing";
 
 // The homepage is a client component (session-aware CTAs), and a client
 // component cannot export metadata. Rather than give up the route's title/OG
@@ -20,6 +21,6 @@ export const metadata: Metadata = pageMetadata({ path: "/" });
 // untouched, it's not deleted, since removing it is a separate, verified
 // decision, not a side effect of this page no longer needing it.
 //
-export default function Page() {
-  return <LandingPage />;
+export default async function Page() {
+  return <LandingPage extraClassCents={(await getPricingConfig()).extraClassCents} />;
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { buildStrictCsp, isProtectedPath, newNonce } from "@/lib/csp";
-import { isWrongRecipient, RECIPIENT_HINT_PARAM } from "@/lib/recipientTag";
+import { isWrongRecipient, RECIPIENT_HINT_PARAM, RECIPIENT_PARAM } from "@/lib/recipientTag";
 
 // Edge middleware can't hit Postgres directly, so it only handles what the
 // NextAuth JWT can answer on its own: signed in, onboarded, admin or not.
@@ -28,7 +28,22 @@ export async function middleware(req: NextRequest) {
     return res;
   };
 
-  if (!isProtectedPath(pathname)) return next();
+  if (!isProtectedPath(pathname)) {
+    // A link from an email is made for one person (see recipientTag.ts). Even on a page that needs no sign-in (such as
+    // /unsubscribe), someone signed in as a DIFFERENT account must not be waved through as if the link were theirs: stop and
+    // say so. Nobody signed in, or the right account, goes straight on.
+    if (req.nextUrl.searchParams.has(RECIPIENT_PARAM) && pathname !== "/wrong-account") {
+      const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+      if (token?.sub && (await isWrongRecipient(req.nextUrl.searchParams, token.email))) {
+        const stop = new URL("/wrong-account", req.url);
+        stop.searchParams.set("next", pathname + req.nextUrl.search);
+        const hint = req.nextUrl.searchParams.get(RECIPIENT_HINT_PARAM);
+        if (hint) stop.searchParams.set("for", hint.slice(0, 80));
+        return NextResponse.redirect(stop);
+      }
+    }
+    return next();
+  }
 
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
