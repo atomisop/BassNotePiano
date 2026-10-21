@@ -219,6 +219,7 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
   grants). The JWT's copy is display-only; the edge no longer gates scales.
   `getRoadmap`/`canAccessScale` in `src/lib/access.ts` (DB-authoritative) are
   the real gate, via `decideScaleAccess`.
+- **A paid month is exactly 4 classes (decided 2026-10-20, after trying five).** The billing cycle runs from one payment date to the next, so it can hold five of a student's weekday (any weekday, about 4 cycles a year). `classesLeftInPaidMonth` (`paymentPlans.ts`) caps the cycle at creditsPerInstallment / creditsPerClass (4); the fifth weekday is a rest week, never booked. Do not give a free fifth class: one was added in PR 225 and taken out again. Access never depends on credits; extra time that week is an extra session (`SUBSCRIBER_CLASSES_PER_WEEK` = 1).
 - **Teacher-approved drip.** Full access opens Scale 1 only. Each next scale
   opens when the teacher approves it (`approveNextScale` in
   `src/lib/scaleApproval.ts`, button on `/admin/progress`): eligible when the
