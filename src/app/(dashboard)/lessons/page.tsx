@@ -22,6 +22,7 @@ import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { LessonsHub } from "./LessonsHub";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 import { discordChannelUrl } from "@/lib/discord";
+import { MyPlanSummary } from "@/components/billing/MyPlanSummary";
 import { DiscordConnectCard } from "@/components/lessons/DiscordConnectCard";
 
 /**
@@ -130,6 +131,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
   return (
     <>
       {card}
+      <MyPlanSummary userId={session.user.id} />
     <LessonsHub
       initialTab={searchParams.tab === "extra" ? "extra" : "weekly"}
       weekly={
