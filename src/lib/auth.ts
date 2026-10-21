@@ -115,7 +115,16 @@ async function loadEntitlements(userId: string): Promise<Entitlements> {
 // on every subsequent session touch), a slow Postgres round trip here
 // would otherwise block a login that already passed the real credential
 // check, so it gets a hard cap rather than being trusted to always be fast.
-async function loadEntitlementsBounded(userId: string, attempts = 2): Promise<Entitlements | null> {
+// A few seconds of memory per server instance. Every page, every background poll (credits, sidebar) and every action reads the
+// session, and each read used to cost about six database queries; a navigation now pays them once instead of several times
+// over. A sign-in and an explicit session update always read fresh (`fresh`), so "I just changed my password" never
+// signs the device that did it out. The ban check in getServerAuthSession is separate and stays live on every request.
+const ENTITLEMENT_TTL_MS = 5_000;
+const entitlementCache = new Map<string, { at: number; value: Entitlements }>();
+
+async function loadEntitlementsBounded(userId: string, attempts = 2, fresh = false): Promise<Entitlements | null> {
+  const hit = entitlementCache.get(userId);
+  if (!fresh && hit && Date.now() - hit.at < ENTITLEMENT_TTL_MS) return hit.value;
   // A slow first query (a cold Neon database) is retried once before giving up.
   // Returning null means "unknown": the caller keeps what the token already
   // says instead of overwriting it with least-privilege defaults, which is
@@ -126,7 +135,11 @@ async function loadEntitlementsBounded(userId: string, attempts = 2): Promise<En
         loadEntitlements(userId),
         new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
       ]);
-      if (result) return result;
+      if (result) {
+        if (entitlementCache.size > 500) entitlementCache.clear();
+        entitlementCache.set(userId, { at: Date.now(), value: result });
+        return result;
+      }
     } catch (err) {
       console.error("loadEntitlements failed:", err);
     }
@@ -239,7 +252,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, trigger }) {
       if (!token.sub) return token;
 
-      const loaded = await loadEntitlementsBounded(token.sub);
+      const loaded = await loadEntitlementsBounded(token.sub, 2, Boolean(user) || trigger === "update");
       if (!loaded) {
         // Database did not answer: keep the last known values (or, on a fresh
         // sign-in, what authorize just read), they are corrected on the next
