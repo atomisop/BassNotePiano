@@ -5,6 +5,9 @@ import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { listAudit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { getAdminPayments } from "@/lib/payments";
+import { PaymentQueue } from "@/components/admin/PaymentQueue";
+import { approvePaymentAction, checkPaymentAction, rejectPaymentAction } from "./payments/actions";
 import { getFollowUps } from "@/lib/adminFollowUps";
 import { getJobStatuses, isStopped } from "@/lib/jobRun";
 import { OverviewStats } from "@/components/admin/OverviewStats";
@@ -21,7 +24,7 @@ function formatUsd(cents: number) {
 export const metadata = { title: "Admin: Overview" };
 
 export default async function AdminOverviewPage() {
-  const [stats, trends, session, subs, attention, followUps] = await Promise.all([getOverviewStats(), getOverviewTrends(6), getServerAuthSession(), getSubscriptionStats(), getAttentionItems(), getFollowUps()]);
+  const [stats, trends, session, subs, attention, followUps, waiting] = await Promise.all([getOverviewStats(), getOverviewTrends(6), getServerAuthSession(), getSubscriptionStats(), getAttentionItems(), getFollowUps(), getAdminPayments("PENDING_REVIEW", 1)]);
   const isOwner = isOwnerEmail(session?.user?.email);
   const [activity, jobs, visits] = isOwner
     ? await Promise.all([
@@ -53,6 +56,20 @@ export default async function AdminOverviewPage() {
           </ul>
         )}
       </section>
+
+      {waiting.payments.length > 0 && (
+        <section className="mt-4">
+          <div className="mb-2 flex items-baseline justify-between gap-3">
+            <h2 className="text-body font-semibold text-slate-50">Approve without leaving</h2>
+            {waiting.total > 3 && (
+              <Link href="/admin/payments" className="text-small text-slate-400 underline-offset-4 hover:text-slate-100 hover:underline">
+                All {waiting.total} waiting
+              </Link>
+            )}
+          </div>
+          <PaymentQueue payments={waiting.payments.slice(0, 3)} onApprove={approvePaymentAction} onReject={rejectPaymentAction} onCheck={checkPaymentAction} />
+        </section>
+      )}
 
       {followUps.length > 0 && (
         <section className="mt-4 rounded-2xl bg-neu-base p-4 shadow-raised-low">
