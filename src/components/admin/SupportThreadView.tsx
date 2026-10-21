@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CANNED_REPLIES } from "@/lib/cannedReplies";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { SupportMessageSender } from "@prisma/client";
@@ -296,7 +297,23 @@ export function SupportThreadView({ initial, admins, currentAdminId, backHref }:
           </ul>
         )}
 
-        <form onSubmit={handleSend} className="flex min-w-0 items-end gap-2 border-t border-ink/10 p-3">
+        <div className="flex gap-1.5 overflow-x-auto border-t border-ink/10 px-3 pt-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Saved replies">
+          {CANNED_REPLIES.map((c) => (
+            <button
+              key={c.label}
+              type="button"
+              disabled={sending}
+              onClick={() => {
+                setReply(c.text);
+                inputRef.current?.focus();
+              }}
+              className="tap shrink-0 rounded-full bg-neu-base px-3 py-1 text-small text-slate-300 shadow-raised-low transition hover:text-slate-50 hover:shadow-raised-mid"
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+        <form onSubmit={handleSend} className="flex min-w-0 items-end gap-2 p-3">
           {isEmail ? (
             <textarea
               ref={inputRef}
