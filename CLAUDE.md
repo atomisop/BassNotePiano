@@ -512,3 +512,11 @@ Settings > "Your classes in your calendar" gives a signed-in student a subscribe
 120 days with a 15 minute alert and the Discord link; a canceled class is simply absent so calendar apps drop it on refresh. Calendar apps cannot sign in, so the token is an HMAC of
 the account id and `User.calendarVersion` (`studentCalendar.ts`, nothing stored); "Make a new link" bumps the version (`POST /api/me/calendar`, audited as `calendar.reset`) and the old
 link 404s, as does a banned account's. The teacher's own feed (`teacherCalendar.ts`) is separate and unchanged.
+
+## Push reminders (added 2026-10-21)
+
+Settings > "Reminders on your phone" (`PushCard` in `AccountSettings.tsx`, `public/sw.js`, `/api/me/push`, `webPush.ts`, `pushRules.ts`): class and practice reminders also arrive as web push. `createNotification` pushes
+only when its `emailCategory` is `reminders` or `classes` and the person's own switch for it is on (same rule as the email; a banned account gets nothing). `PushSubscription` rows are one per
+browser; the push service saying 404/410 deletes the row. The endpoint a browser sends must be on an allow-list of real push hosts (`isAllowedPushEndpoint`), because our server POSTs to it.
+**Needs three env vars to turn on**: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (make a pair with `npx web-push generate-vapid-keys`) and optionally `VAPID_SUBJECT` (`mailto:...`). Without the keys the card is
+hidden and nothing is sent. On iPhone/iPad push only works once the site is on the Home Screen, so the card shows those steps first (the "Add to Home Screen" prompt).

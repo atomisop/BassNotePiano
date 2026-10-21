@@ -819,6 +819,7 @@ function PasswordSection() {
         </form>
       </SectionCard>
 
+      <PushCard />
       <CalendarFeedCard />
       <SignedInDevicesCard />
       <SignOutOtherDevicesCard />
@@ -830,6 +831,133 @@ const DEVICE_ICON = { Phone: Smartphone, Tablet: Tablet, Computer: Laptop } as c
 
 // Every browser and device this account is signed in on: what it is, roughly where, when it signed in, and a green dot while
 // it has a tab open (gray otherwise). No IP addresses anywhere. Refreshes every minute and when other devices are signed out.
+function urlBase64ToUint8Array(base64: string): Uint8Array {
+  const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+  const raw = atob(padded.replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+}
+
+type PushState = "loading" | "unavailable" | "needs-home-screen" | "unsupported" | "blocked" | "off" | "on";
+
+/** Class and practice reminders as push notifications. On an iPhone the browser only allows it once the site is on the Home Screen. */
+function PushCard() {
+  const [state, setState] = useState<PushState>("loading");
+  const [key, setKey] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const ua = navigator.userAgent;
+        const isIos = /iPhone|iPad|iPod/.test(ua);
+        const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
+        const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+        if (isIos && !standalone) return alive && setState("needs-home-screen");
+        if (!supported) return alive && setState("unsupported");
+        let endpoint = "";
+        const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+        const existing = await reg?.pushManager.getSubscription();
+        if (existing) endpoint = existing.endpoint;
+        const r = await fetch(`/api/me/push${endpoint ? `?endpoint=${encodeURIComponent(endpoint)}` : ""}`, { cache: "no-store" });
+        if (!r.ok || !alive) return;
+        const d = (await r.json()) as { publicKey: string | null; subscribedHere: boolean };
+        setKey(d.publicKey);
+        if (!d.publicKey) return setState("unavailable");
+        if (Notification.permission === "denied") return setState("blocked");
+        setState(d.subscribedHere ? "on" : "off");
+      } catch {
+        if (alive) setState("unsupported");
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  async function turnOn() {
+    if (!key) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setState(permission === "denied" ? "blocked" : "off");
+        return;
+      }
+      const reg = await navigator.serviceWorker.register("/sw.js");
+      await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(key) as BufferSource });
+      const r = await fetch("/api/me/push", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(sub.toJSON()) });
+      if (!r.ok) throw new Error("save failed");
+      setState("on");
+    } catch {
+      setMessage("Couldn't turn it on. Try again in a moment.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function turnOff() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const reg = await navigator.serviceWorker.getRegistration("/sw.js");
+      const sub = await reg?.pushManager.getSubscription();
+      if (sub) {
+        await fetch("/api/me/push", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ endpoint: sub.endpoint }) });
+        await sub.unsubscribe();
+      }
+      setState("off");
+    } catch {
+      setMessage("Couldn't turn it off. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function sendTest() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const r = await fetch("/api/me/push/test", { method: "POST" });
+      const d = await r.json().catch(() => ({}));
+      setMessage(r.ok ? (d.delivered > 0 ? "Sent. It should arrive in a few seconds." : "Nothing was delivered. Turn it off and on again.") : (d.error ?? "Couldn't send a test."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (state === "loading" || state === "unavailable") return null;
+
+  return (
+    <SectionCard title="Reminders on your phone">
+      <p className="text-small text-slate-400">Get a push notification before a class and when it is time to practice, under the same reminder switches as email.</p>
+      {state === "needs-home-screen" && (
+        <p className="mt-3 text-small text-slate-300">
+          On iPhone and iPad, first add Bass Note Piano to your Home Screen: tap the Share button in Safari, then &quot;Add to Home Screen&quot;, open it from there and come back to this page.
+        </p>
+      )}
+      {state === "unsupported" && <p className="mt-3 text-small text-slate-500">This browser can&apos;t show push notifications. Email reminders still work.</p>}
+      {state === "blocked" && <p className="mt-3 text-small text-slate-300">Notifications are blocked for this site. Allow them in your browser or phone settings, then come back.</p>}
+      {state === "off" && (
+        <button type="button" disabled={busy} onClick={turnOn} className={`mt-3 ${buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}`}>
+          {busy ? "Working…" : "Turn on reminders here"}
+        </button>
+      )}
+      {state === "on" && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-small text-slate-300">On for this device.</span>
+          <button type="button" disabled={busy} onClick={sendTest} className={buttonVariants({ variant: "secondary", size: "sm" })}>Send a test</button>
+          <button type="button" disabled={busy} onClick={turnOff} className={buttonVariants({ variant: "secondary", size: "sm" })}>Turn off</button>
+        </div>
+      )}
+      {message && <p className="mt-2 text-small text-slate-300" role="status">{message}</p>}
+    </SectionCard>
+  );
+}
+
 function CalendarFeedCard() {
   const [links, setLinks] = useState<{ https: string; webcal: string } | null | undefined>(undefined);
   const [copied, setCopied] = useState(false);
