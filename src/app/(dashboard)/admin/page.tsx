@@ -5,6 +5,7 @@ import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { listAudit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { getFollowUps } from "@/lib/adminFollowUps";
 import { getJobStatuses, isStopped } from "@/lib/jobRun";
 import { OverviewStats } from "@/components/admin/OverviewStats";
 import { MetricCard } from "@/components/ui/MetricCard";
@@ -20,7 +21,7 @@ function formatUsd(cents: number) {
 export const metadata = { title: "Admin: Overview" };
 
 export default async function AdminOverviewPage() {
-  const [stats, trends, session, subs, attention] = await Promise.all([getOverviewStats(), getOverviewTrends(6), getServerAuthSession(), getSubscriptionStats(), getAttentionItems()]);
+  const [stats, trends, session, subs, attention, followUps] = await Promise.all([getOverviewStats(), getOverviewTrends(6), getServerAuthSession(), getSubscriptionStats(), getAttentionItems(), getFollowUps()]);
   const isOwner = isOwnerEmail(session?.user?.email);
   const [activity, jobs, visits] = isOwner
     ? await Promise.all([
@@ -52,6 +53,35 @@ export default async function AdminOverviewPage() {
           </ul>
         )}
       </section>
+
+      {followUps.length > 0 && (
+        <section className="mt-4 rounded-2xl bg-neu-base p-4 shadow-raised-low">
+          <h2 className="text-body font-semibold text-slate-50">People to follow up with</h2>
+          <ul className="mt-2 divide-y divide-slate-50/10">
+            {followUps.map((f) => (
+              <li key={f.key} className="py-2.5 text-small">
+                <div className="flex items-center justify-between gap-3">
+                  <Link href={f.href} className="font-medium text-slate-200 hover:underline">
+                    {f.title}
+                  </Link>
+                  <span className="rounded-full bg-[rgb(var(--signal)/0.14)] px-2.5 py-0.5 font-semibold tabular-nums text-signal">{f.total}</span>
+                </div>
+                <p className="mt-0.5 text-slate-500">{f.hint}</p>
+                {f.people.length > 0 && (
+                  <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                    {f.people.map((p) => (
+                      <Link key={p.id} href={`/admin/users/${p.id}`} className="tap inline-flex items-center text-slate-300 underline decoration-slate-600 underline-offset-2 hover:text-slate-50">
+                        {p.name}
+                      </Link>
+                    ))}
+                    {f.total > f.people.length && <span className="text-slate-500">and {f.total - f.people.length} more</span>}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Two trend cards over the last six months, both from real rows
           (User.createdAt and VERIFIED payments). Flat stretches are real

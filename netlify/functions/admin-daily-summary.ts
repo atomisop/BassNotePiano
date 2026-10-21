@@ -5,6 +5,7 @@ import { OWNER_EMAIL } from "../../src/lib/adminNotifications";
 import { todayBoundsEt } from "../../src/lib/classSchedule";
 import { sendNotificationEmailWithCta, sendTodoListEmail, getAppUrl, type TodoEmailItem } from "../../src/lib/email";
 import { getBoolSetting } from "../../src/lib/siteSettings";
+import { getFollowUps } from "../../src/lib/adminFollowUps";
 import { countUnmatchedReceipts, getPaymentPipelineHealth } from "../../src/lib/paymentPipelineStatus";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -27,7 +28,7 @@ export const handler = schedule("0 12 * * *", async () =>
   }
   const now = Date.now();
   const today = todayBoundsEt();
-  const [pendingPayments, uncheckedAuto, unmatchedEmails, applications, openChats, classesToday, unmarked, stoppedJobs, pipeline] = await Promise.all([
+  const [pendingPayments, uncheckedAuto, unmatchedEmails, applications, openChats, classesToday, unmarked, stoppedJobs, pipeline, followUps] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
     prisma.zellePayment.count({ where: { autoApproved: true, checkedAt: null, status: "VERIFIED" } }),
     // Payment emails that matched nobody and nobody has dismissed (the same count the Overview shows).
@@ -44,6 +45,7 @@ export const handler = schedule("0 12 * * *", async () =>
     findStoppedJobs(new Date(now)),
     // Payments someone says they sent, with no bank email for two days: the Gmail script has probably stopped.
     getPaymentPipelineHealth(new Date(now)),
+    getFollowUps(new Date(now)),
   ]);
   const pipelineQuiet = pipeline.status === "quiet";
 
@@ -71,10 +73,29 @@ export const handler = schedule("0 12 * * *", async () =>
     pipelineQuiet
       ? { text: "No bank or Venmo email has arrived in two days while payments are waiting, check the Gmail script", url: getAppUrl("/admin/payments") }
       : null,
+    // People to reach out to (overdue bills, students who stopped practicing, trials ending, credits about to lapse).
+    ...followUps.map((f) => ({
+      text: `${f.title}: ${f.people.length ? f.people.map((p) => p.name).join(", ") : `${f.total}`}${f.total > f.people.length && f.people.length ? ` and ${f.total - f.people.length} more` : ""}`,
+      url: getAppUrl(f.href),
+    })),
   ].filter((p): p is TodoEmailItem => p !== null);
 
+  // Mondays: the week in numbers, added to whichever email goes out.
+  const isMonday = new Date(now).toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long" }) === "Monday";
+  let digest: string | null = null;
+  if (isMonday) {
+    const weekAgo = new Date(now - 7 * 24 * HOUR_MS);
+    const [signups, revenue, taught, noShows, newPlans] = await Promise.all([
+      prisma.user.count({ where: { createdAt: { gte: weekAgo } } }),
+      prisma.zellePayment.aggregate({ where: { status: "VERIFIED", reviewedAt: { gte: weekAgo } }, _sum: { amountCents: true } }),
+      prisma.classBooking.count({ where: { status: "COMPLETED", scheduledAt: { gte: weekAgo } } }),
+      prisma.classBooking.count({ where: { attendance: "NO_SHOW", scheduledAt: { gte: weekAgo } } }),
+      prisma.paymentPlan.count({ where: { createdAt: { gte: weekAgo } } }),
+    ]);
+    digest = `Last 7 days: ${signups} new ${signups === 1 ? "account" : "accounts"}, ${newPlans} new ${newPlans === 1 ? "plan" : "plans"}, $${((revenue._sum.amountCents ?? 0) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} verified, ${taught} ${taught === 1 ? "class" : "classes"} taught, ${noShows} no-${noShows === 1 ? "show" : "shows"}.`;
+  }
+
   if (parts.length === 0 && !classLine) {
-    const isMonday = new Date(now).toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long" }) === "Monday";
     if (!isMonday) {
       console.log("Admin daily summary: nothing needs a decision, no email sent");
       return { statusCode: 200 };
@@ -82,14 +103,14 @@ export const handler = schedule("0 12 * * *", async () =>
     await sendNotificationEmailWithCta(
       OWNER_EMAIL,
       "All clear",
-      "Weekly check-in: nothing needs a decision, every scheduled job has run on time, and payment emails are arriving. If you stop getting this on Mondays, something is wrong with the scheduler or the email service.",
+      `${digest ? `${digest} ` : ""}Weekly check-in: nothing needs a decision, every scheduled job has run on time, and payment emails are arriving. If you stop getting this on Mondays, something is wrong with the scheduler or the email service.`,
       { label: "Open admin", url: getAppUrl("/admin") },
     );
     console.log("Admin daily summary: all clear sent");
     return { statusCode: 200 };
   }
 
-  await sendTodoListEmail(OWNER_EMAIL, "Today's to-do", classLine, parts);
+  await sendTodoListEmail(OWNER_EMAIL, "Today's to-do", [classLine, digest].filter(Boolean).join(" ") || null, parts);
   console.log(`Admin daily summary: sent (${parts.length} items, ${classesToday.length} classes)`);
   return { statusCode: 200 };
 }));
