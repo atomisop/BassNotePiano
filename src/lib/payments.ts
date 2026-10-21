@@ -17,7 +17,7 @@ import {
   MIN_FAMILY_BUNDLE_RECIPIENTS,
   describePaymentPlan,
 } from "@/lib/classCreditPricing";
-import { addCalendarMonthsClamped, bookReservedWindowForPlan, describeReservedSlot } from "@/lib/paymentPlans";
+import { addCalendarMonthsClamped, bookReservedWindowForPlan, describeReservedSlot, fifthClassReceiptNote } from "@/lib/paymentPlans";
 import { createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
 import { adjustUserCredits } from "@/lib/creditAdjustments";
@@ -819,6 +819,9 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
     notificationBody = plan
       ? `Installment ${ordinal} of ${plan.termMonths} was verified. ${creditsNote}.`
       : `Your payment plan installment was verified. ${creditsNote}.`;
+    // A cycle that holds five of the student's weekday includes the fifth class free: say so on the receipt.
+    const freeClass = await fifthClassReceiptNote(payment.paymentPlanId);
+    if (freeClass) notificationBody += ` ${freeClass}`;
   } else if (payment.scaleGroupId) {
     const scaleGroup = await prisma.scaleGroup.findUniqueOrThrow({ where: { id: payment.scaleGroupId } });
     notificationBody = `Your payment for ${scaleGroup.code}: ${scaleGroup.title} was verified. It's unlocked now.`;
