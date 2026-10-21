@@ -2,6 +2,8 @@ import { Resend } from "resend";
 import { tagAppLinks } from "@/lib/recipientTag";
 import type { VerificationPurpose } from "@prisma/client";
 import { SCALE_GROUPS } from "@/lib/curriculum";
+import type { EmailCategory } from "@/lib/emailPreferences";
+import { unsubscribeLinks } from "@/lib/unsubscribe";
 
 // Falls back to the actual verified Resend sending domain (a subdomain, not
 // the root domain; see the deployment notes) so a missing env var fails
@@ -36,8 +38,16 @@ function getResendClient(): Resend | null {
   return new Resend(apiKey);
 }
 
+/** Who an email is for and which switch governs it, so the email can carry a working "Unsubscribe" (see unsubscribe.ts). */
+export interface UnsubscribeTarget {
+  userId: string;
+  category: EmailCategory;
+}
+
 interface SendEmailParams {
   to: string;
+  /** The one-click unsubscribe endpoint, sent as the List-Unsubscribe header (RFC 8058) so mail apps can show their own button. */
+  unsubscribePostUrl?: string;
   subject: string;
   html: string;
   /** Plain-text fallback shown in dev-mode console logging and passed to Resend. */
@@ -52,7 +62,7 @@ interface SendEmailParams {
  * logs the email to the server console instead of sending, the whole
  * verification/2FA/reset flow is fully testable without real credentials.
  */
-async function sendEmail({ to, subject, html: rawHtml, text: rawText, from }: SendEmailParams): Promise<void> {
+async function sendEmail({ to, subject, html: rawHtml, text: rawText, from, unsubscribePostUrl }: SendEmailParams): Promise<void> {
   // Every link into the app is tagged with who the email is for, so opening it signed in as someone else is caught
   // (see recipientTag.ts and the middleware) instead of showing that other account's screen.
   const html = await tagAppLinks(rawHtml, to);
@@ -85,11 +95,12 @@ async function sendEmail({ to, subject, html: rawHtml, text: rawText, from }: Se
   // Try the wanted sender first, then the standard one, then the root-domain one. A sender whose domain
   // is not verified for this Resend key is refused, and the message should still go out.
   const senders = Array.from(new Set([from ?? EMAIL_FROM, EMAIL_FROM, NOREPLY_FROM]));
-  let result = await client.emails.send({ from: senders[0], to, subject, html, text, replyTo: EMAIL_REPLY_TO });
+  const headers = unsubscribePostUrl ? { "List-Unsubscribe": `<${unsubscribePostUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } : undefined;
+  let result = await client.emails.send({ from: senders[0], to, subject, html, text, replyTo: EMAIL_REPLY_TO, headers });
   for (const next of senders.slice(1)) {
     if (!result.error) break;
     console.error(`Sending from ${senders[0]} failed (${result.error.message}), trying ${next}.`);
-    result = await client.emails.send({ from: next, to, subject, html, text, replyTo: EMAIL_REPLY_TO });
+    result = await client.emails.send({ from: next, to, subject, html, text, replyTo: EMAIL_REPLY_TO, headers });
   }
   if (result.error) {
     throw new Error(`Resend failed to send to ${to}: ${result.error.message}`);
@@ -114,13 +125,17 @@ interface EmailShellOptions {
   kind?: keyof typeof SHELL_ACCENT;
   /** Overrides the default "manage preferences" footer line, used by code emails, which have a different (ignore-if-not-you) concern. */
   footerNote?: string;
+  /** Adds an "Unsubscribe" link to the default footer line (ignored when footerNote replaces it). */
+  unsubscribePageUrl?: string;
 }
 
 function emailShell(title: string, bodyHtml: string, options: EmailShellOptions = {}): string {
   const accent = SHELL_ACCENT[options.kind ?? "default"];
   const footerNote =
     options.footerNote ??
-    `You're getting this because you have a Bass Note Piano account. <a href="${getAppUrl("/account?tab=notifications")}" style="color:#f5f5f5;text-decoration:underline;">Manage email preferences</a>.`;
+    `You're getting this because you have a Bass Note Piano account. <a href="${getAppUrl("/account?tab=notifications")}" style="color:#f5f5f5;text-decoration:underline;">Manage email preferences</a>${
+      options.unsubscribePageUrl ? ` or <a href="${options.unsubscribePageUrl}" style="color:#f5f5f5;text-decoration:underline;">unsubscribe from these emails</a>` : ""
+    }.`;
 
   return `
     <div style="background:#0d0d0d;padding:40px 16px;font-family:Helvetica,Arial,sans-serif;">
@@ -245,10 +260,11 @@ function escapeHtml(text: string): string {
 }
 
 /** Generic notification email, payment approvals, role changes, practice reminders, etc. */
-export async function sendNotificationEmail(to: string, title: string, body: string, kind: "default" | "notice" = "default") {
-  const html = emailShell(title, `<p style="margin:0;">${escapeHtml(body)}</p>`, { kind });
-  const text = body;
-  await sendEmail({ to, subject: title, html, text });
+export async function sendNotificationEmail(to: string, title: string, body: string, kind: "default" | "notice" = "default", unsubscribe?: UnsubscribeTarget) {
+  const links = unsubscribe ? unsubscribeLinks(unsubscribe.userId, unsubscribe.category) : null;
+  const html = emailShell(title, `<p style="margin:0;">${escapeHtml(body)}</p>`, { kind, unsubscribePageUrl: links?.page });
+  const text = links ? `${body}\n\nUnsubscribe: ${links.page}` : body;
+  await sendEmail({ to, subject: title, html, text, unsubscribePostUrl: links?.post });
 }
 
 /** Where to make a Discord account. */
@@ -335,8 +351,9 @@ export async function sendPersonalEmail(
   to: string,
   subject: string,
   body: string,
-  options: { firstName?: string | null; link?: { label: string; url: string } } = {},
+  options: { firstName?: string | null; link?: { label: string; url: string }; unsubscribe?: UnsubscribeTarget } = {},
 ) {
+  const links = options.unsubscribe ? unsubscribeLinks(options.unsubscribe.userId, options.unsubscribe.category) : null;
   const greeting = options.firstName?.trim() ? `Hi ${options.firstName.trim()},` : "Hi,";
   const paragraphs = body
     .trim()
@@ -348,9 +365,10 @@ export async function sendPersonalEmail(
 <p style="margin:0 0 14px;">${escapeHtml(greeting)}</p>
 ${paragraphs.map((p) => `<p style="margin:0 0 14px;">${escapeHtml(p).replace(/\n/g, "<br>")}</p>`).join("\n")}
 ${linkHtml}<p style="margin:0;">Bass Note Piano</p>
+${links ? `<p style="margin:18px 0 0;font-size:12px;color:#666666;">Do not want these emails? <a href="${links.page}" style="color:#666666;">Unsubscribe</a>.</p>` : ""}
 </div>`;
-  const text = [greeting, "", ...paragraphs.flatMap((p) => [p, ""]), ...(options.link ? [`${options.link.label}: ${options.link.url}`, ""] : []), "Bass Note Piano"].join("\n");
-  await sendEmail({ to, subject, html, text, from: PERSONAL_FROM });
+  const text = [greeting, "", ...paragraphs.flatMap((p) => [p, ""]), ...(options.link ? [`${options.link.label}: ${options.link.url}`, ""] : []), "Bass Note Piano", ...(links ? ["", `Do not want these emails? Unsubscribe: ${links.page}`] : [])].join("\n");
+  await sendEmail({ to, subject, html, text, from: PERSONAL_FROM, unsubscribePostUrl: links?.post });
 }
 
 function ctaButtonHtml(cta: { label: string; url: string }): string {
@@ -377,10 +395,12 @@ export async function sendNotificationEmailWithCta(
   body: string,
   cta: { label: string; url: string },
   kind: "default" | "notice" = "default",
+  unsubscribe?: UnsubscribeTarget,
 ) {
-  const html = emailShell(title, `<p style="margin:0 0 20px;">${escapeHtml(body)}</p>${ctaButtonHtml(cta)}`, { kind });
-  const text = `${body}\n\n${cta.label}: ${cta.url}`;
-  await sendEmail({ to, subject: title, html, text });
+  const links = unsubscribe ? unsubscribeLinks(unsubscribe.userId, unsubscribe.category) : null;
+  const html = emailShell(title, `<p style="margin:0 0 20px;">${escapeHtml(body)}</p>${ctaButtonHtml(cta)}`, { kind, unsubscribePageUrl: links?.page });
+  const text = `${body}\n\n${cta.label}: ${cta.url}${links ? `\n\nUnsubscribe: ${links.page}` : ""}`;
+  await sendEmail({ to, subject: title, html, text, unsubscribePostUrl: links?.post });
 }
 
 function formatUsdCents(cents: number): string {
@@ -398,6 +418,8 @@ export interface PaymentPlanInvoiceDetails {
   cta: { label: string; url: string };
   /** When this installment's credits (and the exclusive hold on the student's reserved weekly slot) actually lapse if unused, computed the same way the CreditGrant itself is (addCalendarMonthsClamped(plan.nextDueDate, 1), already known ahead of approval since only approval advances nextDueDate). Optional and rendered as one more summary row only when present, so a caller that doesn't have it handy doesn't need to fake one. */
   cycleEndsAt?: Date;
+  /** Who the bill is for, so it carries a working "Unsubscribe" for the payments switch. */
+  unsubscribe?: UnsubscribeTarget;
   /** Present only for the overdue variant, its presence, not a separate flag, is what picks the template's copy/accent. */
   overdueDays?: number;
 }
@@ -472,7 +494,8 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
     </table>
   `;
 
-  const html = emailShell(heading, `${headlineHtml}${buttonsHtml}${summaryHtml}`, { kind: isOverdue ? "notice" : "default" });
+  const links = details.unsubscribe ? unsubscribeLinks(details.unsubscribe.userId, details.unsubscribe.category) : null;
+  const html = emailShell(heading, `${headlineHtml}${buttonsHtml}${summaryHtml}`, { kind: isOverdue ? "notice" : "default", unsubscribePageUrl: links?.page });
   const text = [
     `${heading}: ${amountLabel} ${isOverdue ? "was due" : "due on"} ${dueDateLabel}`,
     intro,
@@ -484,6 +507,7 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
     "",
     `Pay bill: ${details.cta.url}`,
     `Remind me: ${remindUrl}`,
+    ...(links ? ["", `Unsubscribe: ${links.page}`] : []),
   ].join("\n");
 
   await sendEmail({
@@ -491,6 +515,7 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
     subject: isOverdue ? `Overdue: ${amountLabel} bill` : `Bill: ${amountLabel} due ${dueShort}`,
     html,
     text,
+    unsubscribePostUrl: links?.post,
   });
 }
 

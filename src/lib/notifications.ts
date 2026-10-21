@@ -142,10 +142,12 @@ async function maybeSendEmail(
   if (user.bannedAt) return;
   if (!isEmailEnabled(user, category) && !force) return;
 
+  // Every email a switch governs carries an "Unsubscribe" for that same switch.
+  const unsubscribe = { userId, category };
   if (cta) {
-    await sendNotificationEmailWithCta(user.email, title, body ?? "", { label: cta.label, url: cta.url }, cta.kind);
+    await sendNotificationEmailWithCta(user.email, title, body ?? "", { label: cta.label, url: cta.url }, cta.kind, unsubscribe);
   } else {
-    await sendNotificationEmail(user.email, title, body ?? "");
+    await sendNotificationEmail(user.email, title, body ?? "", "default", unsubscribe);
   }
 }
 
