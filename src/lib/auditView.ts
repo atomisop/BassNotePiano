@@ -7,6 +7,7 @@ const LABELS: Record<string, string> = {
   "setting.reset": "Reset a setting",
   "plan.cancel": "Canceled a plan",
   "plan.pause": "Paused a plan",
+  "calendar.reset": "Made a new calendar link",
   "payment.refund": "Refunded a payment",
   "payment.delete": "Deleted a payment",
   "payment.match_email": "Matched a bank email by hand",

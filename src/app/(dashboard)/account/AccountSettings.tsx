@@ -819,6 +819,7 @@ function PasswordSection() {
         </form>
       </SectionCard>
 
+      <CalendarFeedCard />
       <SignedInDevicesCard />
       <SignOutOtherDevicesCard />
     </div>
@@ -829,6 +830,79 @@ const DEVICE_ICON = { Phone: Smartphone, Tablet: Tablet, Computer: Laptop } as c
 
 // Every browser and device this account is signed in on: what it is, roughly where, when it signed in, and a green dot while
 // it has a tab open (gray otherwise). No IP addresses anywhere. Refreshes every minute and when other devices are signed out.
+function CalendarFeedCard() {
+  const [links, setLinks] = useState<{ https: string; webcal: string } | null | undefined>(undefined);
+  const [copied, setCopied] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/me/calendar", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => alive && setLinks(d?.links ?? null))
+      .catch(() => alive && setLinks(null));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  async function copy() {
+    if (!links) return;
+    try {
+      await navigator.clipboard.writeText(links.https);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* the link is also shown in full to copy by hand */
+    }
+  }
+
+  async function reset() {
+    setBusy(true);
+    try {
+      const r = await fetch("/api/me/calendar", { method: "POST" });
+      if (r.ok) setLinks((await r.json()).links);
+    } finally {
+      setBusy(false);
+      setConfirmReset(false);
+    }
+  }
+
+  return (
+    <SectionCard title="Your classes in your calendar">
+      <p className="text-small text-slate-400">
+        Subscribe once and every class you book shows up in Apple Calendar, Google Calendar or Outlook, and moves or disappears when you change it. Keep the link private: anyone who has it can see your class times.
+      </p>
+      {links === undefined ? (
+        <p className="mt-3 text-small text-slate-500">Loading…</p>
+      ) : links === null ? (
+        <p className="mt-3 text-small text-slate-500">Couldn&apos;t load your link. Refresh the page.</p>
+      ) : (
+        <div className="mt-3 space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <a href={links.webcal} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>Subscribe on this device</a>
+            <button type="button" onClick={copy} className={buttonVariants({ variant: "secondary", size: "sm" })}>{copied ? "Copied" : "Copy link"}</button>
+          </div>
+          <label htmlFor="cal-link" className="sr-only">Your calendar link</label>
+          <input id="cal-link" readOnly value={links.https} onFocus={(e) => e.currentTarget.select()} className="h-11 w-full rounded-lg bg-neu-base px-3 text-base text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+          {!confirmReset ? (
+            <button type="button" onClick={() => setConfirmReset(true)} className="text-small text-slate-400 underline underline-offset-4 hover:text-slate-200">Make a new link</button>
+          ) : (
+            <div className="rounded-xl bg-neu-base p-4 shadow-raised-low">
+              <p className="text-small text-slate-200">The old link stops working. Calendars that use it will need the new one.</p>
+              <div className="mt-3 flex gap-2">
+                <button type="button" disabled={busy} onClick={reset} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>{busy ? "Working…" : "Make a new link"}</button>
+                <button type="button" disabled={busy} onClick={() => setConfirmReset(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Keep it</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
 function SignedInDevicesCard() {
   const [devices, setDevices] = useState<SignedInDevice[] | null>(null);
 

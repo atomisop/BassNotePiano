@@ -796,6 +796,8 @@ model User {
   // account-settings password form's claim that changing it signs out other
   // devices did nothing enforceable before this existed.
   sessionVersion   Int               @default(1)
+  // Bumped by "make a new calendar link" in Settings; the personal calendar feed link is signed with it, so the old link stops working.
+  calendarVersion  Int               @default(0)
   // Admin two-step sign-in (TOTP). The secret is stored encrypted (AES-256-GCM, src/lib/totp.ts); students never have one.
   totpSecretEnc    String?
   totpEnabledAt    DateTime?

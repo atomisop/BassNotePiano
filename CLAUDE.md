@@ -505,3 +505,10 @@ Refused while a payment is under review or the bill is already due. The student 
 Admin > Overview > Activity (`/admin/activity`, owner only) is a searchable view of `AuditLog`: text search over action, details and actor email, a kind filter
 (the part of the action before the dot), a date range (30 days by default) and `?user=<id>` for one account's changes. 50 per page. Plain-English action names
 live in `src/lib/auditView.ts`; an action not listed there shows as its code, so add a label when you add a new audited action. The student page's change log links to it.
+
+## Personal calendar feed (added 2026-10-21)
+
+Settings > "Your classes in your calendar" gives a signed-in student a subscribe link (`webcal://` and https) to `/api/calendar/me?u=<id>&t=<token>`: their SCHEDULED classes for the next
+120 days with a 15 minute alert and the Discord link; a canceled class is simply absent so calendar apps drop it on refresh. Calendar apps cannot sign in, so the token is an HMAC of
+the account id and `User.calendarVersion` (`studentCalendar.ts`, nothing stored); "Make a new link" bumps the version (`POST /api/me/calendar`, audited as `calendar.reset`) and the old
+link 404s, as does a banned account's. The teacher's own feed (`teacherCalendar.ts`) is separate and unchanged.
