@@ -34,7 +34,7 @@ export function RemindButton({ kind, userId, name }: { kind: string; userId: str
           <button type="button" disabled={state === "sending"} onClick={() => setState("idle")} className="tap text-small text-slate-400 hover:text-slate-200">
             Not yet
           </button>
-          <button type="button" disabled={state === "sending"} onClick={() => void send()} className="tap inline-flex items-center gap-1 text-small font-semibold text-signal">
+          <button type="button" disabled={state === "sending"} onClick={() => void send()} className="tap inline-flex items-center gap-1 text-small font-semibold text-signal-fg">
             {state === "sending" && <MorphingSquare size={11} />}
             {state === "sending" ? "Sending…" : "Yes, send"}
           </button>

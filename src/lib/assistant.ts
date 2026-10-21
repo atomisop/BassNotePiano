@@ -15,12 +15,10 @@ import { assertRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { SCALE_GROUPS } from "@/lib/curriculum";
 import { assistantRateWindows } from "@/lib/assistantInput";
 import {
-  FAMILY_BUNDLE_DISCOUNT_RATE,
   MIN_FAMILY_BUNDLE_RECIPIENTS,
   calculateFamilyBundleTotal,
   calculatePaymentPlanRate,
   describePaymentPlan,
-  EXTRA_CLASS_PRICE_CENTS,
   OFFERED_PLAN_CADENCE,
   CLASS_MINUTES,
   CREDITS_PER_CLASS,
@@ -29,6 +27,7 @@ import { TERMS_LAST_UPDATED } from "@/components/legal/TermsContent";
 import { PRIVACY_LAST_UPDATED } from "@/components/legal/PrivacyContent";
 
 import { GeminiError } from "@/lib/atomFailure";
+import { getPricingConfig } from "@/lib/pricing";
 
 export { RateLimitError };
 
@@ -121,6 +120,7 @@ export interface VisitorContext {
 
 async function buildSystemPrompt(visitor: VisitorContext): Promise<string> {
   // Policy numbers the owner can change in Settings, so Atom never quotes a stale one.
+  const pricing = await getPricingConfig();
   const [cancelHours, trialOn, trialDays, trialLessons, unlockDays] = await Promise.all([
     getNumberSetting("cancel.cutoffHours"),
     getBoolSetting("trial.enabled"),
@@ -143,7 +143,7 @@ async function buildSystemPrompt(visitor: VisitorContext): Promise<string> {
   const PLAN_TERMS: PaymentPlanTerm[] = ["MONTHLY", "TERM_3", "TERM_6"];
   const planList = PLAN_CADENCES.map(({ value: cadence, label }) => {
     const rows = PLAN_TERMS.map((term) => {
-      const rate = calculatePaymentPlanRate(cadence, term);
+      const rate = calculatePaymentPlanRate(cadence, term, pricing);
       return `      - ${describePaymentPlan(cadence, term)}: ${formatUsd(rate.installmentAmountCents)}/month${
         rate.termMonths > 1 ? ` × ${rate.termMonths} months` : ", no further commitment"
       }`;
@@ -158,7 +158,7 @@ async function buildSystemPrompt(visitor: VisitorContext): Promise<string> {
   // discount stacked on top.
   const bundleList = PLAN_CADENCES.map(({ value: cadence, label }) => {
     const rows = PLAN_TERMS.map((term) => {
-      const total = calculateFamilyBundleTotal(cadence, term, MIN_FAMILY_BUNDLE_RECIPIENTS);
+      const total = calculateFamilyBundleTotal(cadence, term, MIN_FAMILY_BUNDLE_RECIPIENTS, pricing);
       return `      - ${describePaymentPlan(cadence, term)}: ${total.creditsPerRecipient / CREDITS_PER_CLASS} classes per recipient, ${formatUsd(
         total.totalCents,
       )} for the first month for ${MIN_FAMILY_BUNDLE_RECIPIENTS} people together (then the same monthly price per person)`;
@@ -187,11 +187,11 @@ ${scaleList}
 Live classes (weekly, on Discord). Every class is one 45-minute lesson, one-on-one with the teacher, starting on the hour:
   - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a term (Monthly, no commitment, 3-Month, or 6-Month), paid one Zelle or Venmo installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active, nothing to book yourself. A plan is 4 classes a month. A billing month runs from one payment date to the next, so about four times a year it holds five of the student's class day. A 3-month or 6-month plan includes that fifth class free (the credit is added automatically and the receipt says so). On the Monthly plan the fifth class is optional: the student can add it for a small member price under Lessons, Extra sessions, and nothing changes if they skip it. If a specific week doesn't work, the student can skip that class in the app up to ${cutoff} before it starts (see below); inside ${cutoff} they attend or message the studio. Longer terms cost less per month:
 ${planList}
-  - Family plan ("Me and my family" on the payment plan page, 2 to 4 existing accounts): each person gets their own plan at the same per-month rate and term discount as a solo plan, plus an extra ${FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off, all on the same weekly time. One person is the payer and pays for everyone from their own bank account: the first month is one combined payment that starts everybody together (if anyone cannot start, nobody does), then each person has their own monthly bill that the payer pays. Everyone needs their own account with their own first and last name first. Example prices for the first month together:
+  - Family plan ("Me and my family" on the payment plan page, 2 to 4 existing accounts): each person gets their own plan at the same per-month rate and term discount as a solo plan, plus an extra ${Math.round(pricing.familyDiscountRate * 100)}% off, all on the same weekly time. One person is the payer and pays for everyone from their own bank account: the first month is one combined payment that starts everybody together (if anyone cannot start, nobody does), then each person has their own monthly bill that the payer pays. Everyone needs their own account with their own first and last name first. Example prices for the first month together:
 ${bundleList}
 ${bundleList}
   - Classes are one-on-one with the teacher. A family session is siblings with their own accounts taught together, one class for the whole family.
-  - When someone starts a Payment Plan they pick their weekly day and time on a calendar of the open spots, and that time is locked in for them every week of the term and booked automatically, so a subscriber never has to buy anything or book their weekly class. The /lessons page has two tabs for them: "My weekly class" and "Extra sessions". Extra sessions is the booking calendar for extra time with the teacher on top of their weekly class, each extra class is booked and paid for one at a time at a flat ${formatUsd(EXTRA_CLASS_PRICE_CENTS)} (one 45-minute class), by Zelle or Venmo. Credits cannot be bought. They only come as a gift, a refund or an employee benefit, and a student with credits can tick "Use credits" when booking. Anyone without an active plan sees the same booking calendar directly (Family sessions, or a between-plans student).
+  - When someone starts a Payment Plan they pick their weekly day and time on a calendar of the open spots, and that time is locked in for them every week of the term and booked automatically, so a subscriber never has to buy anything or book their weekly class. The /lessons page has two tabs for them: "My weekly class" and "Extra sessions". Extra sessions is the booking calendar for extra time with the teacher on top of their weekly class, each extra class is booked and paid for one at a time at a flat ${formatUsd(pricing.extraClassCents)} (one 45-minute class), by Zelle or Venmo. Credits cannot be bought. They only come as a gift, a refund or an employee benefit, and a student with credits can tick "Use credits" when booking. Anyone without an active plan sees the same booking calendar directly (Family sessions, or a between-plans student).
   - A scheduled class can be canceled or changed until ${cutoff} before it starts, and the class stays on the account for the student to rebook. Inside ${cutoff} it can't be changed in the app: the student attends, or messages the studio for a case-by-case call. A subscriber's weekly class works the same way: "skip this class" until ${cutoff} before, then use it to book a different time under Extra sessions. The standing weekly time can't be moved while a class is starting within ${cutoff}.
   - Nothing about a purchase (curriculum, a payment plan installment, or a family bundle) is refundable as cash, the only way a class comes back is canceling before the cutoff above.
 

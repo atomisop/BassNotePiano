@@ -353,6 +353,36 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
   Custom modals must use `useDialogFocus` (focus in, Tab trapped, Escape, focus back). Never put `aria-label` on a bare `p`/`span` without a role; icon targets are at
   least 24px; links inside running text are underlined.
 
+- **Security policy reports** (`CspViolation`, Admin > Security, owner only): the strict Content-Security-Policy still runs report-only. `/api/csp-report` counts each report by rule, what was blocked (host only)
+  and page (path only), capped at 500 rows; the page separates real findings from visitors' own browser extensions (`isBrowserNoise`) and says whether it looks safe to enforce (no real finding in 3 days).
+  Turning enforcement on is a small follow-up (swap `Content-Security-Policy-Report-Only` for the enforced header in `middleware.ts`) once that page has stayed clean for several days of normal use.
+
+- **Polling budget** (each open tab costs server work): one shared status poll a minute (`MeStatusProvider` / `/api/me/status`, now also carrying `unreadMessages` for the dock and sidebar badge, so there is no separate unread poll),
+  the sidebar cards every 3 minutes and only at lg width, `AutoRefresh` every 90 seconds (a full server render each time). Every timer skips a background tab. A new poller should join the shared status or follow the same rules.
+- **Orange text** is `text-signal-fg`, never `text-signal` (that class no longer exists): it is darker in the light theme so it passes contrast. Backgrounds and borders stay `bg-signal` / `border-signal`.
+
+- **Pull to refresh** (`PullToRefreshMain`, touch screens only): the finger drives the page and the spinner through refs (no React state per touch move), on a rubber-band curve, with the
+  browser's own bounce switched off while pulling (a non-passive `touchmove`). Twelve spokes light up as you pull and become the fading ring while it refreshes (the "iOS Spinner" idea from
+  21st.dev, which has no pull-to-refresh component of its own). It refreshes the page's data in place (`router.refresh`) and tells the badges to look again. Always check a screen built for
+  the computer at phone width too (390px and 320px) before calling it done.
+
+## Pricing and personal discounts (added 2026-10-21)
+
+- **Prices are the owner's numbers** (Admin > Pricing, owner only, `src/app/(dashboard)/admin/pricing/`): monthly plan price, 3 and 6 month discount %, family extra %, extra class price,
+  fifth class price. They are settings (`pricing.*`, plus `payments.fifthClassPriceDollars`), read with `getPricingConfig()` (`src/lib/pricing.ts`). The math is still the pure
+  `calculatePaymentPlanRate` / `calculateFamilyBundleTotal` in `classCreditPricing.ts`, which take a `PricingConfig` (default `DEFAULT_PRICING` = today's prices): never hard-code a price,
+  pass the config. Server pages hand it to client components as a prop, or through `PricingProvider` / `usePricing()` in the signed-in layout. A plan keeps the price it enrolled at, so a
+  price change affects new plans and plan changes only.
+- **Personal discount** (`AccountDiscount`, one row per account, `src/lib/accountDiscounts.ts`): 1 to 90 percent off a SOLO plan. `discountedPlanPriceCents` (nearest dollar, a cent under). Setting,
+  changing or removing it rewrites the account's running solo plan (`installmentAmountCents`, the one price bills read) and its unpaid, not-yet-submitted bill, and tells the student; the
+  price before the discount is kept in `PaymentPlan.listAmountCents` so removing it restores the signed-up price exactly. New plans and term changes apply it (`createPaymentPlan`,
+  `changePaymentPlanTerm`). Family plans keep the family rate and are left alone. All of it is audited (`pricing.update`, `pricing.discount.set/clear`).
+
+- **Emailed links are for one person**: `tagAppLinks` tags every page link in an email (only `/api` and files are left alone, sign-in and reset steps included) and
+  the middleware stops a different signed-in account on ANY tagged page, public ones like `/unsubscribe` too, with the "Sign in with the right account" screen
+  (`/wrong-account`; a public target simply opens once they sign out). Any link the app builds from inside a page that is about another person (such as the
+  unsubscribe confirmation's settings link) must carry their tag too (`settingsLinkFor`).
+
 ## Abuse guards (added 2026-10-12, `docs/ABUSE-AUDIT.md`)
 
 One free trial per inbox forever (`trial-used:` marker, plus tags dropped at every domain); an unpaid first bill releases the weekly
@@ -468,4 +498,10 @@ Settings > "Pause your plan" (`PausePlanCard`, `pausePaymentPlan` in `paymentPla
 weeks, once per 90 days (`PaymentPlan.pausedAt` / `pauseUntil` keep the last one). The weekly slot stays reserved. In one transaction the next due date and the expiry of the
 plan's unused `CreditGrant`s move out by the same whole weeks (the one place a grant's `expiresAt` is ever changed; its "expiring soon" flag resets), and classes inside the pause
 are canceled with `canceledReason = "Plan paused"`, which `createReservedBookingIfAbsent` already reads as "do not book again", so both booking jobs skip them with no extra code.
-Refused while a payment is under review or the bill is already due. The student and the owner are told, and `plan.pause` is audited (add its label to `auditView.ts` once the activity log is on main).
+Refused while a payment is under review or the bill is already due. The student and the owner are told, and `plan.pause` is audited.
+
+## Activity log (added 2026-10-21)
+
+Admin > Overview > Activity (`/admin/activity`, owner only) is a searchable view of `AuditLog`: text search over action, details and actor email, a kind filter
+(the part of the action before the dot), a date range (30 days by default) and `?user=<id>` for one account's changes. 50 per page. Plain-English action names
+live in `src/lib/auditView.ts`; an action not listed there shows as its code, so add a label when you add a new audited action. The student page's change log links to it.

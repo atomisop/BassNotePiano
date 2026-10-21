@@ -116,7 +116,7 @@ import { ScrollToTopButton } from "@/components/marketing/ScrollToTopButton";
  * REDESIGN pass already established. See InstrumentPicker.tsx's own
  * comment for the full reasoning and which photo runs where.
  */
-export function LandingPage() {
+export function LandingPage({ extraClassCents }: { extraClassCents?: number }) {
   return (
     <div className="relative">
       <MarketingNav />
@@ -134,7 +134,7 @@ export function LandingPage() {
         <Solution />
         <HowItWorks />
         <SocialProof />
-        <FAQ />
+        <FAQ extraClassCents={extraClassCents} />
         <FinalCTA />
       </main>
 

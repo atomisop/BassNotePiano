@@ -368,7 +368,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
         className={cn(
           "relative flex shrink-0 flex-col items-center justify-center gap-0.5 rounded-control transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
           layout === "rail" ? "h-14 w-14" : "h-14 min-w-14 flex-1 px-2",
-          active ? "bg-[rgb(var(--signal)/0.14)] text-signal shadow-plane-front" : "text-slate-300 hover:bg-[rgb(var(--c-s-50)/0.06)] hover:text-slate-50",
+          active ? "bg-[rgb(var(--signal)/0.14)] text-signal-fg shadow-plane-front" : "text-slate-300 hover:bg-[rgb(var(--c-s-50)/0.06)] hover:text-slate-50",
         )}
       >
         <t.Icon className="h-5 w-5" aria-hidden />
@@ -638,7 +638,7 @@ function OutlineItem({
         <StatusIcon className="h-3 w-3" strokeWidth={3} />
       </span>
       <span className="min-w-0">
-        <span className={cn("block text-small font-semibold", active ? "text-signal" : disabled ? "text-slate-500" : "text-slate-50")}>{title}</span>
+        <span className={cn("block text-small font-semibold", active ? "text-signal-fg" : disabled ? "text-slate-500" : "text-slate-50")}>{title}</span>
         {meta && <span className="block text-small text-slate-400">{meta}</span>}
         {disabled && lockedReason && <span className="sr-only">{lockedReason}</span>}
       </span>

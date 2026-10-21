@@ -88,6 +88,8 @@
   /* Signal orange (the logo color). `--signal` / `--signal-ink` are set per data-mode below. */
   --color-signal: rgb(var(--signal));
   --color-signal-ink: rgb(var(--signal-ink));
+  /* The signal orange AS TEXT. Same as --signal in the dark theme; a deeper burnt orange in the light theme, where the logo orange is only 3 to 3.5:1 on light grounds. */
+  --color-signal-fg: rgb(var(--signal-fg));
   --color-danger: rgb(var(--c-rd-400));
 
   /* The one display face, used only for each screen's Hero element. */
@@ -1028,6 +1030,7 @@
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
     --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.35), 0 10px 28px -8px rgb(var(--c-a-400) / 0.45);
+    --signal-fg: var(--c-a-400);
   }
 
   [data-mode="light"] {
@@ -1040,6 +1043,7 @@
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
     --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.3), 0 10px 24px -10px rgb(var(--c-a-400) / 0.5);
+    --signal-fg: 156 54 18; /* #9c3612: 4.7:1 or better on every light surface, including the orange-tinted ones */
   }
 
   /* Shapes are two shadows: light from the top-left, shade to the
@@ -1488,4 +1492,40 @@
   0% { opacity: 1; transform: translate(-50%, -50%) rotate(0deg) scale(0.6); }
   60% { opacity: 1; }
   100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) + 180px)) rotate(var(--rot)) scale(1); }
+}
+
+/* Pull to refresh (components/layout/PullToRefreshMain.tsx): twelve spokes that light up one by one as you pull, then turn into the
+   classic fading ring while it refreshes. The ring idea is the "iOS Spinner" on 21st.dev (yadwinder); the pull-driven fill is ours.
+   --p is the pull progress (0 to 1) and --i the spoke number, both set from the component. */
+.ptr-spoke {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 7px;
+  margin: -12px 0 0 -1px;
+  border-radius: 2px;
+  background: currentColor;
+  transform-origin: 50% 12px;
+  transform: rotate(calc(var(--i) * 30deg));
+  opacity: calc(var(--p, 0) * 12 - var(--i));
+}
+.ptr-well[data-phase="refreshing"] .ptr-spoke {
+  opacity: 1;
+  animation: ptr-fade 0.9s linear infinite;
+  animation-delay: calc(var(--i) * -0.075s);
+}
+@keyframes ptr-fade {
+  from { opacity: 1; }
+  to { opacity: 0.15; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ptr-well[data-phase="refreshing"] .ptr-spoke {
+    animation: ptr-pulse 1.4s ease-in-out infinite;
+    animation-delay: 0s;
+  }
+}
+@keyframes ptr-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
 }

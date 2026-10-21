@@ -3,7 +3,9 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import {
+import { ShieldCheck,
+  BadgePercent,
+  History,
   Briefcase,
   BookUser,
   CalendarDays,
@@ -40,12 +42,19 @@ interface AdminNavGroup {
 }
 
 const NAV_GROUPS: AdminNavGroup[] = [
-  { label: "Overview", leaves: [{ href: "/admin", label: "Overview", icon: LayoutDashboard }] },
+  {
+    label: "Overview",
+    leaves: [
+      { href: "/admin", label: "Overview", icon: LayoutDashboard },
+      { href: "/admin/activity", label: "Activity", icon: History },
+    ],
+  },
   {
     label: "Billing",
     leaves: [
       { href: "/admin/payments", label: "Payments", icon: CreditCard },
       { href: "/admin/payment-plans", label: "Payment Plans", icon: Repeat },
+      { href: "/admin/pricing", label: "Pricing", icon: BadgePercent },
     ],
   },
   {
@@ -76,6 +85,7 @@ const NAV_GROUPS: AdminNavGroup[] = [
 
 /** Pinned under the groups, set apart, like the settings entry in Google's consoles. */
 const SETTINGS_LEAF: AdminNavLeaf = { href: "/admin/settings", label: "Settings", icon: Settings };
+const SECURITY_LEAF: AdminNavLeaf = { href: "/admin/security", label: "Security", icon: ShieldCheck };
 
 /** What is waiting, by page address. Pages with nothing waiting have no entry. */
 export type AdminNavBadges = Record<string, number>;
@@ -88,7 +98,7 @@ function Count({ count, className = "" }: { count: number; className?: string })
   if (count <= 0) return null;
   return (
     <span
-      className={`rounded-full bg-[rgb(var(--signal)/0.18)] px-1.5 text-small font-semibold tabular-nums text-signal ${className}`}
+      className={`rounded-full bg-[rgb(var(--signal)/0.18)] px-1.5 text-small font-semibold tabular-nums text-signal-fg ${className}`}
       aria-label={`${count} waiting`}
     >
       {count > 99 ? "99+" : count}
@@ -112,7 +122,7 @@ function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
           active ? "bg-neu-lift text-slate-50 shadow-pressed-low" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
         }`}
       >
-        <Icon className={`h-4 w-4 shrink-0 ${active ? "text-signal" : ""}`} strokeWidth={active ? 2.1 : 1.75} aria-hidden />
+        <Icon className={`h-4 w-4 shrink-0 ${active ? "text-signal-fg" : ""}`} strokeWidth={active ? 2.1 : 1.75} aria-hidden />
         <span className="truncate">{leaf.label}</span>
         <Count count={badges[leaf.href] ?? 0} className="ml-auto" />
       </Link>
@@ -138,6 +148,7 @@ function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
       ))}
       <div className="border-t border-(--neu-edge) pt-3">
         <Item leaf={SETTINGS_LEAF} />
+        <Item leaf={SECURITY_LEAF} />
       </div>
     </nav>
   );
@@ -152,7 +163,7 @@ function AdminSwipeRow({ badges }: { badges: AdminNavBadges }) {
     activeRef.current?.scrollIntoView({ inline: "center", block: "nearest" });
   }, [pathname]);
 
-  const groups = [...NAV_GROUPS, { label: "Settings", leaves: [SETTINGS_LEAF] }];
+  const groups = [...NAV_GROUPS, { label: "Settings", leaves: [SETTINGS_LEAF, SECURITY_LEAF] }];
 
   return (
     <nav aria-label="Admin sections" className="-mx-4 mb-4 overflow-x-auto px-4 [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden">
@@ -169,7 +180,7 @@ function AdminSwipeRow({ badges }: { badges: AdminNavBadges }) {
                   ref={active ? activeRef : undefined}
                   aria-current={active ? "page" : undefined}
                   className={`press-soft flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                    active ? "bg-neu-lift text-signal shadow-pressed-low" : "bg-neu-base text-slate-300 shadow-raised-low"
+                    active ? "bg-neu-lift text-signal-fg shadow-pressed-low" : "bg-neu-base text-slate-300 shadow-raised-low"
                   }`}
                 >
                   <Icon className="h-4 w-4 shrink-0" strokeWidth={active ? 2.1 : 1.75} aria-hidden />

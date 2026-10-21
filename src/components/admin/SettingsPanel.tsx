@@ -49,7 +49,7 @@ function Row({ def, value, onSave, onReset }: { def: SettingDef; value: SettingV
       <div className="min-w-0 sm:max-w-[34rem]">
         <p className="text-body font-medium text-slate-100">
           {def.label}
-          {changed && <span className="ml-2 rounded-full bg-[rgb(var(--signal)/0.16)] px-2 py-0.5 text-small font-medium text-signal">Changed</span>}
+          {changed && <span className="ml-2 rounded-full bg-[rgb(var(--signal)/0.16)] px-2 py-0.5 text-small font-medium text-signal-fg">Changed</span>}
         </p>
         <p className="mt-0.5 text-small text-slate-500">{def.help}</p>
         {error && <p className="mt-1 text-small text-red-400">{error}</p>}
@@ -84,7 +84,7 @@ function Row({ def, value, onSave, onReset }: { def: SettingDef; value: SettingV
             Save
           </button>
         )}
-        {saved && <span className="text-small text-signal">Saved</span>}
+        {saved && <span className="text-small text-signal-fg">Saved</span>}
         {changed && !dirty && (
           <button
             type="button"
@@ -130,7 +130,7 @@ export function SettingsPanel({ defs, categories, initial, onSave, onReset }: Pr
           type="button"
           aria-pressed={onlyChanged}
           onClick={() => setOnlyChanged((v) => !v)}
-          className={`tap rounded-full px-3 py-1 text-small font-medium ${onlyChanged ? "bg-neu-lift text-signal shadow-pressed-low" : "bg-neu-base text-slate-300 shadow-raised-low"}`}
+          className={`tap rounded-full px-3 py-1 text-small font-medium ${onlyChanged ? "bg-neu-lift text-signal-fg shadow-pressed-low" : "bg-neu-base text-slate-300 shadow-raised-low"}`}
         >
           Only what I changed ({changedCount})
         </button>

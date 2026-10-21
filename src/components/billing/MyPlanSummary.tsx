@@ -43,7 +43,7 @@ export async function MyPlanSummary({ userId }: { userId: string }) {
       {fifth ? (
         <p className="mt-3 text-small text-slate-300">
           This cycle holds a fifth class on {formatEtDateTime(fifth.scheduledAt)}.{" "}
-          <Link href="/lessons?tab=extra" className="font-semibold text-signal underline-offset-4 hover:underline">
+          <Link href="/lessons?tab=extra" className="font-semibold text-signal-fg underline-offset-4 hover:underline">
             Add it for {usd(fifth.priceCents)}
           </Link>
         </p>

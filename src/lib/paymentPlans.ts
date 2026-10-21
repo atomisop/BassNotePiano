@@ -6,7 +6,9 @@ import { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason, type Prism
 import { prisma } from "@/lib/prisma";
 import { hasFirstAndLastName } from "@/lib/studentName";
 import { namesMatch } from "@/lib/personNames";
-import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPlan, isPlanTermOffered, isPlanCadenceOffered, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPlan, discountedPlanPriceCents, isPlanTermOffered, isPlanCadenceOffered, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { getPricingConfig } from "@/lib/pricing";
+import { getDiscountPercent } from "@/lib/accountDiscounts";
 import {
   chunksForSchedule,
   classesInWindow,
@@ -138,7 +140,12 @@ export async function createPaymentPlan(
     throw new PaymentPlanError("That plan length is no longer offered. Pick Monthly, 3-Month, or 6-Month.");
   }
 
-  const rate = calculatePaymentPlanRate(cadence, term);
+  const pricing = await getPricingConfig();
+  const rate = calculatePaymentPlanRate(cadence, term, pricing);
+  // The owner's personal discount for this account (Admin > Pricing): the plan is created at the discounted price, and the price before
+  // it is kept so the discount can be changed or removed later.
+  const discountPercent = await getDiscountPercent(userId);
+  const installmentCents = discountedPlanPriceCents(rate.installmentAmountCents, discountPercent);
   const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
 
   try {
@@ -156,7 +163,8 @@ export async function createPaymentPlan(
             userId,
             cadence,
             term,
-            installmentAmountCents: rate.installmentAmountCents,
+            installmentAmountCents: installmentCents,
+            listAmountCents: discountPercent > 0 ? rate.installmentAmountCents : null,
             creditsPerInstallment: rate.creditsPerInstallment,
             termMonths: rate.termMonths,
             nextDueDate: new Date(),
@@ -167,7 +175,7 @@ export async function createPaymentPlan(
                 {
                   userId,
                   purpose: "PAYMENT_PLAN_INSTALLMENT",
-                  amountCents: rate.installmentAmountCents,
+                  amountCents: installmentCents,
                   zelleHandle,
                   lessonQuantity: rate.creditsPerInstallment,
                   installmentNumber: 1,
@@ -283,7 +291,7 @@ export async function getOrCreateOpenInstallmentPayment(
   // A family plan needs at least two paying people. Down to one, the person pays the solo price from this bill on.
   let amountCents = plan.installmentAmountCents;
   if (plan.familyGroupId && (await activeFamilySize(plan.familyGroupId)) < 2) {
-    amountCents = calculatePaymentPlanRate(plan.cadence, plan.term).installmentAmountCents;
+    amountCents = calculatePaymentPlanRate(plan.cadence, plan.term, await getPricingConfig()).installmentAmountCents;
   }
 
   const payment = await prisma.zellePayment.create({
@@ -508,7 +516,10 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
 
   await assertNoOpenInstallment(plan.id);
 
-  const rate = calculatePaymentPlanRate(plan.cadence, newTerm);
+  const rate = calculatePaymentPlanRate(plan.cadence, newTerm, await getPricingConfig());
+  // The new term's price, then this account's personal discount on top (if the owner gave one).
+  const discountPercent = await getDiscountPercent(userId);
+  const newInstallmentCents = discountedPlanPriceCents(rate.installmentAmountCents, discountPercent);
   if (plan.installmentsPaid >= rate.termMonths) {
     throw new PaymentPlanError(
       "You've already paid enough installments that this term wouldn't ask for any more. If you want to stop here, cancel your plan instead.",
@@ -519,7 +530,8 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
     where: { id: plan.id },
     data: {
       term: newTerm,
-      installmentAmountCents: rate.installmentAmountCents,
+      installmentAmountCents: newInstallmentCents,
+      listAmountCents: discountPercent > 0 ? rate.installmentAmountCents : null,
       creditsPerInstallment: rate.creditsPerInstallment,
       termMonths: rate.termMonths,
     },
@@ -527,7 +539,7 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
   await noticePlanUpdated({
     userId,
     title: "Your plan term changed",
-    body: `Your plan is now ${describePaymentPlan(plan.cadence, newTerm)}. Your next installment is ${(rate.installmentAmountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}.`,
+    body: `Your plan is now ${describePaymentPlan(plan.cadence, newTerm)}. Your next installment is ${(newInstallmentCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}.`,
   });
 }
 
@@ -1299,7 +1311,7 @@ async function noticeFamilyShrank(groupId: string): Promise<void> {
   });
   if (remaining.length !== 1) return;
   const [last] = remaining;
-  const solo = calculatePaymentPlanRate(last.cadence, last.term).installmentAmountCents;
+  const solo = calculatePaymentPlanRate(last.cadence, last.term, await getPricingConfig()).installmentAmountCents;
   await noticePlanUpdated({
     userId: last.userId,
     title: "Your family is down to one person",
@@ -1433,8 +1445,9 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
   const reservedChunkIndex = input.reservedChunkIndex ?? oldPlan?.reservedChunkIndex ?? null;
   if (!reservedScheduleId || reservedChunkIndex === null) throw new PaymentPlanError("Pick the weekly time first.");
 
-  const perMemberCents = calculateFamilyBundleTotal(cadence, term, members.length).perStudentMonthlyCents;
-  const rate = calculatePaymentPlanRate(cadence, term);
+  const pricing = await getPricingConfig();
+  const perMemberCents = calculateFamilyBundleTotal(cadence, term, members.length, pricing).perStudentMonthlyCents;
+  const rate = calculatePaymentPlanRate(cadence, term, pricing);
   const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
   const memberIds = members.map((m) => m.id);
   // The members who get a plan row now. A switching payer's own plan is created only when the family starts.

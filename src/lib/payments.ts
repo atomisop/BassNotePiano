@@ -22,6 +22,7 @@ import { createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
 import { adjustUserCredits } from "@/lib/creditAdjustments";
 import { assertRateLimit } from "@/lib/rateLimit";
+import { getPricingConfig } from "@/lib/pricing";
 
 /**
  * A student who opens the payment modal but never actually confirms a
@@ -202,7 +203,7 @@ export async function createExtraClassPayment(
     data: {
       userId,
       purpose: "CLASS_CREDITS",
-      amountCents: EXTRA_CLASS_PRICE_CENTS,
+      amountCents: (await getPricingConfig()).extraClassCents,
       zelleHandle,
       lessonQuantity: CREDITS_PER_CLASS,
       extraSessionScheduleId: scheduleId,
@@ -333,7 +334,7 @@ export async function createFamilyBundlePayment(input: FamilyBundlePurchaseInput
     throw new FamilyBundleError("Each recipient needs to be a different account.");
   }
 
-  const { totalCents, creditsPerRecipient } = calculateFamilyBundleTotal(input.cadence, input.term, normalized.length);
+  const { totalCents, creditsPerRecipient } = calculateFamilyBundleTotal(input.cadence, input.term, normalized.length, await getPricingConfig());
 
   await expireStalePendingPayments();
 

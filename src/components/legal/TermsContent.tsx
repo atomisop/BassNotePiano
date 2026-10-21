@@ -4,7 +4,6 @@
 // "Terms & refunds" tab. Keeping this in one place means the two surfaces
 // can never quietly drift out of sync with each other.
 
-import { FAMILY_BUNDLE_DISCOUNT_RATE } from "@/lib/classCreditPricing";
 
 export const TERMS_LAST_UPDATED = "October 21, 2026";
 
@@ -62,7 +61,7 @@ export function TermsContent() {
         <p>
           Family bundles use the same cadence and term rates a solo Payment Plan does, for 2 or more separate,
           already-existing accounts at once, paid as a single upfront payment for the whole term instead of monthly
-          installments, plus an extra {FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total. Family credits
+          installments, plus an extra family discount off the combined total (the current percentage is shown on the pricing page). Family credits
           never expire.
         </p>
         <p>

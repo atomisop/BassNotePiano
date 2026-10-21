@@ -19,7 +19,7 @@ export function CreditsBadge() {
   return (
     <Link href="/lessons" aria-label={`${label} available. Open lessons.`} className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal">
       <UsageBadge
-        icon={<Coins className="h-4 w-4 text-signal" aria-hidden />}
+        icon={<Coins className="h-4 w-4 text-signal-fg" aria-hidden />}
         planName="Credits"
         usage={credits}
         limit={0}

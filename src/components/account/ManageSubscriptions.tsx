@@ -5,9 +5,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason } from "@prisma/client";
-import { calculatePaymentPlanRate, FAMILY_BUNDLE_DISCOUNT_RATE, PLAN_CADENCE_CREDITS_PER_WEEK, isPlanTermOffered, OFFERED_PLAN_CADENCE, CLASS_MINUTES } from "@/lib/classCreditPricing";
+import { calculatePaymentPlanRate, discountedPlanPriceCents, PLAN_CADENCE_CREDITS_PER_WEEK, isPlanTermOffered, OFFERED_PLAN_CADENCE, CLASS_MINUTES } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { usePricing } from "@/components/billing/PricingContext";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -93,6 +94,8 @@ type CancelStage = "idle" | "downgrade-offer" | "reason" | "canceling";
  */
 export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: ManageSubscriptionsProps) {
   const router = useRouter();
+  // The owner's current prices and this account's own discount, from the signed-in layout.
+  const { pricing, personalDiscountPercent } = usePricing();
   // One plan on offer (45 minutes a week). A plan on a retired length keeps showing its own.
   const cadence: PaymentPlanCadence = activePlan?.cadence ?? OFFERED_PLAN_CADENCE;
   const [pendingTerm, setPendingTerm] = useState<PaymentPlanTerm | null>(null);
@@ -181,7 +184,9 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
 
         <div className={`mt-3 grid gap-3 ${visibleTerms.length >= 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-1 sm:grid-cols-3"} ${activePlan?.family ? "hidden" : ""}`}>
           {visibleTerms.map((option) => {
-            const rate = calculatePaymentPlanRate(cadence, option.value);
+            const listRate = calculatePaymentPlanRate(cadence, option.value, pricing);
+            // The same rule the server charges by: the personal discount is taken off a solo plan's price.
+            const rate = personalDiscountPercent > 0 && !activePlan?.family ? { ...listRate, installmentAmountCents: discountedPlanPriceCents(listRate.installmentAmountCents, personalDiscountPercent) } : listRate;
             const isCurrent = activePlan ? option.value === activePlan.term : false;
             const isUpgrade = currentRank !== null && option.rank > currentRank;
             const pending = pendingTerm === option.value;
@@ -255,7 +260,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
         <div>
           <p className="text-small font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">Family bundle</p>
           <p className="mt-1 text-small text-slate-400">
-            Buying for 2 or more kids gets an extra {FAMILY_BUNDLE_DISCOUNT_RATE * 100}% off the combined total.
+            Buying for 2 or more kids gets an extra {Math.round(pricing.familyDiscountRate * 100)}% off the combined total.
           </p>
         </div>
         <Link

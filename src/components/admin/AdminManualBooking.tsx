@@ -251,7 +251,7 @@ export function AdminManualBooking({ openOccurrences, holds = [], onSearchStuden
                   >
                     <span className={active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}>{formatDateTime(slot.scheduledAt)}</span>
                     <span className="text-small text-slate-500">
-                      {heldFor(slot) ? <span className="mr-2 font-medium text-signal">Reserved for {heldFor(slot)!.contactName}</span> : null}
+                      {heldFor(slot) ? <span className="mr-2 font-medium text-signal-fg">Reserved for {heldFor(slot)!.contactName}</span> : null}
                       {slot.label ?? "Class"} · {CLASS_MINUTES} min
                     </span>
                   </button>

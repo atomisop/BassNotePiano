@@ -213,7 +213,7 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
                 onClick={() => onSelect(tab.id)}
                 className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-small transition ${
                   activeTab === tab.id
-                    ? "border-transparent bg-neu-base text-signal shadow-pressed-low"
+                    ? "border-transparent bg-neu-base text-signal-fg shadow-pressed-low"
                     : "border-transparent text-slate-400 hover:text-slate-200 hover:shadow-raised-low active:shadow-pressed-low"
                 }`}
               >
@@ -339,7 +339,7 @@ function InfoRow({ label, children }: { label: string; children: React.ReactNode
 
 function Badge({ ok, children }: { ok: boolean; children: React.ReactNode }) {
   return (
-    <span className={`ml-2 rounded-full px-2 py-0.5 text-small font-medium ${ok ? "bg-[rgb(var(--signal)/0.16)] text-signal" : "bg-slate-700/60 text-slate-300"}`}>{children}</span>
+    <span className={`ml-2 rounded-full px-2 py-0.5 text-small font-medium ${ok ? "bg-[rgb(var(--signal)/0.16)] text-signal-fg" : "bg-slate-700/60 text-slate-300"}`}>{children}</span>
   );
 }
 
@@ -839,7 +839,9 @@ function SignedInDevicesCard() {
         .then((rows) => alive && setDevices(rows))
         .catch(() => alive && setDevices((prev) => prev ?? []));
     void load();
-    const timer = setInterval(load, 60_000);
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, 60_000);
     window.addEventListener("bnp:devices-changed", load);
     return () => {
       alive = false;
