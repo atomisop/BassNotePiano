@@ -15,6 +15,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { CheckIcon } from "@/components/ui/icons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { ManageSubscriptions, type ActivePlanInfo } from "@/components/account/ManageSubscriptions";
+import { PausePlanCard } from "@/components/account/PausePlanCard";
 import type { AssistantMessage } from "@/lib/assistant";
 import {
   updatePasswordAction,
@@ -27,6 +28,7 @@ import {
   confirmAccountDeletionAction,
   changePaymentPlanTermAction,
   cancelPaymentPlanBySelfAction,
+  pausePaymentPlanAction,
   type NotificationPreferencesInput,
 } from "./actions";
 import { SettingsLayout } from "@/components/layout/PageLayouts";
@@ -644,6 +646,12 @@ function MembershipSection({
           <span className="text-slate-500">→</span>
         </Link>
       </SectionCard>
+
+      {activePlan && !activePlan.family && (
+        <SectionCard title="Pause your plan">
+          <PausePlanCard pausedAt={activePlan.pausedAt ?? null} pausedUntil={activePlan.pausedUntil ?? null} onPause={pausePaymentPlanAction} />
+        </SectionCard>
+      )}
 
       <SectionCard title="Manage subscriptions">
         <ManageSubscriptions

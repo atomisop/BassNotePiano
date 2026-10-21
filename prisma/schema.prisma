@@ -121,6 +121,10 @@ model PaymentPlan {
   reservedChunkIndex             Int?
   reservedSlotInactiveNotifiedAt DateTime?
 
+  // The latest pause: it began at pausedAt and the weekly classes resume at pauseUntil. Kept after it ends so the 90 day limit has a date to read.
+  pausedAt   DateTime?
+  pauseUntil DateTime?
+
   canceledAt       DateTime?
   canceledById     String?
   canceledBy       User?     @relation("PaymentPlanCanceledBy", fields: [canceledById], references: [id])

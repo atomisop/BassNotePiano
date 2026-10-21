@@ -59,6 +59,10 @@ export interface ActivePlanInfo {
   installmentsPaid: number;
   termMonths: number;
   family?: FamilyPlanDetails | null;
+  /** ISO date the current pause ends, when one is running. */
+  pausedUntil?: string | null;
+  /** ISO date of the last pause, for the once-in-90-days limit. */
+  pausedAt?: string | null;
 }
 
 export interface ManageSubscriptionsProps {
