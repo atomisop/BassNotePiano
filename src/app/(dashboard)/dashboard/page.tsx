@@ -345,6 +345,7 @@ export default async function DashboardPage() {
 
         {/* ---- The path: tabs + scale grid --------------------------------- */}
         <div>
+          <h2 className="sr-only">Your scales</h2>
           <ScaleRoadmap roadmap={roadmap} earnedBadgeCodes={earnedBadgeCodes} />
         </div>
       </div>

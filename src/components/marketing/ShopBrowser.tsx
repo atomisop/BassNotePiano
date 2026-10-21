@@ -53,8 +53,8 @@ function ProductCard({ product }: { product: ShopProduct }) {
         />
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3 pt-5">
-        <p className="text-small uppercase tracking-[0.18em] text-[#E1E0CC]/50">{product.brand}</p>
-        <h3 className="text-balance text-body font-medium leading-snug tracking-[-0.01em] text-[#E1E0CC]">{product.name}</h3>
+        <p className="text-small uppercase tracking-[0.18em] text-[#E1E0CC]/60">{product.brand}</p>
+        <h2 className="text-balance text-body font-medium leading-snug tracking-[-0.01em] text-[#E1E0CC]">{product.name}</h2>
         <p className="text-small leading-relaxed text-[#E1E0CC]/60">{product.blurb}</p>
         <div className="mt-auto flex items-center justify-between gap-3 pt-5">
           <span className="text-xl font-medium tracking-[-0.02em] text-[#E1E0CC]">{formatUsd(product.priceCents)}</span>

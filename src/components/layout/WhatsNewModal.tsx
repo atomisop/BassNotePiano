@@ -6,6 +6,7 @@ import type { ChangelogEntry } from "@/lib/changelog";
 import { CheckIcon } from "@/components/ui/icons";
 import { FADE, SPRING } from "@/lib/motionTokens";
 import { buttonVariants } from "@/components/ui/button";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -31,6 +32,7 @@ const panelVariants = {
 /** The What's new card. Opened by the provider: automatically once per account for each new version, and any time from the bulb in the top bar. */
 export function WhatsNewModal({ open, onClose, entry }: { open: boolean; onClose: () => void; entry: ChangelogEntry }) {
   const handleClose = onClose;
+  const dialogRef = useDialogFocus<HTMLDivElement>(open, handleClose);
 
   return (
     <AnimatePresence>
@@ -49,6 +51,8 @@ export function WhatsNewModal({ open, onClose, entry }: { open: boolean; onClose
           />
 
           <motion.div
+            ref={dialogRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-labelledby="whats-new-title"

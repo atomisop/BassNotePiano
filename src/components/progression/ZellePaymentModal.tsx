@@ -14,6 +14,7 @@ import { normalizePhone, PHONE_HELP } from "@/lib/phone";
 import { checkPaymentPhoneAction, getPaymentPhoneStateAction, savePaymentPhoneAction } from "@/app/(dashboard)/billing/payment-phone-actions";
 import type { PaymentPhoneCheck } from "@/lib/paymentPhone";
 import { buttonVariants } from "@/components/ui/button";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 export interface ZellePaymentModalProps {
   isOpen: boolean;
@@ -234,6 +235,8 @@ export function ZellePaymentModal({
     window.setTimeout(reset, 200);
   }
 
+  const dialogRef = useDialogFocus<HTMLDivElement>(isOpen, handleClose);
+
   async function handleCopyHandle() {
     await navigator.clipboard.writeText(method === "VENMO" ? `@${VENMO_HANDLE}` : zelleHandle);
     setCopied(true);
@@ -282,6 +285,8 @@ export function ZellePaymentModal({
           />
 
           <motion.div
+            ref={dialogRef}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-labelledby="zelle-modal-title"

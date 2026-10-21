@@ -313,7 +313,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                     href={item.href}
                     aria-label={item.label}
                     data-tour={"dataTour" in item ? item.dataTour : undefined}
-                    className="tap relative flex items-center justify-center px-1"
+                    className="tap relative flex min-h-6 items-center justify-center rounded-full px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {/* The glow: a blurred white gradient, positioned above
                         the icon (`-translate-y-full` moves it fully clear of
@@ -351,7 +351,6 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                           rather than boxing it like `box-shadow` would), and
                           the active tab's icon glows brighter still. */}
                       <DockItem
-                        aria-label={item.label}
                         className={`rounded-full transition-colors duration-200 ${active ? "" : "hover:shadow-pressed-low"}`}
                       >
                         <DockIcon>

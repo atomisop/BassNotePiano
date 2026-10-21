@@ -341,6 +341,18 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
 - **Top banners** never ask for what the screen already shows (`alreadyShown` in `TopBanners.tsx`): no Discord banner on Lessons or at desktop width (the sidebar card
   carries it), no practice banner on Practice, no phone banner on Settings.
 
+## Email opt-out, Atom notice, accessibility (added 2026-10-21)
+
+- **Unsubscribe**: every email a switch governs (anything sent through `createNotification` with an `emailCategory`, announcements and admin messages, payment-plan
+  bills) carries a signed link (`src/lib/unsubscribe.ts`, HMAC of user + category, no sign-in) to `/unsubscribe` (a page that only asks) and a `List-Unsubscribe`
+  one-click POST header to `/api/unsubscribe` (the only thing that changes a switch). Sign-in codes, security alerts, the welcome email, applicant replies and owner
+  emails carry none, on purpose. Pass `unsubscribe: { userId, category }` when adding a new email of that kind.
+- **Atom** shows what it is and what is kept before anyone types (the empty-state paragraph and the footer line in `AssistantWidget.tsx`); keep it in step with
+  `PrivacyContent.tsx` and the privacy summary in `assistant.ts`.
+- **Accessibility**: run axe-core (WCAG 2.2 AA + best-practice) against the signed-out pages, Home, Lessons, Settings, Billing and the admin screens after UI changes.
+  Custom modals must use `useDialogFocus` (focus in, Tab trapped, Escape, focus back). Never put `aria-label` on a bare `p`/`span` without a role; icon targets are at
+  least 24px; links inside running text are underlined.
+
 ## Abuse guards (added 2026-10-12, `docs/ABUSE-AUDIT.md`)
 
 One free trial per inbox forever (`trial-used:` marker, plus tags dropped at every domain); an unpaid first bill releases the weekly

@@ -97,13 +97,13 @@ export function ScrollTimeline({
           />
 
           <div className="relative flex w-[min(82vw,34rem)] shrink-0 flex-col justify-center pr-8">
-            <p className="mb-4 text-small uppercase tracking-[0.18em] text-[#E1E0CC]/50">
+            <p className="mb-4 text-small uppercase tracking-[0.18em] text-[#E1E0CC]/60">
               {label}
             </p>
             <h2 className="text-[clamp(3rem,9vw,8rem)] font-medium leading-[0.88] tracking-[-0.06em] text-[#E1E0CC]">
               {title}
             </h2>
-            <p className="mt-6 text-small text-[#E1E0CC]/50">Keep scrolling</p>
+            <p className="mt-6 text-small text-[#E1E0CC]/60">Keep scrolling</p>
           </div>
 
           {steps.map((step, i) => {

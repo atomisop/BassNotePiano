@@ -60,7 +60,7 @@ export default function ForgotPasswordPage() {
 
       <p className="mt-6 text-center text-small text-slate-500">
         Remembered it?{" "}
-        <Link href="/login" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
+        <Link href="/login" className="text-[rgb(var(--c-s-50))] underline underline-offset-4 transition hover:opacity-70">
           Back to login
         </Link>
       </p>

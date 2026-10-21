@@ -327,7 +327,7 @@ export function SidebarSpotlight({ initial, isAdmin }: { initial: SidebarCard[];
               aria-selected={s === current}
               aria-label={`Card ${i + 1} of ${slots.length}`}
               onClick={() => setIndex(i)}
-              className="flex h-4 w-4 items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-6 w-6 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <span className={`block h-1.5 rounded-full transition-all ${s === current ? "w-4 bg-signal" : "w-1.5 bg-slate-600"}`} />
             </button>

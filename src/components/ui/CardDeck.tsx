@@ -151,7 +151,7 @@ export function CardDeck({
             aria-selected={i === active}
             aria-label={name}
             onClick={() => go(i)}
-            className="tap flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
+            className="tap flex h-6 min-w-6 items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
           >
             <span
               className={cn(

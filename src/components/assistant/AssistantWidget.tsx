@@ -1334,7 +1334,7 @@ export function AssistantWidget() {
         )}
       </AnimatePresence>
 
-      {!open && !hasTopBarTrigger && <AtomButton onClick={openPanel} label="Chat with Atom, your personal assistant" />}
+      {!open && !hasTopBarTrigger && <AtomButton onClick={openPanel} label="Ask AI: chat with Atom, your personal assistant" />}
     </div>,
     document.body,
   );
