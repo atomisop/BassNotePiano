@@ -19,6 +19,7 @@ import {
   submitPlanInstallmentPaymentAction,
 } from "./actions";
 import { Tabs } from "@/components/ui/Tabs";
+import { SlotWaitlistPanel } from "./SlotWaitlistPanel";
 import { buttonVariants } from "@/components/ui/button";
 
 function formatUsd(cents: number) {
@@ -654,6 +655,7 @@ export function PaymentPlanEnrollmentFlow({
             )}
           </>
         )}
+        <SlotWaitlistPanel />
       </div>
 
       <div className="rounded-xl p-4 sm:p-5 bg-neu-base shadow-raised-low">

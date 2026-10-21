@@ -27,6 +27,7 @@ export const JOB_MAX_SILENCE_HOURS: Record<string, number> = {
   "discord-class-channels": 2,
   "mail-chain-probe": 30,
   "db-backup": 30,
+  "slot-waitlist": 3,
   // The watchdog itself runs every 30 minutes; the outside monitor is what notices if it stops.
   "job-watchdog": 3,
 };
@@ -41,6 +42,7 @@ export const JOB_ADDED_AT: Record<string, string> = {
   "mail-chain-probe": "2026-10-09T00:00:00Z",
   "db-backup": "2026-10-09T00:00:00Z",
   "attendance-auto-charge": "2026-10-13T00:00:00Z",
+  "slot-waitlist": "2026-10-22T00:00:00Z",
 };
 
 export type JobState = "ok" | "waiting" | "failed" | "late" | "never";
