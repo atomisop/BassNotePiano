@@ -1,4 +1,5 @@
 import { passwordRequirementError } from "@/lib/passwordRules";
+import { attachReferral } from "@/lib/referrals";
 import { canonicalEmail } from "@/lib/canonicalEmail";
 import { notifyAdmins } from "@/lib/adminNotifications";
 import { hasApprovedRegistration, startTrialForEmail } from "@/lib/entitlement";
@@ -109,6 +110,8 @@ export async function POST(req: NextRequest) {
     if (await hasApprovedRegistration(user.email).catch(() => false)) {
       await startTrialForEmail(user.email).catch((err) => console.error("Starting the free trial failed (non-blocking):", err));
     }
+    // Came in through a friend's link: remember who (the reward waits for their first paid 3 or 6 month plan). Never blocks sign-up.
+    if (body?.ref) await attachReferral(user.id, body.ref);
     await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
     // Owner only (see ADMIN_NOTIFICATION_KINDS): who signed up, still unverified.
     // After the code goes out and never blocking: a failed alert must not leave

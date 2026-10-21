@@ -108,7 +108,7 @@ function RegisterForm() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, phone: noPhone ? "" : phone, noPhone, password, website, turnstileToken }),
+      body: JSON.stringify({ name, email, phone: noPhone ? "" : phone, noPhone, password, website, turnstileToken, ref: searchParams.get("ref") }),
     });
 
     if (!res.ok) {
@@ -144,6 +144,9 @@ function RegisterForm() {
         </svg>
       </div>
       <h1 className="font-hero text-hero font-bold text-balance text-center text-slate-50">Create your account</h1>
+      {/^[A-Za-z0-9]{8}$/.test(searchParams.get("ref") ?? "") && (
+        <p className="mt-3 text-center text-small text-slate-300">A friend invited you. Start a 3 or 6 month plan and you both get 10% off for 3 months.</p>
+      )}
 
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">
       <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">

@@ -2,6 +2,7 @@ import { schedule } from "@netlify/functions";
 import { runJob } from "../../src/lib/jobRun";
 import { createNotification } from "../../src/lib/notifications";
 import { expireDueCreditGrants, warnExpiringSoonCreditGrants } from "../../src/lib/creditLedger";
+import { expireTimedDiscounts } from "../../src/lib/referrals";
 import { sendTrialNotices } from "../../src/lib/trialNotices";
 import { CREDITS_PER_CLASS, creditsLabelFromStored } from "../../src/lib/classCreditPricing";
 
@@ -50,6 +51,9 @@ export const handler = schedule("0 9 * * *", async () =>
       emailCategory: "payments",
     }).catch((err) => console.error(`CREDITS_EXPIRED notification failed for user ${summary.userId} (non-blocking):`, err));
   }
+
+  const discountsEnded = await expireTimedDiscounts(now);
+  console.log(`Timed discounts ended: ${discountsEnded}.`);
 
   const trials = await sendTrialNotices(now);
   console.log(`Trial notices: ${trials.ending} ending soon, ${trials.ended} ended.`);

@@ -805,6 +805,10 @@ model User {
   adminBackupCodes  AdminBackupCode[]
   knownDevices      KnownDevice[]
   pushSubscriptions PushSubscription[]
+  // Referral program: the code this person shares, and the referral rows they made / came in through.
+  referralCode      String?            @unique
+  referralsMade     Referral[]         @relation("ReferrerRel")
+  referralReceived  Referral?          @relation("ReferredRel")
 
   // Set when the owner bans the account: it can no longer sign in, and every open session is ended. `bannedReason` is a
   // private note for the owner, never shown to the person. Lifting the ban clears both.
@@ -1983,15 +1987,17 @@ model CspViolation {
 // A percentage off ONE account's plan price, set by the owner on Admin > Pricing. One row per account; changing the percent updates the row and
 // the account's running solo plan (see src/lib/accountDiscounts.ts). Family plans keep the family rate.
 model AccountDiscount {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   percent     Int
   note        String?
+  // Set for a discount that ends by itself (a referral reward); null for one the owner gave, which stays until the owner removes it.
+  expiresAt   DateTime?
   createdById String?
-  createdBy   User?    @relation("AccountDiscountGivenBy", fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdBy   User?     @relation("AccountDiscountGivenBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 // A browser or phone that agreed to get class and practice reminders as push notifications. One row per browser (endpoint); a row the push service
@@ -2008,4 +2014,17 @@ model PushSubscription {
   lastUsedAt DateTime?
 
   @@index([userId])
+}
+
+// Someone invited by a friend's link. rewardedAt is set once, when the invited person's first payment on a 3 or 6 month plan is approved and both get their discount.
+model Referral {
+  id         String    @id @default(cuid())
+  referrerId String
+  referrer   User      @relation("ReferrerRel", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredId String    @unique
+  referred   User      @relation("ReferredRel", fields: [referredId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  rewardedAt DateTime?
+
+  @@index([referrerId])
 }
