@@ -1218,6 +1218,7 @@ export async function resendPlanInvoice(planId: string): Promise<"sent" | "opted
     zelleHandle: payment.zelleHandle,
     cta: { label: "Pay bill", url: getAppUrl("/billing/plans") },
     overdueDays,
+    unsubscribe: { userId: plan.userId, category: "payments" },
   });
   return "sent";
 }

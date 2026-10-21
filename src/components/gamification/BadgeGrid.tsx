@@ -90,7 +90,7 @@ export function BadgeGrid({ earnedCodes }: BadgeGridProps) {
                       className={`flex h-16 w-16 flex-col items-center justify-center rounded-2xl border text-center transition ${
                         earned
                           ? "border-transparent bg-[rgb(var(--c-s-50)/0.1)] text-slate-50 shadow-raised-low"
-                          : "border-transparent text-slate-600 opacity-50 bg-neu-base shadow-raised-low"
+                          : "border-transparent text-slate-500 opacity-50 bg-neu-base shadow-raised-low"
                       }`}
                     >
                       {(() => {

@@ -276,7 +276,7 @@ export function LoginForm({
 
         <p className="mt-4 text-center text-small text-slate-500">
           New here?{" "}
-          <Link href="/register" onClick={onNavigateAway} className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
+          <Link href="/register" onClick={onNavigateAway} className="text-[rgb(var(--c-s-50))] underline underline-offset-4 transition hover:opacity-70">
             Create an account
           </Link>
         </p>
@@ -380,7 +380,7 @@ export function LoginForm({
 
       <p className="mt-6 text-center text-small text-slate-500">
         New here?{" "}
-        <Link href="/register" onClick={onNavigateAway} className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
+        <Link href="/register" onClick={onNavigateAway} className="text-[rgb(var(--c-s-50))] underline underline-offset-4 transition hover:opacity-70">
           Create an account
         </Link>
       </p>

@@ -52,6 +52,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           to a visitor who isn't already fluent in that web convention. An
           explicit corner link says so directly, on every auth screen at
           once, without disturbing the centered brand moment. */}
+      <nav aria-label="Back to homepage">
       <Link
         href="/"
         className="tap absolute left-4 top-4 flex items-center gap-1.5 text-small text-slate-500 transition hover:text-slate-300 sm:left-6 sm:top-6"
@@ -68,6 +69,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             this shell down to begin with. */}
         Back<span className="hidden sm:inline">&nbsp;to homepage</span>
       </Link>
+      </nav>
       {/* header, not a bare <a>: axe's "region" check flagged this brand
           link for sitting outside any landmark, as a sibling of <main>
           rather than inside one. */}

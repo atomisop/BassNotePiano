@@ -283,7 +283,7 @@ function RegisterForm() {
 
       <p className="mt-6 text-center text-small text-slate-500">
         Already have an account?{" "}
-        <Link href="/login" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
+        <Link href="/login" className="text-[rgb(var(--c-s-50))] underline underline-offset-4 transition hover:opacity-70">
           Log in
         </Link>
       </p>

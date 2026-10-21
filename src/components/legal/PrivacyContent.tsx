@@ -21,7 +21,7 @@
 // an email they type has an account. Account deletion now actually deletes
 // the stored avatar file, not just the database row pointing at it: a real
 // gap this pass fixed in the code, not just in what this page claims.
-export const PRIVACY_LAST_UPDATED = "October 5, 2026";
+export const PRIVACY_LAST_UPDATED = "October 21, 2026";
 
 function PrivacySection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -47,7 +47,19 @@ export function PrivacyContent() {
         </p>
         <p>
           What the app generates from your use of it: your class bookings, credit balance,
-          practice/streak activity, quiz results, and notification preferences.
+          practice/streak activity, quiz results, and notification preferences. We also keep a short list of
+          the browsers and devices you are signed in on (for example &quot;Safari on iPhone&quot;), when each last signed in, and
+          a rough place (city, region and country) that our hosting network works out for the request. This list does
+          not include your IP address. You can see it under Settings, and signing out of your other devices clears it. Separately, to
+          stop abuse we briefly keep a record that a request came from an internet address, only for as long as the short limit on
+          sign-ups, forms and chat lasts.
+        </p>
+        <p>
+          If you add a phone number, we keep it so we can match your payments and reach you. It is not shared with anyone else.
+          If you connect Discord, we keep your Discord user ID and name so we can add you to your private class call, and we
+          remove you from our server if you disconnect or delete your account. If you email the studio, the message and your
+          address are saved with our support conversations. For payments, your bank or Venmo emails us a notice of a transfer
+          (the sender name, the amount and the note you typed); we read those only to match them to your payment.
         </p>
         <p>
           What Atom (our AI assistant) collects: the chat window itself always opens fresh, whether
@@ -76,7 +88,8 @@ export function PrivacyContent() {
           A handful of vendors process data on our behalf, strictly to run the app: Resend sends
           the emails the app triggers (verification codes, notifications), Cloudflare stores
           uploaded avatars and lesson video/PDF files, Neon hosts the database, Netlify hosts the
-          app itself, and GlitchTip, our error-monitoring service, receives error reports when something breaks so we can fix it.
+          app itself, Mailgun receives the emails people send to the studio address, Discord runs the live class calls,
+          and, only if text confirmation is switched on, Plivo texts a one-time code to your phone. GlitchTip, our error-monitoring service, receives error reports when something breaks so we can fix it.
           Google&apos;s Gemini API is what actually generates Atom&apos;s replies: whatever you type to
           Atom is sent to Google to produce an answer, along with a few facts about your account
           (your name, whether you have curriculum access, how many classes are on your account) so the reply can be
@@ -115,7 +128,10 @@ export function PrivacyContent() {
         <p>
           Your account, purchase and credit history, and everything else covered above stays for
           as long as your account exists. Nothing about it is automatically deleted just because
-          you stop using the app. See the next section if you&apos;d like it removed sooner.
+          you stop using the app. See the next section if you&apos;d like it removed sooner. When you delete your
+          account it is removed from the live app straight away. A nightly encrypted backup of our database is kept
+          for 35 days, so a deleted account can remain in those backups until the last one that held it is replaced, and is not restored
+          unless we have to recover the whole database.
         </p>
         <p>
           Your ordinary back-and-forth with Atom is the one exception: it&apos;s automatically deleted
@@ -131,11 +147,18 @@ export function PrivacyContent() {
         <p>
           Update your name, photo, learning preferences, and notification settings anytime from
           Settings, and see your own Atom conversation history (until it ages out on its own)
-          under Settings → Privacy &amp; Data. To correct, export, or fully delete your account and
-          everything tied to it sooner than that, message us directly through the app or contact
-          us the same way you would for a billing question. This is a small, hands-on operation,
-          so full account deletion is handled by a real person rather than a self-service button,
-          and we&apos;ll confirm once it&apos;s done.
+          under Settings → Privacy &amp; Data. From the same place you can download a copy of your data, and
+          delete your account yourself (it asks for your password and an emailed code, and cannot be undone). To correct
+          something, or if you would like help, message us directly through the app.
+        </p>
+        <p>
+          Every email you can switch off has an Unsubscribe link at the bottom (and a button in most mail apps) that turns it
+          off in one step, with no sign-in. Sign-in codes and security alerts are always sent, because they protect your account.
+        </p>
+        <p>
+          If you live in the EU, the UK or California, you have the legal rights to access, correct, delete and
+          take a copy of your personal data, and to object to how we use it. The tools above cover most of that, and anything else
+          you ask for through a message to us is answered within 30 days.
         </p>
       </PrivacySection>
 

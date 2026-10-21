@@ -32,6 +32,7 @@ import { markAllMailReadAction } from "@/app/(dashboard)/mail/actions";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { EASE_IOS, FADE, SPRING } from "@/lib/motionTokens";
 import { onChange } from "@/lib/liveEvents";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 const POLL_INTERVAL_MS = 30_000;
 
@@ -256,7 +257,7 @@ function NotificationEntry({ notification, onClick }: { notification: Notificati
       <span className="min-w-0 flex-1">
         <span className="block text-small font-medium text-slate-100">{notification.title}</span>
         {notification.body && <span className="mt-0.5 block text-small text-slate-500">{notification.body}</span>}
-        <span className="mt-1.5 block text-small text-slate-600">{relativeTime(notification.createdAt)}</span>
+        <span className="mt-1.5 block text-small text-slate-500">{relativeTime(notification.createdAt)}</span>
       </span>
     </>
   );
@@ -333,10 +334,10 @@ function NotificationGroup({
               {hasUnread && <span className="h-2 w-2 shrink-0 rounded-full bg-[rgb(var(--signal))]" aria-hidden />}
             </span>
             <span className="mt-0.5 block truncate text-small text-slate-500">{latest.title}</span>
-            <span className="mt-1.5 block text-small text-slate-600">{relativeTime(latest.createdAt)}</span>
+            <span className="mt-1.5 block text-small text-slate-500">{relativeTime(latest.createdAt)}</span>
           </span>
           <ChevronRight
-            className={`mt-1 h-4 w-4 shrink-0 text-slate-600 transition-transform ${expanded ? "rotate-90" : ""}`}
+            className={`mt-1 h-4 w-4 shrink-0 text-slate-500 transition-transform ${expanded ? "rotate-90" : ""}`}
             strokeWidth={1.75}
             aria-hidden
           />
@@ -370,6 +371,7 @@ function NotificationGroup({
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
+  const inboxRef = useDialogFocus<HTMLDivElement>(open);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [mailUnreadCount, setMailUnreadCount] = useState(0);
@@ -557,6 +559,8 @@ export function NotificationBell() {
                   animate={{ x: 0 }}
                   exit={{ x: "100%" }}
                   transition={SPRING.smooth}
+                  ref={inboxRef}
+                  tabIndex={-1}
                   role="dialog"
                   aria-modal="true"
                   aria-label="Inbox"
@@ -607,7 +611,7 @@ export function NotificationBell() {
                 <div className="mx-auto w-full max-w-xl flex-1 overflow-y-auto overscroll-contain px-6 py-6">
                   {shown.length === 0 ? (
                     <div className="flex flex-col items-center gap-3 pt-20 text-center">
-                      <span className="flex h-14 w-14 items-center justify-center rounded-full text-slate-600 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low">
+                      <span className="flex h-14 w-14 items-center justify-center rounded-full text-slate-500 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low">
                         <Bell size={24} strokeWidth={1.5} />
                       </span>
                       <p className="text-small font-medium text-slate-400">{tab === "MAIL" ? "No mail yet." : "No notifications yet."}</p>
@@ -630,7 +634,7 @@ export function NotificationBell() {
                     <div className="space-y-5">
                       {groupNotifications(shown).map((section) => (
                         <div key={section.label}>
-                          <p className="mb-2 px-1 text-small font-medium uppercase tracking-[0.2em] text-slate-600">{section.label}</p>
+                          <p className="mb-2 px-1 text-small font-medium uppercase tracking-[0.2em] text-slate-500">{section.label}</p>
                           <div className="space-y-2">
                             {section.clusters.map((cluster) =>
                               cluster.items.length === 1 ? (

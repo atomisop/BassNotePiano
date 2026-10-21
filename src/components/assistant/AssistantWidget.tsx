@@ -184,7 +184,7 @@ function FeedbackButtons({
 }) {
   return (
     <div className="mt-1 flex items-center gap-1 pl-1">
-      <span className="text-small text-slate-600">Was this answer satisfying?</span>
+      <span className="text-small text-slate-500">Was this answer satisfying?</span>
       <button
         type="button"
         onClick={() => onRate("UP")}
@@ -192,7 +192,7 @@ function FeedbackButtons({
         aria-label="Helpful"
         aria-pressed={rating === "UP"}
         className={`flex h-5 w-5 items-center justify-center rounded transition ${
-          rating === "UP" ? "text-amber-400" : "text-slate-600 hover:text-slate-400"
+          rating === "UP" ? "text-amber-400" : "text-slate-500 hover:text-slate-400"
         } disabled:cursor-default disabled:opacity-60`}
       >
         <svg viewBox="0 0 24 24" fill={rating === "UP" ? "currentColor" : "none"} className="h-3 w-3">
@@ -211,7 +211,7 @@ function FeedbackButtons({
         aria-label="Not helpful"
         aria-pressed={rating === "DOWN"}
         className={`flex h-5 w-5 items-center justify-center rounded transition ${
-          rating === "DOWN" ? "text-red-400" : "text-slate-600 hover:text-slate-400"
+          rating === "DOWN" ? "text-red-400" : "text-slate-500 hover:text-slate-400"
         } disabled:cursor-default disabled:opacity-60`}
       >
         <svg viewBox="0 0 24 24" fill={rating === "DOWN" ? "currentColor" : "none"} className="h-3 w-3">
@@ -328,7 +328,7 @@ function ThreadMessageBubble({ message }: { message: ThreadMessage }) {
   const isVisitor = message.sender === "VISITOR";
   return (
     <div className={`flex flex-col ${isVisitor ? "items-end" : "items-start"}`}>
-      <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-600">{THREAD_SENDER_LABEL[message.sender]}</span>
+      <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-500">{THREAD_SENDER_LABEL[message.sender]}</span>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -1040,10 +1040,22 @@ export function AssistantWidget() {
 
             <div data-lenis-prevent className="min-w-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
               {!inSupportMode && messages.length === 0 && (
-                <p className="text-small text-slate-400">
-                  Hi, I&apos;m Atom. Ask me about pricing, booking a class, policies, or anything else about Bass Note
-                  Piano.
-                </p>
+                <>
+                  <p className="text-small text-slate-400">
+                    Hi, I&apos;m Atom. Ask me about pricing, booking a class, policies, or anything else about Bass Note
+                    Piano.
+                  </p>
+                  {/* The notice a visitor should see BEFORE typing: what Atom is, where the words go, and what is kept. Mirrors the
+                      privacy policy (components/legal/PrivacyContent.tsx), so change them together. */}
+                  <p className="rounded-xl bg-neu-base p-3 text-small leading-relaxed text-slate-400 shadow-pressed-low">
+                    Atom is an AI assistant and can be wrong. What you type is sent to Google to write the reply, so please do not share
+                    passwords or card numbers. If you are signed in, your chats are saved to your account for 30 days. If you ask for our team,
+                    the conversation is shared with them.{" "}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-medium text-slate-200 underline underline-offset-2">
+                      Privacy policy<span className="sr-only"> (opens in a new tab)</span>
+                    </a>
+                  </p>
+                </>
               )}
 
               {!inSupportMode &&
@@ -1211,6 +1223,12 @@ export function AssistantWidget() {
                 {loading ? <MorphingSquare size={16} /> : <ArrowRight className="size-4" />}
               </GenerateAIButton>
             </form>
+            <p className="border-t border-border px-4 py-1.5 text-center text-small leading-snug text-slate-400">
+              {inSupportMode ? "This chat is saved so our team can read it and reply." : "AI assistant. Do not share passwords or card numbers."}{" "}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-slate-300">
+                Privacy<span className="sr-only"> policy (opens in a new tab)</span>
+              </a>
+            </p>
             </div>
           </motion.div>
         )}
@@ -1316,7 +1334,7 @@ export function AssistantWidget() {
         )}
       </AnimatePresence>
 
-      {!open && !hasTopBarTrigger && <AtomButton onClick={openPanel} label="Chat with Atom, your personal assistant" />}
+      {!open && !hasTopBarTrigger && <AtomButton onClick={openPanel} label="Ask AI: chat with Atom, your personal assistant" />}
     </div>,
     document.body,
   );

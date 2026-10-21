@@ -70,7 +70,7 @@ function MobileAboutMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
         >
           <TabIcon path={tab.icon} className="h-5 w-5 shrink-0 text-slate-400" />
           <span className="flex-1 text-small text-slate-100">{tab.label}</span>
-          <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-600" />
+          <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
         </button>
       ))}
     </div>
@@ -86,7 +86,7 @@ function AboutTab() {
         An interactive masterclass in the Ethiopian scale system: Tizita, Bati, Anchihoye, and Mixolydian
         pentatonics, spelled correctly in every key, with native chords mapped for each one.
       </p>
-      <p className="mt-6 text-small text-slate-600">© {new Date().getFullYear()} Bass Note Piano.</p>
+      <p className="mt-6 text-small text-slate-500">© {new Date().getFullYear()} Bass Note Piano.</p>
     </div>
   );
 }
@@ -98,7 +98,7 @@ function UpdatesTab() {
         <div key={entry.version} className="glass-surface p-6">
           <div className="flex items-baseline justify-between gap-4">
             <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">v{entry.version}</p>
-            <p className="text-small text-slate-600">{entry.date}</p>
+            <p className="text-small text-slate-500">{entry.date}</p>
           </div>
           <h2 className="mt-1.5 text-body text-slate-50 font-semibold">{entry.title}</h2>
           <ul className="mt-3 space-y-1.5">

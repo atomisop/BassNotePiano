@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from "framer-motion";
 
 function Word({ word, progress, range }: { word: string; progress: MotionValue<number>; range: [number, number] }) {
-  const opacity = useTransform(progress, range, [0.15, 1]);
+  const opacity = useTransform(progress, range, [0.55, 1]);
   return (
     <motion.span style={{ opacity }} className="inline-block">
       {word}
@@ -22,7 +22,9 @@ export function ScrollText({ text, className = "" }: { text: string; className?:
   if (reduced) return <p className={className}>{text}</p>;
 
   return (
-    <p ref={ref} className={className} aria-label={text}>
+    <p ref={ref} className={className}>
+      {/* The whole sentence for assistive tech; the words below are only the scroll effect (an aria-label is not allowed on a paragraph). */}
+      <span className="sr-only">{text}</span>
       <span aria-hidden className="flex flex-wrap gap-x-[0.28em]">
         {words.map((word, i) => {
           const start = i / words.length;

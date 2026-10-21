@@ -9,6 +9,7 @@ import { getTodaysNotesRosterAction, searchStudentsForNotesAction } from "@/app/
 import type { NotesRosterRow } from "@/lib/studentNotes";
 import type { BookableStudent } from "@/lib/admin";
 import { StudentNotesEditor } from "@/components/admin/StudentNotesEditor";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 function timeOf(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
@@ -28,6 +29,7 @@ export function StudentNotesPanel() {
   const [results, setResults] = useState<BookableStudent[] | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  useDialogFocus<HTMLDivElement>(open, undefined, { trap: false, ref: panelRef });
 
   useEffect(() => setMounted(true), []);
   // The profile menu (the only way in on phones) opens this panel.
@@ -81,6 +83,7 @@ export function StudentNotesPanel() {
         createPortal(
           <div
             ref={panelRef}
+            tabIndex={-1}
             role="dialog"
             aria-label="Student notes"
             className="fixed right-3 top-12 z-[60] max-h-[80vh] w-[min(28rem,calc(100vw-1.5rem))] overflow-y-auto rounded-2xl bg-neu-base p-3 shadow-raised-high sm:right-8"

@@ -287,7 +287,7 @@ export function AdminLessonManager({
             <div key={lesson.id} className="flex items-center gap-3 py-3.5">
               <span className="w-5 shrink-0 text-center text-small font-semibold text-slate-500">{index + 1}</span>
               <div className="min-w-0 flex-1">
-                <h3 className="truncate text-body text-slate-50">{lesson.title}</h3>
+                <h2 className="truncate text-body text-slate-50">{lesson.title}</h2>
                 <p className="truncate text-small text-slate-500">
                   {lesson.type === "VIDEO" ? "Video" : "PDF"}
                   {lesson.fileSizeBytes != null && ` · ${formatBytes(lesson.fileSizeBytes)}`}

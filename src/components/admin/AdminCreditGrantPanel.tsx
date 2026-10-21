@@ -316,7 +316,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                       <span className="text-slate-500">{new Date(row.createdAt).toLocaleString()}</span>
                     </div>
                     <p className="mt-1 text-slate-400">{row.reasonNote}</p>
-                    <p className="mt-1 text-slate-600">by {row.adjustedBy.name ?? row.adjustedBy.email}</p>
+                    <p className="mt-1 text-slate-500">by {row.adjustedBy.name ?? row.adjustedBy.email}</p>
                   </div>
                 ))}
               </div>
@@ -346,7 +346,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 </span>
               </div>
               <p className="mt-2 text-small text-slate-400">{row.reasonNote}</p>
-              <p className="mt-1 text-small text-slate-600">by {row.adjustedByName ?? row.adjustedByEmail}</p>
+              <p className="mt-1 text-small text-slate-500">by {row.adjustedByName ?? row.adjustedByEmail}</p>
             </div>
           ))}
         </div>

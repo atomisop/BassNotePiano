@@ -257,10 +257,10 @@ export function PaymentQueue({
               {canTick(payment) && <RowCheck checked={picked.has(payment.id)} onChange={(on) => toggle(payment.id, on)} label={`Select ${payment.user.name ?? payment.user.email}`} />}
               <div>
               <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">{eyebrow}</p>
-              <h3 className="mt-1 text-body text-slate-50 font-semibold">{title}</h3>
+              <h2 className="mt-1 text-body text-slate-50 font-semibold">{title}</h2>
               <p className="mt-1 text-small text-slate-500">{payment.user.name ?? payment.user.email}</p>
               {payment.purpose === "FAMILY_BUNDLE" && payment.familyBundleRecipients.length > 0 && (
-                <p className="mt-1 text-small text-slate-600">
+                <p className="mt-1 text-small text-slate-500">
                   Credits go to: {payment.familyBundleRecipients.map((r) => r.user.name ?? r.user.email).join(", ")}
                 </p>
               )}
@@ -278,27 +278,27 @@ export function PaymentQueue({
 
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-small">
             <div>
-              <dt className="text-small text-slate-600">{payment.method === "VENMO" ? "Venmo name" : "Zelle name"}</dt>
+              <dt className="text-small text-slate-500">{payment.method === "VENMO" ? "Venmo name" : "Zelle name"}</dt>
               <dd className="text-slate-300">{payment.senderName ?? "None"}</dd>
             </div>
             {payment.matchedVia && (
               <div className="col-span-2">
-                <dt className="text-small text-slate-600">Cleared by the bank email through</dt>
+                <dt className="text-small text-slate-500">Cleared by the bank email through</dt>
                 <dd className={payment.matchedVia === "amount" || payment.matchedVia === "phone" || payment.matchedVia === "codeTypo" ? "text-amber-300" : "text-slate-300"}>
                   {MATCHED_VIA_LABEL[payment.matchedVia] ?? payment.matchedVia}
                 </dd>
               </div>
             )}
             <div>
-              <dt className="text-small text-slate-600">Paying from phone</dt>
+              <dt className="text-small text-slate-500">Paying from phone</dt>
               <dd className="text-slate-300">{payment.senderPhone ? formatPhone(payment.senderPhone) : "None given"}</dd>
             </div>
             <div>
-              <dt className="text-small text-slate-600">Paid with</dt>
+              <dt className="text-small text-slate-500">Paid with</dt>
               <dd className="text-slate-300">{payment.method === "VENMO" ? "Venmo" : "Zelle"}</dd>
             </div>
             <div>
-              <dt className="text-small text-slate-600">Submitted</dt>
+              <dt className="text-small text-slate-500">Submitted</dt>
               <dd className="text-slate-300">
                 {payment.submittedAt ? new Date(payment.submittedAt).toLocaleString() : "None"}
               </dd>

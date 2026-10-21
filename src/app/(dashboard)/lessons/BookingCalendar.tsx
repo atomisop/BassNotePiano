@@ -163,7 +163,7 @@ export function BookingCalendar({
 
       <div className="mt-4 grid grid-cols-7 gap-y-1.5 text-center">
         {DAY_NAMES.map((d, i) => (
-          <span key={i} className="text-small font-medium uppercase tracking-wide text-slate-600">
+          <span key={i} className="text-small font-medium uppercase tracking-wide text-slate-500">
             {d}
           </span>
         ))}
@@ -192,7 +192,7 @@ export function BookingCalendar({
                   : clickable
                     ? "bg-[rgb(var(--signal)/0.14)] font-semibold text-slate-50 ring-1 ring-inset ring-[rgb(var(--signal)/0.45)] hover:bg-[rgb(var(--signal)/0.24)]"
                     : isFull
-                      ? "text-slate-600 line-through decoration-slate-600/60"
+                      ? "text-slate-500 line-through decoration-slate-600/60"
                       : isToday
                         ? "text-slate-300 ring-1 ring-inset ring-ink/15"
                         : "text-slate-700"
@@ -218,7 +218,7 @@ export function BookingCalendar({
             Open
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="text-slate-600 line-through">12</span>
+            <span className="text-slate-500 line-through">12</span>
             Full
           </span>
         </p>

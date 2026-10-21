@@ -176,7 +176,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
           <div key={key} className="glass-surface p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-body text-slate-50 font-semibold">{occ.label ?? "Class"}</h3>
+                <h2 className="text-body text-slate-50 font-semibold">{occ.label ?? "Class"}</h2>
                 <p className="mt-0.5 text-small text-slate-500">{formatDateTime(occ.scheduledAt)}</p>
               </div>
               {activeRoster.length > 0 && (
@@ -204,7 +204,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                               <Avatar image={entry.studentImage} name={entry.studentName ?? entry.studentEmail} />
                               <div>
                                 <p className="text-small text-slate-100">{entry.studentName ?? "Student"}</p>
-                                <p className="text-small text-slate-600">
+                                <p className="text-small text-slate-500">
                                   {entry.studentEmail} · until {formatEndTime(occ.scheduledAt, entry.creditsSpent)} (
                                   {creditsLabelFromStored(entry.creditsSpent)})
                                 </p>
@@ -235,7 +235,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                             }}
                                           />
                                           <span className={inPerson ? "font-medium text-slate-50" : "text-slate-500"}>In person</span>
-                                          {inPerson && <span className="text-slate-600">no Discord call</span>}
+                                          {inPerson && <span className="text-slate-500">no Discord call</span>}
                                         </>
                                       );
                                     })()}

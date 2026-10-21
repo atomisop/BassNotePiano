@@ -39,6 +39,7 @@ export function StreakDots({ currentStreak }: { currentStreak: number }) {
               />
             )}
             <span
+              role="img"
               aria-label={`${day.isToday ? "Today" : day.name}: ${day.isFilled ? "practiced" : "not practiced"}`}
               className={`relative flex h-8 w-8 items-center justify-center rounded-full text-small font-semibold ${
                 day.isFilled

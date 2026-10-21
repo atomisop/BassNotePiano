@@ -58,7 +58,7 @@ function ThreadRow({ thread, href, currentAdminId }: { thread: AdminThreadSummar
           {thread.lastMessage.body}
         </p>
       )}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-slate-600">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-slate-500">
         <span>{relativeTime(thread.createdAt)}</span>
         {thread.assignedTo && (
           <span className={assignedToMe ? "font-medium text-[rgb(var(--c-s-50))]" : "text-slate-400"}>

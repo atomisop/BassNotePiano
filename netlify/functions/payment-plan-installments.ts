@@ -65,6 +65,7 @@ async function notifyInstallment(
     zelleHandle: payment.zelleHandle,
     cta: { label: "Pay your installment", url: getAppUrl("/billing/plans") },
     overdueDays,
+    unsubscribe: { userId: plan.userId, category: "payments" },
   }).catch((err) => console.error(`Installment invoice email failed for user ${plan.userId} (non-blocking):`, err));
 }
 

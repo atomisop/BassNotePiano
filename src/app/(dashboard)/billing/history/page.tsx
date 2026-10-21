@@ -98,7 +98,7 @@ export default async function BillingHistoryPage() {
                 <div>
                   <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">{eyebrow}</p>
                   <p className="mt-1 text-slate-100">{title}</p>
-                  <p className="mt-1 text-small text-slate-600">
+                  <p className="mt-1 text-small text-slate-400">
                     {new Date(payment.createdAt).toLocaleDateString(undefined, {
                       year: "numeric",
                       month: "short",

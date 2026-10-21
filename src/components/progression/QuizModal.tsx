@@ -9,6 +9,7 @@ import { SuccessGlowPulse } from "@/components/ui/SuccessGlowPulse";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { SPRING } from "@/lib/motionTokens";
 import { buttonVariants } from "@/components/ui/button";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 export interface QuizModalProps {
   isOpen: boolean;
@@ -94,6 +95,8 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
     window.setTimeout(reset, 200);
   }
 
+  const dialogRef = useDialogFocus<HTMLDivElement>(isOpen, handleClose);
+
   // A full-screen panel must not leave the page scrollable behind it, same
   // reasoning (and same pattern) MarketingNav's own full-screen mobile menu
   // uses. Also where a genuine (re)start rolls a new seed and regenerates
@@ -149,6 +152,8 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
     <AnimatePresence>
       {isOpen && (
         <motion.div
+          ref={dialogRef}
+          tabIndex={-1}
           role="dialog"
           aria-modal="true"
           aria-labelledby="quiz-modal-title"

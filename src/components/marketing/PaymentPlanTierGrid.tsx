@@ -141,7 +141,7 @@ export function PaymentPlanTierGrid() {
                   {featured ? (
                     <span className="rounded-full bg-[rgb(var(--c-a-400))] px-3 py-1 text-small font-bold text-black">Best value</span>
                   ) : isMonthly && !isFamily ? (
-                    <span className="rounded-full bg-slate-800 px-3 py-1 text-small font-medium text-slate-400">No commitment</span>
+                    <span className="rounded-full bg-slate-800 px-3 py-1 text-small font-medium text-slate-300">No commitment</span>
                   ) : null}
                 </div>
 
