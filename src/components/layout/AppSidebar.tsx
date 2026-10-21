@@ -81,6 +81,7 @@ export function AppSidebar({ unreadMessageCount: initial }: { unreadMessageCount
                   ) : (
                   <Link
                     href={item.href}
+                    prefetch
                     data-tour={item.dataTour}
                     aria-current={active ? "page" : undefined}
                     className={`press-soft flex h-9 items-center gap-2.5 rounded-control px-2.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${

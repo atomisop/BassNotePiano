@@ -15,10 +15,11 @@ const nextConfig = {
   // unused optional dependency is simply never touched.
   serverExternalPackages: ["resend"],
   experimental: {
-    // Next keeps a visited page's data in the browser for 30 seconds and reuses it on the next click, which showed stale
-    // payment statuses, Discord buttons and balances after something changed. Pages that depend on who is signed in are
-    // fetched fresh on every visit now.
-    staleTimes: { dynamic: 0, static: 30 },
+    // A visited page is reused for 30 seconds, so going back to a screen you just left is instant instead of waiting on the
+    // server and database again (a zero here made every click a full round trip, and the loading skeleton flashed on
+    // pages already seen). Staleness is bounded: every server action calls revalidatePath, which empties this cache,
+    // `announceChange` / router.refresh() do the same, and AutoRefresh re-fetches the open page every 30 seconds.
+    staleTimes: { dynamic: 30, static: 30 },
   },
 
   // Old URLs that no longer have a page of their own. Kept as redirects (in
