@@ -1,5 +1,6 @@
 "use client";
 
+import { Celebrate } from "@/components/ui/Celebrate";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Minus, Pause, Play, Plus } from "lucide-react";
 import { Card, Eyebrow } from "@/components/ui/Card";
@@ -339,6 +340,7 @@ export function PracticeClient({
                 : "Keep this screen on and in view: the timer pauses when your phone locks or you switch apps."}
           </p>
         )}
+        {justCompleted && <Celebrate />}
         {justCompleted && (
           <p className="mt-3 rounded-xl bg-neu-base px-4 py-3 text-small font-semibold text-slate-50 shadow-pressed-low">
             10 minutes done. {"\u{1F389}"}

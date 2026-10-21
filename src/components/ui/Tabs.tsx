@@ -51,6 +51,19 @@ export function Tabs<const T extends string>({
     measure();
   }, [measure]);
 
+  // On a narrow screen the row scrolls sideways; when the chosen tab changes (a tap, or a deep link), bring it into view.
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+  const firstRun = useRef(true);
+  useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    const btn = refs.current[itemsRef.current.findIndex((item) => item.id === value)];
+    btn?.scrollIntoView({ inline: "nearest", block: "nearest" });
+  }, [value]);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container || typeof ResizeObserver === "undefined") return;

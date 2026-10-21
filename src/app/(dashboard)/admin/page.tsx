@@ -5,6 +5,12 @@ import { getServerAuthSession } from "@/lib/auth";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { listAudit } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { getAdminPayments } from "@/lib/payments";
+import { PaymentQueue } from "@/components/admin/PaymentQueue";
+import { approvePaymentAction, checkPaymentAction, rejectPaymentAction } from "./payments/actions";
+import { RemindButton } from "@/components/admin/RemindButton";
+import { REMINDER_KINDS } from "@/lib/followUpReminders";
+import { getFollowUps } from "@/lib/adminFollowUps";
 import { getJobStatuses, isStopped } from "@/lib/jobRun";
 import { OverviewStats } from "@/components/admin/OverviewStats";
 import { MetricCard } from "@/components/ui/MetricCard";
@@ -20,7 +26,7 @@ function formatUsd(cents: number) {
 export const metadata = { title: "Admin: Overview" };
 
 export default async function AdminOverviewPage() {
-  const [stats, trends, session, subs, attention] = await Promise.all([getOverviewStats(), getOverviewTrends(6), getServerAuthSession(), getSubscriptionStats(), getAttentionItems()]);
+  const [stats, trends, session, subs, attention, followUps, waiting] = await Promise.all([getOverviewStats(), getOverviewTrends(6), getServerAuthSession(), getSubscriptionStats(), getAttentionItems(), getFollowUps(), getAdminPayments("PENDING_REVIEW", 1)]);
   const isOwner = isOwnerEmail(session?.user?.email);
   const [activity, jobs, visits] = isOwner
     ? await Promise.all([
@@ -52,6 +58,52 @@ export default async function AdminOverviewPage() {
           </ul>
         )}
       </section>
+
+      {waiting.payments.length > 0 && (
+        <section className="mt-4">
+          <div className="mb-2 flex items-baseline justify-between gap-3">
+            <h2 className="text-body font-semibold text-slate-50">Approve without leaving</h2>
+            {waiting.total > 3 && (
+              <Link href="/admin/payments" className="text-small text-slate-400 underline-offset-4 hover:text-slate-100 hover:underline">
+                All {waiting.total} waiting
+              </Link>
+            )}
+          </div>
+          <PaymentQueue payments={waiting.payments.slice(0, 3)} onApprove={approvePaymentAction} onReject={rejectPaymentAction} onCheck={checkPaymentAction} />
+        </section>
+      )}
+
+      {followUps.length > 0 && (
+        <section className="mt-4 rounded-2xl bg-neu-base p-4 shadow-raised-low">
+          <h2 className="text-body font-semibold text-slate-50">People to follow up with</h2>
+          <ul className="mt-2 divide-y divide-slate-50/10">
+            {followUps.map((f) => (
+              <li key={f.key} className="py-2.5 text-small">
+                <div className="flex items-center justify-between gap-3">
+                  <Link href={f.href} className="font-medium text-slate-200 hover:underline">
+                    {f.title}
+                  </Link>
+                  <span className="rounded-full bg-[rgb(var(--signal)/0.14)] px-2.5 py-0.5 font-semibold tabular-nums text-signal">{f.total}</span>
+                </div>
+                <p className="mt-0.5 text-slate-500">{f.hint}</p>
+                {f.people.length > 0 && (
+                  <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                    {f.people.map((p) => (
+                      <span key={p.id} className="inline-flex flex-wrap items-center gap-2">
+                        <Link href={`/admin/users/${p.id}`} className="tap inline-flex items-center text-slate-300 underline decoration-slate-600 underline-offset-2 hover:text-slate-50">
+                          {p.name}
+                        </Link>
+                        {(REMINDER_KINDS as string[]).includes(f.key) && <RemindButton kind={f.key} userId={p.id} name={p.name} />}
+                      </span>
+                    ))}
+                    {f.total > f.people.length && <span className="text-slate-500">and {f.total - f.people.length} more</span>}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Two trend cards over the last six months, both from real rows
           (User.createdAt and VERIFIED payments). Flat stretches are real

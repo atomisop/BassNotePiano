@@ -6,6 +6,7 @@ import { PasswordStrength } from "@/components/ui/password-strength";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Laptop, Smartphone, Tablet } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
 import { ThemePicker } from "@/components/theme/ThemePicker";
@@ -19,6 +20,8 @@ import {
   updatePasswordAction,
   requestPasswordChangeCodeAction,
   signOutOtherDevicesAction,
+  listSignedInDevicesAction,
+  type SignedInDevice,
   updateNotificationPreferencesAction,
   requestAccountDeletionCodeAction,
   confirmAccountDeletionAction,
@@ -808,8 +811,68 @@ function PasswordSection() {
         </form>
       </SectionCard>
 
+      <SignedInDevicesCard />
       <SignOutOtherDevicesCard />
     </div>
+  );
+}
+
+const DEVICE_ICON = { Phone: Smartphone, Tablet: Tablet, Computer: Laptop } as const;
+
+// Every browser and device this account is signed in on: what it is, roughly where, when it signed in, and a green dot while
+// it has a tab open (gray otherwise). No IP addresses anywhere. Refreshes every minute and when other devices are signed out.
+function SignedInDevicesCard() {
+  const [devices, setDevices] = useState<SignedInDevice[] | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      listSignedInDevicesAction()
+        .then((rows) => alive && setDevices(rows))
+        .catch(() => alive && setDevices((prev) => prev ?? []));
+    void load();
+    const timer = setInterval(load, 60_000);
+    window.addEventListener("bnp:devices-changed", load);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+      window.removeEventListener("bnp:devices-changed", load);
+    };
+  }, []);
+
+  return (
+    <SectionCard title="Where you are signed in">
+      {devices === null ? (
+        <p className="text-small text-slate-500">Loading…</p>
+      ) : devices.length === 0 ? (
+        <p className="text-small text-slate-500">Nothing to show yet.</p>
+      ) : (
+        <ul className="divide-y divide-slate-50/10">
+          {devices.map((d) => {
+            const Icon = DEVICE_ICON[d.kind];
+            return (
+              <li key={d.id} className="flex items-center gap-3 py-3">
+                <Icon className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-body text-slate-50">
+                    {d.label}
+                    {d.isThisDevice && <span className="ml-2 rounded-full bg-neu-base px-2 py-0.5 text-small text-slate-300 shadow-pressed-low">This device</span>}
+                  </p>
+                  <p className="truncate text-small text-slate-400">
+                    {d.place ?? "Location unavailable"} · Signed in{" "}
+                    {new Date(d.signedInAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                  </p>
+                </div>
+                <span className="flex shrink-0 items-center gap-1.5 text-small text-slate-400">
+                  <span aria-hidden className={`h-2.5 w-2.5 rounded-full ${d.active ? "bg-green-400 shadow-[0_0_6px_rgb(74_222_128/0.8)]" : "bg-slate-600"}`} />
+                  {d.active ? "Active now" : "Not active"}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </SectionCard>
   );
 }
 
@@ -830,6 +893,7 @@ function SignOutOtherDevicesCard() {
     await update();
     setSubmitting(false);
     setSuccess(true);
+    window.dispatchEvent(new Event("bnp:devices-changed"));
   }
 
   return (

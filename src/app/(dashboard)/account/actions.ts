@@ -4,6 +4,8 @@ import { passwordRequirementError } from "@/lib/passwordRules";
 import { removeDiscordPresence } from "@/lib/discordCleanup";
 import { noticeAccountChange } from "@/lib/studentNotices";
 import bcrypt from "bcryptjs";
+import { headers } from "next/headers";
+import { currentDeviceId, deviceKind, DEVICE_ACTIVE_MS, placeLabel } from "@/lib/deviceAlerts";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import type { LearningGoal, MusicGenre, PrimaryInstrument, SkillLevel, PaymentPlanTerm, PlanCancellationReason } from "@prisma/client";
@@ -139,8 +141,42 @@ export async function updatePasswordAction(currentPassword: string, newPassword:
 export async function signOutOtherDevicesAction() {
   const { id } = await requireSession();
   await prisma.user.update({ where: { id }, data: { sessionVersion: { increment: 1 } } });
+  // The devices that were just signed out no longer belong in the list; this one stays. If one signs in again it is a new device.
+  const mine = await currentDeviceId(id, (await headers()).get("user-agent"));
+  await prisma.knownDevice.deleteMany({ where: { userId: id, ...(mine ? { id: { not: mine } } : {}) } });
   await noticeAccountChange(id, { kind: "signed-out-everywhere", by: "you" });
   return { ok: true as const };
+}
+
+export interface SignedInDevice {
+  id: string;
+  label: string;
+  kind: "Phone" | "Tablet" | "Computer";
+  place: string | null;
+  signedInAt: string;
+  lastSeenAt: string;
+  active: boolean;
+  isThisDevice: boolean;
+}
+
+/** Where this account is signed in: device, rough place (never the IP), when it signed in, and whether it is open right now. */
+export async function listSignedInDevicesAction(): Promise<SignedInDevice[]> {
+  const { id } = await requireSession();
+  const [rows, mine] = await Promise.all([
+    prisma.knownDevice.findMany({ where: { userId: id }, orderBy: { lastSeenAt: "desc" }, take: 20 }),
+    currentDeviceId(id, (await headers()).get("user-agent")),
+  ]);
+  const now = Date.now();
+  return rows.map((d) => ({
+    id: d.id,
+    label: d.label,
+    kind: deviceKind(d.label),
+    place: placeLabel(d),
+    signedInAt: d.signedInAt.toISOString(),
+    lastSeenAt: d.lastSeenAt.toISOString(),
+    active: now - d.lastSeenAt.getTime() < DEVICE_ACTIVE_MS || d.id === mine,
+    isThisDevice: d.id === mine,
+  }));
 }
 
 // ---------------------------------------------------------------------------

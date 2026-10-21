@@ -326,6 +326,21 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
 - **New notices** live in `studentNotices.ts` (+ `trialNotices.ts`, run by the daily credit-expiry job). Add a new student-facing
   event there, with a `NotificationType` (enum migration), its CTA in `notifications.ts` and its category in `NotificationBell.tsx`.
 
+## Sidebar spotlight, devices and follow-ups (added 2026-10-21)
+
+- **Sidebar spotlight** (`SidebarSpotlight`, `src/lib/sidebarCards.ts`, `/api/me/sidebar`): the bottom of the desktop sidebar shows one card at a time (dots step
+  through the rest): Discord invitation until linked, next class countdown, low credits, fifth class, scale unlocked / waiting, streak, continue lesson,
+  friends practicing; admins get jobs stopped, needs-you counts and today's classes. Each is a true fact with one tap; add a new kind to the `SidebarCard` union.
+- **Signed-in devices** (Settings > "Where you are signed in"): `KnownDevice` rows (browser + OS, never the IP) with city/region/country from the host's geo headers
+  (`placeFromHeaders`, Netlify `x-nf-geo` is unverified in production), `signedInAt`, and `lastSeenAt` touched by `/api/me/status` (about once a minute per open tab).
+  Active = checked in within 5 minutes. "Sign out other devices" deletes the other rows. Sessions are JWT, so there is no per-device sign-out.
+- **Follow-ups** (`adminFollowUps.ts`, Overview + morning email; one-click reminders in `followUpReminders.ts`): overdue bills, not practicing, trial ending, credits
+  expiring, stale applications. A reminder uses fixed wording, re-checks the reason, goes once per person per reason per day, and is audited (`followup.reminder`).
+- **Session lookup cache**: `loadEntitlementsBounded` remembers a user's entitlements for 5 seconds per server (sign-in and `update()` read fresh; the ban check is live).
+- **Admin student page** has Overview / Learning / Classes / Money / Support tabs; sections stay mounted (hidden), the tab is kept in the URL hash.
+- **Top banners** never ask for what the screen already shows (`alreadyShown` in `TopBanners.tsx`): no Discord banner on Lessons or at desktop width (the sidebar card
+  carries it), no practice banner on Practice, no phone banner on Settings.
+
 ## Abuse guards (added 2026-10-12, `docs/ABUSE-AUDIT.md`)
 
 One free trial per inbox forever (`trial-used:` marker, plus tags dropped at every domain); an unpaid first bill releases the weekly

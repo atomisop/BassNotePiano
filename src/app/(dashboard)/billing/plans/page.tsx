@@ -7,6 +7,7 @@ import { getFamilyDetails, getActivePaymentPlan, getUserPaymentPlans, getOrCreat
 import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
+import { MyPlanSummary } from "@/components/billing/MyPlanSummary";
 import { BackLink } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Payment plans" };
@@ -124,6 +125,7 @@ export default async function BillingPlansPage(
       </div>
 
       <div className="mt-8 lg:col-span-7 lg:mt-0">
+        {activePlan && <MyPlanSummary userId={session.user.id} />}
         <PaymentPlanEnrollmentFlow
           zelleHandle={zelleHandle}
           initialCadence={initialCadence}

@@ -1472,3 +1472,20 @@
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+
+/* Confetti burst (components/ui/Celebrate.tsx): pieces fly out from the middle of the screen and fall away. */
+.confetti-piece {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: confetti-burst 1.7s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+@keyframes confetti-burst {
+  0% { opacity: 1; transform: translate(-50%, -50%) rotate(0deg) scale(0.6); }
+  60% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy) + 180px)) rotate(var(--rot)) scale(1); }
+}

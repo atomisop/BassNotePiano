@@ -103,12 +103,18 @@ function Row({ def, value, onSave, onReset }: { def: SettingDef; value: SettingV
 
 export function SettingsPanel({ defs, categories, initial, onSave, onReset }: Props) {
   const [query, setQuery] = useState("");
+  const [onlyChanged, setOnlyChanged] = useState(false);
   const q = query.trim().toLowerCase();
 
+  // "Changed" means different from the built-in default, so you can see everything you have ever touched in one list.
   const shown = useMemo(
-    () => defs.filter((d) => !q || `${d.label} ${d.help} ${d.key}`.toLowerCase().includes(q)),
-    [defs, q],
+    () =>
+      defs.filter(
+        (d) => (!q || `${d.label} ${d.help} ${d.key}`.toLowerCase().includes(q)) && (!onlyChanged || (initial[d.key] ?? d.default) !== d.default),
+      ),
+    [defs, q, onlyChanged, initial],
   );
+  const changedCount = defs.filter((d) => (initial[d.key] ?? d.default) !== d.default).length;
 
   return (
     <div className="space-y-6">
@@ -119,6 +125,21 @@ export function SettingsPanel({ defs, categories, initial, onSave, onReset }: Pr
         aria-label="Search settings"
         className="w-full rounded-xl bg-neu-base px-4 py-2.5 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500"
       />
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          aria-pressed={onlyChanged}
+          onClick={() => setOnlyChanged((v) => !v)}
+          className={`tap rounded-full px-3 py-1 text-small font-medium ${onlyChanged ? "bg-neu-lift text-signal shadow-pressed-low" : "bg-neu-base text-slate-300 shadow-raised-low"}`}
+        >
+          Only what I changed ({changedCount})
+        </button>
+        {categories.map((c) => (
+          <a key={c.id} href={`#settings-${c.id}`} className="tap inline-flex items-center rounded-full bg-neu-base px-3 py-1 text-small text-slate-400 shadow-raised-low hover:text-slate-100">
+            {c.label}
+          </a>
+        ))}
+      </div>
       {categories.map((c) => {
         const rows = shown.filter((d) => d.category === c.id);
         if (rows.length === 0) return null;

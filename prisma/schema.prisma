@@ -1076,6 +1076,11 @@ model KnownDevice {
   label       String
   firstSeenAt DateTime @default(now())
   lastSeenAt  DateTime @default(now())
+  // The most recent sign-in on this device, and the rough place it came from (city, region, country; never the IP address).
+  signedInAt  DateTime @default(now())
+  city        String?
+  region      String?
+  country     String?
 
   @@unique([userId, deviceHash])
 }

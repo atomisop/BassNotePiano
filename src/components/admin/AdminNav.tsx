@@ -106,6 +106,7 @@ function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
     return (
       <Link
         href={leaf.href}
+        prefetch
         aria-current={active ? "page" : undefined}
         className={`press-soft flex h-9 items-center gap-2.5 rounded-control px-2.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
           active ? "bg-neu-lift text-slate-50 shadow-pressed-low" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
@@ -164,6 +165,7 @@ function AdminSwipeRow({ badges }: { badges: AdminNavBadges }) {
               <li key={leaf.href} className={`flex items-center ${li === 0 && gi > 0 ? "ml-1.5 border-l border-(--neu-edge) pl-3" : ""}`}>
                 <Link
                   href={leaf.href}
+                  prefetch
                   ref={active ? activeRef : undefined}
                   aria-current={active ? "page" : undefined}
                   className={`press-soft flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${

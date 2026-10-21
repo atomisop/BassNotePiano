@@ -71,12 +71,12 @@ export default async function DashboardPage() {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
 
-  const [roadmap, badgeRows, user, practice, nextClass, entitlement, pendingApplication] = await Promise.all([
+  const [roadmap, badgeRows, user, practice, nextClass, entitlement, pendingApplication, everBooked, everPracticed] = await Promise.all([
     getRoadmap(session.user.id),
     prisma.userBadge.findMany({ where: { userId: session.user.id }, select: { code: true } }),
     prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { name: true, currentStreak: true, classCredits: true },
+      select: { name: true, currentStreak: true, classCredits: true, discordId: true },
     }),
     getFingerPracticeStatus(session.user.id),
     // Still counts for an hour after it starts, so "Join" is there if they are a little late.
@@ -93,6 +93,8 @@ export default async function DashboardPage() {
         OR: [{ userId: session.user.id }, { email: { equals: session.user.email ?? "", mode: "insensitive" } }],
       },
     }),
+    prisma.classBooking.count({ where: { studentId: session.user.id } }),
+    prisma.fingerPracticeDay.count({ where: { userId: session.user.id, completedAt: { not: null } } }),
   ]);
 
   const progress = summariseProgress(roadmap);
@@ -111,6 +113,51 @@ export default async function DashboardPage() {
   // Each card is a function, called once per place it renders (never reuse one
   // element twice: a streamed <Suspense> reused in two spots fails to hydrate): the phone deck below
   // `lg`, and the normal layout from `lg` up (the other copy is display:none).
+  // First-week checklist: three things that make the app work for a new student. Each ticks itself when the real thing happens,
+  // and the whole card disappears once all three are done (or for the admin, who has no classes of their own to set up).
+  const gettingStarted = [
+    { done: Boolean(user?.discordId), label: "Link your Discord", detail: "Your live class call opens there.", href: "/api/discord/connect", external: true },
+    { done: everBooked > 0, label: "Book your first class", detail: "Pick a time that repeats every week.", href: "/lessons", external: false },
+    { done: everPracticed > 0, label: "Do your first 10 minutes of practice", detail: "It also opens your scales.", href: "/practice", external: false },
+  ];
+  const showGettingStarted = session.user.role !== "ADMIN" && entitlement.kind !== "NONE" && gettingStarted.some((g) => !g.done);
+  const gettingStartedCard = () => (
+    <Card className="relative z-(--z-mid)">
+      <Eyebrow>
+        Get started · {gettingStarted.filter((g) => g.done).length} of {gettingStarted.length}
+      </Eyebrow>
+      <ul className="mt-3 grid gap-1">
+        {gettingStarted.map((g) => {
+          const row = (
+            <>
+              <span
+                aria-hidden
+                className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold", g.done ? "bg-signal text-slate-950" : "bg-neu-base text-transparent shadow-pressed-low")}
+              >
+                ✓
+              </span>
+              <span className="min-w-0">
+                <span className={cn("block text-body font-semibold", g.done ? "text-slate-500 line-through" : "text-slate-50")}>{g.label}</span>
+                {!g.done && <span className="block text-small text-slate-400">{g.detail}</span>}
+              </span>
+            </>
+          );
+          const cls = "tap flex items-center gap-3 rounded-control py-1.5";
+          if (g.done) return <li key={g.label} className={cls}>{row}</li>;
+          return (
+            <li key={g.label}>
+              {g.external ? (
+                <a href={g.href} className={cn(cls, "hover:bg-slate-800/40")}>{row}</a>
+              ) : (
+                <Link href={g.href} className={cn(cls, "hover:bg-slate-800/40")}>{row}</Link>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
+  );
+
   const nextStepCard = () => (
     <Card className="relative z-(--z-mid)">
       <Eyebrow>Your next step</Eyebrow>
@@ -270,11 +317,12 @@ export default async function DashboardPage() {
         <CardDeck
           className="md:hidden"
           label="Your home cards"
-          labels={["Finger practice", "Next class", "Your next step", "This week", "Progress", "Badges"]}
+          labels={[...(showGettingStarted ? ["Get started"] : []), "Your next step", "Finger practice", "Next class", "This week", "Progress", "Badges"]}
         >
+          {showGettingStarted && gettingStartedCard()}
+          {nextStepCard()}
           {practiceCard()}
           {nextClassCard()}
-          {nextStepCard()}
           {weekCard()}
           {progressCard()}
           {badgesCard()}
@@ -285,9 +333,10 @@ export default async function DashboardPage() {
             the week and progress cards take the space it used to leave empty,
             so there is no side column and the scales get the full width. ---- */}
         <div className="hidden gap-3 md:grid md:grid-cols-2 lg:grid-cols-4 [&>*>*]:h-full">
+          {showGettingStarted && <div className="md:col-span-2 lg:col-span-4">{gettingStartedCard()}</div>}
+          <div className="md:col-span-2 lg:col-span-4">{nextStepCard()}</div>
           <div className="lg:col-span-2">{practiceCard()}</div>
           <div className="lg:col-span-2">{nextClassCard()}</div>
-          <div className="md:col-span-2 lg:col-span-2">{nextStepCard()}</div>
           <div>{weekCard()}</div>
           <div>{progressCard()}</div>
         </div>

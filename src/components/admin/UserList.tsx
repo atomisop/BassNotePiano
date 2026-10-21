@@ -7,6 +7,7 @@ import { ChevronRight } from "lucide-react";
 import { AdminListSearch } from "@/components/admin/AdminListSearch";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
 
 export interface UserListRow {
   id: string;
@@ -39,6 +40,15 @@ export function UserList({
   const [query, setQuery] = useState(initialQuery);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const pickedList = [...picked].filter((id) => rows.some((r) => r.id === id));
+  const toggle = (id: string, on: boolean) =>
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
 
   function handleSearchChange(value: string) {
     setQuery(value);
@@ -67,12 +77,36 @@ export function UserList({
 
       {error && <p className="mb-3 text-small text-red-400">{error}</p>}
 
+      <BulkBar
+        ids={pickedList}
+        onClear={() => setPicked(new Set())}
+        onDone={(ok) => {
+          setPicked((prev) => new Set([...prev].filter((id) => !ok.includes(id))));
+          router.refresh();
+        }}
+        actions={[
+          ...(pickedList.length > 0 && pickedList.every((id) => rows.find((r) => r.id === id)?.readyScale)
+            ? [{ label: "Approve next scale", question: `Release the next scale for ${pickedList.length} student${pickedList.length === 1 ? "" : "s"}? Each one is told right away.`, confirmLabel: "Yes, approve", run: (id: string) => onApproveNext(id, false) }]
+            : []),
+        ]}
+        extra={
+          <button
+            type="button"
+            className={buttonVariants({ variant: "secondary", size: "sm" })}
+            onClick={() => void navigator.clipboard?.writeText(pickedList.map((id) => rows.find((r) => r.id === id)?.email).filter(Boolean).join(", "))}
+          >
+            Copy emails
+          </button>
+        }
+      />
+
       {rows.length === 0 ? (
         <p className="glass-surface p-8 text-center text-small text-slate-500">No one found.</p>
       ) : (
         <ul className="glass-surface divide-y divide-slate-50/10 px-4">
           {rows.map((row) => (
             <li key={row.id} className="flex items-center gap-2">
+              <RowCheck checked={picked.has(row.id)} onChange={(on) => toggle(row.id, on)} label={`Select ${row.name ?? row.email}`} />
               <Link href={`/admin/users/${row.id}`} className="tap flex min-w-0 flex-1 items-center gap-3 py-3.5">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-body text-slate-50">{row.name ?? row.email}</p>
