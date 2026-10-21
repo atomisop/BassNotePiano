@@ -137,28 +137,46 @@ function PricesCard({ initial, onSave }: { initial: PricingFormValues; onSave: P
       </div>
 
       {preview && (
-        <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[22rem] text-left text-small">
-            <caption className="mb-2 text-left text-small font-medium uppercase tracking-wide text-slate-500">What people will see</caption>
-            <thead>
-              <tr className="text-slate-500">
-                <th scope="col" className="py-1 pr-3 font-medium">Plan</th>
-                <th scope="col" className="py-1 pr-3 font-medium">Per month</th>
-                <th scope="col" className="py-1 pr-3 font-medium">Family, per person</th>
-                <th scope="col" className="py-1 font-medium">Whole term</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50/10 text-slate-200">
-              {preview.map((r) => (
-                <tr key={r.term}>
-                  <th scope="row" className="py-2 pr-3 font-medium">{r.label}</th>
-                  <td className="py-2 pr-3 tabular-nums">{usd(r.monthly)}</td>
-                  <td className="py-2 pr-3 tabular-nums">{usd(r.family)}</td>
-                  <td className="py-2 tabular-nums">{r.months === 1 ? "Month to month" : usd(r.monthly * r.months)}</td>
+        <div className="mt-5">
+          <p className="mb-2 text-small font-medium uppercase tracking-wide text-slate-500">What people will see</p>
+          {/* Phones: one small card per plan. From sm up: the table. */}
+          <ul className="grid gap-2 sm:hidden">
+            {preview.map((r) => (
+              <li key={r.term} className="rounded-xl bg-neu-base p-3 shadow-raised-low">
+                <p className="text-small font-medium text-slate-100">{r.label}</p>
+                <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5 text-small text-slate-300">
+                  <dt className="text-slate-500">Per month</dt>
+                  <dd className="tabular-nums">{usd(r.monthly)}</dd>
+                  <dt className="text-slate-500">Family, per person</dt>
+                  <dd className="tabular-nums">{usd(r.family)}</dd>
+                  <dt className="text-slate-500">Whole term</dt>
+                  <dd className="tabular-nums">{r.months === 1 ? "Month to month" : usd(r.monthly * r.months)}</dd>
+                </dl>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto sm:block" role="region" aria-label="What people will see" tabIndex={0}>
+            <table className="w-full min-w-[22rem] text-left text-small">
+              <thead>
+                <tr className="text-slate-500">
+                  <th scope="col" className="py-1 pr-3 font-medium">Plan</th>
+                  <th scope="col" className="py-1 pr-3 font-medium">Per month</th>
+                  <th scope="col" className="py-1 pr-3 font-medium">Family, per person</th>
+                  <th scope="col" className="py-1 font-medium">Whole term</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-50/10 text-slate-200">
+                {preview.map((r) => (
+                  <tr key={r.term}>
+                    <th scope="row" className="py-2 pr-3 font-medium">{r.label}</th>
+                    <td className="py-2 pr-3 tabular-nums">{usd(r.monthly)}</td>
+                    <td className="py-2 pr-3 tabular-nums">{usd(r.family)}</td>
+                    <td className="py-2 tabular-nums">{r.months === 1 ? "Month to month" : usd(r.monthly * r.months)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
