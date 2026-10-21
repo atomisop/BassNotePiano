@@ -11,7 +11,7 @@ import { getCurriculumEntitlement } from "@/lib/entitlement";
 import { isFullAccess } from "@/lib/entitlementRules";
 import { tokenWhenEntitlementsUnknown } from "@/lib/tokenFallback";
 import { consumeSecondStep } from "@/lib/adminTwoStep";
-import { recordSignInDevice } from "@/lib/deviceAlerts";
+import { placeFromHeaders, recordSignInDevice } from "@/lib/deviceAlerts";
 import { maybeAlertFailedLogins } from "@/lib/loginAlerts";
 
 type Entitlements = {
@@ -229,7 +229,7 @@ export const authOptions: NextAuthOptions = {
         if (user.bannedAt) throw new Error(BANNED_ERROR_CODE);
 
         // A sign-in from a browser or device this account has not used before is emailed to its owner.
-        await recordSignInDevice(user, req?.headers?.["user-agent"]);
+        await recordSignInDevice(user, req?.headers?.["user-agent"], placeFromHeaders(req?.headers));
 
         return {
           id: user.id,
