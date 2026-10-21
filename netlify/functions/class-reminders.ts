@@ -23,7 +23,7 @@ export const handler = schedule("*/15 * * * *", async () =>
         reminder24At: null,
         scheduledAt: { gt: new Date(now.getTime() + 2 * HOUR_MS), lte: new Date(now.getTime() + 24 * HOUR_MS) },
       },
-      select: { id: true, studentId: true, scheduledAt: true, createdAt: true },
+      select: { id: true, studentId: true, scheduledAt: true, createdAt: true, inPerson: true },
     });
 
     for (const booking of dayBefore) {
@@ -34,9 +34,9 @@ export const handler = schedule("*/15 * * * *", async () =>
         userId: booking.studentId,
         type: "CLASS_REMINDER",
         title: "Your class is tomorrow",
-        body: `${formatEtDateTime(booking.scheduledAt)}. We meet live on Discord.`,
+        body: booking.inPerson ? `${formatEtDateTime(booking.scheduledAt)}. This class is in person.` : `${formatEtDateTime(booking.scheduledAt)}. We meet live on Discord.`,
         emailCategory: "reminders",
-        cta: { label: "Open Discord", url: DISCORD_INVITE_URL },
+        ...(booking.inPerson ? {} : { cta: { label: "Open Discord", url: DISCORD_INVITE_URL } }),
       }).catch((err) => console.error("Class reminder (day before) failed (non-blocking):", err));
     }
 
@@ -46,7 +46,7 @@ export const handler = schedule("*/15 * * * *", async () =>
         reminder1hAt: null,
         scheduledAt: { gt: now, lte: new Date(now.getTime() + HOUR_MS) },
       },
-      select: { id: true, studentId: true, scheduledAt: true, discordChannelId: true },
+      select: { id: true, studentId: true, scheduledAt: true, discordChannelId: true, inPerson: true },
     });
 
     for (const booking of soon) {
@@ -57,9 +57,9 @@ export const handler = schedule("*/15 * * * *", async () =>
         userId: booking.studentId,
         type: "CLASS_REMINDER",
         title: "Your class starts soon",
-        body: `Starting in about ${minutes} minute${minutes === 1 ? "" : "s"}. Join your teacher on Discord.`,
+        body: booking.inPerson ? `Starting in about ${minutes} minute${minutes === 1 ? "" : "s"}. This class is in person.` : `Starting in about ${minutes} minute${minutes === 1 ? "" : "s"}. Join your teacher on Discord.`,
         emailCategory: "reminders",
-        cta: { label: "Join on Discord", url: booking.discordChannelId ? discordChannelUrl(booking.discordChannelId) : DISCORD_INVITE_URL },
+        ...(booking.inPerson ? {} : { cta: { label: "Join on Discord", url: booking.discordChannelId ? discordChannelUrl(booking.discordChannelId) : DISCORD_INVITE_URL } }),
       }).catch((err) => console.error("Class reminder (starting soon) failed (non-blocking):", err));
     }
 

@@ -83,7 +83,7 @@ export default async function DashboardPage() {
     prisma.classBooking.findFirst({
       where: { studentId: session.user.id, status: "SCHEDULED", scheduledAt: { gt: new Date(Date.now() - 60 * 60_000) } },
       orderBy: { scheduledAt: "asc" },
-      select: { scheduledAt: true, creditsSpent: true, discordChannelId: true },
+      select: { scheduledAt: true, creditsSpent: true, discordChannelId: true, inPerson: true },
     }),
     getCurriculumEntitlement(session.user.id),
     // An application from this account, or from this email before the account existed.
@@ -137,7 +137,7 @@ export default async function DashboardPage() {
 
   const nextClassCard = () => {
     const minutesAway = nextClass ? (nextClass.scheduledAt.getTime() - Date.now()) / 60_000 : 0;
-    const canJoin = nextClass !== null && minutesAway <= 30;
+    const canJoin = nextClass !== null && !nextClass.inPerson && minutesAway <= 30;
     const length = nextClass ? Math.round((nextClass.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES) : CLASS_MINUTES;
     return (
       <Card className="relative z-(--z-mid)">
@@ -145,7 +145,7 @@ export default async function DashboardPage() {
         {nextClass ? (
           <>
             <p className="mt-2 text-body font-semibold text-slate-50">{formatEtDateTime(nextClass.scheduledAt)}</p>
-            <p className="mt-1 text-small text-slate-400">{untilLabel(nextClass.scheduledAt)}</p>
+            <p className="mt-1 text-small text-slate-400">{untilLabel(nextClass.scheduledAt)}{nextClass.inPerson ? " · In person, no Discord call" : ""}</p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               {canJoin && (
                 <DiscordLink

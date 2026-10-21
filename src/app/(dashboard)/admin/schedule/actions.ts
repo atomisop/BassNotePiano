@@ -11,7 +11,7 @@ import { discordChannelUrl } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { getNumberSetting } from "@/lib/siteSettings";
 import { adminBookClass, rescheduleClassBooking, ClassBookingError } from "@/lib/classSchedule";
-import { markAttendance, undoAttendance, adminCancelClassBooking, getPendingAttendanceBookings, getBookingFeed, type PendingAttendanceRow, type BookingFeedRow } from "@/lib/classScheduleAdmin";
+import { markAttendance, undoAttendance, adminCancelClassBooking, setClassInPerson, getPendingAttendanceBookings, getBookingFeed, type PendingAttendanceRow, type BookingFeedRow } from "@/lib/classScheduleAdmin";
 import { createClassSchedule, updateClassSchedule, setClassScheduleActive, ClassScheduleError, type ClassScheduleInput } from "@/lib/classScheduleManage";
 import { searchStudentsForBooking, type BookableStudent } from "@/lib/admin";
 
@@ -103,6 +103,18 @@ export async function adminMoveBookingAction(bookingId: string, scheduleId: stri
   try {
     const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId }, select: { studentId: true } });
     await rescheduleClassBooking(booking.studentId, bookingId, scheduleId, occurrenceDateMs, chunkIndex, undefined, { byAdmin: true });
+    revalidatePath("/", "layout");
+    return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+  }
+}
+
+/** The Online / In person switch on the attendance list. In person means no Discord call for that class. */
+export async function setClassInPersonAction(bookingId: string, inPerson: boolean) {
+  await requireAdmin();
+  try {
+    await setClassInPerson(bookingId, inPerson);
     revalidatePath("/", "layout");
     return { ok: true as const };
   } catch (err) {

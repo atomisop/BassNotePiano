@@ -59,6 +59,8 @@ interface BookingRow {
   reserved?: boolean;
   /** The private Discord call for this class, once it exists. */
   discordUrl?: string | null;
+  /** Taught in person: there is no Discord call. */
+  inPerson?: boolean;
 }
 
 type BookingMode = "SOLO" | "FAMILY";
@@ -233,7 +235,8 @@ function BookingCard({
 
       {scheduled && hoursUntil > -1 && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          {hoursUntil <= 0.5 && (
+          {b.inPerson && <span className="rounded-full bg-neu-base px-2.5 py-1 text-small font-medium text-slate-200 shadow-raised-low">In person</span>}
+          {hoursUntil <= 0.5 && !b.inPerson && (
             <DiscordLink
               href={b.discordUrl ?? DISCORD_INVITE_URL}
               target="_blank"
