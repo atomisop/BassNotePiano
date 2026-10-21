@@ -528,3 +528,8 @@ When the invited person's FIRST plan payment is approved (`approveZellePayment`,
 claims the reward once (atomic `rewardedAt`) and gives BOTH people a 10% `AccountDiscount` for 3 months (`referralRules.ts`). The discount rides the personal-discount tool: `expiresAt` marks one that ends by itself, the owner's own
 discounts have none, and setting a discount by hand clears any expiry. A reward never lowers a bigger or longer discount (`rewardWouldHelp`). The daily `credit-expiry` job runs `expireTimedDiscounts`, which deletes due discounts and
 puts the running plan back to its list price. Audited as `referral.reward`.
+
+## Teaching day screen (added 2026-10-21)
+
+Admin > Teaching > Today (`/admin/today`, `src/lib/teachingToday.ts`): today's classes (Eastern day) grouped by start time, one row per student with the facts a teacher wants before class: first class flag, in person flag,
+plan, current open scale, days practiced out of 7, credits left, Discord linked, overdue bill, and the newest teacher note. Read only; the sidebar "Today" card for admins opens it. Marking attendance stays on Schedule > Attendance.

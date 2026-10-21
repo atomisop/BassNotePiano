@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { ShieldCheck,
+import { Sun, ShieldCheck,
   BadgePercent,
   History,
   Briefcase,
@@ -69,6 +69,7 @@ const NAV_GROUPS: AdminNavGroup[] = [
   {
     label: "Teaching",
     leaves: [
+      { href: "/admin/today", label: "Today", icon: Sun },
       { href: "/admin/schedule", label: "Schedule", icon: CalendarDays },
       { href: "/admin/lessons", label: "Lessons", icon: BookOpen },
       { href: "/admin/discord", label: "Discord", icon: Headphones },
