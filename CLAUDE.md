@@ -540,3 +540,9 @@ On Billing > Plans, under "Your weekly time", a collapsed "Want a time that is t
 `slotWaitlist.ts`). The hourly `slot-waitlist` job (`netlify/functions/slot-waitlist.ts`, in `JOB_MAX_SILENCE_HOURS`) runs `notifyOpenedSlots`: for each waitlisted time that is open again it tells ONLY the first person in line
 (`SLOT_WAITLIST_OPENED`, class-updates switch, so it also pushes), then waits 24 hours before offering it to the next; a time that is taken again resets the offer; entries older than 90 days, for a retired schedule, or for someone who now holds
 that very time are cleared. Nothing is reserved for the person told: the time still goes to whoever starts a plan first.
+
+## Tests that guard money and access (added 2026-10-21)
+
+`tests/db/` now also covers `access.ts` (`accessGate`), `scaleApproval.ts`, `creditLedger.ts`, `creditAdjustments.ts` and `attendanceAutoCharge.ts`: who can open which scale, the teacher-approved drip and its two rules, FIFO draw-down and the
+once-only expiry (floored at the real balance, never touching credits a booked class holds), admin credit changes that can never go below zero, and the unmarked-class charge happening once. Settings in tests go through
+`saveSetting` / `resetSetting` (the raw table is cached for 10 seconds).
