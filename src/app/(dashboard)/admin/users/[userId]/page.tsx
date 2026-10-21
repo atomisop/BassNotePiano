@@ -60,7 +60,10 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
           changeLog={
             changes.length > 0 ? (
               <section className="glass-surface p-5">
-                <h2 className="text-body font-semibold text-slate-50">Changes made on this account</h2>
+                <div className="flex items-baseline justify-between gap-3">
+                  <h2 className="text-body font-semibold text-slate-50">Changes made on this account</h2>
+                  <Link href={`/admin/activity?user=${params.userId}&days=all`} className="text-small text-slate-400 underline underline-offset-4 hover:text-slate-200">See all</Link>
+                </div>
                 <ul className="mt-3 divide-y divide-slate-50/10">
                   {changes.map((c) => (
                     <li key={c.id} className="py-2.5 text-small">
