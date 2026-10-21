@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { IosBanner } from "@/components/ui/IosBanner";
 import { useMeStatus } from "@/components/layout/MeStatusProvider";
 
@@ -17,6 +18,18 @@ export interface TopBannersProps {
   discord: { seconds: number; repeatMinutes: number } | null;
   /** Ask to practice (shown only while today's practice is not done). Null when switched off. */
   practice: { seconds: number; repeatMinutes: number } | null;
+}
+
+/**
+ * A banner never asks for something the screen is already showing. Phone: the Settings page it links to. Discord: the Lessons
+ * page's own connect card, and any desktop-width screen, where the sidebar carries the same invitation all the time. Practice:
+ * the practice page itself. The owner's timing settings are untouched; a banner held back here simply comes back elsewhere.
+ */
+function alreadyShown(which: Which, pathname: string): boolean {
+  const on = (p: string) => pathname === p || pathname.startsWith(`${p}/`);
+  if (which === "phone") return on("/account");
+  if (which === "practice") return on("/practice");
+  return on("/lessons") || (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches);
 }
 
 function today(): string {
@@ -48,10 +61,11 @@ function write(key: string, value: string) {
  */
 export function TopBanners({ phone, discord, practice }: TopBannersProps) {
   const status = useMeStatus();
+  const pathname = usePathname();
   const [active, setActive] = useState<Which | null>(null);
   const activeRef = useRef<Which | null>(null);
-  const latest = useRef({ phone, discord, practice, status });
-  latest.current = { phone, discord, practice, status };
+  const latest = useRef({ phone, discord, practice, status, pathname });
+  latest.current = { phone, discord, practice, status, pathname };
 
   function show(which: Which) {
     activeRef.current = which;
@@ -61,13 +75,13 @@ export function TopBanners({ phone, discord, practice }: TopBannersProps) {
   useEffect(() => {
     function check() {
       if (activeRef.current || document.visibilityState !== "visible") return;
-      const { phone: p, discord: d, practice: r, status: s } = latest.current;
-      if (p && read(PHONE_DAY_KEY) !== today()) {
+      const { phone: p, discord: d, practice: r, status: s, pathname: path } = latest.current;
+      if (p && !alreadyShown("phone", path) && read(PHONE_DAY_KEY) !== today()) {
         write(PHONE_DAY_KEY, today());
         return show("phone");
       }
-      if (d && s && !s.discordConnected && Date.now() >= Number(read(DISCORD_NEXT_KEY) ?? 0)) return show("discord");
-      if (r && s && !s.practicedToday && Date.now() >= Number(read(PRACTICE_NEXT_KEY) ?? 0)) show("practice");
+      if (d && s && !s.discordConnected && !alreadyShown("discord", path) && Date.now() >= Number(read(DISCORD_NEXT_KEY) ?? 0)) return show("discord");
+      if (r && s && !s.practicedToday && !alreadyShown("practice", path) && Date.now() >= Number(read(PRACTICE_NEXT_KEY) ?? 0)) show("practice");
     }
     // A beat after the page settles, so a banner does not land on top of the page loading in.
     const first = setTimeout(check, 1500);
@@ -86,6 +100,14 @@ export function TopBanners({ phone, discord, practice }: TopBannersProps) {
       setActive(null);
     }
   }, [status, active]);
+
+  // Walking onto the screen a banner is about takes the banner down (it is not counted as dismissed, so it is not delayed).
+  useEffect(() => {
+    if (active && alreadyShown(active, pathname)) {
+      activeRef.current = null;
+      setActive(null);
+    }
+  }, [pathname, active]);
 
   function closed(which: Which) {
     if (which === "discord" && discord) write(DISCORD_NEXT_KEY, String(Date.now() + discord.repeatMinutes * 60_000));
