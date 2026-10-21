@@ -6,7 +6,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/Dialog";
 
 interface RosterFocus {
   scaleOrder: number | null;
@@ -62,10 +63,21 @@ interface OccurrenceGroup {
   roster: RosterEntry[];
 }
 
+export interface MoveSlot {
+  scheduleId: string;
+  occurrenceDateMs: number;
+  chunkIndex: number;
+  label: string | null;
+  scheduledAt: string;
+}
+
 export interface AdminAttendanceRosterProps {
   occurrences: OccurrenceGroup[];
   onMarkAttendance: (bookingId: string, attendance: "PRESENT" | "NO_SHOW") => Promise<void>;
   onCancelBooking: (bookingId: string, reason?: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+  /** Open times a class can be moved to. With onMoveBooking, each upcoming booking gets a Move button. */
+  openSlots?: MoveSlot[];
+  onMoveBooking?: (bookingId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number) => Promise<{ ok: true } | { ok: false; error: string }>;
   onUndoAttendance: (bookingId: string) => Promise<{ ok: true } | { ok: false; error: string }>;
 }
 
@@ -73,10 +85,15 @@ function Avatar({ image, name }: { image: string | null; name: string }) {
   return <UiAvatar image={image} label={name} size="sm" className="h-9 w-9" />;
 }
 
-export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelBooking, onUndoAttendance }: AdminAttendanceRosterProps) {
+export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelBooking, openSlots = [], onMoveBooking, onUndoAttendance }: AdminAttendanceRosterProps) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
+  // The class being moved, and the open time picked for it.
+  const [moving, setMoving] = useState<{ entry: RosterEntry; from: string } | null>(null);
+  const [moveTo, setMoveTo] = useState<MoveSlot | null>(null);
+  const [moveBusy, setMoveBusy] = useState(false);
+  const [moveError, setMoveError] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   // Which already-marked booking is showing its edit controls (re-pick
@@ -297,6 +314,20 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                     Upcoming
                                   </span>
                                 )}
+                                {canCancel && onMoveBooking && !hasHappened && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setMoveError(null);
+                                      setMoveTo(null);
+                                      setMoving({ entry, from: occ.scheduledAt });
+                                    }}
+                                    disabled={busyId === entry.bookingId}
+                                    className={buttonVariants({ variant: "secondary", size: "sm" })}
+                                  >
+                                    Move
+                                  </button>
+                                )}
                                 {canCancel && (
                                   <button
                                     type="button"
@@ -364,6 +395,64 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
       })}
 
       {error && <p className="text-small text-red-400">{error}</p>}
+
+      <Dialog
+        open={moving !== null}
+        onOpenChange={(open) => {
+          if (!open && !moveBusy) setMoving(null);
+        }}
+        title={moving ? `Move ${moving.entry.studentName ?? moving.entry.studentEmail}'s class` : "Move class"}
+        description={moving ? `Now: ${formatDateTime(moving.from)}. Pick the open time to move it to. The old time is freed and the new one booked together, or nothing changes.` : undefined}
+        footer={
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button type="button" variant="secondary" disabled={moveBusy} onClick={() => setMoving(null)}>
+              Never mind
+            </Button>
+            <Button
+              type="button"
+              disabled={!moveTo || moveBusy}
+              loading={moveBusy}
+              onClick={async () => {
+                if (!moving || !moveTo || !onMoveBooking) return;
+                setMoveBusy(true);
+                setMoveError(null);
+                const result = await onMoveBooking(moving.entry.bookingId, moveTo.scheduleId, moveTo.occurrenceDateMs, moveTo.chunkIndex);
+                setMoveBusy(false);
+                if (!result.ok) return setMoveError(result.error);
+                setMoving(null);
+                router.refresh();
+              }}
+            >
+              {moveTo ? `Move to ${formatDateTime(moveTo.scheduledAt)}` : "Pick a time"}
+            </Button>
+          </div>
+        }
+      >
+        {openSlots.length === 0 ? (
+          <p className="text-small text-slate-500">No open times right now.</p>
+        ) : (
+          <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+            {openSlots.map((slot) => {
+              const key = `${slot.scheduleId}:${slot.occurrenceDateMs}:${slot.chunkIndex}`;
+              const active = moveTo ? `${moveTo.scheduleId}:${moveTo.occurrenceDateMs}:${moveTo.chunkIndex}` === key : false;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setMoveTo(slot)}
+                  className={`flex w-full items-center justify-between rounded-lg border px-3.5 py-2.5 text-left text-small transition ${
+                    active ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-transparent bg-neu-base shadow-raised-low"
+                  }`}
+                >
+                  <span className={active ? "text-[rgb(var(--c-s-50))]" : "text-slate-100"}>{formatDateTime(slot.scheduledAt)}</span>
+                  <span className="text-slate-500">{slot.label ?? "Class"}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {moveError && <p role="alert" className="mt-3 text-small text-red-400">{moveError}</p>}
+      </Dialog>
     </div>
   );
 }
