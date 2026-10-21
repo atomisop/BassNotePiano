@@ -19,7 +19,7 @@ import { consumeRateLimit, RateLimitError as RateLimitErr } from "@/lib/rateLimi
 import { TwoStepError, beginSetup, confirmSetup, disableTwoStep, regenerateBackupCodes } from "@/lib/adminTwoStep";
 import { sendPasswordChangedEmail } from "@/lib/email";
 import { FULL_NAME_MESSAGE, hasFirstAndLastName } from "@/lib/studentName";
-import { changePaymentPlanTerm, cancelPaymentPlanBySelf, PaymentPlanError } from "@/lib/paymentPlans";
+import { changePaymentPlanTerm, cancelPaymentPlanBySelf, pausePaymentPlan, PaymentPlanError } from "@/lib/paymentPlans";
 
 
 /** Every action here operates on the signed-in user only, never on an email passed by the client. */
@@ -410,6 +410,18 @@ export async function changePaymentPlanTermAction(newTerm: PaymentPlanTerm) {
     return { ok: true as const, error: null };
   } catch (err) {
     if (err instanceof PaymentPlanError) return { ok: false as const, error: err.message };
+    throw err;
+  }
+}
+
+export async function pausePaymentPlanAction(weeks: number) {
+  const { id } = await requireSession();
+  try {
+    const { resumesOn } = await pausePaymentPlan(id, Number(weeks));
+    revalidatePath("/", "layout");
+    return { ok: true as const, error: null, resumesOn: resumesOn.toISOString() };
+  } catch (err) {
+    if (err instanceof PaymentPlanError) return { ok: false as const, error: err.message, resumesOn: null };
     throw err;
   }
 }

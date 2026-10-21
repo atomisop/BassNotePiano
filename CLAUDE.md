@@ -461,3 +461,11 @@ sessions are JWT), `LoginEvent` and `LessonBooking` (historical) are not read or
 written by any code. They stay in the schema on purpose: dropping a table is
 irreversible, so do it only in its own migration, after confirming with the owner
 that nothing in production needs the rows.
+
+## Pausing a plan (added 2026-10-21)
+
+Settings > "Pause your plan" (`PausePlanCard`, `pausePaymentPlan` in `paymentPlans.ts`, pure rules in `planPause.ts`): a running, paid-up, non-family plan can pause 1 to 4
+weeks, once per 90 days (`PaymentPlan.pausedAt` / `pauseUntil` keep the last one). The weekly slot stays reserved. In one transaction the next due date and the expiry of the
+plan's unused `CreditGrant`s move out by the same whole weeks (the one place a grant's `expiresAt` is ever changed; its "expiring soon" flag resets), and classes inside the pause
+are canceled with `canceledReason = "Plan paused"`, which `createReservedBookingIfAbsent` already reads as "do not book again", so both booking jobs skip them with no extra code.
+Refused while a payment is under review or the bill is already due. The student and the owner are told, and `plan.pause` is audited (add its label to `auditView.ts` once the activity log is on main).

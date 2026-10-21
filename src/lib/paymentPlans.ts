@@ -20,6 +20,8 @@ import {
   OCCURRENCES_PER_SLOT, CANCELLATION_CUTOFF_HOURS } from "@/lib/classSchedule";
 import { createNotification } from "@/lib/notifications";
 import { grantCredits } from "@/lib/creditLedger";
+import { PAUSE_REASON, pauseBlockedReason, pauseSpanMs } from "@/lib/planPause";
+import { logAudit } from "@/lib/audit";
 
 export class PaymentPlanError extends Error {}
 
@@ -747,6 +749,59 @@ export async function cancelPaymentPlanBySelf(
       }),
     ),
   );
+}
+
+/**
+ * Pauses a running plan for 1 to 4 weeks, starting now. The weekly slot stays theirs; the next payment date and the
+ * expiry of this plan's unused credits both move out by the same span, so the pause costs them nothing. Classes
+ * inside the pause are canceled with a reason, which the booking jobs read as "do not book this again".
+ */
+export async function pausePaymentPlan(userId: string, weeks: number): Promise<{ resumesOn: Date }> {
+  const now = new Date();
+  const plan = await prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
+  if (!plan) throw new PaymentPlanError("You don't have an active payment plan.");
+  const blocked = pauseBlockedReason(plan, weeks, now);
+  if (blocked) throw new PaymentPlanError(blocked);
+  await assertNoOpenInstallment(plan.id);
+
+  const span = pauseSpanMs(weeks);
+  const resumesOn = new Date(now.getTime() + span);
+  await prisma.$transaction(async (tx) => {
+    // Re-check inside the transaction: a double click must not push the date twice.
+    const claimed = await tx.paymentPlan.updateMany({
+      where: { id: plan.id, status: "ACTIVE", nextDueDate: plan.nextDueDate, pausedAt: plan.pausedAt },
+      data: { pausedAt: now, pauseUntil: resumesOn, nextDueDate: new Date(plan.nextDueDate.getTime() + span) },
+    });
+    if (claimed.count !== 1) throw new PaymentPlanError("Your plan just changed. Refresh and try again.");
+    const grants = await tx.creditGrant.findMany({
+      where: { paymentPlanId: plan.id, expiredAt: null, creditsRemaining: { gt: 0 }, expiresAt: { gt: now } },
+      select: { id: true, expiresAt: true },
+    });
+    for (const g of grants) {
+      await tx.creditGrant.update({ where: { id: g.id }, data: { expiresAt: new Date(g.expiresAt!.getTime() + span), expiringSoonNotifiedAt: null } });
+    }
+    await tx.classBooking.updateMany({
+      where: { reservedByPlanId: plan.id, status: "SCHEDULED", scheduledAt: { gt: now, lt: resumesOn } },
+      data: { status: "CANCELED", refunded: true, canceledReason: PAUSE_REASON },
+    });
+  });
+
+  await logAudit({ actorId: userId, action: "plan.pause", targetType: "User", targetId: userId, detail: `Paused for ${weeks} week${weeks === 1 ? "" : "s"}, back on ${resumesOn.toISOString().slice(0, 10)}` }).catch(() => undefined);
+  await createNotification({
+    userId,
+    type: "PAYMENT_PLAN_CANCELED",
+    title: "Plan paused",
+    body: `Your plan is paused for ${weeks} week${weeks === 1 ? "" : "s"}. Your weekly time is still yours and classes start again on ${resumesOn.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })}. Your next payment moved back by the same time.`,
+    emailCategory: "payments",
+  }).catch((err) => console.error("Pause notice failed (non-blocking):", err));
+  await notifyAdmins("PLAN_CANCEL_FEEDBACK", {
+    type: "ADMIN_ALERT",
+    title: "A student paused their plan",
+    body: `Paused for ${weeks} week${weeks === 1 ? "" : "s"}. Their slot is held and the next payment moved back.`,
+    emailCategory: "social",
+    cta: { label: "See the plans", path: "/admin/payment-plans" },
+  }).catch((err) => console.error("Pause admin alert failed (non-blocking):", err));
+  return { resumesOn };
 }
 
 /** Days a plan may sit past due before the system cancels it. */
