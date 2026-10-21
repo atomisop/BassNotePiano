@@ -220,7 +220,7 @@ function slotFor(card: SidebarCard): Slot {
       return {
         id: "todayClasses",
         node: (now) => (
-          <Shell href="/admin/schedule" icon={CalendarDays} label="Today" cta="Open schedule">
+          <Shell href="/admin/today" icon={CalendarDays} label="Today" cta="Open today">
             <Big>
               {card.count} {card.count === 1 ? "class" : "classes"} today
             </Big>
