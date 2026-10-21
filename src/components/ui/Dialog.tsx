@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { Cross2Icon } from "@radix-ui/react-icons";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -60,7 +60,7 @@ export function Dialog({
               aria-label="Close"
               className="-mr-2 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-400 transition-shadow hover:text-slate-50 hover:shadow-raised-low active:shadow-pressed-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <Cross2Icon className="h-4 w-4" />
+              <X className="h-4 w-4" aria-hidden />
             </DialogPrimitive.Close>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 text-body text-slate-200">{children}</div>

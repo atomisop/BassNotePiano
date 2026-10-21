@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { CheckIcon, Cross2Icon, ExclamationTriangleIcon, LockClosedIcon } from "@radix-ui/react-icons";
+import { Check, Lock, TriangleAlert, X } from "lucide-react";
 
 /**
  * Status chips. Status is information, not an action, so none of these use
@@ -16,10 +16,10 @@ type Tone = "neutral" | "success" | "warning" | "danger" | "locked";
 
 const ICONS: Record<Tone, ReactNode> = {
   neutral: null,
-  success: <CheckIcon aria-hidden className="h-3.5 w-3.5" />,
-  warning: <ExclamationTriangleIcon aria-hidden className="h-3.5 w-3.5" />,
-  danger: <Cross2Icon aria-hidden className="h-3.5 w-3.5" />,
-  locked: <LockClosedIcon aria-hidden className="h-3.5 w-3.5" />,
+  success: <Check aria-hidden className="h-3.5 w-3.5" />,
+  warning: <TriangleAlert aria-hidden className="h-3.5 w-3.5" />,
+  danger: <X aria-hidden className="h-3.5 w-3.5" />,
+  locked: <Lock aria-hidden className="h-3.5 w-3.5" />,
 };
 
 const TONES: Record<Tone, string> = {

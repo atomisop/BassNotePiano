@@ -3,7 +3,7 @@
 // From 21st.dev (serafimcloud/send-button). Only the colors are mapped to this
 // app's tokens, and it now renders inside a real <button> at the call site.
 import * as React from "react";
-import { IconArrowUp, IconPlayerStopFilled } from "@tabler/icons-react";
+import { ArrowUp, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type SendButtonProps = {
@@ -17,7 +17,7 @@ export function SendButton({ state }: SendButtonProps) {
   if (isStreaming) {
     return (
       <div className="flex size-9 items-center justify-center rounded-full bg-slate-100 shadow-raised-low">
-        <IconPlayerStopFilled className="size-5 text-slate-950" />
+        <Square className="size-4 fill-current text-slate-950" aria-hidden />
       </div>
     );
   }
@@ -29,7 +29,7 @@ export function SendButton({ state }: SendButtonProps) {
         isTyping ? "bg-signal shadow-raised-low" : "bg-neu-base shadow-pressed-low",
       )}
     >
-      <IconArrowUp className={cn("size-5", isTyping ? "text-slate-950" : "text-slate-500")} />
+      <ArrowUp className={cn("size-5", isTyping ? "text-slate-950" : "text-slate-500")} aria-hidden />
     </div>
   );
 }
