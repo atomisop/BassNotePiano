@@ -42,6 +42,9 @@ export async function POST(request: Request) {
   if (fromPage) {
     const done = new URL("/unsubscribe", request.url);
     done.searchParams.set("done", category);
+    // Carried so the confirmation page can prove the link and point at THIS person's settings (not whoever is signed in).
+    done.searchParams.set("u", userId);
+    done.searchParams.set("t", token);
     return NextResponse.redirect(done, 303);
   }
   return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
