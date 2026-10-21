@@ -819,6 +819,7 @@ function PasswordSection() {
         </form>
       </SectionCard>
 
+      <ReferralCard />
       <PushCard />
       <CalendarFeedCard />
       <SignedInDevicesCard />
@@ -831,6 +832,50 @@ const DEVICE_ICON = { Phone: Smartphone, Tablet: Tablet, Computer: Laptop } as c
 
 // Every browser and device this account is signed in on: what it is, roughly where, when it signed in, and a green dot while
 // it has a tab open (gray otherwise). No IP addresses anywhere. Refreshes every minute and when other devices are signed out.
+function ReferralCard() {
+  const [data, setData] = useState<{ link: string; joined: number; rewarded: number; percent: number; months: number } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/me/referral", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => alive && setData(d))
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  async function copy() {
+    if (!data) return;
+    try {
+      await navigator.clipboard.writeText(data.link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* the link is shown in full below */
+    }
+  }
+
+  if (!data) return null;
+  return (
+    <SectionCard title="Invite a friend">
+      <p className="text-small text-slate-400">
+        Send your link. When your friend starts a 3 or 6 month plan and their first payment goes through, you both get {data.percent}% off for {data.months} months.
+      </p>
+      <label htmlFor="ref-link" className="sr-only">Your invite link</label>
+      <input id="ref-link" readOnly value={data.link} onFocus={(e) => e.currentTarget.select()} className="mt-3 h-11 w-full rounded-lg bg-neu-base px-3 text-base text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button type="button" onClick={copy} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>{copied ? "Copied" : "Copy link"}</button>
+        <span className="text-small text-slate-400">
+          {data.joined === 0 ? "No one has joined yet." : `${data.joined} joined, ${data.rewarded} earned the discount.`}
+        </span>
+      </div>
+    </SectionCard>
+  );
+}
+
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
   const raw = atob(padded.replace(/-/g, "+").replace(/_/g, "/"));

@@ -520,3 +520,11 @@ only when its `emailCategory` is `reminders` or `classes` and the person's own s
 browser; the push service saying 404/410 deletes the row. The endpoint a browser sends must be on an allow-list of real push hosts (`isAllowedPushEndpoint`), because our server POSTs to it.
 **Needs three env vars to turn on**: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (make a pair with `npx web-push generate-vapid-keys`) and optionally `VAPID_SUBJECT` (`mailto:...`). Without the keys the card is
 hidden and nothing is sent. On iPhone/iPad push only works once the site is on the Home Screen, so the card shows those steps first (the "Add to Home Screen" prompt).
+
+## Referrals (added 2026-10-21)
+
+Settings > "Invite a friend": each account has a `referralCode` (made on first view, `referrals.ts`); `/register?ref=CODE` carries it into sign-up, which records a `Referral` (own, unknown or banned-referrer codes are ignored; one referral per invited person).
+When the invited person's FIRST plan payment is approved (`approveZellePayment`, installment 1) and their plan is a 3 or 6 month term (`isQualifyingReferralTerm`; Monthly earns nothing), `rewardReferralForFirstPayment`
+claims the reward once (atomic `rewardedAt`) and gives BOTH people a 10% `AccountDiscount` for 3 months (`referralRules.ts`). The discount rides the personal-discount tool: `expiresAt` marks one that ends by itself, the owner's own
+discounts have none, and setting a discount by hand clears any expiry. A reward never lowers a bigger or longer discount (`rewardWouldHelp`). The daily `credit-expiry` job runs `expireTimedDiscounts`, which deletes due discounts and
+puts the running plan back to its list price. Audited as `referral.reward`.

@@ -1,4 +1,5 @@
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
+import { rewardReferralForFirstPayment } from "@/lib/referrals";
 import { noticePaymentReceived } from "@/lib/studentNotices";
 import { getAdminRecipients, notifyAdmins } from "@/lib/adminNotifications";
 import { settleWithStoredReceipt } from "@/lib/paymentEmail";
@@ -777,6 +778,8 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
   // (and into the admin's Attendance list) right now, not at tomorrow's job.
   if (payment.purpose === "PAYMENT_PLAN_INSTALLMENT" && payment.paymentPlanId) {
     await bookReservedWindowForPlan(payment.paymentPlanId);
+    // A friend's invitation pays off once the invited person's first payment on a 3 or 6 month plan is in.
+    if (payment.installmentNumber === 1) await rewardReferralForFirstPayment(payment.userId, payment.paymentPlanId);
 
     // A first payment going through is the moment someone becomes a subscriber: tell the admins who and when.
     if (payment.installmentNumber === 1) {

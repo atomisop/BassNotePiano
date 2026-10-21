@@ -8,6 +8,7 @@ const LABELS: Record<string, string> = {
   "plan.cancel": "Canceled a plan",
   "plan.pause": "Paused a plan",
   "calendar.reset": "Made a new calendar link",
+  "referral.reward": "Paid out a referral reward",
   "payment.refund": "Refunded a payment",
   "payment.delete": "Deleted a payment",
   "payment.match_email": "Matched a bank email by hand",

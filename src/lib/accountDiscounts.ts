@@ -28,7 +28,7 @@ export interface PlanPriceChange {
 }
 
 /** Rewrites the account's running solo plan (and its unpaid open bill) to the price a given percent gives. Runs inside the caller's transaction. */
-async function applyToRunningPlan(
+export async function applyToRunningPlan(
   tx: Pick<typeof prisma, "paymentPlan" | "zellePayment">,
   userId: string,
   percent: number,
@@ -69,7 +69,7 @@ export async function setAccountDiscount(input: { userId: string; percent: numbe
   const planChange = await prisma.$transaction(async (tx) => {
     await tx.accountDiscount.upsert({
       where: { userId: user.id },
-      update: { percent, note, createdById: input.actor.id },
+      update: { percent, note, createdById: input.actor.id, expiresAt: null },
       create: { userId: user.id, percent, note, createdById: input.actor.id },
     });
     return applyToRunningPlan(tx, user.id, percent);
