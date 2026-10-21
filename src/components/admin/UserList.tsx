@@ -122,7 +122,7 @@ export function UserList({
                   </span>
                 )}
                 {row.progress && <span className="shrink-0 text-small tabular-nums text-slate-400">{row.progress}</span>}
-                {!row.readyScale && <ChevronRight className="h-4 w-4 shrink-0 text-slate-600" aria-hidden />}
+                {!row.readyScale && <ChevronRight className="h-4 w-4 shrink-0 text-slate-500" aria-hidden />}
               </Link>
               {row.readyScale && (
                 <button

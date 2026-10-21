@@ -4,6 +4,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useDismissDrag } from "@/lib/useDismissDrag";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 import { FADE, SPRING } from "@/lib/motionTokens";
 
 /**
@@ -28,6 +29,7 @@ export function SlideOverPanel({
   useEffect(() => setMounted(true), []);
 
   const titleId = useId();
+  const dialogRef = useDialogFocus<HTMLDivElement>(open);
 
   // The panel is full-width on phones and capped at md:max-w-md above that,
   // so the dismiss distance has to be measured rather than assumed.
@@ -95,6 +97,8 @@ export function SlideOverPanel({
               onPointerMove={dismiss.onPointerMove}
               onPointerUp={dismiss.onPointerUp}
               onPointerCancel={dismiss.onPointerUp}
+              ref={dialogRef}
+              tabIndex={-1}
               role="dialog"
               aria-modal="true"
               aria-labelledby={titleId}

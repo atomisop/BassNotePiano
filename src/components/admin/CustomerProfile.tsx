@@ -355,10 +355,10 @@ export function CustomerProfile({
               <div className="text-small text-slate-400">
                 <p>{user.email}</p>
                 {user.username && <p className="mt-0.5 text-slate-500">@{user.username}</p>}
-                <p className="mt-1 text-small text-slate-600">
+                <p className="mt-1 text-small text-slate-500">
                   Joined {formatDate(user.createdAt)} · {user.emailVerified ? "Email verified" : "Email not verified"}
                 </p>
-                <p className="mt-1 text-small text-slate-600">
+                <p className="mt-1 text-small text-slate-500">
                   {user.phone ? `${formatPhone(user.phone)} · ${user.phoneVerifiedAt ? "Phone verified" : "Phone not verified"}` : "No phone number"}
                   {user.phone && (
                     <button
@@ -372,10 +372,10 @@ export function CustomerProfile({
                     </button>
                   )}
                 </p>
-                <p className="mt-1 text-small text-slate-600">
+                <p className="mt-1 text-small text-slate-500">
                   {user.passwordChangedAt ? `Password changed ${formatDate(user.passwordChangedAt)}` : "Password never changed"}
                 </p>
-                <p className="mt-1 text-small text-slate-600">
+                <p className="mt-1 text-small text-slate-500">
                   {user.lastActivityAt ? `Last active ${formatDate(user.lastActivityAt)}` : "No recorded activity"} ·{" "}
                   {user.currentStreak}-day streak
                 </p>
@@ -811,7 +811,7 @@ export function CustomerProfile({
             <div className="max-h-[36rem] space-y-3 overflow-y-auto pr-1">
               {profile.timeline.map((event, i) => (
                 <div key={i} className="border-l-2 border-ink/10 pl-3">
-                  <p className="text-small text-slate-600">{formatDateTime(event.at)}</p>
+                  <p className="text-small text-slate-500">{formatDateTime(event.at)}</p>
                   <p className="text-small text-slate-200">{event.label}</p>
                   {event.detail && <p className="text-small text-slate-500">{event.detail}</p>}
                 </div>

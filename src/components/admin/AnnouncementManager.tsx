@@ -193,7 +193,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
             </span>
           </div>
           <p className="mt-1 text-small text-slate-400">{announcement.body}</p>
-          <p className="mt-2 text-small text-slate-600">
+          <p className="mt-2 text-small text-slate-500">
             {relativeTime(announcement.createdAt)} · {announcement.dismissedCount} of {totalUsers} dismissed
           </p>
         </div>

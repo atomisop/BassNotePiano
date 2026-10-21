@@ -254,7 +254,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
                       To {m.recipientName ?? m.recipientEmail}
                       {m.supportCta ? " · with contact support" : ""}
                     </p>
-                    <p className="mt-1 text-small text-slate-600">{relativeTime(m.createdAt)}</p>
+                    <p className="mt-1 text-small text-slate-500">{relativeTime(m.createdAt)}</p>
                   </button>
                   <Collapse open={open}>
                     <div className="border-t border-slate-50/10 px-4 pb-4 pt-3">

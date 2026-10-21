@@ -35,7 +35,7 @@ function MessageRow({ message, visitorLabel }: { message: AdminThreadMessage; vi
   if (message.sender === "INTERNAL") {
     return (
       <div className="flex flex-col items-center">
-        <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-600">
+        <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-500">
           Internal note{message.sentByName ? ` · ${message.sentByName}` : ""} · only admins see this
         </span>
         <div className="max-w-[90%] rounded-2xl border border-dashed border-slate-600 bg-slate-800/40 px-3.5 py-2 text-body text-slate-300">
@@ -47,7 +47,7 @@ function MessageRow({ message, visitorLabel }: { message: AdminThreadMessage; vi
   const isVisitor = message.sender === "VISITOR";
   return (
     <div className={`flex flex-col ${isVisitor ? "items-end" : "items-start"}`}>
-      <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-600">
+      <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-500">
         {isVisitor ? visitorLabel : SENDER_LABEL[message.sender]}
         {message.sender === "SUPPORT" && message.sentByName && ` · ${message.sentByName}`}
       </span>

@@ -190,7 +190,7 @@ export function AdminManualBooking({ openOccurrences, holds = [], onSearchStuden
 
           {results.length > 0 && (
             <div className="mt-3 space-y-2">
-              <p className="text-small uppercase tracking-wide text-slate-600">
+              <p className="text-small uppercase tracking-wide text-slate-500">
                 {query.trim() ? "Matches" : "Recently active"}
               </p>
               {results.map((s) => (

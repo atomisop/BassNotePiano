@@ -83,7 +83,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
             <div className="flex items-start gap-3">
               <Avatar image={reg.user?.image} name={reg.fullName} />
               <div>
-                <h3 className="text-body text-slate-50 font-semibold">{reg.fullName}</h3>
+                <h2 className="text-body text-slate-50 font-semibold">{reg.fullName}</h2>
                 <p className="mt-0.5 text-small text-slate-500">
                   {INSTRUMENT_LABEL[reg.instrument]} · {SKILL_LABEL[reg.skillLevel]}
                   {reg.user?.username && <> · @{reg.user.username}</>}
@@ -99,15 +99,15 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
 
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-small sm:grid-cols-3">
             <div>
-              <dt className="text-small text-slate-600">Email</dt>
+              <dt className="text-small text-slate-500">Email</dt>
               <dd className="text-slate-300">{reg.email}</dd>
             </div>
             <div>
-              <dt className="text-small text-slate-600">Phone</dt>
+              <dt className="text-small text-slate-500">Phone</dt>
               <dd className="text-slate-300">{reg.phone}</dd>
             </div>
             <div>
-              <dt className="text-small text-slate-600">Submitted</dt>
+              <dt className="text-small text-slate-500">Submitted</dt>
               <dd className="text-slate-300">{new Date(reg.createdAt).toLocaleString()}</dd>
             </div>
           </dl>
@@ -117,7 +117,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
             <p className="mt-2 text-small text-red-400">Rejected: {reg.rejectionReason}</p>
           )}
           {reg.status !== "PENDING" && reg.reviewedBy && (
-            <p className="mt-2 text-small text-slate-600">Reviewed by {reg.reviewedBy.name ?? "an admin"}</p>
+            <p className="mt-2 text-small text-slate-500">Reviewed by {reg.reviewedBy.name ?? "an admin"}</p>
           )}
 
           {reg.status !== "PENDING" ? null : rejectingId === reg.id ? (

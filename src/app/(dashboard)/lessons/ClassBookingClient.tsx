@@ -856,7 +856,7 @@ export function ClassBookingClient({
   }
 
   const actionClass =
-    "tap flex min-h-9 shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold transition disabled:cursor-not-allowed disabled:text-slate-600 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low text-[rgb(var(--c-s-50))]";
+    "tap flex min-h-9 shrink-0 items-center justify-center rounded-lg px-4 py-2 text-small font-semibold transition disabled:cursor-not-allowed disabled:text-slate-500 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low text-[rgb(var(--c-s-50))]";
   const bookingBarVisible = tab === "book" && mode === "SOLO" && !reschedulingBooking && selectedKeys.size > 0 && !extraPayment;
 
   return (

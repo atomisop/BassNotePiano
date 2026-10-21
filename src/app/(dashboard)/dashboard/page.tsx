@@ -137,7 +137,10 @@ export default async function DashboardPage() {
                 ✓
               </span>
               <span className="min-w-0">
-                <span className={cn("block text-body font-semibold", g.done ? "text-slate-500 line-through" : "text-slate-50")}>{g.label}</span>
+                <span className={cn("block text-body font-semibold", g.done ? "text-slate-500 line-through" : "text-slate-50")}>
+                  {g.label}
+                  <span className="sr-only">{g.done ? " (done)" : " (not done yet)"}</span>
+                </span>
                 {!g.done && <span className="block text-small text-slate-400">{g.detail}</span>}
               </span>
             </>

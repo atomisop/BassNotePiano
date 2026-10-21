@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type RefObject } from "react";
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -10,10 +10,15 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([t
  *
  * Attach the returned ref to the element that has role="dialog" (give it tabIndex={-1} so it can take focus when it holds nothing
  * focusable). `onEscape` should be the same function the Close button and the backdrop use (so a dialog that refuses to close
- * while it is busy still refuses).
+ * while it is busy still refuses); leave it out when the component already closes itself on Escape.
+ *
+ * Options: `trap: false` for a popover that is not modal (focus still moves in and comes back, but Tab may leave it), and `ref`
+ * to use an element ref the component already owns (for example one it also uses to detect clicks outside).
  */
-export function useDialogFocus<T extends HTMLElement>(open: boolean, onEscape?: () => void) {
-  const ref = useRef<T>(null);
+export function useDialogFocus<T extends HTMLElement>(open: boolean, onEscape?: () => void, options: { trap?: boolean; ref?: RefObject<T | null> } = {}) {
+  const ownRef = useRef<T>(null);
+  const ref = options.ref ?? ownRef;
+  const trap = options.trap ?? true;
   const escapeRef = useRef(onEscape);
   escapeRef.current = onEscape;
 
@@ -36,7 +41,7 @@ export function useDialogFocus<T extends HTMLElement>(open: boolean, onEscape?: 
         escapeRef.current();
         return;
       }
-      if (e.key !== "Tab") return;
+      if (e.key !== "Tab" || !trap) return;
       const items = Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE)).filter((n) => n.offsetParent !== null || n === document.activeElement);
       if (items.length === 0) {
         e.preventDefault();
@@ -61,7 +66,7 @@ export function useDialogFocus<T extends HTMLElement>(open: boolean, onEscape?: 
       document.removeEventListener("keydown", onKeyDown, true);
       if (before && document.contains(before)) before.focus({ preventScroll: true });
     };
-  }, [open]);
+  }, [open, ref, trap]);
 
   return ref;
 }

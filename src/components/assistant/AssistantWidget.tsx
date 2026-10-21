@@ -184,7 +184,7 @@ function FeedbackButtons({
 }) {
   return (
     <div className="mt-1 flex items-center gap-1 pl-1">
-      <span className="text-small text-slate-600">Was this answer satisfying?</span>
+      <span className="text-small text-slate-500">Was this answer satisfying?</span>
       <button
         type="button"
         onClick={() => onRate("UP")}
@@ -192,7 +192,7 @@ function FeedbackButtons({
         aria-label="Helpful"
         aria-pressed={rating === "UP"}
         className={`flex h-5 w-5 items-center justify-center rounded transition ${
-          rating === "UP" ? "text-amber-400" : "text-slate-600 hover:text-slate-400"
+          rating === "UP" ? "text-amber-400" : "text-slate-500 hover:text-slate-400"
         } disabled:cursor-default disabled:opacity-60`}
       >
         <svg viewBox="0 0 24 24" fill={rating === "UP" ? "currentColor" : "none"} className="h-3 w-3">
@@ -211,7 +211,7 @@ function FeedbackButtons({
         aria-label="Not helpful"
         aria-pressed={rating === "DOWN"}
         className={`flex h-5 w-5 items-center justify-center rounded transition ${
-          rating === "DOWN" ? "text-red-400" : "text-slate-600 hover:text-slate-400"
+          rating === "DOWN" ? "text-red-400" : "text-slate-500 hover:text-slate-400"
         } disabled:cursor-default disabled:opacity-60`}
       >
         <svg viewBox="0 0 24 24" fill={rating === "DOWN" ? "currentColor" : "none"} className="h-3 w-3">
@@ -328,7 +328,7 @@ function ThreadMessageBubble({ message }: { message: ThreadMessage }) {
   const isVisitor = message.sender === "VISITOR";
   return (
     <div className={`flex flex-col ${isVisitor ? "items-end" : "items-start"}`}>
-      <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-600">{THREAD_SENDER_LABEL[message.sender]}</span>
+      <span className="mb-1 px-1 text-small uppercase tracking-wide text-slate-500">{THREAD_SENDER_LABEL[message.sender]}</span>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}

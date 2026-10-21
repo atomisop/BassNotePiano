@@ -10,6 +10,7 @@ import { adminCancelBookingAction, getBookingFeedAction, markAttendanceAction } 
 import { Collapse } from "@/components/ui/Collapse";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 const POLL_INTERVAL_MS = 30_000;
 // Present and Absent stay greyed out until this long before the class starts.
@@ -83,6 +84,7 @@ export function AdminAttendanceQuickPanel() {
   // The panel is portaled to document.body, so it is never a DOM descendant of
   // wrapperRef; the outside-click handler has to check both.
   const panelRef = useRef<HTMLDivElement>(null);
+  useDialogFocus<HTMLDivElement>(open, undefined, { trap: false, ref: panelRef });
 
   useEffect(() => setMounted(true), []);
 
@@ -236,6 +238,7 @@ export function AdminAttendanceQuickPanel() {
         createPortal(
           <div
             ref={panelRef}
+            tabIndex={-1}
             className="fixed right-3 top-12 z-[60] max-h-[75vh] w-[min(26rem,calc(100vw-1.5rem))] overflow-y-auto rounded-2xl bg-neu-base p-3 shadow-raised-high sm:right-8"
             role="dialog"
             aria-label="Class bookings"

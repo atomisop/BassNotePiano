@@ -129,7 +129,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
               <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
                 {describePaymentPlan(plan.cadence, plan.term)}
               </p>
-              <h3 className="mt-1 text-body text-slate-50 font-semibold">{plan.user.name ?? plan.user.email}</h3>
+              <h2 className="mt-1 text-body text-slate-50 font-semibold">{plan.user.name ?? plan.user.email}</h2>
               {plan.familyGroup && (
                 <p className="mt-1 text-small text-slate-400">
                   Family plan of {plan.familyGroup._count.plans}, paid by {plan.familyGroup.payer.name ?? plan.familyGroup.payer.email}
@@ -156,15 +156,15 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
 
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-small sm:grid-cols-3">
             <div>
-              <dt className="text-small text-slate-600">Next due</dt>
+              <dt className="text-small text-slate-500">Next due</dt>
               <dd className="text-slate-300">{new Date(plan.nextDueDate).toLocaleDateString()}</dd>
             </div>
             <div>
-              <dt className="text-small text-slate-600">Started</dt>
+              <dt className="text-small text-slate-500">Started</dt>
               <dd className="text-slate-300">{new Date(plan.createdAt).toLocaleDateString()}</dd>
             </div>
             <div>
-              <dt className="text-small text-slate-600">Reserved slot</dt>
+              <dt className="text-small text-slate-500">Reserved slot</dt>
               <dd className="text-slate-300">
                 {plan.reservedSchedule
                   ? `${DAY_LABELS[plan.reservedSchedule.dayOfWeek]} ${formatTimeLabel(plan.reservedSchedule.startTime)}${plan.reservedSchedule.label ? ` · ${plan.reservedSchedule.label}` : ""}`

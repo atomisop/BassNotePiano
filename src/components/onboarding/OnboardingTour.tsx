@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { TOUR_STEPS } from "./tourSteps";
 import { markOnboardingTourSeenAction } from "@/app/(dashboard)/about/actions";
 import { buttonVariants } from "@/components/ui/button";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 interface Rect {
   top: number;
@@ -93,6 +94,8 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
+  // Focus moves into the tour card, stays there, and returns when it ends (Escape already skips the tour, below).
+  const dialogRef = useDialogFocus<HTMLDivElement>(open);
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<Rect | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -245,7 +248,7 @@ export function OnboardingTour({ autoShow }: { autoShow: boolean }) {
   const transitionClass = reducedMotion ? "" : "transition-all duration-300 ease-out";
 
   return createPortal(
-    <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="App tour">
+    <div ref={dialogRef} tabIndex={-1} className="fixed inset-0 z-[60] outline-none" role="dialog" aria-modal="true" aria-label="App tour">
       {/* Dimmed backdrop with a spotlight cutout around the current target, via a huge box-shadow, no SVG masking needed. */}
       {targetRect ? (
         <div

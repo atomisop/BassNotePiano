@@ -87,7 +87,7 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
       <button
         ref={triggerRef}
         type="button"
-        aria-label="Your account"
+        aria-label={appExtras && phoneBadge > 0 ? `Your account, ${phoneBadge} new` : "Your account"}
         aria-expanded={open}
         data-tour="nav-profile"
         onClick={() => setOpen((v) => !v)}
@@ -100,15 +100,15 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
             // eslint-disable-next-line @next/next/no-img-element -- data URI, next/image can't optimize it
             <img src={image} alt="" className="h-full w-full object-cover" />
           ) : (
-            <span className="flex h-full w-full items-center justify-center text-small text-[rgb(var(--c-s-50))]">{initial}</span>
+            // The letter is drawn by CSS (not text in the page): the button already has a name ("Your account"), and a one-letter avatar
+            // is decoration that would otherwise count as visible text the name must contain.
+            <span aria-hidden data-char={initial} className="flex h-full w-full items-center justify-center text-small text-[rgb(var(--c-s-50))] after:content-[attr(data-char)]" />
           )}
         </span>
         {isOwner && <OwnerStarBadge />}
         {appExtras && phoneBadge > 0 && (
           // Phones only: the bell and the attendance button are in this menu there, so their counts show on the picture.
-          <span aria-hidden className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950 md:hidden">
-            {phoneBadge > 9 ? "9+" : phoneBadge}
-          </span>
+          <span aria-hidden data-char={phoneBadge > 9 ? "9+" : String(phoneBadge)} className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950 after:content-[attr(data-char)] md:hidden" />
         )}
       </button>
 

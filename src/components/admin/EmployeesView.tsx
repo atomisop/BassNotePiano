@@ -127,7 +127,7 @@ export function EmployeesView({ employees, currentUserId, onRevoke, notification
                         </div>
                         <div className="flex w-11 justify-center">
                           {row.ownerOnly ? (
-                            <span className="text-small text-slate-600">Never</span>
+                            <span className="text-small text-slate-500">Never</span>
                           ) : (
                             <Switch checked={values[toKey(row.kind, "employees")]} onCheckedChange={(v) => handleToggle(row.kind, "employees", v)} aria-label={`${row.label}, for staff`} />
                           )}

@@ -479,7 +479,7 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
         <h3 className="text-small font-medium text-slate-200">History → Atom</h3>
         <div className="mt-3 max-h-96 space-y-2 overflow-y-auto rounded-xl p-3 bg-neu-base shadow-raised-low">
           {history.length === 0 ? (
-            <p className="py-6 text-center text-small text-slate-600">
+            <p className="py-6 text-center text-small text-slate-500">
               Nothing here yet. Questions you ask Atom while signed in will show up here.
             </p>
           ) : (
@@ -854,11 +854,11 @@ function SignedInDevicesCard() {
               <li key={d.id} className="flex items-center gap-3 py-3">
                 <Icon className="h-5 w-5 shrink-0 text-slate-400" aria-hidden />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-body text-slate-50">
-                    {d.label}
-                    {d.isThisDevice && <span className="ml-2 rounded-full bg-neu-base px-2 py-0.5 text-small text-slate-300 shadow-pressed-low">This device</span>}
+                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body text-slate-50">
+                    <span className="min-w-0 break-words">{d.label}</span>
+                    {d.isThisDevice && <span className="rounded-full bg-neu-base px-2 py-0.5 text-small text-slate-300 shadow-pressed-low">This device</span>}
                   </p>
-                  <p className="truncate text-small text-slate-400">
+                  <p className="text-small text-slate-400">
                     {d.place ?? "Location unavailable"} · Signed in{" "}
                     {new Date(d.signedInAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                   </p>
