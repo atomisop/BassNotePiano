@@ -353,6 +353,10 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
   Custom modals must use `useDialogFocus` (focus in, Tab trapped, Escape, focus back). Never put `aria-label` on a bare `p`/`span` without a role; icon targets are at
   least 24px; links inside running text are underlined.
 
+- **Security policy reports** (`CspViolation`, Admin > Security, owner only): the strict Content-Security-Policy still runs report-only. `/api/csp-report` counts each report by rule, what was blocked (host only)
+  and page (path only), capped at 500 rows; the page separates real findings from visitors' own browser extensions (`isBrowserNoise`) and says whether it looks safe to enforce (no real finding in 3 days).
+  Turning enforcement on is a small follow-up (swap `Content-Security-Policy-Report-Only` for the enforced header in `middleware.ts`) once that page has stayed clean for several days of normal use.
+
 - **Polling budget** (each open tab costs server work): one shared status poll a minute (`MeStatusProvider` / `/api/me/status`, now also carrying `unreadMessages` for the dock and sidebar badge, so there is no separate unread poll),
   the sidebar cards every 3 minutes and only at lg width, `AutoRefresh` every 90 seconds (a full server render each time). Every timer skips a background tab. A new poller should join the shared status or follow the same rules.
 - **Orange text** is `text-signal-fg`, never `text-signal` (that class no longer exists): it is darker in the light theme so it passes contrast. Backgrounds and borders stay `bg-signal` / `border-signal`.

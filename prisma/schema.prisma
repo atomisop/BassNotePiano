@@ -1958,6 +1958,21 @@ model ContactSession {
   @@index([contactId, date])
 }
 
+// Browser reports of things the strict Content-Security-Policy WOULD block (it runs report-only), counted by rule, what was blocked and the page.
+// Admin > Security reads it to show whether anything real would break before the policy is enforced. Capped at 500 distinct rows.
+model CspViolation {
+  id          String   @id @default(cuid())
+  directive   String
+  blocked     String
+  page        String
+  count       Int      @default(1)
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  @@unique([directive, blocked, page])
+  @@index([lastSeenAt])
+}
+
 // A percentage off ONE account's plan price, set by the owner on Admin > Pricing. One row per account; changing the percent updates the row and
 // the account's running solo plan (see src/lib/accountDiscounts.ts). Family plans keep the family rate.
 model AccountDiscount {
