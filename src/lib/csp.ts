@@ -71,3 +71,54 @@ export function summarizeCspReport(body: unknown): string | null {
   };
   return `directive=${pick("effective-directive", "effectiveDirective", "violated-directive")} blocked=${pick("blocked-uri", "blockedURL")} page=${pick("document-uri", "documentURL")} source=${pick("source-file", "sourceFile")}`;
 }
+
+
+export interface CspViolationKey {
+  /** The rule that was broken, such as "script-src-elem". */
+  directive: string;
+  /** What was blocked, cut down to a host or a keyword ("inline", "eval", "data", a host name): never a full address. */
+  blocked: string;
+  /** The page it happened on, path only. */
+  page: string;
+}
+
+function hostOf(value: string): string {
+  try {
+    const u = new URL(value);
+    return u.host ? `${u.protocol}//${u.host}`.slice(0, 120) : u.protocol.slice(0, 20);
+  } catch {
+    return value.slice(0, 40);
+  }
+}
+
+/** The fields a report page needs, cut down so nothing private (query strings, tokens, full addresses) is ever kept. */
+export function parseCspViolation(body: unknown): CspViolationKey | null {
+  const r = (body as { "csp-report"?: Record<string, unknown> } | null)?.["csp-report"] ?? (Array.isArray(body) ? (body[0] as { body?: Record<string, unknown> })?.body : null);
+  if (!r || typeof r !== "object") return null;
+  const get = (...keys: string[]) => {
+    for (const k of keys) {
+      const v = (r as Record<string, unknown>)[k];
+      if (typeof v === "string" && v) return v;
+    }
+    return "";
+  };
+  const directive = get("effective-directive", "effectiveDirective", "violated-directive").split(" ")[0].slice(0, 40);
+  if (!directive) return null;
+  const blockedRaw = get("blocked-uri", "blockedURL");
+  const blocked = !blockedRaw || blockedRaw === "inline" ? "inline" : blockedRaw === "eval" ? "eval" : hostOf(blockedRaw);
+  let page = "/";
+  try {
+    page = new URL(get("document-uri", "documentURL")).pathname.slice(0, 120);
+  } catch {
+    page = "/";
+  }
+  return { directive, blocked, page };
+}
+
+/**
+ * True for reports caused by something on the visitor's own device (a browser extension, a translation tool, an antivirus injecting a
+ * script), which no change to the site can or should "fix". Everything else is a real finding to look at before turning enforcement on.
+ */
+export function isBrowserNoise(v: CspViolationKey): boolean {
+  return /^(chrome|moz|safari|ms-browser|edge)-extension:/.test(v.blocked) || v.blocked === "about" || v.blocked === "blob:" || /^(chrome|moz|safari)-/.test(v.blocked);
+}

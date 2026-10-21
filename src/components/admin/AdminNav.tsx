@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import {
+import { ShieldCheck,
   Briefcase,
   BookUser,
   CalendarDays,
@@ -76,6 +76,7 @@ const NAV_GROUPS: AdminNavGroup[] = [
 
 /** Pinned under the groups, set apart, like the settings entry in Google's consoles. */
 const SETTINGS_LEAF: AdminNavLeaf = { href: "/admin/settings", label: "Settings", icon: Settings };
+const SECURITY_LEAF: AdminNavLeaf = { href: "/admin/security", label: "Security", icon: ShieldCheck };
 
 /** What is waiting, by page address. Pages with nothing waiting have no entry. */
 export type AdminNavBadges = Record<string, number>;
@@ -138,6 +139,7 @@ function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
       ))}
       <div className="border-t border-(--neu-edge) pt-3">
         <Item leaf={SETTINGS_LEAF} />
+        <Item leaf={SECURITY_LEAF} />
       </div>
     </nav>
   );
@@ -152,7 +154,7 @@ function AdminSwipeRow({ badges }: { badges: AdminNavBadges }) {
     activeRef.current?.scrollIntoView({ inline: "center", block: "nearest" });
   }, [pathname]);
 
-  const groups = [...NAV_GROUPS, { label: "Settings", leaves: [SETTINGS_LEAF] }];
+  const groups = [...NAV_GROUPS, { label: "Settings", leaves: [SETTINGS_LEAF, SECURITY_LEAF] }];
 
   return (
     <nav aria-label="Admin sections" className="-mx-4 mb-4 overflow-x-auto px-4 [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden">
