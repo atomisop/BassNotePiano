@@ -5,7 +5,7 @@ import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
 import { notifyAdmins } from "../../src/lib/adminNotifications";
 import { PLAN_CADENCE_CREDITS_PER_WEEK } from "../../src/lib/classCreditPricing";
-import { addCalendarMonthsClamped, classesLeftInPaidMonth, topUpIfFifth } from "../../src/lib/paymentPlans";
+import { addCalendarMonthsClamped, classesLeftInPaidMonth } from "../../src/lib/paymentPlans";
 import {
   OCCURRENCES_PER_SLOT,
   chunksForSchedule,
@@ -114,9 +114,8 @@ export const handler = schedule("30 9 * * *", async () =>
       // up by this job to book their weekly slot for weeks not yet paid for.
       if (scheduledAt.getTime() >= paidUntil.getTime()) continue;
 
-      // A paid month is every one of this weekday inside the cycle: four, or five when the cycle holds five.
+      // A paid month is 4 classes even when it holds five of this weekday.
       if ((await classesLeftInPaidMonth(plan)) <= 0) break;
-      await topUpIfFifth(plan, creditsPerClass);
 
       const available = await getEffectiveClassCredits(plan.userId);
       if (available < creditsPerClass) {
