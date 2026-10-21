@@ -1,7 +1,7 @@
 "use client";
 
 import { CREDITS_PER_CLASS, creditsLabelFromStored, creditsToStored, formatCredits } from "@/lib/classCreditPricing";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Hammer } from "lucide-react";
@@ -12,6 +12,7 @@ import { StudentNotesEditor } from "@/components/admin/StudentNotesEditor";
 import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { Tabs } from "@/components/ui/Tabs";
 
 export interface CustomerProfileProps {
   profile: CustomerProfileData;
@@ -117,6 +118,15 @@ function PracticeStrip({ practice }: { practice: CustomerProfileData["practice"]
   );
 }
 
+type ProfileTab = "overview" | "learning" | "classes" | "money" | "support";
+const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
+  { id: "overview", label: "Overview" },
+  { id: "learning", label: "Learning" },
+  { id: "classes", label: "Classes" },
+  { id: "money", label: "Money" },
+  { id: "support", label: "Support" },
+];
+
 function Empty({ children }: { children: React.ReactNode }) {
   return <p className="text-small text-slate-500">{children}</p>;
 }
@@ -140,6 +150,18 @@ export function CustomerProfile({
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Which group of sections is showing. Every section stays mounted (hidden, not removed), so a half-typed credit amount or an
+  // open confirmation survives a change of tab. The tab is kept in the address (#money) so a link or a refresh returns to it.
+  const [tab, setTab] = useState<ProfileTab>("overview");
+  useEffect(() => {
+    const fromHash = window.location.hash.replace("#", "");
+    const match = PROFILE_TABS.find((t) => t.id === fromHash);
+    if (match) setTab(match.id);
+  }, []);
+  function chooseTab(next: ProfileTab) {
+    setTab(next);
+    window.history.replaceState(null, "", `#${next}`);
+  }
   const [creditAmount, setCreditAmount] = useState("");
   const [creditReason, setCreditReason] = useState("");
   const [creditSuccess, setCreditSuccess] = useState<string | null>(null);
@@ -280,8 +302,10 @@ export function CustomerProfile({
         <div className="rounded-xl border border-red-400/30 bg-red-400/10 p-3 text-small text-red-300">{error}</div>
       )}
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <div className="space-y-5 lg:col-span-2">
+      <Tabs<ProfileTab> label="Sections of this account" items={PROFILE_TABS} value={tab} onChange={chooseTab} />
+
+      <div className="space-y-5">
+        <div hidden={tab !== "overview"} className="space-y-5">
           {/* Identity + account-level quick actions */}
           <SectionCard title="Account" action={banButton}>
             {user.bannedAt && (
@@ -481,6 +505,9 @@ export function CustomerProfile({
             </div>
           </SectionCard>
 
+        </div>
+
+        <div hidden={tab !== "learning"} className="space-y-5">
           {/* Curriculum roadmap */}
           <SectionCard title="Daily practice">
             <PracticeStrip practice={profile.practice} />
@@ -523,6 +550,9 @@ export function CustomerProfile({
 
           <NotesSection studentId={user.id} />
 
+        </div>
+
+        <div hidden={tab !== "classes"} className="space-y-5">
           {/* Credits + bookings */}
           <SectionCard title={`Class credits · ${creditsLabelFromStored(user.classCredits)} available`}>
             <form onSubmit={handleReviewCredits} className="flex flex-wrap items-end gap-2">
@@ -676,6 +706,9 @@ export function CustomerProfile({
             )}
           </SectionCard>
 
+        </div>
+
+        <div hidden={tab !== "money"} className="space-y-5">
           {/* Payments */}
           <SectionCard title="Payment history">
             {profile.payments.length === 0 && <Empty>No payments submitted.</Empty>}
@@ -738,7 +771,7 @@ export function CustomerProfile({
           </SectionCard>
         </div>
 
-        <div className="space-y-5">
+        <div hidden={tab !== "support"} className="space-y-5">
           {/* Support history */}
           <SectionCard title="Support history">
             {profile.supportThreads.length === 0 && <Empty>No support conversations.</Empty>}
