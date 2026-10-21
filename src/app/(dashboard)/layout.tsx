@@ -24,13 +24,14 @@ import { phoneVerifyMode } from "@/lib/phoneVerification";
 import { TopBanners } from "@/components/ui/TopBanners";
 import { MeStatusProvider } from "@/components/layout/MeStatusProvider";
 import { getMeStatus } from "@/lib/meStatus";
+import { getSidebarCards } from "@/lib/sidebarCards";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
 
   // Everything the shell needs is asked for at once, not one after another (it ran on every page).
-  const [directUnreadCount, groupUnreadCount, supportUnreadCount, user, activeAnnouncement, verifyMode, meStatus, owner] = await Promise.all([
+  const [directUnreadCount, groupUnreadCount, supportUnreadCount, user, activeAnnouncement, verifyMode, meStatus, owner, sidebarCards] = await Promise.all([
     getTotalUnreadMessageCount(session.user.id),
     getTotalUnreadGroupMessageCount(session.user.id),
     getSupportUnreadCount(session.user.id),
@@ -39,6 +40,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     phoneVerifyMode(),
     getMeStatus(session.user.id),
     prisma.user.findUnique({ where: { email: OWNER_EMAIL }, select: { id: true } }),
+    getSidebarCards(session.user.id, session.user.role ?? "STUDENT", session.user.role === "ADMIN" && isOwnerEmail(session.user.email)).catch(() => []),
   ]);
   const unreadMessageCount = directUnreadCount + groupUnreadCount + supportUnreadCount;
 
@@ -115,7 +117,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="lg:hidden">
         <AppDock unreadMessageCount={unreadMessageCount} />
       </div>
-      <AppSidebar unreadMessageCount={unreadMessageCount} />
+      <AppSidebar unreadMessageCount={unreadMessageCount} cards={sidebarCards} isAdmin={isAdmin} />
       <CommandMenu isAdmin={isAdmin} />
             <Suspense fallback={null}>
         <OnboardingTour autoShow={shouldShowTour} />

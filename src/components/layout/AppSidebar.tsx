@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Music2, CalendarCheck, Users, MessageSquare, User, Settings, Globe, ArrowUpRight, ArrowRight, type LucideIcon } from "lucide-react";
+import { Home, Music2, CalendarCheck, Users, MessageSquare, User, Settings, Globe, ArrowUpRight, type LucideIcon } from "lucide-react";
 import { useUnreadMessages } from "@/lib/useUnreadMessages";
-import { useMeStatus } from "@/components/layout/MeStatusProvider";
-import { DiscordIcon } from "@/components/ui/icons";
+import { SidebarSpotlight } from "@/components/layout/SidebarSpotlight";
+import type { SidebarCard } from "@/lib/sidebarCards";
 
 type Item = { href: string; label: string; icon: LucideIcon; dataTour?: string; match?: string[]; external?: boolean };
 
@@ -43,10 +43,9 @@ const GROUPS: { title: string; items: Item[] }[] = [
  * AppDock; this takes its place on wide screens so nothing floats over the
  * content and every destination has a label. Sits under the fixed TopBar.
  */
-export function AppSidebar({ unreadMessageCount: initial }: { unreadMessageCount: number }) {
+export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { unreadMessageCount: number; cards: SidebarCard[]; isAdmin: boolean }) {
   const pathname = usePathname();
   const unread = useUnreadMessages(initial);
-  const status = useMeStatus();
 
   return (
     <nav
@@ -106,41 +105,8 @@ export function AppSidebar({ unreadMessageCount: initial }: { unreadMessageCount
         </div>
       ))}
 
-      {/* Shown only until Discord is linked: live classes happen there. The two logos link up with a travelling pulse. */}
-      {status && !status.discordConnected && (
-        <a
-          href="/api/discord/connect"
-          className="press-soft mt-auto block overflow-hidden rounded-card bg-neu-lift shadow-raised-low hover:shadow-raised-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <span aria-hidden className="link-scene relative flex h-24 items-center justify-center gap-1.5 bg-[rgb(var(--c-s-950))]">
-            <span className="link-star left-[14%] top-[22%]" />
-            <span className="link-star left-[82%] top-[30%] [animation-delay:0.7s]" />
-            <span className="link-star left-[26%] top-[78%] [animation-delay:1.3s]" />
-            <span className="link-star left-[70%] top-[80%] [animation-delay:0.3s]" />
-            <span className="link-tile link-tile-a flex h-11 w-11 items-center justify-center rounded-[0.9rem] bg-[#5865F2] text-white shadow-raised-mid">
-              <DiscordIcon size={24} />
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="link-dot" />
-              <span className="link-dot [animation-delay:0.15s]" />
-              <span className="link-dot [animation-delay:0.3s]" />
-              <span className="link-dot [animation-delay:0.45s]" />
-            </span>
-            <span className="link-tile link-tile-b flex h-11 w-11 items-center justify-center rounded-[0.9rem] bg-neu-lift shadow-raised-mid">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-mark.png" alt="" width={32} height={32} className="h-8 w-8 rounded-lg" />
-            </span>
-          </span>
-          <span className="block p-3">
-            <span className="block text-small font-semibold text-slate-50">Link your Discord</span>
-            <span className="mt-0.5 block text-small text-slate-400">Your private class call opens there before each lesson.</span>
-            <span className="mt-2 inline-flex items-center gap-1 text-small font-semibold text-signal">
-              Connect Discord
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-            </span>
-          </span>
-        </a>
-      )}
+      {/* Discord invitation (until linked), next class, streak, admin counts and the rest: one card at a time. */}
+      <SidebarSpotlight initial={cards} isAdmin={isAdmin} />
     </nav>
   );
 }
