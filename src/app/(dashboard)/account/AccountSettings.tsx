@@ -16,6 +16,7 @@ import { CheckIcon } from "@/components/ui/icons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { ManageSubscriptions, type ActivePlanInfo } from "@/components/account/ManageSubscriptions";
 import { PausePlanCard } from "@/components/account/PausePlanCard";
+import { AddToHomeSteps, isStandalone } from "@/components/pwa/AddToHomeSteps";
 import type { AssistantMessage } from "@/lib/assistant";
 import {
   updatePasswordAction,
@@ -1338,16 +1339,30 @@ function DangerZoneSection() {
 
 function TutorialsSection() {
   const router = useRouter();
+  const [installed, setInstalled] = useState(false);
+  useEffect(() => setInstalled(isStandalone()), []);
   return (
-    <SectionCard title="Tutorials">
-      <button
-        type="button"
-        onClick={() => router.push("/dashboard?tour=1")}
-        className={buttonVariants({ variant: "primary", className: "mt-4" })}
-      >
-        Replay app tour
-      </button>
-    </SectionCard>
+    <>
+      <SectionCard title="Tutorials">
+        <button
+          type="button"
+          onClick={() => router.push("/dashboard?tour=1")}
+          className={buttonVariants({ variant: "primary", className: "mt-4" })}
+        >
+          Replay app tour
+        </button>
+      </SectionCard>
+      <SectionCard title="Add to your Home Screen">
+        <p className="text-small text-slate-400">
+          {installed
+            ? "You are already using Bass Note Piano from your Home Screen. The steps are here in case you set up another phone."
+            : "Put Bass Note Piano on your Home Screen so it opens full screen with its own icon, like an app from the store."}
+        </p>
+        <div className="mt-4">
+          <AddToHomeSteps />
+        </div>
+      </SectionCard>
+    </>
   );
 }
 

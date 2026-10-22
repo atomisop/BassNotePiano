@@ -16,6 +16,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { WhatsNewProvider } from "@/components/layout/WhatsNewProvider";
 import { AnnouncementBanner } from "@/components/layout/AnnouncementBanner";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
+import { AddToHomePrompt } from "@/components/pwa/AddToHomePrompt";
 import { CommandMenu } from "@/components/layout/CommandMenu";
 import { OwnerStarProvider } from "@/components/ui/OwnerStar";
 import { isOwnerEmail, OWNER_EMAIL } from "@/lib/adminNotifications";
@@ -128,6 +129,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Suspense fallback={null}>
         <OnboardingTour autoShow={shouldShowTour} />
       </Suspense>
+      <AddToHomePrompt suppressed={shouldShowTour || showWhatsNew} />
       <TopBanners phone={promptPhone ? { seconds: promptSeconds, verifying: verifyMode } : null} discord={discordPrompt} practice={practicePrompt} />
     </div>
     </WhatsNewProvider>
