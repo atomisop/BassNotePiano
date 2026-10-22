@@ -139,7 +139,7 @@ export function AddToHomePrompt({ suppressed }: { suppressed: boolean }) {
 
       {note && (
         <div role="status" className="fixed inset-x-0 bottom-24 z-[55] flex justify-center px-5">
-          <div className="flex max-w-[26rem] items-center gap-3 rounded-2xl bg-[rgb(30_30_33/0.95)] px-4 py-3 text-small text-slate-100 shadow-[0_8px_28px_rgb(0_0_0/0.45)]">
+          <div className="flex max-w-[26rem] items-center gap-3 rounded-2xl border border-[rgb(var(--c-s-50)/0.1)] bg-white/95 px-4 py-3 text-small text-slate-100 shadow-[0_8px_28px_rgb(0_0_0/0.2)] dark:bg-[rgb(var(--c-s-900)/0.97)]">
             <span>No problem. The steps are in Settings, under Tutorials, whenever you want them.</span>
             <Link href="/account?tab=tutorials" onClick={() => setNote(false)} className="tap shrink-0 font-medium underline underline-offset-4">
               Open
