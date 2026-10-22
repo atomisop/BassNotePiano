@@ -3,10 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Home, CalendarCheck, Users, MessageSquare, Settings, type LucideIcon } from "lucide-react";
 import { useUnreadMessages } from "@/lib/useUnreadMessages";
-import { SPRING } from "@/lib/motionTokens";
 import { onChange } from "@/lib/liveEvents";
 
 // Same 30s cadence as NotificationBell's own poll, which this mirrors.
@@ -100,6 +99,30 @@ const NAV_ITEMS = [
  */
 export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDockProps) {
   const pathname = usePathname();
+  const reduceMotion = useReducedMotion();
+  // Scrolling down tucks the dock into a smaller pill; scrolling back up (or reaching the top) opens it again.
+  const [compact, setCompact] = useState(false);
+
+  useEffect(() => {
+    const lastTop = new WeakMap<EventTarget, number>();
+    const onScroll = (e: Event) => {
+      const el = e.target;
+      // Only the app's own page scroller (<main>): a list scrolling inside a page should not move the dock.
+      if (!(el instanceof HTMLElement) || el.tagName !== "MAIN") return;
+      const top = el.scrollTop;
+      const prev = lastTop.get(el) ?? top;
+      lastTop.set(el, top);
+      const delta = top - prev;
+      if (top < 24) setCompact(false);
+      else if (delta > 6) setCompact(true);
+      else if (delta < -6) setCompact(false);
+    };
+    document.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    return () => document.removeEventListener("scroll", onScroll, { capture: true });
+  }, []);
+
+  // A new page starts at the top, with the dock open.
+  useEffect(() => setCompact(false), [pathname]);
 
   // The unread badge: the server's count at page load, then the shared live status (one poll a minute for the whole app, a look on every
   // page change and every "messages" announcement), the same one the sidebar uses. It used to run its own timer.
@@ -129,11 +152,16 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
     <div
       role="navigation"
       aria-label="Primary"
-      className="pointer-events-none fixed inset-x-0 bottom-[max(0.75rem,calc(env(safe-area-inset-bottom)-0.75rem))] z-40 flex justify-center px-5"
+      className="pointer-events-none fixed inset-x-0 bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)-0.25rem))] z-40 flex justify-center px-5"
     >
       {/* The Instagram-style floating pill: about 53pt tall, 20pt in from each side on a phone (capped on wider screens), five equal
           slots, white icons about 22pt, and a lighter capsule behind the page you are on that slides to the next one. Dark glass in every theme. */}
-      <div className="pointer-events-auto grid h-[53px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full border border-white/[0.08] bg-[rgb(30_30_33/0.82)] p-1 shadow-[0_8px_28px_rgb(0_0_0/0.45)] backdrop-blur-2xl">
+      <motion.div
+        animate={{ scale: compact ? 0.82 : 1, y: compact ? 8 : 0 }}
+        transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 340, damping: 17, mass: 0.8 }}
+        style={{ transformOrigin: "50% 100%" }}
+        className="pointer-events-auto grid h-[53px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full border border-white/[0.08] bg-[rgb(30_30_33/0.82)] p-1 shadow-[0_8px_28px_rgb(0_0_0/0.45)] backdrop-blur-2xl"
+      >
         {NAV_ITEMS.map((item) => {
           const active = pathname === item.href;
           const badge = item.href === "/messages" ? unreadMessageCount : 0;
@@ -150,11 +178,16 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
               {active && (
                 <motion.span
                   layoutId="dock-active-pill"
-                  transition={SPRING.lively}
+                  transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 15, mass: 0.9 }}
                   className="pointer-events-none absolute left-1/2 top-0 h-full w-[4.7rem] -translate-x-1/2 rounded-full bg-white/[0.13]"
                 />
               )}
-              <motion.span whileTap={{ scale: 0.9 }} className="relative flex h-[22px] w-[22px] items-center justify-center">
+              <motion.span
+                whileTap={{ scale: 0.82 }}
+                animate={active && !reduceMotion ? { scale: [1, 1.28, 0.92, 1] } : { scale: 1 }}
+                transition={{ duration: 0.55, ease: "easeOut" }}
+                className="relative flex h-[22px] w-[22px] items-center justify-center"
+              >
                 <Icon
                   aria-hidden
                   strokeWidth={active ? 2.4 : 2}
@@ -166,7 +199,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
             </Link>
           );
         })}
-      </div>
+      </motion.div>
     </div>
   );
 }

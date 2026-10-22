@@ -557,3 +557,6 @@ naming the account), including the rare old curriculum payment that is approved 
 `AddToHomePrompt` (mounted in `(dashboard)/layout.tsx`, `src/components/pwa/`) asks once per DEVICE (localStorage `bnp-add-to-home-seen`, not per account) to put the site on the Home Screen, with the numbered steps for iPhone/iPad and Android
 (`HOME_SCREEN_STEPS` in `src/lib/addToHome.ts`; Chrome on Android also gets a one-tap Install button from `beforeinstallprompt`). Phones and tablets only, never when already running standalone, never over the first-visit tour or the "what's new"
 card (it waits for a later visit), and only while the tab is visible. "Maybe later" or the X shows a short note pointing to Settings > Tutorials, where the same steps live permanently ("Add to your Home Screen" card).
+
+The dock (`AppDock`) is also alive: it sits a little higher (clear of the iPhone home bar), the sliding highlight capsule and the tapped icon overshoot on a spring so they wobble, and it tucks into a smaller pill (about 82%) while the page (`<main>`) scrolls
+down and opens again on scrolling up or at the top. Reduced-motion users get none of the springs.
