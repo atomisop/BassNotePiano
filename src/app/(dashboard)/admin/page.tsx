@@ -12,6 +12,7 @@ import { RemindButton } from "@/components/admin/RemindButton";
 import { REMINDER_KINDS } from "@/lib/followUpReminders";
 import { getFollowUps } from "@/lib/adminFollowUps";
 import { getJobStatuses, isStopped } from "@/lib/jobRun";
+import { RefreshTasksButton } from "@/components/admin/RefreshTasksButton";
 import { OverviewStats } from "@/components/admin/OverviewStats";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { ModuleHealthSection, ModuleHealthSkeleton } from "@/components/admin/ModuleHealthSection";
@@ -178,7 +179,15 @@ export default async function AdminOverviewPage() {
             )}
           </section>
           <section id="tasks" className="glass-surface scroll-mt-20 p-5">
-            <h2 className="text-body font-semibold text-slate-50">Automatic tasks</h2>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-body font-semibold text-slate-50">Automatic tasks</h2>
+                <p className="mt-0.5 text-small text-slate-500">
+                  Checked {new Date().toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", second: "2-digit" })} ET
+                </p>
+              </div>
+              <RefreshTasksButton />
+            </div>
             <ul className="mt-3 divide-y divide-slate-50/10">
               {jobs.map((job) => {
                 const bad = isStopped(job.state);
