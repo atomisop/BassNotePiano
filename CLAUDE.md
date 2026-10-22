@@ -548,3 +548,12 @@ once-only expiry (floored at the real balance, never touching credits a booked c
 `saveSetting` / `resetSetting` (the raw table is cached for 10 seconds).
 
 Icons: use `lucide-react` only. The Tabler and Radix icon packages were removed (2026-10-21); do not add another icon library.
+
+Complimentary access (the `hasCurriculumAccess` flag) is visible and traceable: Admin > Accounts has a "Complimentary" tab and a badge on each such row, and every grant or removal is in the activity log (`access.grant` / `access.revoke`,
+naming the account), including the rare old curriculum payment that is approved late (`approveZellePayment`).
+
+## Add to Home Screen (added 2026-10-22)
+
+`AddToHomePrompt` (mounted in `(dashboard)/layout.tsx`, `src/components/pwa/`) asks once per DEVICE (localStorage `bnp-add-to-home-seen`, not per account) to put the site on the Home Screen, with the numbered steps for iPhone/iPad and Android
+(`HOME_SCREEN_STEPS` in `src/lib/addToHome.ts`; Chrome on Android also gets a one-tap Install button from `beforeinstallprompt`). Phones and tablets only, never when already running standalone, never over the first-visit tour or the "what's new"
+card (it waits for a later visit), and only while the tab is visible. "Maybe later" or the X shows a short note pointing to Settings > Tutorials, where the same steps live permanently ("Add to your Home Screen" card).

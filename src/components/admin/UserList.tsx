@@ -15,6 +15,8 @@ export interface UserListRow {
   email: string;
   /** Shown only for people who are not students. */
   roleLabel: string | null;
+  /** The owner gave this account curriculum access by hand (no plan needed). */
+  complimentary?: boolean;
   /** "3/15", only for students. */
   progress: string | null;
   /** Code of the scale the teacher can release right now, e.g. "S4". */
@@ -113,6 +115,7 @@ export function UserList({
                   {row.name && <p className="truncate text-small text-slate-500">{row.email}</p>}
                 </div>
                 {row.roleLabel && <span className="shrink-0 text-small text-slate-400">{row.roleLabel}</span>}
+                {row.complimentary && <span className="shrink-0 rounded-full bg-neu-base px-2 py-0.5 text-small text-slate-300 shadow-pressed-low">Complimentary</span>}
                 {row.practiceDays !== null && (
                   <span
                     title="Days this week with the full 10 minutes of practice"

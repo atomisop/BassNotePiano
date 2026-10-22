@@ -762,6 +762,17 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
     throw err;
   }
 
+  // An old curriculum purchase that resolves late still switches on complimentary access: leave a trace in the activity log.
+  if (payment.purpose === "CURRICULUM" || payment.purpose === "CURRICULUM_FAMILY_BUNDLE") {
+    const recipients =
+      payment.purpose === "CURRICULUM"
+        ? [payment.userId]
+        : (await prisma.familyBundleRecipient.findMany({ where: { paymentId: payment.id }, select: { userId: true } })).map((r) => r.userId);
+    for (const userId of recipients) {
+      await logAudit({ actorId: reviewerId, action: "access.grant", targetType: "User", targetId: userId, detail: "Complimentary access from an old curriculum payment that was approved" });
+    }
+  }
+
   // A payer's family plan created inside the approval: its credit ledger row was written before the plan existed for good, so
   // it is linked to the plan now.
   if (newPlanId) {

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { Home, CalendarCheck, Users, MessageSquare, Settings, type LucideIcon } from "lucide-react";
-import { Dock, DockIcon, DockItem } from "@/components/ui/dock";
 import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { SPRING } from "@/lib/motionTokens";
 import { onChange } from "@/lib/liveEvents";
@@ -127,214 +126,47 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
 
 
   return (
-    <>
-      {/* No fade/blur band behind the dock anymore, by direct instruction,
-          the dock is meant to be the one thing freely floating above the
-          page, full stop. An earlier version of this file painted a
-          ground-toned gradient (then a blurred one) behind it to soften the
-          seam where a lighter card's edge met the dock's own forced-black
-          bar; on a phone's short viewport that band itself read as a
-          separate solid/hazy bar sitting under the dock rather than the
-          dock floating cleanly, which is exactly what this removes. */}
-      <div
-        role="navigation"
-        aria-label="Primary"
-        className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center pb-[env(safe-area-inset-bottom)]"
-      >
-        <motion.div className="pointer-events-auto">
-          {/* No idle bob: the dock used to drift up and down by 2px on an
-              endless loop, which read as the bar never sitting still. It now
-              rests; the only things that move it are the deliberate
-              hide/reveal slide above and the tap squish on an icon. */}
-          <div>
-            {/* !bg-black/!bg-none/!border-white/10 override `glass-surface-
-                elevated`'s own theme-driven glass background, solid black
-                regardless of theme or accent, by direct instruction. Both
-                `!bg-black` AND `!bg-none` are needed: `glass-surface-elevated`
-                sets `background` as a shorthand (a translucent gradient, see
-                `--elev-bg`), and Tailwind's `bg-*` utility only overrides the
-                shorthand's background-color slot, the gradient's own
-                background-image would otherwise keep painting over the black,
-                a soft wash rather than the requested pitch black. The `!` is
-                load-bearing on both: `glass-surface-elevated` sets these via a
-                plain class rule, not an inline style, so an unmarked override
-                isn't guaranteed to win the cascade against it.
-  
-                `!backdrop-blur-none` removes `glass-surface-elevated`'s own
-                `backdrop-filter: blur(...)`, which is pure dead weight on a
-                100%-opaque black bar, there's nothing behind it left to blur
-                into view. It's also the precondition for a well-documented
-                WebKit rendering bug: `backdrop-filter` combined with
-                `border-radius` on an element that doesn't otherwise clip its
-                own content (this bar is `overflow: visible`, so its box-shadow
-                glow can extend past its own box) can leak a faint square-
-                cornered halo at each rounded corner in Safari, because the
-                blur's own compositing layer doesn't reliably mask itself to
-                the rounded shape, reported as "a light gray sharp corner on
-                all sides of the smooth corners" surviving even after the
-                tap-highlight fix (that fix addressed a real, separate
-                tap-only flash; this addresses a persistent one). Removing the
-                backdrop-filter here removes the bug's precondition entirely,
-                without needing `overflow: hidden` (which would also clip the
-                glow this bar is meant to have).
-  
-                `!shadow-[...]` overrides `glass-surface-elevated`'s own
-                `--elev-shadow` for the same reason as the three overrides
-                above: that token is a *dark* drop shadow (tuned for a card
-                sitting on a lighter surface), which all but disappears
-                underneath a bar that's forced solid black sitting on this
-                app's own near-black page ground, direct instruction: "the
-                dock is not a freely suspended thing, it's lying on [the
-                bottom edge]." A dark shadow can't read as elevation once
-                there's no lighter surface for it to fall on, so this pairs a
-                normal dark contact shadow (still doing real work wherever the
-                page behind happens to be lighter, e.g. the Paper theme) with
-                a soft white ambient glow, the same light-not-dark technique
-                the icons above already use to read as lit against black.
-
-                `!rounded-full` fixes the actual, still-unaddressed source of
-                the corner artifact reported after the backdrop-filter fix
-                above (that fix was real, it closed a genuine bug class,
-                but it wasn't this one). `dock.tsx`'s own `Dock` hardcodes
-                `rounded-2xl` (1rem) on the very same element that also
-                carries `glass-surface-elevated`, which sets its own
-                `border-radius: var(--surface-radius)` (0.75rem on Paper,
-                0.5rem on Ink), two same-specificity classes fighting over
-                one property, on the one element none of the four overrides
-                above ever touched. Nothing here ever decided which wins;
-                it was just whichever the build's own class order happened
-                to emit last. Either way, 0.5-1rem on a 60px-tall bar is a
-                visibly squared corner, not the smooth capsule this bar is
-                designed to be, and a genuine cascade tie is exactly the
-                kind of thing that can paint one way in one browser/engine
-                and differently in another, which fits "the curve is there
-                but so is a frame around it" better than a single clean
-                radius ever would. Forcing one explicit, fully-rounded value
-                here removes the conflict outright instead of relying on a
-                tiebreak this file never actually chose. */}
-            <Dock
-              className="items-center !gap-1 !rounded-full !bg-neu-lift !bg-none !border-transparent !px-2 !backdrop-blur-none !shadow-[0_8px_24px_rgb(0_0_0/0.4),0_0_0_0.5px_var(--neu-edge)]"
-              magnification={36}
-              distance={140}
-              panelHeight={44}
+    <div
+      role="navigation"
+      aria-label="Primary"
+      className="pointer-events-none fixed inset-x-0 bottom-[max(0.75rem,calc(env(safe-area-inset-bottom)-0.75rem))] z-40 flex justify-center px-5"
+    >
+      {/* The Instagram-style floating pill: about 53pt tall, 20pt in from each side on a phone (capped on wider screens), five equal
+          slots, white icons about 22pt, and a lighter capsule behind the page you are on that slides to the next one. Dark glass in every theme. */}
+      <div className="pointer-events-auto grid h-[53px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full border border-white/[0.08] bg-[rgb(30_30_33/0.82)] p-1 shadow-[0_8px_28px_rgb(0_0_0/0.45)] backdrop-blur-2xl">
+        {NAV_ITEMS.map((item) => {
+          const active = pathname === item.href;
+          const badge = item.href === "/messages" ? unreadMessageCount : 0;
+          const Icon = NAV_ICON[item.icon];
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-label={badge ? `${item.label}, ${badge} unread` : item.label}
+              aria-current={active ? "page" : undefined}
+              data-tour={"dataTour" in item ? item.dataTour : undefined}
+              className="tap relative flex h-[45px] items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
             >
-              {/* Icon-only now, by direct instruction ("remove the texts"),
-                  the permanent-caption layout (`flex-col`, a bottom-anchored
-                  bar via `items-end pb-3` above) is gone along with the
-                  labels themselves, so the bar is `items-center` instead:
-                  with no caption anchoring each tab to the bottom, centering
-                  is what actually puts the icon in the middle of the bar's
-                  own height rather than low and cramped against where the
-                  removed label used to sit.
-
-                  The active-tab indicator is a "spotlight" pair now (look
-                  ported from a reference component, by direct instruction),
-                  replacing the previous liquid-glass droplet pill entirely:
-                  a soft light glowing down from directly above the active
-                  icon, plus a thin white line hovering at the top of the
-                  bar above it. Every tab carries a dimmer version of the
-                  same glow, falling off with distance from whichever tab is
-                  actually active, a roaming spotlight sweeping the whole
-                  bar, not just a single fixed pool of light, the reference's
-                  own `Math.max(0, 1 - distance * 0.6)` falloff curve,
-                  ported as-is since it's what gives the sweep its shape.
-
-                  This also happens to remove the one other place the bar's
-                  own documented corner-artifact bug (see the big comment
-                  above `<Dock`) could still have been sneaking in from: the
-                  droplet this replaces carried its own inline
-                  `backdropFilter`, entirely separate from, and not reached
-                  by, the outer bar's `!backdrop-blur-none` override, which
-                  only ever touched `glass-surface-elevated`'s own backdrop-
-                  filter, not a one-off inline style on a child. That's gone
-                  now along with the droplet itself. The glow below uses a
-                  plain `filter: blur()` (Tailwind's `blur-lg`), not
-                  `backdrop-filter`, blurring the glow's own pixels rather
-                  than sampling and blurring whatever sits behind it, which
-                  is the specific combination (backdrop-sampling blur +
-                  border-radius on a non-clipping element) the bug actually
-                  needs, so this isn't a new instance of it. */}
-              {NAV_ITEMS.map((item, index) => {
-                const active = pathname === item.href;
-                const badge = item.href === "/messages" ? unreadMessageCount : 0;
-                const Icon = NAV_ICON[item.icon];
-                return (
-                  // Badge lives on this wrapper, not inside `DockItem`, that
-                  // component clones its direct children unconditionally (see
-                  // dock.tsx), so a third, sometimes-`false` child there
-                  // crashes it. `DockItem` gets exactly one static child
-                  // (`DockIcon`), always.
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    aria-label={item.label}
-                    data-tour={"dataTour" in item ? item.dataTour : undefined}
-                    className="tap relative flex min-h-6 items-center justify-center rounded-full px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    {/* The glow: a blurred white gradient, positioned above
-                        the icon (`-translate-y-full` moves it fully clear of
-                        the icon itself, rather than the reference's own
-                        half-overlapping version, since there's no label
-                        underneath here competing for the same vertical
-                        space) and centered on the tab's own box so it tracks
-                        correctly even while magnification is resizing that
-                        box. Opacity-only transition (not position), since
-                        every tab's glow lives in the same spot at all times,
-                        only how bright it is ever changes. */}
-                    {/* The line: only the active tab gets one, and the
-                        shared `layoutId` is what makes Framer Motion slide
-                        the single element from one tab's position to the
-                        next on navigation, instead of one instance fading
-                        out while a new one fades in elsewhere, the same
-                        shared-layout technique the previous glass-droplet
-                        indicator used, just carried over to this new shape
-                        rather than reinventing it. */}
-                    {active && (
-                      <motion.div
-                        layoutId="dock-active-line"
-                        transition={SPRING.lively}
-                        className="pointer-events-none absolute bottom-[3px] left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-signal"
-                      />
-                    )}
-                    <motion.div whileTap={{ scale: 0.9 }} className="relative">
-                      {/* White at every step, not accent-colored, same
-                          direct instruction as the dock's own background.
-                          Active vs inactive is opacity, glow, and now stroke
-                          weight too (a subtly bolder active glyph, matching
-                          the reference): every icon carries a soft white
-                          ambient glow at rest (a `drop-shadow` on the icon
-                          itself, since that follows the glyph's own shape
-                          rather than boxing it like `box-shadow` would), and
-                          the active tab's icon glows brighter still. */}
-                      <DockItem
-                        className={`rounded-full transition-colors duration-200 ${active ? "" : "hover:shadow-pressed-low"}`}
-                      >
-                        <DockIcon>
-                          <Icon
-                            strokeWidth={active ? 2.2 : 1.75}
-                            fill={active ? "currentColor" : "none"}
-                            fillOpacity={active ? 0.2 : 0}
-                            className={`h-full w-full transition-[color,filter] duration-200 ${
-                              active
-                                ? "text-signal-fg"
-                                : "text-slate-400 hover:text-slate-50"
-                            }`}
-                          />
-                        </DockIcon>
-                      </DockItem>
-                    </motion.div>
-                    {Boolean(badge) && (
-                      <span className="pointer-events-none absolute right-0 top-0 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-[rgb(var(--c-s-50))] px-1 text-small font-bold text-slate-950">
-                        {badge > 9 ? "9+" : badge}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </Dock>
-          </div>
-        </motion.div>
+              {active && (
+                <motion.span
+                  layoutId="dock-active-pill"
+                  transition={SPRING.lively}
+                  className="pointer-events-none absolute left-1/2 top-0 h-full w-[4.7rem] -translate-x-1/2 rounded-full bg-white/[0.13]"
+                />
+              )}
+              <motion.span whileTap={{ scale: 0.9 }} className="relative flex h-[22px] w-[22px] items-center justify-center">
+                <Icon
+                  aria-hidden
+                  strokeWidth={active ? 2.4 : 2}
+                  fill={active && item.icon === "home" ? "currentColor" : "none"}
+                  className="h-[22px] w-[22px] text-white"
+                />
+                {Boolean(badge) && <span className="pointer-events-none absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ff3040] ring-2 ring-[rgb(30_30_33)]" />}
+              </motion.span>
+            </Link>
+          );
+        })}
       </div>
-    </>
+    </div>
   );
 }
