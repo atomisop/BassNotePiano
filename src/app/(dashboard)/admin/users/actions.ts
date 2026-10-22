@@ -45,8 +45,16 @@ export async function setUserRoleAction(targetUserId: string, role: Role) {
 
 export async function setCurriculumAccessAction(targetUserId: string, hasAccess: boolean) {
   const admin = await requireAdmin();
+  const target = await prisma.user.findUnique({ where: { id: targetUserId }, select: { email: true } });
   await setCurriculumAccess(targetUserId, hasAccess);
-  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: hasAccess ? "access.grant" : "access.revoke", targetType: "User", targetId: targetUserId });
+  await logAudit({
+    actorId: admin.id,
+    actorEmail: admin.email,
+    action: hasAccess ? "access.grant" : "access.revoke",
+    targetType: "User",
+    targetId: targetUserId,
+    detail: `${hasAccess ? "Complimentary access given to" : "Complimentary access removed from"} ${target?.email ?? targetUserId}`,
+  });
   revalidatePath("/", "layout");
 }
 

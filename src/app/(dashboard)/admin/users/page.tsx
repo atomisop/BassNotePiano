@@ -17,7 +17,8 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
   const isOwner = isOwnerEmail(session?.user?.email);
   const needsApproval = searchParams.filter === "approval";
   const notPracticing = searchParams.filter === "idle";
-  const [users, progress] = await Promise.all([searchUsers(query), getAdminProgressOverview(query)]);
+  const complimentary = searchParams.filter === "comped";
+  const [users, progress] = await Promise.all([searchUsers(query, { complimentaryOnly: complimentary }), getAdminProgressOverview(query)]);
   const progressById = new Map(progress.map((p) => [p.id, p]));
   // Practice is only expected from students with full access (not the admin, not a lapsed or never-paid account).
   const expectedToPractice = (id: string) => {
@@ -35,6 +36,7 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
         name: u.name,
         email: u.email,
         roleLabel: u.bannedAt ? "Banned" : u.role === "ADMIN" ? "Admin" : null,
+        complimentary: u.hasCurriculumAccess && u.role !== "ADMIN",
         progress: p ? `${p.scalesCompleted}/${p.scales.length}` : null,
         readyScale: ready ? (p!.scales.find((s) => s.slug === ready)?.code ?? "next") : null,
         practiceDays: expectedToPractice(u.id) ? (doneByUser.get(u.id) ?? 0) : null,
@@ -54,9 +56,10 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
         <AdminFilterTabs
           label="Show"
           items={[
-            { label: "Everyone", href: `/admin/users${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`, active: !needsApproval && !notPracticing },
+            { label: "Everyone", href: `/admin/users${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`, active: !needsApproval && !notPracticing && !complimentary },
             { label: "Needs approval", href: `/admin/users?filter=approval${q}`, active: needsApproval },
             { label: "Not practicing", href: `/admin/users?filter=idle${q}`, active: notPracticing },
+            { label: "Complimentary", href: `/admin/users?filter=comped${q}`, active: complimentary },
           ]}
         />
       </div>

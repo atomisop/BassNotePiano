@@ -3,6 +3,8 @@ const LABELS: Record<string, string> = {
   "user.ban": "Banned an account",
   "user.unban": "Lifted a ban",
   "user.role": "Changed a role",
+  "access.grant": "Gave complimentary access",
+  "access.revoke": "Removed complimentary access",
   "setting.set": "Changed a setting",
   "setting.reset": "Reset a setting",
   "plan.cancel": "Canceled a plan",
@@ -39,6 +41,7 @@ export function auditKind(action: string): string {
 
 export const AUDIT_KIND_LABEL: Record<string, string> = {
   user: "Accounts",
+  access: "Complimentary access",
   setting: "Settings",
   plan: "Plans",
   payment: "Payments",

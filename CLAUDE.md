@@ -548,3 +548,6 @@ once-only expiry (floored at the real balance, never touching credits a booked c
 `saveSetting` / `resetSetting` (the raw table is cached for 10 seconds).
 
 Icons: use `lucide-react` only. The Tabler and Radix icon packages were removed (2026-10-21); do not add another icon library.
+
+Complimentary access (the `hasCurriculumAccess` flag) is visible and traceable: Admin > Accounts has a "Complimentary" tab and a badge on each such row, and every grant or removal is in the activity log (`access.grant` / `access.revoke`,
+naming the account), including the rare old curriculum payment that is approved late (`approveZellePayment`).
