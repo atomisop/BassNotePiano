@@ -32,6 +32,8 @@ import { markAllMailReadAction } from "@/app/(dashboard)/mail/actions";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { EASE_IOS, FADE, SPRING } from "@/lib/motionTokens";
 import { onChange } from "@/lib/liveEvents";
+import { newPaymentToasts } from "@/lib/paymentToasts";
+import { toast } from "@/components/ui/Toaster";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 const POLL_INTERVAL_MS = 30_000;
@@ -385,6 +387,8 @@ export function NotificationBell() {
   // student just opened.
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const previousUnreadRef = useRef<number | null>(null);
+  // Every notice this tab has already looked at; null until the first poll, which only fills it.
+  const seenNoticesRef = useRef<Set<string> | null>(null);
 
   function toggleGroup(key: string) {
     setExpandedGroups((prev) => {
@@ -417,6 +421,11 @@ export function NotificationBell() {
         playNotificationSound();
       }
       previousUnreadRef.current = total;
+
+      // A payment that clears (or is turned down) while they are on another page still tells them, as a toast.
+      const { toasts, seen } = newPaymentToasts(result.notifications, seenNoticesRef.current);
+      seenNoticesRef.current = seen;
+      for (const t of toasts) toast[t.kind](t.title, { description: t.description });
 
       setUnreadCount(result.unreadCount);
       setNotifications(result.notifications);

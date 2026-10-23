@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { buttonVariants } from "@/components/ui/button";
 import { announceChange } from "@/lib/liveEvents";
+import { toast } from "@/components/ui/Toaster";
 import { PAUSE_COOLDOWN_DAYS, PAUSE_MAX_WEEKS } from "@/lib/planPause";
 
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" });
@@ -38,10 +39,13 @@ export function PausePlanCard({
     const result = await onPause(weeks);
     setBusy(false);
     if (!result.ok) {
-      setError(result.error ?? "Something went wrong. Try again.");
+      const message = result.error ?? "Something went wrong. Try again.";
+      setError(message);
+      toast.error("Couldn't pause your plan", { description: message });
       setConfirming(false);
       return;
     }
+    toast.success("Plan paused", { description: result.resumesOn ? `Classes start again on ${day(result.resumesOn)}.` : undefined });
     setConfirming(false);
     announceChange("status", "page");
     router.refresh();

@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { toast } from "@/components/ui/Toaster";
 
 export interface BulkAction {
   label: string;
@@ -52,6 +53,10 @@ export function BulkBar({
     setProgress(null);
     setErrors(bad);
     onDone(ok);
+    const summary = `${ok.length} of ${ids.length} went through.`;
+    if (bad.length === 0) toast.success(action.label, { description: summary });
+    else if (ok.length === 0) toast.error(action.label, { description: "None of them went through. The reasons are in the bar above." });
+    else toast.warning(action.label, { description: `${summary} The rest are listed in the bar above.` });
   }
 
   if (ids.length === 0 && errors.length === 0) return null;

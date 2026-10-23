@@ -20,6 +20,7 @@ import { CLASS_MINUTES, CREDITS_PER_CLASS, EXTRA_CLASS_PRICE_CENTS, creditsLabel
 import { errorNeedsTeam, weekRangeForOccurrence } from "@/lib/bookingRules";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { createExtraClassPaymentAction, createFifthClassPaymentAction, submitClassCreditsPaymentAction } from "../billing/lessons/actions";
+import { toast } from "@/components/ui/Toaster";
 import type { ZellePaymentStatus } from "@prisma/client";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
@@ -752,7 +753,9 @@ export function ClassBookingClient({
       const result = await createExtraClassPaymentAction(row.scheduleId, row.occurrenceDateMs, row.chunkIndex);
       announceChange("booking");
       if (!result.ok || !result.id || !result.status || result.amountCents === null) {
-        setError(result.error ?? "Something went wrong. Please try again.");
+        const message = result.error ?? "Something went wrong. Please try again.";
+        setError(message);
+        toast.error("Couldn't start that payment", { description: message, action: { label: "Retry", onClick: () => void startExtraPayment(row) } });
         return;
       }
       setExtraPayment({
@@ -763,6 +766,7 @@ export function ClassBookingClient({
       });
     } catch {
       setError(NETWORK_ERROR);
+      toast.error("Couldn't start that payment", { description: NETWORK_ERROR, action: { label: "Retry", onClick: () => void startExtraPayment(row) } });
     } finally {
       setPayBusyKey(null);
     }
@@ -778,7 +782,9 @@ export function ClassBookingClient({
       const result = await createFifthClassPaymentAction();
       announceChange("booking");
       if (!result.ok || !result.id || !result.status || result.amountCents === null) {
-        setError(result.error ?? "Something went wrong. Please try again.");
+        const message = result.error ?? "Something went wrong. Please try again.";
+        setError(message);
+        toast.error("Couldn't start that payment", { description: message, action: { label: "Retry", onClick: () => void startFifthClassPayment() } });
         return;
       }
       setExtraPayment({
@@ -789,6 +795,7 @@ export function ClassBookingClient({
       });
     } catch {
       setError(NETWORK_ERROR);
+      toast.error("Couldn't start that payment", { description: NETWORK_ERROR, action: { label: "Retry", onClick: () => void startFifthClassPayment() } });
     } finally {
       setPayBusyKey(null);
     }

@@ -12,6 +12,7 @@ import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
+import { toast } from "@/components/ui/Toaster";
 
 export interface PaymentQueueProps {
   payments: PendingZellePayment[];
@@ -152,12 +153,25 @@ export function PaymentQueue({
   const [refundPlan, setRefundPlan] = useState(true);
   const [refundError, setRefundError] = useState<string | null>(null);
 
+  /** "Jordan Alemu, $55.00": who and how much, for the toast, so the admin can tell which row it was. */
+  function whoAndHow(id: string): string | undefined {
+    const p = payments.find((x) => x.id === id);
+    return p ? `${p.user.name ?? p.user.email}, ${formatUsd(p.amountCents)}` : undefined;
+  }
+
+  function failureText(err: unknown): string {
+    return err instanceof Error && err.message ? err.message : "It did not go through. Try again.";
+  }
+
   async function handleApprove(id: string) {
     setBusyId(id);
     try {
       await onApprove(id);
+      toast.success("Payment approved", { description: whoAndHow(id) });
       router.refresh();
       setApprovingId(null);
+    } catch (err) {
+      toast.error("Couldn't approve that payment", { description: failureText(err), action: { label: "Retry", onClick: () => void handleApprove(id) } });
     } finally {
       setBusyId(null);
     }
@@ -171,13 +185,18 @@ export function PaymentQueue({
       const result = await onRefund(id, refundNote.trim(), refundCredits, refundPlan);
       if (!result.ok) {
         setRefundError(result.error);
+        toast.error("Couldn't refund that payment", { description: result.error ?? undefined });
         return;
       }
       setRefundingId(null);
       setRefundNote("");
       router.refresh();
-      // The refund went through but part of it could not be done; the panel is gone after a refresh, so say so now.
-      if (result.warning) window.alert(`Refunded, with a note: ${result.warning}`);
+      // The refund went through but part of it could not be done; the panel is gone after a refresh, so say so now,
+      // and keep the toast up until it is dismissed.
+      if (result.warning) toast.warning("Refunded, with a note", { description: result.warning, duration: null });
+      else toast.success("Payment refunded", { description: whoAndHow(id) });
+    } catch (err) {
+      toast.error("Couldn't refund that payment", { description: failureText(err) });
     } finally {
       setBusyId(null);
     }
@@ -188,8 +207,11 @@ export function PaymentQueue({
     setBusyId(id);
     try {
       await onDelete(id);
+      toast.success("Payment record deleted", { description: whoAndHow(id) });
       router.refresh();
       setDeletingId(null);
+    } catch (err) {
+      toast.error("Couldn't delete that payment", { description: failureText(err) });
     } finally {
       setBusyId(null);
     }
@@ -200,9 +222,12 @@ export function PaymentQueue({
     setBusyId(id);
     try {
       await onReject(id, reason.trim());
+      toast.success("Payment rejected", { description: whoAndHow(id) });
       router.refresh();
       setRejectingId(null);
       setReason("");
+    } catch (err) {
+      toast.error("Couldn't reject that payment", { description: failureText(err) });
     } finally {
       setBusyId(null);
     }
