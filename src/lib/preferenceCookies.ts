@@ -5,8 +5,6 @@
 
 export const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 
-export const ATOM_DISMISS_COOKIE = "bnp_atom_dismiss";
-
 export function preferenceCookieOptions(httpOnly: boolean) {
   return {
     path: "/",

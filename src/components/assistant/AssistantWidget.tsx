@@ -6,12 +6,10 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
 import GenerateAIButton, { AI_HALO, AiBorder } from "@/components/ui/button-33";
-import { MessageBubble as IdeaBubble } from "@/components/ui/message-bubble";
-import { ArrowRight, Lightbulb, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
-import { readConsent, CONSENT_DECIDED_EVENT } from "@/lib/cookieConsent";
 import { FULLSCREEN_NAV_EVENT, setAtomPanelOpen } from "@/lib/overlayNav";
 import { ATOM_TRIGGER_EVENT, OPEN_ATOM_CASE_EVENT, OPEN_ATOM_EVENT, isAtomTriggerPresent } from "@/lib/atomTrigger";
 import { SPRING } from "@/lib/motionTokens";
@@ -85,20 +83,8 @@ import { SPRING } from "@/lib/motionTokens";
  *    real name, which the visitor-facing API never even returns.
  */
 
-const GREETING_TEXT = "Hi I am Atom, your personal assistant. Ask me anything related to Bass Note Piano";
-const GREETING_SEEN_KEY = "bnp-atom-greeting-seen";
 const FEEDBACK_KEY = "bnp-atom-feedback";
 const ESCALATION_ID_KEY = "bnp-atom-escalation-id";
-const GREETING_DELAY_MS = 1800;
-const GREETING_VISIBLE_MS = 9000;
-
-// Local fallback copy of the dismissal count (the real count lives on the
-// server: a one-year device cookie plus the account, see
-// /api/assistant/greeting). Mirrors ATOM_GREETING_DISMISS_LIMIT in
-// src/lib/assistant.ts. localStorage, not sessionStorage: it needs to
-// survive closing the tab, unlike GREETING_SEEN_KEY above.
-const ANONYMOUS_GREETING_DISMISS_KEY = "bnp-atom-greeting-dismiss-count";
-const ANONYMOUS_GREETING_DISMISS_LIMIT = 3;
 const SUPPORT_POLL_MS = 2500;
 
 const SUGGESTIONS = [
@@ -150,15 +136,6 @@ function readStoredEscalationId(): string | null {
     return window.sessionStorage.getItem(ESCALATION_ID_KEY);
   } catch {
     return null;
-  }
-}
-
-function readAnonymousGreetingDismissCount(): number {
-  if (typeof window === "undefined") return 0;
-  try {
-    return Number(window.localStorage.getItem(ANONYMOUS_GREETING_DISMISS_KEY)) || 0;
-  } catch {
-    return 0;
   }
 }
 
@@ -371,30 +348,9 @@ export function AssistantWidget() {
   const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
-  const [showGreeting, setShowGreeting] = useState(false);
-  // The welcome tour announces when it opens and closes (it is an unrelated sibling, so a DOM event,
-  // not shared state). While it is open the greeting bubble waits, so the two never stack on screen.
-  const [tourOpen, setTourOpen] = useState(false);
-  useEffect(() => {
-    const onTour = (e: Event) => setTourOpen(Boolean((e as CustomEvent<boolean>).detail));
-    window.addEventListener("bnp:force-dock-visible", onTour);
-    return () => window.removeEventListener("bnp:force-dock-visible", onTour);
-  }, []);
-  // A top-of-screen banner (phone, Discord, practice) is showing: the greeting bubble waits for it to leave.
-  const [bannerOpen, setBannerOpen] = useState(false);
-  useEffect(() => {
-    const onBanner = (e: Event) => setBannerOpen(Boolean((e as CustomEvent<boolean>).detail));
-    window.addEventListener("bnp:top-banner", onBanner);
-    return () => window.removeEventListener("bnp:top-banner", onBanner);
-  }, []);
   // Model-predicted follow-ups for the chips; empty until the first answer
   // lands (the built-in SUGGESTIONS cover the empty chat).
   const [generatedSuggestions, setGeneratedSuggestions] = useState<string[]>([]);
-  // Whether the greeting bubble has been explicitly dismissed enough times
-  // (see dismissGreeting) that it should never be offered again. Checked
-  // once mounted, server-side for a signed-in account or from this
-  // browser's own localStorage otherwise (see the effect below).
-  const [greetingSuppressed, setGreetingSuppressed] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -446,7 +402,7 @@ export function AssistantWidget() {
   }, [open]);
 
   // The dashboard TopBar's "Ask AI" button (see lib/atomTrigger.ts) replaces
-  // the floating launcher and greeting bubble while it is mounted, and opens
+  // the floating launcher while it is mounted, and opens
   // this panel on click.
   const [hasTopBarTrigger, setHasTopBarTrigger] = useState(false);
   useEffect(() => {
@@ -477,27 +433,6 @@ export function AssistantWidget() {
     window.addEventListener(OPEN_ATOM_CASE_EVENT, onCase);
     return () => window.removeEventListener(OPEN_ATOM_CASE_EVENT, onCase);
   }, []);
-
-  // Where the top-bar Ask AI button sits, so the greeting bubble can hang right
-  // under it like a thought. Re-measured on resize and whenever the bubble is
-  // about to show (the nav can reflow between breakpoints).
-  const [triggerAnchor, setTriggerAnchor] = useState<{ top: number; right: number; width: number } | null>(null);
-  useEffect(() => {
-    if (!hasTopBarTrigger) {
-      setTriggerAnchor(null);
-      return;
-    }
-    function measure() {
-      const el = document.querySelector<HTMLElement>("[data-atom-trigger]");
-      if (!el) return setTriggerAnchor(null);
-      const r = el.getBoundingClientRect();
-      if (r.width === 0) return setTriggerAnchor(null);
-      setTriggerAnchor({ top: r.bottom, right: window.innerWidth - r.right, width: r.width });
-    }
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [hasTopBarTrigger, showGreeting]);
 
   // Portals need a real document, same SSR-safety pattern as NotificationBell.
   useEffect(() => {
@@ -597,122 +532,7 @@ export function AssistantWidget() {
     { enabled: Boolean(activeEscalationId && open), resetKey: activeEscalationId },
   );
 
-  // Whether the greeting has been explicitly canceled enough times to stop
-  // offering it at all. A signed-in account persists this server-side (so
-  // it holds across devices); an anonymous visitor only has this browser's
-  // own localStorage. Depends on session?.user?.id rather than just
-  // `mounted` since useSession() itself resolves a moment after mount; the
-  // brief window where that's still unsettled just reads the (harmless,
-  // usually-false) localStorage branch until it re-runs against the real
-  // session, well before GREETING_DELAY_MS could ever show the bubble.
-  //
-  // The server answers for both cases now (a one-year device cookie plus the
-  // account when signed in; see /api/assistant/greeting), so the count no
-  // longer resets when Safari clears page storage or when someone signs in.
-  // The old localStorage counter still counts, so nobody who already
-  // dismissed it three times sees it come back after this change.
-  useEffect(() => {
-    if (!mounted) return;
-    if (readAnonymousGreetingDismissCount() >= ANONYMOUS_GREETING_DISMISS_LIMIT) {
-      setGreetingSuppressed(true);
-      return;
-    }
-    fetch("/api/assistant/greeting")
-      .then((res) => res.json())
-      .then((data) => setGreetingSuppressed(Boolean(data?.suppressed)))
-      .catch(() => {
-        // Best-effort: worst case the greeting shows once more than it should.
-      });
-  }, [mounted, session?.user?.id]);
-
-  // Greeting bubble: once per browser session, only if the conversation is
-  // still empty (a returning visitor mid-conversation doesn't need re-pitching).
-  //
-  // Also held back until the cookie banner is decided: both this bubble and
-  // CookieConsentBanner are fixed, bottom-right, glass-surfaced elements, and
-  // on a visitor's very first page load they used to show at the same time,
-  // their overlapping backdrop-blurs compositing into a genuinely broken-
-  // looking mess ("the shop page is glitched"). The browser's own `storage`
-  // event only fires in *other* tabs, never the one that made the write, so
-  // waiting on that wouldn't catch the same-tab decision that matters here.
-  // `CONSENT_DECIDED_EVENT` is dispatched by `writeConsent()` specifically
-  // for this.
-  useEffect(() => {
-    if (!mounted || messages.length > 0 || greetingSuppressed) return;
-    if (window.sessionStorage.getItem(GREETING_SEEN_KEY)) return;
-
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const arm = () => {
-      timer = setTimeout(() => setShowGreeting(true), GREETING_DELAY_MS);
-    };
-
-    if (readConsent() !== null) {
-      arm();
-      return () => clearTimeout(timer);
-    }
-
-    const onDecided = () => arm();
-    window.addEventListener(CONSENT_DECIDED_EVENT, onDecided, { once: true });
-    return () => {
-      window.removeEventListener(CONSENT_DECIDED_EVENT, onDecided);
-      clearTimeout(timer);
-    };
-  }, [mounted, messages.length, greetingSuppressed]);
-
-  // The bubble introduces itself, then gets out of the way on its own so it
-  // never sits on top of page content for long.
-  useEffect(() => {
-    if (!showGreeting) return;
-    const timer = setTimeout(() => hideGreetingForSession(), GREETING_VISIBLE_MS);
-    return () => clearTimeout(timer);
-    // hideGreetingForSession only touches state setters and sessionStorage.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showGreeting]);
-
-  // Hides the bubble for the rest of this tab's session regardless of how
-  // that happened. Opening the chat (openPanel) counts just as much as an
-  // explicit cancel here; neither should keep re-pitching the same tab.
-  function hideGreetingForSession() {
-    setShowGreeting(false);
-    try {
-      window.sessionStorage.setItem(GREETING_SEEN_KEY, "1");
-    } catch {
-      // Non-fatal: worst case the greeting reappears once more.
-    }
-  }
-
-  /**
-   * The bubble's own explicit dismiss (X) control specifically, distinct
-   * from opening the chat (openPanel), which also hides the bubble for this
-   * tab but isn't "canceling" it: using Atom is already a stronger signal
-   * than closing an unread pitch, so it doesn't count toward the limit.
-   * Persisted server-side for a signed-in account (so the cap holds across
-   * every device, not just this browser); an anonymous visitor has no
-   * account for that, so this browser's own localStorage stands in.
-   */
-  function dismissGreeting() {
-    hideGreetingForSession();
-    // Counted on the server for everyone (device cookie, plus the account
-    // when signed in). localStorage keeps a local copy as a fallback.
-    try {
-      const next = readAnonymousGreetingDismissCount() + 1;
-      window.localStorage.setItem(ANONYMOUS_GREETING_DISMISS_KEY, String(next));
-      if (next >= ANONYMOUS_GREETING_DISMISS_LIMIT) setGreetingSuppressed(true);
-    } catch {
-      // Non-fatal: the server count below still applies.
-    }
-    fetch("/api/assistant/greeting", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.suppressed) setGreetingSuppressed(true);
-      })
-      .catch(() => {
-        // Best-effort: worst case this dismissal just doesn't count server-side.
-      });
-  }
-
   function openPanel() {
-    hideGreetingForSession();
     setOpen(true);
     setTimeout(() => inputRef.current?.focus(), 250);
   }
@@ -1230,106 +1050,6 @@ export function AssistantWidget() {
               </a>
             </p>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* The "I have an idea" greeting: a thought bubble hanging under the top-bar
-          Ask AI button, with the little trail of circles a thought bubble has
-          rising toward it. Same Atom look as everything else (glowing border,
-          neumorphic fill). The three-dismissals-and-it-never-returns rule is the
-          existing one, in dismissGreeting/greetingSuppressed. */}
-      <AnimatePresence>
-        {showGreeting && !tourOpen && !bannerOpen && !open && hasTopBarTrigger && triggerAnchor && (
-          <motion.div
-            key="idea-bubble"
-            initial={{ opacity: 0, y: -8, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.92 }}
-            transition={SPRING.lively}
-            style={{
-              position: "fixed",
-              top: triggerAnchor.top + 26,
-              right: Math.max(12, Math.min(triggerAnchor.right, 40)),
-              width: "min(268px, calc(100vw - 24px))",
-              transformOrigin: "top right",
-            }}
-            className="z-[46]"
-          >
-            {/* Thought trail: small, then bigger, rising to the button. */}
-            <span
-              aria-hidden
-              className="absolute rounded-full bg-neu-base ring-[1.5px] ring-amber-400/70 shadow-raised-low"
-              style={{ width: 8, height: 8, top: -24, right: triggerAnchor.right + triggerAnchor.width / 2 - Math.max(12, Math.min(triggerAnchor.right, 40)) - 4 }}
-            />
-            <span
-              aria-hidden
-              className="absolute rounded-full bg-neu-base ring-[1.5px] ring-amber-400/70 shadow-raised-low"
-              style={{ width: 13, height: 13, top: -16, right: triggerAnchor.right + triggerAnchor.width / 2 - Math.max(12, Math.min(triggerAnchor.right, 40)) - 6.5 }}
-            />
-            <motion.div
-              animate={{ y: [0, -3, 0] }}
-              transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-              className="relative rounded-[24px] ring-[1.5px] ring-amber-400/70"
-              style={{ boxShadow: `var(--neu-raised-mid), ${AI_HALO}` }}
-            >
-              {/* The bubble itself is the 21st.dev Message Bubble (components/ui/message-bubble.tsx). */}
-              <IdeaBubble variant="incoming" state="visible" maxWidth="100%" bodyStyle={{ display: "block", padding: "14px 40px 14px 14px", borderRadius: 24 }}>
-                <button type="button" onClick={openPanel} className="flex w-full items-start gap-3 text-left">
-                  <Lightbulb className="mt-0.5 size-5 shrink-0 text-amber-400" fill="currentColor" aria-hidden />
-                  <span>{GREETING_TEXT}</span>
-                </button>
-              </IdeaBubble>
-              <button
-                type="button"
-                aria-label="Dismiss"
-                onClick={dismissGreeting}
-                className="absolute right-2.5 top-2.5 z-20 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-neu-base text-primary shadow-raised-low transition hover:opacity-70"
-              >
-                <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
-                  <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showGreeting && !tourOpen && !open && !hasTopBarTrigger && (
-          // A <button> (the bubble, opens the panel) used to have another
-          // interactive element (the dismiss control) nested inside it,
-          // invalid HTML regardless of whether that inner control is a real
-          // <button> or (as it was) a role="button" span, and genuinely
-          // ambiguous for a screen reader or keyboard user, not just a
-          // technicality. Two sibling buttons inside a plain wrapping div
-          // instead: open and dismiss are both real, independently
-          // reachable controls, neither nested in the other.
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={SPRING.snappy}
-            // Same reasoning as the open panel above: no local
-            // `--elev-border`/`--elev-bg` override anymore, so this greeting
-            // bubble reads the same elevated-glass material every other
-            // `glass-surface-elevated` on the site does.
-            className="relative max-w-[240px] rounded-2xl text-body text-primary shadow-raised-mid"
-          >
-            <AiBorder rounded="rounded-2xl" surface="bg-neu-base" />
-            <button type="button" onClick={openPanel} className="relative z-10 block w-full rounded-2xl px-4 py-3 text-left">
-              {GREETING_TEXT}
-            </button>
-            <button
-              type="button"
-              aria-label="Dismiss"
-              onClick={dismissGreeting}
-              className="absolute -right-2 -top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-neu-base text-primary shadow-raised-low transition hover:opacity-70"
-            >
-              <svg viewBox="0 0 24 24" fill="none" className="h-3 w-3">
-                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-            </button>
           </motion.div>
         )}
       </AnimatePresence>
