@@ -1,48 +1,83 @@
 "use client";
 
-import { Toaster as SonnerToaster, toast } from "sonner";
+import { useEffect, useState } from "react";
+import { Toaster as SileoToaster, sileo, type SileoOptions } from "sileo";
 
 /**
- * #1, Toast notifications.
+ * Toast notifications, built on Sileo (gooey SVG body, spring physics).
  *
- * Styled through `toastOptions.classNames` rather than Sonner's own CSS
- * variables. Sonner ships light/dark themes built on fixed colours; this app
- * has 3 themes (each with universal glass, its own ground colour, and a
- * 5-way accent choice) driven by the ramp in themes.css, so the only way a
- * toast matches the page it appears over is to hand it the same surface
- * classes every other panel uses (`.glass-surface`, `slate-*`, `amber-*`).
+ * Sileo paints its toast body as an SVG `fill`, so the colour has to be a real
+ * value, not a class. This app has several themes driven by the ramp in
+ * themes.css, so the wrapper reads the live `--neu-base` from <html> and
+ * hands Sileo that, and watches `data-theme` / `data-mode` so a theme switch
+ * recolours the next toast. Text colours come from the rules in globals.css
+ * (`[data-sileo-*]`), which use the same slate ramp as every other panel.
  *
- * `richColors` is deliberately off for the same reason, it would inject
- * Sonner's own green/red rather than the ramp's slate-50/red-400.
+ * Sileo has no green-for-success rule of its own to fight: its state colours
+ * are overridden in globals.css to the app's (paper text for success, red for
+ * errors), because green means "tap this" only.
  */
+const FALLBACK_FILL = "rgb(38 38 36)";
+
+function readToastFill(): string {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue("--neu-base").trim();
+  return raw ? `rgb(${raw})` : FALLBACK_FILL;
+}
+
 export function Toaster() {
+  const [fill, setFill] = useState(FALLBACK_FILL);
+
+  useEffect(() => {
+    const update = () => setFill(readToastFill());
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme", "data-mode", "class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <SonnerToaster
-      position="bottom-right"
-      // Sonner's default is 'light'; forcing 'system' off keeps it from
-      // applying a palette on top of the classNames below.
-      theme="light"
-      richColors={false}
-      closeButton
-      toastOptions={{
-        classNames: {
-          toast: "!rounded-card !bg-neu-base !shadow-raised-mid text-slate-100 !border-transparent !text-small",
-          title: "!text-small font-semibold text-slate-50",
-          description: "!text-small !text-slate-400",
-          // Solid --primary, neutral, see globals.css's own `--primary`
-          // comment: green was tried for real CTAs too and reverted by
-          // direct instruction.
-          actionButton: "!rounded-control !bg-[rgb(var(--cta-bg,var(--primary)))] !text-[rgb(var(--cta-ink,var(--primary-foreground)))] !font-semibold",
-          cancelButton: "!bg-neu-base !shadow-raised-low !text-slate-300",
-          closeButton: "!bg-neu-base !border-transparent !shadow-raised-low !text-slate-400",
-          // Success is paper text plus sonner's own check icon, never green
-          // (green means "tap this" only).
-          success: "!text-slate-50",
-          error: "!text-red-400",
-        },
-      }}
+    <SileoToaster
+      // Top centre: Atom (bottom right) and the dock (bottom) both live at the
+      // bottom of every screen, so a toast there would sit under them.
+      position="top-center"
+      offset={{ top: "calc(env(safe-area-inset-top, 0px) + 0.5rem)" }}
+      options={{ fill }}
     />
   );
 }
 
-export { toast };
+/**
+ * Same call shape the app used with Sonner, `toast.error("Title", { description,
+ * action: { label, onClick } })`, so call sites stay one line. Sileo's own
+ * `sileo` object is exported for anything that needs `promise`.
+ */
+type ToastExtras = {
+  description?: SileoOptions["description"];
+  action?: { label: string; onClick: () => void };
+  duration?: number | null;
+};
+
+function show(kind: "success" | "error" | "warning" | "info") {
+  return (title: string, extras: ToastExtras = {}) =>
+    sileo[kind]({
+      title,
+      description: extras.description,
+      duration: extras.duration,
+      button: extras.action ? { title: extras.action.label, onClick: extras.action.onClick } : undefined,
+    });
+}
+
+export const toast = {
+  success: show("success"),
+  error: show("error"),
+  warning: show("warning"),
+  info: show("info"),
+  promise: sileo.promise,
+  dismiss: sileo.dismiss,
+  clear: sileo.clear,
+};
+
+export { sileo };

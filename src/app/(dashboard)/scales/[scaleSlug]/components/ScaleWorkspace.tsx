@@ -219,11 +219,18 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
     setMarkingPractice(true);
     setActionError(null);
     try {
-      await onMarkPracticeCompleted();
+      await toast.promise(onMarkPracticeCompleted(), {
+        loading: { title: "Logging practice" },
+        success: { title: "Practice logged", description: `${scaleGroup.code}: ${scaleGroup.title}` },
+        error: {
+          title: "Couldn't log that practice",
+          description: "Nothing was saved. Try again in a moment.",
+          button: { title: "Retry", onClick: () => void handlePractice() },
+        },
+      });
       router.refresh();
-      toast.success("Practice logged", { description: `${scaleGroup.code}: ${scaleGroup.title}` });
     } catch {
-      toast.error("Couldn't log that practice", { description: "Nothing was saved. Try again in a moment." });
+      // The error toast above already told them; nothing else to do.
     } finally {
       setMarkingPractice(false);
     }
