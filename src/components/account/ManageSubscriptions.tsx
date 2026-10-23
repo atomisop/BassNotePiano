@@ -9,6 +9,7 @@ import { calculatePaymentPlanRate, discountedPlanPriceCents, PLAN_CADENCE_CREDIT
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { usePricing } from "@/components/billing/PricingContext";
+import { toast } from "@/components/ui/Toaster";
 
 function formatUsd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -110,10 +111,13 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
     setTermError(null);
     const result = await onChangeTerm(term);
     if (!result.ok) {
+      const message = result.error ?? "Something went wrong. Please try again.";
       setPendingTerm(null);
-      setTermError(result.error ?? "Something went wrong. Please try again.");
+      setTermError(message);
+      toast.error("Couldn't change your plan", { description: message });
       return;
     }
+    toast.success("Plan updated");
     router.refresh();
   }
 
@@ -140,10 +144,13 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
     setCancelError(null);
     const result = await onCancel(reason, trimmedNote || null);
     if (!result.ok) {
+      const message = result.error ?? "Something went wrong. Please try again.";
       setCancelStage("reason");
-      setCancelError(result.error ?? "Something went wrong. Please try again.");
+      setCancelError(message);
+      toast.error("Couldn't cancel your plan", { description: message });
       return;
     }
+    toast.info("Plan canceled");
     router.refresh();
   }
 

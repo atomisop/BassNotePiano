@@ -15,6 +15,7 @@ import { checkPaymentPhoneAction, getPaymentPhoneStateAction, savePaymentPhoneAc
 import type { PaymentPhoneCheck } from "@/lib/paymentPhone";
 import { buttonVariants } from "@/components/ui/button";
 import { useDialogFocus } from "@/hooks/useDialogFocus";
+import { toast } from "@/components/ui/Toaster";
 
 export interface ZellePaymentModalProps {
   isOpen: boolean;
@@ -259,8 +260,11 @@ export function ZellePaymentModal({
     try {
       await onSubmit({ senderName: senderName.trim(), note: note.trim() || undefined, method });
       setStep("pending");
+      toast.info("Sent for review", { description: "We will check your payment and tell you here as soon as it is approved." });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong submitting your confirmation.");
+      const message = err instanceof Error ? err.message : "Something went wrong submitting your confirmation.";
+      setError(message);
+      toast.error("Couldn't send that", { description: message, action: { label: "Retry", onClick: () => void handleSubmit() } });
     } finally {
       setSubmitting(false);
     }

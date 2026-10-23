@@ -1559,3 +1559,20 @@
 [data-sileo-viewport] [data-sileo-description] {
   color: rgb(var(--c-s-300, 203 213 225)) !important;
 }
+
+/* Sileo draws every toast 350px wide (a fixed number in its code). On phones narrower than that plus its edge gap the
+   body ran off both sides (320px showed it 15px past each edge). Scaling the whole viewport keeps the shape and the
+   spring intact; Sileo measures with layout sizes, so the scale does not disturb its own maths. The scale shares one
+   transform with Sileo's own centring (`translateX(-50%)`): the separate `scale` property would be applied before it
+   and push the toast off centre. */
+@media (max-width: 373px) {
+  :root [data-sileo-viewport][data-position$="center"] {
+    transform: translateX(-50%) scale(0.92);
+    transform-origin: top center;
+  }
+}
+@media (max-width: 345px) {
+  :root [data-sileo-viewport][data-position$="center"] {
+    transform: translateX(-50%) scale(0.82);
+  }
+}

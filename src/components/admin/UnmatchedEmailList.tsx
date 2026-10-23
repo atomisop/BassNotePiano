@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { toast } from "@/components/ui/Toaster";
 
 export interface UnmatchedEmailRow {
   id: string;
@@ -52,15 +53,23 @@ export function UnmatchedEmailList({
   const [confirming, setConfirming] = useState<{ receiptId: string; paymentId: string | "dismiss" | "ignore" } | null>(null);
   const [error, setError] = useState<{ receiptId: string; message: string } | null>(null);
 
-  async function run(receiptId: string, action: () => Promise<Result>) {
+  async function run(receiptId: string, action: () => Promise<Result>, done: { title: string; description?: string }) {
     setBusy(receiptId);
     setError(null);
-    const result = await action();
+    let result: Result;
+    try {
+      result = await action();
+    } catch {
+      result = { ok: false, error: "It did not go through. Try again." };
+    }
     setBusy(null);
     if (!result.ok) {
-      setError({ receiptId, message: result.error ?? "Something went wrong." });
+      const message = result.error ?? "Something went wrong.";
+      setError({ receiptId, message });
+      toast.error(`Couldn't finish: ${done.title.toLowerCase()}`, { description: message });
       return;
     }
+    toast.success(done.title, { description: done.description });
     setConfirming(null);
     router.refresh();
   }
@@ -103,7 +112,7 @@ export function UnmatchedEmailList({
                         <button
                           type="button"
                           disabled={busy === row.id}
-                          onClick={() => run(row.id, () => onMatch(row.id, c.id))}
+                          onClick={() => run(row.id, () => onMatch(row.id, c.id), { title: "Email attached, payment approved", description: who })}
                           className={buttonVariants({ variant: "primary", size: "sm" })}
                         >
                           {busy === row.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
@@ -141,7 +150,7 @@ export function UnmatchedEmailList({
                 <button
                   type="button"
                   disabled={busy === row.id}
-                  onClick={() => run(row.id, () => onDismiss(row.id))}
+                  onClick={() => run(row.id, () => onDismiss(row.id), { title: "Email dismissed" })}
                   className={buttonVariants({ variant: "outline", size: "sm" })}
                 >
                   {busy === row.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
@@ -159,7 +168,7 @@ export function UnmatchedEmailList({
                 <button
                   type="button"
                   disabled={busy === row.id}
-                  onClick={() => run(row.id, () => onIgnoreSender(row.id))}
+                  onClick={() => run(row.id, () => onIgnoreSender(row.id), { title: "Sender ignored from now on", description: row.senderName })}
                   className={buttonVariants({ variant: "outline", size: "sm" })}
                 >
                   {busy === row.id && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
