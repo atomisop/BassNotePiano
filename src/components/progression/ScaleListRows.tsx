@@ -19,6 +19,8 @@ export interface ScaleListRowsProps {
   /** Slug of the one "you're here" scale, or null if it is not in this list. */
   currentSlug: string | null;
   onRowClick: (scale: ScaleAccessState) => void;
+  /** On phones, rows from this position on are hidden (the roadmap's "Show all" button reveals them). */
+  phoneHiddenFrom?: number;
 }
 
 /**
@@ -28,7 +30,7 @@ export interface ScaleListRowsProps {
  * grid, not a re-skin of it, so a student can scan all 15 without heavy
  * scrolling.
  */
-export function ScaleListRows({ roadmap, currentSlug, onRowClick }: ScaleListRowsProps) {
+export function ScaleListRows({ roadmap, currentSlug, onRowClick, phoneHiddenFrom }: ScaleListRowsProps) {
   return (
     <motion.ol
       variants={listContainer}
@@ -36,14 +38,14 @@ export function ScaleListRows({ roadmap, currentSlug, onRowClick }: ScaleListRow
       animate="visible"
       className="divide-y divide-ink/[0.08] overflow-hidden rounded-card border border-ink/[0.08] bg-[rgb(var(--plane-mid-bg))] shadow-plane-mid"
     >
-      {roadmap.map((scale) => {
+      {roadmap.map((scale, index) => {
         const locked = !scale.canAccess;
         const isCurrent = scale.scaleGroup.slug === currentSlug;
         const isCompleted = scale.status === "COMPLETED";
         const doneCount = [scale.moduleRead, scale.practiceCompleted, scale.quizPassed].filter(Boolean).length;
 
         return (
-          <motion.li key={scale.scaleGroup.slug} variants={listItem}>
+          <motion.li key={scale.scaleGroup.slug} variants={listItem} className={phoneHiddenFrom !== undefined && index >= phoneHiddenFrom ? "max-md:hidden" : undefined}>
             <button
               type="button"
               onClick={() => onRowClick(scale)}

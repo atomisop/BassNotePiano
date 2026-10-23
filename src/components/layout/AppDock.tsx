@@ -7,6 +7,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Home, CalendarCheck, Users, MessageSquare, Settings, type LucideIcon } from "lucide-react";
 import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { onChange } from "@/lib/liveEvents";
+import { SCROLL_TOP_EVENT } from "@/components/layout/ScrollAssist";
 
 // Same 30s cadence as NotificationBell's own poll, which this mirrors.
 const POLL_INTERVAL_MS = 30_000;
@@ -172,6 +173,15 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
               href={item.href}
               aria-label={badge ? `${item.label}, ${badge} unread` : item.label}
               aria-current={active ? "page" : undefined}
+              // The current tab again means "take me to the top" (it would only reload the same page).
+              onClick={
+                active
+                  ? (e) => {
+                      e.preventDefault();
+                      window.dispatchEvent(new Event(SCROLL_TOP_EVENT));
+                    }
+                  : undefined
+              }
               data-tour={"dataTour" in item ? item.dataTour : undefined}
               className="tap relative flex h-[45px] items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >

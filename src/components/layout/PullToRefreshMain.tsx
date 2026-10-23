@@ -208,7 +208,7 @@ export function PullToRefreshMain({ className, children }: { className: string; 
   }, []);
 
   return (
-    <main ref={mainRef} className={className}>
+    <main id="app-scroll" ref={mainRef} className={className}>
       <div ref={contentRef} className="relative">
         <div
           ref={indicatorRef}

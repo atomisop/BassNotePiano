@@ -1,5 +1,6 @@
 import { practiceBannerAllowed } from "@/lib/emailPreferences";
 import { PullToRefreshMain } from "@/components/layout/PullToRefreshMain";
+import { ScrollAssist } from "@/components/layout/ScrollAssist";
 import { AutoRefresh } from "@/components/layout/AutoRefresh";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
@@ -121,6 +122,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pb-32 pt-4 md:px-6 md:pb-32 md:pt-5 lg:pb-8">{children}</PullToRefreshMain>
       </div>
       <AutoRefresh />
+      <Suspense fallback={null}>
+        <ScrollAssist />
+      </Suspense>
       <div className="lg:hidden">
         <AppDock unreadMessageCount={unreadMessageCount} />
       </div>
