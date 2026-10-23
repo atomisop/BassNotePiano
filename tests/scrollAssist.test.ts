@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ignoresMainScroll, readPositions, scrollKey, shouldShowBackToTop, withPosition } from "@/lib/scrollAssist";
+import { ignoresMainScroll, readPositions, scrollKey, shouldOfferJump, shouldShowBackToTop, uniqueTitles, withPosition } from "@/lib/scrollAssist";
 
 describe("shouldShowBackToTop", () => {
   it("appears only after about a screen and a half", () => {
@@ -47,5 +47,19 @@ describe("positions", () => {
     expect(keys).toHaveLength(40);
     expect(keys[0]).toBe("/p20");
     expect(keys.at(-1)).toBe("/p59");
+  });
+});
+
+describe("jump list", () => {
+  it("is offered only for pages with enough sections", () => {
+    expect(shouldOfferJump(2)).toBe(false);
+    expect(shouldOfferJump(3)).toBe(true);
+  });
+  it("lists each title once, in page order, skipping blanks and tidying spaces", () => {
+    expect(uniqueTitles(["  Needs  you now ", "", "People", "Needs you now", "Activity"])).toEqual([
+      { title: "Needs you now", index: 0 },
+      { title: "People", index: 2 },
+      { title: "Activity", index: 4 },
+    ]);
   });
 });

@@ -3,6 +3,26 @@
 /** The page's own scroll area scrolls this many screens before the back-to-top button appears. */
 export const BACK_TO_TOP_SCREENS = 1.5;
 
+/** A page needs at least this many section titles before a "Jump to" list is worth showing. */
+export const MIN_JUMP_HEADINGS = 3;
+
+export function shouldOfferJump(headingCount: number): boolean {
+  return headingCount >= MIN_JUMP_HEADINGS;
+}
+
+/** The list shows each title once, in page order (a repeated title would be two identical rows). */
+export function uniqueTitles(titles: string[]): { title: string; index: number }[] {
+  const seen = new Set<string>();
+  const out: { title: string; index: number }[] = [];
+  titles.forEach((raw, index) => {
+    const title = raw.replace(/\s+/g, " ").trim();
+    if (!title || seen.has(title)) return;
+    seen.add(title);
+    out.push({ title, index });
+  });
+  return out;
+}
+
 export function shouldShowBackToTop(scrollTop: number, clientHeight: number): boolean {
   return clientHeight > 0 && scrollTop > clientHeight * BACK_TO_TOP_SCREENS;
 }

@@ -2,13 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, List } from "lucide-react";
+import { Dialog } from "@/components/ui/Dialog";
 import {
   SCROLL_POSITIONS_STORAGE_KEY,
   ignoresMainScroll,
   readPositions,
   scrollKey,
+  shouldOfferJump,
   shouldShowBackToTop,
+  uniqueTitles,
   withPosition,
 } from "@/lib/scrollAssist";
 
@@ -43,6 +46,11 @@ export function ScrollAssist() {
   keyRef.current = key;
   const pushedRef = useRef(false);
   const [show, setShow] = useState(false);
+  // The page's own section titles, for the "Jump to" sheet (read when it is needed, never kept in step with the page).
+  const [canJump, setCanJump] = useState(false);
+  const [jumpOpen, setJumpOpen] = useState(false);
+  const [jumpItems, setJumpItems] = useState<{ title: string; index: number }[]>([]);
+  const headingsRef = useRef<HTMLElement[]>([]);
 
   // A link tap or router.push opens a page with history.pushState; going back or forward does not. That tells a return
   // from a first visit (listening for popstate is not reliable: Next renders the page before a listener of ours runs).
@@ -129,16 +137,66 @@ export function ScrollAssist() {
     return () => window.removeEventListener(SCROLL_TOP_EVENT, toTop);
   }, []);
 
-  if (!show) return null;
+  // Whether this page has enough sections for a jump list: checked when the page first scrolls far enough to want one.
+  useEffect(() => {
+    if (show) setCanJump(shouldOfferJump(visibleHeadings().length));
+  }, [show, key]);
+
+  function openJump() {
+    const headings = visibleHeadings();
+    headingsRef.current = headings;
+    // A folded section's heading also holds its summary ("2 stopped"); it names itself in data-jump-title.
+    setJumpItems(uniqueTitles(headings.map((h) => h.dataset.jumpTitle ?? h.textContent ?? "")));
+    setJumpOpen(true);
+  }
+
+  function jumpTo(index: number) {
+    const heading = headingsRef.current[index];
+    setJumpOpen(false);
+    if (!heading) return;
+    // A section that is folded on a phone opens as you arrive, so the jump lands on something you can read.
+    heading.querySelector<HTMLButtonElement>('button[aria-expanded="false"]')?.click();
+    // After the sheet has closed and released the page's scroll lock.
+    window.setTimeout(() => heading.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" }), 180);
+  }
+
+  const buttonClass =
+    "tap flex h-11 w-11 items-center justify-center rounded-full bg-neu-base text-slate-100 shadow-raised-mid transition active:shadow-pressed-low";
   return (
-    <button
-      type="button"
-      aria-label="Back to top"
-      onClick={() => window.dispatchEvent(new Event(SCROLL_TOP_EVENT))}
-      // Bottom left, clear of the dock (which is centred) and of Ask AI (bottom right).
-      className="tap fixed bottom-[calc(env(safe-area-inset-bottom,0px)+5.75rem)] left-4 z-(--z-chrome) flex h-11 w-11 items-center justify-center rounded-full bg-neu-base text-slate-100 shadow-raised-mid transition active:shadow-pressed-low lg:bottom-6"
-    >
-      <ArrowUp aria-hidden className="h-5 w-5" />
-    </button>
+    <>
+      {show && (
+        // Bottom left, clear of the dock (which is centred) and of Ask AI (bottom right).
+        <div className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+5.75rem)] left-4 z-(--z-chrome) flex flex-col gap-2.5 lg:bottom-6">
+          {canJump && (
+            <button type="button" aria-label="Jump to a section" onClick={openJump} className={buttonClass}>
+              <List aria-hidden className="h-5 w-5" />
+            </button>
+          )}
+          <button type="button" aria-label="Back to top" onClick={() => window.dispatchEvent(new Event(SCROLL_TOP_EVENT))} className={buttonClass}>
+            <ArrowUp aria-hidden className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+      <Dialog open={jumpOpen} onOpenChange={setJumpOpen} title="Jump to">
+        <ul className="-mx-2 divide-y divide-slate-50/10">
+          {jumpItems.map((item) => (
+            <li key={item.index}>
+              <button type="button" onClick={() => jumpTo(item.index)} className="tap flex w-full items-center justify-between gap-3 rounded-xl px-2 py-3 text-left text-body text-slate-100 active:bg-neu-lift">
+                {item.title}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </Dialog>
+    </>
+  );
+}
+
+/** The page's visible level-2 titles: hidden ones (a desktop-only or phone-only copy) and screen-reader-only ones are skipped. */
+function visibleHeadings(): HTMLElement[] {
+  const root = scroller();
+  if (!root) return [];
+  return Array.from(root.querySelectorAll<HTMLElement>("h2")).filter(
+    (h) => h.getClientRects().length > 0 && !h.classList.contains("sr-only") && (h.textContent ?? "").trim().length > 0,
   );
 }
