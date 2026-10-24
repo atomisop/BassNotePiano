@@ -22,6 +22,8 @@ export interface ScaleCardGridProps {
   /** Slug of the one "you're here" scale, or null if it is not in this list. */
   currentSlug: string | null;
   onCardClick: (scale: ScaleAccessState) => void;
+  /** On phones, cards from this position on are hidden (the roadmap's "Show all" button reveals them). */
+  phoneHiddenFrom?: number;
 }
 
 /**
@@ -34,7 +36,7 @@ export interface ScaleCardGridProps {
  * The section's one green button is "Continue" in the next-step card above,
  * so card actions here stay quiet text.
  */
-export function ScaleCardGrid({ roadmap, currentSlug, onCardClick }: ScaleCardGridProps) {
+export function ScaleCardGrid({ roadmap, currentSlug, onCardClick, phoneHiddenFrom }: ScaleCardGridProps) {
   return (
     <motion.ol
       variants={gridContainer}
@@ -42,13 +44,13 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick }: ScaleCardGr
       animate="visible"
       className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
     >
-      {roadmap.map((scale) => {
+      {roadmap.map((scale, index) => {
         const locked = !scale.canAccess;
         const isCurrent = scale.scaleGroup.slug === currentSlug;
         const isCompleted = scale.status === "COMPLETED";
 
         return (
-          <motion.li key={scale.scaleGroup.slug} variants={gridItem}>
+          <motion.li key={scale.scaleGroup.slug} variants={gridItem} className={phoneHiddenFrom !== undefined && index >= phoneHiddenFrom ? "max-md:hidden" : undefined}>
             <button
               type="button"
               onClick={() => onCardClick(scale)}

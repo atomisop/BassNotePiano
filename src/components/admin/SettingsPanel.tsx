@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronLeft } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Switch as UiSwitch } from "@/components/ui/switch";
 import type { SettingDef, SettingValue } from "@/lib/siteSettingsDefs";
@@ -104,7 +105,11 @@ function Row({ def, value, onSave, onReset }: { def: SettingDef; value: SettingV
 export function SettingsPanel({ defs, categories, initial, onSave, onReset }: Props) {
   const [query, setQuery] = useState("");
   const [onlyChanged, setOnlyChanged] = useState(false);
+  // Phones: one group at a time instead of one very long page. Null = the list of groups.
+  const [active, setActive] = useState<string | null>(null);
   const q = query.trim().toLowerCase();
+  // Searching or filtering to "what I changed" shows every match at once, on any screen size.
+  const browsing = !q && !onlyChanged;
 
   // "Changed" means different from the built-in default, so you can see everything you have ever touched in one list.
   const shown = useMemo(
@@ -134,17 +139,47 @@ export function SettingsPanel({ defs, categories, initial, onSave, onReset }: Pr
         >
           Only what I changed ({changedCount})
         </button>
+        {/* From md up the whole list shows, with these to jump around it. */}
         {categories.map((c) => (
-          <a key={c.id} href={`#settings-${c.id}`} className="tap inline-flex items-center rounded-full bg-neu-base px-3 py-1 text-small text-slate-400 shadow-raised-low hover:text-slate-100">
+          <a key={c.id} href={`#settings-${c.id}`} className="tap hidden items-center rounded-full bg-neu-base px-3 py-1 text-small text-slate-400 shadow-raised-low hover:text-slate-100 md:inline-flex">
             {c.label}
           </a>
         ))}
       </div>
+      {browsing && active === null && (
+        <div className="grid grid-cols-2 gap-3 md:hidden">
+          {categories.map((c) => {
+            const count = defs.filter((d) => d.category === c.id).length;
+            if (count === 0) return null;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setActive(c.id)}
+                className="tap flex min-h-[4.5rem] flex-col items-start justify-between rounded-2xl bg-neu-base p-3.5 text-left shadow-raised-low active:shadow-pressed-low"
+              >
+                <span className="text-small font-semibold text-slate-50">{c.label}</span>
+                <span className="text-small text-slate-500">{count} {count === 1 ? "setting" : "settings"}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {browsing && active !== null && (
+        <button
+          type="button"
+          onClick={() => setActive(null)}
+          className="tap sticky top-0 z-10 -mb-2 inline-flex items-center gap-1.5 rounded-full bg-neu-lift px-3.5 py-1.5 text-small font-medium text-slate-100 shadow-raised-low md:hidden"
+        >
+          <ChevronLeft aria-hidden className="h-4 w-4" />
+          All settings
+        </button>
+      )}
       {categories.map((c) => {
         const rows = shown.filter((d) => d.category === c.id);
         if (rows.length === 0) return null;
         return (
-          <section key={c.id} id={`settings-${c.id}`} className="glass-surface p-5">
+          <section key={c.id} id={`settings-${c.id}`} className={`glass-surface p-5 ${browsing && active !== c.id ? "hidden md:block" : ""}`}>
             <h2 className="text-body font-semibold text-slate-50">{c.label}</h2>
             <p className="text-small text-slate-500">{c.blurb}</p>
             <div className="mt-2 divide-y divide-slate-700/40">

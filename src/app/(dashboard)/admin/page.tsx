@@ -15,6 +15,7 @@ import { getJobStatuses, isStopped } from "@/lib/jobRun";
 import { RefreshTasksButton } from "@/components/admin/RefreshTasksButton";
 import { OverviewStats } from "@/components/admin/OverviewStats";
 import { MetricCard } from "@/components/ui/MetricCard";
+import { PhoneAccordion } from "@/components/ui/PhoneAccordion";
 import { ModuleHealthSection, ModuleHealthSkeleton } from "@/components/admin/ModuleHealthSection";
 
 function formatUsd(cents: number) {
@@ -75,9 +76,8 @@ export default async function AdminOverviewPage() {
       )}
 
       {followUps.length > 0 && (
-        <section className="mt-4 rounded-2xl bg-neu-base p-4 shadow-raised-low">
-          <h2 className="text-body font-semibold text-slate-50">People to follow up with</h2>
-          <ul className="mt-2 divide-y divide-slate-50/10">
+        <PhoneAccordion title="People to follow up with" summary={`${followUps.length} to follow up`} className="mt-4 rounded-2xl bg-neu-base shadow-raised-low">
+          <ul className="divide-y divide-slate-50/10">
             {followUps.map((f) => (
               <li key={f.key} className="py-2.5 text-small">
                 <div className="flex items-center justify-between gap-3">
@@ -103,13 +103,14 @@ export default async function AdminOverviewPage() {
               </li>
             ))}
           </ul>
-        </section>
+        </PhoneAccordion>
       )}
 
       {/* Two trend cards over the last six months, both from real rows
           (User.createdAt and VERIFIED payments). Flat stretches are real
           flat stretches, no smoothing, no seeded history. */}
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <PhoneAccordion title="Signups and revenue" summary={formatUsd(stats.totalRevenueCents)} className="mt-8 rounded-2xl bg-neu-base shadow-raised-low md:bg-transparent md:p-0 md:shadow-none">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <MetricCard
           label="Signups"
           value={stats.totalUsers.toLocaleString()}
@@ -126,6 +127,7 @@ export default async function AdminOverviewPage() {
           tone="success"
         />
       </div>
+      </PhoneAccordion>
 
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
@@ -143,12 +145,11 @@ export default async function AdminOverviewPage() {
 
       {isOwner && (
         <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <section className="glass-surface p-5">
-            <h2 className="text-body font-semibold text-slate-50">Recent activity</h2>
+          <PhoneAccordion title="Recent activity" summary={`${activity.length} changes`} className="glass-surface">
             {activity.length === 0 ? (
-              <p className="mt-3 text-small text-slate-500">Nothing yet.</p>
+              <p className="text-small text-slate-500">Nothing yet.</p>
             ) : (
-              <ul className="mt-3 divide-y divide-slate-50/10">
+              <ul className="divide-y divide-slate-50/10">
                 {activity.map((row) => (
                   <li key={row.id} className="py-2.5 text-small">
                     <p className="text-slate-200">
@@ -162,13 +163,12 @@ export default async function AdminOverviewPage() {
                 ))}
               </ul>
             )}
-          </section>
-          <section className="glass-surface p-5">
-            <h2 className="text-body font-semibold text-slate-50">Page views, last 7 days</h2>
+          </PhoneAccordion>
+          <PhoneAccordion title="Page views, last 7 days" summary={`${visits.reduce((n, v) => n + (v._sum.count ?? 0), 0).toLocaleString()} views`} className="glass-surface">
             {visits.length === 0 ? (
-              <p className="mt-3 text-small text-slate-500">No views yet.</p>
+              <p className="text-small text-slate-500">No views yet.</p>
             ) : (
-              <ul className="mt-3 divide-y divide-slate-50/10">
+              <ul className="divide-y divide-slate-50/10">
                 {visits.map((v) => (
                   <li key={v.path} className="flex items-center justify-between gap-3 py-2.5 text-small">
                     <span className="text-slate-200">{v.path}</span>
@@ -177,15 +177,18 @@ export default async function AdminOverviewPage() {
                 ))}
               </ul>
             )}
-          </section>
-          <section id="tasks" className="glass-surface scroll-mt-20 p-5">
+          </PhoneAccordion>
+          <PhoneAccordion
+            id="tasks"
+            title="Automatic tasks"
+            summary={jobs.filter((j) => isStopped(j.state)).length > 0 ? `${jobs.filter((j) => isStopped(j.state)).length} stopped` : "All running"}
+            warn={jobs.some((j) => isStopped(j.state))}
+            className="glass-surface scroll-mt-20"
+          >
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-body font-semibold text-slate-50">Automatic tasks</h2>
-                <p className="mt-0.5 text-small text-slate-500">
-                  Checked {new Date().toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", second: "2-digit" })} ET
-                </p>
-              </div>
+              <p className="text-small text-slate-500">
+                Checked {new Date().toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", second: "2-digit" })} ET
+              </p>
               <RefreshTasksButton />
             </div>
             <ul className="mt-3 divide-y divide-slate-50/10">
@@ -207,7 +210,7 @@ export default async function AdminOverviewPage() {
                 );
               })}
             </ul>
-          </section>
+          </PhoneAccordion>
         </div>
       )}
 

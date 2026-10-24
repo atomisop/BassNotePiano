@@ -23,9 +23,14 @@ export interface ScaleRoadmapProps {
  * and badges on the same screen instead of three stacked sections (STEP
  * 2B). The tabs only filter what the dashboard already loads; no new data.
  */
+/** Scales shown at first on a phone. */
+const PHONE_VISIBLE = 4;
+
 export function ScaleRoadmap({ roadmap, earnedBadgeCodes }: ScaleRoadmapProps) {
   const router = useRouter();
   const [tab, setTab] = useState<HomeTab>("progress");
+  // Phones: the path is fifteen cards long. Show the scale you are on and the next few; the rest open on request.
+  const [showAllOnPhone, setShowAllOnPhone] = useState(false);
 
   // Defaults to grid on first paint (server and client agree, no hydration
   // mismatch), then swaps to whatever the student last picked once mounted.
@@ -57,6 +62,8 @@ export function ScaleRoadmap({ roadmap, earnedBadgeCodes }: ScaleRoadmapProps) {
   const inProgress = roadmap.filter((s) => s.status !== "COMPLETED");
   const completed = roadmap.filter((s) => s.status === "COMPLETED");
   const shown = tab === "completed" ? completed : inProgress;
+  const hiddenOnPhone = Math.max(0, shown.length - PHONE_VISIBLE);
+  const phoneHiddenFrom = showAllOnPhone || hiddenOnPhone === 0 ? undefined : PHONE_VISIBLE;
 
   function handleCardClick(scale: ScaleAccessState) {
     // A locked scale opens a page that says why it is locked and what to do about it.
@@ -87,9 +94,19 @@ export function ScaleRoadmap({ roadmap, earnedBadgeCodes }: ScaleRoadmapProps) {
             title={tab === "completed" ? "No finished scales yet" : "Every scale is finished"}
           />
         ) : view === "grid" ? (
-          <ScaleCardGrid roadmap={shown} currentSlug={currentSlug} onCardClick={handleCardClick} />
+          <ScaleCardGrid roadmap={shown} currentSlug={currentSlug} onCardClick={handleCardClick} phoneHiddenFrom={phoneHiddenFrom} />
         ) : (
-          <ScaleListRows roadmap={shown} currentSlug={currentSlug} onRowClick={handleCardClick} />
+          <ScaleListRows roadmap={shown} currentSlug={currentSlug} onRowClick={handleCardClick} phoneHiddenFrom={phoneHiddenFrom} />
+        )}
+        {tab !== "badges" && hiddenOnPhone > 0 && (
+          <button
+            type="button"
+            aria-expanded={showAllOnPhone}
+            onClick={() => setShowAllOnPhone((v) => !v)}
+            className="tap mt-3 flex w-full items-center justify-center gap-1.5 rounded-full bg-neu-base px-4 py-2.5 text-small font-semibold text-slate-100 shadow-raised-low active:shadow-pressed-low md:hidden"
+          >
+            {showAllOnPhone ? "Show fewer" : `Show all ${shown.length} scales`}
+          </button>
         )}
       </div>
     </section>

@@ -16,5 +16,17 @@
     "ui": "@/components/ui",
     "lib": "@/lib",
     "hooks": "@/hooks"
+  },
+  "registries": {
+    "@magicui": "https://magicui.design/r/{name}",
+    "@kibo-ui": "https://www.kibo-ui.com/r/{name}.json",
+    "@reui": "https://reui.io/r/{style}/{name}.json",
+    "@animate-ui": "https://animate-ui.com/r/{name}.json",
+    "@motion-primitives": "https://motion-primitives.com/c/{name}.json",
+    "@smoothui": "https://smoothui.dev/r/{name}.json",
+    "@cult-ui": "https://cult-ui.com/r/{name}.json",
+    "@shadcn-studio": "https://shadcnstudio.com/r/{style}/{name}.json",
+    "@eldoraui": "https://eldoraui.site/r/{name}.json",
+    "@aceternity": "https://ui.aceternity.com/registry/{name}.json"
   }
 }
