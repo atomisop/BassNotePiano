@@ -132,7 +132,7 @@ export default async function AdminOverviewPage() {
       <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Subscribers", value: String(subs.active) },
-          { label: "Per 4 weeks", value: formatUsd(subs.monthlyCents) },
+          { label: "Per 28 days", value: formatUsd(subs.monthlyCents) },
           { label: "Due this week", value: `${subs.dueSoon} · ${formatUsd(subs.dueSoonCents)}` },
           { label: "Overdue", value: String(subs.overdue), warn: subs.overdue > 0 },
         ].map((tile) => (

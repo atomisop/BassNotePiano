@@ -863,7 +863,7 @@ function ReferralCard() {
   return (
     <SectionCard title="Invite a friend">
       <p className="text-small text-slate-400">
-        Send your link. When your friend starts a 12 or 24 week plan and their first payment goes through, you both get {data.percent}% off for {data.months} months.
+        Send your link. When your friend starts a 84 or 168 day plan and their first payment goes through, you both get {data.percent}% off for {data.months} months.
       </p>
       <label htmlFor="ref-link" className="sr-only">Your invite link</label>
       <input id="ref-link" readOnly value={data.link} onFocus={(e) => e.currentTarget.select()} className="mt-3 h-11 w-full rounded-lg bg-neu-base px-3 text-base text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />

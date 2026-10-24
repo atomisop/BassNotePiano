@@ -11,6 +11,7 @@ const users: string[] = [];
 const planIds: string[] = [];
 const DAY = 86_400_000;
 const sql = readFileSync(path.join(process.cwd(), "prisma/migrations/20261106000000_billing_28_day_cycles/migration.sql"), "utf8");
+const wordingSql = readFileSync(path.join(process.cwd(), "prisma/migrations/20261107000000_billing_notice_wording/migration.sql"), "utf8");
 const statements = sql
   .split(/;\s*\n\s*\n/)
   .map((s) => s.replace(/--[^\n]*\n/g, "").trim().replace(/;$/, ""))
@@ -102,5 +103,20 @@ describe("the billing migration: existing plans move to 28-day cycles", () => {
     const g = await prisma.creditGrant.findFirstOrThrow({ where: { paymentPlanId: live.p.id } });
     expect(g.expiresAt!.getTime() - moved.nextDueDate.getTime()).toBe(28 * DAY);
     expect((await getCurriculumEntitlement(live.u.id)).kind).toBe("PAID");
+  });
+
+  it("the follow-up migration rewords the notices already sent, and only those", async () => {
+    const a = await plan("Notice", { installmentsPaid: 1, nextDueDate: utc(2026, 11, 12) });
+    await grant(a.u.id, a.p.id, utc(2026, 11, 12));
+    for (const statement of statements) await prisma.$executeRawUnsafe(statement);
+    const other = await prisma.notification.create({ data: { userId: a.u.id, type: "PAYMENT_PLAN_UPDATED", title: "Something else", body: "Plans are now billed in 4-week cycles, so every cycle holds exactly four of your weekly class." } });
+    const wording = wordingSql.replace(/--[^\n]*\n/g, "").trim().replace(/;$/, "");
+    await prisma.$executeRawUnsafe(wording);
+    const sent = await prisma.notification.findFirstOrThrow({ where: { userId: a.u.id, title: "Your plan now bills every 28 days" } });
+    expect(sent.body).toContain("billed every 28 days, and each bill pays for exactly 4 classes.");
+    expect(sent.body).toContain("next payment is due");
+    expect(sent.body).not.toMatch(/4-week|4 weeks/);
+    expect((await prisma.notification.findUniqueOrThrow({ where: { id: other.id } })).body).toContain("4-week cycles"); // not ours: left alone
+    expect(await prisma.notification.count({ where: { userId: a.u.id, title: "Your plan now bills every 4 weeks" } })).toBe(0);
   });
 });

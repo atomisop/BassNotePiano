@@ -145,7 +145,7 @@ function RegisterForm() {
       </div>
       <h1 className="font-hero text-hero font-bold text-balance text-center text-slate-50">Create your account</h1>
       {/^[A-Za-z0-9]{8}$/.test(searchParams.get("ref") ?? "") && (
-        <p className="mt-3 text-center text-small text-slate-300">A friend invited you. Start a 12 or 24 week plan and you both get 10% off for 3 months.</p>
+        <p className="mt-3 text-center text-small text-slate-300">A friend invited you. Start a 84 or 168 day plan and you both get 10% off for 3 months.</p>
       )}
 
       <motion.form onSubmit={handleSubmit} animate={shakeControls} className="mt-6 space-y-4">

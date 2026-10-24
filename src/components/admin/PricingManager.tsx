@@ -38,9 +38,9 @@ const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "c
 const inputClass = "h-11 rounded-lg bg-neu-base px-3 text-base text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
 
 const FIELDS: { key: keyof PricingFormValues; label: string; unit: "$" | "%"; min: number; max: number; help: string }[] = [
-  { key: "pricing.monthlyPlanDollars", label: "4-Week plan price", unit: "$", min: 20, max: 2000, help: "Per 4-week payment, before any term discount. Shown as just under the next $5 ($220 shows as $219.99)." },
-  { key: "pricing.term3DiscountPercent", label: "12-week plan discount", unit: "%", min: 0, max: 60, help: "Off the 4-week price when someone commits to 12 weeks." },
-  { key: "pricing.term6DiscountPercent", label: "24-week plan discount", unit: "%", min: 0, max: 70, help: "Off the 4-week price when someone commits to 24 weeks." },
+  { key: "pricing.monthlyPlanDollars", label: "28-Day plan price", unit: "$", min: 20, max: 2000, help: "Per 28-day payment, before any term discount. Shown as just under the next $5 ($220 shows as $219.99)." },
+  { key: "pricing.term3DiscountPercent", label: "84-day plan discount", unit: "%", min: 0, max: 60, help: "Off the 28-day price when someone commits to 84 days." },
+  { key: "pricing.term6DiscountPercent", label: "168-day plan discount", unit: "%", min: 0, max: 70, help: "Off the 28-day price when someone commits to 168 days." },
   { key: "pricing.familyDiscountPercent", label: "Family plan extra discount", unit: "%", min: 0, max: 50, help: "Extra off, per person, on a family plan." },
   { key: "pricing.extraClassPriceDollars", label: "Extra class price", unit: "$", min: 1, max: 500, help: "One extra 45 minute class, on top of a weekly class or for someone without a plan." },
 ];
@@ -144,7 +144,7 @@ function PricesCard({ initial, onSave }: { initial: PricingFormValues; onSave: P
               <li key={r.term} className="rounded-xl bg-neu-base p-3 shadow-raised-low">
                 <p className="text-small font-medium text-slate-100">{r.label}</p>
                 <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5 text-small text-slate-300">
-                  <dt className="text-slate-500">Per 4 weeks</dt>
+                  <dt className="text-slate-500">Per 28 days</dt>
                   <dd className="tabular-nums">{usd(r.monthly)}</dd>
                   <dt className="text-slate-500">Family, per person</dt>
                   <dd className="tabular-nums">{usd(r.family)}</dd>
@@ -159,7 +159,7 @@ function PricesCard({ initial, onSave }: { initial: PricingFormValues; onSave: P
               <thead>
                 <tr className="text-slate-500">
                   <th scope="col" className="py-1 pr-3 font-medium">Plan</th>
-                  <th scope="col" className="py-1 pr-3 font-medium">Per 4 weeks</th>
+                  <th scope="col" className="py-1 pr-3 font-medium">Per 28 days</th>
                   <th scope="col" className="py-1 pr-3 font-medium">Family, per person</th>
                   <th scope="col" className="py-1 font-medium">Whole term</th>
                 </tr>
@@ -211,7 +211,7 @@ function PlanLine({ plan, percent }: { plan: { monthlyCents: number; listCents: 
   const after = percent > 0 ? discountedPlanPriceCents(plan.listCents, percent) : plan.listCents;
   return (
     <span className="tabular-nums text-slate-300">
-      {usd(plan.monthlyCents)} per 4 weeks now
+      {usd(plan.monthlyCents)} per 28 days now
       {after !== plan.monthlyCents && (
         <>
           {" "}
@@ -336,7 +336,7 @@ function AddDiscount({ onSearch, onSet }: { onSearch: Props["onSearch"]; onSet: 
                   <span className="block truncate text-slate-100">{r.name ?? r.email}</span>
                   {r.name && <span className="block truncate text-slate-500">{r.email}</span>}
                 </span>
-                <span className="shrink-0 text-slate-400">{r.discountPercent > 0 ? `${r.discountPercent}% off now` : r.plan ? (r.plan.family ? "Family plan" : `${usd(r.plan.monthlyCents)} per 4 weeks`) : "No plan yet"}</span>
+                <span className="shrink-0 text-slate-400">{r.discountPercent > 0 ? `${r.discountPercent}% off now` : r.plan ? (r.plan.family ? "Family plan" : `${usd(r.plan.monthlyCents)} per 28 days`) : "No plan yet"}</span>
               </button>
             </li>
           ))}
