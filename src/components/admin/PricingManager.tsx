@@ -38,12 +38,11 @@ const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "c
 const inputClass = "h-11 rounded-lg bg-neu-base px-3 text-base text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
 
 const FIELDS: { key: keyof PricingFormValues; label: string; unit: "$" | "%"; min: number; max: number; help: string }[] = [
-  { key: "pricing.monthlyPlanDollars", label: "Monthly plan price", unit: "$", min: 20, max: 2000, help: "Per month, before any term discount. Shown as just under the next $5 ($220 shows as $219.99)." },
-  { key: "pricing.term3DiscountPercent", label: "3-month plan discount", unit: "%", min: 0, max: 60, help: "Off the monthly price when someone commits to 3 months." },
-  { key: "pricing.term6DiscountPercent", label: "6-month plan discount", unit: "%", min: 0, max: 70, help: "Off the monthly price when someone commits to 6 months." },
+  { key: "pricing.monthlyPlanDollars", label: "4-Week plan price", unit: "$", min: 20, max: 2000, help: "Per 4-week payment, before any term discount. Shown as just under the next $5 ($220 shows as $219.99)." },
+  { key: "pricing.term3DiscountPercent", label: "12-week plan discount", unit: "%", min: 0, max: 60, help: "Off the 4-week price when someone commits to 12 weeks." },
+  { key: "pricing.term6DiscountPercent", label: "24-week plan discount", unit: "%", min: 0, max: 70, help: "Off the 4-week price when someone commits to 24 weeks." },
   { key: "pricing.familyDiscountPercent", label: "Family plan extra discount", unit: "%", min: 0, max: 50, help: "Extra off, per person, on a family plan." },
   { key: "pricing.extraClassPriceDollars", label: "Extra class price", unit: "$", min: 1, max: 500, help: "One extra 45 minute class, on top of a weekly class or for someone without a plan." },
-  { key: "payments.fifthClassPriceDollars", label: "Fifth class price (Monthly plan)", unit: "$", min: 0, max: 200, help: "A Monthly subscriber adding the fifth class in a five-class month. 3-month and 6-month plans get it free." },
 ];
 
 function toConfig(v: PricingFormValues): PricingConfig {
@@ -145,12 +144,12 @@ function PricesCard({ initial, onSave }: { initial: PricingFormValues; onSave: P
               <li key={r.term} className="rounded-xl bg-neu-base p-3 shadow-raised-low">
                 <p className="text-small font-medium text-slate-100">{r.label}</p>
                 <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-4 gap-y-0.5 text-small text-slate-300">
-                  <dt className="text-slate-500">Per month</dt>
+                  <dt className="text-slate-500">Per 4 weeks</dt>
                   <dd className="tabular-nums">{usd(r.monthly)}</dd>
                   <dt className="text-slate-500">Family, per person</dt>
                   <dd className="tabular-nums">{usd(r.family)}</dd>
                   <dt className="text-slate-500">Whole term</dt>
-                  <dd className="tabular-nums">{r.months === 1 ? "Month to month" : usd(r.monthly * r.months)}</dd>
+                  <dd className="tabular-nums">{r.months === 1 ? "No commitment" : usd(r.monthly * r.months)}</dd>
                 </dl>
               </li>
             ))}
@@ -160,7 +159,7 @@ function PricesCard({ initial, onSave }: { initial: PricingFormValues; onSave: P
               <thead>
                 <tr className="text-slate-500">
                   <th scope="col" className="py-1 pr-3 font-medium">Plan</th>
-                  <th scope="col" className="py-1 pr-3 font-medium">Per month</th>
+                  <th scope="col" className="py-1 pr-3 font-medium">Per 4 weeks</th>
                   <th scope="col" className="py-1 pr-3 font-medium">Family, per person</th>
                   <th scope="col" className="py-1 font-medium">Whole term</th>
                 </tr>
@@ -171,7 +170,7 @@ function PricesCard({ initial, onSave }: { initial: PricingFormValues; onSave: P
                     <th scope="row" className="py-2 pr-3 font-medium">{r.label}</th>
                     <td className="py-2 pr-3 tabular-nums">{usd(r.monthly)}</td>
                     <td className="py-2 pr-3 tabular-nums">{usd(r.family)}</td>
-                    <td className="py-2 tabular-nums">{r.months === 1 ? "Month to month" : usd(r.monthly * r.months)}</td>
+                    <td className="py-2 tabular-nums">{r.months === 1 ? "No commitment" : usd(r.monthly * r.months)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -212,7 +211,7 @@ function PlanLine({ plan, percent }: { plan: { monthlyCents: number; listCents: 
   const after = percent > 0 ? discountedPlanPriceCents(plan.listCents, percent) : plan.listCents;
   return (
     <span className="tabular-nums text-slate-300">
-      {usd(plan.monthlyCents)} a month now
+      {usd(plan.monthlyCents)} per 4 weeks now
       {after !== plan.monthlyCents && (
         <>
           {" "}
@@ -337,7 +336,7 @@ function AddDiscount({ onSearch, onSet }: { onSearch: Props["onSearch"]; onSet: 
                   <span className="block truncate text-slate-100">{r.name ?? r.email}</span>
                   {r.name && <span className="block truncate text-slate-500">{r.email}</span>}
                 </span>
-                <span className="shrink-0 text-slate-400">{r.discountPercent > 0 ? `${r.discountPercent}% off now` : r.plan ? (r.plan.family ? "Family plan" : `${usd(r.plan.monthlyCents)} a month`) : "No plan yet"}</span>
+                <span className="shrink-0 text-slate-400">{r.discountPercent > 0 ? `${r.discountPercent}% off now` : r.plan ? (r.plan.family ? "Family plan" : `${usd(r.plan.monthlyCents)} per 4 weeks`) : "No plan yet"}</span>
               </button>
             </li>
           ))}

@@ -24,11 +24,11 @@ const faqs = (extraClassCents: number) => [
   },
   {
     q: "How do live lessons work?",
-    a: `Every class is ${CLASS_MINUTES} minutes, one-on-one with your teacher, live on Discord. Start a Payment Plan (Monthly, 3-Month, or 6-Month, paid one Zelle or Venmo installment at a time) and you pick your weekly day and time on a calendar of open spots. It is yours every week, booked for you automatically. Want more time? Book an extra class for ${formatUsd(extraClassCents)} whenever there is an open spot. Siblings learning together can use a family bundle instead.`,
+    a: `Every class is ${CLASS_MINUTES} minutes, one-on-one with your teacher, live on Discord. Start a Payment Plan (4-Week, 12-Week, or 24-Week, paid one Zelle or Venmo installment every 4 weeks) and you pick your weekly day and time on a calendar of open spots. It is yours every week, booked for you automatically. Want more time? Book an extra class for ${formatUsd(extraClassCents)} whenever there is an open spot. Siblings learning together can use a family bundle instead.`,
   },
   {
-    q: "What if my month has five of my class day?",
-    a: "A billing month runs from one payment date to the next, so about four times a year it holds five of your class day instead of four. 3-Month and 6-Month plans include that fifth class free, as a thank-you for committing. On the Monthly plan the fifth class is optional: you can add it at a member price, and nothing changes if you skip it.",
+    q: "How often am I billed?",
+    a: "Every 4 weeks, exactly 28 days from one payment to the next. Because a cycle is always four whole weeks, it holds exactly four of your weekly class, whatever the month. Your price per payment is the same every time.",
   },
   {
     q: "Can I cancel a booked lesson?",

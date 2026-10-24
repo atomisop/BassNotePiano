@@ -1,20 +1,17 @@
-import Link from "next/link";
-import { classesLeftInPaidMonth, getActivePaymentPlan, getFifthClassOffer } from "@/lib/paymentPlans";
+import { classesLeftInPaidMonth, getActivePaymentPlan } from "@/lib/paymentPlans";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
-import { formatEtDateTime } from "@/lib/classScheduleLabels";
 
 const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 const dateOnly = (d: Date) => d.toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric" });
 
 /**
- * "My plan" in plain words: what they are on, when the next bill is and how much, how many classes are left this cycle, and the
- * one thing worth doing about it (the optional fifth class, or a longer plan that includes it). Shown on Lessons and on the
- * plan page. Renders nothing without an active plan.
+ * "My plan" in plain words: what they are on, when the next bill is and how much, and how many classes are left this cycle. Shown on
+ * Lessons and on the plan page. Renders nothing without an active plan.
  */
 export async function MyPlanSummary({ userId }: { userId: string }) {
   const plan = await getActivePaymentPlan(userId);
   if (!plan) return null;
-  const [left, fifth] = await Promise.all([classesLeftInPaidMonth(plan), getFifthClassOffer(userId).catch(() => null)]);
+  const left = await classesLeftInPaidMonth(plan);
   const due = plan.nextDueDate;
   const daysToDue = Math.ceil((due.getTime() - Date.now()) / 86_400_000);
   const overdue = daysToDue < 0;
@@ -40,21 +37,6 @@ export async function MyPlanSummary({ userId }: { userId: string }) {
           </div>
         </dl>
       </div>
-      {fifth ? (
-        <p className="mt-3 text-small text-slate-300">
-          This cycle holds a fifth class on {formatEtDateTime(fifth.scheduledAt)}.{" "}
-          <Link href="/lessons?tab=extra" className="font-semibold text-signal-fg underline-offset-4 hover:underline">
-            Add it for {usd(fifth.priceCents)}
-          </Link>
-        </p>
-      ) : plan.term === "MONTHLY" ? (
-        <p className="mt-3 text-small text-slate-400">
-          A 3-month or 6-month plan includes the fifth class in the months that have one, at no extra cost.{" "}
-          <Link href="/billing/plans" className="font-semibold text-slate-200 underline-offset-4 hover:underline">
-            See plans
-          </Link>
-        </p>
-      ) : null}
     </section>
   );
 }

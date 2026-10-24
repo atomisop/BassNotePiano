@@ -18,7 +18,8 @@ import {
   MIN_FAMILY_BUNDLE_RECIPIENTS,
   describePaymentPlan,
 } from "@/lib/classCreditPricing";
-import { addCalendarMonthsClamped, bookReservedWindowForPlan, describeReservedSlot, fifthClassReceiptNote, getFifthClassOffer } from "@/lib/paymentPlans";
+import { addBillingCycles } from "@/lib/billingCycle";
+import { bookReservedWindowForPlan, describeReservedSlot, fifthClassReceiptNote, getFifthClassOffer } from "@/lib/paymentPlans";
 import { createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
 import { adjustUserCredits } from "@/lib/creditAdjustments";
@@ -302,7 +303,7 @@ export async function createFamilyBundlePayment(input: FamilyBundlePurchaseInput
     throw new FamilyBundleError("That weekly length isn't offered anymore. Classes are 45 minutes a week.");
   }
   if (!isPlanTermOffered(input.term)) {
-    throw new FamilyBundleError("That plan length is no longer offered. Pick Monthly, 3-Month, or 6-Month.");
+    throw new FamilyBundleError("That plan length is no longer offered. Pick 4-Week, 12-Week, or 24-Week.");
   }
 
   const normalized = input.recipientEmails.map((e) => e.trim().toLowerCase()).filter(Boolean);
@@ -901,7 +902,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
         userId: payment.userId,
         type: "PAYMENT_PLAN_COMPLETED",
         title: "Payment plan complete",
-        body: `You've paid off your ${plan.termMonths}-month plan in full. Nice work.`,
+        body: `You've paid off your ${plan.termMonths * 4}-week plan in full. Nice work.`,
         emailCategory: "payments",
       });
     }
@@ -968,7 +969,7 @@ async function applyPlanInstallment(
   // The first month starts when the first payment is approved, not when the plan was
   // created, so a student who pays a few days after signing up still gets a full month.
   const cycleStart = plan && plan.installmentsPaid === 0 && plan.nextDueDate < new Date() ? new Date() : plan?.nextDueDate;
-  const cycleEnd = plan && cycleStart ? addCalendarMonthsClamped(cycleStart, 1) : null;
+  const cycleEnd = plan && cycleStart ? addBillingCycles(cycleStart, 1) : null;
 
   // Quantity is snapshotted onto the payment row at installment-creation
   // time (see createPaymentPlan/getOrCreateOpenInstallmentPayment in

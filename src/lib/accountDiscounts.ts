@@ -87,7 +87,7 @@ export async function setAccountDiscount(input: { userId: string; percent: numbe
     await noticePlanUpdated({
       userId: user.id,
       title: "Your plan price changed",
-      body: `Your monthly price is now ${money(planChange.toCents)} (it was ${money(planChange.fromCents)}). It applies to your next bill${planChange.openBillChanged ? ", and the bill that is open now has been updated" : ""}.`,
+      body: `Your price per payment is now ${money(planChange.toCents)} (it was ${money(planChange.fromCents)}). It applies to your next bill${planChange.openBillChanged ? ", and the bill that is open now has been updated" : ""}.`,
     });
   }
   return { percent, planChange };
@@ -113,7 +113,7 @@ export async function clearAccountDiscount(input: { userId: string; actor: { id:
     await noticePlanUpdated({
       userId: user.id,
       title: "Your plan price changed",
-      body: `Your monthly price is now ${money(planChange.toCents)} (it was ${money(planChange.fromCents)}). It applies to your next bill${planChange.openBillChanged ? ", and the bill that is open now has been updated" : ""}.`,
+      body: `Your price per payment is now ${money(planChange.toCents)} (it was ${money(planChange.fromCents)}). It applies to your next bill${planChange.openBillChanged ? ", and the bill that is open now has been updated" : ""}.`,
     });
   }
   return { percent: 0, planChange };

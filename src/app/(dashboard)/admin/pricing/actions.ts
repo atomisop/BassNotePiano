@@ -114,7 +114,7 @@ export async function setAccountDiscountAction(userId: string, percent: number, 
     const result = await setAccountDiscount({ userId, percent, note, actor: { id: admin.id, email: admin.email ?? null } });
     revalidatePath("/", "layout");
     const message = result.planChange && result.planChange.fromCents !== result.planChange.toCents
-      ? `${percent}% off saved. Their monthly price is now ${(result.planChange.toCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })} and they were told.`
+      ? `${percent}% off saved. Their price per payment is now ${(result.planChange.toCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })} and they were told.`
       : `${percent}% off saved. It applies when they start or change a plan.`;
     return { ok: true, message };
   } catch (err) {
@@ -128,7 +128,7 @@ export async function clearAccountDiscountAction(userId: string): Promise<Ok<{ m
     const result = await clearAccountDiscount({ userId, actor: { id: admin.id, email: admin.email ?? null } });
     revalidatePath("/", "layout");
     const message = result.planChange && result.planChange.fromCents !== result.planChange.toCents
-      ? `Discount removed. Their monthly price is back to ${(result.planChange.toCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })} and they were told.`
+      ? `Discount removed. Their price per payment is back to ${(result.planChange.toCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })} and they were told.`
       : "Discount removed.";
     return { ok: true, message };
   } catch (err) {
