@@ -16,6 +16,7 @@ import {
 } from "@/lib/classCreditPricing";
 import { CheckIcon } from "@/components/ui/icons";
 import { NumberTicker } from "@/components/ui/number-ticker";
+import { SnapCarousel } from "@/components/ui/SnapCarousel";
 
 const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
   { value: "MONTHLY", label: "Monthly" },
@@ -25,6 +26,8 @@ const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
 
 /** The card that gets the animated border and the "Best value" badge (a marketing choice, not the lowest price). */
 const FEATURED_TERM: PaymentPlanTerm = "TERM_3";
+
+const FEATURED_INDEX = Math.max(0, TERM_OPTIONS.findIndex((o) => o.value === FEATURED_TERM));
 
 type Audience = "solo" | "family";
 
@@ -61,6 +64,115 @@ export function PaymentPlanTierGrid({ pricing = DEFAULT_PRICING }: { pricing?: P
   const monthlyBaseline = calculatePaymentPlanRate(cadence, "MONTHLY", pricing).installmentAmountCents;
   const isFamily = audience === "family";
 
+  // One plan card. It is built once for the swipe carousel (phones) and once for the side-by-side grid (lg and up), never one
+  // element placed in two spots, so each place gets its own copy.
+  function renderCard(option: (typeof TERM_OPTIONS)[number]): { featured: boolean; node: ReactNode } {
+    const rate = calculatePaymentPlanRate(cadence, option.value, pricing);
+    const family = calculateFamilyBundleTotal(cadence, option.value, MIN_FAMILY_BUNDLE_RECIPIENTS, pricing);
+    const isMonthly = option.value === "MONTHLY";
+    const featured = option.value === FEATURED_TERM;
+
+    const perStudentCents = isFamily ? family.perStudentMonthlyCents : rate.installmentAmountCents;
+    const classesPerMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
+    const percentOff = Math.round((1 - perStudentCents / monthlyBaseline) * 100);
+
+    const features: ReactNode[] = isFamily
+      ? [
+          <>
+            <NumberTicker value={classesPerMonth} /> live {CLASS_MINUTES}-minute classes a month, per student
+          </>,
+          "Each student's weekly time reserved",
+          <>
+            Paid once for the whole term: <NumberTicker value={family.totalCents} format={formatUsd} /> for{" "}
+            <NumberTicker value={family.recipientCount} /> students
+          </>,
+        ]
+      : [
+          <>
+            <NumberTicker value={classesPerMonth} /> live {CLASS_MINUTES}-minute classes a month
+          </>,
+          "Your weekly time reserved",
+          isMonthly ? (
+            "In a five-class-day month, add the fifth class at a member price"
+          ) : (
+            "A free bonus class in any month with five of your class day"
+          ),
+          isMonthly ? (
+            "No commitment, pay month to month"
+          ) : (
+            <>
+              Locked in for <NumberTicker value={rate.termMonths} /> months, paid monthly
+            </>
+          ),
+        ];
+
+    return {
+      featured,
+      node: (
+          <div
+            className={`relative flex flex-1 flex-col gap-7 rounded-2xl p-7 sm:p-8 ${
+              featured
+                ? "bg-neu-base shadow-raised-high ring-2 ring-[rgb(var(--c-a-400))] shadow-[0_0_48px_-8px_rgb(var(--c-a-400)/0.55)]"
+                : "glass-surface opacity-90 transition hover:opacity-100 hover:shadow-raised-high"
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-serif text-body text-slate-50">{option.label}</p>
+              {featured ? (
+                <span className="rounded-full bg-[rgb(var(--c-a-400))] px-3 py-1 text-small font-bold text-black">Best value</span>
+              ) : isMonthly && !isFamily ? (
+                <span className="rounded-full bg-slate-800 px-3 py-1 text-small font-medium text-slate-300">No commitment</span>
+              ) : null}
+            </div>
+    
+            <div>
+              <p className="h-5 text-small tabular-nums text-slate-500">
+                {percentOff > 0 && (
+                  <span className="line-through">
+                    <NumberTicker value={monthlyBaseline} format={formatUsd} />
+                    /mo
+                  </span>
+                )}
+                {percentOff > 0 && (
+                  <span className="ml-2 rounded-full bg-slate-50 px-2 py-0.5 align-middle text-small font-bold text-slate-950">
+                    −<NumberTicker value={percentOff} />%
+                  </span>
+                )}
+              </p>
+              <p className="mt-1 flex items-baseline gap-1.5">
+                <span className={`font-serif text-hero tabular-nums ${featured ? "text-[rgb(var(--c-a-400))]" : "text-slate-50"}`}>
+                  <NumberTicker value={perStudentCents} format={formatUsd} />
+                </span>
+                <span className="text-small text-slate-400">{isFamily ? "/student/mo" : "/month"}</span>
+              </p>
+            </div>
+    
+            <div className="h-px w-full bg-ink/10" />
+    
+            <ul className="flex flex-1 flex-col gap-3.5">
+              {features.map((feature, i) => (
+                <li key={i} className="flex items-start gap-3 text-small text-slate-300">
+                  <CheckIcon size={16} className="mt-0.5 shrink-0 text-[rgb(var(--c-s-50))]" />
+                  <span className="min-w-0">{feature}</span>
+                </li>
+              ))}
+            </ul>
+    
+            <Link
+              href={isFamily ? "/billing/plans" : `/billing/plans?cadence=${cadence}&term=${option.value}`}
+              className={`flex h-12 items-center justify-center rounded-xl text-small font-semibold transition ${
+                featured
+                  ? "bg-[rgb(var(--c-a-400))] text-black shadow-raised-mid hover:brightness-110 active:shadow-pressed-low"
+                  : "bg-neu-base text-slate-100 shadow-raised-low active:shadow-pressed-low hover:text-[rgb(var(--c-s-50))]"
+              }`}
+            >
+              {isFamily ? "Bundle & save" : "Start plan"}
+            </Link>
+          </div>
+          ),
+    };
+  }
+
   return (
     <div>
       <div className="mx-auto mb-8 flex flex-col items-center gap-3">
@@ -80,116 +192,30 @@ export function PaymentPlanTierGrid({ pricing = DEFAULT_PRICING }: { pricing?: P
         )}
       </div>
 
+      {/* Phones: one plan at a time, swipe left and right (the 6-month "best value" plan opens first). */}
+      <div className="lg:hidden">
+        <SnapCarousel label="Plans" peek={28} gap={12} defaultIndex={FEATURED_INDEX} viewportClassName="-my-6 py-8">
+          {TERM_OPTIONS.map((option) => (
+            <div key={option.value} className="relative flex h-full flex-col">
+              {renderCard(option).node}
+            </div>
+          ))}
+        </SnapCarousel>
+      </div>
+
       <motion.div
         // No `key` on purpose: the cards stay mounted when you flip Solo/Family
         // or the weekly length, so only the numbers change (they count).
         variants={gridContainer}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-3"
+        className="hidden items-stretch gap-5 lg:grid lg:grid-cols-3"
       >
         {TERM_OPTIONS.map((option) => {
-          const rate = calculatePaymentPlanRate(cadence, option.value, pricing);
-          const family = calculateFamilyBundleTotal(cadence, option.value, MIN_FAMILY_BUNDLE_RECIPIENTS, pricing);
-          const isMonthly = option.value === "MONTHLY";
-          const featured = option.value === FEATURED_TERM;
-
-          const perStudentCents = isFamily ? family.perStudentMonthlyCents : rate.installmentAmountCents;
-          const classesPerMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
-          const percentOff = Math.round((1 - perStudentCents / monthlyBaseline) * 100);
-
-          const features: ReactNode[] = isFamily
-            ? [
-                <>
-                  <NumberTicker value={classesPerMonth} /> live {CLASS_MINUTES}-minute classes a month, per student
-                </>,
-                "Each student's weekly time reserved",
-                <>
-                  Paid once for the whole term: <NumberTicker value={family.totalCents} format={formatUsd} /> for{" "}
-                  <NumberTicker value={family.recipientCount} /> students
-                </>,
-              ]
-            : [
-                <>
-                  <NumberTicker value={classesPerMonth} /> live {CLASS_MINUTES}-minute classes a month
-                </>,
-                "Your weekly time reserved",
-                isMonthly ? (
-                  "In a five-class-day month, add the fifth class at a member price"
-                ) : (
-                  "A free bonus class in any month with five of your class day"
-                ),
-                isMonthly ? (
-                  "No commitment, pay month to month"
-                ) : (
-                  <>
-                    Locked in for <NumberTicker value={rate.termMonths} /> months, paid monthly
-                  </>
-                ),
-              ];
-
+          const { featured, node } = renderCard(option);
           return (
             <motion.div key={option.value} variants={cardItem} className={`relative flex flex-col ${featured ? "z-10 lg:-my-3 lg:scale-[1.05]" : ""}`}>
-              <div
-                className={`relative flex flex-1 flex-col gap-7 rounded-2xl p-7 sm:p-8 ${
-                  featured
-                    ? "bg-neu-base shadow-raised-high ring-2 ring-[rgb(var(--c-a-400))] shadow-[0_0_48px_-8px_rgb(var(--c-a-400)/0.55)]"
-                    : "glass-surface opacity-90 transition hover:opacity-100 hover:shadow-raised-high"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-serif text-body text-slate-50">{option.label}</p>
-                  {featured ? (
-                    <span className="rounded-full bg-[rgb(var(--c-a-400))] px-3 py-1 text-small font-bold text-black">Best value</span>
-                  ) : isMonthly && !isFamily ? (
-                    <span className="rounded-full bg-slate-800 px-3 py-1 text-small font-medium text-slate-300">No commitment</span>
-                  ) : null}
-                </div>
-
-                <div>
-                  <p className="h-5 text-small tabular-nums text-slate-500">
-                    {percentOff > 0 && (
-                      <span className="line-through">
-                        <NumberTicker value={monthlyBaseline} format={formatUsd} />
-                        /mo
-                      </span>
-                    )}
-                    {percentOff > 0 && (
-                      <span className="ml-2 rounded-full bg-slate-50 px-2 py-0.5 align-middle text-small font-bold text-slate-950">
-                        −<NumberTicker value={percentOff} />%
-                      </span>
-                    )}
-                  </p>
-                  <p className="mt-1 flex items-baseline gap-1.5">
-                    <span className={`font-serif text-hero tabular-nums ${featured ? "text-[rgb(var(--c-a-400))]" : "text-slate-50"}`}>
-                      <NumberTicker value={perStudentCents} format={formatUsd} />
-                    </span>
-                    <span className="text-small text-slate-400">{isFamily ? "/student/mo" : "/month"}</span>
-                  </p>
-                </div>
-
-                <div className="h-px w-full bg-ink/10" />
-
-                <ul className="flex flex-1 flex-col gap-3.5">
-                  {features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-3 text-small text-slate-300">
-                      <CheckIcon size={16} className="mt-0.5 shrink-0 text-[rgb(var(--c-s-50))]" />
-                      <span className="min-w-0">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Link
-                  href={isFamily ? "/billing/plans" : `/billing/plans?cadence=${cadence}&term=${option.value}`}
-                  className={`flex h-12 items-center justify-center rounded-xl text-small font-semibold transition ${
-                    featured
-                      ? "bg-[rgb(var(--c-a-400))] text-black shadow-raised-mid hover:brightness-110 active:shadow-pressed-low"
-                      : "bg-neu-base text-slate-100 shadow-raised-low active:shadow-pressed-low hover:text-[rgb(var(--c-s-50))]"
-                  }`}
-                >
-                  {isFamily ? "Bundle & save" : "Start plan"}
-                </Link>
-              </div>
+              {node}
             </motion.div>
           );
         })}

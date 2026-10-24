@@ -61,7 +61,11 @@ export function Tabs<const T extends string>({
       return;
     }
     const btn = refs.current[itemsRef.current.findIndex((item) => item.id === value)];
-    btn?.scrollIntoView({ inline: "nearest", block: "nearest" });
+    const track = containerRef.current;
+    // Only the row itself scrolls (scrollIntoView also moves every scrolling parent, which slid the whole page sideways).
+    if (btn && track && track.scrollWidth > track.clientWidth) {
+      track.scrollTo({ left: btn.offsetLeft - (track.clientWidth - btn.offsetWidth) / 2, behavior: "smooth" });
+    }
   }, [value]);
 
   useEffect(() => {
