@@ -309,7 +309,7 @@ export function PaymentPlanEnrollmentFlow({
     const progressPercent = Math.min(100, (plan.installmentsPaid / plan.termMonths) * 100);
 
     return (
-      <div>
+      <div className="mx-auto max-w-2xl">
         {pendingSwitch && (
           <div className="mb-6">
             <p className="mb-3 rounded-xl bg-neu-base px-3.5 py-3 text-small text-slate-300 shadow-pressed-low">

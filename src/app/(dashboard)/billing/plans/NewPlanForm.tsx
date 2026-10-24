@@ -233,6 +233,7 @@ export function NewPlanForm({
 
   return (
     <div className="space-y-6">
+      <div className="lg:flex lg:justify-center">
       <Tabs
         label="Who is this plan for?"
         items={[
@@ -245,7 +246,11 @@ export function NewPlanForm({
           setError(null);
         }}
       />
+      </div>
 
+      {/* Wide screens: the choices on the left, the weekly time beside them, so nothing needs a long scroll. */}
+      <div className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-8 lg:space-y-0">
+      <div className="space-y-6">
       <div>
         <p className="mb-2 text-small font-medium text-slate-400">Plan length</p>
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -351,6 +356,8 @@ export function NewPlanForm({
         </section>
       )}
 
+      </div>
+
       <div>
         <p className="mb-2 text-small font-medium text-slate-400">Your weekly time</p>
         {slotsLoading ? (
@@ -378,6 +385,7 @@ export function NewPlanForm({
             )}
           </>
         )}
+      </div>
       </div>
 
       <CheckoutBar priceCents={totals.firstPaymentCents} priceNote={barNote} detail={barDetail} hint={hint} actionLabel="Review" onAction={() => setReviewOpen(true)} />

@@ -126,23 +126,23 @@ export default async function BillingPlansPage(
 
   const pastPlans = allPlans.filter((plan) => plan.status !== "ACTIVE");
 
-  // Same split as the family bundle page (STEP 4): the explanation on the
-  // left, the form on the right, so the form never stretches across a wide
-  // screen. Stacks on smaller screens.
+  // One centered column: the title on top, the form below it. On wide screens the form itself puts the choices and the weekly time side by side.
   return (
-    <div className="lg:grid lg:grid-cols-12 lg:gap-12">
-      <BackLink href="/lessons" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100 lg:col-span-12">
+    <div className="mx-auto w-full max-w-5xl">
+      <BackLink href="/lessons" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
         <ArrowLeftIcon size={16} />
         Back
       </BackLink>
-      <div className="lg:col-span-5">
+      <div className="text-center">
         <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment plan</h1>
       </div>
 
-      <div className="mt-8 lg:col-span-7 lg:mt-0">
-        <FamilyInvitesPanel invites={(await listInvitesForPerson(session.user.id)).map((i) => ({ id: i.id, payerName: i.payerName }))} />
-        {activePlan && <MyPlanSummary userId={session.user.id} />}
+      <div className="mt-8">
+        <div className="mx-auto max-w-2xl">
+          <FamilyInvitesPanel invites={(await listInvitesForPerson(session.user.id)).map((i) => ({ id: i.id, payerName: i.payerName }))} />
+          {activePlan && <MyPlanSummary userId={session.user.id} />}
+        </div>
         <PaymentPlanEnrollmentFlow
           zelleHandle={zelleHandle}
           initialCadence={initialCadence}
@@ -182,7 +182,7 @@ export default async function BillingPlansPage(
       </div>
 
       {pastPlans.length > 0 && (
-        <div className="mt-10 border-t border-ink/10 pt-6 lg:col-span-7 lg:col-start-6">
+        <div className="mx-auto mt-10 max-w-2xl border-t border-ink/10 pt-6">
           <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Plan history</p>
           <div className="mt-4 space-y-3">
             {pastPlans.map((plan) => (
