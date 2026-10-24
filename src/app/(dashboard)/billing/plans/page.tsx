@@ -126,9 +126,9 @@ export default async function BillingPlansPage(
 
   const pastPlans = allPlans.filter((plan) => plan.status !== "ACTIVE");
 
-  // One centered column: the title on top, the form below it. On wide screens the form itself puts the choices and the weekly time side by side.
+  // One centered column: the title on top, the form below it. Everything stacks in that one column at every screen size.
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <div className="mx-auto w-full max-w-2xl">
       <BackLink href="/lessons" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
         <ArrowLeftIcon size={16} />
         Back
