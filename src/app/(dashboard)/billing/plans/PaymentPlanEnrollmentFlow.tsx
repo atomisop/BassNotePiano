@@ -53,9 +53,9 @@ function upcomingDatesFor(dayOfWeek: number, weeks: number): number[] {
 
 
 const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
-  { value: "MONTHLY", label: "4-Week" },
-  { value: "TERM_3", label: "12-Week" },
-  { value: "TERM_6", label: "24-Week" },
+  { value: "MONTHLY", label: "28-Day" },
+  { value: "TERM_3", label: "84-Day" },
+  { value: "TERM_6", label: "168-Day" },
 ];
 
 export interface ActivePlanSummary {
@@ -196,7 +196,7 @@ function SwitchToFamilyPanel({
             </button>
           )}
           <div className="rounded-control bg-neu-base p-3 text-small text-slate-300 shadow-pressed-low">
-            <div className="flex justify-between"><span>Each person, every 4 weeks</span><span>{formatUsd(price.perStudentMonthlyCents)}</span></div>
+            <div className="flex justify-between"><span>Each person, every 28 days</span><span>{formatUsd(price.perStudentMonthlyCents)}</span></div>
             <div className="mt-1 flex justify-between font-semibold text-slate-50"><span>First payment, {Math.max(2, typed.length + 1)} people together</span><span>{formatUsd(price.perStudentMonthlyCents * Math.max(2, typed.length + 1))}</span></div>
           </div>
           <p className="text-small text-slate-400">To confirm, enter your password. We then email you a code.</p>
@@ -293,7 +293,7 @@ export function PaymentPlanEnrollmentFlow({
   // correct if the pricing table above it ever changes.
   const classesPerMonth = rate.creditsPerInstallment / PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
   const classMinutes = CLASS_MINUTES;
-  const termPhrase = rate.termMonths === 1 ? "these 4 weeks" : `your whole ${rate.termMonths * 4}-week term`;
+  const termPhrase = rate.termMonths === 1 ? "these 28 days" : `your whole ${rate.termMonths * 28}-day term`;
 
   // A calendar like the class booking page: every open weekly time shows up
   // on the next few dates that fall on its weekday, so you pick a day you can
@@ -425,10 +425,10 @@ export function PaymentPlanEnrollmentFlow({
             {memberView
               ? fam.waitingForStart
                 ? `This is a family plan for ${fam.memberCount} accounts. Your classes start when ${fam.payerName ?? "the person who set it up"} sends the combined first payment. There is nothing for you to pay.`
-                : `This is a family plan for ${fam.memberCount} accounts. ${fam.payerName ?? "The person who set it up"} pays your 4-week bill from their own bank account.`
+                : `This is a family plan for ${fam.memberCount} accounts. ${fam.payerName ?? "The person who set it up"} pays your 28-day bill from their own bank account.`
               : fam.waitingForStart
                 ? `Family plan for ${fam.memberCount} accounts. Everyone starts together when this combined first payment arrives, and it must come from your own bank account.`
-                : `Family plan for ${fam.memberCount} accounts. You pay every member's 4-week bill from your own bank account.`}
+                : `Family plan for ${fam.memberCount} accounts. You pay every member's 28-day bill from your own bank account.`}
             {fam.memberNames && fam.memberNames.length > 0 && ` In this family: ${fam.memberNames.join(", ")}.`}
             {fam.weeklyTime && ` Your weekly class together: ${fam.weeklyTime}.`}
           </p>
@@ -468,7 +468,7 @@ export function PaymentPlanEnrollmentFlow({
         )}
         {familyBills.length > 0 && (
           <div className="mt-6 space-y-4">
-            <p className="text-small font-medium text-slate-400">Other members&apos; 4-week bills</p>
+            <p className="text-small font-medium text-slate-400">Other members&apos; 28-day bills</p>
             {familyBills.map((bill) => (
               <ZelleUnlockGate
                 key={bill.payment.id}
@@ -509,7 +509,7 @@ export function PaymentPlanEnrollmentFlow({
           <p className="text-small font-semibold text-slate-50">Who is in the family?</p>
           <p className="mt-1 text-small text-slate-400">
             Each person needs their own Bass Note Piano account first, with their own name. You pay for everyone from your own bank
-            account: one combined first payment starts everyone together, then each person has their own 4-week bill. If anyone
+            account: one combined first payment starts everyone together, then each person has their own 28-day bill. If anyone
             cannot start, nobody does.
           </p>
           <div className="mt-3 space-y-2">
@@ -663,10 +663,10 @@ export function PaymentPlanEnrollmentFlow({
           <span>
             <NumberTicker value={rate.installmentAmountCents} format={formatUsd} />
             {rate.termMonths === 1 ? (
-              ", 4 weeks"
+              ", 28 days"
             ) : (
               <>
-                /4 weeks × <NumberTicker value={rate.termMonths} /> payments
+                /28 days × <NumberTicker value={rate.termMonths} /> payments
               </>
             )}
           </span>
@@ -682,7 +682,7 @@ export function PaymentPlanEnrollmentFlow({
           </div>
         )}
         <div className="mt-2 flex items-center justify-between border-t border-ink/10 pt-2 text-body font-semibold text-slate-50">
-          <span>{isFamily ? "Each person, every 4 weeks" : rate.termMonths === 1 ? "Due now" : "Due every 4 weeks"}</span>
+          <span>{isFamily ? "Each person, every 28 days" : rate.termMonths === 1 ? "Due now" : "Due every 28 days"}</span>
           <NumberTicker value={rate.installmentAmountCents} format={formatUsd} />
         </div>
         {isFamily && (
@@ -694,11 +694,11 @@ export function PaymentPlanEnrollmentFlow({
         <div className="mt-1 flex items-center justify-between text-small text-slate-500">
           <span>{classMinutes}-min classes</span>
           <span>
-            <NumberTicker value={classesPerMonth} /> classes every 4 weeks
+            <NumberTicker value={classesPerMonth} /> classes every 28 days
             {rate.termMonths > 1 && (
               <>
                 {" "}
-                · <NumberTicker value={classesPerMonth * rate.termMonths} /> total over <NumberTicker value={rate.termMonths * 4} /> weeks
+                · <NumberTicker value={classesPerMonth * rate.termMonths} /> total over <NumberTicker value={rate.termMonths * 28} /> days
               </>
             )}
           </span>
@@ -715,11 +715,11 @@ export function PaymentPlanEnrollmentFlow({
         <span>
           {rate.termMonths === 1 ? (
             <>
-              I&apos;m paying for 4 weeks (<NumberTicker value={rate.installmentAmountCents} format={formatUsd} />), no further commitment.
+              I&apos;m paying for 28 days (<NumberTicker value={rate.installmentAmountCents} format={formatUsd} />), no further commitment.
             </>
           ) : (
             <>
-              I&apos;m committing to <NumberTicker value={rate.termMonths} /> installments, one every 4 weeks, of{" "}
+              I&apos;m committing to <NumberTicker value={rate.termMonths} /> installments, one every 28 days, of{" "}
               <NumberTicker value={rate.installmentAmountCents} format={formatUsd} /> each.
             </>
           )}{" "}

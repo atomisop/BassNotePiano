@@ -30,7 +30,7 @@ export function TermsContent() {
       <TermsSection title="Curriculum (included with live classes)">
         <p>
           The curriculum isn&apos;t sold separately. It comes with an active class plan, and your teacher opens it one
-          scale at a time as you progress. When a plan ends, curriculum access continues until the end of the 4 weeks
+          scale at a time as you progress. When a plan ends, curriculum access continues until the end of the 28 days
           you already paid for, then closes. Approved applicants get a 3-day free trial of the first lessons.
         </p>
         <p>
@@ -41,17 +41,16 @@ export function TermsContent() {
 
       <TermsSection title="Class credits & bundles">
         <p>
-          Every class is 45 minutes, one-on-one. Your weekly classes come from a Payment Plan: 4-Week,
-          12-Week, or 24-Week, paid one Zelle or Venmo installment every 4 weeks, longer terms at a lower rate. Enrolling
+          Every class is 45 minutes, one-on-one. Your weekly classes come from a Payment Plan: 28-Day,
+          84-Day, or 168-Day, paid one Zelle or Venmo installment every 28 days, longer terms at a lower rate. Enrolling
           reserves your weekly day and time exclusively and auto-books it every week for as long as the plan stays
           active. You can skip or change a class up to 6 hours before it starts; inside 6 hours, please attend
           or message us. A skipped class stays on your account to rebook on another day, but it is forfeited if
-          unused once that installment&apos;s 4-week cycle expires.
+          unused once that installment&apos;s 28-day cycle expires.
         </p>
         <p>
-          Each installment pays for 4 classes and covers exactly 28 days (4 weeks), from one payment date to the next. A cycle
-          is always four whole weeks, so it holds exactly four of your weekly class, whatever the month. The price of each
-          payment is the same every time.
+          Each installment is billed every 28 days, from one payment date to the next, and pays for exactly 4 classes: your
+          weekly class, four times in those 28 days, whatever the month. The price of each payment is the same every time.
         </p>
         <p>
           Extra classes are $55 each, booked and paid for one at a time on the Lessons page, for more time on top of
@@ -61,7 +60,7 @@ export function TermsContent() {
         <p>
           Family bundles use the same cadence and term rates a solo Payment Plan does, for 2 or more separate,
           already-existing accounts at once, paid as a single upfront payment for the whole term instead of installments
-          every 4 weeks, plus an extra family discount off the combined total (the current percentage is shown on the pricing page). Family credits
+          every 28 days, plus an extra family discount off the combined total (the current percentage is shown on the pricing page). Family credits
           never expire.
         </p>
         <p>

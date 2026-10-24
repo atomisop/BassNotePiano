@@ -144,8 +144,8 @@ async function buildSystemPrompt(visitor: VisitorContext): Promise<string> {
   const planList = PLAN_CADENCES.map(({ value: cadence, label }) => {
     const rows = PLAN_TERMS.map((term) => {
       const rate = calculatePaymentPlanRate(cadence, term, pricing);
-      return `      - ${describePaymentPlan(cadence, term)}: ${formatUsd(rate.installmentAmountCents)} every 4 weeks${
-        rate.termMonths > 1 ? ` × ${rate.termMonths} payments (${rate.termMonths * 4} weeks)` : ", no further commitment"
+      return `      - ${describePaymentPlan(cadence, term)}: ${formatUsd(rate.installmentAmountCents)} every 28 days${
+        rate.termMonths > 1 ? ` × ${rate.termMonths} payments (${rate.termMonths * 28} days)` : ", no further commitment"
       }`;
     }).join("\n");
     return `    - ${label}:\n${rows}`;
@@ -161,7 +161,7 @@ async function buildSystemPrompt(visitor: VisitorContext): Promise<string> {
       const total = calculateFamilyBundleTotal(cadence, term, MIN_FAMILY_BUNDLE_RECIPIENTS, pricing);
       return `      - ${describePaymentPlan(cadence, term)}: ${total.creditsPerRecipient / CREDITS_PER_CLASS} classes per recipient, ${formatUsd(
         total.totalCents,
-      )} for the first 4 weeks for ${MIN_FAMILY_BUNDLE_RECIPIENTS} people together (then the same price per person every 4 weeks)`;
+      )} for the first 28 days for ${MIN_FAMILY_BUNDLE_RECIPIENTS} people together (then the same price per person every 28 days)`;
     }).join("\n");
     return `    - ${label}:\n${rows}`;
   }).join("\n");
@@ -179,15 +179,15 @@ ${visitorLine}
 REAL FACTS ABOUT THIS APP: never invent a price, policy, or page that isn't listed here:
 
 Curriculum (self-paced, on the website):
-  - The curriculum is NOT sold on its own. It comes with live classes: an active Payment Plan opens it, and the teacher releases each next scale one at a time (no sooner than ${unlockDays} days after the last one) once the student has finished the previous one. If a plan ends, access closes when the paid 4 weeks end. ${trialLine}
+  - The curriculum is NOT sold on its own. It comes with live classes: an active Payment Plan opens it, and the teacher releases each next scale one at a time (no sooner than ${unlockDays} days after the last one) once the student has finished the previous one. If a plan ends, access closes when the paid 28 days end. ${trialLine}
   - The scale groups, in order:
 ${scaleList}
   - Each scale group includes video/PDF lessons, a practice tracker, and a quiz you need to pass to mark it complete.
 
 Live classes (weekly, on Discord). Every class is one 45-minute lesson, one-on-one with the teacher, starting on the hour:
-  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a term (4-Week, no commitment, 12-Week, or 24-Week), paid one Zelle or Venmo installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active, nothing to book yourself. A plan is 4 classes every 4 weeks. Billing is in cycles of exactly 28 days (4 weeks), from one payment date to the next, so every cycle holds exactly four of the student's class day, whatever the month, and each payment covers 28 days at the same price every time. There is no fifth class. If a specific week doesn't work, the student can skip that class in the app up to ${cutoff} before it starts (see below); inside ${cutoff} they attend or message the studio. Longer terms cost less per payment:
+  - Solo (your own account) uses a Payment Plan, not a one-off purchase: pick a term (28-Day, no commitment, 84-Day, or 168-Day), paid one Zelle or Venmo installment at a time, never all at once and never auto-charged. Enrolling reserves one specific weekly day/time exclusively and auto-books it every week for as long as the plan stays active, nothing to book yourself. A plan is 4 classes every 28 days. Each payment is billed every 28 days, from one payment date to the next, and pays for exactly 4 classes (the student's weekly class, four times in those 28 days), whatever the month, at the same price every time. An 84-Day plan is 3 of those payments and a 168-Day plan is 6. There is no fifth class. If a specific week doesn't work, the student can skip that class in the app up to ${cutoff} before it starts (see below); inside ${cutoff} they attend or message the studio. Longer terms cost less per payment:
 ${planList}
-  - Family plan ("Me and my family" on the payment plan page, 2 to 4 existing accounts): each person gets their own plan at the same per-payment rate and term discount as a solo plan, plus an extra ${Math.round(pricing.familyDiscountRate * 100)}% off, all on the same weekly time. One person is the payer and pays for everyone from their own bank account: the first payment is one combined payment that starts everybody together (if anyone cannot start, nobody does), then each person has their own 4-week bill that the payer pays. Everyone needs their own account with their own first and last name first. Example prices for the first payment together:
+  - Family plan ("Me and my family" on the payment plan page, 2 to 4 existing accounts): each person gets their own plan at the same per-payment rate and term discount as a solo plan, plus an extra ${Math.round(pricing.familyDiscountRate * 100)}% off, all on the same weekly time. One person is the payer and pays for everyone from their own bank account: the first payment is one combined payment that starts everybody together (if anyone cannot start, nobody does), then each person has their own 28-day bill that the payer pays. Everyone needs their own account with their own first and last name first. Example prices for the first payment together:
 ${bundleList}
 ${bundleList}
   - Classes are one-on-one with the teacher. A family session is siblings with their own accounts taught together, one class for the whole family.

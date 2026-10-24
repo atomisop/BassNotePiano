@@ -19,9 +19,9 @@ import { NumberTicker } from "@/components/ui/number-ticker";
 import { SnapCarousel } from "@/components/ui/SnapCarousel";
 
 const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
-  { value: "MONTHLY", label: "4-Week" },
-  { value: "TERM_3", label: "12-Week" },
-  { value: "TERM_6", label: "24-Week" },
+  { value: "MONTHLY", label: "28-Day" },
+  { value: "TERM_3", label: "84-Day" },
+  { value: "TERM_6", label: "168-Day" },
 ];
 
 /** The card that gets the animated border and the "Best value" badge (a marketing choice, not the lowest price). */
@@ -79,7 +79,7 @@ export function PaymentPlanTierGrid({ pricing = DEFAULT_PRICING }: { pricing?: P
     const features: ReactNode[] = isFamily
       ? [
           <>
-            <NumberTicker value={classesPerMonth} /> live {CLASS_MINUTES}-minute classes every 4 weeks, per student
+            <NumberTicker value={classesPerMonth} /> live {CLASS_MINUTES}-minute classes every 28&nbsp;days, per student
           </>,
           "Each student's weekly time reserved",
           <>
@@ -89,14 +89,14 @@ export function PaymentPlanTierGrid({ pricing = DEFAULT_PRICING }: { pricing?: P
         ]
       : [
           <>
-            <NumberTicker value={classesPerMonth} /> live {CLASS_MINUTES}-minute classes every 4 weeks
+            <NumberTicker value={classesPerMonth} /> live {CLASS_MINUTES}-minute classes every 28&nbsp;days
           </>,
           "Your weekly time reserved",
           isMonthly ? (
-            "No commitment, pay every 4 weeks"
+            "No commitment, pay every 28\u00a0days"
           ) : (
             <>
-              Locked in for <NumberTicker value={rate.termMonths * 4} /> weeks, paid every 4 weeks
+              Locked in for <NumberTicker value={rate.termMonths * 28} /> days, paid every 28&nbsp;days
             </>
           ),
         ];
@@ -125,7 +125,7 @@ export function PaymentPlanTierGrid({ pricing = DEFAULT_PRICING }: { pricing?: P
                 {percentOff > 0 && (
                   <span className="line-through">
                     <NumberTicker value={monthlyBaseline} format={formatUsd} />
-                    /4 wks
+                    /28 days
                   </span>
                 )}
                 {percentOff > 0 && (
@@ -138,7 +138,7 @@ export function PaymentPlanTierGrid({ pricing = DEFAULT_PRICING }: { pricing?: P
                 <span className={`font-serif text-hero tabular-nums ${featured ? "text-[rgb(var(--c-a-400))]" : "text-slate-50"}`}>
                   <NumberTicker value={perStudentCents} format={formatUsd} />
                 </span>
-                <span className="text-small text-slate-400">{isFamily ? "/student per 4 weeks" : "/4 weeks"}</span>
+                <span className="text-small text-slate-400">{isFamily ? "/student per 28 days" : "/28 days"}</span>
               </p>
             </div>
     
