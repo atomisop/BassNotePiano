@@ -5,7 +5,8 @@ import { prisma } from "../../src/lib/prisma";
 import { createNotification } from "../../src/lib/notifications";
 import { notifyAdmins } from "../../src/lib/adminNotifications";
 import { PLAN_CADENCE_CREDITS_PER_WEEK } from "../../src/lib/classCreditPricing";
-import { addCalendarMonthsClamped, classesLeftInPaidMonth, topUpIfFifth } from "../../src/lib/paymentPlans";
+import { addBillingCycles } from "../../src/lib/billingCycle";
+import { classesLeftInPaidMonth, topUpIfFifth } from "../../src/lib/paymentPlans";
 import {
   OCCURRENCES_PER_SLOT,
   chunksForSchedule,
@@ -89,7 +90,7 @@ export const handler = schedule("30 9 * * *", async () =>
     // block's size (2 credits) and used to be charged to every plan, so a
     // 30-minute subscriber (4 credits a month) ran out after two weeks.
     const creditsPerClass = PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence];
-    const paidUntil = plan.status === "COMPLETED" ? addCalendarMonthsClamped(plan.nextDueDate, 1) : plan.nextDueDate;
+    const paidUntil = plan.status === "COMPLETED" ? addBillingCycles(plan.nextDueDate, 1) : plan.nextDueDate;
 
     // Self-heal: upcoming, not-yet-attended classes this plan already booked
     // at the old (too high) price are brought down to the plan's own rate.

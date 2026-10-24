@@ -18,7 +18,8 @@ import {
   MIN_FAMILY_BUNDLE_RECIPIENTS,
   describePaymentPlan,
 } from "@/lib/classCreditPricing";
-import { addCalendarMonthsClamped, bookReservedWindowForPlan, describeReservedSlot, fifthClassReceiptNote, getFifthClassOffer } from "@/lib/paymentPlans";
+import { addBillingCycles } from "@/lib/billingCycle";
+import { bookReservedWindowForPlan, describeReservedSlot, fifthClassReceiptNote, getFifthClassOffer } from "@/lib/paymentPlans";
 import { createNotification } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
 import { adjustUserCredits } from "@/lib/creditAdjustments";
@@ -968,7 +969,7 @@ async function applyPlanInstallment(
   // The first month starts when the first payment is approved, not when the plan was
   // created, so a student who pays a few days after signing up still gets a full month.
   const cycleStart = plan && plan.installmentsPaid === 0 && plan.nextDueDate < new Date() ? new Date() : plan?.nextDueDate;
-  const cycleEnd = plan && cycleStart ? addCalendarMonthsClamped(cycleStart, 1) : null;
+  const cycleEnd = plan && cycleStart ? addBillingCycles(cycleStart, 1) : null;
 
   // Quantity is snapshotted onto the payment row at installment-creation
   // time (see createPaymentPlan/getOrCreateOpenInstallmentPayment in
