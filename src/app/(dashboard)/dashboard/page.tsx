@@ -311,7 +311,8 @@ export default async function DashboardPage() {
 
   return (
     <WideLayout>
-      <div className="grid gap-y-(--space-group)">
+      {/* grid-cols-1, not an automatic column: an automatic one grows to its widest unbreakable content, and the one-line scale titles in List view made the whole page wider than the phone. */}
+      <div className="grid grid-cols-1 gap-y-(--space-group)">
         {/* ---- Hero -------------------------------------------------------- */}
         <div className="relative pt-4 md:pt-6">
           <TodayGreeting name={user?.name ?? null} className="relative z-(--z-mid)" />

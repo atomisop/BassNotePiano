@@ -22,7 +22,7 @@ export default async function MailPage() {
 
   return (
     <WideLayout>
-      <div className="grid gap-(--space-group)">
+      <div className="grid grid-cols-1 gap-(--space-group)">
         <div className="flex flex-wrap items-end justify-between gap-3 pt-2">
           <div>
             <Eyebrow>Inbox</Eyebrow>

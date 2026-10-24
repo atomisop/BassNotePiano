@@ -66,6 +66,18 @@ export function ScrollAssist() {
     };
   }, []);
 
+  // The page never slides sideways: it is clipped (overflow-x hidden) but still scrollable by script or by something inside it
+  // asking to be scrolled into view. Wherever that comes from, put it back.
+  useEffect(() => {
+    const el = scroller();
+    if (!el) return;
+    const keepLeft = () => {
+      if (el.scrollLeft !== 0) el.scrollLeft = 0;
+    };
+    el.addEventListener("scroll", keepLeft, { passive: true });
+    return () => el.removeEventListener("scroll", keepLeft);
+  }, []);
+
   // Remember where this page was scrolled to, and show the back-to-top button.
   useEffect(() => {
     const el = scroller();
