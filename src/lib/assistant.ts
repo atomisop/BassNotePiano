@@ -203,7 +203,7 @@ Privacy (full policy at /privacy, last updated ${PRIVACY_LAST_UPDATED}):
   - Collected: name, email, optional profile photo/learning preferences, messages sent to friends, private per-scale lesson notes the student writes (only they can see them; deleted with the account), and (for Zelle payments) the sender name + reference code, never actual bank or card numbers. The public class registration form (no account needed) collects name, email, phone, instrument, and skill level.
   - Third parties used to run the app: Resend (email), Mailgun (emails sent to the studio address), Discord (live class calls), Cloudflare (file storage), Neon (database), Netlify (hosting), GlitchTip (error monitoring), and Google's Gemini API, which is what actually generates this conversation's replies (whatever's typed here, plus the visitor's name/curriculum status/classes on their account if signed in, is sent to Google to produce the answer). None of them get to use visitor data for their own purposes, and nothing is ever sold.
   - If someone asks to talk to a real person, the whole conversation plus their contact info is saved so an admin can read and reply to it (kept as a normal support record, not auto-deleted). Signed-in visitors' ordinary Atom chats are saved to their account and readable under Settings → Privacy & Data, but auto-delete after 30 days; anonymous chats are never stored server-side at all.
-  - Cookies: the sign-in session cookie, plus two small preference cookies that remember the visitor's cookie-banner answer and how many times they closed Atom's greeting, for up to a year on that device so they aren't asked again.
+  - Cookies: the sign-in session cookie, plus one small preference cookie that remembers the visitor's cookie-banner answer, for up to a year on that device so they aren't asked again.
   - A signed-in student can download their data and delete their own account under Settings, Privacy & Data (it asks for their password and an emailed code). Deleting removes the uploaded photo too. A nightly encrypted backup kept 35 days can still hold it until it is replaced. Every email that can be switched off has an Unsubscribe link, and Settings, Notification settings controls them.
   - Signed-in devices: the app keeps a short list of the browsers and devices an account is signed in on, with a rough city, region and country from the hosting network (the list itself never includes the IP address).
 
@@ -305,28 +305,6 @@ export async function appendPersistedMessages(userId: string, userMessage: strin
 /** Admin-only, the caller (admin/users/actions.ts) is responsible for verifying an ADMIN session before this runs; this function itself trusts whatever userId it's given. */
 export async function clearPersistedHistory(userId: string): Promise<void> {
   await prisma.assistantConversationMessage.deleteMany({ where: { userId } });
-}
-
-// Once an account has explicitly dismissed Atom's greeting bubble this many
-// times, it stops being offered at all. See the User.atomGreetingDismissCount
-// column's own comment and AssistantWidget's dismissGreeting().
-export const ATOM_GREETING_DISMISS_LIMIT = 3;
-
-export async function getAtomGreetingDismissCount(userId: string): Promise<number> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { atomGreetingDismissCount: true } });
-  return user?.atomGreetingDismissCount ?? 0;
-}
-
-/** Capped at ATOM_GREETING_DISMISS_LIMIT: once reached, further calls are no-ops rather than counting past it forever. Returns the count after this call. */
-export async function recordAtomGreetingDismissal(userId: string): Promise<number> {
-  const current = await getAtomGreetingDismissCount(userId);
-  if (current >= ATOM_GREETING_DISMISS_LIMIT) return current;
-  const updated = await prisma.user.update({
-    where: { id: userId },
-    data: { atomGreetingDismissCount: { increment: 1 } },
-    select: { atomGreetingDismissCount: true },
-  });
-  return updated.atomGreetingDismissCount;
 }
 
 /**

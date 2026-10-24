@@ -1576,3 +1576,19 @@
     transform: translateX(-50%) scale(0.82);
   }
 }
+
+
+/* iPhone Safari zooms in when the same spot is tapped twice quickly. Flipping a two-button switch (Grid / List) does exactly that,
+   and the whole page looked zoomed. `manipulation` keeps scrolling and pinch-zoom but drops the double-tap zoom on every control. */
+a,
+button,
+summary,
+label,
+select,
+input[type="checkbox"],
+input[type="radio"],
+[role="button"],
+[role="tab"],
+[role="switch"] {
+  touch-action: manipulation;
+}
