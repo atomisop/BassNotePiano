@@ -24,7 +24,7 @@ const faqs = (extraClassCents: number) => [
   },
   {
     q: "How do live lessons work?",
-    a: `Every class is ${CLASS_MINUTES} minutes, one-on-one with your teacher, live on Discord. Start a Payment Plan (28-Day, 84-Day, or 168-Day, paid one Zelle or Venmo installment every 28 days) and you pick your weekly day and time on a calendar of open spots. It is yours every week, booked for you automatically. Want more time? Book an extra class for ${formatUsd(extraClassCents)} whenever there is an open spot. Siblings learning together can use a family bundle instead.`,
+    a: `Every class is ${CLASS_MINUTES} minutes, one-on-one with your teacher, live on Discord. Start a Payment Plan (1 Month, 3 Months, or 6 Months, paid one Zelle or Venmo installment every 28 days) and you pick your weekly day and time on a calendar of open spots. It is yours every week, booked for you automatically. Want more time? Book an extra class for ${formatUsd(extraClassCents)} whenever there is an open spot. Siblings learning together can use a family bundle instead.`,
   },
   {
     q: "How often am I billed?",

@@ -12,6 +12,7 @@ import { getMyWaitlist, getTakenSlots, joinWaitlist, leaveWaitlist, WaitlistErro
 import { RateLimitError, consumeRateLimit } from "@/lib/rateLimit";
 import { createAndSendCode, verifyCode, RateLimitError as CodeRateLimitError } from "@/lib/verification";
 import { prisma } from "@/lib/prisma";
+import { checkFamilyMember, type MemberCheck } from "@/lib/familyMemberCheck";
 import { OFFERED_PLAN_CADENCE, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 
 export interface EnrollPaymentPlanResult {
@@ -28,6 +29,19 @@ export async function getReservableSlotsAction(cadence: PaymentPlanCadence): Pro
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
   if (!Object.values(PaymentPlanCadence).includes(cadence)) return [];
   return getReservableSlots(PLAN_CADENCE_CREDITS_PER_WEEK[cadence]);
+}
+
+/** Does this email belong to an account that could join a family plan? Limited, because each answer says whether an email has an account. */
+export async function checkFamilyMemberAction(email: string): Promise<MemberCheck | "limited"> {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  try {
+    await consumeRateLimit(prisma, `family-member-check:${session.user.id}`, { windowMinutes: 60, max: 40, message: "Too many checks." });
+  } catch (error) {
+    if (error instanceof RateLimitError) return "limited";
+    throw error;
+  }
+  return checkFamilyMember(session.user.id, String(email).slice(0, 254));
 }
 
 /** Weekly times other plans hold, and which of them this person is waiting for. */

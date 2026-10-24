@@ -303,7 +303,7 @@ export async function createFamilyBundlePayment(input: FamilyBundlePurchaseInput
     throw new FamilyBundleError("That weekly length isn't offered anymore. Classes are 45 minutes a week.");
   }
   if (!isPlanTermOffered(input.term)) {
-    throw new FamilyBundleError("That plan length is no longer offered. Pick 28-Day, 84-Day, or 168-Day.");
+    throw new FamilyBundleError("That plan length is no longer offered. Pick 1 Month, 3 Months, or 6 Months.");
   }
 
   const normalized = input.recipientEmails.map((e) => e.trim().toLowerCase()).filter(Boolean);

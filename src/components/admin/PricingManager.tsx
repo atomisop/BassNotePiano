@@ -38,9 +38,9 @@ const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "c
 const inputClass = "h-11 rounded-lg bg-neu-base px-3 text-base text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
 
 const FIELDS: { key: keyof PricingFormValues; label: string; unit: "$" | "%"; min: number; max: number; help: string }[] = [
-  { key: "pricing.monthlyPlanDollars", label: "28-Day plan price", unit: "$", min: 20, max: 2000, help: "Per 28-day payment, before any term discount. Shown as just under the next $5 ($220 shows as $219.99)." },
-  { key: "pricing.term3DiscountPercent", label: "84-day plan discount", unit: "%", min: 0, max: 60, help: "Off the 28-day price when someone commits to 84 days." },
-  { key: "pricing.term6DiscountPercent", label: "168-day plan discount", unit: "%", min: 0, max: 70, help: "Off the 28-day price when someone commits to 168 days." },
+  { key: "pricing.monthlyPlanDollars", label: "1 Month plan price", unit: "$", min: 20, max: 2000, help: "Per 28-day payment, before any term discount. Shown as just under the next $5 ($220 shows as $219.99)." },
+  { key: "pricing.term3DiscountPercent", label: "3 month plan discount", unit: "%", min: 0, max: 60, help: "Off the 1 month price when someone commits to 3 months (3 payments)." },
+  { key: "pricing.term6DiscountPercent", label: "6 month plan discount", unit: "%", min: 0, max: 70, help: "Off the 1 month price when someone commits to 6 months (6 payments)." },
   { key: "pricing.familyDiscountPercent", label: "Family plan extra discount", unit: "%", min: 0, max: 50, help: "Extra off, per person, on a family plan." },
   { key: "pricing.extraClassPriceDollars", label: "Extra class price", unit: "$", min: 1, max: 500, help: "One extra 45 minute class, on top of a weekly class or for someone without a plan." },
 ];

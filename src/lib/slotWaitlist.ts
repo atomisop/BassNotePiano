@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { chunksForSchedule, getReservableSlots, type ReservableSlot } from "@/lib/classSchedule";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
 import { createNotification } from "@/lib/notifications";
+import { OWNER_EMAIL } from "@/lib/adminNotifications";
+import { DAY_NAMES, formatTimeLabel } from "@/lib/weeklyTimeLabels";
 import { OFFERED_PLAN_CADENCE, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import { MAX_WAITLIST_ENTRIES, WAITLIST_HOLD_HOURS, WAITLIST_KEEP_DAYS, slotKey } from "@/lib/slotWaitlistRules";
 
@@ -38,12 +40,38 @@ export async function getMyWaitlist(userId: string): Promise<string[]> {
 export async function joinWaitlist(userId: string, scheduleId: string, chunkIndex: number): Promise<void> {
   if (!Number.isInteger(chunkIndex) || chunkIndex < 0) throw new WaitlistError("That time does not exist.");
   const taken = await getTakenSlots();
-  if (!taken.some((s) => s.scheduleId === scheduleId && s.chunkIndex === chunkIndex)) {
-    throw new WaitlistError("That time is open right now. You can pick it directly, no waiting needed.");
-  }
+  const slot = taken.find((s) => s.scheduleId === scheduleId && s.chunkIndex === chunkIndex);
+  if (!slot) throw new WaitlistError("That time is open right now. You can pick it directly, no waiting needed.");
   const mine = await prisma.slotWaitlist.count({ where: { userId } });
   if (mine >= MAX_WAITLIST_ENTRIES) throw new WaitlistError(`You can wait for up to ${MAX_WAITLIST_ENTRIES} times at once. Remove one first.`);
-  await prisma.slotWaitlist.upsert({ where: { userId_scheduleId_chunkIndex: { userId, scheduleId, chunkIndex } }, create: { userId, scheduleId, chunkIndex }, update: {} });
+  const key = { userId_scheduleId_chunkIndex: { userId, scheduleId, chunkIndex } };
+  const already = await prisma.slotWaitlist.findUnique({ where: key, select: { id: true } });
+  await prisma.slotWaitlist.upsert({ where: key, create: { userId, scheduleId, chunkIndex }, update: {} });
+  // Told once, the first time someone asks for that time (asking again, or someone else's own entry, never repeats it).
+  if (!already) await tellOwnerSomeoneIsWaiting(userId, slot);
+}
+
+/**
+ * Tells the owner, and only the owner, that a student is waiting for a taken weekly time: "Jordan is looking forward to Tuesdays at
+ * 6:00 PM becoming available." A bell notice with a link to the schedule; no email, and never to other admins. Never fails the join.
+ */
+async function tellOwnerSomeoneIsWaiting(userId: string, slot: ReservableSlot): Promise<void> {
+  try {
+    const [student, owner] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } }),
+      prisma.user.findFirst({ where: { email: { equals: OWNER_EMAIL, mode: "insensitive" } }, select: { id: true } }),
+    ]);
+    if (!student || !owner || owner.id === userId) return;
+    await createNotification({
+      userId: owner.id,
+      type: "ADMIN_ALERT",
+      title: "Someone is waiting for a weekly time",
+      body: `${student.name ?? student.email} is looking forward to ${DAY_NAMES[slot.dayOfWeek]}s at ${formatTimeLabel(slot.startTime)} becoming available.`,
+      cta: { label: "Open schedule", path: "/admin/schedule" },
+    });
+  } catch (err) {
+    console.error("Waitlist owner notice failed (non-blocking):", err);
+  }
 }
 
 export async function leaveWaitlist(userId: string, scheduleId: string, chunkIndex: number): Promise<void> {

@@ -293,9 +293,9 @@ const PLAN_CADENCE_LABEL: Record<PaymentPlanCadence, string> = {
 };
 
 const PLAN_TERM_LABEL: Record<PaymentPlanTerm, string> = {
-  MONTHLY: "28-Day",
-  TERM_3: "84-Day",
-  TERM_6: "168-Day",
+  MONTHLY: "1 Month",
+  TERM_3: "3 Months",
+  TERM_6: "6 Months",
   TERM_12: "Yearly",
 };
 
@@ -366,6 +366,13 @@ export function calculatePaymentPlanRate(cadence: PaymentPlanCadence, term: Paym
 // ---------------------------------------------------------------------------
 
 export const FAMILY_BUNDLE_DISCOUNT_RATE = 0.1;
+/**
+ * A family plan is you (the payer) plus others, each with their own account and their own plan at the family rate, all on one weekly time.
+ * One number for the screen and the server, so they can never disagree about how many people fit.
+ */
+export const MIN_FAMILY_MEMBERS = 2;
+export const MAX_FAMILY_MEMBERS = 8;
+
 export const MIN_FAMILY_BUNDLE_RECIPIENTS = 2;
 export const MAX_FAMILY_BUNDLE_RECIPIENTS = 20; // matches MAX_CUSTOM_QUANTITY's own order of magnitude, a ceiling, not an expectation
 

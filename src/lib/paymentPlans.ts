@@ -7,7 +7,7 @@ import { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason, type Prism
 import { prisma } from "@/lib/prisma";
 import { hasFirstAndLastName } from "@/lib/studentName";
 import { namesMatch } from "@/lib/personNames";
-import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPlan, discountedPlanPriceCents, isPlanTermOffered, isPlanCadenceOffered, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPlan, discountedPlanPriceCents, isPlanTermOffered, isPlanCadenceOffered, MIN_FAMILY_MEMBERS, MAX_FAMILY_MEMBERS, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import { getPricingConfig } from "@/lib/pricing";
 import { getDiscountPercent } from "@/lib/accountDiscounts";
 import {
@@ -138,7 +138,7 @@ export async function createPaymentPlan(
     throw new PaymentPlanError("That weekly length isn't offered anymore. Classes are 45 minutes a week.");
   }
   if (!isPlanTermOffered(term)) {
-    throw new PaymentPlanError("That plan length is no longer offered. Pick 28-Day, 84-Day, or 168-Day.");
+    throw new PaymentPlanError("That plan length is no longer offered. Pick 1 Month, 3 Months, or 6 Months.");
   }
 
   const pricing = await getPricingConfig();
@@ -1370,7 +1370,7 @@ async function afterFamilyPlanEnded(plan: { id: string; userId: string; familyGr
 // ---------------------------------------------------------------------------
 // Family plans
 //
-// 2 to MAX_FAMILY_MEMBERS existing accounts, each with its own PaymentPlan at the family rate, all on the same weekly time.
+// 2 to MAX_FAMILY_MEMBERS (8) existing accounts, each with its own PaymentPlan at the family rate, all on the same weekly time.
 // Everything is created in ONE transaction: if any member cannot start (already on a plan, banned, a name that is not a real
 // first and last name, the same person typed twice, the time taken), nothing is created for anyone. The one payer is a member;
 // the first month is a single combined FAMILY_PLAN_START payment whose approval starts every member's plan at once
@@ -1378,8 +1378,7 @@ async function afterFamilyPlanEnded(plan: { id: string; userId: string; familyGr
 // their own bill, and only the payer's account can settle them (see familyPayerOf in paymentEmail.ts).
 // ---------------------------------------------------------------------------
 
-export const MIN_FAMILY_MEMBERS = 2;
-export const MAX_FAMILY_MEMBERS = 4;
+export { MIN_FAMILY_MEMBERS, MAX_FAMILY_MEMBERS };
 
 export interface CreateFamilyPlansInput {
   payerId: string;
@@ -1400,7 +1399,7 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
   if (!Object.values(PaymentPlanCadence).includes(cadence)) throw new PaymentPlanError(`"${cadence}" isn't a valid cadence.`);
   if (!Object.values(PaymentPlanTerm).includes(term)) throw new PaymentPlanError(`"${term}" isn't a valid term.`);
   if (!isPlanCadenceOffered(cadence)) throw new PaymentPlanError("That weekly length isn't offered anymore. Classes are 45 minutes a week.");
-  if (!isPlanTermOffered(term)) throw new PaymentPlanError("That plan length is no longer offered. Pick 28-Day, 84-Day, or 168-Day.");
+  if (!isPlanTermOffered(term)) throw new PaymentPlanError("That plan length is no longer offered. Pick 1 Month, 3 Months, or 6 Months.");
 
   const payer = await prisma.user.findUnique({ where: { id: payerId }, select: { id: true, name: true, email: true, role: true, bannedAt: true } });
   if (!payer) throw new PaymentPlanError("Your account was not found.");
@@ -1417,8 +1416,7 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
   const members = [payer, ...others];
   for (const member of members) {
     const who = member.id === payer.id ? "Your account" : member.email;
-    if (member.bannedAt) throw new PaymentPlanError(`${who} cannot start a plan.`);
-    if (member.role !== "STUDENT") throw new PaymentPlanError(`${who} is not a student account.`);
+    if (member.bannedAt || member.role !== "STUDENT") throw new PaymentPlanError(`${who} cannot start a plan.`);
     if (!hasFirstAndLastName(member.name)) throw new PaymentPlanError(`${who} needs a first and last name on the account before a family plan can start.`);
   }
   // Each member has to be a different person, not one person with two accounts.

@@ -1,3 +1,4 @@
+import { parseAudience } from "@/lib/planCheckout";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { PaymentPlanCadence, PaymentPlanTerm, type ZellePaymentStatus } from "@prisma/client";
@@ -16,12 +17,19 @@ export const metadata = { title: "Payment plans" };
 
 export default async function BillingPlansPage(
   props: {
-    searchParams: Promise<{ cadence?: string; term?: string }>;
+    searchParams: Promise<{ cadence?: string; term?: string; who?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
   const session = await getServerAuthSession();
-  if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  if (!session?.user) {
+    // Keep what the pricing page chose (length and who it is for) through sign-in and registration.
+    const keep = new URLSearchParams();
+    if (searchParams.term) keep.set("term", searchParams.term);
+    if (searchParams.who) keep.set("who", searchParams.who);
+    const back = keep.size > 0 ? `/billing/plans?${keep}` : "/billing/plans";
+    redirect(`/login?callbackUrl=${encodeURIComponent(back)}`);
+  }
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
 
@@ -32,6 +40,8 @@ export default async function BillingPlansPage(
   // against the real enums (query params are just strings) rather than cast.
   const initialCadence = Object.values(PaymentPlanCadence).find((c) => c === searchParams.cadence);
   const initialTerm = Object.values(PaymentPlanTerm).find((t) => t === searchParams.term);
+  // "?who=family" from the pricing page's family toggle opens the plan page already on "Me and my family".
+  const initialAudience = parseAudience(searchParams.who);
 
   const [activePlan, allPlans, pricing, personalDiscountPercent] = await Promise.all([
     getActivePaymentPlan(session.user.id),
@@ -134,6 +144,7 @@ export default async function BillingPlansPage(
           zelleHandle={zelleHandle}
           initialCadence={initialCadence}
           initialTerm={initialTerm}
+          initialAudience={initialAudience}
           pricing={pricing}
           personalDiscountPercent={personalDiscountPercent}
           activePlan={
