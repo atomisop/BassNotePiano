@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Sun, ShieldCheck,
@@ -19,15 +19,18 @@ import { Sun, ShieldCheck,
   Repeat,
   Settings,
   Users,
+  ChevronDown,
   type LucideIcon,
 } from "lucide-react";
+import { Dialog } from "@/components/ui/Dialog";
 
 /**
  * The one admin menu. Every admin page is a single entry in one grouped list,
  * the way YouTube Studio and Google's admin consoles lay theirs out: nothing is
  * hidden behind a second row of tabs or a dropdown, and each name matches the
  * heading of the page it opens. From md up it is a list on the left (Settings
- * pinned underneath); on phones the same entries are one swipeable row.
+ * pinned underneath); on phones it is one bar naming the page you are on, which opens
+ * a sheet with every entry in a grid (no sideways swiping).
  * Pages keep their own tabs for what is inside them (statuses, filters).
  */
 interface AdminNavLeaf {
@@ -155,52 +158,81 @@ function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
   );
 }
 
-/** Phones: the same entries in one row you swipe, the current one scrolled into view. A thin divider marks each group. */
-function AdminSwipeRow({ badges }: { badges: AdminNavBadges }) {
+/**
+ * Phones: one bar that names the page you are on and opens every page in a sheet. Sixteen pages used to sit in one row you had
+ * to swipe sideways; now nothing scrolls. What is waiting shows on the bar (the total) and on each entry.
+ */
+function AdminPhoneMenu({ badges }: { badges: AdminNavBadges }) {
   const pathname = usePathname();
-  const activeRef = useRef<HTMLAnchorElement | null>(null);
-
-  useEffect(() => {
-    activeRef.current?.scrollIntoView({ inline: "center", block: "nearest" });
-  }, [pathname]);
+  const [open, setOpen] = useState(false);
 
   const groups = [...NAV_GROUPS, { label: "Settings", leaves: [SETTINGS_LEAF, SECURITY_LEAF] }];
+  const all = groups.flatMap((g) => g.leaves);
+  // Longest address first, so /admin/payment-plans is not mistaken for /admin/payments and the Overview never wins by default.
+  const current = [...all].sort((a, b) => b.href.length - a.href.length).find((leaf) => isLeafActive(leaf.href, pathname)) ?? all[0];
+  const CurrentIcon = current.icon;
+  const waiting = Object.values(badges).reduce((sum, n) => sum + (n > 0 ? n : 0), 0);
 
   return (
-    <nav aria-label="Admin sections" className="-mx-4 mb-4 overflow-x-auto px-4 [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden">
-      <ul className="flex w-max items-center gap-1.5">
-        {groups.map((group, gi) =>
-          group.leaves.map((leaf, li) => {
-            const active = isLeafActive(leaf.href, pathname);
-            const Icon = leaf.icon;
-            return (
-              <li key={leaf.href} className={`flex items-center ${li === 0 && gi > 0 ? "ml-1.5 border-l border-(--neu-edge) pl-3" : ""}`}>
-                <Link
-                  href={leaf.href}
-                  prefetch
-                  ref={active ? activeRef : undefined}
-                  aria-current={active ? "page" : undefined}
-                  className={`press-soft flex h-9 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                    active ? "bg-neu-lift text-signal-fg shadow-pressed-low" : "bg-neu-base text-slate-300 shadow-raised-low"
-                  }`}
-                >
-                  <Icon className="h-4 w-4 shrink-0" strokeWidth={active ? 2.1 : 1.75} aria-hidden />
-                  {leaf.label}
-                  <Count count={badges[leaf.href] ?? 0} />
-                </Link>
-              </li>
-            );
-          }),
-        )}
-      </ul>
-    </nav>
+    <div className="mb-4 md:hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        aria-label={`Admin menu, you are on ${current.label}${waiting > 0 ? `, ${waiting} waiting` : ""}`}
+        className="tap press-soft flex h-11 w-full items-center gap-2.5 rounded-full bg-neu-base px-4 text-left text-small font-medium text-slate-100 shadow-raised-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <CurrentIcon className="h-4 w-4 shrink-0 text-signal-fg" strokeWidth={2.1} aria-hidden />
+        <span className="min-w-0 flex-1 truncate">{current.label}</span>
+        <Count count={waiting} />
+        <span className="flex items-center gap-1 text-slate-400">
+          Menu
+          <ChevronDown aria-hidden className="h-4 w-4" />
+        </span>
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen} title="Admin menu">
+        <nav aria-label="Admin sections" className="space-y-2.5">
+          {groups.map((group) => (
+            <div key={group.label}>
+              {!(group.leaves.length === 1 && group.leaves[0].label === group.label) && (
+                <p className="px-1 pb-1 text-small font-medium leading-tight text-slate-500">{group.label}</p>
+              )}
+              <ul className="grid grid-cols-2 gap-1.5">
+                {group.leaves.map((leaf) => {
+                  const active = leaf.href === current.href;
+                  const Icon = leaf.icon;
+                  return (
+                    <li key={leaf.href}>
+                      <Link
+                        href={leaf.href}
+                        prefetch
+                        onClick={() => setOpen(false)}
+                        aria-current={active ? "page" : undefined}
+                        className={`press-soft flex h-10 items-center gap-2 rounded-2xl px-3 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                          active ? "bg-neu-lift text-signal-fg shadow-pressed-low" : "bg-neu-base text-slate-200 shadow-raised-low"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" strokeWidth={active ? 2.1 : 1.75} aria-hidden />
+                        <span className="min-w-0 flex-1 truncate">{leaf.label}</span>
+                        <Count count={badges[leaf.href] ?? 0} />
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </nav>
+      </Dialog>
+    </div>
   );
 }
 
 export function AdminNav({ badges = {} }: { badges?: AdminNavBadges }) {
   return (
     <>
-      <AdminSwipeRow badges={badges} />
+      <AdminPhoneMenu badges={badges} />
       <AdminSideRail badges={badges} />
     </>
   );

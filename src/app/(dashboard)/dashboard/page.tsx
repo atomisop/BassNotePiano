@@ -11,6 +11,8 @@ import { gettingStartedStep } from "@/lib/lockedScale";
 import { getCurriculumEntitlement } from "@/lib/entitlement";
 import { cn } from "@/lib/utils";
 import { ScaleRoadmap } from "@/components/progression/ScaleRoadmap";
+import { cookies } from "next/headers";
+import { SCALE_VIEW_COOKIE, parseScaleView } from "@/lib/scaleView";
 import { StreakDots } from "@/components/gamification/StreakDots";
 import { TodayGreeting } from "@/components/dashboard/TodayGreeting";
 import { ProgressRing } from "@/components/ui/ProgressRing";
@@ -349,7 +351,7 @@ export default async function DashboardPage() {
         {/* ---- The path: tabs + scale grid --------------------------------- */}
         <div>
           <h2 className="sr-only">Your scales</h2>
-          <ScaleRoadmap roadmap={roadmap} earnedBadgeCodes={earnedBadgeCodes} />
+          <ScaleRoadmap roadmap={roadmap} earnedBadgeCodes={earnedBadgeCodes} initialView={parseScaleView((await cookies()).get(SCALE_VIEW_COOKIE)?.value) ?? "grid"} />
         </div>
       </div>
     </WideLayout>
