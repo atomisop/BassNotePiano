@@ -83,3 +83,6 @@ export function missingForCheckout(input: { audience: Audience; memberRows: stri
   if (!input.slotChosen) return "Pick your weekly time";
   return null;
 }
+
+/** The reply when the first payment on screen is no longer the real one (the owner changed a price while the review was open). */
+export const PRICE_CHANGED_MESSAGE = "The price changed while you were looking. We refreshed it. Please check the new price and start again.";

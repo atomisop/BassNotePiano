@@ -12,6 +12,7 @@ import { getMyWaitlist, getTakenSlots, joinWaitlist, leaveWaitlist, WaitlistErro
 import { RateLimitError, consumeRateLimit } from "@/lib/rateLimit";
 import { createAndSendCode, verifyCode, RateLimitError as CodeRateLimitError } from "@/lib/verification";
 import { prisma } from "@/lib/prisma";
+import { cancelFamilyInvite, FamilyInviteError, listInvitesFromPayer, respondToFamilyInvite, sendFamilyInvite, type InviteState } from "@/lib/familyInvites";
 import { checkFamilyMember, type MemberCheck } from "@/lib/familyMemberCheck";
 import { OFFERED_PLAN_CADENCE, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 
@@ -44,6 +45,49 @@ export async function checkFamilyMemberAction(email: string): Promise<MemberChec
   return checkFamilyMember(session.user.id, String(email).slice(0, 254));
 }
 
+export type FamilyInviteRow = { email: string; status: InviteState };
+
+/** The invitations this person has out (waiting, accepted, declined), so the form can show who still has to say yes. */
+export async function listMyFamilyInvitesAction(): Promise<FamilyInviteRow[]> {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  return listInvitesFromPayer(session.user.id);
+}
+
+/** Asks one existing account to join the family. Limited: each answer says whether an email has an account. */
+export async function sendFamilyInviteAction(email: string): Promise<{ ok: boolean; status: InviteState | null; error: string | null }> {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  try {
+    await consumeRateLimit(prisma, `family-invite:${session.user.id}`, { windowMinutes: 60, max: 20, message: "Too many invitations. Please wait a while and try again." });
+    const status = await sendFamilyInvite(session.user.id, String(email).slice(0, 254));
+    return { ok: true, status, error: null };
+  } catch (error) {
+    if (error instanceof FamilyInviteError || error instanceof RateLimitError) return { ok: false, status: null, error: error.message };
+    throw error;
+  }
+}
+
+export async function cancelFamilyInviteAction(email: string): Promise<void> {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  await cancelFamilyInvite(session.user.id, String(email).slice(0, 254));
+}
+
+/** The invited person's answer, from their own Billing > Plans screen. */
+export async function respondFamilyInviteAction(inviteId: string, accept: boolean): Promise<{ ok: boolean; error: string | null }> {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  try {
+    await respondToFamilyInvite(session.user.id, String(inviteId), Boolean(accept));
+    revalidatePath("/billing/plans");
+    return { ok: true, error: null };
+  } catch (error) {
+    if (error instanceof FamilyInviteError) return { ok: false, error: error.message };
+    throw error;
+  }
+}
+
 /** Weekly times other plans hold, and which of them this person is waiting for. */
 export async function getWaitlistAction(): Promise<{ taken: ReservableSlot[]; mine: string[] }> {
   const session = await getServerAuthSession();
@@ -70,6 +114,7 @@ export async function enrollInPaymentPlanAction(
   term: PaymentPlanTerm,
   reservedScheduleId: string,
   reservedChunkIndex: number,
+  expectedFirstPaymentCents?: number,
 ): Promise<EnrollPaymentPlanResult> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
@@ -77,7 +122,7 @@ export async function enrollInPaymentPlanAction(
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
 
   try {
-    const plan = await createPaymentPlan(session.user.id, cadence, term, zelleHandle, reservedScheduleId, reservedChunkIndex);
+    const plan = await createPaymentPlan(session.user.id, cadence, term, zelleHandle, reservedScheduleId, reservedChunkIndex, typeof expectedFirstPaymentCents === "number" ? expectedFirstPaymentCents : undefined);
     const installment = plan.installmentPayments[0];
     revalidatePath("/billing/plans");
     return { ok: true, planId: plan.id, installmentPaymentId: installment.id, amountCents: installment.amountCents, error: null };
@@ -112,6 +157,7 @@ export async function enrollFamilyPlanAction(
   reservedScheduleId: string,
   reservedChunkIndex: number,
   memberEmails: string[],
+  expectedFirstPaymentCents?: number,
 ): Promise<EnrollFamilyPlanResult> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
@@ -137,6 +183,7 @@ export async function enrollFamilyPlanAction(
       reservedScheduleId,
       reservedChunkIndex,
       memberEmails,
+      expectedFirstPaymentCents: typeof expectedFirstPaymentCents === "number" ? expectedFirstPaymentCents : undefined,
     });
     const mine = plans.find((plan) => plan.userId === session.user.id);
     revalidatePath("/", "layout");
@@ -185,6 +232,7 @@ export async function confirmSwitchToFamilyAction(
   reservedScheduleId: string | null,
   reservedChunkIndex: number | null,
   memberEmails: string[],
+  expectedFirstPaymentCents?: number,
 ): Promise<EnrollFamilyPlanResult> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
@@ -210,6 +258,7 @@ export async function confirmSwitchToFamilyAction(
       reservedScheduleId: reservedScheduleId ?? undefined,
       reservedChunkIndex: reservedChunkIndex ?? undefined,
       memberEmails,
+      expectedFirstPaymentCents: typeof expectedFirstPaymentCents === "number" ? expectedFirstPaymentCents : undefined,
       verifiedSwitch: true,
     });
     revalidatePath("/", "layout");

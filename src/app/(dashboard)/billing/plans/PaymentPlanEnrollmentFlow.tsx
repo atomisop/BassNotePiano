@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { PaymentPlanCadence, PaymentPlanTerm, ZellePaymentStatus } from "@prisma/client";
 import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPlan, MAX_FAMILY_MEMBERS, type PricingConfig, OFFERED_PLAN_CADENCE } from "@/lib/classCreditPricing";
-import type { Audience } from "@/lib/planCheckout";
+import { PRICE_CHANGED_MESSAGE, type Audience } from "@/lib/planCheckout";
+import { useFamilyInvites } from "@/components/billing/useFamilyInvites";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import {
@@ -13,6 +15,9 @@ import {
   getReservableSlotsAction,
   getWaitlistAction,
   checkFamilyMemberAction,
+  cancelFamilyInviteAction,
+  listMyFamilyInvitesAction,
+  sendFamilyInviteAction,
   setWaitlistAction,
   requestSwitchToFamilyCodeAction,
   submitPlanInstallmentPaymentAction,
@@ -102,6 +107,11 @@ function SwitchToFamilyPanel({
   const [error, setError] = useState<string | null>(null);
 
   const typed = emails.map((e) => e.trim()).filter(Boolean);
+  const invites = useFamilyInvites(INVITE_API, open);
+  // Nobody is put on a family without saying yes: the code step opens once every typed email has accepted.
+  const states = typed.map((e) => invites.status[e.toLowerCase()]);
+  const allAccepted = typed.length > 0 && states.every((st) => st === "ACCEPTED");
+  const toInvite = typed.filter((e, i) => !states[i]);
   // Every row added counts as a person at once, so the price follows the taps, not only the typing.
   const people = Math.max(2, emails.length + 1);
   const price = calculateFamilyBundleTotal(OFFERED_PLAN_CADENCE, term, people, pricing);
@@ -119,7 +129,7 @@ function SwitchToFamilyPanel({
   async function confirm() {
     setBusy(true);
     setError(null);
-    const result = await confirmSwitchToFamilyAction(password, code, term, null, null, typed).catch(() => null);
+    const result = await confirmSwitchToFamilyAction(password, code, term, null, null, typed, price.perStudentMonthlyCents * people).catch(() => null);
     setBusy(false);
     if (!result || !result.ok || !result.startPaymentId || result.amountCents === null) return setError(result?.error ?? "Something went wrong. Try again.");
     onStarted({ id: result.startPaymentId, status: "AWAITING_TRANSFER", rejectionReason: null, amountCents: result.amountCents, installmentNumber: 1 }, result.memberCount);
@@ -168,11 +178,29 @@ function SwitchToFamilyPanel({
             <div className="flex justify-between"><span>Each person, every 28 days</span><span>{formatUsd(price.perStudentMonthlyCents)}</span></div>
             <div className="mt-1 flex justify-between font-semibold text-slate-50"><span>First payment, {people} people together</span><span>{formatUsd(price.perStudentMonthlyCents * people)}</span></div>
           </div>
-          <p className="text-small text-slate-400">To confirm, enter your password. We then email you a code.</p>
+          {typed.length > 0 && (
+            <ul className="space-y-1 text-small">
+              {typed.map((e, i) => (
+                <li key={e + i} className="flex items-center justify-between gap-2 text-slate-300">
+                  <span className="min-w-0 truncate">{e}</span>
+                  <span className={states[i] === "ACCEPTED" ? "text-emerald-400" : states[i] === "DECLINED" ? "text-amber-300" : "text-slate-400"}>
+                    {states[i] === "ACCEPTED" ? "Accepted" : states[i] === "DECLINED" ? "Declined" : states[i] === "SENDING" ? "Sending…" : states[i] === "PENDING" ? "Waiting for them" : "Not invited yet"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {toInvite.length > 0 && (
+            <button type="button" onClick={() => void invites.send(toInvite)} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+              {toInvite.length === 1 ? "Send invitation" : `Send ${toInvite.length} invitations`}
+            </button>
+          )}
+          {invites.error && <p className="text-small text-red-400">{invites.error}</p>}
+          <p className="text-small text-slate-400">Everyone has to accept first. Then enter your password to confirm, and we email you a code.</p>
           <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" aria-label="Your password" className={field} />
           {error && <p className="text-small text-red-400">{error}</p>}
           <div className="flex gap-2">
-            <button type="button" disabled={busy || typed.length === 0 || !password} onClick={sendCode} className={buttonVariants({ variant: "primary", size: "sm" })}>
+            <button type="button" disabled={busy || !allAccepted || !password} onClick={sendCode} className={buttonVariants({ variant: "primary", size: "sm" })}>
               {busy ? "Sending…" : "Email me a code"}
             </button>
             <button type="button" onClick={() => setOpen(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Cancel</button>
@@ -194,6 +222,8 @@ function SwitchToFamilyPanel({
     </div>
   );
 }
+
+const INVITE_API = { list: listMyFamilyInvitesAction, send: sendFamilyInviteAction, cancel: cancelFamilyInviteAction };
 
 /**
  * Handles both states of /billing/plans: no active plan (the cadence/term
@@ -220,6 +250,7 @@ export function PaymentPlanEnrollmentFlow({
   // installment is nullable now: an active plan can have nothing payable yet
   // (see nextInstallmentDueDate above), that's still "enrolled", just
   // between installments, not the picker below.
+  const router = useRouter();
   const [enrolled, setEnrolled] = useState<{ plan: ActivePlanSummary; installment: OpenInstallmentSummary | null; family?: FamilyPlanInfo | null } | null>(
     initialPlan ? { plan: initialPlan, installment: initialInstallment, family } : null,
   );
@@ -233,15 +264,16 @@ export function PaymentPlanEnrollmentFlow({
   }, [serverCopy]);
 
   /** The form's server calls: start a solo or family plan, and move to the payment screen once it exists. */
-  async function startPlan({ audience, term, slot, memberEmails }: StartPlanInput): Promise<StartPlanResult> {
+  async function startPlan({ audience, term, slot, memberEmails, expectedFirstPaymentCents }: StartPlanInput): Promise<StartPlanResult> {
     const termPayments = calculatePaymentPlanRate(cadence, term, pricing).termMonths;
     if (audience === "FAMILY") {
       let result: Awaited<ReturnType<typeof enrollFamilyPlanAction>>;
       try {
-        result = await enrollFamilyPlanAction(term, slot.scheduleId, slot.chunkIndex, memberEmails);
+        result = await enrollFamilyPlanAction(term, slot.scheduleId, slot.chunkIndex, memberEmails, expectedFirstPaymentCents);
       } catch {
         return { ok: false, error: "Something went wrong starting the family plan. Please try again." };
       }
+      if (result.error === PRICE_CHANGED_MESSAGE) router.refresh();
       if (!result.ok || !result.planId || !result.startPaymentId || result.amountCents === null) {
         return { ok: false, error: result.error ?? "Something went wrong starting the family plan." };
       }
@@ -254,10 +286,11 @@ export function PaymentPlanEnrollmentFlow({
     }
     let result: Awaited<ReturnType<typeof enrollInPaymentPlanAction>>;
     try {
-      result = await enrollInPaymentPlanAction(cadence, term, slot.scheduleId, slot.chunkIndex);
+      result = await enrollInPaymentPlanAction(cadence, term, slot.scheduleId, slot.chunkIndex, expectedFirstPaymentCents);
     } catch {
       return { ok: false, error: "Something went wrong starting your plan. Please try again." };
     }
+    if (result.error === PRICE_CHANGED_MESSAGE) router.refresh();
     if (!result.ok || !result.planId || !result.installmentPaymentId || result.amountCents === null) {
       return { ok: false, error: result.error ?? "Something went wrong starting your plan." };
     }
@@ -381,6 +414,7 @@ export function PaymentPlanEnrollmentFlow({
       loadSlots={() => getReservableSlotsAction(cadence)}
       onStart={startPlan}
       checkMember={checkFamilyMemberAction}
+      inviteApi={INVITE_API}
       loadWaitlist={getWaitlistAction}
       setWaitlist={(slot, join) => setWaitlistAction(slot.scheduleId, slot.chunkIndex, join)}
     />

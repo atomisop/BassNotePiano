@@ -11,6 +11,8 @@ import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
 import { MyPlanSummary } from "@/components/billing/MyPlanSummary";
 import { getPricingConfig } from "@/lib/pricing";
 import { getDiscountPercent } from "@/lib/accountDiscounts";
+import { FamilyInvitesPanel } from "@/components/billing/FamilyInvitesPanel";
+import { listInvitesForPerson } from "@/lib/familyInvites";
 import { BackLink } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Payment plans" };
@@ -139,6 +141,7 @@ export default async function BillingPlansPage(
       </div>
 
       <div className="mt-8 lg:col-span-7 lg:mt-0">
+        <FamilyInvitesPanel invites={(await listInvitesForPerson(session.user.id)).map((i) => ({ id: i.id, payerName: i.payerName }))} />
         {activePlan && <MyPlanSummary userId={session.user.id} />}
         <PaymentPlanEnrollmentFlow
           zelleHandle={zelleHandle}

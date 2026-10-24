@@ -7,6 +7,7 @@ import { CLASS_MINUTES, MAX_FAMILY_MEMBERS, OFFERED_PLAN_CADENCE, describePaymen
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { checkoutTotals, headcount, missingForCheckout, type Audience } from "@/lib/planCheckout";
 import { DAY_NAMES, formatTimeRange } from "@/lib/weeklyTimeLabels";
+import { useFamilyInvites, type FamilyInviteApi } from "@/components/billing/useFamilyInvites";
 import { AccountCheckLine, type CheckState } from "@/components/billing/AccountCheckLine";
 import { looksLikeEmail } from "@/lib/familyMemberCheck";
 import { CheckoutBar } from "@/components/billing/CheckoutBar";
@@ -38,6 +39,8 @@ export interface StartPlanInput {
   slot: ReservableSlot;
   /** Every family member's account email, in the order typed (empty for a solo plan). */
   memberEmails: string[];
+  /** The first payment on screen when they pressed Start; the server refuses if the real price is different. */
+  expectedFirstPaymentCents: number;
 }
 
 /**
@@ -56,6 +59,7 @@ export function NewPlanForm({
   loadWaitlist,
   setWaitlist,
   checkMember,
+  inviteApi,
 }: {
   pricing: PricingConfig;
   personalDiscountPercent?: number;
@@ -67,6 +71,8 @@ export function NewPlanForm({
   loadWaitlist?: () => Promise<{ taken: ReservableSlot[]; mine: string[] }>;
   setWaitlist?: (slot: ReservableSlot, join: boolean) => Promise<{ ok: boolean; error: string | null }>;
   /** Asks the server whether an email is an account that can join. Leave out to skip the live check. */
+  /** Invitations: a family member must accept before the plan can start. Leave out to skip (no gate). */
+  inviteApi?: FamilyInviteApi;
   checkMember?: (email: string) => Promise<Exclude<CheckState, "checking" | "duplicate" | "failed">>;
 }) {
   const cadence = OFFERED_PLAN_CADENCE;
@@ -132,6 +138,16 @@ export function NewPlanForm({
   // Each typed email is looked up once it stops changing; answers are kept so retyping the same one is instant.
   const [lookups, setLookups] = useState<Record<string, CheckState>>({});
   const asked = useRef(new Set<string>());
+  const invites = useFamilyInvites(inviteApi, audience === "FAMILY");
+  const gated = Boolean(inviteApi);
+  // Invitations survive a reload: the people already asked come back into the list.
+  const restored = useRef(false);
+  useEffect(() => {
+    if (restored.current || !invites.loaded) return;
+    restored.current = true;
+    const emails = Object.keys(invites.status).filter((e) => invites.status[e] !== "SENDING");
+    if (emails.length > 0 && memberRows.every((r) => r.trim() === "")) setMemberRows(emails);
+  }, [invites.loaded, invites.status, memberRows]);
   useEffect(() => {
     if (!checkMember || audience !== "FAMILY") return;
     const wanted = memberRows.map((r) => r.trim().toLowerCase()).filter((e) => looksLikeEmail(e) && !asked.current.has(e));
@@ -159,7 +175,10 @@ export function NewPlanForm({
     if (!email || !checkMember) return null;
     if (!looksLikeEmail(email)) return null;
     if (memberRows.slice(0, i).some((r) => r.trim().toLowerCase() === email)) return "duplicate";
-    return lookups[email] ?? "checking";
+    const found = lookups[email] ?? "checking";
+    if (found !== "ready" || !gated) return found;
+    const inv = invites.status[email];
+    return inv === "SENDING" ? "sending" : inv === "PENDING" ? "waiting" : inv === "ACCEPTED" ? "accepted" : inv === "DECLINED" ? "declined" : "ready";
   }
 
   // A row just added takes the cursor, so adding a person and typing their email is one motion.
@@ -176,12 +195,20 @@ export function NewPlanForm({
     [cadence, term, pricing, audience, memberRows, personalDiscountPercent],
   );
   const rowStates = isFamily ? memberRows.map((_, i) => stateFor(i)) : [];
+  const good = (st: CheckState | null) => st === "accepted" || (!gated && st === "ready");
+  const toInvite = gated ? memberRows.filter((_, i) => rowStates[i] === "ready").map((r) => r.trim()) : [];
   const accountHint = rowStates.includes("checking")
     ? "Checking the accounts…"
-    : rowStates.some((st) => st !== null && st !== "ready")
-      ? "Fix or remove the email marked above"
-      : null;
-  const hint = missingForCheckout({ audience, memberRows, slotChosen: slot !== null }) ?? accountHint;
+    : rowStates.some((st) => st === "sending" || st === "waiting")
+      ? "Waiting for everyone to accept"
+      : toInvite.length > 0
+        ? "Send the invitations below"
+        : rowStates.some((st) => st !== null && !good(st))
+          ? "Fix or remove the email marked above"
+          : null;
+  // In the order the page asks: the people, their yes, then the time.
+  const missing = missingForCheckout({ audience, memberRows, slotChosen: slot !== null });
+  const hint = (missing !== "Pick your weekly time" ? missing : null) ?? accountHint ?? missing;
   const planName = describePaymentPlan(cadence, term).replace(/, .*/, "");
   const classesTotal = totals.classesPerPayment * totals.payments;
   const timeLine = slot ? `${DAY_NAMES[slot.dayOfWeek]}s, ${formatTimeRange(slot.startTime, CLASS_MINUTES)}` : null;
@@ -197,7 +224,7 @@ export function NewPlanForm({
     if (!slot || hint !== null) return;
     setBusy(true);
     setError(null);
-    const result = await onStart({ audience, term, slot, memberEmails: isFamily ? memberRows.map((r) => r.trim()).filter(Boolean) : [] }).catch(
+    const result = await onStart({ audience, term, slot, memberEmails: isFamily ? memberRows.map((r) => r.trim()).filter(Boolean) : [], expectedFirstPaymentCents: totals.firstPaymentCents }).catch(
       (): StartPlanResult => ({ ok: false, error: "Something went wrong. Please try again." }),
     );
     setBusy(false);
@@ -257,7 +284,7 @@ export function NewPlanForm({
             </p>
           </div>
           <p className="mt-1 text-small text-slate-400">
-            Each person needs their own Bass Note Piano account first, with their own name. You pay for everyone from your own bank account: one combined first payment starts
+            Each person needs their own Bass Note Piano account first, with their own name, and must accept your invitation. You pay for everyone from your own bank account: one combined first payment starts
             everyone together. If anyone cannot start, nobody does.
           </p>
           <ul className="mt-3 space-y-2">
@@ -285,7 +312,10 @@ export function NewPlanForm({
                   <button
                     type="button"
                     aria-label={`Remove family member ${i + 1}`}
-                    onClick={() => setMemberRows((prev) => prev.filter((_, j) => j !== i))}
+                    onClick={() => {
+                      invites.cancel(email);
+                      setMemberRows((prev) => prev.filter((_, j) => j !== i));
+                    }}
                     className="tap flex h-11 w-11 shrink-0 items-center justify-center rounded-control bg-neu-base text-slate-300 shadow-raised-low active:shadow-pressed-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <X aria-hidden className="h-4 w-4" />
@@ -307,6 +337,16 @@ export function NewPlanForm({
           >
             Add another person
           </button>
+          {toInvite.length > 0 && (
+            <button type="button" onClick={() => void invites.send(toInvite)} className={buttonVariants({ variant: "primary", size: "sm", className: "ml-2 mt-3" })}>
+              {toInvite.length === 1 ? "Send invitation" : `Send ${toInvite.length} invitations`}
+            </button>
+          )}
+          {invites.error && (
+            <p role="alert" className="mt-2 text-small text-red-400">
+              {invites.error}
+            </p>
+          )}
           {people.atMax && <p className="mt-2 text-small text-slate-500">That is the most one family plan holds ({MAX_FAMILY_MEMBERS} people).</p>}
         </section>
       )}
@@ -399,7 +439,7 @@ export function NewPlanForm({
                 I&apos;m committing to {totals.payments} installments, one every 28 days, of {usd(totals.perPaymentCents)} each.
               </>
             )}{" "}
-            My selected weekly time is reserved for me exclusively and auto-booked automatically every week this plan stays active, I don&apos;t need to book it myself. If a
+            I understand I am billed every 28 days (13 times a year, not 12), so a month here means one 28-day bill. My selected weekly time is reserved for me exclusively and auto-booked automatically every week this plan stays active, I don&apos;t need to book it myself. If a
             specific week doesn&apos;t work for me, I&apos;ll message support rather than rescheduling it myself. Money spent is{" "}
             <span className="font-medium text-[rgb(var(--c-s-50))]">non-refundable</span> once a class happens.
           </span>

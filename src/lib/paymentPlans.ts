@@ -8,7 +8,9 @@ import { prisma } from "@/lib/prisma";
 import { hasFirstAndLastName } from "@/lib/studentName";
 import { namesMatch } from "@/lib/personNames";
 import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPlan, discountedPlanPriceCents, isPlanTermOffered, isPlanCadenceOffered, MIN_FAMILY_MEMBERS, MAX_FAMILY_MEMBERS, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { assertEveryoneAccepted, FamilyInviteError, spendInvites } from "@/lib/familyInvites";
 import { getPricingConfig } from "@/lib/pricing";
+import { PRICE_CHANGED_MESSAGE } from "@/lib/planCheckout";
 import { getDiscountPercent } from "@/lib/accountDiscounts";
 import {
   chunksForSchedule,
@@ -27,6 +29,21 @@ import { PAUSE_REASON, pauseBlockedReason, pauseSpanMs } from "@/lib/planPause";
 import { logAudit } from "@/lib/audit";
 
 export class PaymentPlanError extends Error {}
+
+
+/** How many plans one person may start and leave unpaid in a week before they must pay one or wait. Stops holding the best weekly times for free. */
+export const MAX_UNPAID_STARTS_PER_WEEK = 3;
+
+async function assertNotHoardingTimes(userId: string) {
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const [solo, families] = await Promise.all([
+    prisma.paymentPlan.count({ where: { userId, familyGroupId: null, installmentsPaid: 0, createdAt: { gte: since } } }),
+    prisma.familyPlanGroup.count({ where: { payerId: userId, createdAt: { gte: since }, plans: { none: { installmentsPaid: { gt: 0 } } } } }),
+  ]);
+  if (solo + families >= MAX_UNPAID_STARTS_PER_WEEK) {
+    throw new PaymentPlanError("You have started several plans this week without paying for one. Please pay one of them, or try again in a few days.");
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Enrollment
@@ -121,6 +138,8 @@ export async function createPaymentPlan(
   zelleHandle: string,
   reservedScheduleId: string,
   reservedChunkIndex: number,
+  /** The first payment the person was shown. If the real price is different now, nothing is created. */
+  expectedFirstPaymentCents?: number,
 ) {
   // A Server Action's params are only compile-time-typed, a raw request
   // against the same endpoint could send anything. Validate against the
@@ -148,6 +167,8 @@ export async function createPaymentPlan(
   const discountPercent = await getDiscountPercent(userId);
   const installmentCents = discountedPlanPriceCents(rate.installmentAmountCents, discountPercent);
   const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
+  if (expectedFirstPaymentCents !== undefined && expectedFirstPaymentCents !== installmentCents) throw new PaymentPlanError(PRICE_CHANGED_MESSAGE);
+  await assertNotHoardingTimes(userId);
 
   try {
     const created = await prisma.$transaction(
@@ -1390,6 +1411,8 @@ export interface CreateFamilyPlansInput {
   reservedChunkIndex?: number;
   /** The other members' account emails (the payer is added automatically). */
   memberEmails: string[];
+  /** The first payment (everyone together) the payer was shown. If the real price is different now, nothing is created. */
+  expectedFirstPaymentCents?: number;
   /** Set only by the action that has just checked the payer's password and emailed code. Needed when the payer is on a plan now. */
   verifiedSwitch?: boolean;
 }
@@ -1452,6 +1475,8 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
 
   const pricing = await getPricingConfig();
   const perMemberCents = calculateFamilyBundleTotal(cadence, term, members.length, pricing).perStudentMonthlyCents;
+  if (input.expectedFirstPaymentCents !== undefined && input.expectedFirstPaymentCents !== perMemberCents * members.length) throw new PaymentPlanError(PRICE_CHANGED_MESSAGE);
+  await assertNotHoardingTimes(payerId);
   const rate = calculatePaymentPlanRate(cadence, term, pricing);
   const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
   const memberIds = members.map((m) => m.id);
@@ -1461,6 +1486,13 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
   try {
     const created = await prisma.$transaction(
       async (tx) => {
+        // Nobody is put on a family without saying yes: every other member must have accepted this payer's invitation.
+        try {
+          await assertEveryoneAccepted(tx, payerId, others);
+        } catch (err) {
+          if (err instanceof FamilyInviteError) throw new PaymentPlanError(err.message);
+          throw err;
+        }
         // Every other member must be able to start: none may already be on a plan. (A subscribed sibling cancels their own plan first.)
         const busy = await tx.paymentPlan.findFirst({ where: { userId: { in: planMembers.map((m) => m.id) }, status: "ACTIVE" }, select: { userId: true } });
         if (busy) {
@@ -1507,6 +1539,7 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
             status: "AWAITING_TRANSFER",
           },
         });
+        await spendInvites(tx, payerId, others.map((o) => o.id));
         return { group, plans, startPayment };
       },
       { isolationLevel: "Serializable" },

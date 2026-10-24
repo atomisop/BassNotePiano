@@ -114,3 +114,21 @@ describe("weekly time labels", () => {
     expect(DAY_ORDER).toEqual([1, 2, 3, 4, 5, 6, 0]);
   });
 });
+
+describe("the price on screen is the price the server charges", () => {
+  it("solo, with and without a personal discount, and family, for every plan length", async () => {
+    const { calculatePaymentPlanRate, calculateFamilyBundleTotal, DEFAULT_PRICING, OFFERED_PLAN_CADENCE } = await import("@/lib/classCreditPricing");
+    const { discountedPlanPriceCents } = await import("@/lib/classCreditPricing");
+    for (const term of ["MONTHLY", "TERM_3", "TERM_6"] as const) {
+      const list = calculatePaymentPlanRate(OFFERED_PLAN_CADENCE, term, DEFAULT_PRICING).installmentAmountCents;
+      const solo = checkoutTotals({ cadence: OFFERED_PLAN_CADENCE, term, pricing: DEFAULT_PRICING, audience: "SOLO", memberRows: [] });
+      expect(solo.firstPaymentCents).toBe(list);
+      const off = checkoutTotals({ cadence: OFFERED_PLAN_CADENCE, term, pricing: DEFAULT_PRICING, audience: "SOLO", memberRows: [], personalDiscountPercent: 15 });
+      expect(off.firstPaymentCents).toBe(discountedPlanPriceCents(list, 15));
+      for (const others of [1, 3, 7]) {
+        const family = checkoutTotals({ cadence: OFFERED_PLAN_CADENCE, term, pricing: DEFAULT_PRICING, audience: "FAMILY", memberRows: Array(others).fill("a@b.co") });
+        expect(family.firstPaymentCents).toBe(calculateFamilyBundleTotal(OFFERED_PLAN_CADENCE, term, others + 1, DEFAULT_PRICING).perStudentMonthlyCents * (others + 1));
+      }
+    }
+  });
+});

@@ -253,6 +253,9 @@ A subscribed payer switches in (`FamilyPlanGroup.replacesPlanId`): password plus
 approved and is then replaced in the same transaction. A member leaving one short of two bills the survivor at the solo price; the payer
 leaving ends the family (members keep the month paid). One family change per `family.changeCooldownDays`.
 
+**Nobody is put on a family without saying yes (2026-10-24, `familyInvites.ts`, table `FamilyInvite`).** The payer invites an existing account from the plan form (or the switch panel); the invitee sees Accept / Decline on their own Billing > Plans screen (`FamilyInvitesPanel`) and gets a bell notice. `createFamilyPlans` refuses unless every other member has an ACCEPTED invite from THIS payer made within `FAMILY_INVITE_DAYS` (7); the invites are deleted when the family is created, so a yes starts one family only. A decline blocks asking again for 30 days. Nothing (no plan row, no held slot) exists for an invitee until they accept and the payer pays.
+**Two more guards in the same place**: `assertNotHoardingTimes` stops anyone who started `MAX_UNPAID_STARTS_PER_WEEK` (3) plans in 7 days without paying one; and the screen sends the first payment it showed (`expectedFirstPaymentCents`), the server refuses with `PRICE_CHANGED_MESSAGE` if the real price differs and the screen reloads the prices. The live account check (`familyMemberCheck.ts`) answers a banned or admin email exactly like a missing one.
+
 ## Contacts and soft holds (added 2026-10-20)
 
 Admin > People > Contacts (`src/lib/contacts.ts`, `src/app/(dashboard)/admin/contacts/`) is one list of everyone: accounts (classes taken, next class,

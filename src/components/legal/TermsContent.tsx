@@ -42,7 +42,7 @@ export function TermsContent() {
       <TermsSection title="Class credits & bundles">
         <p>
           Every class is 45 minutes, one-on-one. Your weekly classes come from a Payment Plan: 1 Month,
-          3 Months, or 6 Months, paid one Zelle or Venmo installment every 28 days, longer terms at a lower rate. Enrolling
+          3 Months, or 6 Months, paid one Zelle or Venmo installment every 28 days (so 13 bills a year, not 12; a plan's "month" is one 28-day bill), longer terms at a lower rate. Enrolling
           reserves your weekly day and time exclusively and auto-books it every week for as long as the plan stays
           active. You can skip or change a class up to 6 hours before it starts; inside 6 hours, please attend
           or message us. A skipped class stays on your account to rebook on another day, but it is forfeited if
