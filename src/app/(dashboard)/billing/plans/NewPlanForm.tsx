@@ -373,7 +373,7 @@ export function NewPlanForm({
             />
             {timeLine && (
               <p className="mt-3 rounded-xl bg-neu-base px-3.5 py-3 text-small text-slate-300 shadow-pressed-low">
-                Every <span className="font-semibold text-slate-50">{timeLine}</span>, locked in for {totals.payments === 1 ? "these 28 days" : `your whole ${totals.payments * 28}-day plan`}.
+                <span className="font-semibold text-slate-50">{timeLine}</span>, locked in for {totals.payments === 1 ? "these 28 days" : `your whole ${totals.payments * 28}-day plan`}.
               </p>
             )}
           </>
