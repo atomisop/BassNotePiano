@@ -52,8 +52,12 @@ days. A daily `mail-chain-probe` job sends a test email to music@ (subject `BNP 
   `/billing/*`, `/friends`, `/messages` (1:1 + group), `/account`
   (tabbed settings, password, notifications, appearance, tutorials,
   **Delete Account** danger zone), `/profile`, `/about`.
-- `src/app/(dashboard)/admin`, the sole admin's console. Nav is
-  `src/components/admin/AdminNav.tsx`: one grouped list on the left from md up (icons, count badges, Settings pinned underneath), one swipeable row on phones. Groups: Overview / Billing (Payments, Payment Plans) / People (**Applications**, **Accounts**, Employees) / Teaching (Schedule, Lessons, Discord) / Inbox (Support Chat, Messages). Each label matches its page heading; pages keep their own tabs only for statuses and filters.
+- `src/app/(dashboard)/admin`, the sole admin's console. The menu is six choices, defined in `src/lib/adminNav.ts` (tested): Overview, Billing (Payments, Plans,
+  Pricing), People (Accounts, Applicants, Contacts, Staff), Classes (Today, Schedule, Lessons, Discord), Inbox (Support Chat, Messages), Setup (Settings, Security,
+  Activity). `AdminNav` (`src/components/admin/AdminNav.tsx`) is a six-item list from md up and, on phones, one bar naming the section that opens a sheet of six equal rows;
+  `AdminSectionTabs` draws the section's pages as one underlined tab row above every page (evenly spaced, so nothing scrolls sideways; a dot marks a tab with something
+  waiting). Every page keeps its own address, so old links still work; a new page goes in `ADMIN_HUBS`, and its tab name is also its heading (one short word, four tabs must fit
+  across a 320px phone). Pages keep their own filter pills for statuses.
 - Booking code: `src/lib/classSchedule.ts` (booking, cancel, reschedule and the
   shared time and slot rules), `classScheduleAdmin.ts` (roster, attendance),
   `classScheduleManage.ts` (adding and retiring weekly slots), `bookingRules.ts`
