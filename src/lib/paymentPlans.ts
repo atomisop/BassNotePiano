@@ -138,7 +138,7 @@ export async function createPaymentPlan(
     throw new PaymentPlanError("That weekly length isn't offered anymore. Classes are 45 minutes a week.");
   }
   if (!isPlanTermOffered(term)) {
-    throw new PaymentPlanError("That plan length is no longer offered. Pick Monthly, 3-Month, or 6-Month.");
+    throw new PaymentPlanError("That plan length is no longer offered. Pick 4-Week, 12-Week, or 24-Week.");
   }
 
   const pricing = await getPricingConfig();
@@ -1345,14 +1345,14 @@ async function endFamilyWhenPayerLeaves(groupId: string, leavingPlanId: string):
       userId: member.userId,
       type: "PAYMENT_PLAN_CANCELED",
       title: "Your family plan is ending",
-      body: "The person who paid for your family plan left it, so it ends. The month already paid stays: your credits and booked classes run until then. You can start your own plan any time.",
+      body: "The person who paid for your family plan left it, so it ends. The 4 weeks already paid stay: your credits and booked classes run until then. You can start your own plan any time.",
       emailCategory: "payments",
     }).catch((err) => console.error("Family ended notice failed (non-blocking):", err));
   }
   await notifyAdmins("PLAN_CANCEL_FEEDBACK", {
     type: "ADMIN_ALERT",
     title: "A family plan ended: the payer left",
-    body: `${members.length} other member${members.length === 1 ? "" : "s"} lost the family plan because the one who paid left. They keep the month already paid.`,
+    body: `${members.length} other member${members.length === 1 ? "" : "s"} lost the family plan because the one who paid left. They keep the 4 weeks already paid.`,
     emailCategory: "social",
     cta: { label: "See the plans", path: "/admin/payment-plans?status=CANCELED" },
   }).catch((err) => console.error("Family ended alert failed (non-blocking):", err));
@@ -1400,7 +1400,7 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
   if (!Object.values(PaymentPlanCadence).includes(cadence)) throw new PaymentPlanError(`"${cadence}" isn't a valid cadence.`);
   if (!Object.values(PaymentPlanTerm).includes(term)) throw new PaymentPlanError(`"${term}" isn't a valid term.`);
   if (!isPlanCadenceOffered(cadence)) throw new PaymentPlanError("That weekly length isn't offered anymore. Classes are 45 minutes a week.");
-  if (!isPlanTermOffered(term)) throw new PaymentPlanError("That plan length is no longer offered. Pick Monthly, 3-Month, or 6-Month.");
+  if (!isPlanTermOffered(term)) throw new PaymentPlanError("That plan length is no longer offered. Pick 4-Week, 12-Week, or 24-Week.");
 
   const payer = await prisma.user.findUnique({ where: { id: payerId }, select: { id: true, name: true, email: true, role: true, bannedAt: true } });
   if (!payer) throw new PaymentPlanError("Your account was not found.");
@@ -1527,7 +1527,7 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
       await noticePlanUpdated({
         userId: other.id,
         title: "You were added to a family plan",
-        body: `${payer.name ?? payer.email} set up a family plan that includes you. Your classes start when their first payment arrives, and they pay for your monthly bills.`,
+        body: `${payer.name ?? payer.email} set up a family plan that includes you. Your classes start when their first payment arrives, and they pay for your 4-week bills.`,
       }).catch((err) => console.error("Family member notice failed (non-blocking):", err));
     }
     return created;

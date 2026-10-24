@@ -215,16 +215,15 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
   `src/lib/entitlement.ts` (DB) resolve a student to `ADMIN | PAID | COMPED |
   TRIAL | NONE`. `PAID` = a Payment Plan with at least one approved
   installment, through the end of the paid period (+3 days grace). Cancelling
-  keeps access to the end of the paid month. A COMPLETED plan (every Monthly
+  keeps access to the end of the paid 4 weeks. A COMPLETED plan (every 4-Week
   one) does not advance `nextDueDate` on its last installment, so its paid
-  period ends one month *after* it (easy to get wrong, it was).
+  period ends one 28-day cycle *after* it (easy to get wrong, it was).
 - `User.hasCurriculumAccess` is now only the admin's complimentary override
   (`COMPED`). The migration cleared every existing flag (they were all free
   grants). The JWT's copy is display-only; the edge no longer gates scales.
   `getRoadmap`/`canAccessScale` in `src/lib/access.ts` (DB-authoritative) are
   the real gate, via `decideScaleAccess`.
-- **Fifth class (decided 2026-10-21): free on 3-month and 6-month plans, optional and paid on Monthly.** `isCommitmentTerm` / `classesInPaidMonth` (`paymentPlans.ts`) give a commitment plan every weekday in its cycle; a Monthly plan covers four and can add the fifth through `getFifthClassOffer` / `createFifthClassPayment` (owner price `payments.fifthClassPriceDollars`, default $55 (the regular rate), same pay screen as an extra class, card on Lessons > Extra sessions, link on the receipt). A fifth already given (marker row) is never taken back. Details of the cycle count follow.
-- **A paid month is every one of the student's weekday inside the billing cycle (commitment plans).** The cycle runs from one billing date to the next, so it holds four OR five of that weekday (any subscriber meets a five-class cycle about 4 times a year, in months that depend on their start date). `classesInPaidMonth` (`paymentPlans.ts`) counts them with `classesInWindow` (`classSchedule.ts`); the installment still grants four classes of credit and `topUpIfFifth` adds the fifth class's credit once per cycle (marker `plan-fifth-class:<plan>:<cycle start>` in AppSetting), good until the next billing date. Access never depends on credits; extra time that week is an extra session (`SUBSCRIBER_CLASSES_PER_WEEK` = 1).
+- **Billing cycles are 28 days (decided 2026-10-24).** Every payment plan is billed every 4 weeks, never by calendar month: one payment covers exactly 28 days, so a cycle always holds exactly four of any weekday. `addBillingCycles` / `BILLING_CYCLE_DAYS` (`src/lib/billingCycle.ts`, tested) is the only place a cycle's length is defined; the paid period, the next due date and the credits' expiry all go through it, so never add months to a billing date. The price per payment did not change. Plan names are 4-Week (no commitment), 12-Week (3 payments) and 24-Week (6 payments); `termMonths` in the code means the NUMBER OF PAYMENTS, not months. The old fifth-class offer and free credit are switched off (`FIFTH_CLASS_RETIRED` in `paymentPlans.ts`; a fifth class already given is still honored). Migration `20261106000000_billing_28_day_cycles` moved plans that were mid-cycle onto 28 days (due dates, live credits, a bell notice each); `tests/db/billing28Migration.test.ts` runs that file against realistic rows. Referral discounts still last 3 calendar months (they are a promotion, not a bill).
 - **Teacher-approved drip.** Full access opens Scale 1 only. Each next scale
   opens when the teacher approves it (`approveNextScale` in
   `src/lib/scaleApproval.ts`, button on `/admin/progress`): eligible when the
@@ -333,7 +332,7 @@ banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`)
 ## Sidebar spotlight, devices and follow-ups (added 2026-10-21)
 
 - **Sidebar spotlight** (`SidebarSpotlight`, `src/lib/sidebarCards.ts`, `/api/me/sidebar`): the bottom of the desktop sidebar shows one card at a time (dots step
-  through the rest): Discord invitation until linked, next class countdown, low credits, fifth class, scale unlocked / waiting, streak, continue lesson,
+  through the rest): Discord invitation until linked, next class countdown, low credits, scale unlocked / waiting, streak, continue lesson,
   friends practicing; admins get jobs stopped, needs-you counts and today's classes. Each is a true fact with one tap; add a new kind to the `SidebarCard` union.
 - **Signed-in devices** (Settings > "Where you are signed in"): `KnownDevice` rows (browser + OS, never the IP) with city/region/country from the host's geo headers
   (`placeFromHeaders`, Netlify `x-nf-geo` is unverified in production), `signedInAt`, and `lastSeenAt` touched by `/api/me/status` (about once a minute per open tab).

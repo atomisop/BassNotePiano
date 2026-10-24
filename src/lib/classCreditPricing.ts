@@ -293,9 +293,9 @@ const PLAN_CADENCE_LABEL: Record<PaymentPlanCadence, string> = {
 };
 
 const PLAN_TERM_LABEL: Record<PaymentPlanTerm, string> = {
-  MONTHLY: "Monthly",
-  TERM_3: "3-Month",
-  TERM_6: "6-Month",
+  MONTHLY: "4-Week",
+  TERM_3: "12-Week",
+  TERM_6: "24-Week",
   TERM_12: "Yearly",
 };
 

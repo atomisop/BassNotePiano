@@ -303,7 +303,7 @@ export async function createFamilyBundlePayment(input: FamilyBundlePurchaseInput
     throw new FamilyBundleError("That weekly length isn't offered anymore. Classes are 45 minutes a week.");
   }
   if (!isPlanTermOffered(input.term)) {
-    throw new FamilyBundleError("That plan length is no longer offered. Pick Monthly, 3-Month, or 6-Month.");
+    throw new FamilyBundleError("That plan length is no longer offered. Pick 4-Week, 12-Week, or 24-Week.");
   }
 
   const normalized = input.recipientEmails.map((e) => e.trim().toLowerCase()).filter(Boolean);
@@ -902,7 +902,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
         userId: payment.userId,
         type: "PAYMENT_PLAN_COMPLETED",
         title: "Payment plan complete",
-        body: `You've paid off your ${plan.termMonths}-month plan in full. Nice work.`,
+        body: `You've paid off your ${plan.termMonths * 4}-week plan in full. Nice work.`,
         emailCategory: "payments",
       });
     }

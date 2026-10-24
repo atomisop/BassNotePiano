@@ -17,7 +17,7 @@ export const CANNED_REPLIES: { label: string; text: string }[] = [
   },
   {
     label: "Cancel my plan",
-    text: "You can cancel your plan yourself under Settings. You keep your classes until the end of the month you already paid for. If you would like to pause or switch plans instead, tell me and I will help with that.",
+    text: "You can cancel your plan yourself under Settings. You keep your classes until the end of the 4 weeks you already paid for. If you would like to pause or switch plans instead, tell me and I will help with that.",
   },
   {
     label: "Next scale",

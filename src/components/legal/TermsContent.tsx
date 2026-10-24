@@ -5,7 +5,7 @@
 // can never quietly drift out of sync with each other.
 
 
-export const TERMS_LAST_UPDATED = "October 21, 2026";
+export const TERMS_LAST_UPDATED = "October 24, 2026";
 
 function TermsSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -30,7 +30,7 @@ export function TermsContent() {
       <TermsSection title="Curriculum (included with live classes)">
         <p>
           The curriculum isn&apos;t sold separately. It comes with an active class plan, and your teacher opens it one
-          scale at a time as you progress. When a plan ends, curriculum access continues until the end of the month
+          scale at a time as you progress. When a plan ends, curriculum access continues until the end of the 4 weeks
           you already paid for, then closes. Approved applicants get a 3-day free trial of the first lessons.
         </p>
         <p>
@@ -41,17 +41,17 @@ export function TermsContent() {
 
       <TermsSection title="Class credits & bundles">
         <p>
-          Every class is 45 minutes, one-on-one. Your weekly classes come from a Payment Plan: Monthly,
-          3-Month, or 6-Month, paid one Zelle or Venmo installment at a time, longer terms at a lower rate. Enrolling
+          Every class is 45 minutes, one-on-one. Your weekly classes come from a Payment Plan: 4-Week,
+          12-Week, or 24-Week, paid one Zelle or Venmo installment every 4 weeks, longer terms at a lower rate. Enrolling
           reserves your weekly day and time exclusively and auto-books it every week for as long as the plan stays
           active. You can skip or change a class up to 6 hours before it starts; inside 6 hours, please attend
           or message us. A skipped class stays on your account to rebook on another day, but it is forfeited if
-          unused once that installment&apos;s monthly cycle expires.
+          unused once that installment&apos;s 4-week cycle expires.
         </p>
         <p>
-          Each installment pays for 4 classes. A billing month runs from one payment date to the next, so about four times a
-          year it holds five of your weekday. On a 3-Month or 6-Month plan, the fifth class is included at no charge. On a
-          Monthly plan, it is optional and can be added for a set price; nothing changes if you do not add it.
+          Each installment pays for 4 classes and covers exactly 28 days (4 weeks), from one payment date to the next. A cycle
+          is always four whole weeks, so it holds exactly four of your weekly class, whatever the month. The price of each
+          payment is the same every time.
         </p>
         <p>
           Extra classes are $55 each, booked and paid for one at a time on the Lessons page, for more time on top of
@@ -60,8 +60,8 @@ export function TermsContent() {
         </p>
         <p>
           Family bundles use the same cadence and term rates a solo Payment Plan does, for 2 or more separate,
-          already-existing accounts at once, paid as a single upfront payment for the whole term instead of monthly
-          installments, plus an extra family discount off the combined total (the current percentage is shown on the pricing page). Family credits
+          already-existing accounts at once, paid as a single upfront payment for the whole term instead of installments
+          every 4 weeks, plus an extra family discount off the combined total (the current percentage is shown on the pricing page). Family credits
           never expire.
         </p>
         <p>
@@ -96,7 +96,7 @@ export function TermsContent() {
       <TermsSection title="Payment & Zelle or Venmo">
         <p>
           Payments go through Zelle or Venmo and are checked by hand before access or credits are granted, which is why
-          it&apos;s not instant. For returning students, a monthly installment unlocks right away and is checked
+          it&apos;s not instant. For returning students, an installment unlocks right away and is checked
           afterward. Submitting a fake or altered payment reference to get access is fraud and results in
           the access being revoked and the account closed, no warning.
         </p>

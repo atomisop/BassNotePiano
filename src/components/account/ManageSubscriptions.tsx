@@ -24,9 +24,9 @@ const CADENCE_LABELS: Record<PaymentPlanCadence, string> = {
 // below: anything ranked higher than the plan's own current term is an
 // upgrade (more commitment, a better rate), anything lower is a downgrade.
 const TERM_OPTIONS: { value: PaymentPlanTerm; label: string; rank: number }[] = [
-  { value: "MONTHLY", label: "Monthly", rank: 0 },
-  { value: "TERM_3", label: "3-Month", rank: 1 },
-  { value: "TERM_6", label: "6-Month", rank: 2 },
+  { value: "MONTHLY", label: "4-Week", rank: 0 },
+  { value: "TERM_3", label: "12-Week", rank: 1 },
+  { value: "TERM_6", label: "24-Week", rank: 2 },
   { value: "TERM_12", label: "Yearly", rank: 3 },
 ];
 
@@ -176,8 +176,8 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                 {activePlan.family.weeklyTime && <p className="mt-1">Weekly class together: {activePlan.family.weeklyTime}.</p>}
                 <p className="mt-1">
                   {activePlan.family.isPayer
-                    ? "You pay everyone's monthly bill from your own bank account."
-                    : `${activePlan.family.payerName ?? "The person who set it up"} pays your monthly bill from their own bank account.`}
+                    ? "You pay everyone's 4-week bill from your own bank account."
+                    : `${activePlan.family.payerName ?? "The person who set it up"} pays your 4-week bill from their own bank account.`}
                 </p>
                 <p className="mt-1 text-slate-400">The length and weekly time of a family plan are changed by the teacher.</p>
               </div>
@@ -221,11 +221,11 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   return (
                     <>
                       <p className="text-small text-slate-500">
-                        per month · <NumberTicker value={perMonth} /> classes
+                        per 4 weeks · <NumberTicker value={perMonth} /> classes
                       </p>
                       {option.value !== "MONTHLY" && (
                         <p className="text-small text-slate-500">
-                          <NumberTicker value={perMonth * rate.termMonths} /> total over <NumberTicker value={rate.termMonths} /> months
+                          <NumberTicker value={perMonth * rate.termMonths} /> total over <NumberTicker value={rate.termMonths * 4} /> weeks
                         </p>
                       )}
                     </>
@@ -283,7 +283,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
           {activePlan.family && cancelStage === "idle" && (
             <p className="mb-3 text-small text-slate-400">
               {activePlan.family.isPayer
-                ? "You pay for this family. If you cancel, the family plan ends for everyone. Each person keeps the month already paid, with its credits and booked classes."
+                ? "You pay for this family. If you cancel, the family plan ends for everyone. Each person keeps the 4 weeks already paid, with its credits and booked classes."
                 : "If you cancel, only you leave the family. If one person is left, they pay the solo price from their next bill."}
             </p>
           )}
@@ -295,7 +295,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
 
           {cancelStage === "downgrade-offer" && (
             <div className="rounded-xl p-4 bg-neu-base shadow-raised-low">
-              <p className="text-small text-slate-100">Before you cancel, want to switch to 3-Month instead?</p>
+              <p className="text-small text-slate-100">Before you cancel, want to switch to 12-Week instead?</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -304,7 +304,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   className={buttonVariants({ variant: "primary" })}
                 >
                   {pendingTerm === "TERM_3" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                  Switch to 3-Month
+                  Switch to 12-Week
                 </button>
                 <button
                   type="button"
