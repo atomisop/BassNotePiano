@@ -55,6 +55,7 @@ export const ADMIN_HUBS: AdminHub[] = [
     pages: [
       { href: "/admin/support", label: "Support Chat" },
       { href: "/admin/messages", label: "Messages" },
+      { href: "/admin/sent", label: "Sent" },
     ],
   },
   {
