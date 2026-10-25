@@ -11,6 +11,9 @@ export function KeyboardFit({ children, className = "", topOffset = "3rem" }: { 
   const ref = useRef<HTMLDivElement>(null);
   const [vvh, setVvh] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
+  // iOS Safari floats its own up / down / done bar over the bottom of the page while the keyboard is open, which would sit right on top of the input.
+  const [ios, setIos] = useState(false);
+  useEffect(() => setIos(/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)), []);
 
   useEffect(() => {
     const vv = window.visualViewport;
@@ -39,7 +42,7 @@ export function KeyboardFit({ children, className = "", topOffset = "3rem" }: { 
     <div
       ref={ref}
       style={{ height: `calc(${vvh ? `${vvh}px` : "100dvh"} - ${topOffset})` }}
-      className={`flex overflow-hidden ${open ? "pb-0" : "pb-24 lg:pb-0"} ${className}`}
+      className={`flex overflow-hidden ${open ? (ios ? "pb-16" : "pb-0") : "pb-24 lg:pb-0"} ${className}`}
     >
       {children}
     </div>
