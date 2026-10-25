@@ -152,10 +152,6 @@ function SwitchToFamilyPanel({
       <p className="text-small font-semibold text-slate-50">Switch to a family plan</p>
       {step === "people" ? (
         <>
-          <p className="text-small text-slate-400">
-            Each person needs their own account first (their own name; a child can sign up without a phone number). You pay for everyone from your own bank
-            account. If anyone cannot start, nobody does, and your current plan is not touched.
-          </p>
           {emails.map((email, i) => (
             <input
               key={i}

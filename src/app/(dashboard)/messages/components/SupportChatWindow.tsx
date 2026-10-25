@@ -62,11 +62,6 @@ export function SupportChatWindow({
       </div>
 
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-4">
-        {count === 0 && (
-          <p className="mx-auto mt-10 max-w-xs text-center text-small text-slate-500">
-            Ask us anything about classes, payments or your account. A person reads every message and answers here.
-          </p>
-        )}
         {chat.messages.map((m) => (
           <div key={m.id} className={`flex ${m.mine ? "justify-end" : "justify-start"}`}>
             <div
