@@ -489,6 +489,9 @@ enum NotificationType {
   TRIAL_ENDING // to the student, a day before their free trial ends and when it has ended
   PAYMENT_PLAN_UPDATED // to the student, when their plan starts or its term changes
   SLOT_WAITLIST_OPENED // to the student, when a weekly time they were waiting for is free to take
+  BANNER_PHONE // to the student, each time the "add your phone number" banner pops up (kept in the bell even if they close it)
+  BANNER_DISCORD // same, for the "connect your Discord" banner
+  BANNER_PRACTICE // same, for the "time to practice" banner
 }
 
 // The in-app inbox is the source of truth, always written regardless of

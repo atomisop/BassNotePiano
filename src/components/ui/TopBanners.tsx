@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { IosBanner } from "@/components/ui/IosBanner";
 import { useMeStatus } from "@/components/layout/MeStatusProvider";
+import { bannerSlotId } from "@/lib/bannerSlots";
 
-const PHONE_DAY_KEY = "bnp-phone-banner-day";
-const DISCORD_NEXT_KEY = "bnp-discord-banner-next";
-const PRACTICE_NEXT_KEY = "bnp-practice-banner-next";
+// The slot (2am, 8am, 2pm, 8pm, the viewer's own clock) each banner last popped up in: a banner shows at most once per slot, four times a day.
+const SLOT_KEY = (which: string) => `bnp-banner-slot-${which}`;
 
 type Which = "phone" | "discord" | "practice";
 
@@ -32,11 +32,6 @@ function alreadyShown(which: Which, pathname: string): boolean {
   return on("/lessons") || (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches);
 }
 
-function today(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-}
-
 function read(key: string): string | null {
   try {
     return window.localStorage.getItem(key);
@@ -54,10 +49,10 @@ function write(key: string, value: string) {
 }
 
 /**
- * The banners at the top of the app, one at a time and only while the tab is visible. Phone number: at most once per calendar
- * day. Discord and practice: they come back `repeatMinutes` after they were last shown, for as long as the live status
- * (MeStatusProvider) says it still applies, so connecting Discord or finishing practice stops them at once, on every screen.
- * Order when several are due: phone, Discord, practice.
+ * The banners at the top of the app, one at a time and only while the tab is visible. Each one pops up at most once per slot, four slots
+ * a day six hours apart from 8am (8am, 2pm, 8pm, 2am, the viewer's clock), for as long as the live status (MeStatusProvider) says it still
+ * applies, so connecting Discord or finishing practice stops them at once, on every screen. Each time one pops up the reminder is also
+ * kept in the notifications, so closing the banner never loses it. Order when several are due: phone, Discord, practice.
  */
 export function TopBanners({ phone, discord, practice }: TopBannersProps) {
   const status = useMeStatus();
@@ -68,20 +63,23 @@ export function TopBanners({ phone, discord, practice }: TopBannersProps) {
   latest.current = { phone, discord, practice, status, pathname };
 
   function show(which: Which) {
+    const slot = bannerSlotId(new Date());
+    write(SLOT_KEY(which), slot);
     activeRef.current = which;
     setActive(which);
+    // Keep the reminder in the notifications whether or not they close the banner. Best effort: a failure changes nothing on screen.
+    void fetch("/api/me/banner-notice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: which, slot }) }).catch(() => undefined);
   }
 
   useEffect(() => {
     function check() {
       if (activeRef.current || document.visibilityState !== "visible") return;
       const { phone: p, discord: d, practice: r, status: s, pathname: path } = latest.current;
-      if (p && !alreadyShown("phone", path) && read(PHONE_DAY_KEY) !== today()) {
-        write(PHONE_DAY_KEY, today());
-        return show("phone");
-      }
-      if (d && s && !s.discordConnected && !alreadyShown("discord", path) && Date.now() >= Number(read(DISCORD_NEXT_KEY) ?? 0)) return show("discord");
-      if (r && s && !s.practicedToday && !alreadyShown("practice", path) && Date.now() >= Number(read(PRACTICE_NEXT_KEY) ?? 0)) show("practice");
+      const slot = bannerSlotId(new Date());
+      const due = (which: Which) => read(SLOT_KEY(which)) !== slot;
+      if (p && !alreadyShown("phone", path) && due("phone")) return show("phone");
+      if (d && s && !s.discordConnected && !alreadyShown("discord", path) && due("discord")) return show("discord");
+      if (r && s && !s.practicedToday && !alreadyShown("practice", path) && due("practice")) show("practice");
     }
     // A beat after the page settles, so a banner does not land on top of the page loading in.
     const first = setTimeout(check, 1500);
@@ -109,9 +107,7 @@ export function TopBanners({ phone, discord, practice }: TopBannersProps) {
     }
   }, [pathname, active]);
 
-  function closed(which: Which) {
-    if (which === "discord" && discord) write(DISCORD_NEXT_KEY, String(Date.now() + discord.repeatMinutes * 60_000));
-    if (which === "practice" && practice) write(PRACTICE_NEXT_KEY, String(Date.now() + practice.repeatMinutes * 60_000));
+  function closed() {
     activeRef.current = null;
     setActive(null);
   }
@@ -124,7 +120,7 @@ export function TopBanners({ phone, discord, practice }: TopBannersProps) {
         body={phone.verifying ? "Confirm it with a 6-digit text. It takes under a minute." : "It helps us match your payments and reach you. It takes a few seconds."}
         href="/account?tab=account#phone"
         seconds={phone.seconds}
-        onClose={() => closed("phone")}
+        onClose={closed}
       />
     );
   }
@@ -136,7 +132,7 @@ export function TopBanners({ phone, discord, practice }: TopBannersProps) {
         body="Your private class call opens there before each lesson. Tap to connect, it takes a few seconds."
         href="/api/discord/connect"
         seconds={discord.seconds}
-        onClose={() => closed("discord")}
+        onClose={closed}
       />
     );
   }
@@ -148,7 +144,7 @@ export function TopBanners({ phone, discord, practice }: TopBannersProps) {
         body="Your 10 minutes of finger practice is not done today. Tap to start."
         href="/practice"
         seconds={practice.seconds}
-        onClose={() => closed("practice")}
+        onClose={closed}
       />
     );
   }

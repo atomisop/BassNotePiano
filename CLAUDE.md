@@ -311,10 +311,12 @@ proves nothing about the line being active or theirs; only a text code or a paid
   twice (desktop column and phone slide-over), so never use DOM ids inside it.
 
 Top-of-screen banners (`IosBanner`, `TopBanners` in `components/ui/`, mounted in `(dashboard)/layout.tsx`) look like an iPhone
-notification and show one at a time, only while the tab is visible and never over the tour or the "what's new" popup. The phone
-banner shows at most once per calendar day (localStorage `bnp-phone-banner-day`). The Discord banner shows to anyone with no
-`discordId` and comes back after `discord.promptRepeatMinutes` (default 10) whenever it was ignored or closed
-(`bnp-discord-banner-next`); lengths and the on/off switch are owner settings (`phone.promptSeconds`, `discord.prompt*`, default 8 seconds).
+notification and show one at a time, only while the tab is visible and never over the tour or the "what's new" popup. **Each banner (phone number,
+Discord, practice) pops up at most once per slot, four slots a day six hours apart from 8am: 8am, 2pm, 8pm and 2am by the viewer's own clock**
+(`src/lib/bannerSlots.ts`; the slot a banner last showed in is in localStorage `bnp-banner-slot-<kind>`). Every time one pops up the browser tells
+`/api/me/banner-notice`, which keeps that reminder in the person's bell (`BANNER_PHONE` / `BANNER_DISCORD` / `BANNER_PRACTICE`, grouped under
+Reminders, once per banner per slot, `src/lib/bannerNotices.ts`), so closing the banner never loses it. The owner settings `discord.promptRepeatMinutes`
+and the practice repeat minutes no longer set the timing (the slots do); `phone.promptSeconds` and the `discord.prompt*` lengths and on/off switches still apply.
 
 ## Staying in sync across the app (added 2026-10-10, `docs/SYNC-AUDIT.md`)
 
