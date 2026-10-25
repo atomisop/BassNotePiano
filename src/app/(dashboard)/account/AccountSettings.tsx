@@ -640,6 +640,14 @@ function MembershipSection({
         </div>
 
         <Link
+          href="/billing/plans"
+          className="mt-3 flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low"
+        >
+          Payment plan
+          <span className="text-slate-500">→</span>
+        </Link>
+
+        <Link
           href="/billing/history"
           className="mt-3 flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low"
         >
