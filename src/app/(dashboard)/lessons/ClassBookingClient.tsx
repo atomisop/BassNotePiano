@@ -1039,7 +1039,7 @@ export function ClassBookingClient({
               </div>
             )}
 
-            {/* The day's times show as soon as a day is tapped. */}
+            {/* The day's times show as soon as a day is tapped: two to a row for plain pick-a-time cards, one per row for cards that carry their own button (family, moving a class, a second class in a week). */}
             <div ref={timesRef} className="mt-6 scroll-mt-20">
               {selectedDateKey && (
                 <p className="mb-3 text-body font-semibold text-slate-100">
@@ -1049,7 +1049,7 @@ export function ClassBookingClient({
               {!selectedDateKey ? null : displayRows.length === 0 ? (
                 <p className="text-small text-slate-500">No open times on that day.</p>
               ) : (
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                <div className={`grid gap-2 sm:gap-3 ${mode === "SOLO" && !reschedulingBooking && !weeklyLimited ? "grid-cols-2" : "grid-cols-1"}`}>
                   {occurrenceGroups.flatMap((group) => group.rows).map((row) => {
                     const key = rowKey(row);
                     const cost = creditsFor(row);
@@ -1103,7 +1103,7 @@ export function ClassBookingClient({
                             type="button"
                             onClick={() => handleReschedule(row)}
                             disabled={tooPricey || reschedulingKey !== null}
-                            className={actionClass}
+                            className={`${actionClass} shrink-0`}
                           >
                             {reschedulingKey === key && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                             {reschedulingKey === key ? "Moving…" : tooPricey ? "Not enough credits" : "Move here"}
@@ -1116,13 +1116,13 @@ export function ClassBookingClient({
                       return (
                         <div key={key} className="flex items-center justify-between gap-3 rounded-xl bg-neu-base px-4 py-3 shadow-raised-low">
                           <span className="min-w-0">
-                            <span className="block text-body font-semibold text-slate-50">
-                              {formatOccurrenceTime(row.scheduledAt)} to {formatEndTime(row.scheduledAt, familyCreditsPerStudent)}
+                            <span className="block text-body font-semibold text-slate-50">{formatOccurrenceTime(row.scheduledAt)}</span>
+                            <span className="block text-small text-slate-500">
+                              to {formatEndTime(row.scheduledAt, familyCreditsPerStudent)} · {creditsLabel(familyCreditsPerStudent)} each
                             </span>
-                            <span className="block text-small text-slate-500">{creditsLabel(familyCreditsPerStudent)} per student</span>
                           </span>
-                          <button type="button" onClick={() => openFamilyBooking(row)} disabled={familySubmitting} className={actionClass}>
-                            Set up family
+                          <button type="button" onClick={() => openFamilyBooking(row)} disabled={familySubmitting} className={`${actionClass} shrink-0`}>
+                            Set up
                           </button>
                         </div>
                       );
