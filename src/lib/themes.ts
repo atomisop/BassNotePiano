@@ -53,7 +53,7 @@ export const THEMES: ThemeMeta[] = [
     description: "True near-black and near-white, with frosted-glass panels, the default look.",
     mode: "dark",
     source: "curated",
-    swatch: ["#1A1A1A", "#2E2E2E", "#F5F5F5"],
+    swatch: ["#0C0C0C", "#151515", "#F5F5F5"],
   },
 ];
 

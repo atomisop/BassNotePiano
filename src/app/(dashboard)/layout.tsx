@@ -86,7 +86,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <MeStatusProvider initial={meStatus}>
     <PricingProvider pricing={pricing} personalDiscountPercent={personalDiscountPercent}>
     <WhatsNewProvider entry={LATEST_ENTRY} showInitially={showWhatsNew}>
-    <div data-surface="app" className="fixed inset-0 flex overflow-hidden bg-neu-base">
+    <div data-surface="app" className="fixed inset-0 flex overflow-hidden bg-ground">
       {/* No photographic backdrop behind the app shell, deliberately. The
           previous system wallpapered every authenticated page with a piano
           photo; on paper that reads as a smudge under the text rather than

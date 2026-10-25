@@ -157,7 +157,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             anything deferred is already too late. */}
         <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
-      <body className="min-h-screen bg-neu-base font-sans text-slate-100 antialiased">
+      <body className="min-h-screen bg-ground font-sans text-slate-100 antialiased">
         {/* No flat ambient wash here by design, each area (marketing sections,
             auth shell, app shell) sets its own ground. See
             design-system/bass-note-piano/MASTER.md. */}

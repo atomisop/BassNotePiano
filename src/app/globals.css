@@ -114,6 +114,7 @@
      pressable; pressed = held/filled/selected. Three depths, tokens only:
      never write a one-off shadow on a component. */
   --color-neu-base: rgb(var(--neu-base));
+  --color-ground: rgb(var(--ground));
   /* One step lighter than the base: the floating dock sits on this so it
      never blends into the page. */
   --color-neu-lift: rgb(var(--neu-lift));
@@ -1017,14 +1018,15 @@
     --dur-slow: 360ms;
   }
 
-  /* Neumorphic base + the two shadow colors, per mode. Dark is charcoal
-     (not black) so the light-side shadow has room to show. Light is a soft
+  /* Neumorphic base + the two shadow colors, per mode. Dark is near-black
+     ground (#111111, the Claude app's) with cards a step lighter, so the light-side shadow has room to show. Light is a soft
      gray, darker than paper white, for the same reason. */
   [data-mode="dark"] {
-    --neu-base: 38 38 36; /* Claude dark grey #262624 */
-    --neu-lift: 50 50 48;
-    --neu-hi: rgb(255 255 255 / 0.045);
-    --neu-lo: rgb(0 0 0 / 0.42);
+    --ground: 12 12 12; /* the page itself: deeper than the Claude app's #111111 */
+    --neu-base: 21 21 21; /* cards and panels, a step above the ground */
+    --neu-lift: 29 29 29;
+    --neu-hi: rgb(255 255 255 / 0.03);
+    --neu-lo: rgb(0 0 0 / 0.5);
     --neu-top: rgb(255 255 255 / 0.04);
     --neu-edge: rgb(255 255 255 / 0.1);
     --signal: var(--c-a-400);
@@ -1034,6 +1036,7 @@
   }
 
   [data-mode="light"] {
+    --ground: 229 229 233; /* light mode keeps one flat soft grey for page and cards */
     --neu-base: 229 229 233;
     --neu-lift: 244 244 248;
     --neu-hi: rgb(255 255 255 / 0.95);

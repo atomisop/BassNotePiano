@@ -50,7 +50,7 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
   return (
     <nav
       aria-label="Primary"
-      className="app-sidebar fixed bottom-0 left-0 top-0 z-40 hidden w-52 flex-col gap-5 overflow-y-auto overflow-x-hidden border-r border-(--neu-edge) bg-neu-base px-3 pb-4 pt-14 lg:flex"
+      className="app-sidebar fixed bottom-0 left-0 top-0 z-40 hidden w-52 flex-col gap-5 overflow-y-auto overflow-x-hidden border-r border-(--neu-edge) bg-ground px-3 pb-4 pt-14 lg:flex"
     >
       {GROUPS.map((group) => (
         <div key={group.title} className="sb-group">

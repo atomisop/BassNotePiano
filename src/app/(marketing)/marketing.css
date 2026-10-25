@@ -44,9 +44,9 @@
   --c-s-500: 153 153 153;   /* mono labels          6.5:1 */
   --c-s-600: 120 120 120;   /* disabled             4.4:1, non-text, always */
   --c-s-700: 66 66 66;      /* hairlines, rules */
-  --c-s-800: 58 58 55;      /* raised surface */
-  --c-s-900: 48 48 46;      /* recessed surface */
-  --c-s-950: 38 38 36;      /* the ground = the neumorphic base, Claude dark grey #262624 */
+  --c-s-800: 36 36 36;      /* raised surface */
+  --c-s-900: 22 22 22;      /* recessed surface */
+  --c-s-950: 12 12 12;      /* the ground, deeper than the Claude app's #111111 */
 
   /* ---- Accent ramp: signal green, back again -----------------------------
      Same values as `[data-mode="dark"]` in themes.css, see that file's
