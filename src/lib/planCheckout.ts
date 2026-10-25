@@ -77,10 +77,10 @@ export function checkoutTotals(input: {
 export function missingForCheckout(input: { audience: Audience; memberRows: string[]; slotChosen: boolean }): string | null {
   if (input.audience === "FAMILY") {
     const { empty } = headcount(input.memberRows);
-    if (input.memberRows.length === 0) return "Add at least one more person";
-    if (empty > 0) return empty === 1 ? "Type that person's account email, or remove the empty row" : "Type each person's account email, or remove the empty rows";
+    if (input.memberRows.length === 0) return "Add a family member";
+    if (empty > 0) return empty === 1 ? "Fill in or remove the empty email" : "Fill in or remove the empty emails";
   }
-  if (!input.slotChosen) return "Pick your weekly time";
+  if (!input.slotChosen) return "Pick a weekly time";
   return null;
 }
 

@@ -28,3 +28,9 @@ export function setAtomTriggerPresent(present: boolean) {
 export function isAtomTriggerPresent() {
   return typeof window !== "undefined" && Boolean((window as unknown as { __atomTrigger?: boolean }).__atomTrigger);
 }
+
+/** Pages where Atom stays out of the way: the pricing screens (the public pricing page and the payment plan screen). */
+export function atomHiddenOn(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return pathname === "/pricing" || pathname.startsWith("/pricing/") || pathname === "/billing/plans" || pathname.startsWith("/billing/plans/");
+}

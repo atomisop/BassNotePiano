@@ -164,7 +164,7 @@ function useSnapCarousel({ count, defaultIndex = 0, gap = 12, momentum = 0.14, m
     [goTo, move],
   );
 
-  return { index, target, shown: dragging ? target : index, dragging, swiped, x, step, gap, total, goTo, move, viewportRef, onKeyDown, onDragStart, onDrag, onDragEnd };
+  return { index, target, shown: dragging ? target : index, dragging, swiped, x, step, gap, total, ready: slideWidth > 0, goTo, move, viewportRef, onKeyDown, onDragStart, onDrag, onDragEnd };
 }
 
 /**
@@ -196,7 +196,8 @@ export function SnapCarousel({
   const reduced = useReducedMotion();
   const car = useSnapCarousel({ count: slides.length, defaultIndex, gap });
 
-  const fade = `linear-gradient(to right, transparent 0, black ${peek + 14}px, black calc(100% - ${peek + 14}px), transparent 100%)`;
+  // The neighbours stay clearly visible at the edges (about half strength at the very edge, full by the card), so it is obvious there is more to swipe to.
+  const fade = `linear-gradient(to right, rgba(0,0,0,0.5) 0, black ${peek}px, black calc(100% - ${peek}px), rgba(0,0,0,0.5) 100%)`;
   const control =
     "tap flex h-9 w-9 items-center justify-center rounded-full bg-neu-base text-slate-100 shadow-raised-low transition active:shadow-pressed-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
@@ -233,7 +234,8 @@ export function SnapCarousel({
           onDragStart={car.onDragStart}
           onDrag={car.onDrag}
           onDragEnd={car.onDragEnd}
-          style={{ x: car.x, gap: `${gap}px`, touchAction: "pan-y" }}
+          // Hidden until the width is measured, so the track never visibly jumps from the first card to the opening one.
+          style={{ x: car.x, gap: `${gap}px`, touchAction: "pan-y", opacity: car.ready ? 1 : 0 }}
           className={cn("flex items-stretch", car.dragging ? "cursor-grabbing" : "cursor-grab")}
         >
           {slides.map((slide, i) => {
@@ -245,7 +247,7 @@ export function SnapCarousel({
                 aria-roledescription="slide"
                 aria-label={`${i + 1} of ${slides.length}`}
                 initial={false}
-                animate={i === car.shown ? { scale: 1, opacity: 1 } : { scale: 0.96, opacity: 0.6 }}
+                animate={i === car.shown ? { scale: 1, opacity: 1 } : { scale: 0.96, opacity: 0.8 }}
                 transition={reduced ? { duration: 0 } : CROSSFADE}
                 // A neighbour is brought forward by a tap anywhere on it.
                 onClick={front ? undefined : () => car.goTo(i)}

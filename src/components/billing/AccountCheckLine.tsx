@@ -9,14 +9,14 @@ import type { MemberCheck } from "@/lib/familyMemberCheck";
 export type CheckState = MemberCheck | "checking" | "limited" | "duplicate" | "failed" | "sending" | "waiting" | "accepted" | "declined";
 
 const PROBLEM: Record<Exclude<CheckState, "ready" | "checking" | "sending" | "waiting" | "accepted">, string> = {
-  invalid: "That does not look like an email yet",
-  no_account: "No account with this email. They need to register first",
-  needs_name: "This account needs a first and last name before it can join",
-  self: "That is your own account. You are already included",
-  duplicate: "Already added above",
-  declined: "They declined the invitation. Remove them to continue",
-  limited: "Too many checks. Wait a little and try again",
-  failed: "Could not check just now. Try again in a moment",
+  invalid: "Not an email yet",
+  no_account: "No account",
+  needs_name: "Needs a full name",
+  self: "That is you",
+  duplicate: "Already added",
+  declined: "Declined",
+  limited: "Slow down",
+  failed: "Could not check",
 };
 
 /** The line under one email box: a small square loader while the account is looked up, then a green check, or why not. Takes no room until there is something to say. */
@@ -29,7 +29,7 @@ export function AccountCheckLine({ state }: { state: CheckState | null }) {
         <>
           <MorphingSquare size={12} className="shrink-0" />
           <span className="text-slate-400">
-            {state === "checking" ? "Checking the account…" : state === "sending" ? "Sending the invitation…" : "Invitation sent. Waiting for them to accept"}
+            {state === "checking" ? "Checking" : state === "sending" ? "Sending" : "Waiting for them"}
           </span>
         </>
       ) : state === "ready" || state === "accepted" ? (
@@ -42,7 +42,7 @@ export function AccountCheckLine({ state }: { state: CheckState | null }) {
           >
             <Check aria-hidden className="h-3 w-3 text-white" strokeWidth={3.5} />
           </motion.span>
-          <span className="text-emerald-400">{state === "accepted" ? "Accepted. Ready to join" : "Account found. Send the invitation below"}</span>
+          <span className="text-emerald-400">{state === "accepted" ? "Accepted" : "Found"}</span>
         </>
       ) : (
         <>

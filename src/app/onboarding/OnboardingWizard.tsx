@@ -9,6 +9,7 @@ import { INSTRUMENTS_COMING_SOON } from "@/lib/classRegistrationLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { saveOnboardingAction, checkUsernameAvailableAction } from "./actions";
 import { Stepper } from "@/components/ui/Stepper";
+import { GuardedButton } from "@/components/ui/GuardedButton";
 import { buttonVariants } from "@/components/ui/button";
 
 const cardVariants = {
@@ -251,7 +252,6 @@ export function OnboardingWizard() {
       </AnimatePresence>
 
       {error && <p className="mt-4 text-small text-red-400">{error}</p>}
-      {step === 0 && <p className="mt-4 text-small text-slate-500">Only your username and instrument are needed. The rest is optional, and you can change any of it later in your profile.</p>}
 
       {step === LAST_REQUIRED_STEP && instrument !== null && (
         <button type="button" onClick={save} disabled={submitting} className="mt-4 text-small font-medium text-slate-400 underline-offset-4 transition hover:text-slate-100 hover:underline disabled:opacity-60">
@@ -270,15 +270,16 @@ export function OnboardingWizard() {
             Back
           </button>
         )}
-        <button
-          type="button"
-          onClick={handleNext}
-          disabled={!canAdvance || submitting || checkingUsername}
+        <GuardedButton
+          reason={submitting || checkingUsername ? null : step === 0 && !canAdvance ? "Username needs 3 or more characters" : step === 1 && !canAdvance ? "Pick your instrument" : null}
+          onClick={() => {
+            if (!submitting && !checkingUsername) void handleNext();
+          }}
           className={buttonVariants({ variant: "primary", size: "sm", className: "flex flex-1" })}
         >
           {(checkingUsername || submitting) && <MorphingSquare size={14} className="mr-1.5 shrink-0" />}
           {checkingUsername ? "Checking…" : submitting ? "Saving…" : step < lastStep ? "Next" : "Finish"}
-        </button>
+        </GuardedButton>
         {optional && (
           <button
             type="button"
