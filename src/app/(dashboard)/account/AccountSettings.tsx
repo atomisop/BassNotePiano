@@ -654,7 +654,7 @@ function MembershipSection({
         </SectionCard>
       )}
 
-      <SectionCard title="Manage subscriptions">
+      <SectionCard title="Manage membership">
         <ManageSubscriptions
           activePlan={activePlan}
           onChangeTerm={changePaymentPlanTermAction}

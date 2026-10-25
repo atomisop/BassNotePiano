@@ -7,9 +7,9 @@
 
 export const TERMS_LAST_UPDATED = "October 24, 2026";
 
-function TermsSection({ title, children }: { title: string; children: React.ReactNode }) {
+function TermsSection({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   return (
-    <div className="border-b border-ink/10 pb-6 last:border-b-0 last:pb-0">
+    <div id={id} className="scroll-mt-24 border-b border-ink/10 pb-6 last:border-b-0 last:pb-0">
       <h2 className="font-serif text-body text-slate-50">{title}</h2>
       <div className="mt-2 space-y-2 text-small leading-relaxed text-slate-400">{children}</div>
     </div>
@@ -39,6 +39,75 @@ export function TermsContent() {
         </p>
       </TermsSection>
 
+      <TermsSection title="Payment plans: how billing works" id="payment-plans">
+        <p>
+          <span className="font-medium text-[rgb(var(--c-s-50))]">What you are buying.</span> A plan gives you one live 45-minute class a week.
+          The plans are named 1 Month, 3 Months and 6 Months. 1 Month is a single bill with no commitment. 3 Months is 3 bills in a row. 6 Months
+          is 6 bills in a row. Longer plans cost less per bill.
+        </p>
+        <p>
+          <span className="font-medium text-[rgb(var(--c-s-50))]">A &quot;month&quot; is 28 days, not a calendar month.</span> Every bill covers exactly 28
+          days and exactly 4 classes. That means you are billed 13 times a year, not 12. A 3 Months plan is 84 days (about 2.8 calendar months) and a 6
+          Months plan is 168 days (about 5.5 calendar months). Each bill has the same price as the first one, the price you saw before you started.
+        </p>
+        <p>
+          <span className="font-medium text-[rgb(var(--c-s-50))]">Starting.</span> Your plan starts when your first payment is approved. The price on
+          the review screen is the price you pay. If our prices change while you are looking at it, you are asked to review it again before anything is
+          created. After you start, your plan keeps the price it started at. Paying by Zelle or Venmo is described under &quot;Payment &amp; Zelle or
+          Venmo&quot; below.
+        </p>
+        <p>
+          <span className="font-medium text-[rgb(var(--c-s-50))]">Your weekly time.</span> The day and time you pick is yours alone and is booked
+          for you automatically every week while the plan is active. If you do not pay your first bill, we release that time after a few days so others
+          can have it. Starting several plans in one week without paying for any of them is not allowed, and we may stop you from starting another until
+          you pay or a few days pass.
+        </p>
+        <p>
+          <span className="font-medium text-[rgb(var(--c-s-50))]">Credits expire.</span> Each bill puts class credits on your account, one for each
+          class. Those credits are good only until the end of that bill&apos;s 28 days. Credits you did not use by then expire. They do not roll over to
+          the next bill and they are not paid back in money. Book your classes before the 28 days run out.
+        </p>
+        <p>
+          <span className="font-medium text-[rgb(var(--c-s-50))]">Switching, pausing and canceling.</span> You can switch to another plan length in
+          Settings, under Manage membership. Your next bill then uses the new plan&apos;s price, and the bills you have already paid count toward the
+          new plan. You cannot switch to a plan that asks for fewer bills than you have already paid. You can pause a plan for 1 to 4 weeks, once every
+          90 days. You can cancel any time. Canceling ends the plan and frees your weekly time. You keep access for the 28 days you already paid for.
+        </p>
+        <p>
+          <span className="font-medium text-[rgb(var(--c-s-50))]">No refunds.</span> Money paid for a plan is not refunded, including for classes
+          you did not attend or credits that expired.
+        </p>
+      </TermsSection>
+
+      <TermsSection title="Family plans" id="family-plans">
+        <p>
+          <span className="font-medium text-[rgb(var(--c-s-50))]">Who can be in one.</span> A family plan is for 2 to 8 people. Everyone needs their own
+          account in their own name. The person who sets it up is the payer and is also a student on the plan. Each person pays a lower price than the
+          solo price.
+        </p>
+        <p>
+          <span className="font-medium text-[rgb(var(--c-s-50))]">Nobody is added without saying yes.</span> The payer sends each person an invitation.
+          Nothing is created for you, and nothing is held for you, until you accept it. An invitation lasts 7 days. If you decline, the same person
+          cannot invite you again for 30 days. You can only be on one plan at a time, so any plan of your own has to end before you can join.
+        </p>
+        <p>
+          <span className="font-medium text-[rgb(var(--c-s-50))]">The payer pays for everyone.</span> The payer makes one combined first payment from
+          their own bank account, and then pays each person&apos;s bill every 28 days. The plan starts for everyone together, or for nobody. If the
+          payer stops paying, every plan in the family ends when its paid 28 days run out. If the payer cancels, the family plan ends for everyone. If
+          someone else leaves and only one person is left, that person pays the solo price from their next bill. A family can be changed only once in a
+          limited period, so people cannot move in and out for the discount.
+        </p>
+        <p>
+          <span className="font-medium text-[rgb(var(--c-s-50))]">It is not a group class.</span> The weekly time chosen when the plan is set up is
+          the payer&apos;s own. Everyone else gets their class credits on their own account when the payer pays, and then picks their own class times
+          with them, one class a week, in Online Lessons. Each person has their own teacher time. Nobody is booked into someone else&apos;s class.
+        </p>
+        <p>
+          <span className="font-medium text-[rgb(var(--c-s-50))]">Credits expire.</span> The same rule applies to everyone in the family: credits are
+          good until the end of that bill&apos;s 28 days, and unused credits expire. The payer is not paid back for credits other people did not use.
+        </p>
+      </TermsSection>
+
       <TermsSection title="Class credits & bundles">
         <p>
           Every class is 45 minutes, one-on-one. Your weekly classes come from a Payment Plan: 1 Month,
@@ -56,12 +125,6 @@ export function TermsContent() {
           Extra classes are $55 each, booked and paid for one at a time on the Lessons page, for more time on top of
           your weekly class. Credits cannot be bought. They come only as a gift, a refund or an employee benefit, and
           can be used when booking an extra class.
-        </p>
-        <p>
-          Family bundles use the same cadence and term rates a solo Payment Plan does, for 2 or more separate,
-          already-existing accounts at once, paid as a single upfront payment for the whole term instead of installments
-          every 28 days, plus an extra family discount off the combined total (the current percentage is shown on the pricing page). Family credits
-          never expire.
         </p>
         <p>
           <span className="font-medium text-[rgb(var(--c-s-50))]">Money spent on credits is non-refundable.</span> The only way

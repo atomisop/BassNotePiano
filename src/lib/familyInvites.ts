@@ -74,7 +74,7 @@ export async function sendFamilyInvite(payerId: string, rawEmail: string): Promi
   await noticePlanUpdated({
     userId: invitee.id,
     title: "You were invited to a family plan",
-    body: `${nameOf(payer)} would like you on their family plan. Open Billing > Plans to accept or decline. Nothing starts for you unless you accept, and they pay for your classes.`,
+    body: `${nameOf(payer)} would like you on their family plan. Open Billing > Plans to accept or decline. Nothing starts for you unless you accept. They pay for your classes, you pick your own class times with your credits, and credits expire at the end of each 28-day cycle.`,
   });
   return "PENDING";
 }
