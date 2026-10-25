@@ -176,7 +176,7 @@ export function ChatWindow({
           bottom of a thread and flinging back up rubber-bands and can
           visibly slide over that header for an instant on iOS. Same fix
           (dashboard)/layout.tsx already applies to its own <main>. */}
-      <div className="min-w-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 md:px-4">
+      <div data-chat-scroll className="min-w-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 md:px-4">
         {layoutThread(messages).map((meta, i) => {
           const m = messages[i];
           const isMine = m.senderId !== conversation.friendId;

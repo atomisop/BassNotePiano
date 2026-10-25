@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { Home, CalendarCheck, Users, MessageSquare, Settings, type LucideIcon } from "lucide-react";
 import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { onChange } from "@/lib/liveEvents";
 import { SCROLL_TOP_EVENT } from "@/components/layout/ScrollAssist";
+import { NAV_PENDING_EVENT } from "@/components/layout/NavPendingGate";
 
 // Same 30s cadence as NotificationBell's own poll, which this mirrors.
 const POLL_INTERVAL_MS = 30_000;
@@ -100,7 +101,15 @@ const NAV_ITEMS = [
  */
 export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDockProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const reduceMotion = useReducedMotion();
+  // The tab just tapped lights up at once, before the new page has arrived.
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  useEffect(() => setPendingHref(null), [pathname]);
+  // Every tab is fetched ahead of the tap, so the move is instant.
+  useEffect(() => {
+    for (const item of NAV_ITEMS) router.prefetch(item.href);
+  }, [router]);
   // Scrolling down tucks the dock into a smaller pill; scrolling back up (or reaching the top) opens it again.
   const [compact, setCompact] = useState(false);
 
@@ -164,7 +173,8 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
         className="pointer-events-auto grid h-[53px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full border border-[rgb(var(--c-s-50)/0.1)] bg-white/80 p-1 shadow-[0_8px_28px_rgb(0_0_0/0.16)] backdrop-blur-2xl dark:bg-[rgb(var(--c-s-900)/0.85)] dark:shadow-[0_8px_28px_rgb(0_0_0/0.45)]"
       >
         {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href;
+          const active = (pendingHref ?? pathname) === item.href;
+          const current = pathname === item.href;
           const badge = item.href === "/messages" ? unreadMessageCount : 0;
           const Icon = NAV_ICON[item.icon];
           return (
@@ -172,15 +182,18 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
               key={item.href}
               href={item.href}
               aria-label={badge ? `${item.label}, ${badge} unread` : item.label}
-              aria-current={active ? "page" : undefined}
+              aria-current={current ? "page" : undefined}
               // The current tab again means "take me to the top" (it would only reload the same page).
               onClick={
-                active
+                current
                   ? (e) => {
                       e.preventDefault();
                       window.dispatchEvent(new Event(SCROLL_TOP_EVENT));
                     }
-                  : undefined
+                  : () => {
+                      setPendingHref(item.href);
+                      window.dispatchEvent(new CustomEvent(NAV_PENDING_EVENT, { detail: item.href }));
+                    }
               }
               data-tour={"dataTour" in item ? item.dataTour : undefined}
               className="tap relative flex h-[45px] items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
