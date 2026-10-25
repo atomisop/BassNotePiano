@@ -50,11 +50,11 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
   return (
     <nav
       aria-label="Primary"
-      className="app-sidebar fixed bottom-0 left-0 top-0 z-40 hidden w-52 flex-col gap-5 overflow-y-auto border-r border-(--neu-edge) bg-neu-base px-3 pb-4 pt-14 lg:flex"
+      className="app-sidebar fixed bottom-0 left-0 top-0 z-40 hidden w-52 flex-col gap-5 overflow-y-auto overflow-x-hidden border-r border-(--neu-edge) bg-neu-base px-3 pb-4 pt-14 lg:flex"
     >
       {GROUPS.map((group) => (
-        <div key={group.title}>
-          <p className="px-2.5 pb-1.5 text-small font-semibold uppercase tracking-[0.16em] text-slate-500">{group.title}</p>
+        <div key={group.title} className="sb-group">
+          <p className="sb-group-title px-2.5 pb-1.5 text-small font-semibold uppercase tracking-[0.16em] text-slate-500">{group.title}</p>
           <ul className="grid gap-0.5">
             {group.items.map((item) => {
               const active =
@@ -70,11 +70,12 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
                       href={item.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="press-soft flex h-9 items-center gap-2.5 rounded-control px-2.5 text-small font-medium text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      title={item.label}
+                      className="sb-item press-soft flex h-9 items-center gap-2.5 rounded-control px-2.5 text-small font-medium text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
-                      <span className="truncate">{item.label}</span>
-                      <ArrowUpRight className="ml-auto h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
+                      <span className="sb-label truncate">{item.label}</span>
+                      <ArrowUpRight className="sb-label ml-auto h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
                       <span className="sr-only">(opens in a new tab)</span>
                     </a>
                   ) : (
@@ -82,17 +83,18 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
                     href={item.href}
                     prefetch
                     data-tour={item.dataTour}
+                    title={item.label}
                     aria-current={active ? "page" : undefined}
-                    className={`press-soft flex h-9 items-center gap-2.5 rounded-control px-2.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    className={`sb-item press-soft relative flex h-9 items-center gap-2.5 rounded-control px-2.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       active
                         ? "bg-neu-lift text-slate-50 shadow-pressed-low"
                         : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
                     }`}
                   >
                     <Icon className={`h-4 w-4 shrink-0 ${active ? "text-signal-fg" : ""}`} strokeWidth={active ? 2.25 : 1.75} aria-hidden />
-                    <span className="truncate">{item.label}</span>
+                    <span className="sb-label truncate">{item.label}</span>
                     {badge > 0 && (
-                      <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950">
+                      <span className="sb-badge ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950">
                         {badge > 9 ? "9+" : badge}
                       </span>
                     )}
@@ -106,7 +108,9 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
       ))}
 
       {/* Discord invitation (until linked), next class, streak, admin counts and the rest: one card at a time. */}
-      <SidebarSpotlight initial={cards} isAdmin={isAdmin} />
+      <div className="sb-spotlight">
+        <SidebarSpotlight initial={cards} isAdmin={isAdmin} />
+      </div>
     </nav>
   );
 }

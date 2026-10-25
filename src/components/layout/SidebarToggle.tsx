@@ -6,7 +6,7 @@ import { PanelLeft } from "lucide-react";
 const KEY = "bnp-sidebar-collapsed";
 
 /**
- * Shows or hides the desktop sidebar (lg and up). The choice is kept in
+ * Expands the desktop sidebar or shrinks it to a rail of icons (lg and up). The choice is kept in
  * localStorage and applied as `data-sidebar` on <html>, which globals.css
  * reads, so the sidebar and the page padding follow without any shared state.
  */
@@ -42,9 +42,9 @@ export function SidebarToggle() {
     <button
       type="button"
       onClick={toggle}
-      aria-label={collapsed ? "Show sidebar" : "Hide sidebar"}
+      aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       aria-pressed={collapsed}
-      title={collapsed ? "Show sidebar" : "Hide sidebar"}
+      title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       className="sidebar-toggle press hidden h-8 w-8 items-center justify-center rounded-control text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex"
     >
       <PanelLeft className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden />

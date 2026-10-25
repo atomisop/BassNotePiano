@@ -1294,56 +1294,53 @@
   }
 }
 
-/* Desktop sidebar hidden by the top-bar toggle (SidebarToggle.tsx). It slides
-   out and fades while the page area glides over to fill the space. The
-   transitions only switch on after the saved choice has been applied
-   (`data-sidebar-anim`), so a page load never animates a sidebar that was
-   left closed. `visibility` flips at the end of the slide so a hidden
-   sidebar can never be tabbed into. */
+/* Desktop sidebar shrunk to a rail of icons by the top-bar toggle (SidebarToggle.tsx). The sidebar narrows from 13rem to 3.5rem, the
+   labels, group titles and the spotlight card drop out (each icon keeps its name as a tooltip), and the page area's left padding follows
+   so the content glides over. The transitions only switch on after the saved choice has been applied (`data-sidebar-anim`), so a page
+   load never animates a sidebar that was left shrunk. */
 @media (min-width: 1024px) {
   html[data-sidebar-anim] .app-sidebar {
     transition:
-      translate 380ms var(--ease-ios),
-      opacity 260ms var(--ease-ios),
-      visibility 0s linear 0s;
+      width 320ms var(--ease-ios),
+      padding 320ms var(--ease-ios);
   }
   html[data-sidebar-anim] .app-shell-col {
-    transition: padding-left 380ms var(--ease-ios);
+    transition: padding-left 320ms var(--ease-ios);
   }
   html[data-sidebar="collapsed"] .app-sidebar {
-    translate: -100% 0;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-  }
-  html[data-sidebar-anim][data-sidebar="collapsed"] .app-sidebar {
-    transition:
-      translate 380ms var(--ease-ios),
-      opacity 260ms var(--ease-ios),
-      visibility 0s linear 380ms;
+    width: 3.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    gap: 0.75rem;
   }
   html[data-sidebar="collapsed"] .app-shell-col {
-    padding-left: 0;
+    padding-left: 3.5rem;
   }
-
-  /* Peek: while hidden, pointing at the sidebar toggle floats the sidebar out
-     over the page (no layout shift). It stays while the pointer is on the
-     toggle or the sidebar, and tucks away when it leaves both. */
-  html[data-sidebar="collapsed"]:has(.sidebar-toggle:hover) .app-sidebar,
-  html[data-sidebar="collapsed"] .app-sidebar:hover {
-    translate: 0 0;
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    box-shadow: 0 16px 48px rgb(0 0 0 / 0.55);
+  html[data-sidebar="collapsed"] .app-sidebar .sb-label,
+  html[data-sidebar="collapsed"] .app-sidebar .sb-group-title,
+  html[data-sidebar="collapsed"] .app-sidebar .sb-spotlight {
+    display: none;
   }
-  html[data-sidebar-anim][data-sidebar="collapsed"]:has(.sidebar-toggle:hover) .app-sidebar,
-  html[data-sidebar-anim][data-sidebar="collapsed"] .app-sidebar:hover {
-    transition:
-      translate 380ms var(--ease-ios),
-      opacity 260ms var(--ease-ios),
-      box-shadow 260ms var(--ease-ios),
-      visibility 0s linear 0s;
+  html[data-sidebar="collapsed"] .app-sidebar .sb-item {
+    justify-content: center;
+    padding-inline: 0;
+  }
+  /* A thin line between the groups stands in for their titles. */
+  html[data-sidebar="collapsed"] .app-sidebar .sb-group + .sb-group {
+    border-top: 1px solid var(--neu-edge);
+    padding-top: 0.75rem;
+  }
+  /* The unread count becomes a small badge on the icon's corner. */
+  html[data-sidebar="collapsed"] .app-sidebar .sb-badge {
+    position: absolute;
+    top: 0.125rem;
+    right: 0.25rem;
+    margin: 0;
+    height: 0.875rem;
+    min-width: 0.875rem;
+    padding: 0 0.125rem;
+    font-size: 0.625rem;
+    line-height: 1;
   }
 }
 @media (prefers-reduced-motion: reduce) {
