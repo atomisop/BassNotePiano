@@ -19,9 +19,9 @@ import { NumberTicker } from "@/components/ui/number-ticker";
 import { SnapCarousel } from "@/components/ui/SnapCarousel";
 
 const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
-  { value: "MONTHLY", label: "28-Day" },
-  { value: "TERM_3", label: "84-Day" },
-  { value: "TERM_6", label: "168-Day" },
+  { value: "MONTHLY", label: "1 Month" },
+  { value: "TERM_3", label: "3 Months" },
+  { value: "TERM_6", label: "6 Months" },
 ];
 
 /** The card that gets the animated border and the "Best value" badge (a marketing choice, not the lowest price). */
@@ -154,7 +154,7 @@ export function PaymentPlanTierGrid({ pricing = DEFAULT_PRICING }: { pricing?: P
             </ul>
     
             <Link
-              href={isFamily ? "/billing/plans" : `/billing/plans?cadence=${cadence}&term=${option.value}`}
+              href={`/billing/plans?term=${option.value}&who=${isFamily ? "family" : "solo"}`}
               className={`flex h-12 items-center justify-center rounded-xl text-small font-semibold transition ${
                 featured
                   ? "bg-[rgb(var(--c-a-400))] text-black shadow-raised-mid hover:brightness-110 active:shadow-pressed-low"

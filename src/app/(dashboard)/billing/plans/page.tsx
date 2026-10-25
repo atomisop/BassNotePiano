@@ -1,3 +1,4 @@
+import { parseAudience } from "@/lib/planCheckout";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { PaymentPlanCadence, PaymentPlanTerm, type ZellePaymentStatus } from "@prisma/client";
@@ -10,18 +11,27 @@ import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
 import { MyPlanSummary } from "@/components/billing/MyPlanSummary";
 import { getPricingConfig } from "@/lib/pricing";
 import { getDiscountPercent } from "@/lib/accountDiscounts";
+import { FamilyInvitesPanel } from "@/components/billing/FamilyInvitesPanel";
+import { listInvitesForPerson } from "@/lib/familyInvites";
 import { BackLink } from "@/components/ui/BackLink";
 
 export const metadata = { title: "Payment plans" };
 
 export default async function BillingPlansPage(
   props: {
-    searchParams: Promise<{ cadence?: string; term?: string }>;
+    searchParams: Promise<{ cadence?: string; term?: string; who?: string }>;
   }
 ) {
   const searchParams = await props.searchParams;
   const session = await getServerAuthSession();
-  if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  if (!session?.user) {
+    // Keep what the pricing page chose (length and who it is for) through sign-in and registration.
+    const keep = new URLSearchParams();
+    if (searchParams.term) keep.set("term", searchParams.term);
+    if (searchParams.who) keep.set("who", searchParams.who);
+    const back = keep.size > 0 ? `/billing/plans?${keep}` : "/billing/plans";
+    redirect(`/login?callbackUrl=${encodeURIComponent(back)}`);
+  }
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
 
@@ -32,6 +42,8 @@ export default async function BillingPlansPage(
   // against the real enums (query params are just strings) rather than cast.
   const initialCadence = Object.values(PaymentPlanCadence).find((c) => c === searchParams.cadence);
   const initialTerm = Object.values(PaymentPlanTerm).find((t) => t === searchParams.term);
+  // "?who=family" from the pricing page's family toggle opens the plan page already on "Me and my family".
+  const initialAudience = parseAudience(searchParams.who);
 
   const [activePlan, allPlans, pricing, personalDiscountPercent] = await Promise.all([
     getActivePaymentPlan(session.user.id),
@@ -114,26 +126,28 @@ export default async function BillingPlansPage(
 
   const pastPlans = allPlans.filter((plan) => plan.status !== "ACTIVE");
 
-  // Same split as the family bundle page (STEP 4): the explanation on the
-  // left, the form on the right, so the form never stretches across a wide
-  // screen. Stacks on smaller screens.
+  // One centered column: the title on top, the form below it. Everything stacks in that one column at every screen size.
   return (
-    <div className="lg:grid lg:grid-cols-12 lg:gap-12">
-      <BackLink href="/lessons" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100 lg:col-span-12">
+    <div className="mx-auto w-full max-w-2xl">
+      <BackLink href="/lessons" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
         <ArrowLeftIcon size={16} />
         Back
       </BackLink>
-      <div className="lg:col-span-5">
+      <div className="text-center">
         <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment plan</h1>
       </div>
 
-      <div className="mt-8 lg:col-span-7 lg:mt-0">
-        {activePlan && <MyPlanSummary userId={session.user.id} />}
+      <div className="mt-8">
+        <div className="mx-auto max-w-2xl">
+          <FamilyInvitesPanel invites={(await listInvitesForPerson(session.user.id)).map((i) => ({ id: i.id, payerName: i.payerName }))} />
+          {activePlan && <MyPlanSummary userId={session.user.id} />}
+        </div>
         <PaymentPlanEnrollmentFlow
           zelleHandle={zelleHandle}
           initialCadence={initialCadence}
           initialTerm={initialTerm}
+          initialAudience={initialAudience}
           pricing={pricing}
           personalDiscountPercent={personalDiscountPercent}
           activePlan={
@@ -168,7 +182,7 @@ export default async function BillingPlansPage(
       </div>
 
       {pastPlans.length > 0 && (
-        <div className="mt-10 border-t border-ink/10 pt-6 lg:col-span-7 lg:col-start-6">
+        <div className="mx-auto mt-10 max-w-2xl border-t border-ink/10 pt-6">
           <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Plan history</p>
           <div className="mt-4 space-y-3">
             {pastPlans.map((plan) => (

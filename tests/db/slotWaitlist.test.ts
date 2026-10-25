@@ -1,6 +1,7 @@
 import { afterAll, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/auth", () => ({ getServerAuthSession: async () => null, authOptions: {} }));
 import { getTakenSlots, joinWaitlist, leaveWaitlist, notifyOpenedSlots, WaitlistError } from "@/lib/slotWaitlist";
+import { OWNER_EMAIL } from "@/lib/adminNotifications";
 import { makeUser, newTag, prisma } from "./helpers";
 
 const tag = newTag("wl");
@@ -71,5 +72,39 @@ describe("slot waitlist", () => {
     const r = await notifyOpenedSlots(new Date());
     expect(r.cleared).toBeGreaterThanOrEqual(1);
     expect(await prisma.slotWaitlist.count({ where: { userId: s.first.id } })).toBe(0);
+  });
+
+  it("tells the owner, and only the owner, once, when someone starts waiting for a time", async () => {
+    const s = await setup();
+    const owner = (await prisma.user.findFirst({ where: { email: { equals: OWNER_EMAIL, mode: "insensitive" } } })) ?? (await prisma.user.create({ data: { email: OWNER_EMAIL, name: "Owner", passwordHash: "x", role: "ADMIN" } }));
+    const otherAdmin = await makeUser(`${tag}a${ids.length}`, "Other Admin", { role: "ADMIN" });
+    ids.push(owner.id, otherAdmin.id);
+    const noticesFor = (userId: string) => prisma.notification.findMany({ where: { userId, type: "ADMIN_ALERT", title: "Someone is waiting for a weekly time" } });
+    const before = (await noticesFor(owner.id)).length;
+
+    await joinWaitlist(s.first.id, s.slot.id, 0);
+    await joinWaitlist(s.first.id, s.slot.id, 0); // asking again is not news
+    const notices = await noticesFor(owner.id);
+    expect(notices.length - before).toBe(1);
+    const latest = notices.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+    expect(latest.body).toBe("First InLine is looking forward to Thursdays at 7:00 PM becoming available.");
+
+    expect((await noticesFor(otherAdmin.id)).length).toBe(0); // not other admins
+    expect((await noticesFor(s.first.id)).length).toBe(0); // not the student
+    await joinWaitlist(s.second.id, s.slot.id, 0); // a second person is a second notice
+    expect((await noticesFor(owner.id)).length - before).toBe(2);
+
+    await leaveWaitlist(s.first.id, s.slot.id, 0);
+    await joinWaitlist(s.first.id, s.slot.id, 0); // leaving and coming back is a new request
+    expect((await noticesFor(owner.id)).length - before).toBe(3);
+  });
+
+  it("does not tell the owner about their own entry", async () => {
+    const s = await setup();
+    const owner = (await prisma.user.findFirst({ where: { email: { equals: OWNER_EMAIL, mode: "insensitive" } } })) ?? (await prisma.user.create({ data: { email: OWNER_EMAIL, name: "Owner", passwordHash: "x", role: "ADMIN" } }));
+    ids.push(owner.id);
+    const before = await prisma.notification.count({ where: { userId: owner.id, type: "ADMIN_ALERT", title: "Someone is waiting for a weekly time" } });
+    await joinWaitlist(owner.id, s.slot.id, 0);
+    expect(await prisma.notification.count({ where: { userId: owner.id, type: "ADMIN_ALERT", title: "Someone is waiting for a weekly time" } })).toBe(before);
   });
 });

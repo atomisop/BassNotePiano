@@ -24,9 +24,9 @@ const CADENCE_LABELS: Record<PaymentPlanCadence, string> = {
 // below: anything ranked higher than the plan's own current term is an
 // upgrade (more commitment, a better rate), anything lower is a downgrade.
 const TERM_OPTIONS: { value: PaymentPlanTerm; label: string; rank: number }[] = [
-  { value: "MONTHLY", label: "28-Day", rank: 0 },
-  { value: "TERM_3", label: "84-Day", rank: 1 },
-  { value: "TERM_6", label: "168-Day", rank: 2 },
+  { value: "MONTHLY", label: "1 Month", rank: 0 },
+  { value: "TERM_3", label: "3 Months", rank: 1 },
+  { value: "TERM_6", label: "6 Months", rank: 2 },
   { value: "TERM_12", label: "Yearly", rank: 3 },
 ];
 
@@ -295,7 +295,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
 
           {cancelStage === "downgrade-offer" && (
             <div className="rounded-xl p-4 bg-neu-base shadow-raised-low">
-              <p className="text-small text-slate-100">Before you cancel, want to switch to 84-Day instead?</p>
+              <p className="text-small text-slate-100">Before you cancel, want to switch to 3 Months instead?</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -304,7 +304,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   className={buttonVariants({ variant: "primary" })}
                 >
                   {pendingTerm === "TERM_3" && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                  Switch to 84-Day
+                  Switch to 3 Months
                 </button>
                 <button
                   type="button"

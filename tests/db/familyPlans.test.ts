@@ -29,6 +29,11 @@ async function account(label: string, name: string) {
 async function family(term: "MONTHLY" | "TERM_3" = "MONTHLY", emails?: string[], payerId?: string, slotId?: string) {
   const payer = payerId ? { id: payerId } : await account(`payer${userIds.length}`, "Parent Tester");
   const kid = emails ? null : await account(`kid${userIds.length}`, "Child Tester");
+  // Nobody is put on a family without saying yes: whoever the test asks for has accepted.
+  const asked = await prisma.user.findMany({ where: { email: { in: emails ?? [kid!.email] } }, select: { id: true } });
+  for (const other of asked) {
+    await prisma.familyInvite.upsert({ where: { payerId_inviteeId: { payerId: payer.id, inviteeId: other.id } }, create: { payerId: payer.id, inviteeId: other.id, status: "ACCEPTED" }, update: { status: "ACCEPTED", createdAt: new Date() } });
+  }
   return createFamilyPlans({
     payerId: payer.id,
     cadence: OFFERED_PLAN_CADENCE,
@@ -41,6 +46,7 @@ async function family(term: "MONTHLY" | "TERM_3" = "MONTHLY", emails?: string[],
 }
 
 afterAll(async () => {
+  await prisma.familyInvite.deleteMany({ where: { OR: [{ payerId: { in: userIds } }, { inviteeId: { in: userIds } }] } });
   await prisma.notification.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.creditGrant.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.classBooking.deleteMany({ where: { studentId: { in: userIds } } });
@@ -185,8 +191,13 @@ describe("switching from a plan of your own", () => {
     });
     return { adam, plan };
   }
-  const switchOf = (adamId: string, emails: string[], extra: Partial<Parameters<typeof createFamilyPlans>[0]> = {}) =>
-    createFamilyPlans({ payerId: adamId, cadence: OFFERED_PLAN_CADENCE, term: "TERM_6", zelleHandle: "pay@example.com", memberEmails: emails, verifiedSwitch: true, ...extra });
+  const switchOf = async (adamId: string, emails: string[], extra: Partial<Parameters<typeof createFamilyPlans>[0]> = {}) => {
+    const asked = await prisma.user.findMany({ where: { email: { in: emails } }, select: { id: true } });
+    for (const other of asked) {
+      await prisma.familyInvite.upsert({ where: { payerId_inviteeId: { payerId: adamId, inviteeId: other.id } }, create: { payerId: adamId, inviteeId: other.id, status: "ACCEPTED" }, update: { status: "ACCEPTED", createdAt: new Date() } });
+    }
+    return createFamilyPlans({ payerId: adamId, cadence: OFFERED_PLAN_CADENCE, term: "TERM_6", zelleHandle: "pay@example.com", memberEmails: emails, verifiedSwitch: true, ...extra });
+  };
 
   it("needs the password-and-code check, and leaves the old plan alone until the family's first payment is approved", async () => {
     const slot = await newSlot();

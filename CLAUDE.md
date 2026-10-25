@@ -223,7 +223,7 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
   grants). The JWT's copy is display-only; the edge no longer gates scales.
   `getRoadmap`/`canAccessScale` in `src/lib/access.ts` (DB-authoritative) are
   the real gate, via `decideScaleAccess`.
-- **Billing cycles are 28 days (decided 2026-10-24).** Every payment plan is billed every 4 weeks, never by calendar month: one payment covers exactly 28 days, so a cycle always holds exactly four of any weekday. `addBillingCycles` / `BILLING_CYCLE_DAYS` (`src/lib/billingCycle.ts`, tested) is the only place a cycle's length is defined; the paid period, the next due date and the credits' expiry all go through it, so never add months to a billing date. The price per payment did not change. The offer is worded exactly this way everywhere: billed every 28 days, and each bill pays for exactly 4 classes. Plan names are 28-Day (no commitment), 84-Day (3 payments) and 168-Day (6 payments), and copy says "every 28 days", never "monthly" or "4 weeks"; `termMonths` in the code means the NUMBER OF PAYMENTS, not months. The old fifth-class offer and free credit are switched off (`FIFTH_CLASS_RETIRED` in `paymentPlans.ts`; a fifth class already given is still honored). Migration `20261106000000_billing_28_day_cycles` moved plans that were mid-cycle onto 28 days (due dates, live credits, a bell notice each); `tests/db/billing28Migration.test.ts` runs that file against realistic rows. Referral discounts still last 3 calendar months (they are a promotion, not a bill).
+- **Billing cycles are 28 days (decided 2026-10-24).** Every payment plan is billed every 4 weeks, never by calendar month: one payment covers exactly 28 days, so a cycle always holds exactly four of any weekday. `addBillingCycles` / `BILLING_CYCLE_DAYS` (`src/lib/billingCycle.ts`, tested) is the only place a cycle's length is defined; the paid period, the next due date and the credits' expiry all go through it, so never add months to a billing date. The price per payment did not change. The offer is worded exactly this way everywhere: billed every 28 days, and each bill pays for exactly 4 classes. Plans are NAMED 1 Month (no commitment), 3 Months (3 payments) and 6 Months (6 payments) (decided 2026-10-24: a 28-day cycle is sold as a month, off only by days), while billing copy says "every 28 days", never "monthly" or "4 weeks"; `termMonths` in the code means the NUMBER OF PAYMENTS, not months. The old fifth-class offer and free credit are switched off (`FIFTH_CLASS_RETIRED` in `paymentPlans.ts`; a fifth class already given is still honored). Migration `20261106000000_billing_28_day_cycles` moved plans that were mid-cycle onto 28 days (due dates, live credits, a bell notice each); `tests/db/billing28Migration.test.ts` runs that file against realistic rows. Referral discounts still last 3 calendar months (they are a promotion, not a bill).
 - **Teacher-approved drip.** Full access opens Scale 1 only. Each next scale
   opens when the teacher approves it (`approveNextScale` in
   `src/lib/scaleApproval.ts`, button on `/admin/progress`): eligible when the
@@ -245,13 +245,16 @@ redirects to `/billing/plans`). Access is *derived*, never a stored purchase:
 
 ## Family plans (added 2026-10-14, `docs/FAMILY-PLANS.md`)
 
-2 to 4 accounts, one `PaymentPlan` each at the family rate (`FamilyPlanGroup`), all created in one transaction (any member that cannot start
+2 to 8 accounts (`MIN_FAMILY_MEMBERS` / `MAX_FAMILY_MEMBERS` in `classCreditPricing.ts`, shared by the form and the server), one `PaymentPlan` each at the family rate (`FamilyPlanGroup`), all created in one transaction (any member that cannot start
 stops everyone). The payer pays one combined `FAMILY_PLAN_START` first payment whose approval starts every plan at once; from month two each
 member has their own bill. Only the payer's bank account settles family money (`familyPayerOf`). A failed start lapses the whole group.
 The old one-payment `FAMILY_BUNDLE` page now redirects to `/billing/plans`.
 A subscribed payer switches in (`FamilyPlanGroup.replacesPlanId`): password plus emailed code, the old plan runs until the combined payment is
 approved and is then replaced in the same transaction. A member leaving one short of two bills the survivor at the solo price; the payer
 leaving ends the family (members keep the month paid). One family change per `family.changeCooldownDays`.
+
+**Nobody is put on a family without saying yes (2026-10-24, `familyInvites.ts`, table `FamilyInvite`).** The payer invites an existing account from the plan form (or the switch panel); the invitee sees Accept / Decline on their own Billing > Plans screen (`FamilyInvitesPanel`) and gets a bell notice. `createFamilyPlans` refuses unless every other member has an ACCEPTED invite from THIS payer made within `FAMILY_INVITE_DAYS` (7); the invites are deleted when the family is created, so a yes starts one family only. A decline blocks asking again for 30 days. Nothing (no plan row, no held slot) exists for an invitee until they accept and the payer pays.
+**Two more guards in the same place**: `assertNotHoardingTimes` stops anyone who started `MAX_UNPAID_STARTS_PER_WEEK` (3) plans in 7 days without paying one; and the screen sends the first payment it showed (`expectedFirstPaymentCents`), the server refuses with `PRICE_CHANGED_MESSAGE` if the real price differs and the screen reloads the prices. The live account check (`familyMemberCheck.ts`) answers a banned or admin email exactly like a missing one.
 
 ## Contacts and soft holds (added 2026-10-20)
 
@@ -537,10 +540,17 @@ puts the running plan back to its list price. Audited as `referral.reward`.
 Admin > Teaching > Today (`/admin/today`, `src/lib/teachingToday.ts`): today's classes (Eastern day) grouped by start time, one row per student with the facts a teacher wants before class: first class flag, in person flag,
 plan, current open scale, days practiced out of 7, credits left, Discord linked, overdue bill, and the newest teacher note. Read only; the sidebar "Today" card for admins opens it. Marking attendance stays on Schedule > Attendance.
 
+## Payment plan screen (reworked 2026-10-24)
+
+`/billing/plans` for a new plan is `NewPlanForm` (`billing/plans/`): Just me / Me and my family, plan length, family emails, then the weekday-and-time chips. `?term=TERM_3&who=family` (set by the pricing page's Start plan links, kept through the login redirect)
+preselects everything but the time. The price and the next step live in `CheckoutBar` (fixed above the dock on phones, sticky from lg), and the family price follows every added row (`checkoutTotals`, `planCheckout.ts`, pure and tested). Each typed family email is looked up live
+(`checkFamilyMemberAction` -> `familyMemberCheck.ts`, 40 a minute per account because each answer says whether an email has an account): a square loader, then a green check, or why not (no account, needs a first and last name, cannot join, your own, a repeat).
+Review stays off until every row is a found account. The server still re-checks everything in `createFamilyPlans`.
+
 ## Weekly time waitlist (added 2026-10-21)
 
-On Billing > Plans, under "Your weekly time", a collapsed "Want a time that is taken?" lists the weekly times other plans hold (`getTakenSlots`, the chunks `getReservableSlots` does not return) and lets a student wait for up to 5 (`SlotWaitlist`,
-`slotWaitlist.ts`). The hourly `slot-waitlist` job (`netlify/functions/slot-waitlist.ts`, in `JOB_MAX_SILENCE_HOURS`) runs `notifyOpenedSlots`: for each waitlisted time that is open again it tells ONLY the first person in line
+On Billing > Plans the weekly time picker (`WeekdayTimePicker`) shows the times other plans hold dimmed, right in the day and time chips (`getTakenSlots`, the chunks `getReservableSlots` does not return); tapping one offers "Tell me when it opens" / "Stop waiting"
+(square loader while it saves), for up to 5 times (`SlotWaitlist`, `slotWaitlist.ts`). Joining a time also sends the OWNER only a notice, once per new entry: "<name> is looking forward to <Day>s at <time> becoming available.". The hourly `slot-waitlist` job (`netlify/functions/slot-waitlist.ts`, in `JOB_MAX_SILENCE_HOURS`) runs `notifyOpenedSlots`: for each waitlisted time that is open again it tells ONLY the first person in line
 (`SLOT_WAITLIST_OPENED`, class-updates switch, so it also pushes), then waits 24 hours before offering it to the next; a time that is taken again resets the offer; entries older than 90 days, for a retired schedule, or for someone who now holds
 that very time are cleared. Nothing is reserved for the person told: the time still goes to whoever starts a plan first.
 

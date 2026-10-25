@@ -7,8 +7,10 @@ import { PaymentPlanCadence, PaymentPlanTerm, PlanCancellationReason, type Prism
 import { prisma } from "@/lib/prisma";
 import { hasFirstAndLastName } from "@/lib/studentName";
 import { namesMatch } from "@/lib/personNames";
-import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPlan, discountedPlanPriceCents, isPlanTermOffered, isPlanCadenceOffered, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPlan, discountedPlanPriceCents, isPlanTermOffered, isPlanCadenceOffered, MIN_FAMILY_MEMBERS, MAX_FAMILY_MEMBERS, PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
+import { assertEveryoneAccepted, FamilyInviteError, spendInvites } from "@/lib/familyInvites";
 import { getPricingConfig } from "@/lib/pricing";
+import { PRICE_CHANGED_MESSAGE } from "@/lib/planCheckout";
 import { getDiscountPercent } from "@/lib/accountDiscounts";
 import {
   chunksForSchedule,
@@ -27,6 +29,21 @@ import { PAUSE_REASON, pauseBlockedReason, pauseSpanMs } from "@/lib/planPause";
 import { logAudit } from "@/lib/audit";
 
 export class PaymentPlanError extends Error {}
+
+
+/** How many plans one person may start and leave unpaid in a week before they must pay one or wait. Stops holding the best weekly times for free. */
+export const MAX_UNPAID_STARTS_PER_WEEK = 3;
+
+async function assertNotHoardingTimes(userId: string) {
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const [solo, families] = await Promise.all([
+    prisma.paymentPlan.count({ where: { userId, familyGroupId: null, installmentsPaid: 0, createdAt: { gte: since } } }),
+    prisma.familyPlanGroup.count({ where: { payerId: userId, createdAt: { gte: since }, plans: { none: { installmentsPaid: { gt: 0 } } } } }),
+  ]);
+  if (solo + families >= MAX_UNPAID_STARTS_PER_WEEK) {
+    throw new PaymentPlanError("You have started several plans this week without paying for one. Please pay one of them, or try again in a few days.");
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Enrollment
@@ -121,6 +138,8 @@ export async function createPaymentPlan(
   zelleHandle: string,
   reservedScheduleId: string,
   reservedChunkIndex: number,
+  /** The first payment the person was shown. If the real price is different now, nothing is created. */
+  expectedFirstPaymentCents?: number,
 ) {
   // A Server Action's params are only compile-time-typed, a raw request
   // against the same endpoint could send anything. Validate against the
@@ -138,7 +157,7 @@ export async function createPaymentPlan(
     throw new PaymentPlanError("That weekly length isn't offered anymore. Classes are 45 minutes a week.");
   }
   if (!isPlanTermOffered(term)) {
-    throw new PaymentPlanError("That plan length is no longer offered. Pick 28-Day, 84-Day, or 168-Day.");
+    throw new PaymentPlanError("That plan length is no longer offered. Pick 1 Month, 3 Months, or 6 Months.");
   }
 
   const pricing = await getPricingConfig();
@@ -148,6 +167,8 @@ export async function createPaymentPlan(
   const discountPercent = await getDiscountPercent(userId);
   const installmentCents = discountedPlanPriceCents(rate.installmentAmountCents, discountPercent);
   const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
+  if (expectedFirstPaymentCents !== undefined && expectedFirstPaymentCents !== installmentCents) throw new PaymentPlanError(PRICE_CHANGED_MESSAGE);
+  await assertNotHoardingTimes(userId);
 
   try {
     const created = await prisma.$transaction(
@@ -1370,7 +1391,7 @@ async function afterFamilyPlanEnded(plan: { id: string; userId: string; familyGr
 // ---------------------------------------------------------------------------
 // Family plans
 //
-// 2 to MAX_FAMILY_MEMBERS existing accounts, each with its own PaymentPlan at the family rate, all on the same weekly time.
+// 2 to MAX_FAMILY_MEMBERS (8) existing accounts, each with its own PaymentPlan at the family rate, all on the same weekly time.
 // Everything is created in ONE transaction: if any member cannot start (already on a plan, banned, a name that is not a real
 // first and last name, the same person typed twice, the time taken), nothing is created for anyone. The one payer is a member;
 // the first month is a single combined FAMILY_PLAN_START payment whose approval starts every member's plan at once
@@ -1378,8 +1399,7 @@ async function afterFamilyPlanEnded(plan: { id: string; userId: string; familyGr
 // their own bill, and only the payer's account can settle them (see familyPayerOf in paymentEmail.ts).
 // ---------------------------------------------------------------------------
 
-export const MIN_FAMILY_MEMBERS = 2;
-export const MAX_FAMILY_MEMBERS = 4;
+export { MIN_FAMILY_MEMBERS, MAX_FAMILY_MEMBERS };
 
 export interface CreateFamilyPlansInput {
   payerId: string;
@@ -1391,6 +1411,8 @@ export interface CreateFamilyPlansInput {
   reservedChunkIndex?: number;
   /** The other members' account emails (the payer is added automatically). */
   memberEmails: string[];
+  /** The first payment (everyone together) the payer was shown. If the real price is different now, nothing is created. */
+  expectedFirstPaymentCents?: number;
   /** Set only by the action that has just checked the payer's password and emailed code. Needed when the payer is on a plan now. */
   verifiedSwitch?: boolean;
 }
@@ -1400,7 +1422,7 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
   if (!Object.values(PaymentPlanCadence).includes(cadence)) throw new PaymentPlanError(`"${cadence}" isn't a valid cadence.`);
   if (!Object.values(PaymentPlanTerm).includes(term)) throw new PaymentPlanError(`"${term}" isn't a valid term.`);
   if (!isPlanCadenceOffered(cadence)) throw new PaymentPlanError("That weekly length isn't offered anymore. Classes are 45 minutes a week.");
-  if (!isPlanTermOffered(term)) throw new PaymentPlanError("That plan length is no longer offered. Pick 28-Day, 84-Day, or 168-Day.");
+  if (!isPlanTermOffered(term)) throw new PaymentPlanError("That plan length is no longer offered. Pick 1 Month, 3 Months, or 6 Months.");
 
   const payer = await prisma.user.findUnique({ where: { id: payerId }, select: { id: true, name: true, email: true, role: true, bannedAt: true } });
   if (!payer) throw new PaymentPlanError("Your account was not found.");
@@ -1417,8 +1439,7 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
   const members = [payer, ...others];
   for (const member of members) {
     const who = member.id === payer.id ? "Your account" : member.email;
-    if (member.bannedAt) throw new PaymentPlanError(`${who} cannot start a plan.`);
-    if (member.role !== "STUDENT") throw new PaymentPlanError(`${who} is not a student account.`);
+    if (member.bannedAt || member.role !== "STUDENT") throw new PaymentPlanError(`${who} cannot start a plan.`);
     if (!hasFirstAndLastName(member.name)) throw new PaymentPlanError(`${who} needs a first and last name on the account before a family plan can start.`);
   }
   // Each member has to be a different person, not one person with two accounts.
@@ -1454,6 +1475,8 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
 
   const pricing = await getPricingConfig();
   const perMemberCents = calculateFamilyBundleTotal(cadence, term, members.length, pricing).perStudentMonthlyCents;
+  if (input.expectedFirstPaymentCents !== undefined && input.expectedFirstPaymentCents !== perMemberCents * members.length) throw new PaymentPlanError(PRICE_CHANGED_MESSAGE);
+  await assertNotHoardingTimes(payerId);
   const rate = calculatePaymentPlanRate(cadence, term, pricing);
   const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
   const memberIds = members.map((m) => m.id);
@@ -1463,6 +1486,13 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
   try {
     const created = await prisma.$transaction(
       async (tx) => {
+        // Nobody is put on a family without saying yes: every other member must have accepted this payer's invitation.
+        try {
+          await assertEveryoneAccepted(tx, payerId, others);
+        } catch (err) {
+          if (err instanceof FamilyInviteError) throw new PaymentPlanError(err.message);
+          throw err;
+        }
         // Every other member must be able to start: none may already be on a plan. (A subscribed sibling cancels their own plan first.)
         const busy = await tx.paymentPlan.findFirst({ where: { userId: { in: planMembers.map((m) => m.id) }, status: "ACTIVE" }, select: { userId: true } });
         if (busy) {
@@ -1509,6 +1539,7 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
             status: "AWAITING_TRANSFER",
           },
         });
+        await spendInvites(tx, payerId, others.map((o) => o.id));
         return { group, plans, startPayment };
       },
       { isolationLevel: "Serializable" },

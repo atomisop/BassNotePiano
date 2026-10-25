@@ -181,6 +181,29 @@ model FamilyPlanGroup {
   @@index([replacesPlanId])
 }
 
+enum FamilyInviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// Nobody is put on someone else's family plan without saying yes. The payer invites an existing account, that person accepts or
+// declines on their own Billing > Plans screen, and createFamilyPlans refuses to start a family unless every other member has an
+// ACCEPTED invite from this payer (made within FAMILY_INVITE_DAYS). A declined invite blocks asking again for a while.
+model FamilyInvite {
+  id          String             @id @default(cuid())
+  payerId     String
+  payer       User               @relation("FamilyInvitePayer", fields: [payerId], references: [id], onDelete: Cascade)
+  inviteeId   String
+  invitee     User               @relation("FamilyInviteInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+  status      FamilyInviteStatus @default(PENDING)
+  createdAt   DateTime           @default(now())
+  respondedAt DateTime?
+
+  @@unique([payerId, inviteeId])
+  @@index([inviteeId, status])
+}
+
 // 4 or 8 credits per monthly installment (30 or 60 min/week), matching
 // SOLO_MAX_CREDITS in classSchedule.ts, and also 1 or 2 credits/week (see
 // PLAN_CADENCE_CREDITS_PER_WEEK in classCreditPricing.ts), what the plan's
@@ -920,9 +943,11 @@ model User {
   lessonBookings   LessonBooking[] @relation("LessonBookingStudent") // historical, see LessonBooking model comment
   classBookings    ClassBooking[]  @relation("ClassBookingStudent")
 
-  paymentPlans         PaymentPlan[]     @relation("PaymentPlanStudent")
-  familyPlanGroupsPaid FamilyPlanGroup[] @relation("FamilyPlanPayer")
-  paymentPlansCanceled PaymentPlan[]     @relation("PaymentPlanCanceledBy") // admin side of an admin-canceled plan
+  paymentPlans          PaymentPlan[]     @relation("PaymentPlanStudent")
+  familyPlanGroupsPaid  FamilyPlanGroup[] @relation("FamilyPlanPayer")
+  familyInvitesSent     FamilyInvite[]    @relation("FamilyInvitePayer")
+  familyInvitesReceived FamilyInvite[]    @relation("FamilyInviteInvitee")
+  paymentPlansCanceled  PaymentPlan[]     @relation("PaymentPlanCanceledBy") // admin side of an admin-canceled plan
 
   creditGrants CreditGrant[]
 

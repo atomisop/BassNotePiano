@@ -45,8 +45,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // class a week, so no cadence to choose.
 const TERM_OPTIONS: { value: PaymentPlanTerm; label: string }[] = [
   { value: "MONTHLY", label: "Monthly" },
-  { value: "TERM_3", label: "84-Day" },
-  { value: "TERM_6", label: "168-Day" },
+  { value: "TERM_3", label: "3 Months" },
+  { value: "TERM_6", label: "6 Months" },
 ];
 
 type RowStatus =
