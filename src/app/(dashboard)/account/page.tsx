@@ -1,3 +1,4 @@
+import { isIndefinitePause } from "@/lib/planPause";
 import { discordLinkState } from "@/lib/discordLinkState";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
@@ -79,10 +80,11 @@ export default async function AccountPage() {
               installmentsPaid: activePlan.installmentsPaid,
               termMonths: activePlan.termMonths,
               installmentAmountCents: activePlan.installmentAmountCents,
-              nextDueDate: activePlan.nextDueDate.toISOString(),
+              nextDueDate: isIndefinitePause(activePlan) && activePlan.pauseUntil && activePlan.pauseUntil > new Date() ? null : activePlan.nextDueDate.toISOString(),
+              pausedIndefinitely: isIndefinitePause(activePlan) && Boolean(activePlan.pauseUntil && activePlan.pauseUntil > new Date()),
               family: familyDetails,
               pausedAt: activePlan.pausedAt?.toISOString() ?? null,
-              pausedUntil: activePlan.pauseUntil && activePlan.pauseUntil > new Date() ? activePlan.pauseUntil.toISOString() : null,
+              pausedUntil: activePlan.pauseUntil && activePlan.pauseUntil > new Date() && !isIndefinitePause(activePlan) ? activePlan.pauseUntil.toISOString() : null,
             }
           : null
       }

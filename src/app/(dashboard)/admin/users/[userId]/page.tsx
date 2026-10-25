@@ -8,6 +8,9 @@ import { adminCancelBookingAction } from "../../schedule/actions";
 import { adminClearPhoneAction, adminForceSignOutAction, banUserAction, forgetPayerNameAction, unbanUserAction } from "./actions";
 import { BackLink } from "@/components/ui/BackLink";
 import { prisma } from "@/lib/prisma";
+import type { ReactNode } from "react";
+import { AdminPausePlanButton } from "@/components/admin/AdminPausePlanButton";
+import { isIndefinitePause, isPausedNow } from "@/lib/planPause";
 import { describePaymentPlan, formatCredits, storedToCredits } from "@/lib/classCreditPricing";
 
 const when = (d: Date) => d.toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -22,14 +25,25 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
   // The at-a-glance strip and the change log: the first questions after "who is this?" are plan, credits, next class,
   // Discord, last seen, and what an admin already changed on the account.
   const [plan, discord, changes] = await Promise.all([
-    prisma.paymentPlan.findFirst({ where: { userId: params.userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, select: { cadence: true, term: true, nextDueDate: true } }),
+    prisma.paymentPlan.findFirst({ where: { userId: params.userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, select: { id: true, cadence: true, term: true, nextDueDate: true, familyGroupId: true, pausedAt: true, pauseUntil: true } }),
     prisma.user.findUnique({ where: { id: params.userId }, select: { discordId: true, discordUsername: true } }),
     prisma.auditLog.findMany({ where: { targetId: params.userId }, orderBy: { createdAt: "desc" }, take: 8 }),
   ]);
   const nextBooking = profile.bookings.filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > Date.now()).sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())[0];
-  const facts: { label: string; value: string; warn?: boolean }[] = [
-    { label: "Plan", value: plan ? describePaymentPlan(plan.cadence, plan.term) : "None" },
-    { label: "Next bill", value: plan ? when(plan.nextDueDate).replace(/, \d+:\d+ [AP]M$/, "") : "None", warn: !!plan && plan.nextDueDate.getTime() < Date.now() },
+  const planPaused = plan ? isPausedNow(plan, new Date()) : false;
+  const facts: { label: string; value: string; warn?: boolean; extra?: ReactNode }[] = [
+    {
+      label: "Plan",
+      value: plan ? describePaymentPlan(plan.cadence, plan.term) : "None",
+      extra:
+        plan && !plan.familyGroupId ? (
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            {!planPaused && <span className="inline-block rounded-full bg-emerald-400/15 px-2 py-0.5 text-small font-medium uppercase tracking-wide text-emerald-300">Active</span>}
+            <AdminPausePlanButton planId={plan.id} state={{ paused: planPaused, until: plan.pauseUntil && !isIndefinitePause(plan) ? plan.pauseUntil.toISOString() : null }} compact />
+          </div>
+        ) : null,
+    },
+    { label: "Next bill", value: plan && planPaused && isIndefinitePause(plan) ? "Paused" : plan ? when(plan.nextDueDate).replace(/, \d+:\d+ [AP]M$/, "") : "None", warn: !!plan && plan.nextDueDate.getTime() < Date.now() },
     { label: "Credits", value: formatCredits(storedToCredits(profile.user.classCredits)) },
     { label: "Next class", value: nextBooking ? when(nextBooking.scheduledAt) : "None booked" },
     { label: "Discord", value: discord?.discordId ? (discord.discordUsername ?? "Linked") : "Not linked", warn: !discord?.discordId },
@@ -50,6 +64,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
           <div key={f.label} className="px-2 py-1">
             <dt className="text-small text-slate-500">{f.label}</dt>
             <dd className={`text-small font-semibold ${f.warn ? "text-amber-300" : "text-slate-50"}`}>{f.value}</dd>
+            {f.extra}
           </div>
         ))}
       </dl>

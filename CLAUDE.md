@@ -506,6 +506,8 @@ plan's unused `CreditGrant`s move out by the same whole weeks (the one place a g
 are canceled with `canceledReason = "Plan paused"`, which `createReservedBookingIfAbsent` already reads as "do not book again", so both booking jobs skip them with no extra code.
 Refused while a payment is under review or the bill is already due. The student and the owner are told, and `plan.pause` is audited.
 
+**The studio can pause a plan too** (2026-10-25, `adminPausePlan` / `adminResumePlan`, buttons next to the Active badge in Admin > Billing > Plans and in the plan box on the student page): to a date up to a year out, or **indefinitely**. Same mechanics as the student pause (weekly time kept, next bill and credit expiry moved out by the span, classes inside it canceled with "Plan paused", an unpaid bill for the old date expired); an indefinite pause uses a fixed 10 year span (`INDEFINITE_PAUSE_MS`, no schema change: `pauseUntil` is 10 years after `pausedAt`, read with `isIndefinitePause`), and resuming moves both back by the time actually paused. `bookReservedWindowForPlan` books nothing while a plan is paused (`isPausedNow`), a student cannot pause on top of it, and students see "paused until the studio resumes it" instead of the far date. Not for family plans.
+
 ## Activity log (added 2026-10-21)
 
 Admin > Overview > Activity (`/admin/activity`, owner only) is a searchable view of `AuditLog`: text search over action, details and actor email, a kind filter

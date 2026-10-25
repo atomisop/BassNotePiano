@@ -658,7 +658,7 @@ function MembershipSection({
 
       {activePlan && !activePlan.family && (
         <SectionCard title="Pause your plan">
-          <PausePlanCard pausedAt={activePlan.pausedAt ?? null} pausedUntil={activePlan.pausedUntil ?? null} onPause={pausePaymentPlanAction} />
+          <PausePlanCard pausedAt={activePlan.pausedAt ?? null} pausedUntil={activePlan.pausedUntil ?? null} indefinite={activePlan.pausedIndefinitely ?? false} onPause={pausePaymentPlanAction} />
         </SectionCard>
       )}
 

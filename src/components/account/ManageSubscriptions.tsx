@@ -70,6 +70,8 @@ export interface ActivePlanInfo {
   family?: FamilyPlanDetails | null;
   /** ISO date the current pause ends, when one is running. */
   pausedUntil?: string | null;
+  /** Paused by the studio with no end date. */
+  pausedIndefinitely?: boolean;
   /** ISO date of the last pause, for the once-in-90-days limit. */
   pausedAt?: string | null;
 }
@@ -236,6 +238,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
               </div>
             </dl>
 
+            {activePlan.pausedIndefinitely && <p className="mt-3 text-small text-amber-300">Paused until the studio resumes it.</p>}
             {activePlan.pausedUntil && (
               <p className="mt-3 text-small text-amber-300">
                 Paused until {new Date(activePlan.pausedUntil).toLocaleDateString("en-US", { month: "short", day: "numeric" })}.

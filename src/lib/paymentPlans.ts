@@ -25,7 +25,7 @@ import {
   OCCURRENCES_PER_SLOT, CANCELLATION_CUTOFF_HOURS } from "@/lib/classSchedule";
 import { createNotification } from "@/lib/notifications";
 import { grantCredits } from "@/lib/creditLedger";
-import { PAUSE_REASON, pauseBlockedReason, pauseSpanMs } from "@/lib/planPause";
+import { adminPauseBlockedReason, INDEFINITE_PAUSE_MS, isPausedNow, PAUSE_REASON, pauseBlockedReason, pauseSpanMs } from "@/lib/planPause";
 import { logAudit } from "@/lib/audit";
 
 export class PaymentPlanError extends Error {}
@@ -838,6 +838,91 @@ export async function pausePaymentPlan(userId: string, weeks: number): Promise<{
   return { resumesOn };
 }
 
+/**
+ * The studio pauses a student's plan (Admin > Billing > Plans, or the student's page): to a chosen date, or indefinitely (`until` null).
+ * The weekly time stays theirs. The next bill and the credits' expiry move out by the length of the pause, so nothing falls due or
+ * expires while it lasts, classes inside it are canceled and credited back, and an unpaid bill for the old date is closed. An
+ * indefinite pause moves them out by a fixed ten years and `adminResumePlan` brings them back by the time actually paused.
+ */
+export async function adminPausePlan(planId: string, adminId: string, until: Date | null): Promise<{ resumesOn: Date | null }> {
+  const now = new Date();
+  const plan = await prisma.paymentPlan.findUnique({ where: { id: planId } });
+  if (!plan) throw new PaymentPlanError("That plan was not found.");
+  const blocked = adminPauseBlockedReason(plan, until, now);
+  if (blocked) throw new PaymentPlanError(blocked);
+  const inReview = await prisma.zellePayment.findFirst({ where: { paymentPlanId: plan.id, status: "PENDING_REVIEW" }, select: { id: true } });
+  if (inReview) throw new PaymentPlanError("A payment for this plan is being reviewed. Settle it first.");
+
+  const span = until ? until.getTime() - now.getTime() : INDEFINITE_PAUSE_MS;
+  const pauseUntil = new Date(now.getTime() + span);
+  // A bill already overdue is not made worse by waiting: the new date counts from today.
+  const base = Math.max(plan.nextDueDate.getTime(), now.getTime());
+  await prisma.$transaction(async (tx) => {
+    const claimed = await tx.paymentPlan.updateMany({
+      where: { id: plan.id, status: "ACTIVE", nextDueDate: plan.nextDueDate, pausedAt: plan.pausedAt },
+      data: { pausedAt: now, pauseUntil, nextDueDate: new Date(base + span) },
+    });
+    if (claimed.count !== 1) throw new PaymentPlanError("This plan just changed. Refresh and try again.");
+    await tx.zellePayment.updateMany({ where: { paymentPlanId: plan.id, status: "AWAITING_TRANSFER" }, data: { status: "EXPIRED" } });
+    const grants = await tx.creditGrant.findMany({
+      where: { paymentPlanId: plan.id, expiredAt: null, creditsRemaining: { gt: 0 }, expiresAt: { gt: now } },
+      select: { id: true, expiresAt: true },
+    });
+    for (const g of grants) {
+      await tx.creditGrant.update({ where: { id: g.id }, data: { expiresAt: new Date(g.expiresAt!.getTime() + span), expiringSoonNotifiedAt: null } });
+    }
+    await tx.classBooking.updateMany({
+      where: { reservedByPlanId: plan.id, status: "SCHEDULED", scheduledAt: { gt: now, lt: pauseUntil } },
+      data: { status: "CANCELED", refunded: true, canceledReason: PAUSE_REASON },
+    });
+  });
+
+  const when = until ? `until ${until.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" })}` : "until the studio resumes it";
+  await logAudit({ actorId: adminId, action: "plan.pause", targetType: "PaymentPlan", targetId: plan.id, detail: `Studio paused the plan ${when}` }).catch(() => undefined);
+  await createNotification({
+    userId: plan.userId,
+    type: "PAYMENT_PLAN_UPDATED",
+    title: "Your plan is paused",
+    body: `Your plan is paused ${when}. Your weekly time is still yours, classes stop for now, and your next payment and credits move back by the same time.`,
+    emailCategory: "payments",
+  }).catch((err) => console.error("Studio pause notice failed (non-blocking):", err));
+  return { resumesOn: until };
+}
+
+/** Ends a pause now (a date pause early, or an indefinite one): the due date and credits come back to exactly the time left when it began. */
+export async function adminResumePlan(planId: string, adminId: string): Promise<void> {
+  const now = new Date();
+  const plan = await prisma.paymentPlan.findUnique({ where: { id: planId } });
+  if (!plan || plan.status !== "ACTIVE") throw new PaymentPlanError("Only a running plan can be resumed.");
+  if (!isPausedNow(plan, now) || !plan.pausedAt || !plan.pauseUntil) throw new PaymentPlanError("This plan is not paused.");
+
+  const span = plan.pauseUntil.getTime() - plan.pausedAt.getTime();
+  const delta = now.getTime() - plan.pausedAt.getTime() - span; // negative: the pause is cut short
+  await prisma.$transaction(async (tx) => {
+    const claimed = await tx.paymentPlan.updateMany({
+      where: { id: plan.id, status: "ACTIVE", pauseUntil: plan.pauseUntil },
+      data: { pauseUntil: now, nextDueDate: new Date(plan.nextDueDate.getTime() + delta) },
+    });
+    if (claimed.count !== 1) throw new PaymentPlanError("This plan just changed. Refresh and try again.");
+    const grants = await tx.creditGrant.findMany({
+      where: { paymentPlanId: plan.id, expiredAt: null, creditsRemaining: { gt: 0 }, expiresAt: { gt: now } },
+      select: { id: true, expiresAt: true },
+    });
+    for (const g of grants) {
+      await tx.creditGrant.update({ where: { id: g.id }, data: { expiresAt: new Date(g.expiresAt!.getTime() + delta), expiringSoonNotifiedAt: null } });
+    }
+  });
+  await bookReservedWindowForPlan(plan.id);
+  await logAudit({ actorId: adminId, action: "plan.resume", targetType: "PaymentPlan", targetId: plan.id, detail: "Studio resumed the plan" }).catch(() => undefined);
+  await createNotification({
+    userId: plan.userId,
+    type: "PAYMENT_PLAN_UPDATED",
+    title: "Your plan is back on",
+    body: "Your plan is running again. Your weekly classes are back on the calendar and your next payment is due on the new date.",
+    emailCategory: "payments",
+  }).catch((err) => console.error("Studio resume notice failed (non-blocking):", err));
+}
+
 /** Days a plan may sit past due before the system cancels it. */
 export const LAPSE_AFTER_DAYS = 7;
 
@@ -1141,6 +1226,8 @@ export async function bookReservedWindowForPlan(planId: string): Promise<void> {
   try {
     const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, include: { reservedSchedule: true } });
     if (!plan || plan.status === "CANCELED" || !plan.reservedSchedule || plan.reservedChunkIndex === null || !plan.reservedSchedule.active) return;
+    // A paused plan books nothing until it is resumed.
+    if (isPausedNow(plan, new Date())) return;
     const chunk = chunksForSchedule(plan.reservedSchedule)[plan.reservedChunkIndex];
     if (!chunk) return;
     const creditsPerClass = PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence];

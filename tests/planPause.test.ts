@@ -33,3 +33,26 @@ describe("pause span", () => {
     expect(isPausedNow({ pausedAt: null, pauseUntil: null }, now)).toBe(false);
   });
 });
+
+import { adminPauseBlockedReason, isIndefinitePause } from "@/lib/planPause";
+
+describe("the studio's pause rules", () => {
+  const base = { status: "ACTIVE", familyGroupId: null, installmentsPaid: 1, pausedAt: null, pauseUntil: null };
+  const now = new Date("2026-10-25T12:00:00Z");
+  it("allows a date within a year, or indefinitely", () => {
+    expect(adminPauseBlockedReason(base, new Date("2026-12-01T12:00:00Z"), now)).toBeNull();
+    expect(adminPauseBlockedReason(base, null, now)).toBeNull();
+  });
+  it("refuses a date in the past or beyond a year, a family plan, an unpaid first bill and a plan already paused", () => {
+    expect(adminPauseBlockedReason(base, new Date("2026-10-24T12:00:00Z"), now)).toMatch(/after today/);
+    expect(adminPauseBlockedReason(base, new Date("2028-01-01T12:00:00Z"), now)).toMatch(/within a year/);
+    expect(adminPauseBlockedReason({ ...base, familyGroupId: "g" }, null, now)).toMatch(/family/);
+    expect(adminPauseBlockedReason({ ...base, installmentsPaid: 0 }, null, now)).toMatch(/first payment/);
+    expect(adminPauseBlockedReason({ ...base, pausedAt: new Date("2026-10-20T00:00:00Z"), pauseUntil: new Date("2026-11-20T00:00:00Z") }, null, now)).toMatch(/already paused/);
+  });
+  it("tells an indefinite pause from a dated one", () => {
+    const at = new Date("2026-10-25T00:00:00Z");
+    expect(isIndefinitePause({ pausedAt: at, pauseUntil: new Date(at.getTime() + 3650 * 86_400_000) })).toBe(true);
+    expect(isIndefinitePause({ pausedAt: at, pauseUntil: new Date(at.getTime() + 30 * 86_400_000) })).toBe(false);
+  });
+});

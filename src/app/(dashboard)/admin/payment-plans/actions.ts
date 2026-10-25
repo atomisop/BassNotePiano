@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
-import { cancelPaymentPlan, recordPlanPaymentReceived, resendPlanInvoice } from "@/lib/paymentPlans";
+import { adminPausePlan, adminResumePlan, cancelPaymentPlan, PaymentPlanError, recordPlanPaymentReceived, resendPlanInvoice } from "@/lib/paymentPlans";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { logAudit } from "@/lib/audit";
 
@@ -49,4 +49,35 @@ export async function resendBillAction(planId: string): Promise<{ ok: boolean; m
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message : "Could not send." };
   }
+}
+
+/** Pause a running plan to a date (`until`, end of that day, Eastern) or indefinitely. */
+export async function pausePlanAdminAction(planId: string, when: { kind: "until"; date: string } | { kind: "indefinite" }): Promise<{ ok: boolean; error: string | null }> {
+  const admin = await requireAdmin();
+  try {
+    let until: Date | null = null;
+    if (when.kind === "until") {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(when.date))) return { ok: false, error: "Pick a date." };
+      // Noon UTC of the chosen day: the pause ends on that calendar day wherever the studio is.
+      until = new Date(`${when.date}T12:00:00Z`);
+    }
+    await adminPausePlan(String(planId), admin.id, until);
+  } catch (err) {
+    if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
+    throw err;
+  }
+  revalidatePath("/", "layout");
+  return { ok: true, error: null };
+}
+
+export async function resumePlanAdminAction(planId: string): Promise<{ ok: boolean; error: string | null }> {
+  const admin = await requireAdmin();
+  try {
+    await adminResumePlan(String(planId), admin.id);
+  } catch (err) {
+    if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
+    throw err;
+  }
+  revalidatePath("/", "layout");
+  return { ok: true, error: null };
 }
