@@ -13,10 +13,12 @@ const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: 
 export function PausePlanCard({
   pausedAt,
   pausedUntil,
+  indefinite = false,
   onPause,
 }: {
   pausedAt: string | null;
   pausedUntil: string | null;
+  indefinite?: boolean;
   onPause: (weeks: number) => Promise<{ ok: boolean; error: string | null; resumesOn: string | null }>;
 }) {
   const router = useRouter();
@@ -24,6 +26,14 @@ export function PausePlanCard({
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  if (indefinite) {
+    return (
+      <p className="text-small text-slate-300" role="status">
+        Your plan is paused until the studio resumes it, and your weekly time is still yours.
+      </p>
+    );
+  }
 
   if (pausedUntil) {
     return (

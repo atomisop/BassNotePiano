@@ -8,6 +8,8 @@ import type { AdminPaymentPlan } from "@/lib/paymentPlans";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { AdminPausePlanButton } from "@/components/admin/AdminPausePlanButton";
+import { isIndefinitePause, isPausedNow } from "@/lib/planPause";
 
 export interface PaymentPlanListProps {
   plans: AdminPaymentPlan[];
@@ -141,11 +143,20 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
               <p className="mt-1 text-small text-slate-500">Received {formatUsd(receivedCents(plan))}</p>
             </div>
             <div className="flex flex-col items-end gap-1.5 text-right">
-              <span
-                className={`inline-block rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[plan.status]}`}
-              >
-                {STATUS_LABEL[plan.status]}
-              </span>
+              {plan.status === "ACTIVE" && isPausedNow(plan, new Date()) ? null : (
+                <span
+                  className={`inline-block rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${STATUS_STYLE[plan.status]}`}
+                >
+                  {STATUS_LABEL[plan.status]}
+                </span>
+              )}
+              {plan.status === "ACTIVE" && !plan.familyGroupId && (
+                <AdminPausePlanButton
+                  planId={plan.id}
+                  state={{ paused: isPausedNow(plan, new Date()), until: plan.pauseUntil && !isIndefinitePause(plan) ? new Date(plan.pauseUntil).toISOString() : null }}
+                  compact
+                />
+              )}
               {plan.isOverdue && (
                 <span className="inline-block rounded-full bg-red-400/15 px-2.5 py-1 text-small font-medium uppercase tracking-wide text-red-300">
                   Overdue
@@ -157,7 +168,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-small sm:grid-cols-3">
             <div>
               <dt className="text-small text-slate-500">Next due</dt>
-              <dd className="text-slate-300">{new Date(plan.nextDueDate).toLocaleDateString()}</dd>
+              <dd className="text-slate-300">{plan.status === "ACTIVE" && isPausedNow(plan, new Date()) && isIndefinitePause(plan) ? "On resume" : new Date(plan.nextDueDate).toLocaleDateString()}</dd>
             </div>
             <div>
               <dt className="text-small text-slate-500">Started</dt>
