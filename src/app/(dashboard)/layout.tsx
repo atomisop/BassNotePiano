@@ -11,6 +11,7 @@ import { getTotalUnreadGroupMessageCount } from "@/lib/groupMessages";
 import { getSupportUnreadCount } from "@/lib/messagesSupport";
 import { getActiveAnnouncementForUser } from "@/lib/announcements";
 import { LATEST_ENTRY } from "@/lib/changelog";
+import { NavPendingGate } from "@/components/layout/NavPendingGate";
 import { AppDock } from "@/components/layout/AppDock";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { TopBar } from "@/components/layout/TopBar";
@@ -119,7 +120,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             chaining up to the body once it hits the top/bottom, without
             it, an iOS overscroll bounce here could visibly tug at the fixed
             shell around it, the same "things move weird" complaint. */}
-        <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pb-32 pt-4 md:px-6 md:pb-32 md:pt-5 lg:pb-8">{children}</PullToRefreshMain>
+        <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pb-32 pt-4 md:px-6 md:pb-32 md:pt-5 lg:pb-8"><NavPendingGate>{children}</NavPendingGate></PullToRefreshMain>
       </div>
       <AutoRefresh />
       <Suspense fallback={null}>

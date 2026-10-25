@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { KeyboardFit } from "@/components/layout/KeyboardFit";
 
 /**
  * The four page layouts every signed-in page is built on. A page picks one
@@ -92,10 +93,10 @@ export function TwoPaneLayout({
   if (bleed) {
     return (
       <div className="-mx-4 -mb-32 -mt-4 md:-mx-6 md:-mt-5 lg:-mb-8">
-        <div className={`flex h-[calc(100dvh-3rem)] overflow-hidden pb-24 lg:pb-0 ${className}`}>
+        <KeyboardFit className={className}>
           <div className={`${showDetail ? "hidden md:flex" : "flex"} min-w-0 w-full md:w-[var(--container-pane)] md:shrink-0`}>{list}</div>
           <div className={`${showDetail ? "flex" : "hidden md:flex"} min-w-0 flex-1 [&>*]:min-w-0 [&>*]:flex-1`}>{detail}</div>
-        </div>
+        </KeyboardFit>
       </div>
     );
   }

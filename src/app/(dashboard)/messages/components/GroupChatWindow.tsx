@@ -196,7 +196,7 @@ export function GroupChatWindow({
           bottom of a thread and flinging back up rubber-bands and can
           visibly slide over that header for an instant, same fix as
           ChatWindow's own message list. */}
-      <div className="min-w-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 md:px-4">
+      <div data-chat-scroll className="min-w-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 md:px-4">
         {layoutThread(messages).map((meta, i) => {
           const m = messages[i];
           const isMine = m.senderId === currentUserId;
