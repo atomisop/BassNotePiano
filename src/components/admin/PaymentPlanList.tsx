@@ -9,6 +9,7 @@ import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { AdminPausePlanButton } from "@/components/admin/AdminPausePlanButton";
+import { AdminMovePlanTimeButton } from "@/components/admin/AdminMovePlanTimeButton";
 import { isIndefinitePause, isPausedNow } from "@/lib/planPause";
 
 export interface PaymentPlanListProps {
@@ -150,6 +151,7 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                   {STATUS_LABEL[plan.status]}
                 </span>
               )}
+              {plan.status === "ACTIVE" && plan.reservedScheduleId && <AdminMovePlanTimeButton planId={plan.id} compact />}
               {plan.status === "ACTIVE" && !plan.familyGroupId && (
                 <AdminPausePlanButton
                   planId={plan.id}
