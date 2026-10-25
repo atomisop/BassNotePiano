@@ -25,6 +25,7 @@ import type { ZellePaymentStatus } from "@prisma/client";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { WideLayout } from "@/components/layout/PageLayouts";
+import { Ticket } from "lucide-react";
 import { Tabs } from "@/components/ui/Tabs";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 import { buttonVariants } from "@/components/ui/button";
@@ -871,14 +872,16 @@ export function ClassBookingClient({
 
   return (
     <WideLayout>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
+      {/* One centered column on computers, everything stacked, the same as the payment plan screen. */}
+      <div className="mx-auto w-full max-w-2xl">
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)] lg:text-center">
         {extraMode ? "Extra sessions" : "Live Lessons"}
       </p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50 lg:text-center">
         {extraMode ? "Book an extra class" : "Book a class"}
       </h1>
 
-      <div className="mt-(--space-group)">
+      <div className="mt-(--space-group) lg:flex lg:justify-center">
         <Tabs<TabId>
           label="Booking, upcoming and past classes"
           value={tab}
@@ -906,15 +909,6 @@ export function ClassBookingClient({
 
         {tab === "book" && (
           <div className="min-w-0">
-            {/* Credits: what a class costs and what the student has. No money here. */}
-            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 rounded-xl bg-neu-base px-4 py-3 shadow-pressed-low">
-              <p className="text-small text-slate-400">
-                Your credits <span className="ml-1 text-body font-semibold tabular-nums text-slate-50">{formatCredits(storedToCredits(credits))}</span>
-              </p>
-              <p className="text-small text-slate-400">
-                Each class costs <span className="font-semibold text-slate-100">{creditsLabel(CREDITS_PER_CLASS)}</span> · {CLASS_MINUTES} min
-              </p>
-            </div>
             {fifthClassOffer && !extraPayment && (
               <div className="glass-surface mt-4 flex flex-wrap items-center justify-between gap-3 p-4">
                 <div className="min-w-0">
@@ -937,20 +931,29 @@ export function ClassBookingClient({
               </p>
             )}
 
-            <Tabs
-              className="mt-5"
-              label="Who is this class for?"
-              items={[
-                { id: "SOLO", label: "Just me" },
-                { id: "FAMILY", label: "Me and my family" },
-              ]}
-              value={mode}
-              onChange={(m) => {
-                setMode(m);
-                setSelectedKeys(new Set());
-                setFamilyRowKey(null);
-              }}
-            />
+            {/* One row: who the class is for, and the credits there are to spend. */}
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+              <Tabs
+                label="Who is this class for?"
+                items={[
+                  { id: "SOLO", label: "Just me" },
+                  { id: "FAMILY", label: "Me and my family" },
+                ]}
+                value={mode}
+                onChange={(m) => {
+                  setMode(m);
+                  setSelectedKeys(new Set());
+                  setFamilyRowKey(null);
+                }}
+              />
+              <p
+                className="flex items-center gap-2 rounded-full bg-neu-base px-3.5 py-2 text-small font-semibold tabular-nums text-slate-50 shadow-pressed-low"
+                aria-label={`${formatCredits(storedToCredits(credits))} credits to spend`}
+              >
+                <Ticket aria-hidden className="h-4 w-4 text-signal-fg" strokeWidth={1.75} />
+                {formatCredits(storedToCredits(credits))}
+              </p>
+            </div>
 
             {reschedulingBooking && (
               <div className="glass-surface-elevated mt-5 flex flex-wrap items-center justify-between gap-4 p-5">
@@ -964,15 +967,17 @@ export function ClassBookingClient({
               </div>
             )}
 
+            {/* The calendar and the day's times side by side from lg up, so picking a time needs no scrolling on a computer. */}
+            <div className="mt-5">
             {rows.length > 0 ? (
-              <div id="booking-calendar" className="mt-5 scroll-mt-20">
-                <p className="mb-3 text-small font-medium text-slate-400">Tap a highlighted day, then pick your times</p>
+              <div id="booking-calendar" className="scroll-mt-20">
                 <BookingCalendar occurrences={rows} selectedDateKey={selectedDateKey} onSelectDate={setSelectedDateKey} />
               </div>
             ) : (
-              <p className="mt-5 text-small text-slate-500">No classes scheduled.</p>
+              <p className="text-small text-slate-500">No classes scheduled.</p>
             )}
 
+              <div className="min-w-0">
             {extraPayment && (
               <div className="glass-surface-elevated mt-6 p-5">
                 <p className="mb-3 text-small text-slate-400">
@@ -1044,7 +1049,7 @@ export function ClassBookingClient({
               {!selectedDateKey ? null : displayRows.length === 0 ? (
                 <p className="text-small text-slate-500">No open times on that day.</p>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   {occurrenceGroups.flatMap((group) => group.rows).map((row) => {
                     const key = rowKey(row);
                     const cost = creditsFor(row);
@@ -1061,7 +1066,7 @@ export function ClassBookingClient({
                         onClick={onClick}
                         disabled={!onClick}
                         aria-pressed={onClick ? isSelected : undefined}
-                        className={`tap flex min-h-14 w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left transition disabled:cursor-not-allowed bg-neu-base ${
+                        className={`tap flex min-h-14 w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left sm:gap-3 sm:px-4 sm:py-3 transition disabled:cursor-not-allowed bg-neu-base ${
                           isSelected ? "shadow-pressed-low ring-1 ring-[rgb(var(--signal)/0.5)]" : "shadow-raised-low hover:shadow-raised-mid"
                         } ${extra}`}
                       >
@@ -1070,10 +1075,11 @@ export function ClassBookingClient({
                     );
                     const time = (
                       <span className="min-w-0">
-                        <span className="block text-body font-semibold text-slate-50">
-                          {formatOccurrenceTime(row.scheduledAt)} to {formatEndTime(row.scheduledAt, cost)}
+                        <span className="block text-body font-semibold text-slate-50">{formatOccurrenceTime(row.scheduledAt)}</span>
+                        <span className="block text-small text-slate-500">
+                          to {formatEndTime(row.scheduledAt, cost)}
+                          {cost !== CREDITS_PER_CLASS && ` · ${creditsLabel(cost)}`}
                         </span>
-                        <span className="block text-small text-slate-500">{creditsLabel(cost)}</span>
                       </span>
                     );
 
@@ -1149,7 +1155,7 @@ export function ClassBookingClient({
                       <>
                         {time}
                         <span className="flex shrink-0 items-center gap-2">
-                          {!isSelected && <span className="text-small font-medium text-signal-fg">Open</span>}
+                          {!isSelected && <span className="hidden text-small font-medium text-signal-fg sm:inline">Open</span>}
                           <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${isSelected ? "bg-[rgb(var(--signal))] text-black" : "bg-ink/10 text-transparent"}`}>
                             <CheckIcon size={12} />
                           </span>
@@ -1160,6 +1166,9 @@ export function ClassBookingClient({
                   })}
                 </div>
               )}
+            </div>
+
+              </div>
             </div>
 
             {/* The total, once anything is picked. Sticks to the bottom so it is always in reach. */}
@@ -1252,6 +1261,7 @@ export function ClassBookingClient({
             )}
           </div>
         )}
+      </div>
       </div>
     </WideLayout>
   );

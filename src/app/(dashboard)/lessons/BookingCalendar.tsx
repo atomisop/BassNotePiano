@@ -106,36 +106,28 @@ export function BookingCalendar({
   const firstWeekday = new Date(firstOfMonth).getUTCDay();
   const daysInMonth = new Date(Date.UTC(viewMonth.year, viewMonth.monthIndex + 1, 0)).getUTCDate();
 
-  const cells: (number | null)[] = [
+  const allCells: (number | null)[] = [
     ...Array(firstWeekday).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
-
-  // The one thing a customer needs first: is anything open, and when.
-  const openDays = Array.from(dayInfo.values()).filter((info) => info.hasOpenSlot && info.ms >= todayMidnight).sort((a, b) => a.ms - b.ms);
-  const openTotal = openDays.reduce((sum, info) => sum + info.open, 0);
-  const nextOpen = openDays[0] ?? null;
+  // A week that is entirely behind us is no use to anyone: it is left out, so the first row is this week.
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < allCells.length; i += 7) {
+    const week = allCells.slice(i, i + 7);
+    const allPast = week.every((d) => d === null || utcMidnight(viewMonth.year, viewMonth.monthIndex, d) < todayMidnight);
+    if (!allPast) cells.push(...week);
+  }
 
   return (
-    <div className="glass-surface p-5">
-      <div className="mb-4 flex items-center justify-between gap-3 rounded-control bg-[rgb(var(--signal)/0.1)] px-3.5 py-2.5">
-        {nextOpen ? (
-          <>
-            <p className="text-small text-slate-100">
-              <span className="font-semibold text-signal-fg">{openTotal} open {openTotal === 1 ? "time" : "times"}</span>
-              <span className="text-slate-300"> · next {new Date(nextOpen.ms).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })}</span>
-            </p>
-            <button type="button" onClick={() => onSelectDate(dayKey(nextOpen.ms))} className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}>
-              See times
-            </button>
-          </>
-        ) : (
-          <p className="text-small font-medium text-slate-300">Fully booked for now. Check back soon.</p>
-        )}
-      </div>
+    <div className="glass-surface p-4 sm:p-5">
       <div className="flex items-center justify-between">
         <p className="text-body text-slate-100 font-semibold">{monthLabel}</p>
         <div className="flex items-center gap-1">
+          {selectedDateKey && (
+            <button type="button" onClick={() => onSelectDate(null)} className={buttonVariants({ variant: "secondary", size: "sm", className: "mr-1" })}>
+              Show all
+            </button>
+          )}
           <button
             type="button"
             onClick={() => shiftMonth(-1)}
@@ -161,7 +153,7 @@ export function BookingCalendar({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-7 gap-y-1.5 text-center">
+      <div className="mt-3 grid grid-cols-7 gap-y-1 text-center">
         {DAY_NAMES.map((d, i) => (
           <span key={i} className="text-small font-medium uppercase tracking-wide text-slate-500">
             {d}
@@ -186,7 +178,7 @@ export function BookingCalendar({
               onClick={() => onSelectDate(isSelected ? null : key)}
               aria-label={info && !isPast ? `${day}, ${info.hasOpenSlot ? `${info.open} open` : "full"}` : undefined}
               title={info && !isPast ? (info.hasOpenSlot ? `${info.open} open` : "Full") : undefined}
-              className={`relative mx-auto flex h-10 w-10 pointer-coarse:h-12 pointer-coarse:w-full flex-col items-center justify-center rounded-full text-small transition ${
+              className={`relative mx-auto flex h-10 w-10 pointer-coarse:h-10 pointer-coarse:w-full flex-col items-center justify-center rounded-full text-small transition ${
                 isSelected
                   ? "bg-signal font-semibold text-slate-950"
                   : clickable
@@ -211,27 +203,6 @@ export function BookingCalendar({
         })}
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-t border-ink/10 pt-3">
-        <p className="flex items-center gap-4 text-small text-slate-400">
-          <span className="flex items-center gap-1.5">
-            <span className="h-3.5 w-3.5 rounded-full bg-[rgb(var(--signal)/0.14)] ring-1 ring-inset ring-[rgb(var(--signal)/0.45)]" aria-hidden />
-            Open
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="text-slate-500 line-through">12</span>
-            Full
-          </span>
-        </p>
-        {selectedDateKey && (
-          <button
-            type="button"
-            onClick={() => onSelectDate(null)}
-            className={buttonVariants({ variant: "secondary", size: "sm" })}
-          >
-            Show all
-          </button>
-        )}
-      </div>
     </div>
   );
 }
