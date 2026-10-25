@@ -728,13 +728,14 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
                 creditsPerInstallment: template.creditsPerInstallment,
                 termMonths: template.termMonths,
                 nextDueDate: new Date(),
-                reservedScheduleId: template.reservedScheduleId,
-                reservedChunkIndex: template.reservedChunkIndex,
+                // The payer keeps the weekly time their old plan held; the other members have none (they book with credits).
+                reservedScheduleId: old?.reservedScheduleId ?? null,
+                reservedChunkIndex: old?.reservedChunkIndex ?? null,
                 familyGroupId: group.id,
               },
             });
             if (old) {
-              const sameTime = old.reservedScheduleId === template.reservedScheduleId && old.reservedChunkIndex === template.reservedChunkIndex;
+              const sameTime = true;
               await tx.classBooking.updateMany({
                 where: { reservedByPlanId: old.id, status: "SCHEDULED", scheduledAt: { gt: new Date() } },
                 data: sameTime ? { reservedByPlanId: mine.id, familyBookingGroupId: group.id } : { status: "CANCELED", refunded: true },
@@ -820,10 +821,10 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
   if (payment.purpose === "FAMILY_PLAN_START" && payment.familyGroupId) {
     const plans = await prisma.paymentPlan.findMany({
       where: { familyGroupId: payment.familyGroupId },
-      select: { id: true, userId: true, cadence: true, term: true, creditsPerInstallment: true, user: { select: { name: true, email: true } } },
+      select: { id: true, userId: true, cadence: true, term: true, creditsPerInstallment: true, nextDueDate: true, user: { select: { name: true, email: true } } },
     });
     for (const plan of plans) await bookReservedWindowForPlan(plan.id);
-    familyStartBody = `Your family plan started for ${plans.length} accounts. Everyone's credits are on their accounts and the weekly classes are booked.`;
+    familyStartBody = `Your family plan started for ${plans.length} accounts. Your weekly class is booked. Everyone else has their credits and picks their own class times. Credits expire at the end of each 28-day cycle.`;
     await Promise.all(
       plans
         .filter((plan) => plan.userId !== payment.userId)
@@ -832,8 +833,9 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
             userId: plan.userId,
             type: "PAYMENT_APPROVED",
             title: "Your family plan started",
-            body: `${creditsLabelFromStored(plan.creditsPerInstallment)} ${plan.creditsPerInstallment === CREDITS_PER_CLASS ? "is" : "are"} on your account and your weekly classes are booked.`,
+            body: `${creditsLabelFromStored(plan.creditsPerInstallment)} ${plan.creditsPerInstallment === CREDITS_PER_CLASS ? "is" : "are"} on your account. Pick your own class times in Online Lessons. These credits expire on ${plan.nextDueDate.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })} (the end of this 28-day cycle), so book your classes before then.`,
             emailCategory: "payments",
+            cta: { label: "Pick your class time", path: "/lessons" },
           }).catch((err) => console.error(`Failed to notify family member ${plan.userId} (non-blocking):`, err)),
         ),
     );

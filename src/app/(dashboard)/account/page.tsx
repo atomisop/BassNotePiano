@@ -78,6 +78,8 @@ export default async function AccountPage() {
               term: activePlan.term,
               installmentsPaid: activePlan.installmentsPaid,
               termMonths: activePlan.termMonths,
+              installmentAmountCents: activePlan.installmentAmountCents,
+              nextDueDate: activePlan.nextDueDate.toISOString(),
               family: familyDetails,
               pausedAt: activePlan.pausedAt?.toISOString() ?? null,
               pausedUntil: activePlan.pauseUntil && activePlan.pauseUntil > new Date() ? activePlan.pauseUntil.toISOString() : null,

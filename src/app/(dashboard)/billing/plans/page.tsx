@@ -11,6 +11,7 @@ import { PaymentPlanEnrollmentFlow } from "./PaymentPlanEnrollmentFlow";
 import { MyPlanSummary } from "@/components/billing/MyPlanSummary";
 import { getPricingConfig } from "@/lib/pricing";
 import { getDiscountPercent } from "@/lib/accountDiscounts";
+import { PlanHistoryButton } from "@/components/billing/PlanHistoryButton";
 import { FamilyInvitesPanel } from "@/components/billing/FamilyInvitesPanel";
 import { listInvitesForPerson } from "@/lib/familyInvites";
 import { BackLink } from "@/components/ui/BackLink";
@@ -129,10 +130,22 @@ export default async function BillingPlansPage(
   // One centered column: the title on top, the form below it. Everything stacks in that one column at every screen size.
   return (
     <div className="mx-auto w-full max-w-2xl">
-      <BackLink href="/lessons" className="tap w-fit mb-4 flex items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
-        <ArrowLeftIcon size={16} />
-        Back
-      </BackLink>
+      <div className="mb-4 flex items-center justify-between">
+        <BackLink href="/lessons" className="tap flex w-fit items-center gap-1.5 text-small text-slate-400 transition hover:text-slate-100">
+          <ArrowLeftIcon size={16} />
+          Back
+        </BackLink>
+        <PlanHistoryButton
+          plans={pastPlans.map((plan) => ({
+            id: plan.id,
+            name: describePaymentPlan(plan.cadence, plan.term),
+            billsPaid: plan.installmentsPaid,
+            billsTotal: plan.termMonths,
+            status: plan.status,
+            startedAt: plan.createdAt.toISOString(),
+          }))}
+        />
+      </div>
       <div className="text-center">
         <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment plan</h1>
@@ -181,22 +194,6 @@ export default async function BillingPlansPage(
         />
       </div>
 
-      {pastPlans.length > 0 && (
-        <div className="mx-auto mt-10 max-w-2xl border-t border-ink/10 pt-6">
-          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Plan history</p>
-          <div className="mt-4 space-y-3">
-            {pastPlans.map((plan) => (
-              <div key={plan.id} className="glass-surface p-4">
-                <p className="text-small text-slate-100">{describePaymentPlan(plan.cadence, plan.term)}</p>
-                <p className="mt-1 text-small text-slate-500">
-                  {plan.installmentsPaid} of {plan.termMonths} installments paid ·{" "}
-                  {plan.status === "COMPLETED" ? "Completed" : "Canceled"}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

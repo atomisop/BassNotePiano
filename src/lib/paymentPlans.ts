@@ -1469,8 +1469,10 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
     });
     if (recent) throw new PaymentPlanError(`You started a family plan recently. A family plan can be changed once every ${cooldownDays} days.`);
   }
-  const reservedScheduleId = input.reservedScheduleId ?? oldPlan?.reservedScheduleId ?? null;
-  const reservedChunkIndex = input.reservedChunkIndex ?? oldPlan?.reservedChunkIndex ?? null;
+  // The weekly time is the PAYER's own. Everyone else in the family gets credits and books their own class times with them.
+  // A payer switching in from a plan keeps the weekly time that plan already holds.
+  const reservedScheduleId = oldPlan ? oldPlan.reservedScheduleId : (input.reservedScheduleId ?? null);
+  const reservedChunkIndex = oldPlan ? oldPlan.reservedChunkIndex : (input.reservedChunkIndex ?? null);
   if (!reservedScheduleId || reservedChunkIndex === null) throw new PaymentPlanError("Pick the weekly time first.");
 
   const pricing = await getPricingConfig();
@@ -1507,7 +1509,7 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
         const payingAlready = await tx.familyPlanGroup.findFirst({ where: { payerId, plans: { some: { status: "ACTIVE" } } }, select: { id: true } });
         if (payingAlready) throw new PaymentPlanError("You already pay for a family plan. One family plan per payer.");
 
-        await assertSlotReservable(tx, reservedScheduleId, reservedChunkIndex, creditsPerWeek, memberIds, oldPlan ? [oldPlan.id] : []);
+        await assertSlotReservable(tx, reservedScheduleId, reservedChunkIndex, creditsPerWeek, [payerId], oldPlan ? [oldPlan.id] : []);
 
         const group = await tx.familyPlanGroup.create({ data: { payerId, replacesPlanId: oldPlan?.id ?? null } });
         const plans: PaymentPlan[] = [];
@@ -1522,8 +1524,9 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
                 creditsPerInstallment: rate.creditsPerInstallment,
                 termMonths: rate.termMonths,
                 nextDueDate: new Date(),
-                reservedScheduleId,
-                reservedChunkIndex,
+                // Only the payer's plan holds a weekly time; the others book their own classes with their credits.
+                reservedScheduleId: member.id === payerId ? reservedScheduleId : null,
+                reservedChunkIndex: member.id === payerId ? reservedChunkIndex : null,
                 familyGroupId: group.id,
               },
             }),
@@ -1558,7 +1561,7 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
       await noticePlanUpdated({
         userId: other.id,
         title: "You were added to a family plan",
-        body: `${payer.name ?? payer.email} set up a family plan that includes you. Your classes start when their first payment arrives, and they pay for your 28-day bills.`,
+        body: `${payer.name ?? payer.email} set up a family plan that includes you. When their first payment arrives, class credits go on your account and you pick your own class times. They pay your 28-day bills. Credits expire at the end of each 28-day cycle, so book before then.`,
       }).catch((err) => console.error("Family member notice failed (non-blocking):", err));
     }
     return created;

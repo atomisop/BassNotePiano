@@ -30,8 +30,11 @@ export function FamilyInvitesPanel({ invites }: { invites: Invite[] }) {
         <div key={invite.id} className="rounded-xl bg-neu-base p-4 shadow-raised-low">
           <p className="text-body font-semibold text-slate-50">{invite.payerName} invited you to their family plan</p>
           <p className="mt-1 text-small text-slate-400">
-            They pay for your classes and choose the weekly time. If you accept, nothing starts until they pay. You can only be on one plan at a time, so any plan of yours has
-            to end first. If you do not know them, decline.
+            By accepting you agree to the{" "}
+            <a href="/terms#family-plans" target="_blank" rel="noopener noreferrer" className="font-semibold text-slate-200 underline underline-offset-2">
+              family plan rules
+            </a>
+            .
           </p>
           <div className="mt-3 flex gap-2">
             <button type="button" aria-busy={busy === `${invite.id}:true`} onClick={() => void answer(invite.id, true)} disabled={busy !== null} className={buttonVariants({ variant: "primary", size: "sm" })}>

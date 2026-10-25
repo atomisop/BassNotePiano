@@ -219,6 +219,8 @@ export function NewPlanForm({
     : totals.payments === 1
       ? `${totals.classesPerPayment} classes, no commitment`
       : `${planName} · ${totals.payments} payments`;
+  // The whole plan, so a 3 or 6 month plan shows what it adds up to before anyone starts.
+  const barTotal = totals.payments > 1 ? `Whole plan: ${usd(totals.allPeopleTermCents)} over ${totals.payments} payments (${totals.payments * 28} days)` : null;
 
   async function start() {
     if (!slot || hint !== null) return;
@@ -274,9 +276,6 @@ export function NewPlanForm({
             );
           })}
         </div>
-        <p className="mt-2 text-small text-slate-500">
-          {totals.payments === 1 ? "No commitment: you pay for 28 days at a time." : `${totals.payments} months of classes: ${totals.payments} payments, one every 28 days (${totals.payments * 28} days in all).`} Each payment is 4 classes.
-        </p>
       </div>
 
       {isFamily && (
@@ -287,10 +286,6 @@ export function NewPlanForm({
               <NumberTicker value={people.people} /> of {MAX_FAMILY_MEMBERS} people
             </p>
           </div>
-          <p className="mt-1 text-small text-slate-400">
-            Each person needs their own Bass Note Piano account first, with their own name, and must accept your invitation. You pay for everyone from your own bank account: one combined first payment starts
-            everyone together. If anyone cannot start, nobody does.
-          </p>
           <ul className="mt-3 space-y-2">
             <li className="flex h-11 items-center justify-between rounded-control bg-neu-lift px-4 text-small text-slate-300 shadow-pressed-low">
               <span className="font-medium text-slate-100">You</span>
@@ -358,7 +353,7 @@ export function NewPlanForm({
       </div>
 
       <div>
-        <p className="mb-2 text-small font-medium text-slate-400">Your weekly time</p>
+        <p className="mb-2 text-small font-medium text-slate-400">{isFamily ? "Your weekly time (only you)" : "Your weekly time"}</p>
         {slotsLoading ? (
           <div className="flex items-center justify-center rounded-lg bg-neu-base py-6 shadow-raised-low">
             <MorphingSquare size={16} />
@@ -377,17 +372,12 @@ export function NewPlanForm({
               onWait={setWaitlist ? toggleWait : undefined}
               waitError={waitError}
             />
-            {timeLine && (
-              <p className="mt-3 rounded-xl bg-neu-base px-3.5 py-3 text-small text-slate-300 shadow-pressed-low">
-                <span className="font-semibold text-slate-50">{timeLine}</span>, locked in for {totals.payments === 1 ? "these 28 days" : `your whole ${totals.payments * 28}-day plan`}.
-              </p>
-            )}
           </>
         )}
       </div>
       </div>
 
-      <CheckoutBar priceCents={totals.firstPaymentCents} priceNote={barNote} detail={barDetail} hint={hint} actionLabel="Review" onAction={() => setReviewOpen(true)} />
+      <CheckoutBar priceCents={totals.firstPaymentCents} priceNote={barNote} detail={barDetail} total={barTotal} hint={hint} actionLabel="Review" onAction={() => setReviewOpen(true)} />
 
       <Dialog
         open={reviewOpen}
@@ -412,7 +402,7 @@ export function NewPlanForm({
               {totals.people} (you and {totals.people - 1} more)
             </Row>
           )}
-          {timeLine && <Row label="Weekly time">{timeLine}</Row>}
+          {timeLine && <Row label={isFamily ? "Your weekly time" : "Weekly time"}>{timeLine}</Row>}
           <Row label={isFamily ? "Each person, every 28 days" : "Every 28 days"}>{usd(totals.perPaymentCents)}</Row>
           {!isFamily && personalDiscountPercent > 0 && (
             <Row label="Your discount">
@@ -439,16 +429,19 @@ export function NewPlanForm({
             className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-s-50))]"
           />
           <span>
-            {totals.payments === 1 ? (
-              <>I&apos;m paying for 28 days ({usd(totals.perPaymentCents)}), no further commitment.</>
-            ) : (
+            I have read and agree to the{" "}
+            <a href="/terms#payment-plans" target="_blank" rel="noopener noreferrer" className="font-semibold text-[rgb(var(--c-s-50))] underline underline-offset-2">
+              Terms and Conditions
+            </a>
+            {isFamily && (
               <>
-                I&apos;m committing to {totals.payments} installments, one every 28 days, of {usd(totals.perPaymentCents)} each.
+                , including the{" "}
+                <a href="/terms#family-plans" target="_blank" rel="noopener noreferrer" className="font-semibold text-[rgb(var(--c-s-50))] underline underline-offset-2">
+                  family plan rules
+                </a>
               </>
-            )}{" "}
-            I understand I am billed every 28 days (13 times a year, not 12), so a month here means one 28-day bill. My selected weekly time is reserved for me exclusively and auto-booked automatically every week this plan stays active, I don&apos;t need to book it myself. If a
-            specific week doesn&apos;t work for me, I&apos;ll message support rather than rescheduling it myself. Money spent is{" "}
-            <span className="font-medium text-[rgb(var(--c-s-50))]">non-refundable</span> once a class happens.
+            )}
+            .
           </span>
         </label>
         {error && (

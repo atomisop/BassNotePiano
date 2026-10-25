@@ -21,6 +21,8 @@ export function CheckoutBar(props: {
   /** After the price, e.g. "first payment" or "every 28 days". */
   priceNote: string;
   detail: string;
+  /** The whole plan's price, shown under the detail for a plan of more than one bill. */
+  total?: string | null;
   /** What is still missing; when set it replaces the detail and the button is off. */
   hint: string | null;
   actionLabel: string;
@@ -50,7 +52,7 @@ export function CheckoutBar(props: {
   );
 }
 
-function Bar({ priceCents, priceNote, detail, hint, actionLabel, onAction }: { priceCents: number; priceNote: string; detail: string; hint: string | null; actionLabel: string; onAction: () => void }) {
+function Bar({ priceCents, priceNote, detail, total, hint, actionLabel, onAction }: { priceCents: number; priceNote: string; detail: string; total?: string | null; hint: string | null; actionLabel: string; onAction: () => void }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl bg-neu-lift p-3 shadow-raised-high ring-1 ring-[rgb(var(--c-s-50)/0.1)]">
       <div className="min-w-0 flex-1" aria-live="polite">
@@ -58,6 +60,7 @@ function Bar({ priceCents, priceNote, detail, hint, actionLabel, onAction }: { p
           <NumberTicker value={priceCents} format={usd} /> <span className="text-small font-normal text-slate-400">{priceNote}</span>
         </p>
         <p className={cn("mt-0.5 text-small leading-snug", hint ? "text-amber-300" : "text-slate-400")}>{hint ?? detail}</p>
+        {total && <p className="text-small font-medium leading-snug text-slate-200">{total}</p>}
       </div>
       <button type="button" disabled={hint !== null} onClick={onAction} className={buttonVariants({ variant: "primary", className: "shrink-0" })}>
         {actionLabel}
