@@ -318,7 +318,7 @@ export function NewPlanForm({
                   </button>
                 )}
                 </div>
-                <AccountCheckLine state={stateFor(i)} />
+                <AccountCheckLine state={stateFor(i)} email={email.trim()} />
               </li>
             ))}
           </ul>

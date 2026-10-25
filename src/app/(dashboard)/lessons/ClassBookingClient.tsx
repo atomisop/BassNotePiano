@@ -26,6 +26,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { Ticket } from "lucide-react";
+import { InviteToRegisterButton } from "@/components/billing/InviteToRegisterButton";
 import { Tabs } from "@/components/ui/Tabs";
 import { MessageSupportButton } from "@/components/lessons/MessageSupportButton";
 import { buttonVariants } from "@/components/ui/button";
@@ -405,7 +406,7 @@ function AttendeeEmailRow({
         placeholder="student@email.com"
         className="min-w-0 flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
       />
-      <span className="w-28 shrink-0 text-small">
+      <span className="shrink-0 text-small">
         {value.trim() === "" ? null : status?.checking ? (
           <span className="text-slate-500">Checking…</span>
         ) : status?.verified ? (
@@ -416,7 +417,10 @@ function AttendeeEmailRow({
         ) : status?.found ? (
           <span className="text-red-400">Not verified</span>
         ) : status ? (
-          <span className="text-red-400">No account found</span>
+          <span className="flex items-center gap-1.5 text-red-400">
+            No account
+            <InviteToRegisterButton email={value.trim()} />
+          </span>
         ) : null}
       </span>
       {removable && (
@@ -924,11 +928,6 @@ export function ClassBookingClient({
                   Add it · ${(fifthClassOffer.priceCents / 100).toFixed(fifthClassOffer.priceCents % 100 === 0 ? 0 : 2)}
                 </button>
               </div>
-            )}
-            {weeklyLimited && (
-              <p className="mt-2 text-small text-slate-500">
-                Your plan covers one class a week. A second class in the same week is extra time, paid separately.
-              </p>
             )}
 
             {/* One row: who the class is for, and the credits there are to spend. */}

@@ -74,6 +74,7 @@ export function TwoPaneLayout({
   header,
   mobile = "switch",
   showDetail = false,
+  bleed = false,
   className = "",
 }: {
   list: ReactNode;
@@ -81,8 +82,24 @@ export function TwoPaneLayout({
   header?: ReactNode;
   mobile?: "switch" | "stack";
   showDetail?: boolean;
+  /**
+   * Fill the whole area under the top bar, edge to edge, with no window around it: the page's own side and bottom padding is cancelled and the
+   * panes take the full height (leaving room for the phone dock). For Messages.
+   */
+  bleed?: boolean;
   className?: string;
 }) {
+  if (bleed) {
+    return (
+      <div className="-mx-4 -mb-32 -mt-4 md:-mx-6 md:-mt-5 lg:-mb-8">
+        <div className={`flex h-[calc(100dvh-3rem)] overflow-hidden pb-24 lg:pb-0 ${className}`}>
+          <div className={`${showDetail ? "hidden md:flex" : "flex"} min-w-0 w-full md:w-[var(--container-pane)] md:shrink-0`}>{list}</div>
+          <div className={`${showDetail ? "flex" : "hidden md:flex"} min-w-0 flex-1 [&>*]:min-w-0 [&>*]:flex-1`}>{detail}</div>
+        </div>
+      </div>
+    );
+  }
+
   if (mobile === "stack") {
     return (
       <div className="mx-auto w-full max-w-wide">

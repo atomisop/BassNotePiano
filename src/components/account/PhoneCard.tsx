@@ -1,5 +1,6 @@
 "use client";
 
+import { Hint } from "@/components/ui/Hint";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Phone } from "lucide-react";
@@ -121,7 +122,10 @@ export function PhoneCard({ state }: { state: PhoneState }) {
   return (
     <div ref={ref} data-phone-card className="glass-surface p-6">
       <div className="flex items-start justify-between gap-3">
-        <h2 className="text-body font-semibold text-slate-50">Phone number</h2>
+        <h2 className="flex items-center gap-1 text-body font-semibold text-slate-50">
+          Phone number
+          <Hint>{PHONE_HELP} Used to match your payments and reach you. Never shared.</Hint>
+        </h2>
         {mode === "view" && state.phone && (
           <span className={`rounded-full px-2.5 py-0.5 text-small font-medium ${state.verified ? "bg-[rgb(var(--signal)/0.16)] text-signal-fg" : "bg-slate-700/60 text-slate-300"}`}>
             {state.verified ? "Verified" : "Saved"}
@@ -137,7 +141,6 @@ export function PhoneCard({ state }: { state: PhoneState }) {
               <p className="flex items-center gap-2 text-body text-slate-100">
                 <Phone className="h-4 w-4 text-slate-500" strokeWidth={1.5} /> {shown}
               </p>
-              {plain && <p className="text-small text-slate-500">We use it to help match your payments and reach you. It is never shared.</p>}
               <div className="flex flex-wrap gap-2">
                 <button type="button" className={plainBtn} onClick={() => { setDone(false); setNumber(""); setMode("number"); }}>
                   Change number
@@ -153,14 +156,6 @@ export function PhoneCard({ state }: { state: PhoneState }) {
 
           {mode === "number" && (
             <>
-              <p className="text-small text-slate-500">
-                {plain
-                  ? "Add the number you use for Zelle and calls. We use it to help match your payments."
-                  : state.verified
-                    ? "Enter your new number. Your current one stays until the new one is confirmed."
-                    : "Add a number and confirm it with a 6-digit text."}{" "}
-                {PHONE_HELP}
-              </p>
               <input
                 type="tel"
                 inputMode="tel"

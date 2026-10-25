@@ -310,27 +310,11 @@ function MessagesInner({
   }
 
   return (
-    // 100dvh, not 100vh: unlike the app shell (which deliberately stays put
-    // through Safari's toolbar auto-hide, see (dashboard)/layout.tsx's own
-    // comment on that choice), this pane *should* shrink when the on-screen
-    // keyboard opens for the message input below. 100vh is measured against
-    // the large viewport and never accounts for the keyboard at all, so
-    // this box stayed its full height with the keyboard covering the
-    // bottom of it, and the only way anything could bring the now-hidden
-    // input back into view was scrolling the whole pane up, taking the
-    // header (the person you're actually talking to) off the top of the
-    // screen with it. 100dvh tracks the real visible viewport continuously,
-    // keyboard included, so the header and input (both fixed-size flex
-    // children, see ChatWindow's own h-full flex-col) stay pinned in place
-    // and only the message list in between actually shrinks.
-    //
-    // The 13.5rem (14.5rem from md:) is the shell's real chrome: 4rem TopBar,
-    // the <main> top padding, and its pb-32 that clears the floating dock.
-    // It was 9rem, which only fit because chat auto-scroll used to shove the
-    // whole shell upward to compensate; that is fixed, so the pane must fit.
+    // Full screen under the top bar (TwoPaneLayout `bleed`): 100dvh, not 100vh, so the box shrinks with the on-screen keyboard and the
+    // header and the input stay pinned while only the message list in between gives way.
     <>
       <TwoPaneLayout
-        className="glass-surface h-[calc(100dvh-13.5rem)] overflow-hidden md:h-[calc(100dvh-14.5rem)]"
+        bleed
         showDetail={hasActivePane}
         list={
           <ConversationSidebar

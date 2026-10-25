@@ -4,6 +4,7 @@ import { AlertCircle, Check } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import type { MemberCheck } from "@/lib/familyMemberCheck";
+import { InviteToRegisterButton } from "@/components/billing/InviteToRegisterButton";
 
 /** "ready" is an account that exists; the rest of the states follow the invitation sent to it. */
 export type CheckState = MemberCheck | "checking" | "limited" | "duplicate" | "failed" | "sending" | "waiting" | "accepted" | "declined";
@@ -20,7 +21,7 @@ const PROBLEM: Record<Exclude<CheckState, "ready" | "checking" | "sending" | "wa
 };
 
 /** The line under one email box: a small square loader while the account is looked up, then a green check, or why not. Takes no room until there is something to say. */
-export function AccountCheckLine({ state }: { state: CheckState | null }) {
+export function AccountCheckLine({ state, email }: { state: CheckState | null; email?: string }) {
   const reduced = useReducedMotion();
   if (!state) return null;
   return (
@@ -48,6 +49,7 @@ export function AccountCheckLine({ state }: { state: CheckState | null }) {
         <>
           <AlertCircle aria-hidden className="h-4 w-4 shrink-0 text-amber-300" />
           <span className="text-amber-300">{PROBLEM[state]}</span>
+          {state === "no_account" && email && <InviteToRegisterButton email={email} />}
         </>
       )}
     </p>

@@ -12,6 +12,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { usePricing } from "@/components/billing/PricingContext";
 import { toast } from "@/components/ui/Toaster";
 import { Dialog } from "@/components/ui/Dialog";
+import { Hint } from "@/components/ui/Hint";
 import { PaymentPlanTierGrid } from "@/components/marketing/PaymentPlanTierGrid";
 import { planProgress } from "@/lib/planProgress";
 
@@ -254,7 +255,10 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
 
           {activePlan.family && (
             <div className="rounded-xl bg-neu-base p-4 text-small text-slate-300 shadow-pressed-low">
-              <p className="font-semibold text-slate-50">Family plan</p>
+              <p className="flex items-center gap-1 font-semibold text-slate-50">
+                Family plan
+                <Hint>The length and weekly time of a family plan are changed by the teacher.</Hint>
+              </p>
               <p className="mt-1">In this family: {activePlan.family.memberNames.join(", ")}.</p>
               {activePlan.family.weeklyTime && <p className="mt-1">Weekly class together: {activePlan.family.weeklyTime}.</p>}
               <p className="mt-1">
@@ -262,7 +266,6 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
                   ? "You pay everyone's 28-day bill from your own bank account."
                   : `${activePlan.family.payerName ?? "The person who set it up"} pays your 28-day bill from their own bank account.`}
               </p>
-              <p className="mt-1 text-slate-400">The length and weekly time of a family plan are changed by the teacher.</p>
             </div>
           )}
         </div>

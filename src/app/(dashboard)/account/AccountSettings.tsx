@@ -33,6 +33,7 @@ import {
   type NotificationPreferencesInput,
 } from "./actions";
 import { SettingsLayout } from "@/components/layout/PageLayouts";
+import { Hint } from "@/components/ui/Hint";
 import { startNavigation } from "@/lib/navigationState";
 import { PhoneCard, type PhoneState } from "@/components/account/PhoneCard";
 import { formatPhone } from "@/lib/phone";
@@ -123,10 +124,13 @@ function TabIcon({ path, className = "h-[18px] w-[18px] shrink-0" }: { path: str
   );
 }
 
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionCard({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="glass-surface p-6">
-      <h2 className="text-body text-slate-50 font-semibold">{title}</h2>
+      <h2 className="flex items-center gap-1 text-body text-slate-50 font-semibold">
+        {title}
+        {hint && <Hint>{hint}</Hint>}
+      </h2>
       <div className="mt-4">{children}</div>
     </div>
   );
@@ -349,10 +353,7 @@ function DiscordAccountCard({ username }: { username: string | null }) {
   const [busy, setBusy] = useState(false);
   return (
     <SectionCard title="Discord">
-      <p className="text-small text-slate-500">
-        Live classes happen in a private Discord call. Connecting gives you access to yours.
-      </p>
-      <p className="mt-3 text-small text-slate-100">
+      <p className="text-small text-slate-100">
         {username ? (
           <>
             Connected as <span className="font-semibold">{username}</span>
@@ -430,18 +431,17 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
         </SectionCard>
       </AccountGroup>
 
-      <AccountGroup id="contact" title="Contact" blurb="How we reach you, and how we know it is you.">
+      <AccountGroup id="contact" title="Contact">
         <SectionCard title="Email address">
           <div className="flex flex-wrap items-center">
             <span className="text-small text-slate-100">{account.email}</span>
             <Badge ok={account.emailVerified}>{account.emailVerified ? "Verified" : "Not verified"}</Badge>
           </div>
-          <p className="mt-2 text-small text-slate-500">Sign-in codes, receipts and class reminders go here. To change it, message the studio from the Messages tab.</p>
         </SectionCard>
         <PhoneCard state={account.phone} />
       </AccountGroup>
 
-      <AccountGroup id="security" title="Sign-in & security" blurb="Your password, and where you are signed in.">
+      <AccountGroup id="security" title="Sign-in & security">
         <PasswordSection />
         {twoStep && <AdminTwoStepCard enabled={twoStep.enabled} backupLeft={twoStep.backupLeft} />}
       </AccountGroup>
@@ -450,13 +450,10 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
         <DiscordAccountCard username={account.discordUsername} />
       </AccountGroup>
 
-      <AccountGroup id="privacy" title="Privacy & data" blurb="What we keep, and getting a copy of it.">
+      <AccountGroup id="privacy" title="Privacy & data">
         <PrivacySection history={history} />
         <SectionCard title="Download my data">
-          <p className="text-small text-slate-500">
-            A copy of your account details, classes, payments, progress and any teacher notes shared with you, as one file.
-          </p>
-          <a href="/api/account/export" download className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}>
+          <a href="/api/account/export" download className={buttonVariants({ variant: "secondary", size: "sm" })}>
             Download my data
           </a>
         </SectionCard>
@@ -483,7 +480,7 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
         <div className="mt-3 max-h-96 space-y-2 overflow-y-auto rounded-xl p-3 bg-neu-base shadow-raised-low">
           {history.length === 0 ? (
             <p className="py-6 text-center text-small text-slate-500">
-              Nothing here yet. Questions you ask Atom while signed in will show up here.
+              Nothing here yet.
             </p>
           ) : (
             history.map((message, index) => (
@@ -564,10 +561,7 @@ function AccountSettingsInner({
     <>
       <SettingsLayout
         header={
-          <div>
-            <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Yours to control</p>
-            <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Settings</h1>
-          </div>
+          <h1 className="font-hero text-hero font-bold text-balance text-slate-50">Settings</h1>
         }
         menu={
           <>
@@ -769,7 +763,7 @@ function PasswordSection() {
           {awaitingCode && (
             <div className="space-y-2">
               <p className="text-small text-slate-500">
-                We emailed a 6-digit code to your account&apos;s email address. It expires in 10 minutes.
+                Enter the 6-digit code we emailed you.
               </p>
               <input
                 type="text"
@@ -970,7 +964,6 @@ function PushCard() {
 
   return (
     <SectionCard title="Reminders on your phone">
-      <p className="text-small text-slate-400">Get a push notification before a class and when it is time to practice, under the same reminder switches as email.</p>
       {state === "needs-home-screen" && (
         <p className="mt-3 text-small text-slate-300">
           On iPhone and iPad, first add Bass Note Piano to your Home Screen: tap the Share button in Safari, then &quot;Add to Home Screen&quot;, open it from there and come back to this page.
@@ -1035,10 +1028,7 @@ function CalendarFeedCard() {
   }
 
   return (
-    <SectionCard title="Your classes in your calendar">
-      <p className="text-small text-slate-400">
-        Subscribe once and every class you book shows up in Apple Calendar, Google Calendar or Outlook, and moves or disappears when you change it. Keep the link private: anyone who has it can see your class times.
-      </p>
+    <SectionCard title="Your classes in your calendar" hint="Keep the link private: anyone who has it can see your class times.">
       {links === undefined ? (
         <p className="mt-3 text-small text-slate-500">Loading…</p>
       ) : links === null ? (
@@ -1277,7 +1267,7 @@ function DangerZoneSection() {
         {stage === "code" && (
           <form onSubmit={handleDelete} className="mt-4 space-y-3">
             <p className="text-small text-slate-500">
-              We emailed a 6-digit code to your account&apos;s email address. It expires in 10 minutes.
+              Enter the 6-digit code we emailed you.
             </p>
             <input
               type="text"
