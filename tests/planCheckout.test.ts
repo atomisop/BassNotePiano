@@ -78,15 +78,15 @@ describe("what it costs right now", () => {
 
 describe("what is still missing", () => {
   it("a solo plan needs only a weekly time", () => {
-    expect(missingForCheckout({ audience: "SOLO", memberRows: [], slotChosen: false })).toBe("Pick your weekly time");
+    expect(missingForCheckout({ audience: "SOLO", memberRows: [], slotChosen: false })).toBe("Pick a weekly time");
     expect(missingForCheckout({ audience: "SOLO", memberRows: [], slotChosen: true })).toBeNull();
   });
 
   it("a family needs each person's email first, then the time", () => {
-    expect(missingForCheckout({ audience: "FAMILY", memberRows: [], slotChosen: true })).toMatch(/at least one more person/);
-    expect(missingForCheckout({ audience: "FAMILY", memberRows: [""], slotChosen: true })).toMatch(/empty row/);
-    expect(missingForCheckout({ audience: "FAMILY", memberRows: ["a@x.com", ""], slotChosen: false })).toMatch(/empty row/);
-    expect(missingForCheckout({ audience: "FAMILY", memberRows: ["a@x.com", "b@x.com"], slotChosen: false })).toBe("Pick your weekly time");
+    expect(missingForCheckout({ audience: "FAMILY", memberRows: [], slotChosen: true })).toMatch(/family member/);
+    expect(missingForCheckout({ audience: "FAMILY", memberRows: [""], slotChosen: true })).toMatch(/empty email/);
+    expect(missingForCheckout({ audience: "FAMILY", memberRows: ["a@x.com", ""], slotChosen: false })).toMatch(/empty email/);
+    expect(missingForCheckout({ audience: "FAMILY", memberRows: ["a@x.com", "b@x.com"], slotChosen: false })).toBe("Pick a weekly time");
     expect(missingForCheckout({ audience: "FAMILY", memberRows: ["a@x.com"], slotChosen: true })).toBeNull();
   });
 });

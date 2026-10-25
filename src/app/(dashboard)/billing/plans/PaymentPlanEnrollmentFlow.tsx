@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { PaymentPlanCadence, PaymentPlanTerm, ZellePaymentStatus } from "@prisma/client";
 import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPlan, MAX_FAMILY_MEMBERS, type PricingConfig, OFFERED_PLAN_CADENCE } from "@/lib/classCreditPricing";
 import { PRICE_CHANGED_MESSAGE, type Audience } from "@/lib/planCheckout";
+import { GuardedButton } from "@/components/ui/GuardedButton";
 import { useFamilyInvites } from "@/components/billing/useFamilyInvites";
 import { ZelleUnlockGate } from "@/components/billing/ZelleUnlockGate";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -139,7 +140,6 @@ function SwitchToFamilyPanel({
     return (
       <div className="mt-6 rounded-xl bg-neu-base p-4 shadow-raised-low">
         <p className="text-small font-semibold text-slate-50">Joining others? Switch to a family plan</p>
-        <p className="mt-1 text-small text-slate-400">Everyone gets the family price. Your current plan keeps running until the family&apos;s first payment is approved, then it is replaced with the same weekly time.</p>
         <button type="button" onClick={() => setOpen(true)} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}>
           Add family members
         </button>
@@ -196,13 +196,16 @@ function SwitchToFamilyPanel({
             </button>
           )}
           {invites.error && <p className="text-small text-red-400">{invites.error}</p>}
-          <p className="text-small text-slate-400">Everyone has to accept first. Then enter your password to confirm, and we email you a code.</p>
           <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" aria-label="Your password" className={field} />
           {error && <p className="text-small text-red-400">{error}</p>}
           <div className="flex gap-2">
-            <button type="button" disabled={busy || !allAccepted || !password} onClick={sendCode} className={buttonVariants({ variant: "primary", size: "sm" })}>
+            <GuardedButton
+              reason={busy ? null : typed.length === 0 ? "Add an email" : !allAccepted ? "Waiting for everyone to accept" : !password ? "Enter your password" : null}
+              onClick={sendCode}
+              className={buttonVariants({ variant: "primary", size: "sm" })}
+            >
               {busy ? "Sending…" : "Email me a code"}
-            </button>
+            </GuardedButton>
             <button type="button" onClick={() => setOpen(false)} className={buttonVariants({ variant: "secondary", size: "sm" })}>Cancel</button>
           </div>
         </>

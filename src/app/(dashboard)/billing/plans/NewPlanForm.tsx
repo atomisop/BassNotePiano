@@ -17,6 +17,8 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { Tabs } from "@/components/ui/Tabs";
 import { buttonVariants } from "@/components/ui/button";
+import { toast } from "@/components/ui/Toaster";
+import { cn } from "@/lib/utils";
 
 function usd(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -198,27 +200,22 @@ export function NewPlanForm({
   const good = (st: CheckState | null) => st === "accepted" || (!gated && st === "ready");
   const toInvite = gated ? memberRows.filter((_, i) => rowStates[i] === "ready").map((r) => r.trim()) : [];
   const accountHint = rowStates.includes("checking")
-    ? "Checking the accounts…"
+    ? "Checking the accounts"
     : rowStates.some((st) => st === "sending" || st === "waiting")
-      ? "Waiting for everyone to accept"
+      ? "Waiting for them to accept"
       : toInvite.length > 0
-        ? "Send the invitations below"
+        ? "Send the invitations first"
         : rowStates.some((st) => st !== null && !good(st))
-          ? "Fix or remove the email marked above"
+          ? "Fix the marked email"
           : null;
   // In the order the page asks: the people, their yes, then the time.
   const missing = missingForCheckout({ audience, memberRows, slotChosen: slot !== null });
-  const hint = (missing !== "Pick your weekly time" ? missing : null) ?? accountHint ?? missing;
+  const hint = (missing !== "Pick a weekly time" ? missing : null) ?? accountHint ?? missing;
   const planName = describePaymentPlan(cadence, term).replace(/, .*/, "");
   const classesTotal = totals.classesPerPayment * totals.payments;
   const timeLine = slot ? `${DAY_NAMES[slot.dayOfWeek]}s, ${formatTimeRange(slot.startTime, CLASS_MINUTES)}` : null;
 
   const barNote = isFamily ? "first payment" : totals.payments === 1 ? "for 28 days" : "every 28 days";
-  const barDetail = isFamily
-    ? `${totals.people} people × ${usd(totals.perPaymentCents)} every 28 days`
-    : totals.payments === 1
-      ? `${totals.classesPerPayment} classes, no commitment`
-      : `${planName} · ${totals.payments} payments`;
   // The whole plan, so a 3 or 6 month plan shows what it adds up to before anyone starts.
   const barTotal = totals.payments > 1 ? `Whole plan: ${usd(totals.allPeopleTermCents)} over ${totals.payments} payments (${totals.payments * 28} days)` : null;
 
@@ -377,7 +374,7 @@ export function NewPlanForm({
       </div>
       </div>
 
-      <CheckoutBar priceCents={totals.firstPaymentCents} priceNote={barNote} detail={barDetail} total={barTotal} hint={hint} actionLabel="Review" onAction={() => setReviewOpen(true)} />
+      <CheckoutBar priceCents={totals.firstPaymentCents} priceNote={barNote} total={barTotal} hint={hint} actionLabel="Review" onAction={() => setReviewOpen(true)} />
 
       <Dialog
         open={reviewOpen}
@@ -387,7 +384,16 @@ export function NewPlanForm({
         }}
         title="Review and start"
         footer={
-          <button type="button" onClick={start} disabled={busy || !acknowledged || hint !== null} className={buttonVariants({ variant: "primary", className: "w-full sm:w-auto" })}>
+          <button
+            type="button"
+            aria-disabled={busy || !acknowledged || hint !== null}
+            onClick={() => {
+              if (busy) return;
+              if (!acknowledged) return void toast.warning("Tick the box to agree");
+              void start();
+            }}
+            className={buttonVariants({ variant: "primary", className: cn("w-full sm:w-auto", (busy || !acknowledged) && "opacity-45 saturate-50", !acknowledged && "cursor-not-allowed") })}
+          >
             {busy && <MorphingSquare size={14} className="mr-2 shrink-0" />}
             {busy ? "Starting…" : isFamily ? "Start family plan" : "Start plan"}
           </button>

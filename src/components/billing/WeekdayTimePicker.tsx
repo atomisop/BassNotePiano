@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { Bell, Lock } from "lucide-react";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { DAY_NAMES, DAY_ORDER, DAY_SHORT, formatTimeLabel } from "@/lib/weeklyTimeLabels";
-import { MAX_WAITLIST_ENTRIES } from "@/lib/slotWaitlistRules";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -95,9 +94,7 @@ export function WeekdayTimePicker({
         })}
       </div>
 
-      {day === null ? (
-        <p className="mt-3 text-small text-slate-500">Pick a day to see its times.</p>
-      ) : (
+      {day === null ? null : (
         <div role="group" aria-label={`${DAY_NAMES[day]} times`} className="mt-3 grid grid-cols-3 gap-2">
           {times.map(({ slot, held }) => {
             const key = keyOf(slot);
@@ -140,16 +137,16 @@ export function WeekdayTimePicker({
         </div>
       )}
 
-      {looking && onWait && (
-        <div className="mt-3 rounded-xl bg-neu-base p-3.5 shadow-pressed-low" role="status">
-          <p className="text-small text-slate-300">
-            <span className="font-semibold text-slate-50">
-              {DAY_NAMES[looking.dayOfWeek]}s at {formatTimeLabel(looking.startTime)}
-            </span>{" "}
-            belongs to another student right now.{" "}
-            {lookingWaiting ? "We will message you the moment it opens up." : `Want it? We will message you the moment it opens up (you can wait for up to ${MAX_WAITLIST_ENTRIES} times).`}
-          </p>
-          <WaitButton waiting={lookingWaiting} busy={lookingBusy} onPress={() => onWait(looking, !lookingWaiting)} />
+      {looking && onWait && !lookingWaiting && (
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-neu-base p-3 shadow-pressed-low" role="status">
+          <span className="flex min-w-0 items-center gap-2 text-small font-semibold text-slate-100">
+            <Lock aria-hidden className="h-4 w-4 shrink-0 text-slate-500" />
+            <span className="truncate">
+              {DAY_SHORT[looking.dayOfWeek]} {formatTimeLabel(looking.startTime)}
+            </span>
+            <span className="rounded-full bg-slate-800 px-2 py-0.5 text-small font-medium text-slate-400">Taken</span>
+          </span>
+          <WaitButton waiting={false} busy={lookingBusy} onPress={() => onWait(looking, true)} compact />
         </div>
       )}
 
@@ -161,14 +158,13 @@ export function WeekdayTimePicker({
 
       {myWaits.length > 0 && onWait && (
         <div className="mt-3">
-          <p className="text-small font-medium text-slate-400">You are waiting for</p>
-          <ul className="mt-1.5 space-y-1.5">
+          <ul aria-label="Times you are waiting for" className="space-y-1.5">
             {myWaits.map((slot) => (
               <li key={keyOf(slot)} className="flex items-center justify-between gap-3 rounded-control bg-neu-base px-3 py-2 shadow-pressed-low">
                 <span className="flex min-w-0 items-center gap-2 text-small text-slate-200">
                   <Bell aria-hidden className="h-3.5 w-3.5 shrink-0 text-signal-fg" fill="currentColor" />
                   <span className="truncate">
-                    {DAY_NAMES[slot.dayOfWeek]}s at {formatTimeLabel(slot.startTime)}
+                    {DAY_SHORT[slot.dayOfWeek]} {formatTimeLabel(slot.startTime)}
                   </span>
                 </span>
                 <WaitButton waiting busy={busyKey === keyOf(slot)} onPress={() => onWait(slot, false)} compact />

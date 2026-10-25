@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -11,7 +12,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
 import { FULLSCREEN_NAV_EVENT, setAtomPanelOpen } from "@/lib/overlayNav";
-import { ATOM_TRIGGER_EVENT, OPEN_ATOM_CASE_EVENT, OPEN_ATOM_EVENT, isAtomTriggerPresent } from "@/lib/atomTrigger";
+import { ATOM_TRIGGER_EVENT, OPEN_ATOM_CASE_EVENT, OPEN_ATOM_EVENT, atomHiddenOn, isAtomTriggerPresent } from "@/lib/atomTrigger";
 import { SPRING } from "@/lib/motionTokens";
 
 /**
@@ -345,6 +346,7 @@ function TypingIndicator() {
 }
 
 export function AssistantWidget() {
+  const hiddenHere = atomHiddenOn(usePathname());
   const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
@@ -778,7 +780,8 @@ export function AssistantWidget() {
     setError(null);
   }
 
-  if (!mounted) return null;
+  // Not on the pricing screens: Atom stays out of the way there.
+  if (!mounted || hiddenHere) return null;
 
   const inSupportMode = Boolean(activeEscalationId);
   // Once an admin resolves a thread, it's dead, history stays, but neither

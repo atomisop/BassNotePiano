@@ -1,15 +1,18 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import GenerateAIButton from "@/components/ui/button-33";
-import { openAtom, setAtomTriggerPresent } from "@/lib/atomTrigger";
+import { atomHiddenOn, openAtom, setAtomTriggerPresent } from "@/lib/atomTrigger";
 
 /** Top-bar trigger for Atom. While mounted, Atom's floating launcher hides. */
 export function AskAiButton({ compactOnPhones = false, surface }: { compactOnPhones?: boolean; surface?: string }) {
+  const hidden = atomHiddenOn(usePathname());
   useEffect(() => {
     setAtomTriggerPresent(true);
     return () => setAtomTriggerPresent(false);
   }, []);
+  if (hidden) return null;
 
   // data-atom-trigger: Atom's greeting bubble reads this element's position to
   // sit right under the button.

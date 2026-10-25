@@ -311,7 +311,7 @@ function TabContent({
   twoStep: AccountSettingsProps["twoStep"];
 }) {
   if (tab === "notifications") return <NotificationSettingsSection initial={initialNotificationPreferences} />;
-  if (tab === "membership") return <MembershipSection hasCurriculumAccess={hasCurriculumAccess} activePlan={activePlan} />;
+  if (tab === "membership") return <MembershipSection activePlan={activePlan} />;
   if (tab === "appearance") return <AppearanceSection />;
   if (tab === "tutorials") return <TutorialsSection />;
   return <AccountSection account={account} history={assistantHistory} twoStep={twoStep} />;
@@ -618,30 +618,13 @@ export function AccountSettings(props: AccountSettingsProps) {
   );
 }
 
-function MembershipSection({
-  hasCurriculumAccess,
-  activePlan,
-}: {
-  hasCurriculumAccess: boolean;
-  activePlan: ActivePlanInfo | null;
-}) {
+function MembershipSection({ activePlan }: { activePlan: ActivePlanInfo | null }) {
   return (
     <div className="space-y-6">
       <SectionCard title="Membership & purchases">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl p-4 bg-neu-base shadow-raised-low">
-          <div>
-            <p className="text-small text-slate-100">{hasCurriculumAccess ? "Curriculum included" : "No active class plan"}</p>
-          </div>
-          {!hasCurriculumAccess && (
-            <Link href="/billing/plans" className={buttonVariants({ variant: "primary", size: "sm" })}>
-              See class plans
-            </Link>
-          )}
-        </div>
-
         <Link
           href="/billing/plans"
-          className="mt-3 flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low"
+          className="flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low"
         >
           Payment plan
           <span className="text-slate-500">→</span>

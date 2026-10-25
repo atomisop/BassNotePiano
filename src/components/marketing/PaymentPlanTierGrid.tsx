@@ -238,7 +238,7 @@ export function PaymentPlanTierGrid({
 
       {/* Phones: one plan at a time, swipe left and right (the 6-month "best value" plan opens first). */}
       <div className={narrow ? "@xl:hidden" : "lg:hidden"}>
-        <SnapCarousel label="Plans" peek={28} gap={12} defaultIndex={FEATURED_INDEX} viewportClassName="-my-6 py-8">
+        <SnapCarousel label="Plans" peek={34} gap={12} defaultIndex={FEATURED_INDEX} viewportClassName="-my-6 py-8">
           {TERM_OPTIONS.map((option) => (
             <div key={option.value} className="relative flex h-full flex-col">
               {renderCard(option).node}
