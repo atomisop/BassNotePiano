@@ -137,7 +137,7 @@ export function IosBanner({
           type="button"
           onClick={() => close("dismissed")}
           aria-label="Dismiss"
-          className="absolute right-2 top-2 hidden h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-500/20 hover:text-slate-200 [@media(hover:hover)]:flex"
+          className="hit-slop absolute right-2 top-2 hidden h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-500/20 hover:text-slate-200 [@media(hover:hover)]:flex"
         >
           <X className="h-4 w-4" />
         </button>

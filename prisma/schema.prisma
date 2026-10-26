@@ -2074,3 +2074,18 @@ model SlotWaitlist {
   @@unique([userId, scheduleId, chunkIndex])
   @@index([scheduleId, chunkIndex, createdAt])
 }
+
+// One row per "do this once" request: the browser makes a key when a form opens and sends it with the submit, so a double tap, a
+// retry after a dropped connection or a second tab cannot start a plan, book a class or send a payment twice. Only a request that
+// WORKED keeps its row (a failed one is released so the person can try again); the reply is stored and handed back for a repeat.
+model IdempotencyKey {
+  id        String   @id @default(cuid())
+  userId    String
+  scope     String
+  key       String
+  response  Json?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, scope, key])
+  @@index([createdAt])
+}

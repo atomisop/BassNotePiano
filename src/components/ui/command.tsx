@@ -134,7 +134,13 @@ const CommandItem = React.forwardRef<
 ));
 CommandItem.displayName = "CommandItem";
 
+/** The keys that do this command anywhere, shown at the right edge of its row. */
+function CommandShortcut({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
+  return <span className={cn("ml-auto flex items-center gap-1", className)} {...props} />;
+}
+
 export {
+  CommandShortcut,
   Command,
   CommandDialog,
   CommandInput,

@@ -70,7 +70,49 @@ function show(kind: "success" | "error" | "warning" | "info") {
     });
 }
 
+/**
+ * A toast that can be taken back: shows an Undo button for a few seconds. Pass what to do on Undo; it is not called if the toast is
+ * ignored. Use it for quick actions that are cheap to reverse (a removed item, a dismissed notice) instead of a confirm step.
+ */
+function undo(title: string, onUndo: () => void | Promise<void>, extras: Omit<ToastExtras, "action"> = {}) {
+  return sileo.info({
+    title,
+    description: extras.description,
+    duration: extras.duration ?? 6000,
+    button: {
+      title: "Undo",
+      onClick: () => {
+        void onUndo();
+      },
+    },
+  });
+}
+
+/**
+ * One toast that follows a promise: a spinner while it runs, then success or the error. `error` may be a function of the thrown value.
+ * Resolves to the promise's own result so the caller can keep using it.
+ */
+async function run<T>(
+  work: Promise<T>,
+  messages: { loading: string; success: string | ((value: T) => string); error?: string | ((err: unknown) => string) },
+): Promise<T> {
+  const id = sileo.info({ title: messages.loading, duration: null });
+  try {
+    const value = await work;
+    sileo.dismiss(id);
+    sileo.success({ title: typeof messages.success === "function" ? messages.success(value) : messages.success });
+    return value;
+  } catch (err) {
+    sileo.dismiss(id);
+    const text = typeof messages.error === "function" ? messages.error(err) : (messages.error ?? "Something went wrong. Try again.");
+    sileo.error({ title: text });
+    throw err;
+  }
+}
+
 export const toast = {
+  undo,
+  run,
   success: show("success"),
   error: show("error"),
   warning: show("warning"),

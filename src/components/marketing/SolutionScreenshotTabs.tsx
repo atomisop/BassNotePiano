@@ -1,5 +1,6 @@
 "use client";
 
+import { BlurhashImage } from "@/components/ui/BlurhashImage";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useInView, useReducedMotion } from "framer-motion";
@@ -69,7 +70,7 @@ export function SolutionScreenshotTabs({ screens, defaultKey }: { screens: Solut
                 animation: isActive && !reduced && started ? "phone-screen-in 0.6s ease-out both" : undefined,
               }}
             >
-              <Image src={s.src} alt={isActive ? s.alt : ""} aria-hidden={!isActive} fill sizes="(min-width: 1024px) 300px, 80vw" loading={i === 0 ? "eager" : "lazy"} className="object-cover object-top" />
+              <BlurhashImage src={s.src} alt={isActive ? s.alt : ""} aria-hidden={!isActive} sizes="(min-width: 1024px) 300px, 80vw" loading={i === 0 ? "eager" : "lazy"} className="object-cover object-top" />
             </div>
           );
         })}
