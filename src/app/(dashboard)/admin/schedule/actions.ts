@@ -14,6 +14,8 @@ import { adminBookClass, rescheduleClassBooking, ClassBookingError } from "@/lib
 import { markAttendance, undoAttendance, adminCancelClassBooking, setClassInPerson, getPendingAttendanceBookings, getBookingFeed, type PendingAttendanceRow, type BookingFeedRow } from "@/lib/classScheduleAdmin";
 import { createClassSchedule, updateClassSchedule, setClassScheduleActive, ClassScheduleError, type ClassScheduleInput } from "@/lib/classScheduleManage";
 import { searchStudentsForBooking, type BookableStudent } from "@/lib/admin";
+import { createOwnerReservation, releaseOwnerReservation } from "@/lib/ownerReservationsAdmin";
+import { logAudit } from "@/lib/audit";
 
 async function requireAdmin() {
   const session = await getServerAuthSession();
@@ -173,4 +175,33 @@ export async function createVisibleTestChannelAction(): Promise<{ ok: boolean; m
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message.slice(0, 200) : "Something went wrong.", url: null };
   }
+}
+
+/** Keeps a day (or some hours of it) for a named customer so nobody can book it. */
+export async function reserveForCustomerAction(input: {
+  date: string;
+  hours: { scheduleId: string; chunkIndex: number }[] | null;
+  name: string;
+  email: string;
+  phone: string;
+  note?: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const admin = await requireAdmin();
+  try {
+    const result = await createOwnerReservation(admin.id, input);
+    await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "reservation.create", targetType: "OwnerReservation", targetId: result.groupId, detail: `${input.date} for ${input.name.trim()}` });
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+  }
+}
+
+export async function releaseReservationAction(groupId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const admin = await requireAdmin();
+  const count = await releaseOwnerReservation(groupId);
+  if (count === 0) return { ok: false, error: "That reservation was already released." };
+  await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "reservation.release", targetType: "OwnerReservation", targetId: groupId });
+  revalidatePath("/", "layout");
+  return { ok: true };
 }

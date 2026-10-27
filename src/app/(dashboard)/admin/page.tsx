@@ -43,8 +43,7 @@ export default async function AdminOverviewPage() {
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Overview</h1>
 
-      <section className="mt-6 rounded-2xl bg-neu-base p-4 shadow-raised-low">
-        <h2 className="text-body font-semibold text-slate-50">Needs you now</h2>
+      <PhoneAccordion alwaysCollapsible defaultOpen title="Needs you now" summary={attention.length === 0 ? "Nothing waiting" : `${attention.length} waiting`} className="mt-6 rounded-2xl bg-neu-base p-4 shadow-raised-low">
         {attention.length === 0 ? (
           <p className="mt-2 text-small text-slate-500">Nothing is waiting.</p>
         ) : (
@@ -59,7 +58,7 @@ export default async function AdminOverviewPage() {
             ))}
           </ul>
         )}
-      </section>
+      </PhoneAccordion>
 
       {waiting.payments.length > 0 && (
         <section className="mt-4">
@@ -76,7 +75,7 @@ export default async function AdminOverviewPage() {
       )}
 
       {followUps.length > 0 && (
-        <PhoneAccordion title="People to follow up with" summary={`${followUps.length} to follow up`} className="mt-4 rounded-2xl bg-neu-base shadow-raised-low">
+        <PhoneAccordion alwaysCollapsible title="People to follow up with" summary={`${followUps.length} to follow up`} className="mt-4 rounded-2xl bg-neu-base shadow-raised-low">
           <ul className="divide-y divide-slate-50/10">
             {followUps.map((f) => (
               <li key={f.key} className="py-2.5 text-small">
@@ -109,7 +108,7 @@ export default async function AdminOverviewPage() {
       {/* Two trend cards over the last six months, both from real rows
           (User.createdAt and VERIFIED payments). Flat stretches are real
           flat stretches, no smoothing, no seeded history. */}
-      <PhoneAccordion title="Signups and revenue" summary={formatUsd(stats.totalRevenueCents)} className="mt-8 rounded-2xl bg-neu-base shadow-raised-low md:bg-transparent md:p-0 md:shadow-none">
+      <PhoneAccordion alwaysCollapsible title="Signups and revenue" summary={formatUsd(stats.totalRevenueCents)} className="mt-4 rounded-2xl bg-neu-base shadow-raised-low">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <MetricCard
           label="Signups"
@@ -129,23 +128,25 @@ export default async function AdminOverviewPage() {
       </div>
       </PhoneAccordion>
 
-      <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <PhoneAccordion alwaysCollapsible title="Subscriptions" summary={`${subs.active} active${subs.overdue > 0 ? `, ${subs.overdue} overdue` : ""}`} warn={subs.overdue > 0} className="mt-4 rounded-2xl bg-neu-base shadow-raised-low">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Subscribers", value: String(subs.active) },
           { label: "Per 28 days", value: formatUsd(subs.monthlyCents) },
           { label: "Due this week", value: `${subs.dueSoon} · ${formatUsd(subs.dueSoonCents)}` },
           { label: "Overdue", value: String(subs.overdue), warn: subs.overdue > 0 },
         ].map((tile) => (
-          <div key={tile.label} className="rounded-xl bg-neu-base p-4 shadow-raised-low">
+          <div key={tile.label} className="rounded-xl bg-[rgb(var(--c-s-50)/0.04)] p-4">
             <p className="text-small text-slate-500">{tile.label}</p>
             <p className={`mt-1 text-body font-semibold ${tile.warn ? "text-red-300" : "text-slate-50"}`}>{tile.value}</p>
           </div>
         ))}
       </div>
+      </PhoneAccordion>
 
       {isOwner && (
-        <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <PhoneAccordion title="Recent activity" summary={`${activity.length} changes`} className="glass-surface">
+        <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+          <PhoneAccordion alwaysCollapsible title="Recent activity" summary={`${activity.length} changes`} className="glass-surface">
             {activity.length === 0 ? (
               <p className="text-small text-slate-500">Nothing yet.</p>
             ) : (
@@ -164,7 +165,7 @@ export default async function AdminOverviewPage() {
               </ul>
             )}
           </PhoneAccordion>
-          <PhoneAccordion title="Page views, last 7 days" summary={`${visits.reduce((n, v) => n + (v._sum.count ?? 0), 0).toLocaleString()} views`} className="glass-surface">
+          <PhoneAccordion alwaysCollapsible title="Page views, last 7 days" summary={`${visits.reduce((n, v) => n + (v._sum.count ?? 0), 0).toLocaleString()} views`} className="glass-surface">
             {visits.length === 0 ? (
               <p className="text-small text-slate-500">No views yet.</p>
             ) : (
@@ -180,6 +181,7 @@ export default async function AdminOverviewPage() {
           </PhoneAccordion>
           <PhoneAccordion
             id="tasks"
+            alwaysCollapsible
             title="Automatic tasks"
             summary={jobs.filter((j) => isStopped(j.state)).length > 0 ? `${jobs.filter((j) => isStopped(j.state)).length} stopped` : "All running"}
             warn={jobs.some((j) => isStopped(j.state))}
@@ -214,7 +216,7 @@ export default async function AdminOverviewPage() {
         </div>
       )}
 
-      <div className="mt-8">
+      <div className="mt-4">
         <OverviewStats stats={stats}>
           <Suspense fallback={<ModuleHealthSkeleton />}>
             <ModuleHealthSection />
