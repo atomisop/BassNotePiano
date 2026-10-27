@@ -1,5 +1,6 @@
 "use client";
 
+import { useWebOtp } from "@/lib/useWebOtp";
 import { Hint } from "@/components/ui/Hint";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -37,6 +38,7 @@ export function PhoneCard({ state }: { state: PhoneState }) {
   const [number, setNumber] = useState(state.pendingPhone ?? (plain ? "" : state.phone ?? ""));
   const [pending, setPending] = useState(state.pendingPhone);
   const [code, setCode] = useState("");
+  useWebOtp(mode === "code", setCode);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);

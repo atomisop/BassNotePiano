@@ -1,5 +1,6 @@
 "use server";
 
+import { runOnce } from "@/lib/idempotency";
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -115,14 +116,30 @@ export async function enrollInPaymentPlanAction(
   reservedScheduleId: string,
   reservedChunkIndex: number,
   expectedFirstPaymentCents?: number,
+  idempotencyKey?: string,
 ): Promise<EnrollPaymentPlanResult> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  // A double tap, a retry or a second tab with the same key starts the plan once and gets the same answer back.
+  return runOnce(session.user.id, "enroll-plan", idempotencyKey, () => enrollSolo(session.user.id, cadence, term, reservedScheduleId, reservedChunkIndex, expectedFirstPaymentCents), {
+    isSuccess: (r) => r.ok,
+    whileRunning: { ok: false, planId: null, installmentPaymentId: null, amountCents: null, error: "Starting your plan. One moment." },
+  });
+}
+
+async function enrollSolo(
+  userId: string,
+  cadence: PaymentPlanCadence,
+  term: PaymentPlanTerm,
+  reservedScheduleId: string,
+  reservedChunkIndex: number,
+  expectedFirstPaymentCents?: number,
+): Promise<EnrollPaymentPlanResult> {
 
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
 
   try {
-    const plan = await createPaymentPlan(session.user.id, cadence, term, zelleHandle, reservedScheduleId, reservedChunkIndex, typeof expectedFirstPaymentCents === "number" ? expectedFirstPaymentCents : undefined);
+    const plan = await createPaymentPlan(userId, cadence, term, zelleHandle, reservedScheduleId, reservedChunkIndex, typeof expectedFirstPaymentCents === "number" ? expectedFirstPaymentCents : undefined);
     const installment = plan.installmentPayments[0];
     revalidatePath("/billing/plans");
     return { ok: true, planId: plan.id, installmentPaymentId: installment.id, amountCents: installment.amountCents, error: null };
@@ -158,16 +175,31 @@ export async function enrollFamilyPlanAction(
   reservedChunkIndex: number,
   memberEmails: string[],
   expectedFirstPaymentCents?: number,
+  idempotencyKey?: string,
 ): Promise<EnrollFamilyPlanResult> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  return runOnce(session.user.id, "enroll-family-plan", idempotencyKey, () => enrollFamily(session.user.id, term, reservedScheduleId, reservedChunkIndex, memberEmails, expectedFirstPaymentCents), {
+    isSuccess: (r) => r.ok,
+    whileRunning: { ok: false, planId: null, startPaymentId: null, amountCents: null, memberCount: 0, error: "Starting the family plan. One moment." },
+  });
+}
+
+async function enrollFamily(
+  userId: string,
+  term: PaymentPlanTerm,
+  reservedScheduleId: string,
+  reservedChunkIndex: number,
+  memberEmails: string[],
+  expectedFirstPaymentCents?: number,
+): Promise<EnrollFamilyPlanResult> {
   if (!Array.isArray(memberEmails) || memberEmails.length > 10 || memberEmails.some((e) => typeof e !== "string")) {
     return { ok: false, planId: null, startPaymentId: null, amountCents: null, memberCount: 0, error: "Check the email addresses and try again." };
   }
 
   // Each try tells the person whether an email has an account, so it is limited.
   try {
-    await consumeRateLimit(prisma, `family-plan:${session.user.id}`, { windowMinutes: 60, max: 8, message: "Too many tries. Please wait a while and try again." });
+    await consumeRateLimit(prisma, `family-plan:${userId}`, { windowMinutes: 60, max: 8, message: "Too many tries. Please wait a while and try again." });
   } catch (error) {
     if (error instanceof RateLimitError) return { ok: false, planId: null, startPaymentId: null, amountCents: null, memberCount: 0, error: error.message };
     throw error;
@@ -176,7 +208,7 @@ export async function enrollFamilyPlanAction(
   const zelleHandle = process.env.ZELLE_HANDLE ?? "payments@yourplatform.com";
   try {
     const { plans, startPayment } = await createFamilyPlans({
-      payerId: session.user.id,
+      payerId: userId,
       cadence: OFFERED_PLAN_CADENCE,
       term,
       zelleHandle,
@@ -185,7 +217,7 @@ export async function enrollFamilyPlanAction(
       memberEmails,
       expectedFirstPaymentCents: typeof expectedFirstPaymentCents === "number" ? expectedFirstPaymentCents : undefined,
     });
-    const mine = plans.find((plan) => plan.userId === session.user.id);
+    const mine = plans.find((plan) => plan.userId === userId);
     revalidatePath("/", "layout");
     return { ok: true, planId: mine?.id ?? null, startPaymentId: startPayment.id, amountCents: startPayment.amountCents, memberCount: plans.length, error: null };
   } catch (error) {

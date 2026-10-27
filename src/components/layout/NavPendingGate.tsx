@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import { usePathname } from "next/navigation";
+import { withViewTransition } from "@/lib/viewTransition";
 import GenericLoading from "@/app/(dashboard)/loading";
 import DashboardLoading from "@/app/(dashboard)/dashboard/loading";
 import LessonsLoading from "@/app/(dashboard)/lessons/loading";
@@ -27,13 +29,17 @@ export function NavPendingGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [pending, setPending] = useState<string | null>(null);
 
-  useEffect(() => setPending(null), [pathname]);
+  // The real page arrives: crossfade from the skeleton to it.
+  useEffect(() => {
+    withViewTransition(() => flushSync(() => setPending(null)));
+  }, [pathname]);
 
   useEffect(() => {
     let timer: number | undefined;
     const onPending = (e: Event) => {
       const href = (e as CustomEvent<string>).detail;
-      setPending(href);
+      // Crossfade from the page being left to the next page's skeleton.
+      withViewTransition(() => flushSync(() => setPending(href)));
       window.clearTimeout(timer);
       // Never leave a skeleton up for good if a navigation fails.
       timer = window.setTimeout(() => setPending(null), 12_000);

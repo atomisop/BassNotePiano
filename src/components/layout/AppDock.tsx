@@ -181,6 +181,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
             <Link
               key={item.href}
               href={item.href}
+              data-prerender={item.href === "/messages" ? undefined : ""}
               aria-label={badge ? `${item.label}, ${badge} unread` : item.label}
               aria-current={current ? "page" : undefined}
               // The current tab again means "take me to the top" (it would only reload the same page).
@@ -206,9 +207,10 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                 />
               )}
               <motion.span
+                // Springs, not a timed keyframe list: tapping another tab mid-bounce takes over from where the icon is, instead of finishing or snapping.
                 whileTap={{ scale: 0.82 }}
-                animate={active && !reduceMotion ? { scale: [1, 1.28, 0.92, 1] } : { scale: 1 }}
-                transition={{ duration: 0.55, ease: "easeOut" }}
+                animate={{ scale: active && !reduceMotion ? 1.14 : 1 }}
+                transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 14, mass: 0.7 }}
                 className="relative flex h-[22px] w-[22px] items-center justify-center"
               >
                 <Icon

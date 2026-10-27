@@ -3,6 +3,7 @@ import { runJob } from "../../src/lib/jobRun";
 import { createNotification } from "../../src/lib/notifications";
 import { expireDueCreditGrants, warnExpiringSoonCreditGrants } from "../../src/lib/creditLedger";
 import { expireTimedDiscounts } from "../../src/lib/referrals";
+import { purgeOldIdempotencyKeys } from "../../src/lib/idempotency";
 import { sendTrialNotices } from "../../src/lib/trialNotices";
 import { CREDITS_PER_CLASS, creditsLabelFromStored } from "../../src/lib/classCreditPricing";
 
@@ -54,6 +55,9 @@ export const handler = schedule("0 9 * * *", async () =>
 
   const discountsEnded = await expireTimedDiscounts(now);
   console.log(`Timed discounts ended: ${discountsEnded}.`);
+
+  const keysPurged = await purgeOldIdempotencyKeys(now);
+  console.log(`Old once-only keys removed: ${keysPurged}.`);
 
   const trials = await sendTrialNotices(now);
   console.log(`Trial notices: ${trials.ending} ending soon, ${trials.ended} ended.`);

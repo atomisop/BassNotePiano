@@ -185,7 +185,7 @@ export function MessageBubble({
           type="button"
           onClick={() => setPickerOpen((v) => !v)}
           aria-label="React"
-          className="tap flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-500 opacity-60 transition hover:text-slate-300 md:opacity-0 md:group-hover/bubble:opacity-100 focus-visible:opacity-100"
+          className="tap hit-slop flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-500 opacity-60 transition hover:text-slate-300 md:opacity-0 md:group-hover/bubble:opacity-100 focus-visible:opacity-100"
         >
           <SmileyPlusIcon size={15} />
         </button>

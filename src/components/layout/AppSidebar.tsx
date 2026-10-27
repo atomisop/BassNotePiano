@@ -6,6 +6,8 @@ import { Home, Music2, CalendarCheck, Users, MessageSquare, User, Settings, Glob
 import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { SidebarSpotlight } from "@/components/layout/SidebarSpotlight";
 import type { SidebarCard } from "@/lib/sidebarCards";
+import { Kbd } from "@/components/ui/Kbd";
+import { goKeysFor } from "@/lib/shortcuts";
 
 type Item = { href: string; label: string; icon: LucideIcon; dataTour?: string; match?: string[]; external?: boolean };
 
@@ -83,9 +85,10 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
                     href={item.href}
                     prefetch
                     data-tour={item.dataTour}
+                    data-prerender={item.href === "/messages" ? undefined : ""}
                     title={item.label}
                     aria-current={active ? "page" : undefined}
-                    className={`sb-item press-soft relative flex h-9 items-center gap-2.5 rounded-control px-2.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    className={`sb-item group/sb press-soft relative flex h-9 items-center gap-2.5 rounded-control px-2.5 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       active
                         ? "bg-neu-lift text-slate-50 shadow-pressed-low"
                         : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
@@ -93,6 +96,7 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
                   >
                     <Icon className={`h-4 w-4 shrink-0 ${active ? "text-signal-fg" : ""}`} strokeWidth={active ? 2.25 : 1.75} aria-hidden />
                     <span className="sb-label truncate">{item.label}</span>
+                    {goKeysFor(item.href) && badge === 0 && <Kbd keys={goKeysFor(item.href) ?? []} className="sb-label ml-auto opacity-0 transition-opacity group-hover/sb:opacity-100 group-focus-visible/sb:opacity-100" />}
                     {badge > 0 && (
                       <span className="sb-badge ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-signal px-1 text-small font-bold text-slate-950">
                         {badge > 9 ? "9+" : badge}

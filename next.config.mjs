@@ -179,6 +179,8 @@ const nextConfig = {
           // reconsider.
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           { key: "Content-Security-Policy", value: csp },
+          // Lets Chrome prepare the pages a person is about to open (see app/speculation-rules.json/route.ts).
+          { key: "Speculation-Rules", value: '"/speculation-rules.json"' },
         ],
       },
     ];

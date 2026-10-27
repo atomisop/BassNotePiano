@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { newIdempotencyKey } from "@/lib/idempotencyClient";
 import { useRouter } from "next/navigation";
 import type { PaymentPlanCadence, PaymentPlanTerm, ZellePaymentStatus } from "@prisma/client";
 import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPlan, MAX_FAMILY_MEMBERS, type PricingConfig, OFFERED_PLAN_CADENCE } from "@/lib/classCreditPricing";
@@ -262,13 +263,16 @@ export function PaymentPlanEnrollmentFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverCopy]);
 
+  // One key per attempt to start a plan: a double tap or a retry sends the same key and starts it once. A new key after it worked.
+  const startKey = useRef(newIdempotencyKey());
+
   /** The form's server calls: start a solo or family plan, and move to the payment screen once it exists. */
   async function startPlan({ audience, term, slot, memberEmails, expectedFirstPaymentCents }: StartPlanInput): Promise<StartPlanResult> {
     const termPayments = calculatePaymentPlanRate(cadence, term, pricing).termMonths;
     if (audience === "FAMILY") {
       let result: Awaited<ReturnType<typeof enrollFamilyPlanAction>>;
       try {
-        result = await enrollFamilyPlanAction(term, slot.scheduleId, slot.chunkIndex, memberEmails, expectedFirstPaymentCents);
+        result = await enrollFamilyPlanAction(term, slot.scheduleId, slot.chunkIndex, memberEmails, expectedFirstPaymentCents, startKey.current);
       } catch {
         return { ok: false, error: "Something went wrong starting the family plan. Please try again." };
       }
@@ -276,6 +280,7 @@ export function PaymentPlanEnrollmentFlow({
       if (!result.ok || !result.planId || !result.startPaymentId || result.amountCents === null) {
         return { ok: false, error: result.error ?? "Something went wrong starting the family plan." };
       }
+      startKey.current = newIdempotencyKey();
       setEnrolled({
         plan: { id: result.planId, cadence, term, installmentsPaid: 0, termMonths: termPayments },
         installment: { id: result.startPaymentId, status: "AWAITING_TRANSFER", rejectionReason: null, amountCents: result.amountCents, installmentNumber: 1 },
@@ -285,7 +290,7 @@ export function PaymentPlanEnrollmentFlow({
     }
     let result: Awaited<ReturnType<typeof enrollInPaymentPlanAction>>;
     try {
-      result = await enrollInPaymentPlanAction(cadence, term, slot.scheduleId, slot.chunkIndex, expectedFirstPaymentCents);
+      result = await enrollInPaymentPlanAction(cadence, term, slot.scheduleId, slot.chunkIndex, expectedFirstPaymentCents, startKey.current);
     } catch {
       return { ok: false, error: "Something went wrong starting your plan. Please try again." };
     }
@@ -293,6 +298,7 @@ export function PaymentPlanEnrollmentFlow({
     if (!result.ok || !result.planId || !result.installmentPaymentId || result.amountCents === null) {
       return { ok: false, error: result.error ?? "Something went wrong starting your plan." };
     }
+    startKey.current = newIdempotencyKey();
     setEnrolled({
       plan: { id: result.planId, cadence, term, installmentsPaid: 0, termMonths: termPayments },
       installment: { id: result.installmentPaymentId, status: "AWAITING_TRANSFER", rejectionReason: null, amountCents: result.amountCents, installmentNumber: 1 },

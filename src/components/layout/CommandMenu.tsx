@@ -10,7 +10,21 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandShortcut,
 } from "@/components/ui/command";
+import { Dialog } from "@/components/ui/Dialog";
+import { Kbd } from "@/components/ui/Kbd";
+import {
+  ACTION_SHORTCUTS,
+  CHORD_WINDOW_MS,
+  GO_SHORTCUTS,
+  isTypingTarget,
+  nextShortcutStep,
+  OPEN_COMMAND_EVENT,
+  OPEN_SHORTCUTS_EVENT,
+  TOGGLE_SIDEBAR_EVENT,
+  goKeysFor,
+} from "@/lib/shortcuts";
 import { quickFindPeopleAction, type QuickFindPerson } from "@/app/(dashboard)/admin/quick-find-actions";
 
 /**
@@ -29,6 +43,7 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const [people, setPeople] = React.useState<QuickFindPerson[]>([]);
+  const [helpOpen, setHelpOpen] = React.useState(false);
 
   // Admin: typing a name or email finds the person, so their account is one keystroke away.
   React.useEffect(() => {
@@ -46,16 +61,51 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
     };
   }, [search, isAdmin]);
 
+  // Every keyboard shortcut lives here: Cmd/Ctrl-K, "/", "?", "B" and the two-key "G then a letter" jumps (see lib/shortcuts.ts).
   React.useEffect(() => {
+    let goPending = false;
+    let timer: number | undefined;
+    const clear = () => {
+      goPending = false;
+      window.clearTimeout(timer);
+    };
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setOpen((prev) => !prev);
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented || isTypingTarget(e.target)) return;
+      const step = nextShortcutStep(e.key, goPending, isAdmin);
+      if (step.kind === "wait") {
+        e.preventDefault();
+        goPending = true;
+        window.clearTimeout(timer);
+        timer = window.setTimeout(clear, CHORD_WINDOW_MS);
+      } else if (step.kind === "go") {
+        e.preventDefault();
+        clear();
+        router.push(step.href);
+      } else if (step.kind === "event") {
+        e.preventDefault();
+        clear();
+        window.dispatchEvent(new Event(step.name));
+      } else if (goPending) {
+        clear();
       }
     }
+    const openCommand = () => setOpen(true);
+    const openHelp = () => setHelpOpen(true);
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
+    window.addEventListener(OPEN_COMMAND_EVENT, openCommand);
+    window.addEventListener(OPEN_SHORTCUTS_EVENT, openHelp);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener(OPEN_COMMAND_EVENT, openCommand);
+      window.removeEventListener(OPEN_SHORTCUTS_EVENT, openHelp);
+      clear();
+    };
+  }, [router, isAdmin]);
 
   const go = React.useCallback(
     (href: string) => {
@@ -65,7 +115,17 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
     [router],
   );
 
+  const hint = (href: string) => {
+    const keys = goKeysFor(href);
+    return keys ? (
+      <CommandShortcut>
+        <Kbd keys={keys} />
+      </CommandShortcut>
+    ) : null;
+  };
+
   return (
+    <>
     <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput placeholder={isAdmin ? "Search a person, a scale or a page…" : "Search scales and pages…"} value={search} onValueChange={setSearch} />
       <CommandList>
@@ -91,21 +151,54 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
         <CommandGroup heading="Go to">
           <CommandItem value="dashboard roadmap home" onSelect={() => go("/dashboard")}>
             Dashboard
+            {hint("/dashboard")}
           </CommandItem>
           <CommandItem value="classes lessons booking discord zoom" onSelect={() => go("/lessons")}>
             Book a class
+            {hint("/lessons")}
           </CommandItem>
           <CommandItem value="messages chat" onSelect={() => go("/messages")}>
             Messages
+            {hint("/messages")}
           </CommandItem>
           <CommandItem value="friends classmates" onSelect={() => go("/friends")}>
             Friends
+            {hint("/friends")}
           </CommandItem>
           <CommandItem value="profile badges streak" onSelect={() => go("/profile")}>
             Profile
+            {hint("/profile")}
           </CommandItem>
           <CommandItem value="account settings" onSelect={() => go("/account")}>
             Settings
+            {hint("/account")}
+          </CommandItem>
+        </CommandGroup>
+
+        <CommandGroup heading="Do">
+          <CommandItem
+            value="collapse expand sidebar toggle rail"
+            onSelect={() => {
+              setOpen(false);
+              window.dispatchEvent(new Event(TOGGLE_SIDEBAR_EVENT));
+            }}
+          >
+            Collapse or expand the sidebar
+            <CommandShortcut>
+              <Kbd keys={["B"]} />
+            </CommandShortcut>
+          </CommandItem>
+          <CommandItem
+            value="keyboard shortcuts help keys"
+            onSelect={() => {
+              setOpen(false);
+              setHelpOpen(true);
+            }}
+          >
+            Keyboard shortcuts
+            <CommandShortcut>
+              <Kbd keys={["?"]} />
+            </CommandShortcut>
           </CommandItem>
         </CommandGroup>
 
@@ -128,12 +221,14 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
           <CommandGroup heading="Admin">
             <CommandItem value="admin overview studio" onSelect={() => go("/admin")}>
               Studio overview
+            {hint("/admin")}
             </CommandItem>
             <CommandItem value="admin students" onSelect={() => go("/admin/students")}>
               Students
             </CommandItem>
             <CommandItem value="admin payments zelle" onSelect={() => go("/admin/payments")}>
               Payments
+            {hint("/admin/payments")}
             </CommandItem>
             <CommandItem value="admin lessons upload" onSelect={() => go("/admin/lessons")}>
               Lesson content
@@ -160,5 +255,32 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
         )}
       </CommandList>
     </CommandDialog>
+    <Dialog open={helpOpen} onOpenChange={setHelpOpen} title="Keyboard shortcuts">
+      <div className="space-y-5 text-small">
+        <section>
+          <h3 className="mb-2 font-semibold text-slate-50">Anywhere</h3>
+          <ul className="space-y-2">
+            {ACTION_SHORTCUTS.map((a) => (
+              <li key={a.keys.join("+")} className="flex items-center justify-between gap-3 text-slate-300">
+                {a.label}
+                <Kbd keys={a.keys} className="[@media(hover:none)]:inline-flex" />
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section>
+          <h3 className="mb-2 font-semibold text-slate-50">Go to (press G, then the letter)</h3>
+          <ul className="space-y-2">
+            {GO_SHORTCUTS.filter((g) => !g.adminOnly || isAdmin).map((g) => (
+              <li key={g.key} className="flex items-center justify-between gap-3 text-slate-300">
+                {g.label}
+                <Kbd keys={["G", g.key.toUpperCase()]} className="[@media(hover:none)]:inline-flex" />
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+    </Dialog>
+    </>
   );
 }

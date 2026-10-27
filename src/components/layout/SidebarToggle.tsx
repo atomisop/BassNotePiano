@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PanelLeft } from "lucide-react";
+import { TOGGLE_SIDEBAR_EVENT } from "@/lib/shortcuts";
 
 const KEY = "bnp-sidebar-collapsed";
 
@@ -38,13 +39,22 @@ export function SidebarToggle() {
     }
   }
 
+  // The "B" shortcut (see lib/shortcuts.ts) asks the toggle to flip; always call the latest toggle.
+  const toggleRef = useRef(toggle);
+  toggleRef.current = toggle;
+  useEffect(() => {
+    const onToggle = () => toggleRef.current();
+    window.addEventListener(TOGGLE_SIDEBAR_EVENT, onToggle);
+    return () => window.removeEventListener(TOGGLE_SIDEBAR_EVENT, onToggle);
+  }, []);
+
   return (
     <button
       type="button"
       onClick={toggle}
       aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
       aria-pressed={collapsed}
-      title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      title={`${collapsed ? "Expand sidebar" : "Collapse sidebar"} (B)`}
       className="sidebar-toggle press hidden h-8 w-8 items-center justify-center rounded-control text-slate-400 hover:bg-slate-800/50 hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:flex"
     >
       <PanelLeft className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden />
