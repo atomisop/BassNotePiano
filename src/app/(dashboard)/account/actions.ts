@@ -377,6 +377,7 @@ export async function confirmAccountDeletionAction(currentPassword: string, code
         title: "A student deleted their account",
         body: `${target?.name ?? target?.email ?? "A student"} deleted their account, so ${upcomingClasses} upcoming class${upcomingClasses === 1 ? " was" : "es were"} removed from the schedule.`,
         emailCategory: "social",
+        href: "/admin/users",
       }).catch((err) => console.error("Account deletion alert failed (non-blocking):", err));
     }
 

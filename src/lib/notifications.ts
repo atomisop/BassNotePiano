@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { MAIL_ROUTED_TYPES, createMailMessage } from "@/lib/mail";
 import { sendNotificationEmail, sendNotificationEmailWithCta, getAppUrl } from "@/lib/email";
 
+import { notificationTarget, safeInAppHref } from "@/lib/notificationTargets";
 import { sendPushToUser } from "@/lib/webPush";
 import { categoryIsPushed } from "@/lib/pushRules";
 import { EMAIL_PREF_SELECT, isEmailEnabled, type EmailCategory } from "@/lib/emailPreferences";
@@ -19,6 +20,8 @@ export interface CreateNotificationParams {
   alwaysEmail?: boolean;
   /** Overrides the default button for this type, e.g. a deep link to the exact page. `path` is an in-app path. */
   cta?: { label: string; path?: string; url?: string };
+  /** The exact in-app page tapping this notification opens. Defaults to the button's page, then to the type's default page. */
+  href?: string;
 }
 
 interface NotificationCta {
@@ -114,6 +117,7 @@ export async function createNotification(params: CreateNotificationParams) {
   const cta: NotificationCta | undefined = params.cta
     ? { label: params.cta.label, url: params.cta.url ?? getAppUrl(params.cta.path ?? "/"), kind: "default" }
     : NOTIFICATION_CTA[params.type];
+  const href = notificationTarget(params.type, safeInAppHref(params.href) ?? (cta ? pathOf(cta.url) : null));
   const notification = mailKind
     ? await createMailMessage({
         userId: params.userId,
@@ -124,7 +128,7 @@ export async function createNotification(params: CreateNotificationParams) {
         actionHref: cta ? pathOf(cta.url) : null,
       })
     : await prisma.notification.create({
-        data: { userId: params.userId, type: params.type, title: params.title, body: params.body },
+        data: { userId: params.userId, type: params.type, title: params.title, body: params.body, href },
       });
 
   if (params.emailCategory) {
