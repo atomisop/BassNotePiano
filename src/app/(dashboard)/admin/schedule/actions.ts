@@ -14,7 +14,7 @@ import { adminBookClass, rescheduleClassBooking, ClassBookingError } from "@/lib
 import { markAttendance, undoAttendance, adminCancelClassBooking, setClassInPerson, getPendingAttendanceBookings, getBookingFeed, type PendingAttendanceRow, type BookingFeedRow } from "@/lib/classScheduleAdmin";
 import { createClassSchedule, updateClassSchedule, setClassScheduleActive, ClassScheduleError, type ClassScheduleInput } from "@/lib/classScheduleManage";
 import { searchStudentsForBooking, type BookableStudent } from "@/lib/admin";
-import { createOwnerReservation, releaseOwnerReservation } from "@/lib/ownerReservationsAdmin";
+import { createOwnerReservation, releaseOwnerReservation, getReservableHours, type ReservableHour } from "@/lib/ownerReservationsAdmin";
 import { logAudit } from "@/lib/audit";
 
 async function requireAdmin() {
@@ -175,6 +175,12 @@ export async function createVisibleTestChannelAction(): Promise<{ ok: boolean; m
   } catch (err) {
     return { ok: false, message: err instanceof Error ? err.message.slice(0, 200) : "Something went wrong.", url: null };
   }
+}
+
+/** The hours the studio offers right now, read from the database, so the form never works from a copy of the page the browser kept. */
+export async function getReservableHoursAction(): Promise<ReservableHour[]> {
+  await requireAdmin();
+  return getReservableHours();
 }
 
 /** Keeps a day (or some hours of it) for a named customer so nobody can book it. */

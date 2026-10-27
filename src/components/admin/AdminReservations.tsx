@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarCheck, Trash2 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { toast } from "@/components/ui/Toaster";
-import { reserveForCustomerAction, releaseReservationAction } from "@/app/(dashboard)/admin/schedule/actions";
+import { reserveForCustomerAction, releaseReservationAction, getReservableHoursAction } from "@/app/(dashboard)/admin/schedule/actions";
 import type { ReservableHour, ReservationGroup } from "@/lib/ownerReservationsAdmin";
 
 const field =
@@ -26,11 +26,25 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
   const [releasing, setReleasing] = useState<string | null>(null);
   const [sure, setSure] = useState<string | null>(null);
 
+  // The page's copy can be old (the browser keeps a visited page for a while), so a slot added a moment ago on the Times tab
+  // could be missing. Asking the server again whenever a day is picked, or "Some hours" is chosen, always shows what is offered now.
+  const [live, setLive] = useState<ReservableHour[] | null>(null);
+  useEffect(() => {
+    if (!date) return;
+    let current = true;
+    getReservableHoursAction()
+      .then((fresh) => current && setLive(fresh))
+      .catch(() => {});
+    return () => {
+      current = false;
+    };
+  }, [date, whole]);
+
   const dayHours = useMemo(() => {
     if (!date) return [];
     const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
-    return hours.filter((h) => h.dayOfWeek === weekday);
-  }, [date, hours]);
+    return (live ?? hours).filter((h) => h.dayOfWeek === weekday);
+  }, [date, hours, live]);
   const key = (h: ReservableHour) => `${h.scheduleId}:${h.chunkIndex}`;
 
   async function reserve(e: React.FormEvent) {
@@ -88,10 +102,10 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
             ) : (
               <>
                 <div className="flex gap-2" role="group" aria-label="What to keep">
-                  <button type="button" aria-pressed={whole} onClick={() => setWhole(true)} className={buttonVariants({ variant: whole ? "primary" : "secondary", size: "sm" })}>
+                  <button type="button" aria-pressed={whole} onClick={() => setWhole(true)} className={buttonVariants({ variant: "secondary", size: "sm", className: whole ? "shadow-pressed-low! text-signal-fg!" : "" })}>
                     Whole day
                   </button>
-                  <button type="button" aria-pressed={!whole} onClick={() => setWhole(false)} className={buttonVariants({ variant: !whole ? "primary" : "secondary", size: "sm" })}>
+                  <button type="button" aria-pressed={!whole} onClick={() => setWhole(false)} className={buttonVariants({ variant: "secondary", size: "sm", className: !whole ? "shadow-pressed-low! text-signal-fg!" : "" })}>
                     Some hours
                   </button>
                 </div>
