@@ -2,6 +2,7 @@
 
 import { OPEN_NOTIFICATIONS, UNREAD_COUNT, announce, listen } from "@/lib/topBarEvents";
 import Link from "next/link";
+import { notificationTarget } from "@/lib/notificationTargets";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
@@ -43,52 +44,7 @@ const POLL_INTERVAL_MS = 30_000;
 // business logic. Falls back to no link (just marks read) for anything
 // unmapped, e.g. NEW_MESSAGE never reaches here (excluded upstream).
 function notificationHref(type: string): string | null {
-  switch (type) {
-    case "FRIEND_REQUEST_RECEIVED":
-      return "/friends#requests";
-    case "FRIEND_REQUEST_ACCEPTED":
-      return "/friends";
-    case "PAYMENT_APPROVED":
-    case "PAYMENT_REJECTED":
-    case "PAYMENT_AMOUNT_MISMATCH":
-      return "/billing/history";
-    case "ROLE_UPDATED":
-      return "/admin";
-    case "MAIL_MESSAGE":
-      return "/mail";
-    case "PRACTICE_REMINDER":
-    case "CURRICULUM_ACCESS_GRANTED":
-      return "/dashboard";
-    case "CURRICULUM_ACCESS_REVOKED":
-      return "/billing/plans";
-    case "CLASS_REGISTRATION_RECEIVED":
-    case "CLASS_REGISTRATION_APPROVED":
-    case "CLASS_REGISTRATION_REJECTED":
-      return "/admin/students";
-    case "LESSON_BOOKING_RECEIVED":
-      return "/admin/schedule?view=ATTENDANCE";
-    case "LESSON_BOOKING_CANCELED":
-      return "/lessons";
-    case "ANNOUNCEMENT":
-      return "/dashboard";
-    case "ASSISTANT_ESCALATION":
-      return "/admin/support";
-    case "SUPPORT_TRANSFER":
-      return "/admin/support?filter=mine";
-    case "PLAN_CANCELLATION_FEEDBACK":
-      return "/admin/payment-plans?status=FEEDBACK";
-    case "PAYMENT_PLAN_INSTALLMENT_DUE":
-    case "PAYMENT_PLAN_INSTALLMENT_OVERDUE":
-    case "PAYMENT_PLAN_COMPLETED":
-    case "PAYMENT_PLAN_CANCELED":
-    case "CREDITS_EXPIRED":
-    case "RESERVED_SLOT_UNAVAILABLE":
-      return "/billing/plans";
-    case "CREDITS_EXPIRING_SOON":
-      return "/lessons";
-    default:
-      return null;
-  }
+  return notificationTarget(type);
 }
 
 function relativeTime(iso: string): string {

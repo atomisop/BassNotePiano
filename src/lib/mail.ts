@@ -93,6 +93,7 @@ export async function sendAdminMessage(
       type: "MAIL_MESSAGE",
       title: "New message from Bass Note Piano",
       body: options.supportCta ? `${title}. Click here to contact support.` : title,
+      href: `/mail/${mail.id}`,
     },
   });
 

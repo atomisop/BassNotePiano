@@ -114,6 +114,7 @@ export async function sendMessage(senderId: string, recipientId: string, body: s
           title: "New message to the owner",
           body: `${sender?.name ?? (sender?.username ? `@${sender.username}` : "Someone")}: "${trimmed.slice(0, 120)}"`,
           emailCategory: "social",
+          href: "/admin/messages",
         }).catch((err) => console.error("Owner message alert failed (non-blocking):", err)),
       ),
     );

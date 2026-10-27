@@ -515,6 +515,8 @@ model Notification {
   type      NotificationType
   title     String
   body      String?
+  /// The in-app page tapping it opens (one student's page, one payment). Null falls back to the type's default (notificationTargets.ts).
+  href      String?
   readAt    DateTime?
   createdAt DateTime         @default(now())
 

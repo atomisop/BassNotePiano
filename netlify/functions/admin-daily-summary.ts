@@ -107,7 +107,7 @@ export const handler = schedule("0 12 * * *", async () =>
     await sendNotificationEmailWithCta(
       OWNER_EMAIL,
       "All clear",
-      `${digest ? `${digest} ` : ""}Weekly check-in: nothing needs a decision, every scheduled job has run on time, and payment emails are arriving. If you stop getting this on Mondays, something is wrong with the scheduler or the email service.`,
+      `${digest ? `${digest}\n\n` : ""}Weekly check-in: nothing needs a decision, every scheduled job has run on time, and payment emails are arriving. If you stop getting this on Mondays, something is wrong with the scheduler or the email service.`,
       { label: "Open admin", url: getAppUrl("/admin") },
     );
     console.log("Admin daily summary: all clear sent");

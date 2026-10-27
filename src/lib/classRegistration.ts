@@ -153,6 +153,7 @@ async function confirmReviewToAdmin(
     title: outcome === "APPROVED" ? "You approved a class registration" : "You rejected a class registration",
     body: `${registration.fullName}'s registration for ${INSTRUMENT_LABEL[registration.instrument]} lessons was ${outcome === "APPROVED" ? "approved" : "rejected"}.`,
     emailCategory: "social",
+    href: "/admin/students",
   });
 }
 
