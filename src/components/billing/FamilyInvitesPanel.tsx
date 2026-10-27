@@ -8,7 +8,7 @@ import { respondFamilyInviteAction } from "@/app/(dashboard)/billing/plans/actio
 
 type Invite = { id: string; payerName: string };
 
-/** Someone asked you to join their family plan. Nothing is started for you unless you accept. */
+/** Someone asked you to join their group plan. Nothing is started for you unless you accept. */
 export function FamilyInvitesPanel({ invites }: { invites: Invite[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -25,14 +25,14 @@ export function FamilyInvitesPanel({ invites }: { invites: Invite[] }) {
   }
 
   return (
-    <section aria-label="Family plan invitations" className="mb-6 space-y-3">
+    <section aria-label="Group plan invitations" className="mb-6 space-y-3">
       {invites.map((invite) => (
         <div key={invite.id} className="rounded-xl bg-neu-base p-4 shadow-raised-low">
-          <p className="text-body font-semibold text-slate-50">{invite.payerName} invited you to their family plan</p>
+          <p className="text-body font-semibold text-slate-50">{invite.payerName} invited you to their group plan</p>
           <p className="mt-1 text-small text-slate-400">
             By accepting you agree to the{" "}
             <a href="/terms#family-plans" target="_blank" rel="noopener noreferrer" className="font-semibold text-slate-200 underline underline-offset-2">
-              family plan rules
+              group plan rules
             </a>
             .
           </p>

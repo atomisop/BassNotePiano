@@ -104,6 +104,9 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
           <CommandItem value="profile badges streak" onSelect={() => go("/profile")}>
             Profile
           </CommandItem>
+          <CommandItem value="parent mode children kids progress pay" onSelect={() => go("/parent")}>
+            Parent mode
+          </CommandItem>
           <CommandItem value="account settings" onSelect={() => go("/account")}>
             Settings
           </CommandItem>

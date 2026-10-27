@@ -163,8 +163,16 @@ model PaymentPlan {
 // reserving the same weekly time and all created in one transaction (any member that cannot start stops the whole family). The one
 // payer (a member) pays everything: the first month as ONE combined FAMILY_PLAN_START payment whose approval starts every member's
 // plan in the same transaction, then each member's own monthly bill, which only the payer's bank account may settle.
+// FAMILY: the payer is a member (a group plan). PARENT: a parent pays for the children they are linked to (ParentLink); the parent
+// may or may not be a member too, and leaving the plan never ends the children's plans.
+enum FamilyGroupKind {
+  FAMILY
+  PARENT
+}
+
 model FamilyPlanGroup {
   id        String   @id @default(cuid())
+  kind      FamilyGroupKind @default(FAMILY)
   payerId   String
   payer     User     @relation("FamilyPlanPayer", fields: [payerId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
@@ -489,6 +497,8 @@ enum NotificationType {
   TRIAL_ENDING // to the student, a day before their free trial ends and when it has ended
   PAYMENT_PLAN_UPDATED // to the student, when their plan starts or its term changes
   SLOT_WAITLIST_OPENED // to the student, when a weekly time they were waiting for is free to take
+  PARENT_LINK_REQUEST // to a child's account, when a parent asks to link to it (parent mode)
+  PARENT_LINK_ACCEPTED // to the parent, when the child accepts
   BANNER_PHONE // to the student, each time the "add your phone number" banner pops up (kept in the bell even if they close it)
   BANNER_DISCORD // same, for the "connect your Discord" banner
   BANNER_PRACTICE // same, for the "time to practice" banner
@@ -950,6 +960,8 @@ model User {
   familyPlanGroupsPaid  FamilyPlanGroup[] @relation("FamilyPlanPayer")
   familyInvitesSent     FamilyInvite[]    @relation("FamilyInvitePayer")
   familyInvitesReceived FamilyInvite[]    @relation("FamilyInviteInvitee")
+  parentLinksAsParent   ParentLink[]      @relation("ParentLinkParent")
+  parentLinksAsChild    ParentLink[]      @relation("ParentLinkChild")
   paymentPlansCanceled  PaymentPlan[]     @relation("PaymentPlanCanceledBy") // admin side of an admin-canceled plan
 
   creditGrants CreditGrant[]
@@ -2073,4 +2085,26 @@ model SlotWaitlist {
 
   @@unique([userId, scheduleId, chunkIndex])
   @@index([scheduleId, chunkIndex, createdAt])
+}
+
+enum ParentLinkStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// A parent's link to a child's own account ("parent mode"). The child says yes once; either side can end it any time. While it is
+// ACCEPTED the parent can see the child's progress, practice and classes, change their class times, and pay for their plan.
+model ParentLink {
+  id          String           @id @default(cuid())
+  parentId    String
+  parent      User             @relation("ParentLinkParent", fields: [parentId], references: [id], onDelete: Cascade)
+  childId     String
+  child       User             @relation("ParentLinkChild", fields: [childId], references: [id], onDelete: Cascade)
+  status      ParentLinkStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  respondedAt DateTime?
+
+  @@unique([parentId, childId])
+  @@index([childId, status])
 }

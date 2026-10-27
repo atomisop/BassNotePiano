@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 import type { PaymentPlanTerm } from "@prisma/client";
 import { CLASS_MINUTES, MAX_FAMILY_MEMBERS, OFFERED_PLAN_CADENCE, describePaymentPlan, type PricingConfig } from "@/lib/classCreditPricing";
 import type { ReservableSlot } from "@/lib/classSchedule";
-import { checkoutTotals, headcount, missingForCheckout, type Audience } from "@/lib/planCheckout";
+import { checkoutTotals, headcount, missingForCheckout, parentHeadcount, type Audience } from "@/lib/planCheckout";
 import { DAY_NAMES, formatTimeRange } from "@/lib/weeklyTimeLabels";
 import { useFamilyInvites, type FamilyInviteApi } from "@/components/billing/useFamilyInvites";
 import { AccountCheckLine, type CheckState } from "@/components/billing/AccountCheckLine";
@@ -39,10 +39,24 @@ export interface StartPlanInput {
   audience: Audience;
   term: PaymentPlanTerm;
   slot: ReservableSlot;
-  /** Every family member's account email, in the order typed (empty for a solo plan). */
+  /** Every group member's account email, in the order typed (empty for a solo plan). */
   memberEmails: string[];
   /** The first payment on screen when they pressed Start; the server refuses if the real price is different. */
   expectedFirstPaymentCents: number;
+  /** "PARENT": a parent paying for the children they linked (memberEmails are the children). */
+  mode: "GROUP" | "PARENT";
+  /** Parent mode only: the parent learns too, on a plan of their own at the same price. */
+  includeSelf: boolean;
+}
+
+/** What parent mode needs from the page: how to ask a child to link, and whether the parent can add themselves (not while they have a plan). */
+export interface ParentModeConfig {
+  inviteApi: FamilyInviteApi;
+  canIncludeSelf: boolean;
+  /** Open already in parent mode (the pricing or Parent page sent them here). */
+  startOn?: boolean;
+  /** Only parent mode: no "Just me" and no group choice (opened from the Parent page). */
+  only?: boolean;
 }
 
 /**
@@ -62,6 +76,7 @@ export function NewPlanForm({
   setWaitlist,
   checkMember,
   inviteApi,
+  parent,
 }: {
   pricing: PricingConfig;
   personalDiscountPercent?: number;
@@ -73,12 +88,17 @@ export function NewPlanForm({
   loadWaitlist?: () => Promise<{ taken: ReservableSlot[]; mine: string[] }>;
   setWaitlist?: (slot: ReservableSlot, join: boolean) => Promise<{ ok: boolean; error: string | null }>;
   /** Asks the server whether an email is an account that can join. Leave out to skip the live check. */
-  /** Invitations: a family member must accept before the plan can start. Leave out to skip (no gate). */
+  /** Invitations: a group member must accept before the plan can start. Leave out to skip (no gate). */
   inviteApi?: FamilyInviteApi;
   checkMember?: (email: string) => Promise<Exclude<CheckState, "checking" | "duplicate" | "failed">>;
+  /** Parent mode: a button in the people area switches the plan to one a parent pays for their linked children. Leave out to hide it. */
+  parent?: ParentModeConfig;
 }) {
   const cadence = OFFERED_PLAN_CADENCE;
-  const [audience, setAudience] = useState<Audience>(initialAudience);
+  const [audience, setAudience] = useState<Audience>(parent?.only || parent?.startOn ? "FAMILY" : initialAudience);
+  const [parentMode, setParentMode] = useState(Boolean(parent?.only || parent?.startOn));
+  // The parent learns too unless they take themselves out (or already have a plan of their own).
+  const [includeSelf, setIncludeSelf] = useState(Boolean(parent?.canIncludeSelf));
   const [term, setTerm] = useState<PaymentPlanTerm>(initialTerm ?? "TERM_6");
   const [memberRows, setMemberRows] = useState<string[]>([""]);
   const [slots, setSlots] = useState<ReservableSlot[]>([]);
@@ -140,16 +160,20 @@ export function NewPlanForm({
   // Each typed email is looked up once it stops changing; answers are kept so retyping the same one is instant.
   const [lookups, setLookups] = useState<Record<string, CheckState>>({});
   const asked = useRef(new Set<string>());
-  const invites = useFamilyInvites(inviteApi, audience === "FAMILY");
-  const gated = Boolean(inviteApi);
+  const groupInvites = useFamilyInvites(inviteApi, audience === "FAMILY" && !parentMode);
+  const parentInvites = useFamilyInvites(parent?.inviteApi, audience === "FAMILY" && parentMode);
+  const invites = parentMode && parent ? parentInvites : groupInvites;
+  const gated = parentMode && parent ? true : Boolean(inviteApi);
   // Invitations survive a reload: the people already asked come back into the list.
   const restored = useRef(false);
   useEffect(() => {
     if (restored.current || !invites.loaded) return;
     restored.current = true;
+    // Parent mode offers the linked children as one-tap choices below instead of filling the list with all of them.
+    if (parentMode && parent) return;
     const emails = Object.keys(invites.status).filter((e) => invites.status[e] !== "SENDING");
     if (emails.length > 0 && memberRows.every((r) => r.trim() === "")) setMemberRows(emails);
-  }, [invites.loaded, invites.status, memberRows]);
+  }, [invites.loaded, invites.status, memberRows, parentMode, parent]);
   useEffect(() => {
     if (!checkMember || audience !== "FAMILY") return;
     const wanted = memberRows.map((r) => r.trim().toLowerCase()).filter((e) => looksLikeEmail(e) && !asked.current.has(e));
@@ -191,10 +215,13 @@ export function NewPlanForm({
   }, [focusRow, memberRows.length]);
 
   const isFamily = audience === "FAMILY";
-  const people = headcount(memberRows);
+  const isParent = isFamily && parentMode && Boolean(parent);
+  const people = isParent ? parentHeadcount(memberRows, includeSelf) : headcount(memberRows);
+  const parentTotals = isParent ? { includeSelf } : undefined;
   const totals = useMemo(
-    () => checkoutTotals({ cadence, term, pricing, audience, memberRows, personalDiscountPercent }),
-    [cadence, term, pricing, audience, memberRows, personalDiscountPercent],
+    () => checkoutTotals({ cadence, term, pricing, audience, memberRows, personalDiscountPercent, parent: parentTotals }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cadence, term, pricing, audience, memberRows, personalDiscountPercent, isParent, includeSelf],
   );
   const rowStates = isFamily ? memberRows.map((_, i) => stateFor(i)) : [];
   const good = (st: CheckState | null) => st === "accepted" || (!gated && st === "ready");
@@ -209,7 +236,7 @@ export function NewPlanForm({
           ? "Fix the marked email"
           : null;
   // In the order the page asks: the people, their yes, then the time.
-  const missing = missingForCheckout({ audience, memberRows, slotChosen: slot !== null });
+  const missing = missingForCheckout({ audience, memberRows, slotChosen: slot !== null, parent: isParent });
   const hint = (missing !== "Pick a weekly time" ? missing : null) ?? accountHint ?? missing;
   const planName = describePaymentPlan(cadence, term).replace(/, .*/, "");
   const classesTotal = totals.classesPerPayment * totals.payments;
@@ -223,7 +250,7 @@ export function NewPlanForm({
     if (!slot || hint !== null) return;
     setBusy(true);
     setError(null);
-    const result = await onStart({ audience, term, slot, memberEmails: isFamily ? memberRows.map((r) => r.trim()).filter(Boolean) : [], expectedFirstPaymentCents: totals.firstPaymentCents }).catch(
+    const result = await onStart({ audience, term, slot, memberEmails: isFamily ? memberRows.map((r) => r.trim()).filter(Boolean) : [], expectedFirstPaymentCents: totals.firstPaymentCents, mode: isParent ? "PARENT" : "GROUP", includeSelf: isParent && includeSelf }).catch(
       (): StartPlanResult => ({ ok: false, error: "Something went wrong. Please try again." }),
     );
     setBusy(false);
@@ -232,12 +259,13 @@ export function NewPlanForm({
 
   return (
     <div className="space-y-6">
+      {!parent?.only && (
       <div className="lg:flex lg:justify-center">
       <Tabs
         label="Who is this plan for?"
         items={[
           { id: "SOLO", label: "Just me" },
-          { id: "FAMILY", label: "Me and my family" },
+          { id: "FAMILY", label: "Me and others" },
         ]}
         value={audience}
         onChange={(next) => {
@@ -246,6 +274,7 @@ export function NewPlanForm({
         }}
       />
       </div>
+      )}
 
       <div className="space-y-6">
       <div className="space-y-6">
@@ -254,8 +283,8 @@ export function NewPlanForm({
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {TERM_OPTIONS.map((option) => {
             const active = term === option.value;
-            const t = checkoutTotals({ cadence, term: option.value, pricing, audience, memberRows, personalDiscountPercent });
-            const off = Math.round((1 - t.perPaymentCents / checkoutTotals({ cadence, term: "MONTHLY", pricing, audience, memberRows, personalDiscountPercent }).perPaymentCents) * 100);
+            const t = checkoutTotals({ cadence, term: option.value, pricing, audience, memberRows, personalDiscountPercent, parent: parentTotals });
+            const off = Math.round((1 - t.perPaymentCents / checkoutTotals({ cadence, term: "MONTHLY", pricing, audience, memberRows, personalDiscountPercent, parent: parentTotals }).perPaymentCents) * 100);
             return (
               <button
                 key={option.value}
@@ -277,17 +306,63 @@ export function NewPlanForm({
 
       {isFamily && (
         <section aria-label="People on this plan" className="rounded-xl bg-neu-base p-4 shadow-raised-low">
+          {parent && !parent.only && (
+            <div className="mb-4 flex gap-2" role="group" aria-label="Kind of plan">
+              <button type="button" aria-pressed={!parentMode} onClick={() => setParentMode(false)} className={buttonVariants({ variant: !parentMode ? "primary" : "secondary", size: "sm" })}>
+                Group
+              </button>
+              <button type="button" aria-pressed={parentMode} onClick={() => setParentMode(true)} className={buttonVariants({ variant: parentMode ? "primary" : "secondary", size: "sm" })}>
+                Parent mode
+              </button>
+            </div>
+          )}
           <div className="flex items-baseline justify-between gap-3">
-            <p className="text-small font-semibold text-slate-50">Who is in the family?</p>
+            <p className="text-small font-semibold text-slate-50">{isParent ? "Which children?" : "Who is in the group?"}</p>
             <p className="text-small tabular-nums text-slate-300" aria-live="polite">
               <NumberTicker value={people.people} /> of {MAX_FAMILY_MEMBERS} people
             </p>
           </div>
+          {isParent && (
+            <div className="mt-3 flex flex-wrap gap-2" aria-label="Your linked children">
+              {Object.entries(parentInvites.status)
+                .filter(([email, st]) => st === "ACCEPTED" && !memberRows.some((r) => r.trim().toLowerCase() === email))
+                .map(([email]) => (
+                  <button
+                    key={email}
+                    type="button"
+                    onClick={() => setMemberRows((prev) => (prev.length === 1 && prev[0].trim() === "" ? [email] : [...prev, email]))}
+                    className="tap rounded-full bg-[rgb(var(--c-s-50)/0.06)] px-3.5 py-1.5 text-small text-slate-300 transition hover:text-slate-50"
+                  >
+                    + {email}
+                  </button>
+                ))}
+            </div>
+          )}
           <ul className="mt-3 space-y-2">
-            <li className="flex h-11 items-center justify-between rounded-control bg-neu-lift px-4 text-small text-slate-300 shadow-pressed-low">
-              <span className="font-medium text-slate-100">You</span>
-              <span>pays for everyone</span>
-            </li>
+            {isParent ? (
+              <li className="flex min-h-11 items-center justify-between gap-3 rounded-control bg-neu-lift px-4 py-1.5 text-small text-slate-300 shadow-pressed-low">
+                <span className="font-medium text-slate-100">You pay</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={includeSelf}
+                  disabled={!parent?.canIncludeSelf}
+                  title={parent?.canIncludeSelf ? undefined : "You already have your own plan"}
+                  onClick={() => setIncludeSelf((v) => !v)}
+                  className="tap flex items-center gap-2 rounded-full text-slate-200 disabled:opacity-50"
+                >
+                  <span>{includeSelf ? "I'm learning too" : "Just for them"}</span>
+                  <span aria-hidden className={`flex h-5 w-9 items-center rounded-full p-0.5 transition ${includeSelf ? "bg-signal" : "bg-slate-600"}`}>
+                    <span className={`h-4 w-4 rounded-full bg-white transition-transform ${includeSelf ? "translate-x-4" : ""}`} />
+                  </span>
+                </button>
+              </li>
+            ) : (
+              <li className="flex h-11 items-center justify-between rounded-control bg-neu-lift px-4 text-small text-slate-300 shadow-pressed-low">
+                <span className="font-medium text-slate-100">You</span>
+                <span>pays for everyone</span>
+              </li>
+            )}
             {memberRows.map((email, i) => (
               <li key={i}>
                 <div className="flex gap-2">
@@ -300,14 +375,14 @@ export function NewPlanForm({
                   autoComplete="off"
                   value={email}
                   onChange={(e) => setMemberRows((prev) => prev.map((v, j) => (j === i ? e.target.value : v)))}
-                  placeholder="Their account email"
-                  aria-label={`Family member ${i + 1} email`}
+                  placeholder={isParent ? "Your child's account email" : "Their account email"}
+                  aria-label={isParent ? `Child ${i + 1} email` : `Group member ${i + 1} email`}
                   className={field}
                 />
                 {memberRows.length > 1 && (
                   <button
                     type="button"
-                    aria-label={`Remove family member ${i + 1}`}
+                    aria-label={isParent ? `Remove child ${i + 1}` : `Remove group member ${i + 1}`}
                     onClick={() => {
                       invites.cancel(email);
                       setMemberRows((prev) => prev.filter((_, j) => j !== i));
@@ -331,11 +406,11 @@ export function NewPlanForm({
             }}
             className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}
           >
-            Add another person
+            {isParent ? "Add another child" : "Add another person"}
           </button>
           {toInvite.length > 0 && (
             <button type="button" onClick={() => void invites.send(toInvite)} className={buttonVariants({ variant: "primary", size: "sm", className: "ml-2 mt-3" })}>
-              {toInvite.length === 1 ? "Send invitation" : `Send ${toInvite.length} invitations`}
+              {isParent ? (toInvite.length === 1 ? "Send request" : `Send ${toInvite.length} requests`) : toInvite.length === 1 ? "Send invitation" : `Send ${toInvite.length} invitations`}
             </button>
           )}
           {invites.error && (
@@ -343,14 +418,14 @@ export function NewPlanForm({
               {invites.error}
             </p>
           )}
-          {people.atMax && <p className="mt-2 text-small text-slate-500">That is the most one family plan holds ({MAX_FAMILY_MEMBERS} people).</p>}
+          {people.atMax && <p className="mt-2 text-small text-slate-500">That is the most one group plan holds ({MAX_FAMILY_MEMBERS} people).</p>}
         </section>
       )}
 
       </div>
 
       <div>
-        <p className="mb-2 text-small font-medium text-slate-400">{isFamily ? "Your weekly time (only you)" : "Your weekly time"}</p>
+        <p className="mb-2 text-small font-medium text-slate-400">{isParent ? "Weekly time for your first child" : isFamily ? "Your weekly time (only you)" : "Your weekly time"}</p>
         {slotsLoading ? (
           <div className="flex items-center justify-center rounded-lg bg-neu-base py-6 shadow-raised-low">
             <MorphingSquare size={16} />
@@ -395,7 +470,7 @@ export function NewPlanForm({
             className={buttonVariants({ variant: "primary", className: cn("w-full sm:w-auto", (busy || !acknowledged) && "opacity-45 saturate-50", !acknowledged && "cursor-not-allowed") })}
           >
             {busy && <MorphingSquare size={14} className="mr-2 shrink-0" />}
-            {busy ? "Starting…" : isFamily ? "Start family plan" : "Start plan"}
+            {busy ? "Starting…" : isParent ? "Start plan" : isFamily ? "Start group plan" : "Start plan"}
           </button>
         }
       >
@@ -403,12 +478,19 @@ export function NewPlanForm({
           <Row label="Plan">
             {planName} · {totals.payments === 1 ? "no commitment" : `${totals.payments} payments`}
           </Row>
-          {isFamily && (
-            <Row label="People">
-              {totals.people} (you and {totals.people - 1} more)
+          {isParent ? (
+            <Row label="Paying for">
+              {memberRows.filter((r) => r.trim()).length} {memberRows.filter((r) => r.trim()).length === 1 ? "child" : "children"}
+              {includeSelf ? " and you" : ""}
             </Row>
+          ) : (
+            isFamily && (
+              <Row label="People">
+                {totals.people} (you and {totals.people - 1} more)
+              </Row>
+            )
           )}
-          {timeLine && <Row label={isFamily ? "Your weekly time" : "Weekly time"}>{timeLine}</Row>}
+          {timeLine && <Row label={isParent ? "First child's weekly time" : isFamily ? "Your weekly time" : "Weekly time"}>{timeLine}</Row>}
           <Row label={isFamily ? "Each person, every 28 days" : "Every 28 days"}>{usd(totals.perPaymentCents)}</Row>
           {!isFamily && personalDiscountPercent > 0 && (
             <Row label="Your discount">
@@ -442,8 +524,8 @@ export function NewPlanForm({
             {isFamily && (
               <>
                 , including the{" "}
-                <a href="/terms#family-plans" target="_blank" rel="noopener noreferrer" className="font-semibold text-[rgb(var(--c-s-50))] underline underline-offset-2">
-                  family plan rules
+                <a href={isParent ? "/terms#parent-mode" : "/terms#family-plans"} target="_blank" rel="noopener noreferrer" className="font-semibold text-[rgb(var(--c-s-50))] underline underline-offset-2">
+                  {isParent ? "parent mode rules" : "group plan rules"}
                 </a>
               </>
             )}

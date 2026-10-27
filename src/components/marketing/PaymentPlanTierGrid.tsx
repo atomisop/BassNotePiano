@@ -55,7 +55,7 @@ const cardItem = {
  * Every number comes from calculatePaymentPlanRate and
  * calculateFamilyBundleTotal, the same functions /billing/plans and
  * /billing/lessons compute off of, so this can't drift from the real price.
- * The Solo/Family switch reprices the same three terms: a family bundle is
+ * The Solo/Group switch reprices the same three terms: a group bundle is
  * the same cadence and term with an extra FAMILY_BUNDLE_DISCOUNT_RATE off
  * the combined total, so it is cheaper than the solo price at every term.
  */
@@ -226,7 +226,7 @@ export function PaymentPlanTierGrid({
           onChange={(v) => setAudience(v as Audience)}
           options={[
             { value: "solo", label: "Just me" },
-            { value: "family", label: `Family (${MIN_FAMILY_BUNDLE_RECIPIENTS}+ students)` },
+            { value: "family", label: `Group (${MIN_FAMILY_BUNDLE_RECIPIENTS}+ students)` },
           ]}
         />
         {isFamily && (

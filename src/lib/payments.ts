@@ -824,7 +824,11 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
       select: { id: true, userId: true, cadence: true, term: true, creditsPerInstallment: true, nextDueDate: true, user: { select: { name: true, email: true } } },
     });
     for (const plan of plans) await bookReservedWindowForPlan(plan.id);
-    familyStartBody = `Your family plan started for ${plans.length} accounts. Your weekly class is booked. Everyone else has their credits and picks their own class times. Credits expire at the end of each 28-day cycle.`;
+    const groupKind = (await prisma.familyPlanGroup.findUnique({ where: { id: payment.familyGroupId }, select: { kind: true } }))?.kind ?? "FAMILY";
+    const parentPaid = groupKind === "PARENT";
+    familyStartBody = parentPaid
+      ? `The plan started for ${plans.length === 1 ? "your child" : `${plans.length} accounts`}. Their credits are on their accounts and the weekly class is booked. You can see their progress and change their class times from Parent mode in Settings. Credits expire at the end of each 28-day cycle.`
+      : `Your group plan started for ${plans.length} accounts. Your weekly class is booked. Everyone else has their credits and picks their own class times. Credits expire at the end of each 28-day cycle.`;
     await Promise.all(
       plans
         .filter((plan) => plan.userId !== payment.userId)
@@ -832,7 +836,7 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
           createNotification({
             userId: plan.userId,
             type: "PAYMENT_APPROVED",
-            title: "Your family plan started",
+            title: parentPaid ? "Your plan started" : "Your group plan started",
             body: `${creditsLabelFromStored(plan.creditsPerInstallment)} ${plan.creditsPerInstallment === CREDITS_PER_CLASS ? "is" : "are"} on your account. Pick your own class times in Online Lessons. These credits expire on ${plan.nextDueDate.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" })} (the end of this 28-day cycle), so book your classes before then.`,
             emailCategory: "payments",
             cta: { label: "Pick your class time", path: "/lessons" },
@@ -843,8 +847,8 @@ export async function approveZellePayment(paymentId: string, reviewerId: string 
       const slot = plans[0] ? await describeReservedSlot(plans[0].id) : null;
       await notifyAdmins("NEW_SUBSCRIPTION", {
         type: "ADMIN_ALERT",
-        title: "New family plan",
-        body: `${plans.map((plan) => plan.user.name ?? plan.user.email).join(", ")} started a family plan${plans[0] ? ` (${describePaymentPlan(plans[0].cadence, plans[0].term)})` : ""}${slot ? `, ${slot}` : ""}.`,
+        title: parentPaid ? "New parent-paid plan" : "New group plan",
+        body: `${plans.map((plan) => plan.user.name ?? plan.user.email).join(", ")} started a ${parentPaid ? "parent-paid" : "group"} plan${plans[0] ? ` (${describePaymentPlan(plans[0].cadence, plans[0].term)})` : ""}${slot ? `, ${slot}` : ""}.`,
         emailCategory: "social",
         cta: { label: "See the plans", path: "/admin/payment-plans" },
       });

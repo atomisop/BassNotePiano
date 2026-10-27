@@ -16,6 +16,7 @@ import { CheckIcon } from "@/components/ui/icons";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { ManageSubscriptions, type ActivePlanInfo } from "@/components/account/ManageSubscriptions";
 import { PausePlanCard } from "@/components/account/PausePlanCard";
+import { ParentLinksPanel } from "@/components/parent/ParentLinksPanel";
 import { AddToHomeSteps, isStandalone } from "@/components/pwa/AddToHomeSteps";
 import type { AssistantMessage } from "@/lib/assistant";
 import {
@@ -805,6 +806,11 @@ function PasswordSection() {
         </form>
       </SectionCard>
 
+      <div id="parent-mode" className="scroll-mt-24">
+        <SectionCard title="Parent mode">
+          <ParentLinksPanel />
+        </SectionCard>
+      </div>
       <ReferralCard />
       <PushCard />
       <CalendarFeedCard />

@@ -166,7 +166,7 @@ describe("a family that never starts ends together", () => {
 describe("members cannot change a family plan on their own", () => {
   it("refuses a term change", async () => {
     const { plans } = await family();
-    await expect(changePaymentPlanTerm(plans[1].userId, "TERM_3")).rejects.toThrow(/family plan/i);
+    await expect(changePaymentPlanTerm(plans[1].userId, "TERM_3")).rejects.toThrow(/(family|group) plan/i);
   });
 });
 
@@ -183,7 +183,7 @@ describe("a family is not a group class", () => {
     const grant = await prisma.creditGrant.findFirstOrThrow({ where: { userId: member.userId } });
     expect(grant.expiresAt).not.toBeNull();
     // Payment notices go to the person's Mail.
-    const note = await prisma.mailMessage.findFirstOrThrow({ where: { userId: member.userId, title: "Your family plan started" } });
+    const note = await prisma.mailMessage.findFirstOrThrow({ where: { userId: member.userId, title: "Your group plan started" } });
     expect(note.body).toMatch(/expire/i);
     expect(note.body).toMatch(/pick your own class times/i);
   });

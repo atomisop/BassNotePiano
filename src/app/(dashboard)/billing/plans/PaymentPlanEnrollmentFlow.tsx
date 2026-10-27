@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { PaymentPlanCadence, PaymentPlanTerm, ZellePaymentStatus } from "@prisma/client";
 import { calculateFamilyBundleTotal, calculatePaymentPlanRate, describePaymentPlan, MAX_FAMILY_MEMBERS, type PricingConfig, OFFERED_PLAN_CADENCE } from "@/lib/classCreditPricing";
@@ -13,6 +14,7 @@ import {
   confirmSwitchToFamilyAction,
   enrollFamilyPlanAction,
   enrollInPaymentPlanAction,
+  enrollParentPlanAction,
   getReservableSlotsAction,
   getWaitlistAction,
   checkFamilyMemberAction,
@@ -24,6 +26,7 @@ import {
   submitPlanInstallmentPaymentAction,
 } from "./actions";
 import { NewPlanForm, type StartPlanInput, type StartPlanResult } from "./NewPlanForm";
+import { cancelParentLinkAction, listParentLinksAction, sendParentLinkAction } from "../../parent/actions";
 import { buttonVariants } from "@/components/ui/button";
 
 function formatUsd(cents: number) {
@@ -38,12 +41,12 @@ export interface ActivePlanSummary {
   termMonths: number;
 }
 
-/** What a family plan changes on this page. Null for a solo plan. */
+/** What a group plan changes on this page. Null for a solo plan. */
 export interface FamilyPlanInfo {
   isPayer: boolean;
   payerName: string | null;
   memberCount: number;
-  /** True until the family's combined first payment has been approved. */
+  /** True until the group's combined first payment has been approved. */
   waitingForStart: boolean;
   /** Everyone in the family, the payer first. */
   memberNames?: string[];
@@ -51,7 +54,7 @@ export interface FamilyPlanInfo {
   weeklyTime?: string | null;
 }
 
-/** One family member's monthly bill, shown to the family's payer. */
+/** One group member's monthly bill, shown to the group's payer. */
 export interface FamilyBillSummary {
   planId: string;
   memberName: string;
@@ -74,7 +77,7 @@ interface PaymentPlanEnrollmentFlowProps {
   nextInstallmentDueDate?: string;
   family?: FamilyPlanInfo | null;
   familyBills?: FamilyBillSummary[];
-  /** A switch to a family plan waiting for its combined first payment (the current plan keeps running until it is approved). */
+  /** A switch to a group plan waiting for its combined first payment (the current plan keeps running until it is approved). */
   pendingSwitch?: { payment: OpenInstallmentSummary; memberCount: number } | null;
   /** Preselects the plan from a pricing-page button (?term=&who=): its length, and "just me" or "family". */
   initialCadence?: PaymentPlanCadence;
@@ -84,10 +87,12 @@ interface PaymentPlanEnrollmentFlowProps {
   pricing: PricingConfig;
   /** This account's personal percent off a solo plan (set by the owner), 0 when none. */
   personalDiscountPercent?: number;
+  /** Opened from the Parent page (?who=parent): only the form for paying for linked children, even when this person has a plan of their own. */
+  initialParentMode?: boolean;
 }
 
 /**
- * For someone already on a solo plan: add family members and switch. Nothing changes until the family's combined first payment is
+ * For someone already on a solo plan: add group members and switch. Nothing changes until the group's combined first payment is
  * approved, and the switch needs the account password plus an emailed code.
  */
 function SwitchToFamilyPanel({
@@ -109,7 +114,7 @@ function SwitchToFamilyPanel({
 
   const typed = emails.map((e) => e.trim()).filter(Boolean);
   const invites = useFamilyInvites(INVITE_API, open);
-  // Nobody is put on a family without saying yes: the code step opens once every typed email has accepted.
+  // Nobody is put on a group without saying yes: the code step opens once every typed email has accepted.
   const states = typed.map((e) => invites.status[e.toLowerCase()]);
   const allAccepted = typed.length > 0 && states.every((st) => st === "ACCEPTED");
   const toInvite = typed.filter((e, i) => !states[i]);
@@ -139,9 +144,9 @@ function SwitchToFamilyPanel({
   if (!open) {
     return (
       <div className="mt-6 rounded-xl bg-neu-base p-4 shadow-raised-low">
-        <p className="text-small font-semibold text-slate-50">Joining others? Switch to a family plan</p>
+        <p className="text-small font-semibold text-slate-50">Joining others? Switch to a group plan</p>
         <button type="button" onClick={() => setOpen(true)} className={buttonVariants({ variant: "secondary", size: "sm", className: "mt-3" })}>
-          Add family members
+          Add group members
         </button>
       </div>
     );
@@ -149,7 +154,7 @@ function SwitchToFamilyPanel({
 
   return (
     <div className="mt-6 space-y-3 rounded-xl bg-neu-base p-4 shadow-raised-low">
-      <p className="text-small font-semibold text-slate-50">Switch to a family plan</p>
+      <p className="text-small font-semibold text-slate-50">Switch to a group plan</p>
       {step === "people" ? (
         <>
           {emails.map((email, i) => (
@@ -160,8 +165,8 @@ function SwitchToFamilyPanel({
               autoComplete="off"
               value={email}
               onChange={(e) => setEmails((prev) => prev.map((v, j) => (j === i ? e.target.value : v)))}
-              placeholder="Family member's account email"
-              aria-label={`Family member ${i + 1} email`}
+              placeholder="Group member's account email"
+              aria-label={`Group member ${i + 1} email`}
               className={field}
             />
           ))}
@@ -222,6 +227,7 @@ function SwitchToFamilyPanel({
   );
 }
 
+const PARENT_API = { list: listParentLinksAction, send: sendParentLinkAction, cancel: cancelParentLinkAction };
 const INVITE_API = { list: listMyFamilyInvitesAction, send: sendFamilyInviteAction, cancel: cancelFamilyInviteAction };
 
 /**
@@ -242,6 +248,7 @@ export function PaymentPlanEnrollmentFlow({
   initialAudience,
   pricing,
   personalDiscountPercent = 0,
+  initialParentMode = false,
 }: PaymentPlanEnrollmentFlowProps) {
   // One plan: a 45-minute class a week. (initialCadence from old links is ignored.)
   const cadence: PaymentPlanCadence = OFFERED_PLAN_CADENCE;
@@ -262,19 +269,32 @@ export function PaymentPlanEnrollmentFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverCopy]);
 
-  /** The form's server calls: start a solo or family plan, and move to the payment screen once it exists. */
-  async function startPlan({ audience, term, slot, memberEmails, expectedFirstPaymentCents }: StartPlanInput): Promise<StartPlanResult> {
+  /** The form's server calls: start a solo or group plan, and move to the payment screen once it exists. */
+  async function startPlan({ audience, term, slot, memberEmails, expectedFirstPaymentCents, mode, includeSelf }: StartPlanInput): Promise<StartPlanResult> {
     const termPayments = calculatePaymentPlanRate(cadence, term, pricing).termMonths;
+    if (audience === "FAMILY" && mode === "PARENT") {
+      // A parent paying for linked children: no plan of their own is needed. The first payment waits on the Parent mode page.
+      let result: Awaited<ReturnType<typeof enrollParentPlanAction>>;
+      try {
+        result = await enrollParentPlanAction(term, slot.scheduleId, slot.chunkIndex, memberEmails, includeSelf, expectedFirstPaymentCents);
+      } catch {
+        return { ok: false, error: "Something went wrong starting the plan. Please try again." };
+      }
+      if (result.error === PRICE_CHANGED_MESSAGE) router.refresh();
+      if (!result.ok) return { ok: false, error: result.error ?? "Something went wrong starting the plan." };
+      router.push("/parent");
+      return { ok: true };
+    }
     if (audience === "FAMILY") {
       let result: Awaited<ReturnType<typeof enrollFamilyPlanAction>>;
       try {
         result = await enrollFamilyPlanAction(term, slot.scheduleId, slot.chunkIndex, memberEmails, expectedFirstPaymentCents);
       } catch {
-        return { ok: false, error: "Something went wrong starting the family plan. Please try again." };
+        return { ok: false, error: "Something went wrong starting the group plan. Please try again." };
       }
       if (result.error === PRICE_CHANGED_MESSAGE) router.refresh();
       if (!result.ok || !result.planId || !result.startPaymentId || result.amountCents === null) {
-        return { ok: false, error: result.error ?? "Something went wrong starting the family plan." };
+        return { ok: false, error: result.error ?? "Something went wrong starting the group plan." };
       }
       setEnrolled({
         plan: { id: result.planId, cadence, term, installmentsPaid: 0, termMonths: termPayments },
@@ -300,6 +320,24 @@ export function PaymentPlanEnrollmentFlow({
     return { ok: true };
   }
 
+  if (initialParentMode) {
+    return (
+      <NewPlanForm
+        pricing={pricing}
+        personalDiscountPercent={0}
+        initialTerm={initialTerm}
+        initialAudience="FAMILY"
+        loadSlots={() => getReservableSlotsAction(cadence)}
+        onStart={startPlan}
+        checkMember={checkFamilyMemberAction}
+        inviteApi={INVITE_API}
+        parent={{ inviteApi: PARENT_API, canIncludeSelf: !initialPlan, startOn: true, only: true }}
+        loadWaitlist={getWaitlistAction}
+        setWaitlist={(slot, join) => setWaitlistAction(slot.scheduleId, slot.chunkIndex, join)}
+      />
+    );
+  }
+
   if (enrolled) {
     const { plan, installment } = enrolled;
     const fam = enrolled.family ?? null;
@@ -312,15 +350,15 @@ export function PaymentPlanEnrollmentFlow({
         {pendingSwitch && (
           <div className="mb-6">
             <p className="mb-3 rounded-xl bg-neu-base px-3.5 py-3 text-small text-slate-300 shadow-pressed-low">
-              Switching to a family plan of {pendingSwitch.memberCount} people. Your current plan below keeps running until this combined first payment is approved, then it
-              is replaced by the family plan at the same weekly time. If it does not arrive in time, nothing changes.
+              Switching to a group plan of {pendingSwitch.memberCount} people. Your current plan below keeps running until this combined first payment is approved, then it
+              is replaced by the group plan at the same weekly time. If it does not arrive in time, nothing changes.
             </p>
             <ZelleUnlockGate
               status={pendingSwitch.payment.status}
               rejectionReason={pendingSwitch.payment.rejectionReason}
               scaleCode={`First payment for ${pendingSwitch.memberCount} accounts`}
-              scaleTitle="Family plan"
-              eyebrowLabel="Family plan"
+              scaleTitle="Group plan"
+              eyebrowLabel="Group plan"
               amountCents={pendingSwitch.payment.amountCents}
               zelleHandle={zelleHandle}
               paymentId={pendingSwitch.payment.id}
@@ -339,12 +377,12 @@ export function PaymentPlanEnrollmentFlow({
           <p className="mb-4 rounded-xl bg-neu-base px-3.5 py-3 text-small text-slate-300 shadow-pressed-low">
             {memberView
               ? fam.waitingForStart
-                ? `This is a family plan for ${fam.memberCount} accounts. Your classes start when ${fam.payerName ?? "the person who set it up"} sends the combined first payment. There is nothing for you to pay.`
-                : `This is a family plan for ${fam.memberCount} accounts. ${fam.payerName ?? "The person who set it up"} pays your 28-day bill from their own bank account.`
+                ? `This is a group plan for ${fam.memberCount} accounts. Your classes start when ${fam.payerName ?? "the person who set it up"} sends the combined first payment. There is nothing for you to pay.`
+                : `This is a group plan for ${fam.memberCount} accounts. ${fam.payerName ?? "The person who set it up"} pays your 28-day bill from their own bank account.`
               : fam.waitingForStart
-                ? `Family plan for ${fam.memberCount} accounts. Everyone starts together when this combined first payment arrives, and it must come from your own bank account.`
-                : `Family plan for ${fam.memberCount} accounts. You pay every member's 28-day bill from your own bank account.`}
-            {fam.memberNames && fam.memberNames.length > 0 && ` In this family: ${fam.memberNames.join(", ")}.`}
+                ? `Group plan for ${fam.memberCount} accounts. Everyone starts together when this combined first payment arrives, and it must come from your own bank account.`
+                : `Group plan for ${fam.memberCount} accounts. You pay every member's 28-day bill from your own bank account.`}
+            {fam.memberNames && fam.memberNames.length > 0 && ` In this group: ${fam.memberNames.join(", ")}.`}
             {fam.weeklyTime && ` Your weekly class together: ${fam.weeklyTime}.`}
           </p>
         )}
@@ -354,7 +392,7 @@ export function PaymentPlanEnrollmentFlow({
             rejectionReason={installment.rejectionReason}
             scaleCode={fam?.waitingForStart ? `First payment for ${fam.memberCount} accounts` : `Installment ${installment.installmentNumber ?? plan.installmentsPaid + 1} of ${plan.termMonths}`}
             scaleTitle={planLabel}
-            eyebrowLabel={fam ? "Family plan" : "Payment Plan"}
+            eyebrowLabel={fam ? "Group plan" : "Payment Plan"}
             amountCents={installment.amountCents}
             zelleHandle={zelleHandle}
             paymentId={installment.id}
@@ -381,6 +419,12 @@ export function PaymentPlanEnrollmentFlow({
         {!fam && !pendingSwitch && plan.installmentsPaid >= 1 && (
           <SwitchToFamilyPanel term={plan.term} pricing={pricing} onStarted={(payment, memberCount) => setPendingSwitch({ payment, memberCount })} />
         )}
+        <div className="mt-6 rounded-xl bg-neu-base px-4 py-3 shadow-raised-low">
+          <Link href="/billing/plans?who=parent" className="tap flex items-center justify-between gap-3 text-small font-medium text-slate-100 hover:text-slate-50">
+            Pay for your child&apos;s plan
+            <span aria-hidden className="text-slate-500">→</span>
+          </Link>
+        </div>
         {familyBills.length > 0 && (
           <div className="mt-6 space-y-4">
             <p className="text-small font-medium text-slate-400">Other members&apos; 28-day bills</p>
@@ -391,7 +435,7 @@ export function PaymentPlanEnrollmentFlow({
                 rejectionReason={bill.payment.rejectionReason}
                 scaleCode={`${bill.memberName}: installment ${bill.payment.installmentNumber ?? "?"}`}
                 scaleTitle={planLabel}
-                eyebrowLabel="Family plan"
+                eyebrowLabel="Group plan"
                 amountCents={bill.payment.amountCents}
                 zelleHandle={zelleHandle}
                 paymentId={bill.payment.id}
@@ -414,6 +458,7 @@ export function PaymentPlanEnrollmentFlow({
       onStart={startPlan}
       checkMember={checkFamilyMemberAction}
       inviteApi={INVITE_API}
+      parent={{ inviteApi: PARENT_API, canIncludeSelf: true }}
       loadWaitlist={getWaitlistAction}
       setWaitlist={(slot, join) => setWaitlistAction(slot.scheduleId, slot.chunkIndex, join)}
     />

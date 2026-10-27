@@ -533,7 +533,7 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
 
   const plan = await prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
   if (!plan) throw new PaymentPlanError("You don't have an active payment plan.");
-  if (plan.familyGroupId) throw new PaymentPlanError("A family plan's length is changed by the teacher. Message us and we will help.");
+  if (plan.familyGroupId) throw new PaymentPlanError("A group plan's length is changed by the teacher. Message us and we will help.");
   if (plan.term === newTerm) throw new PaymentPlanError("You're already on this term.");
 
   await assertNoOpenInstallment(plan.id);
@@ -592,7 +592,11 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
     async (tx) => {
       const plan = await tx.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
       if (!plan) throw new PaymentPlanError("You don't have an active payment plan.");
-      if (plan.familyGroupId) throw new PaymentPlanError("A family plan's weekly time is moved by the teacher so everyone stays together. Message us and we will help.");
+      if (plan.familyGroupId) {
+        // A parent-paid plan's child (or their parent, acting for them) can move their own weekly time; a group plan's is moved by the teacher so everyone stays together.
+        const kind = (await tx.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { kind: true } }))?.kind;
+        if (kind !== "PARENT") throw new PaymentPlanError("A group plan's weekly time is moved by the teacher so everyone stays together. Message us and we will help.");
+      }
       if (!plan.reservedScheduleId || plan.reservedChunkIndex === null) {
         throw new PaymentPlanError("Your plan doesn't have a reserved slot yet. Message us and we'll help.");
       }
@@ -1429,8 +1433,8 @@ async function noticeFamilyShrank(groupId: string): Promise<void> {
   const solo = calculatePaymentPlanRate(last.cadence, last.term, await getPricingConfig()).installmentAmountCents;
   await noticePlanUpdated({
     userId: last.userId,
-    title: "Your family is down to one person",
-    body: `A family plan needs at least two people. From your next bill the price is the solo price, ${money(solo)}, instead of ${money(last.installmentAmountCents)}. Your plan keeps its term and weekly time.`,
+    title: "Your group is down to one person",
+    body: `A group plan needs at least two people. From your next bill the price is the solo price, ${money(solo)}, instead of ${money(last.installmentAmountCents)}. Your plan keeps its term and weekly time.`,
   }).catch((err) => console.error("Family shrank notice failed (non-blocking):", err));
 }
 
@@ -1452,8 +1456,8 @@ async function endFamilyWhenPayerLeaves(groupId: string, leavingPlanId: string):
     await createNotification({
       userId: member.userId,
       type: "PAYMENT_PLAN_CANCELED",
-      title: "Your family plan is ending",
-      body: "The person who paid for your family plan left it, so it ends. The 28 days already paid stay: your credits and booked classes run until then. You can start your own plan any time.",
+      title: "Your group plan is ending",
+      body: "The person who paid for your group plan left it, so it ends. The 28 days already paid stay: your credits and booked classes run until then. You can start your own plan any time.",
       emailCategory: "payments",
     }).catch((err) => console.error("Family ended notice failed (non-blocking):", err));
   }
@@ -1469,9 +1473,10 @@ async function endFamilyWhenPayerLeaves(groupId: string, leavingPlanId: string):
 /** Call after any started family plan stops (cancelled by the person, by an admin, or lapsed). */
 async function afterFamilyPlanEnded(plan: { id: string; userId: string; familyGroupId: string | null; installmentsPaid: number }): Promise<void> {
   if (!plan.familyGroupId || plan.installmentsPaid < 1) return;
-  const group = await prisma.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { payerId: true } });
+  const group = await prisma.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { payerId: true, kind: true } });
   if (!group) return;
-  if (group.payerId === plan.userId) await endFamilyWhenPayerLeaves(plan.familyGroupId, plan.id);
+  // In parent mode the parent can leave their own plan and the children's plans carry on (the parent still pays them).
+  if (group.payerId === plan.userId && group.kind === "FAMILY") await endFamilyWhenPayerLeaves(plan.familyGroupId, plan.id);
   else await noticeFamilyShrank(plan.familyGroupId);
 }
 
@@ -1515,8 +1520,8 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
   if (!payer) throw new PaymentPlanError("Your account was not found.");
 
   const typed = Array.from(new Set(input.memberEmails.map((e) => e.trim().toLowerCase()).filter(Boolean))).filter((e) => e !== payer.email.toLowerCase());
-  if (typed.length + 1 < MIN_FAMILY_MEMBERS) throw new PaymentPlanError(`A family plan needs at least ${MIN_FAMILY_MEMBERS} accounts, you and one more.`);
-  if (typed.length + 1 > MAX_FAMILY_MEMBERS) throw new PaymentPlanError(`A family plan can have up to ${MAX_FAMILY_MEMBERS} accounts.`);
+  if (typed.length + 1 < MIN_FAMILY_MEMBERS) throw new PaymentPlanError(`A group plan needs at least ${MIN_FAMILY_MEMBERS} accounts, you and one more.`);
+  if (typed.length + 1 > MAX_FAMILY_MEMBERS) throw new PaymentPlanError(`A group plan can have up to ${MAX_FAMILY_MEMBERS} accounts.`);
 
   const others = await prisma.user.findMany({ where: { email: { in: typed } }, select: { id: true, name: true, email: true, role: true, bannedAt: true } });
   const missing = typed.filter((email) => !others.some((u) => u.email.toLowerCase() === email));
@@ -1527,13 +1532,13 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
   for (const member of members) {
     const who = member.id === payer.id ? "Your account" : member.email;
     if (member.bannedAt || member.role !== "STUDENT") throw new PaymentPlanError(`${who} cannot start a plan.`);
-    if (!hasFirstAndLastName(member.name)) throw new PaymentPlanError(`${who} needs a first and last name on the account before a family plan can start.`);
+    if (!hasFirstAndLastName(member.name)) throw new PaymentPlanError(`${who} needs a first and last name on the account before a group plan can start.`);
   }
   // Each member has to be a different person, not one person with two accounts.
   for (let i = 0; i < members.length; i++) {
     for (let j = i + 1; j < members.length; j++) {
       if (namesMatch(members[i].name, members[j].name)) {
-        throw new PaymentPlanError(`${members[i].email} and ${members[j].email} have the same name. A family plan is for different people, each with their own account.`);
+        throw new PaymentPlanError(`${members[i].email} and ${members[j].email} have the same name. A group plan is for different people, each with their own account.`);
       }
     }
   }
@@ -1541,9 +1546,9 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
   // A payer who is already subscribed switches: the old plan keeps running until the family's first payment is approved.
   const oldPlan = await prisma.paymentPlan.findFirst({ where: { userId: payerId, status: "ACTIVE" } });
   if (oldPlan) {
-    if (oldPlan.familyGroupId) throw new PaymentPlanError("You are already on a family plan.");
+    if (oldPlan.familyGroupId) throw new PaymentPlanError("You are already on a group plan.");
     if (!input.verifiedSwitch) throw new PaymentPlanError("Confirm the switch with your password and the code we email you first.");
-    if (oldPlan.installmentsPaid < 1) throw new PaymentPlanError("Pay or cancel your current plan first, then start the family plan.");
+    if (oldPlan.installmentsPaid < 1) throw new PaymentPlanError("Pay or cancel your current plan first, then start the group plan.");
     const inReview = await prisma.zellePayment.findFirst({ where: { paymentPlanId: oldPlan.id, status: "PENDING_REVIEW" }, select: { id: true } });
     if (inReview) throw new PaymentPlanError("Your last payment is still being confirmed. Try again in a few minutes.");
   }
@@ -1554,7 +1559,7 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
       where: { payerId, createdAt: { gte: new Date(Date.now() - cooldownDays * 24 * 60 * 60 * 1000) }, plans: { some: { installmentsPaid: { gt: 0 } } } },
       select: { id: true },
     });
-    if (recent) throw new PaymentPlanError(`You started a family plan recently. A family plan can be changed once every ${cooldownDays} days.`);
+    if (recent) throw new PaymentPlanError(`You started a group plan recently. A group plan can be changed once every ${cooldownDays} days.`);
   }
   // The weekly time is the PAYER's own. Everyone else in the family gets credits and books their own class times with them.
   // A payer switching in from a plan keeps the weekly time that plan already holds.
@@ -1587,14 +1592,14 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
         if (busy) {
           // Another person's plan status is not told to the payer: only that someone cannot start.
           const who = busy.userId === payerId ? "You already have an active payment plan" : "One of the accounts cannot start a family plan right now";
-          throw new PaymentPlanError(`${who}. Nobody was signed up. Finish or cancel the plan first, then start the family plan.`);
+          throw new PaymentPlanError(`${who}. Nobody was signed up. Finish or cancel the plan first, then start the group plan.`);
         }
         if (oldPlan) {
           const still = await tx.paymentPlan.findFirst({ where: { id: oldPlan.id, status: "ACTIVE" }, select: { id: true } });
           if (!still) throw new PaymentPlanError("Your plan changed while we were setting this up. Try again.");
         }
         const payingAlready = await tx.familyPlanGroup.findFirst({ where: { payerId, plans: { some: { status: "ACTIVE" } } }, select: { id: true } });
-        if (payingAlready) throw new PaymentPlanError("You already pay for a family plan. One family plan per payer.");
+        if (payingAlready) throw new PaymentPlanError("You already pay for a group plan. One group plan per payer.");
 
         await assertSlotReservable(tx, reservedScheduleId, reservedChunkIndex, creditsPerWeek, [payerId], oldPlan ? [oldPlan.id] : []);
 
@@ -1639,17 +1644,156 @@ export async function createFamilyPlans(input: CreateFamilyPlansInput) {
     const money = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
     await noticePlanUpdated({
       userId: payerId,
-      title: "Your family plan is set up",
+      title: "Your group plan is set up",
       body: oldPlan
-        ? `${describePaymentPlan(cadence, term)} for ${members.length} accounts is ready. Your current plan keeps running until the combined first payment (${money(created.startPayment.amountCents)}, from your own bank account) is approved. Then it is replaced by the family plan, with the same weekly time.`
+        ? `${describePaymentPlan(cadence, term)} for ${members.length} accounts is ready. Your current plan keeps running until the combined first payment (${money(created.startPayment.amountCents)}, from your own bank account) is approved. Then it is replaced by the group plan, with the same weekly time.`
         : `${describePaymentPlan(cadence, term)} for ${members.length} accounts is set up. Send the combined first payment (${money(created.startPayment.amountCents)}) from your own bank account to start everyone's classes together.`,
     });
     for (const other of others) {
       await noticePlanUpdated({
         userId: other.id,
-        title: "You were added to a family plan",
-        body: `${payer.name ?? payer.email} set up a family plan that includes you. When their first payment arrives, class credits go on your account and you pick your own class times. They pay your 28-day bills. Credits expire at the end of each 28-day cycle, so book before then.`,
+        title: "You were added to a group plan",
+        body: `${payer.name ?? payer.email} set up a group plan that includes you. When their first payment arrives, class credits go on your account and you pick your own class times. They pay your 28-day bills. Credits expire at the end of each 28-day cycle, so book before then.`,
       }).catch((err) => console.error("Family member notice failed (non-blocking):", err));
+    }
+    return created;
+  } catch (err) {
+    if (err instanceof PaymentPlanError) throw err;
+    if ((err as Prisma.PrismaClientKnownRequestError)?.code === "P2034") throw new PaymentPlanError("That slot was just taken. Try again.");
+    throw err;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Parent mode: a parent pays for the children they are linked to (see parentLinks.ts)
+//
+// Each child gets their own PaymentPlan, all started together by ONE combined payment from the parent's own bank account (the same
+// FAMILY_PLAN_START payment a group plan uses, on a group of kind PARENT). The parent is a member only if they choose to learn too
+// ("I'm learning too", allowed while they have no plan of their own); they are never forced into a plan to pay for a child, and leaving
+// their own plan never ends the children's. The weekly time goes to the first child; the others (and the parent) book with credits.
+// One child is priced like a solo plan; two or more people get the group rate.
+// ---------------------------------------------------------------------------
+
+export interface CreateParentPlansInput {
+  payerId: string;
+  cadence: PaymentPlanCadence;
+  term: PaymentPlanTerm;
+  zelleHandle: string;
+  reservedScheduleId: string;
+  reservedChunkIndex: number;
+  /** The linked children's account emails. The first one holds the weekly time. */
+  childEmails: string[];
+  /** The parent learns too, on a plan of their own at the same price. Needs the parent to have no active plan. */
+  includeSelf: boolean;
+  expectedFirstPaymentCents?: number;
+}
+
+/** What one person pays per 28 days when `people` are on a parent-paid plan: solo price for one, the group rate for two or more. */
+export function parentPlanPerPersonCents(cadence: PaymentPlanCadence, term: PaymentPlanTerm, people: number, pricing: Awaited<ReturnType<typeof getPricingConfig>>): number {
+  return people >= 2 ? calculateFamilyBundleTotal(cadence, term, people, pricing).perStudentMonthlyCents : calculatePaymentPlanRate(cadence, term, pricing).installmentAmountCents;
+}
+
+export async function createParentPlans(input: CreateParentPlansInput) {
+  const { payerId, cadence, term, zelleHandle, includeSelf } = input;
+  if (!Object.values(PaymentPlanCadence).includes(cadence)) throw new PaymentPlanError(`"${cadence}" isn't a valid cadence.`);
+  if (!Object.values(PaymentPlanTerm).includes(term)) throw new PaymentPlanError(`"${term}" isn't a valid term.`);
+  if (!isPlanCadenceOffered(cadence)) throw new PaymentPlanError("That weekly length isn't offered anymore. Classes are 45 minutes a week.");
+  if (!isPlanTermOffered(term)) throw new PaymentPlanError("That plan length is no longer offered. Pick 1 Month, 3 Months, or 6 Months.");
+
+  const payer = await prisma.user.findUnique({ where: { id: payerId }, select: { id: true, name: true, email: true, role: true, bannedAt: true } });
+  if (!payer || payer.bannedAt || payer.role !== "STUDENT") throw new PaymentPlanError("Your account cannot start a plan.");
+  if (includeSelf && !hasFirstAndLastName(payer.name)) throw new PaymentPlanError("Your account needs a first and last name on it before you can be on a plan.");
+
+  const typed = Array.from(new Set(input.childEmails.map((e) => e.trim().toLowerCase()).filter(Boolean))).filter((e) => e !== payer.email.toLowerCase());
+  if (typed.length < 1) throw new PaymentPlanError("Add at least one child's account.");
+  const people = typed.length + (includeSelf ? 1 : 0);
+  if (people > MAX_FAMILY_MEMBERS) throw new PaymentPlanError(`A plan can have up to ${MAX_FAMILY_MEMBERS} accounts.`);
+
+  const kids = await prisma.user.findMany({ where: { email: { in: typed } }, select: { id: true, name: true, email: true, role: true, bannedAt: true } });
+  const missing = typed.filter((email) => !kids.some((u) => u.email.toLowerCase() === email));
+  if (missing.length > 0) throw new PaymentPlanError(`These emails do not have a Bass Note Piano account yet: ${missing.join(", ")}`);
+  // Children first, in the order typed, so the first one holds the weekly time.
+  const orderedKids = typed.map((email) => kids.find((k) => k.email.toLowerCase() === email)!);
+  for (const kid of orderedKids) {
+    if (kid.bannedAt || kid.role !== "STUDENT") throw new PaymentPlanError(`${kid.email} cannot start a plan.`);
+    if (!hasFirstAndLastName(kid.name)) throw new PaymentPlanError(`${kid.email} needs a first and last name on the account before a plan can start.`);
+  }
+  const members = includeSelf ? [...orderedKids, payer] : orderedKids;
+  for (let i = 0; i < members.length; i++) {
+    for (let j = i + 1; j < members.length; j++) {
+      if (namesMatch(members[i].name, members[j].name)) {
+        throw new PaymentPlanError(`${members[i].email} and ${members[j].email} have the same name. Each person needs their own account.`);
+      }
+    }
+  }
+
+  const holder = orderedKids[0];
+  const pricing = await getPricingConfig();
+  const perMemberCents = parentPlanPerPersonCents(cadence, term, members.length, pricing);
+  if (input.expectedFirstPaymentCents !== undefined && input.expectedFirstPaymentCents !== perMemberCents * members.length) throw new PaymentPlanError(PRICE_CHANGED_MESSAGE);
+  await assertNotHoardingTimes(payerId);
+  const rate = calculatePaymentPlanRate(cadence, term, pricing);
+  const creditsPerWeek = PLAN_CADENCE_CREDITS_PER_WEEK[cadence];
+
+  try {
+    const created = await prisma.$transaction(
+      async (tx) => {
+        // Every child must be linked to this parent, and have said yes.
+        const links = await tx.parentLink.findMany({ where: { parentId: payerId, childId: { in: orderedKids.map((k) => k.id) }, status: "ACCEPTED" }, select: { childId: true } });
+        const linked = new Set(links.map((l) => l.childId));
+        const notLinked = orderedKids.filter((k) => !linked.has(k.id));
+        if (notLinked.length > 0) throw new PaymentPlanError(`${notLinked.map((k) => k.email).join(", ")} ${notLinked.length === 1 ? "is" : "are"} not linked to you yet. Ask them to accept your request first.`);
+
+        // Nobody may already be on a plan. A child's plan status is not told to the parent: only that someone cannot start.
+        const busyKid = await tx.paymentPlan.findFirst({ where: { userId: { in: orderedKids.map((k) => k.id) }, status: "ACTIVE" }, select: { userId: true } });
+        if (busyKid) throw new PaymentPlanError("One of the accounts cannot start a plan right now. Nobody was signed up. Finish or cancel their plan first.");
+        if (includeSelf) {
+          const mine = await tx.paymentPlan.findFirst({ where: { userId: payerId, status: "ACTIVE" }, select: { id: true } });
+          if (mine) throw new PaymentPlanError("You already have your own plan. Turn off \"I'm learning too\", or cancel your plan first.");
+        }
+        await assertSlotReservable(tx, input.reservedScheduleId, input.reservedChunkIndex, creditsPerWeek, [], []);
+
+        const group = await tx.familyPlanGroup.create({ data: { payerId, kind: "PARENT" } });
+        const plans: PaymentPlan[] = [];
+        for (const member of members) {
+          plans.push(
+            await tx.paymentPlan.create({
+              data: {
+                userId: member.id,
+                cadence,
+                term,
+                installmentAmountCents: perMemberCents,
+                creditsPerInstallment: rate.creditsPerInstallment,
+                termMonths: rate.termMonths,
+                nextDueDate: new Date(),
+                reservedScheduleId: member.id === holder.id ? input.reservedScheduleId : null,
+                reservedChunkIndex: member.id === holder.id ? input.reservedChunkIndex : null,
+                familyGroupId: group.id,
+              },
+            }),
+          );
+        }
+        const startPayment = await tx.zellePayment.create({
+          data: { userId: payerId, purpose: "FAMILY_PLAN_START", amountCents: perMemberCents * members.length, zelleHandle, familyGroupId: group.id, status: "AWAITING_TRANSFER" },
+        });
+        return { group, plans, startPayment };
+      },
+      { isolationLevel: "Serializable" },
+    );
+
+    await prisma.user.updateMany({ where: { id: { in: members.map((m) => m.id) } }, data: { notifyEmailReminders: true } });
+    const money = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+    await noticePlanUpdated({
+      userId: payerId,
+      title: "Your plan is set up",
+      body: `${describePaymentPlan(cadence, term)} for ${members.length === 1 ? holder.name ?? holder.email : `${members.length} accounts`} is set up. Send the first payment (${money(created.startPayment.amountCents)}) from your own bank account to start the classes. You pay every 28-day bill from the Parent mode page.`,
+    });
+    for (const kid of orderedKids) {
+      await noticePlanUpdated({
+        userId: kid.id,
+        title: "A plan was set up for you",
+        body: `${payer.name ?? payer.email} set up your plan. When their first payment arrives your class credits appear${kid.id === holder.id ? " and your weekly class is booked" : ""}. They pay your bills, and they can see your progress and help with your class times.`,
+      }).catch((err) => console.error("Parent plan child notice failed (non-blocking):", err));
     }
     return created;
   } catch (err) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_PRICING, MAX_FAMILY_MEMBERS, MIN_FAMILY_MEMBERS, OFFERED_PLAN_CADENCE } from "@/lib/classCreditPricing";
-import { checkoutTotals, headcount, missingForCheckout, parseAudience } from "@/lib/planCheckout";
+import { checkoutTotals, headcount, missingForCheckout, parentHeadcount, parseAudience, parseParentMode } from "@/lib/planCheckout";
 import { DAY_ORDER, formatTimeLabel, formatTimeRange } from "@/lib/weeklyTimeLabels";
 
 const base = { cadence: OFFERED_PLAN_CADENCE, pricing: DEFAULT_PRICING, memberRows: [] as string[] };
@@ -83,7 +83,7 @@ describe("what is still missing", () => {
   });
 
   it("a family needs each person's email first, then the time", () => {
-    expect(missingForCheckout({ audience: "FAMILY", memberRows: [], slotChosen: true })).toMatch(/family member/);
+    expect(missingForCheckout({ audience: "FAMILY", memberRows: [], slotChosen: true })).toMatch(/Add a person/);
     expect(missingForCheckout({ audience: "FAMILY", memberRows: [""], slotChosen: true })).toMatch(/empty email/);
     expect(missingForCheckout({ audience: "FAMILY", memberRows: ["a@x.com", ""], slotChosen: false })).toMatch(/empty email/);
     expect(missingForCheckout({ audience: "FAMILY", memberRows: ["a@x.com", "b@x.com"], slotChosen: false })).toBe("Pick a weekly time");
@@ -121,7 +121,7 @@ describe("the price on screen is the price the server charges", () => {
     const { discountedPlanPriceCents } = await import("@/lib/classCreditPricing");
     for (const term of ["MONTHLY", "TERM_3", "TERM_6"] as const) {
       const list = calculatePaymentPlanRate(OFFERED_PLAN_CADENCE, term, DEFAULT_PRICING).installmentAmountCents;
-      const solo = checkoutTotals({ cadence: OFFERED_PLAN_CADENCE, term, pricing: DEFAULT_PRICING, audience: "SOLO", memberRows: [] });
+      const solo = checkoutTotals({ cadence: OFFERED_PLAN_CADENCE, term, pricing: DEFAULT_PRICING, audience: "SOLO" as const, memberRows: [] });
       expect(solo.firstPaymentCents).toBe(list);
       const off = checkoutTotals({ cadence: OFFERED_PLAN_CADENCE, term, pricing: DEFAULT_PRICING, audience: "SOLO", memberRows: [], personalDiscountPercent: 15 });
       expect(off.firstPaymentCents).toBe(discountedPlanPriceCents(list, 15));
@@ -130,5 +130,36 @@ describe("the price on screen is the price the server charges", () => {
         expect(family.firstPaymentCents).toBe(calculateFamilyBundleTotal(OFFERED_PLAN_CADENCE, term, others + 1, DEFAULT_PRICING).perStudentMonthlyCents * (others + 1));
       }
     }
+  });
+});
+
+describe("parent mode", () => {
+  const parentBase = { cadence: OFFERED_PLAN_CADENCE, term: "MONTHLY" as const, pricing: DEFAULT_PRICING, audience: "FAMILY" as const };
+  it("one child alone is priced like a solo plan, and the parent is not counted", () => {
+    const t = checkoutTotals({ ...parentBase, memberRows: ["kid@example.com"], parent: { includeSelf: false } });
+    const solo = checkoutTotals({ ...parentBase, audience: "SOLO" as const, memberRows: [] });
+    expect(t.people).toBe(1);
+    expect(t.perPaymentCents).toBe(solo.perPaymentCents);
+    expect(t.firstPaymentCents).toBe(solo.perPaymentCents);
+  });
+  it("a child plus the parent, or two children, get the group rate for two", () => {
+    const withSelf = checkoutTotals({ ...parentBase, memberRows: ["kid@example.com"], parent: { includeSelf: true } });
+    const two = checkoutTotals({ ...parentBase, memberRows: ["a@example.com", "b@example.com"], parent: { includeSelf: false } });
+    expect(withSelf.people).toBe(2);
+    expect(two.people).toBe(2);
+    expect(withSelf.perPaymentCents).toBe(two.perPaymentCents);
+    expect(withSelf.perPaymentCents).toBeLessThan(checkoutTotals({ ...parentBase, audience: "SOLO" as const, memberRows: [] }).perPaymentCents);
+  });
+  it("needs at least one child before anything else", () => {
+    expect(missingForCheckout({ audience: "FAMILY", memberRows: [], slotChosen: false, parent: true })).toMatch(/child/);
+    expect(missingForCheckout({ audience: "FAMILY", memberRows: ["kid@example.com"], slotChosen: false, parent: true })).toBe("Pick a weekly time");
+  });
+  it("counts people the parent way, and reads ?who=parent", () => {
+    expect(parentHeadcount(["a@x.co"], false).people).toBe(1);
+    expect(parentHeadcount(["a@x.co"], true).people).toBe(2);
+    expect(parseParentMode("parent")).toBe(true);
+    expect(parseParentMode("family")).toBe(false);
+    expect(parseAudience("parent")).toBe("FAMILY");
+    expect(parseAudience("group")).toBe("FAMILY");
   });
 });

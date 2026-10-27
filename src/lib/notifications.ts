@@ -45,6 +45,8 @@ const NOTIFICATION_CTA: Partial<Record<NotificationType, NotificationCta>> = {
   FRIEND_REQUEST_RECEIVED: { label: "View request", url: getAppUrl("/friends#requests"), kind: "default" },
   FRIEND_REQUEST_ACCEPTED: { label: "Say hello", url: getAppUrl("/friends"), kind: "default" },
   PRACTICE_REMINDER: { label: "Continue learning", url: getAppUrl("/dashboard"), kind: "default" },
+  PARENT_LINK_REQUEST: { label: "Answer the request", url: getAppUrl("/account?tab=account#parent-mode"), kind: "default" },
+  PARENT_LINK_ACCEPTED: { label: "Open Parent mode", url: getAppUrl("/parent"), kind: "default" },
   BANNER_PHONE: { label: "Add my number", url: getAppUrl("/account?tab=account#phone"), kind: "default" },
   BANNER_DISCORD: { label: "Connect Discord", url: getAppUrl("/api/discord/connect"), kind: "default" },
   BANNER_PRACTICE: { label: "Start practice", url: getAppUrl("/practice"), kind: "default" },
