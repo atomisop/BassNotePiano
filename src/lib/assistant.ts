@@ -40,7 +40,7 @@ export function isAssistantConfigured(): boolean {
 }
 
 interface GeminiRequest {
-  contents: { role: "user" | "model"; parts: { text: string }[] }[];
+  contents: { role: "user" | "model"; parts: ({ text: string } | { inlineData: { mimeType: string; data: string } })[] }[];
   systemInstruction: string;
   maxOutputTokens: number;
   responseMimeType?: string;
@@ -388,4 +388,18 @@ export async function askAssistant(
   });
 
   return response.text ?? "Sorry, I didn't catch that, could you try asking again?";
+}
+
+/**
+ * Asks Gemini to read one image and answer as JSON (used to pre-check a payer's bank confirmation screenshot). The image is sent for this
+ * one call only and is not stored. The reply is data to compare, never instructions to follow.
+ */
+export async function readImageAsJson(input: { instruction: string; mimeType: string; base64: string }): Promise<string | undefined> {
+  const response = await generateContent({
+    contents: [{ role: "user", parts: [{ inlineData: { mimeType: input.mimeType, data: input.base64 } }, { text: "Read this image." }] }],
+    systemInstruction: input.instruction,
+    maxOutputTokens: 300,
+    responseMimeType: "application/json",
+  });
+  return response.text;
 }

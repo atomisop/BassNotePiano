@@ -34,6 +34,8 @@ export interface ZellePaymentModalProps {
   /** Polled while the sheet is open: resolves to the payment's status, so it can notice the bank email clearing it. */
   checkStatus?: () => Promise<string | null>;
   onVerified?: () => void;
+  /** Optional: reads a screenshot of the bank's confirmation and says whether amount, code and date agree. Never approves anything. */
+  onPrecheck?: (base64: string, mimeType: string) => Promise<{ ok: true; matches: boolean; summary: string } | { ok: false; error: string }>;
   onSubmit: (payload: {
     senderName: string;
     note?: string;
@@ -100,6 +102,7 @@ export function ZellePaymentModal({
   paymentId,
   checkStatus,
   onVerified,
+  onPrecheck,
   onSubmit,
 }: ZellePaymentModalProps) {
   const [step, setStep] = useState<Step>(paymentId ? "loading" : "instructions");
@@ -120,6 +123,7 @@ export function ZellePaymentModal({
   const phoneOk = confirmMatches && phoneCheck !== null && phoneCheck !== "checking" && (phoneCheck.status === "match" || phoneCheck.status === "free");
   const [senderName, setSenderName] = useState("");
   const [note, setNote] = useState("");
+  const [precheck, setPrecheck] = useState<{ state: "reading" } | { state: "done"; matches: boolean; text: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [method, setMethod] = useState<"ZELLE" | "VENMO">("ZELLE");
   const reference = paymentId ? paymentReferenceCode(paymentId) : null;
@@ -248,6 +252,25 @@ export function ZellePaymentModal({
     await navigator.clipboard.writeText(value);
     setCopiedWhat(what);
     window.setTimeout(() => setCopiedWhat(null), 1800);
+  }
+
+  /** Shrinks the screenshot in the browser (a phone screenshot is large), then asks the server to read it. */
+  async function handleScreenshot(file: File | undefined) {
+    if (!file || !onPrecheck) return;
+    setPrecheck({ state: "reading" });
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 1280 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(bitmap.width * scale);
+      canvas.height = Math.round(bitmap.height * scale);
+      canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      const result = await onPrecheck(dataUrl.split(",")[1] ?? "", "image/jpeg");
+      setPrecheck(result.ok ? { state: "done", matches: result.matches, text: result.summary.replace(/^Screenshot check: /, "") } : { state: "done", matches: false, text: result.error });
+    } catch {
+      setPrecheck({ state: "done", matches: false, text: "Could not read that image. You can still send it for review." });
+    }
   }
 
   async function handleSubmit() {
@@ -540,6 +563,20 @@ export function ZellePaymentModal({
                           className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
                         />
                       </div>
+
+                      {onPrecheck && (
+                        <div>
+                          <label className="mb-1 block text-small font-medium text-slate-400">Screenshot of your bank&apos;s confirmation (optional)</label>
+                          <input type="file" accept="image/*" onChange={(e) => void handleScreenshot(e.target.files?.[0])} className="block w-full text-small text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-neu-base file:px-3 file:py-2 file:text-small file:font-medium file:text-slate-100" />
+                          {precheck?.state === "reading" && <p className="mt-1.5 text-small text-slate-400">Checking your screenshot…</p>}
+                          {precheck?.state === "done" && (
+                            <p role="status" className={`mt-1.5 text-small ${precheck.matches ? "text-emerald-400" : "text-amber-300"}`}>
+                              {precheck.matches ? "Looks right: " : "Check this: "}
+                              {precheck.text}
+                            </p>
+                          )}
+                        </div>
+                      )}
 
                       {error && <p className="text-small text-red-400">{error}</p>}
 
