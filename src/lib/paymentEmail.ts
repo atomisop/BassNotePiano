@@ -392,6 +392,48 @@ export async function reportRejectedBankEmail(input: { messageId: string; from: 
   }
 }
 
+/**
+ * A forwarded bank email failed the sender signature check. It is still READ: if it carries a real payment's code AND that payment's exact
+ * amount, that one payment moves to "waiting for your approval" with a note saying the email could not be verified, so the owner checks the
+ * bank app and approves it by hand. Nothing is ever approved from an email that failed the check, so a forged one can only put a payment in
+ * front of the owner, never settle it. Anything else is ignored with the usual alert, as before.
+ */
+export async function holdUnverifiedPaymentEmail(input: { messageId: string; from: string; subject: string; body: string; reason: string }): Promise<"held" | "rejected"> {
+  try {
+    const parsed = isAllowedSender(input.from) ? parsePaymentEmail(input.subject, input.body) : null;
+    const code = parsed ? referenceInMemo(parsed.memo) : null;
+    if (parsed && code) {
+      const open = await prisma.zellePayment.findMany({ where: { status: "AWAITING_TRANSFER", amountCents: parsed.amountCents }, select: { id: true } });
+      const hits = open.filter((payment) => normalizedCodeOf(payment.id) === code);
+      if (hits.length === 1) {
+        const claimed = await prisma.zellePayment.updateMany({
+          where: { id: hits[0].id, status: "AWAITING_TRANSFER" },
+          data: {
+            status: "PENDING_REVIEW",
+            submittedAt: new Date(),
+            senderName: parsed.name.slice(0, 120),
+            method: parsed.method,
+            note: `A bank email with this payment's code and the exact amount arrived, but it could not be verified (${input.reason}). Check your bank app, then approve.`,
+          },
+        });
+        if (claimed.count === 1) {
+          await notifyAdmins("PAYMENT_EMAIL_REJECTED", {
+            type: "ADMIN_ALERT",
+            title: "A payment is waiting for your check",
+            body: `A forwarded email from ${parsed.name} for ${(parsed.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })} carries a payment's code, but it could not be verified (${input.reason}). The payment is waiting in Admin > Payments. Check your bank app, then approve it.`,
+            cta: { label: "Open payments", path: "/admin/payments" },
+          }).catch((err) => console.error("Held payment alert failed (non-blocking):", err));
+          return "held";
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Holding an unverified payment email failed (non-blocking):", err);
+  }
+  await reportRejectedBankEmail({ messageId: input.messageId, from: input.from, subject: input.subject, reason: input.reason });
+  return "rejected";
+}
+
 export async function ingestPaymentEmail(input: {
   messageId: string;
   from: string;

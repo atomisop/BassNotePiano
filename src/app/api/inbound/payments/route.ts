@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { consumeRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { ingestInboundEmail } from "@/lib/support";
 import { reportError } from "@/lib/reportError";
-import { ingestPaymentEmail, isAllowedSender, reportRejectedBankEmail } from "@/lib/paymentEmail";
+import { ingestPaymentEmail, isAllowedSender, holdUnverifiedPaymentEmail } from "@/lib/paymentEmail";
 import { checkForwardedBankMail, emailBodyText, isPaymentInboxRecipient, normalizeMessageId } from "@/lib/paymentInbound";
 import { isAutomatedMail, parseMessageHeaders, parseMessageIds, parseSender, verifyMailgunSignature } from "@/lib/inboundEmail";
 
@@ -75,8 +75,15 @@ export async function POST(req: Request) {
 
     const check = checkForwardedBankMail({ fromEmail: sender.email, dkimResult: headers.get("x-mailgun-dkim-check-result"), rawHeaders });
     if (!check.ok) {
-      await reportRejectedBankEmail({ messageId, from: field("from"), subject: field("subject"), reason: check.reason ?? "its sender check failed" });
-      return NextResponse.json({ outcome: "rejected" });
+      // Not trusted to approve anything, but still read: a payment whose code and exact amount it carries is put in front of the owner.
+      const outcome = await holdUnverifiedPaymentEmail({
+        messageId,
+        from: field("from"),
+        subject: field("subject").slice(0, 300),
+        body: emailBodyText(field("body-plain"), field("body-html")).slice(0, 6000),
+        reason: check.reason ?? "its sender check failed",
+      });
+      return NextResponse.json({ outcome });
     }
 
     const outcome = await ingestPaymentEmail({
