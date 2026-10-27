@@ -1650,6 +1650,7 @@ model ClassSchedule {
   reservedByPlans      PaymentPlan[]
   extraSessionPayments ZellePayment[]
   slotHolds            SlotHold[]
+  ownerReservations    OwnerReservation[]
   slotWaitlist         SlotWaitlist[]
 
   @@index([dayOfWeek, active])
@@ -2088,4 +2089,27 @@ model IdempotencyKey {
 
   @@unique([userId, scope, key])
   @@index([createdAt])
+}
+
+// A day (or one hour of it) the owner keeps for a named customer so nobody can book it. Unlike a SlotHold (a weekly
+// reminder that never blocks), this one blocks every kind of booking until it is released. chunkIndex null means the
+// whole window that day; rows made together share a groupId so they are released together.
+model OwnerReservation {
+  id             String        @id @default(cuid())
+  groupId        String
+  scheduleId     String
+  schedule       ClassSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  // ET calendar date stored at UTC midnight, the same key ClassBooking.occurrenceDate uses.
+  occurrenceDate DateTime
+  chunkIndex     Int?
+  name           String
+  email          String
+  phone          String
+  note           String?
+  createdById    String?
+  releasedAt     DateTime?
+  createdAt      DateTime      @default(now())
+
+  @@index([scheduleId, occurrenceDate])
+  @@index([groupId])
 }

@@ -520,6 +520,12 @@ Refused while a payment is under review or the bill is already due. The student 
 - **Type and touch**: headings are balanced, paragraphs `pretty`, the signed-in shell uses tabular numbers, and rounded boxes use `corner-shape: squircle` where supported (all in globals.css). `hit-slop` extends a small control's touch target by 8px; `viewportFit: "cover"` plus `pad-safe-x` keep the shell clear of the notch. The emailed and texted code boxes already use `autocomplete="one-time-code"`; the SMS ones also read the code with WebOTP (`useWebOtp`).
 - Toasts: `toast.undo(title, onUndo)` and `toast.run(promise, { loading, success, error })` in `ui/Toaster.tsx`.
 
+**Moving a whole plan (2026-10-25)**: "Move time" next to Pause (Admin > Billing > Plans and the student page) opens the free weekly times and calls `changeReservedSlot(..., { byAdmin: true })`: the standing slot and every upcoming class on it move together (the old weeks are canceled with no charge and rebooked on the new day inside the paid period), with no 24 hour cutoff and family payers allowed. The student is told; audited as `plan.move-time`. The one-class mover on the attendance list is unchanged.
+
+## Owner reservations (added 2026-10-25)
+
+Admin > Classes > Schedule > Reserved (`AdminReservations`, `ownerReservationsAdmin.ts`, table `OwnerReservation`): the owner keeps a day (every window, `chunkIndex` null) or chosen hours for a named customer (name, email and phone required). Unlike a `SlotHold` (a reminder that never blocks), this BLOCKS: `bookClass`, `adminBookClass`, `bookFamilyClass`, `rescheduleClassBooking` and `bookExtraSessionOccurrence` refuse it ("reserved by the owner"), a plan's weekly auto-booking skips that week (`createReservedBookingIfAbsent`), and `getUpcomingOccurrences` marks it `isBooked` (+ `reservedByOwner`), so students just see the time as taken and never see the customer. Creating one is refused when someone already has a class in it. Release (two taps) frees it. Audited as `reservation.create` / `reservation.release`. The overview (`/admin`) sections are dropdowns at every width (`PhoneAccordion alwaysCollapsible`).
+
 ## Activity log (added 2026-10-21)
 
 Admin > Overview > Activity (`/admin/activity`, owner only) is a searchable view of `AuditLog`: text search over action, details and actor email, a kind filter

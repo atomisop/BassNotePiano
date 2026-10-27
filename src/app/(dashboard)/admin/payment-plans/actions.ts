@@ -3,9 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
-import { adminPausePlan, adminResumePlan, cancelPaymentPlan, PaymentPlanError, recordPlanPaymentReceived, resendPlanInvoice } from "@/lib/paymentPlans";
+import { adminPausePlan, adminResumePlan, cancelPaymentPlan, changeReservedSlot, PaymentPlanError, recordPlanPaymentReceived, resendPlanInvoice } from "@/lib/paymentPlans";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { logAudit } from "@/lib/audit";
+import { prisma } from "@/lib/prisma";
+import { getReservableSlots } from "@/lib/classSchedule";
+import { getHoldChoices } from "@/lib/contacts";
+import { PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 
 // The admin layout's redirect only protects rendering, Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
@@ -77,6 +81,42 @@ export async function resumePlanAdminAction(planId: string): Promise<{ ok: boole
   } catch (err) {
     if (err instanceof PaymentPlanError) return { ok: false, error: err.message };
     throw err;
+  }
+  revalidatePath("/", "layout");
+  return { ok: true, error: null };
+}
+
+export interface WeeklyTimeChoice {
+  scheduleId: string;
+  chunkIndex: number;
+  label: string;
+}
+
+/** The weekly times a plan could move to (free ones only), and the one it has now. */
+export async function weeklyTimeChoicesAdminAction(planId: string): Promise<{ ok: true; current: string | null; choices: WeeklyTimeChoice[] } | { ok: false; error: string }> {
+  await requireAdmin();
+  const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, select: { cadence: true, reservedScheduleId: true, reservedChunkIndex: true } });
+  if (!plan) return { ok: false, error: "That plan was not found." };
+  const [free, all] = await Promise.all([getReservableSlots(PLAN_CADENCE_CREDITS_PER_WEEK[plan.cadence]), getHoldChoices()]);
+  const labelOf = (scheduleId: string, chunkIndex: number) => all.find((c) => c.scheduleId === scheduleId && c.chunkIndex === chunkIndex)?.label ?? null;
+  const choices = free.flatMap((slot) => {
+    const label = labelOf(slot.scheduleId, slot.chunkIndex);
+    return label ? [{ scheduleId: slot.scheduleId, chunkIndex: slot.chunkIndex, label }] : [];
+  });
+  const current = plan.reservedScheduleId && plan.reservedChunkIndex !== null ? labelOf(plan.reservedScheduleId, plan.reservedChunkIndex) : null;
+  return { ok: true, current, choices };
+}
+
+/** Moves the whole plan: the standing weekly time and every upcoming class on it, in one step. */
+export async function moveWeeklyTimeAdminAction(planId: string, scheduleId: string, chunkIndex: number): Promise<{ ok: boolean; error: string | null }> {
+  const admin = await requireAdmin();
+  try {
+    const plan = await prisma.paymentPlan.findUnique({ where: { id: planId }, select: { userId: true } });
+    if (!plan) return { ok: false, error: "That plan was not found." };
+    await changeReservedSlot(plan.userId, scheduleId, chunkIndex, { byAdmin: true });
+    await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "plan.move-time", targetType: "PaymentPlan", targetId: planId, detail: `${scheduleId}:${chunkIndex}` });
+  } catch (err) {
+    return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Try again." };
   }
   revalidatePath("/", "layout");
   return { ok: true, error: null };
