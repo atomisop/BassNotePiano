@@ -1,5 +1,6 @@
 "use client";
 
+import { useSwr } from "@/lib/useSwr";
 import { AdminTwoStepCard } from "./AdminTwoStepCard";
 import { MIN_PASSWORD_LENGTH, passwordRequirementError } from "@/lib/passwordRules";
 import { PasswordStrength } from "@/components/ui/password-strength";
@@ -825,19 +826,10 @@ const DEVICE_ICON = { Phone: Smartphone, Tablet: Tablet, Computer: Laptop } as c
 // Every browser and device this account is signed in on: what it is, roughly where, when it signed in, and a green dot while
 // it has a tab open (gray otherwise). No IP addresses anywhere. Refreshes every minute and when other devices are signed out.
 function ReferralCard() {
-  const [data, setData] = useState<{ link: string; joined: number; rewarded: number; percent: number; months: number } | null>(null);
+  // Shown from the last visit at once, refreshed behind it.
+  const { data: swrData } = useSwr<{ link: string; joined: number; rewarded: number; percent: number; months: number }>("/api/me/referral");
+  const data = swrData ?? null;
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    fetch("/api/me/referral", { cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => alive && setData(d))
-      .catch(() => undefined);
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   async function copy() {
     if (!data) return;

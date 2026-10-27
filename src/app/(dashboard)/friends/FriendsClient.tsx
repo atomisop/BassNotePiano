@@ -73,8 +73,20 @@ function SectionCard({
   );
 }
 
-export function FriendsClient({ username, friends, receivedRequests, sentRequests, blocked }: FriendsClientProps) {
+export function FriendsClient({ username, friends: allFriends, receivedRequests: allReceived, sentRequests, blocked: allBlocked }: FriendsClientProps) {
   const router = useRouter();
+  // Optimistic: a row the person just answered, blocked or unblocked leaves its list at once; if the server refuses, it comes back.
+  const [gone, setGone] = useState<Set<string>>(new Set());
+  const hide = (id: string) => setGone((prev) => new Set(prev).add(id));
+  const unhide = (id: string) =>
+    setGone((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  const friends = allFriends.filter((f) => !gone.has(`block:${f.id}`));
+  const receivedRequests = allReceived.filter((r) => !gone.has(`req:${r.id}`));
+  const blocked = allBlocked.filter((b) => !gone.has(`unblock:${b.user.id}`));
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PublicProfile[]>([]);
   const action = useAction();
@@ -100,41 +112,71 @@ export function FriendsClient({ username, friends, receivedRequests, sentRequest
     if (!profile.username) return;
     setRequestError(null);
     const username = profile.username;
+    // Shows "Request sent" straight away; taken back if it fails.
+    setSentTo((prev) => new Set(prev).add(profile.id));
     await action.run(async () => {
       const result = await sendFriendRequestAction(username);
       if (!result.ok) {
+        setSentTo((prev) => {
+          const next = new Set(prev);
+          next.delete(profile.id);
+          return next;
+        });
         setRequestError(result.error);
         return;
       }
-      setSentTo((prev) => new Set(prev).add(profile.id));
       router.refresh();
       announceChange("notifications");
     }, `add:${profile.id}`);
   }
 
   async function handleRespond(requestId: string, accept: boolean) {
-    await action.run(async () => {
-      await respondToFriendRequestAction(requestId, accept);
+    hide(`req:${requestId}`);
+    const done = await action.run(async () => {
+      try {
+        await respondToFriendRequestAction(requestId, accept);
+      } catch (err) {
+        unhide(`req:${requestId}`);
+        throw err;
+      }
       router.refresh();
       announceChange("notifications");
+      return true;
     }, `${accept ? "accept" : "reject"}:${requestId}`);
+    if (!done) unhide(`req:${requestId}`);
   }
 
   async function handleBlock(userId: string) {
-    await action.run(async () => {
-      await blockUserAction(userId);
-      setBlockingId(null);
+    hide(`block:${userId}`);
+    setBlockingId(null);
+    const done = await action.run(async () => {
+      try {
+        await blockUserAction(userId);
+      } catch (err) {
+        unhide(`block:${userId}`);
+        throw err;
+      }
       router.refresh();
       announceChange("notifications");
+      return true;
     }, `block:${userId}`);
+    if (!done) unhide(`block:${userId}`);
   }
 
   async function handleUnblock(userId: string) {
-    await action.run(async () => {
-      await unblockUserAction(userId);
+    hide(`unblock:${userId}`);
+    const done = await action.run(async () => {
+      try {
+        await unblockUserAction(userId);
+      } catch (err) {
+        unhide(`unblock:${userId}`);
+        throw err;
+      }
       router.refresh();
       announceChange("notifications");
+      return true;
     }, `unblock:${userId}`);
+    if (!done) unhide(`unblock:${userId}`);
   }
 
   if (!username) {

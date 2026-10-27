@@ -587,12 +587,13 @@ export async function changePaymentPlanTerm(userId: string, newTerm: PaymentPlan
  * so a student doesn't wait up to 24h to see their new day/time actually
  * reflected in their upcoming classes.
  */
-export async function changeReservedSlot(userId: string, newScheduleId: string, newChunkIndex: number) {
+export async function changeReservedSlot(userId: string, newScheduleId: string, newChunkIndex: number, options: { byAdmin?: boolean } = {}) {
+  const byAdmin = Boolean(options.byAdmin);
   const { plan, chunk, schedule } = await prisma.$transaction(
     async (tx) => {
       const plan = await tx.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
       if (!plan) throw new PaymentPlanError("You don't have an active payment plan.");
-      if (plan.familyGroupId) {
+      if (plan.familyGroupId && !byAdmin) {
         // A parent-paid plan's child (or their parent, acting for them) can move their own weekly time; a group plan's is moved by the teacher so everyone stays together.
         const kind = (await tx.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { kind: true } }))?.kind;
         if (kind !== "PARENT") throw new PaymentPlanError("A group plan's weekly time is moved by the teacher so everyone stays together. Message us and we will help.");
@@ -636,7 +637,7 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
       // Same cutoff as cancelling a class: a class that starts within the
       // cutoff has to be attended (or sorted out with support), so the standing
       // time cannot be moved out from under it.
-      const startingSoon = await tx.classBooking.findFirst({
+      const startingSoon = byAdmin ? null : await tx.classBooking.findFirst({
         where: {
           studentId: userId,
           reservedByPlanId: plan.id,
@@ -699,7 +700,9 @@ export async function changeReservedSlot(userId: string, newScheduleId: string, 
     userId,
     type: "RESERVED_SLOT_CHANGED",
     title: "Your weekly class time changed",
-    body: "Your standing weekly class moved to a new day/time. Check Lessons for your updated schedule.",
+    body: byAdmin
+      ? "The studio moved your standing weekly class to a new day and time, and all your upcoming classes with it. Check Lessons for your updated schedule."
+      : "Your standing weekly class moved to a new day/time. Check Lessons for your updated schedule.",
     emailCategory: "payments",
   }).catch((err) => console.error("RESERVED_SLOT_CHANGED notification failed (non-blocking):", err));
 

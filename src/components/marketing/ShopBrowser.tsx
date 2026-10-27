@@ -1,5 +1,6 @@
 "use client";
 
+import { BlurhashImage } from "@/components/ui/BlurhashImage";
 import { useState } from "react";
 import Image from "next/image";
 import { PillCTA } from "@/components/ui/pill-cta";
@@ -44,10 +45,9 @@ function ProductCard({ product }: { product: ShopProduct }) {
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl bg-black p-3">
       <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-white">
-        <Image
+        <BlurhashImage
           src={product.image}
           alt={`${product.brand} ${product.name}`}
-          fill
           sizes="(min-width: 1024px) 22vw, (min-width: 640px) 45vw, 90vw"
           className="object-contain p-6"
         />

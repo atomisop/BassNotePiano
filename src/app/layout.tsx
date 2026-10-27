@@ -77,6 +77,8 @@ const mono = localFont({
 // paint" split THEME_BOOT_SCRIPT already uses for `data-theme`.
 export const viewport: Viewport = {
   themeColor: themeGroundColor(LOGGED_OUT_THEME),
+  // Lets env(safe-area-inset-*) report the notch and home bar, so fixed bars can keep clear of them.
+  viewportFit: "cover",
 };
 
 // metadataBase is what turns every relative `openGraph.images` / canonical

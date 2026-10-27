@@ -10,6 +10,7 @@ import { BackLink } from "@/components/ui/BackLink";
 import { prisma } from "@/lib/prisma";
 import type { ReactNode } from "react";
 import { AdminPausePlanButton } from "@/components/admin/AdminPausePlanButton";
+import { AdminMovePlanTimeButton } from "@/components/admin/AdminMovePlanTimeButton";
 import { isIndefinitePause, isPausedNow } from "@/lib/planPause";
 import { describePaymentPlan, formatCredits, storedToCredits } from "@/lib/classCreditPricing";
 
@@ -25,7 +26,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
   // The at-a-glance strip and the change log: the first questions after "who is this?" are plan, credits, next class,
   // Discord, last seen, and what an admin already changed on the account.
   const [plan, discord, changes] = await Promise.all([
-    prisma.paymentPlan.findFirst({ where: { userId: params.userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, select: { id: true, cadence: true, term: true, nextDueDate: true, familyGroupId: true, pausedAt: true, pauseUntil: true } }),
+    prisma.paymentPlan.findFirst({ where: { userId: params.userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, select: { id: true, cadence: true, term: true, nextDueDate: true, familyGroupId: true, pausedAt: true, pauseUntil: true, reservedScheduleId: true } }),
     prisma.user.findUnique({ where: { id: params.userId }, select: { discordId: true, discordUsername: true } }),
     prisma.auditLog.findMany({ where: { targetId: params.userId }, orderBy: { createdAt: "desc" }, take: 8 }),
   ]);
@@ -40,6 +41,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
             {!planPaused && <span className="inline-block rounded-full bg-emerald-400/15 px-2 py-0.5 text-small font-medium uppercase tracking-wide text-emerald-300">Active</span>}
             <AdminPausePlanButton planId={plan.id} state={{ paused: planPaused, until: plan.pauseUntil && !isIndefinitePause(plan) ? plan.pauseUntil.toISOString() : null }} compact />
+            {plan.reservedScheduleId && <AdminMovePlanTimeButton planId={plan.id} compact />}
           </div>
         ) : null,
     },

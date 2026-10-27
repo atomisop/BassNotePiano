@@ -23,8 +23,10 @@ import {
 } from "./actions";
 import { buttonVariants } from "@/components/ui/button";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
+import { AdminReservations } from "@/components/admin/AdminReservations";
+import { getReservableHours, listOwnerReservations } from "@/lib/ownerReservationsAdmin";
 
-type ViewValue = "WINDOWS" | "BOOKINGS" | "ATTENDANCE";
+type ViewValue = "WINDOWS" | "BOOKINGS" | "ATTENDANCE" | "RESERVED";
 
 // Bookings and attendance used to be one combined view here (and, before
 // that, their own top-level /admin/bookings tab), split into their own
@@ -33,9 +35,10 @@ type ViewValue = "WINDOWS" | "BOOKINGS" | "ATTENDANCE";
 // page, not one task, and scrolling past a growing attendance history to
 // reach the booking tool (or vice versa) got in the way of both.
 const VIEWS: { label: string; value: ViewValue }[] = [
-  { label: "Weekly times", value: "WINDOWS" },
+  { label: "Times", value: "WINDOWS" },
   { label: "Bookings", value: "BOOKINGS" },
   { label: "Attendance", value: "ATTENDANCE" },
+  { label: "Reserved", value: "RESERVED" },
 ];
 
 export const metadata = { title: "Admin: Schedule" };
@@ -85,6 +88,22 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
             onSearchStudents={searchStudentsForBookingAction}
             onBook={adminBookClassAction}
           />
+        </div>
+      </div>
+    );
+  }
+
+  if (activeView === "RESERVED") {
+    const [hours, reservations] = await Promise.all([getReservableHours(), listOwnerReservations()]);
+    return (
+      <div>
+        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
+        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Weekly schedule</h1>
+
+        {viewSwitcher}
+
+        <div className="mt-6">
+          <AdminReservations hours={hours} reservations={reservations} />
         </div>
       </div>
     );

@@ -1,5 +1,6 @@
 "use client";
 
+import { useWebOtp } from "@/lib/useWebOtp";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -28,6 +29,7 @@ export function VerifyPhoneForm({ pendingPhone, codeAlreadySent, callbackUrl }: 
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const cooldown = useResendCooldown();
+  useWebOtp(step === "code", setCode);
 
   async function submitNumber(e: FormEvent) {
     e.preventDefault();

@@ -19,6 +19,7 @@ export function PhoneAccordion({
   summary,
   warn = false,
   defaultOpen = false,
+  alwaysCollapsible = false,
   id,
   className,
   children,
@@ -29,6 +30,8 @@ export function PhoneAccordion({
   /** Colours the summary as a problem. */
   warn?: boolean;
   defaultOpen?: boolean;
+  /** Keep it a dropdown on computers too, not only on phones. */
+  alwaysCollapsible?: boolean;
   /** An address like `/admin#tasks` opens this section on a phone, where it would otherwise be closed. */
   id?: string;
   className?: string;
@@ -44,9 +47,9 @@ export function PhoneAccordion({
     <AccordionPrimitive.Root asChild type="single" collapsible value={value} onValueChange={setValue}>
       <section id={id} className={cn("p-5", className)}>
         <AccordionPrimitive.Item value="section">
-          <h2 className="hidden text-body font-semibold text-slate-50 md:block">{title}</h2>
+          {!alwaysCollapsible && <h2 className="hidden text-body font-semibold text-slate-50 md:block">{title}</h2>}
           <AccordionPrimitive.Header asChild>
-            <h2 className="md:hidden" data-jump-title={title}>
+            <h2 className={alwaysCollapsible ? undefined : "md:hidden"} data-jump-title={title}>
               <AccordionPrimitive.Trigger className="tap -my-1 flex w-full items-center justify-between gap-3 py-1 text-left">
                 <span className="text-body font-semibold text-slate-50">{title}</span>
                 <span className="flex items-center gap-2">
@@ -56,7 +59,7 @@ export function PhoneAccordion({
               </AccordionPrimitive.Trigger>
             </h2>
           </AccordionPrimitive.Header>
-          <AccordionPrimitive.Content forceMount className="mt-3 data-[state=closed]:max-md:hidden">
+          <AccordionPrimitive.Content forceMount className={cn("mt-3", alwaysCollapsible ? "data-[state=closed]:hidden" : "data-[state=closed]:max-md:hidden")}>
             {children}
           </AccordionPrimitive.Content>
         </AccordionPrimitive.Item>

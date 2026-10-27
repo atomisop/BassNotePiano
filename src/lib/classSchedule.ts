@@ -1,4 +1,5 @@
 import { noticeBookingConfirmed } from "@/lib/studentNotices";
+import { findOwnerReservation, OWNER_RESERVED_MESSAGE, reservationCovers } from "@/lib/ownerReservations";
 import { getAdminRecipients } from "@/lib/adminNotifications";
 import { addMinutesToHHmm, formatEtDateTime } from "@/lib/classScheduleLabels";
 import type { Prisma } from "@prisma/client";
@@ -182,6 +183,8 @@ export interface ClassOccurrence {
       start time is gone once anyone has claimed it. A different chunk of
       the same window (a different start time) is unaffected. */
   isBooked: boolean;
+  /** The owner is keeping this time for a customer (it also counts as booked). */
+  reservedByOwner?: boolean;
 }
 
 /**
@@ -305,6 +308,9 @@ export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
     },
     _count: { _all: true },
   });
+  const ownerReservations = await prisma.ownerReservation.findMany({
+    where: { releasedAt: null, OR: candidates.map((c) => ({ scheduleId: c.schedule.id, occurrenceDate: c.occurrenceDate })) },
+  });
   const bookedKeys = new Set(
     bookedCounts.filter((s) => s._count._all > 0).map((s) => `${s.scheduleId}:${s.occurrenceDate.getTime()}:${s.scheduledAt.getTime()}`),
   );
@@ -320,7 +326,10 @@ export async function getUpcomingOccurrences(): Promise<ClassOccurrence[]> {
         creditCost: c.chunk.creditCost,
         occurrenceDate: c.occurrenceDate,
         scheduledAt: c.scheduledAt,
-        isBooked: bookedKeys.has(`${c.schedule.id}:${c.occurrenceDate.getTime()}:${c.scheduledAt.getTime()}`),
+        reservedByOwner: ownerReservations.some((r) => reservationCovers(r, c.schedule.id, c.occurrenceDate, c.chunk.chunkIndex)),
+        isBooked:
+          bookedKeys.has(`${c.schedule.id}:${c.occurrenceDate.getTime()}:${c.scheduledAt.getTime()}`) ||
+          ownerReservations.some((r) => reservationCovers(r, c.schedule.id, c.occurrenceDate, c.chunk.chunkIndex)),
       }),
     )
     .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
@@ -512,6 +521,7 @@ export async function bookClass(
         if (takenByAnyone && takenByAnyone.studentId !== studentId) {
           throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
         }
+        if (await findOwnerReservation(tx, scheduleId, occurrenceDate, chunkIndex)) throw new ClassBookingError(OWNER_RESERVED_MESSAGE);
 
         // Defense-in-depth against a Payment Plan's own reserved slot,
         // layer 3 of 3 (see livePaymentPlanConditions's own comment and
@@ -955,6 +965,7 @@ export async function bookFamilyClass(
       async (tx) => {
         const takenByAnyone = await tx.classBooking.findFirst({ where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED" } });
         if (takenByAnyone) throw new ClassBookingError("This time was just booked. Pick another slot.");
+        if (await findOwnerReservation(tx, scheduleId, occurrenceDate, chunkIndex)) throw new ClassBookingError(OWNER_RESERVED_MESSAGE);
 
         // Same defense-in-depth as bookClass's own guard (see its comment),
         // a family booking never coincides with a solo Payment Plan
@@ -1162,7 +1173,10 @@ export async function createReservedBookingIfAbsent(
 ) {
   const { studentId, scheduleId, occurrenceDate, scheduledAt, creditsSpent, planId } = params;
   // The members of a family plan share one weekly class: their rows form one booking party (one credit charge per row).
-  const familyGroupId = (await db.paymentPlan.findUnique({ where: { id: planId }, select: { familyGroupId: true } }))?.familyGroupId ?? null;
+  const planRow = await db.paymentPlan.findUnique({ where: { id: planId }, select: { familyGroupId: true, reservedChunkIndex: true } });
+  const familyGroupId = planRow?.familyGroupId ?? null;
+  // A day the owner is keeping for someone else: the plan's class is simply not booked that week.
+  if (planRow?.reservedChunkIndex != null && (await findOwnerReservation(db, scheduleId, occurrenceDate, planRow.reservedChunkIndex))) return null;
 
   const existing = await db.classBooking.findUnique({
     where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId, occurrenceDate } },
@@ -1250,6 +1264,10 @@ export async function bookExtraSessionOccurrence(
     where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId, occurrenceDate } },
   });
   if (existing?.status === "SCHEDULED") return true; // already booked somehow (a retried approval, say), nothing to do
+
+  const extraSchedule = await db.classSchedule.findUnique({ where: { id: scheduleId } });
+  const extraChunk = extraSchedule ? chunksForSchedule(extraSchedule).find((c) => computeScheduledAt(extraSchedule, occurrenceDate, c).getTime() === scheduledAt.getTime()) : undefined;
+  if (extraChunk && (await findOwnerReservation(db, scheduleId, occurrenceDate, extraChunk.chunkIndex))) return false;
 
   const conflict = await db.classBooking.findFirst({
     where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED", studentId: { not: studentId } },
@@ -1500,6 +1518,7 @@ export async function rescheduleClassBooking(
         if (takenByAnyone && takenByAnyone.studentId !== studentId) {
           throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
         }
+        if (await findOwnerReservation(tx, newScheduleId, newOccurrenceDate, newChunkIndex)) throw new ClassBookingError(OWNER_RESERVED_MESSAGE);
 
         const reservedByOtherPlan = await tx.paymentPlan.findFirst({
           where: { reservedScheduleId: newScheduleId, reservedChunkIndex: newChunkIndex, userId: { not: studentId }, OR: livePaymentPlanConditions() },

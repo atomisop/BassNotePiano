@@ -1,6 +1,7 @@
 "use server";
 
 import { hasParentControl, PARENT_CONTROL_MESSAGE } from "@/lib/parentLinks";
+import { runOnce } from "@/lib/idempotency";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
@@ -58,18 +59,28 @@ export async function checkFamilyClassAttendeesAction(emails: string[]) {
   return checkFamilyClassAttendees(session.user.id, emails);
 }
 
-export async function bookFamilyClassAction(scheduleId: string, occurrenceDateMs: number, chunkIndex: number, attendeeEmails: string[]) {
+export async function bookFamilyClassAction(scheduleId: string, occurrenceDateMs: number, chunkIndex: number, attendeeEmails: string[], idempotencyKey?: string) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/lessons");
   if (await hasParentControl(session.user.id)) return { ok: false as const, error: PARENT_CONTROL_MESSAGE };
+  const userId = session.user.id;
 
-  try {
-    const bookings = await bookFamilyClass(session.user.id, scheduleId, occurrenceDateMs, chunkIndex, attendeeEmails);
-    revalidatePath("/", "layout");
-    return { ok: true as const, ids: bookings.map((b) => b.id) };
-  } catch (err) {
-    return { ok: false as const, error: err instanceof ClassBookingError || err instanceof RateLimitError ? err.message : "Something went wrong." };
-  }
+  type Result = { ok: true; ids: string[] } | { ok: false; error: string };
+  return runOnce<Result>(
+    userId,
+    "book-family-class",
+    idempotencyKey,
+    async () => {
+      try {
+        const bookings = await bookFamilyClass(userId, scheduleId, occurrenceDateMs, chunkIndex, attendeeEmails);
+        revalidatePath("/", "layout");
+        return { ok: true as const, ids: bookings.map((b) => b.id) };
+      } catch (err) {
+        return { ok: false as const, error: err instanceof ClassBookingError || err instanceof RateLimitError ? err.message : "Something went wrong." };
+      }
+    },
+    { isSuccess: (r) => r.ok, whileRunning: { ok: false, error: "Booking your class. One moment." } },
+  );
 }
 
 export async function cancelClassBookingAction(bookingId: string) {

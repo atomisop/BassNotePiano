@@ -3,6 +3,7 @@
 import { Collapse } from "@/components/ui/Collapse";
 import { scrollWithin } from "@/lib/scrollWithin";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { newIdempotencyKey } from "@/lib/idempotencyClient";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -842,6 +843,9 @@ export function ClassBookingClient({
   const familyAllVerified =
     familyEmailsTrimmed.length >= familyMinAttendees && familyEmailsTrimmed.every((e) => familyChecks[e]?.verified);
 
+  // One key per attempt: a double tap or a retry books the class once. A new key once it worked.
+  const familyKey = useRef(newIdempotencyKey());
+
   async function handleBookFamily() {
     if (!familyRow || !familyAllVerified) return;
     setError(null);
@@ -849,7 +853,7 @@ export function ClassBookingClient({
     setFamilySubmitting(true);
     let result: Awaited<ReturnType<typeof bookFamilyClassAction>>;
     try {
-      result = await bookFamilyClassAction(familyRow.scheduleId, familyRow.occurrenceDateMs, familyRow.chunkIndex, familyEmailsTrimmed);
+      result = await bookFamilyClassAction(familyRow.scheduleId, familyRow.occurrenceDateMs, familyRow.chunkIndex, familyEmailsTrimmed, familyKey.current);
       announceChange("booking");
     } catch {
       setError(NETWORK_ERROR);
@@ -863,6 +867,7 @@ export function ClassBookingClient({
       return;
     }
 
+    familyKey.current = newIdempotencyKey();
     setRows((prev) => prev.map((r) => (rowKey(r) === rowKey(familyRow) ? { ...r, isBooked: true } : r)));
     setFamilyRowKey(null);
     setFamilyEmails(["", ""]);

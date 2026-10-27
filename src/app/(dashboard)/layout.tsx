@@ -12,6 +12,7 @@ import { getSupportUnreadCount } from "@/lib/messagesSupport";
 import { getActiveAnnouncementForUser } from "@/lib/announcements";
 import { LATEST_ENTRY } from "@/lib/changelog";
 import { NavPendingGate } from "@/components/layout/NavPendingGate";
+import { SwipeBack } from "@/components/layout/SwipeBack";
 import { AppDock } from "@/components/layout/AppDock";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { TopBar } from "@/components/layout/TopBar";
@@ -87,7 +88,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <MeStatusProvider initial={meStatus}>
     <PricingProvider pricing={pricing} personalDiscountPercent={personalDiscountPercent}>
     <WhatsNewProvider entry={LATEST_ENTRY} showInitially={showWhatsNew}>
-    <div data-surface="app" className="fixed inset-0 flex overflow-hidden bg-ground">
+    <div data-surface="app" className="pad-safe-x fixed inset-0 flex overflow-hidden bg-ground">
       {/* No photographic backdrop behind the app shell, deliberately. The
           previous system wallpapered every authenticated page with a piano
           photo; on paper that reads as a smudge under the text rather than
@@ -122,6 +123,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             shell around it, the same "things move weird" complaint. */}
         <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pb-32 pt-4 md:px-6 md:pb-32 md:pt-5 lg:pb-8"><NavPendingGate>{children}</NavPendingGate></PullToRefreshMain>
       </div>
+      <SwipeBack />
       <AutoRefresh />
       <Suspense fallback={null}>
         <ScrollAssist />
