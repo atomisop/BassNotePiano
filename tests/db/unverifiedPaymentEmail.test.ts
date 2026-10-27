@@ -37,6 +37,13 @@ describe("a forwarded bank email that failed the signature check", () => {
     expect(after.autoApproved).toBe(false);
   });
 
+  it("also recognises a payment the student already marked as sent, and keeps it waiting for the owner", async () => {
+    const payment = await openPayment(41000);
+    await prisma.zellePayment.update({ where: { id: payment.id }, data: { status: "PENDING_REVIEW", submittedAt: new Date() } });
+    expect(await holdUnverifiedPaymentEmail(sofi(41000, `Message: ${paymentReferenceCode(payment.id)}`))).toBe("held");
+    expect((await prisma.zellePayment.findUniqueOrThrow({ where: { id: payment.id } })).status).toBe("PENDING_REVIEW");
+  });
+
   it("a right code with the wrong amount, or no code at all, stays ignored", async () => {
     const payment = await openPayment(12345);
     expect(await holdUnverifiedPaymentEmail(sofi(99999, `Message: ${paymentReferenceCode(payment.id)}`))).toBe("rejected");
