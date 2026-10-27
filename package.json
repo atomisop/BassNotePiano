@@ -44,7 +44,7 @@
     "@tailwindcss/postcss": "^4.3.3",
     "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.39.0",
-    "bcryptjs": "^2.4.3",
+    "bcryptjs": "^3.0.3",
     "blurhash": "^2.0.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -72,7 +72,7 @@
   },
   "devDependencies": {
     "@netlify/plugin-nextjs": "^5.16.2",
-    "@types/bcryptjs": "^2.4.6",
+    "@types/bcryptjs": "^3.0.0",
     "@types/node": "^20.14.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
