@@ -153,3 +153,10 @@ export async function listLinksToChild(childId: string): Promise<{ requests: Par
     parents: rows.filter((r) => r.status === "ACCEPTED").map((r) => ({ parentId: r.parentId, name: nameOf(r.parent) })),
   };
 }
+
+/** True when a parent is linked to this account: the schedule is theirs to change, not the child's. */
+export async function hasParentControl(childId: string): Promise<boolean> {
+  return Boolean(await prisma.parentLink.findFirst({ where: { childId, status: "ACCEPTED" }, select: { id: true } }));
+}
+
+export const PARENT_CONTROL_MESSAGE = "Your schedule is controlled by your parent.";

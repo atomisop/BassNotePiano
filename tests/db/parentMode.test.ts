@@ -4,7 +4,7 @@ import { canonicalEmail } from "@/lib/canonicalEmail";
 import { OFFERED_PLAN_CADENCE, calculateFamilyBundleTotal, calculatePaymentPlanRate } from "@/lib/classCreditPricing";
 import { cancelPaymentPlan, changeReservedSlot, createParentPlans, getOrCreateOpenInstallmentPayment, PaymentPlanError } from "@/lib/paymentPlans";
 import { approveZellePayment, submitZellePaymentReference } from "@/lib/payments";
-import { assertParentOf, endParentLink, listLinksFromParent, listLinksToChild, ParentLinkError, respondToParentLink, sendParentLink } from "@/lib/parentLinks";
+import { assertParentOf, endParentLink, hasParentControl, listLinksFromParent, listLinksToChild, ParentLinkError, respondToParentLink, sendParentLink } from "@/lib/parentLinks";
 import { getChildView, listParentBills } from "@/lib/parentChildren";
 import { newTag, prisma } from "./helpers";
 
@@ -205,5 +205,21 @@ describe("the parent working with the child's schedule", () => {
     await createFamilyPlans({ payerId: payer.id, cadence: OFFERED_PLAN_CADENCE, term: "MONTHLY", zelleHandle: "pay@example.com", reservedScheduleId: slotId, reservedChunkIndex: 0, memberEmails: [mate.email] });
     await expect(changeReservedSlot(payer.id, await slot(3, "09:00"), 0)).rejects.toBeInstanceOf(PaymentPlanError);
     await prisma.familyInvite.deleteMany({ where: { payerId: payer.id } });
+  });
+});
+
+describe("the child's schedule belongs to the parent", () => {
+  it("is locked for the child while a parent is linked, and free again once the link ends", async () => {
+    const { parent, child } = await linked();
+    expect(await hasParentControl(child.id)).toBe(true);
+    expect(await hasParentControl(parent.id)).toBe(false);
+    await endParentLink(parent.id, child.id);
+    expect(await hasParentControl(child.id)).toBe(false);
+  });
+  it("a waiting request does not lock anything yet", async () => {
+    const parent = await account("lk", "Parent Tester");
+    const child = await account("lkc", "Kiddo Tester");
+    await sendParentLink(parent.id, child.email);
+    expect(await hasParentControl(child.id)).toBe(false);
   });
 });
