@@ -7,9 +7,6 @@ import { consumeRateLimit, RateLimitError } from "@/lib/rateLimit";
 import { isAssistantConfigured, readImageAsJson } from "@/lib/assistant";
 import { judgeReceiptReading, parseReceiptReading, RECEIPT_READ_INSTRUCTION } from "@/lib/receiptScreenshot";
 
-/** The prefix a pre-check line carries, so a later "I've sent it" keeps it (see submitZellePaymentReference). */
-export const PRECHECK_PREFIX = "Screenshot check:";
-
 const MAX_BASE64_CHARS = 2_200_000; // about 1.6 MB of image
 const TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
