@@ -309,10 +309,10 @@ export function NewPlanForm({
         <section aria-label="People on this plan" className="rounded-xl bg-neu-base p-4 shadow-raised-low">
           {parent && !parent.only && (
             <div className="mb-4 flex gap-2" role="group" aria-label="Kind of plan">
-              <button type="button" aria-pressed={!parentMode} onClick={() => setParentMode(false)} className={buttonVariants({ variant: "secondary", size: "sm", className: !parentMode ? "shadow-pressed-low text-signal-fg" : "" })}>
+              <button type="button" aria-pressed={!parentMode} onClick={() => setParentMode(false)} className={buttonVariants({ variant: "secondary", size: "sm", className: !parentMode ? "shadow-pressed-low! text-signal-fg!" : "" })}>
                 Group
               </button>
-              <button type="button" aria-pressed={parentMode} onClick={() => setParentMode(true)} className={buttonVariants({ variant: "secondary", size: "sm", className: parentMode ? "shadow-pressed-low text-signal-fg" : "" })}>
+              <button type="button" aria-pressed={parentMode} onClick={() => setParentMode(true)} className={buttonVariants({ variant: "secondary", size: "sm", className: parentMode ? "shadow-pressed-low! text-signal-fg!" : "" })}>
                 Parent mode
               </button>
               <Hint>Group: you hold the one weekly class time, and everyone else books their own. Parent mode: the weekly time is your child&apos;s, and you can see and change their schedule from your account.</Hint>
