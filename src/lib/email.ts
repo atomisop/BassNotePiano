@@ -115,19 +115,30 @@ async function sendEmail({ to, subject, html: rawHtml, text: rawText, from, unsu
   }
 }
 
-// Accent per email "kind", the default is neutral, not the house accent
-// (src/app/themes.css's Instagram-style purple→pink→orange, see that
-// file's own "Accent" comment for the full history): the "premium black
-// and white" pass covers every email touchpoint now, including the real
-// CTA button below (`cta.url`, see `ctaButtonHtml`'s own comment), there's
-// no colour left anywhere in these emails. A cancellation/rejection still
-// gets its own warm red, that one isn't about the accent at all, just
-// keeping a rejection from reading as "this went well" (same
-// --c-rd-300/400 red the app itself uses for errors).
-const SHELL_ACCENT = {
-  default: { bar: "linear-gradient(90deg,#e86f42,#fb8a5c,#fdb28a)", dot: "#fb8a5c" },
-  notice: { bar: "linear-gradient(90deg,#ef4444,#fca5a5,#ef4444)", dot: "#ef4444" },
+// One light, clean layout for every designed email: a white card on a soft grey page, the brand
+// orange as the single accent, dark text for contrast, and a red accent only for notices (a security
+// change, an overdue bill) so those never read as "this went well". Light on purpose: it reads the
+// same in every mail app, and dark-mode clients that invert it still keep the text legible.
+const MAIL = {
+  page: "#f3f4f6",
+  card: "#ffffff",
+  ink: "#111827",
+  body: "#374151",
+  muted: "#6b7280",
+  line: "#e5e7eb",
+  panel: "#f9fafb",
+  brand: "#e86f42",
+  brandInk: "#ffffff",
+  danger: "#dc2626",
+  dangerSoft: "#fef2f2",
 } as const;
+
+const SHELL_ACCENT = {
+  default: { bar: MAIL.brand, link: "#c2410c" },
+  notice: { bar: MAIL.danger, link: MAIL.danger },
+} as const;
+
+const SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 
 interface EmailShellOptions {
   kind?: keyof typeof SHELL_ACCENT;
@@ -135,59 +146,131 @@ interface EmailShellOptions {
   footerNote?: string;
   /** Adds an "Unsubscribe" link to the default footer line (ignored when footerNote replaces it). */
   unsubscribePageUrl?: string;
+  /** The grey line mail apps show beside the subject in the inbox list. Hidden in the message itself. */
+  preheader?: string;
+}
+
+// Dark mode: the inline styles above are the light look every client understands. Clients that follow the
+// device's dark setting (Apple Mail, iOS, Outlook, most Gmail apps) also read this block, which swaps the
+// same colours for the app's own dark ones. `withDarkClasses` tags each element by the light colours it uses.
+const DARK_CLASS_BY_STYLE: [RegExp, string][] = [
+  [new RegExp(`background:${MAIL.page}`, "i"), "d-page"],
+  [new RegExp(`background:${MAIL.card}`, "i"), "d-card"],
+  [new RegExp(`background:${MAIL.panel}`, "i"), "d-panel"],
+  [new RegExp(`[^-]color:${MAIL.ink}`, "i"), "d-ink"],
+  [new RegExp(`[^-]color:${MAIL.body}`, "i"), "d-body"],
+  [new RegExp(`[^-]color:${MAIL.muted}`, "i"), "d-muted"],
+  [new RegExp(`[^-]color:${SHELL_ACCENT.default.link}`, "i"), "d-link"],
+  [new RegExp(`[^-]color:${MAIL.danger}`, "i"), "d-danger"],
+  [new RegExp(`border:1px solid ${MAIL.line}`, "i"), "d-line d-line-t"],
+  [new RegExp(`border-top:1px solid ${MAIL.line}`, "i"), "d-line-t"],
+];
+
+const DARK_STYLE = `<style>
+:root{color-scheme:light dark;supported-color-schemes:light dark;}
+@media (prefers-color-scheme: dark){
+.d-page{background:#0d0d0d !important;}
+.d-card{background:#1c1c1c !important;}
+.d-panel{background:#262626 !important;}
+.d-ink{color:#f5f5f5 !important;}
+.d-body{color:#cfcfcf !important;}
+.d-muted{color:#9a9a9a !important;}
+.d-link{color:#fb8a5c !important;}
+.d-danger{color:#f87171 !important;}
+.d-line{border-left-color:#333333 !important;border-right-color:#333333 !important;border-bottom-color:#333333 !important;}
+.d-line-t{border-top-color:#333333 !important;}
+}
+</style>`;
+
+function withDarkClasses(html: string): string {
+  return html.replace(/<([a-z0-9]+)((?:\s[^<>]*?)?)\sstyle="([^"]*)"/gi, (whole, tag: string, before: string, style: string) => {
+    const probe = ` ${style}`;
+    const classes = DARK_CLASS_BY_STYLE.filter(([re]) => re.test(probe)).map(([, c]) => c).join(" ");
+    return classes ? `<${tag}${before} class="${classes}" style="${style}"` : whole;
+  });
 }
 
 function emailShell(title: string, bodyHtml: string, options: EmailShellOptions = {}): string {
   const accent = SHELL_ACCENT[options.kind ?? "default"];
+  const linkStyle = `color:${MAIL.muted};text-decoration:underline;`;
   const footerNote =
     options.footerNote ??
-    `You're getting this because you have a Bass Note Piano account. <a href="${getAppUrl("/account?tab=notifications")}" style="color:#f5f5f5;text-decoration:underline;">Manage email preferences</a>${
-      options.unsubscribePageUrl ? ` or <a href="${options.unsubscribePageUrl}" style="color:#f5f5f5;text-decoration:underline;">unsubscribe from these emails</a>` : ""
+    `You're getting this because you have a Bass Note Piano account. <a href="${getAppUrl("/account?tab=notifications")}" style="${linkStyle}">Manage email preferences</a>${
+      options.unsubscribePageUrl ? ` or <a href="${options.unsubscribePageUrl}" style="${linkStyle}">unsubscribe from these emails</a>` : ""
     }.`;
+  const preheader = options.preheader
+    ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;mso-hide:all;">${escapeHtml(options.preheader)}&#8203;&zwnj;&nbsp;&#8203;&zwnj;&nbsp;</div>`
+    : "";
 
-  return `
-    <div style="background:#0d0d0d;padding:40px 16px;font-family:Helvetica,Arial,sans-serif;">
-      <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;background:#1c1c1c;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);box-shadow:0 1px 3px rgba(0,0,0,0.4);">
+  return withDarkClasses(`${DARK_STYLE}
+    <div style="margin:0;background:${MAIL.page};padding:32px 12px;font-family:${SANS};">
+      ${preheader}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;border-collapse:separate;">
         <tr>
-          <td style="height:4px;background:${accent.bar};"></td>
-        </tr>
-        <tr>
-          <td align="center" style="padding:30px 32px 0;">
-            <img src="${getAppUrl("/logo-mark.png")}" width="72" height="72" alt="Bass Note Piano" style="display:block;width:72px;height:72px;border:0;border-radius:36px;margin:0 auto;" />
-            <span style="display:block;margin-top:12px;font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:#f5f5f5;font-weight:bold;">Bass Note Piano</span>
+          <td align="center" style="padding:0 0 18px;">
+            <img src="${getAppUrl("/logo-mark.png")}" width="44" height="44" alt="" style="display:inline-block;vertical-align:middle;width:44px;height:44px;border:0;border-radius:22px;" />
+            <span style="display:inline-block;vertical-align:middle;margin-left:10px;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:${MAIL.ink};font-weight:700;">Bass Note Piano</span>
           </td>
         </tr>
         <tr>
-          <td style="padding:20px 32px 8px;">
-            <h1 style="margin:0 0 16px;font-size:21px;font-family:Georgia,'Times New Roman',serif;color:#f5f5f5;">${escapeHtml(title)}</h1>
-            <div style="font-size:15px;line-height:1.65;color:#c2c2c2;">
+          <td style="background:${MAIL.card};border:1px solid ${MAIL.line};border-top:4px solid ${accent.bar};border-radius:14px;padding:32px 32px 30px;">
+            <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;font-weight:700;font-family:${SANS};color:${MAIL.ink};">${escapeHtml(title)}</h1>
+            <div style="font-size:15px;line-height:1.65;color:${MAIL.body};">
               ${bodyHtml}
             </div>
           </td>
         </tr>
         <tr>
-          <td style="padding:22px 32px 28px;border-top:1px solid rgba(255,255,255,0.08);">
-            <p style="margin:0 0 6px;font-size:12px;line-height:1.6;color:#999999;">
+          <td align="center" style="padding:20px 24px 0;">
+            <p style="margin:0 0 6px;font-size:12px;line-height:1.6;color:${MAIL.muted};">
               ${footerNote}
             </p>
-            <p style="margin:0;font-size:12px;line-height:1.6;color:#999999;">
-              Questions? Write to <a href="mailto:${EMAIL_REPLY_TO}" style="color:#f5f5f5;text-decoration:underline;">${EMAIL_REPLY_TO}</a>.
+            <p style="margin:0;font-size:12px;line-height:1.6;color:${MAIL.muted};">
+              Questions? Write to <a href="mailto:${EMAIL_REPLY_TO}" style="${linkStyle}">${EMAIL_REPLY_TO}</a>.
             </p>
-            ${MAILING_ADDRESS ? `<p style="margin:6px 0 0;font-size:12px;line-height:1.6;color:#999999;">${escapeHtml(MAILING_ADDRESS)}</p>` : ""}
+            ${MAILING_ADDRESS ? `<p style="margin:6px 0 0;font-size:12px;line-height:1.6;color:${MAIL.muted};">${escapeHtml(MAILING_ADDRESS)}</p>` : ""}
           </td>
         </tr>
       </table>
     </div>
-  `;
+  `);
+}
+
+/** An in-text link in the accent colour, for the body of a designed email. */
+function bodyLink(url: string, label: string, kind: keyof typeof SHELL_ACCENT = "default"): string {
+  return `<a href="${url}" style="color:${SHELL_ACCENT[kind].link};text-decoration:underline;font-weight:600;">${label}</a>`;
+}
+
+/**
+ * Turns a plain-text notification body into email paragraphs: a blank line starts a new paragraph, a single
+ * line break stays a line break, and a run of lines starting with "- " becomes a bullet list. Everything is escaped.
+ */
+export function bodyToHtml(body: string): string {
+  const blocks = body.trim().split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
+  return blocks
+    .map((block, i) => {
+      const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+      const gap = i === blocks.length - 1 ? "0" : "14px";
+      if (lines.length > 0 && lines.every((l) => l.startsWith("- "))) {
+        const items = lines.map((l) => `<li style="margin:0 0 6px;">${escapeHtml(l.slice(2))}</li>`).join("");
+        return `<ul style="margin:0 0 ${gap};padding-left:20px;">${items}</ul>`;
+      }
+      return `<p style="margin:0 0 ${gap};">${lines.map(escapeHtml).join("<br />")}</p>`;
+    })
+    .join("");
+}
+
+/** The first sentence or so of a body, for the line mail apps show beside the subject. */
+function preheaderFrom(body: string): string {
+  const flat = body.replace(/^- /gm, "").replace(/\s+/g, " ").trim();
+  return flat.length > 110 ? `${flat.slice(0, 107).trimEnd()}...` : flat;
 }
 
 function codeBlockHtml(code: string): string {
-  // Neutral, not accent-tinted, the code is information to copy, not a
-  // call-to-action, and it's already the single largest, boldest thing in
-  // the email; size and weight carry the emphasis, not colour.
+  // The code is information to copy, not a call to action: a quiet grey panel, large monospace digits.
   return `
-    <div style="margin:20px 0;text-align:center;">
-      <span style="display:inline-block;padding:14px 28px;border-radius:12px;background:#262626;border:1px solid rgba(245,245,245,0.25);font-family:'Courier New',monospace;font-size:28px;letter-spacing:8px;font-weight:bold;color:#f5f5f5;">
+    <div style="margin:22px 0;text-align:center;">
+      <span style="display:inline-block;padding:16px 30px;border-radius:12px;background:${MAIL.panel};border:1px solid ${MAIL.line};font-family:'SFMono-Regular',Menlo,Consolas,'Courier New',monospace;font-size:30px;letter-spacing:8px;font-weight:700;color:${MAIL.ink};">
         ${code}
       </span>
     </div>
@@ -249,10 +332,10 @@ export async function sendVerificationCodeEmail(to: string, purpose: Verificatio
   const copy = PURPOSE_COPY[purpose];
   const html = emailShell(
     copy.heading,
-    `<p style="margin:0 0 4px;">${copy.intro}</p>${codeBlockHtml(code)}<p style="margin:0;color:#999999;font-size:13px;">This code expires in 10 minutes.</p>`,
+    `<p style="margin:0 0 4px;">${copy.intro}</p>${codeBlockHtml(code)}<p style="margin:0;color:${MAIL.muted};font-size:13px;text-align:center;">This code expires in 10 minutes.</p>`,
     // Codes are a different concern than a "manage preferences" footer, the
     // relevant reassurance here is "someone else can't get in", not "opt out".
-    { footerNote: "If you didn't request this, you can safely ignore this email. Your account is still secure." },
+    { footerNote: "If you didn't request this, you can safely ignore this email. Your account is still secure.", preheader: `Your code is ${code}. It expires in 10 minutes.` },
   );
   const text = `${copy.intro}\n\nYour code: ${code}\n\nThis code expires in 10 minutes.`;
   await sendEmail({ to, subject: copy.subject, html, text });
@@ -270,7 +353,7 @@ function escapeHtml(text: string): string {
 /** Generic notification email, payment approvals, role changes, practice reminders, etc. */
 export async function sendNotificationEmail(to: string, title: string, body: string, kind: "default" | "notice" = "default", unsubscribe?: UnsubscribeTarget) {
   const links = unsubscribe ? unsubscribeLinks(unsubscribe.userId, unsubscribe.category) : null;
-  const html = emailShell(title, `<p style="margin:0;">${escapeHtml(body)}</p>`, { kind, unsubscribePageUrl: links?.page });
+  const html = emailShell(title, bodyToHtml(body), { kind, unsubscribePageUrl: links?.page, preheader: preheaderFrom(body) });
   const text = links ? `${body}\n\nUnsubscribe: ${links.page}` : body;
   await sendEmail({ to, subject: title, html, text, unsubscribePostUrl: links?.post });
 }
@@ -284,7 +367,7 @@ export const DISCORD_REGISTER_URL = "https://discord.com/register";
  */
 export async function sendDiscordConnectEmail(to: string): Promise<void> {
   const lessonsUrl = getAppUrl("/lessons");
-  const link = (url: string) => `<a href="${url}" style="color:#fb8a5c;text-decoration:underline;font-weight:bold;">here</a>`;
+  const link = (url: string) => bodyLink(url, "here");
   const html = emailShell(
     "Connect your Discord",
     `<p style="margin:0 0 14px;">Your class calls happen on Discord. Do these 3 steps:</p>
@@ -306,7 +389,7 @@ export async function sendPasswordChangedEmail(to: string, name: string | null) 
   const resetUrl = getAppUrl("/forgot-password");
   const html = emailShell(
     "Your password was changed",
-    `<p style="margin:0 0 12px;">${greeting}</p><p style="margin:0 0 12px;">The password on your Bass Note Piano account was just changed, and any other devices were signed out.</p><p style="margin:0;">If this was you, nothing more to do. If it wasn't, <a href="${resetUrl}">reset your password now</a> and reply to the studio so we can look into it.</p>`,
+    `<p style="margin:0 0 12px;">${greeting}</p><p style="margin:0 0 12px;">The password on your Bass Note Piano account was just changed, and any other devices were signed out.</p><p style="margin:0;">If this was you, nothing more to do. If it wasn't, ${bodyLink(resetUrl, "reset your password now", "notice")} and reply to the studio so we can look into it.</p>`,
     { kind: "notice" },
   );
   const text = `${name ? `Hi ${name.split(" ")[0]},` : "Hi,"}\n\nThe password on your Bass Note Piano account was just changed, and any other devices were signed out.\n\nIf this was you, nothing more to do. If it wasn't, reset your password now: ${resetUrl}\nand reply to the studio so we can look into it.`;
@@ -323,7 +406,7 @@ async function sendSecurityNotice(to: string, name: string | null, subject: stri
   const resetUrl = getAppUrl("/forgot-password");
   const html = emailShell(
     subject,
-    `<p style="margin:0 0 12px;">${greeting}</p><p style="margin:0 0 12px;">${escapeHtml(what)}</p><p style="margin:0;">If this was you, nothing more to do. If it wasn't, <a href="${resetUrl}">reset your password now</a> and reply to the studio so we can look into it.</p>`,
+    `<p style="margin:0 0 12px;">${greeting}</p><p style="margin:0 0 12px;">${escapeHtml(what)}</p><p style="margin:0;">If this was you, nothing more to do. If it wasn't, ${bodyLink(resetUrl, "reset your password now", "notice")} and reply to the studio so we can look into it.</p>`,
     { kind: "notice" },
   );
   const text = `${name ? `Hi ${name.split(" ")[0]},` : "Hi,"}\n\n${what}\n\nIf this was you, nothing more to do. If it wasn't, reset your password now: ${resetUrl}\nand reply to the studio so we can look into it.`;
@@ -380,12 +463,10 @@ ${links ? `<p style="margin:18px 0 0;font-size:12px;color:#666666;">Do not want 
 }
 
 function ctaButtonHtml(cta: { label: string; url: string }): string {
-  // Neutral, not accent, the "premium black and white" pass now covers
-  // real CTAs too, so nothing in the app fills a button with the accent
-  // gradient anymore.
+  // Bulletproof button: the colour sits on the link itself, so it holds in clients that drop padding on inline blocks.
   return `
     <div style="text-align:center;margin-top:4px;">
-      <a href="${cta.url}" style="display:inline-block;padding:13px 30px;border-radius:10px;background:#fb8a5c;color:#1a140e;font-size:14px;font-weight:bold;text-decoration:none;">
+      <a href="${cta.url}" style="display:inline-block;padding:14px 32px;border-radius:10px;background:${MAIL.brand};color:${MAIL.brandInk};font-size:15px;font-weight:700;text-decoration:none;">
         ${escapeHtml(cta.label)}
       </a>
     </div>
@@ -406,7 +487,7 @@ export async function sendNotificationEmailWithCta(
   unsubscribe?: UnsubscribeTarget,
 ) {
   const links = unsubscribe ? unsubscribeLinks(unsubscribe.userId, unsubscribe.category) : null;
-  const html = emailShell(title, `<p style="margin:0 0 20px;">${escapeHtml(body)}</p>${ctaButtonHtml(cta)}`, { kind, unsubscribePageUrl: links?.page });
+  const html = emailShell(title, `<div style="margin:0 0 22px;">${bodyToHtml(body)}</div>${ctaButtonHtml(cta)}`, { kind, unsubscribePageUrl: links?.page, preheader: preheaderFrom(body) });
   const text = `${body}\n\n${cta.label}: ${cta.url}${links ? `\n\nUnsubscribe: ${links.page}` : ""}`;
   await sendEmail({ to, subject: title, html, text, unsubscribePostUrl: links?.post });
 }
@@ -454,56 +535,61 @@ export async function sendPaymentPlanInvoiceEmail(to: string, details: PaymentPl
     ? `This bill is ${details.overdueDays} day${details.overdueDays === 1 ? "" : "s"} overdue. Please send it as soon as you can.`
     : `${details.planLabel}, ${details.installmentLabel.toLowerCase()}.`;
 
-  const rowBorder = "border-top:1px solid rgba(255,255,255,0.08);";
+  const rowBorder = `border-top:1px solid ${MAIL.line};`;
   const cycleEndsAtLabel = details.cycleEndsAt?.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" });
 
   // The two lines that matter, large, the way a bill reads: how much and by when.
   const headlineHtml = `
-    <p style="margin:0 0 6px;color:#999999;font-size:13px;">${escapeHtml(intro)}</p>
-    <p style="margin:0;color:#f5f5f5;font-size:34px;font-weight:bold;line-height:1.1;">${amountLabel}</p>
-    <p style="margin:6px 0 20px;color:${isOverdue ? "#fca5a5" : "#f5f5f5"};font-size:17px;font-weight:bold;">${isOverdue ? "was due" : "due on"} ${escapeHtml(dueDateLabel)}</p>
+    <p style="margin:0 0 8px;color:${MAIL.muted};font-size:14px;">${escapeHtml(intro)}</p>
+    <p style="margin:0;color:${MAIL.ink};font-size:38px;font-weight:700;line-height:1.1;">${amountLabel}</p>
+    <p style="margin:8px 0 22px;color:${isOverdue ? MAIL.danger : MAIL.ink};font-size:16px;font-weight:600;">${isOverdue ? "Was due" : "Due"} ${escapeHtml(dueDateLabel)}</p>
   `;
 
   const buttonsHtml = `
-    <table role="presentation" width="100%" style="border-collapse:collapse;margin:0 0 22px;">
+    <table role="presentation" width="100%" style="border-collapse:collapse;margin:0 0 24px;">
       <tr>
-        <td style="padding-right:8px;">
-          <a href="${details.cta.url}" style="display:block;padding:13px 10px;border-radius:999px;background:#fb8a5c;color:#1a140e;font-size:14px;font-weight:bold;text-align:center;text-decoration:none;">Pay bill</a>
+        <td style="padding-right:6px;">
+          <a href="${details.cta.url}" style="display:block;padding:14px 10px;border-radius:10px;background:${MAIL.brand};color:${MAIL.brandInk};font-size:15px;font-weight:700;text-align:center;text-decoration:none;">Pay bill</a>
         </td>
-        <td style="padding-left:8px;">
-          <a href="${remindUrl}" style="display:block;padding:13px 10px;border-radius:999px;background:#2a2a2a;color:#f5f5f5;font-size:14px;font-weight:bold;text-align:center;text-decoration:none;">Remind me</a>
+        <td style="padding-left:6px;">
+          <a href="${remindUrl}" style="display:block;padding:13px 10px;border-radius:10px;background:${MAIL.card};border:1px solid ${MAIL.line};color:${MAIL.ink};font-size:15px;font-weight:600;text-align:center;text-decoration:none;">Remind me</a>
         </td>
       </tr>
     </table>
   `;
 
+  const cell = "padding:10px 14px;font-size:13px;";
   const summaryHtml = `
-    <table role="presentation" width="100%" style="margin:0;border-collapse:collapse;">
+    <table role="presentation" width="100%" style="margin:0;border-collapse:separate;background:${MAIL.panel};border:1px solid ${MAIL.line};border-radius:10px;">
       <tr>
-        <td style="padding:6px 0;color:#999999;font-size:13px;">Plan</td>
-        <td style="padding:6px 0;color:#f5f5f5;font-size:13px;text-align:right;">${escapeHtml(details.planLabel)}</td>
+        <td style="${cell}color:${MAIL.muted};">Plan</td>
+        <td style="${cell}color:${MAIL.ink};text-align:right;">${escapeHtml(details.planLabel)}</td>
       </tr>
       <tr>
-        <td style="padding:6px 0;color:#999999;font-size:13px;${rowBorder}">Installment</td>
-        <td style="padding:6px 0;color:#f5f5f5;font-size:13px;text-align:right;${rowBorder}">${escapeHtml(details.installmentLabel)}</td>
+        <td style="${cell}color:${MAIL.muted};${rowBorder}">Installment</td>
+        <td style="${cell}color:${MAIL.ink};text-align:right;${rowBorder}">${escapeHtml(details.installmentLabel)}</td>
       </tr>
       ${
         cycleEndsAtLabel
           ? `<tr>
-        <td style="padding:6px 0;color:#999999;font-size:13px;${rowBorder}">Credits valid through</td>
-        <td style="padding:6px 0;color:#f5f5f5;font-size:13px;text-align:right;${rowBorder}">${escapeHtml(cycleEndsAtLabel)}</td>
+        <td style="${cell}color:${MAIL.muted};${rowBorder}">Credits valid through</td>
+        <td style="${cell}color:${MAIL.ink};text-align:right;${rowBorder}">${escapeHtml(cycleEndsAtLabel)}</td>
       </tr>`
           : ""
       }
       <tr>
-        <td style="padding:6px 0;color:#999999;font-size:13px;${rowBorder}">Pay via Zelle to</td>
-        <td style="padding:6px 0;color:#f5f5f5;font-size:13px;text-align:right;${rowBorder}">${escapeHtml(details.zelleHandle)}</td>
+        <td style="${cell}color:${MAIL.muted};${rowBorder}">Pay via Zelle to</td>
+        <td style="${cell}color:${MAIL.ink};text-align:right;${rowBorder}">${escapeHtml(details.zelleHandle)}</td>
       </tr>
     </table>
   `;
 
   const links = details.unsubscribe ? unsubscribeLinks(details.unsubscribe.userId, details.unsubscribe.category) : null;
-  const html = emailShell(heading, `${headlineHtml}${buttonsHtml}${summaryHtml}`, { kind: isOverdue ? "notice" : "default", unsubscribePageUrl: links?.page });
+  const html = emailShell(heading, `${headlineHtml}${buttonsHtml}${summaryHtml}`, {
+    kind: isOverdue ? "notice" : "default",
+    unsubscribePageUrl: links?.page,
+    preheader: `${amountLabel} ${isOverdue ? "was due" : "due"} ${dueShort}. Pay by Zelle, or tap to be reminded.`,
+  });
   const text = [
     `${heading}: ${amountLabel} ${isOverdue ? "was due" : "due on"} ${dueDateLabel}`,
     intro,
@@ -547,19 +633,19 @@ export async function sendWelcomeEmail(to: string, name: string | null) {
     { label: "Say hi to Atom", detail: "Ask anything about classes, pricing or how things work.", url: getAppUrl("/dashboard") },
   ];
 
-  const listStyle = "margin:0 0 20px;padding-left:20px;color:#e5e5e5;line-height:1.7;";
+  const listStyle = `margin:0 0 22px;padding-left:20px;color:${MAIL.body};line-height:1.7;`;
   const bodyHtml = `
     <p style="margin:0 0 16px;">Your email is verified and your account is ready. We're so glad you're here.</p>
-    <p style="margin:0 0 8px;font-weight:bold;color:#f5f5f5;">What you get</p>
+    <p style="margin:0 0 8px;font-weight:700;color:${MAIL.ink};">What you get</p>
     <ul style="${listStyle}">${things.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ul>
-    <p style="margin:0 0 8px;font-weight:bold;color:#f5f5f5;">A few good next steps</p>
+    <p style="margin:0 0 8px;font-weight:700;color:${MAIL.ink};">A few good next steps</p>
     <ol style="${listStyle}">${steps
-      .map((st) => `<li><a href="${st.url}" style="color:#fb8a5c;text-decoration:none;font-weight:bold;">${escapeHtml(st.label)}</a><br /><span style="color:#a3a3a3;">${escapeHtml(st.detail)}</span></li>`)
+      .map((st) => `<li style="margin:0 0 8px;">${bodyLink(st.url, escapeHtml(st.label))}<br /><span style="color:${MAIL.muted};">${escapeHtml(st.detail)}</span></li>`)
       .join("")}</ol>
     <p style="margin:0 0 20px;">Take it one scale at a time. There's no rush, and we're here whenever you need us.</p>
     ${ctaButtonHtml({ label: "Open Bass Note Piano", url: getAppUrl("/dashboard") })}
   `;
-  const html = emailShell(greeting, bodyHtml);
+  const html = emailShell(greeting, bodyHtml, { preheader: "Your account is ready. Here is where to start." });
   const text = [
     greeting.replace(/&[a-z#0-9]+;/gi, ""),
     "",
@@ -621,18 +707,24 @@ export interface TodoEmailItem {
   url: string;
 }
 
-/** The owner's morning list: one line per thing, each a link straight to the page that handles it. */
+/** The owner's morning list: a short summary panel, then one tappable row per thing, each straight to the page that handles it. */
 export async function sendTodoListEmail(to: string, title: string, intro: string | null, items: TodoEmailItem[]) {
   const rows = items
     .map(
-      (item) =>
-        `<li style="margin:0 0 10px;"><a href="${item.url}" style="color:#f5f5f5;text-decoration:underline;">${escapeHtml(item.text)}</a></li>`,
+      (item, i) =>
+        `<tr><td style="padding:13px 16px;${i > 0 ? `border-top:1px solid ${MAIL.line};` : ""}"><a href="${item.url}" style="display:block;color:${MAIL.ink};font-size:14px;line-height:1.5;text-decoration:none;"><span style="color:${SHELL_ACCENT.default.bar};font-weight:700;">&#8250;</span>&nbsp;&nbsp;${escapeHtml(item.text)}</a></td></tr>`,
     )
     .join("");
-  const html = emailShell(
-    title,
-    `${intro ? `<p style="margin:0 0 14px;">${escapeHtml(intro)}</p>` : ""}<ul style="margin:0 0 20px;padding-left:20px;">${rows}</ul>${ctaButtonHtml({ label: "Open admin", url: getAppUrl("/admin") })}`,
-  );
+  const summary = intro
+    ? `<div style="margin:0 0 20px;padding:14px 16px;border-radius:10px;background:${MAIL.panel};border:1px solid ${MAIL.line};font-size:14px;line-height:1.6;color:${MAIL.body};">${escapeHtml(intro)}</div>`
+    : "";
+  const list = items.length
+    ? `<p style="margin:0 0 8px;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;color:${MAIL.muted};">${items.length === 1 ? "1 thing needs you" : `${items.length} things need you`}</p>
+       <table role="presentation" width="100%" style="margin:0 0 24px;border-collapse:separate;border:1px solid ${MAIL.line};border-radius:10px;">${rows}</table>`
+    : "";
+  const html = emailShell(title, `${summary}${list}${ctaButtonHtml({ label: "Open admin", url: getAppUrl("/admin") })}`, {
+    preheader: items.length ? `${items.length} ${items.length === 1 ? "thing needs" : "things need"} you today.` : (intro ?? undefined),
+  });
   const text = [intro, ...items.map((i) => `- ${i.text}: ${i.url}`), "", `Open admin: ${getAppUrl("/admin")}`].filter((l): l is string => l !== null).join("\n");
   await sendEmail({ to, subject: title, html, text });
 }

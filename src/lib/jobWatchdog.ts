@@ -64,7 +64,7 @@ export async function runWatchdog(deps: WatchdogDeps, now = new Date()): Promise
     try {
       await deps.sendEmail(
         problems.length === 1 ? "Something needs attention" : `${problems.length} things need attention`,
-        `${problems.join("\n")}\n\nThese are checked automatically in the background. Open Admin > Overview to see each one, or Netlify > Logs > Functions for the error.`,
+        `${problems.map((x) => `- ${x}`).join("\n")}\n\nThese are checked automatically in the background. Open Admin > Overview to see each one, or Netlify > Logs > Functions for the error.`,
       );
       await deps.recordAlert(problemKey(problems));
       alerted = true;
