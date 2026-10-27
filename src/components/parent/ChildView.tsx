@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Check, Circle, Flame, Lock } from "lucide-react";
 import { Tabs } from "@/components/ui/Tabs";
 import { ChildClasses } from "@/components/parent/ChildClasses";
-import { ChildWeeklyTime } from "@/components/parent/ChildWeeklyTime";
+import { ChildWeeklyTime, EndChildPlanButton } from "@/components/parent/ChildWeeklyTime";
 import type { ChildView as ChildViewData } from "@/lib/parentChildren";
 import { formatDateTime } from "@/lib/classScheduleLabels";
 
@@ -134,11 +134,10 @@ export function ChildView({ view }: { view: ChildViewData }) {
                   <dd className="mt-0.5 text-slate-100">{view.plan.weeklyTime ?? "None (books with credits)"}</dd>
                 </div>
               </dl>
-              {view.canMoveWeeklyTime && (
-                <div className="mt-5">
-                  <ChildWeeklyTime childId={view.id} />
-                </div>
-              )}
+              <div className="mt-5 flex flex-wrap gap-2">
+                {view.canMoveWeeklyTime && <ChildWeeklyTime childId={view.id} />}
+                <EndChildPlanButton childId={view.id} />
+              </div>
             </div>
           ) : (
             <p className="rounded-2xl bg-neu-base p-5 text-small text-slate-500 shadow-raised-low">No plan right now. Start one from the Parent mode page.</p>
