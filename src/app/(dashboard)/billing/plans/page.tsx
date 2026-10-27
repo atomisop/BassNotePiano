@@ -1,4 +1,4 @@
-import { parseAudience } from "@/lib/planCheckout";
+import { parseAudience, parseParentMode } from "@/lib/planCheckout";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { PaymentPlanCadence, PaymentPlanTerm, type ZellePaymentStatus } from "@prisma/client";
@@ -45,6 +45,7 @@ export default async function BillingPlansPage(
   const initialTerm = Object.values(PaymentPlanTerm).find((t) => t === searchParams.term);
   // "?who=family" from the pricing page's family toggle opens the plan page already on "Me and my family".
   const initialAudience = parseAudience(searchParams.who);
+  const initialParentMode = parseParentMode(searchParams.who);
 
   const [activePlan, allPlans, pricing, personalDiscountPercent] = await Promise.all([
     getActivePaymentPlan(session.user.id),
@@ -161,6 +162,7 @@ export default async function BillingPlansPage(
           initialCadence={initialCadence}
           initialTerm={initialTerm}
           initialAudience={initialAudience}
+          initialParentMode={initialParentMode}
           pricing={pricing}
           personalDiscountPercent={personalDiscountPercent}
           activePlan={

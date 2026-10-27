@@ -49,7 +49,7 @@ const CANCELLATION_REASONS: { value: PlanCancellationReason; label: string }[] =
   { value: "OTHER", label: "Other" },
 ];
 
-/** Set when the plan is one person's share of a family plan. */
+/** Set when the plan is one person's share of a group plan. */
 export interface FamilyPlanDetails {
   isPayer: boolean;
   payerName: string | null;
@@ -256,10 +256,10 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
           {activePlan.family && (
             <div className="rounded-xl bg-neu-base p-4 text-small text-slate-300 shadow-pressed-low">
               <p className="flex items-center gap-1 font-semibold text-slate-50">
-                Family plan
-                <Hint>The length and weekly time of a family plan are changed by the teacher.</Hint>
+                Group plan
+                <Hint>The length and weekly time of a group plan are changed by the teacher.</Hint>
               </p>
-              <p className="mt-1">In this family: {activePlan.family.memberNames.join(", ")}.</p>
+              <p className="mt-1">In this group: {activePlan.family.memberNames.join(", ")}.</p>
               {activePlan.family.weeklyTime && <p className="mt-1">Weekly class together: {activePlan.family.weeklyTime}.</p>}
               <p className="mt-1">
                 {activePlan.family.isPayer
@@ -339,7 +339,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
           {activePlan.family && cancelStage === "idle" && (
             <p className="mb-3 text-small text-slate-400">
               {activePlan.family.isPayer
-                ? "You pay for this family. If you cancel, the family plan ends for everyone. Each person keeps the 28 days already paid, with its credits and booked classes."
+                ? "You pay for this family. If you cancel, the group plan ends for everyone. Each person keeps the 28 days already paid, with its credits and booked classes."
                 : "If you cancel, only you leave the family. If one person is left, they pay the solo price from their next bill."}
             </p>
           )}

@@ -44,7 +44,7 @@ export async function listInvitesForPerson(userId: string) {
   return rows.map((r) => ({ id: r.id, payerName: nameOf(r.payer), createdAt: r.createdAt }));
 }
 
-/** Asks an existing account to join the payer's family plan. Nothing is created for them until they say yes. */
+/** Asks an existing account to join the payer's group plan. Nothing is created for them until they say yes. */
 export async function sendFamilyInvite(payerId: string, rawEmail: string): Promise<InviteState> {
   const email = rawEmail.trim().toLowerCase();
   const check = await checkFamilyMember(payerId, email);
@@ -73,8 +73,8 @@ export async function sendFamilyInvite(payerId: string, rawEmail: string): Promi
   });
   await noticePlanUpdated({
     userId: invitee.id,
-    title: "You were invited to a family plan",
-    body: `${nameOf(payer)} would like you on their family plan. Open Billing > Plans to accept or decline. Nothing starts for you unless you accept. They pay for your classes, you pick your own class times with your credits, and credits expire at the end of each 28-day cycle.`,
+    title: "You were invited to a group plan",
+    body: `${nameOf(payer)} would like you on their group plan. Open Billing > Plans to accept or decline. Nothing starts for you unless you accept. They pay for your classes, you pick your own class times with your credits, and credits expire at the end of each 28-day cycle.`,
   });
   return "PENDING";
 }
@@ -95,7 +95,7 @@ export async function respondToFamilyInvite(userId: string, inviteId: string, ac
       prisma.user.findUniqueOrThrow({ where: { id: invite.payerId }, select: { id: true } }),
       prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { name: true, email: true } }),
     ]);
-    await noticePlanUpdated({ userId: payer.id, title: "Family invitation accepted", body: `${nameOf(me)} accepted your family invitation. When everyone has accepted, pick the weekly time and start the plan.` });
+    await noticePlanUpdated({ userId: payer.id, title: "Family invitation accepted", body: `${nameOf(me)} accepted your group invitation. When everyone has accepted, pick the weekly time and start the plan.` });
   }
 }
 
@@ -117,7 +117,7 @@ export async function assertEveryoneAccepted(tx: Prisma.TransactionClient, payer
   if (waiting.length > 0) throw new FamilyInviteError("Everyone must accept their invitation first. Send the invitations, then start the plan once they have accepted.");
 }
 
-/** Once the family exists the invitations are spent: starting a second family needs fresh yeses. */
+/** Once the group exists the invitations are spent: starting a second family needs fresh yeses. */
 export async function spendInvites(tx: Prisma.TransactionClient, payerId: string, otherIds: string[]): Promise<void> {
   if (otherIds.length > 0) await tx.familyInvite.deleteMany({ where: { payerId, inviteeId: { in: otherIds } } });
 }

@@ -154,6 +154,8 @@ const TYPE_CATEGORY: Partial<Record<string, { key: CategoryKey; label: string }>
   TRIAL_ENDING: { key: "billing", label: "Billing" },
   ROLE_UPDATED: { key: "account", label: "Account" },
   ACCOUNT_UPDATE: { key: "account", label: "Account" },
+  PARENT_LINK_REQUEST: { key: "account", label: "Account" },
+  PARENT_LINK_ACCEPTED: { key: "account", label: "Account" },
   LESSON_BOOKING_CONFIRMED: { key: "bookings", label: "Bookings" },
   ATTENDANCE_RECORDED: { key: "bookings", label: "Bookings" },
   FRIEND_REQUEST_RECEIVED: { key: "friends", label: "Friends" },

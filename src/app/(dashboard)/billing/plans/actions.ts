@@ -6,7 +6,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { PaymentPlanCadence, type PaymentPlanTerm } from "@prisma/client";
 import { getServerAuthSession } from "@/lib/auth";
-import { createFamilyPlans, createPaymentPlan, PaymentPlanError } from "@/lib/paymentPlans";
+import { createFamilyPlans,
+  createParentPlans, createPaymentPlan, PaymentPlanError } from "@/lib/paymentPlans";
 import { submitZellePaymentReference, type ZelleReferenceSubmission } from "@/lib/payments";
 import { getReservableSlots, type ReservableSlot } from "@/lib/classSchedule";
 import { getMyWaitlist, getTakenSlots, joinWaitlist, leaveWaitlist, WaitlistError } from "@/lib/slotWaitlist";
@@ -33,7 +34,7 @@ export async function getReservableSlotsAction(cadence: PaymentPlanCadence): Pro
   return getReservableSlots(PLAN_CADENCE_CREDITS_PER_WEEK[cadence]);
 }
 
-/** Does this email belong to an account that could join a family plan? Limited, because each answer says whether an email has an account. */
+/** Does this email belong to an account that could join a group plan? Limited, because each answer says whether an email has an account. */
 export async function checkFamilyMemberAction(email: string): Promise<MemberCheck | "limited"> {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
@@ -168,7 +169,7 @@ export interface EnrollFamilyPlanResult {
   error: string | null;
 }
 
-/** Starts a family plan: you (the payer) and 1 to 3 other existing accounts, all or nobody. */
+/** Starts a group plan: you (the payer) and 1 to 3 other existing accounts, all or nobody. */
 export async function enrollFamilyPlanAction(
   term: PaymentPlanTerm,
   reservedScheduleId: string,
@@ -228,8 +229,55 @@ async function enrollFamily(
   }
 }
 
+export interface EnrollParentPlanResult {
+  ok: boolean;
+  startPaymentId: string | null;
+  amountCents: number | null;
+  error: string | null;
+}
+
+/** Parent mode: a parent starts plans for the children they are linked to (and, if they choose, themselves), paying one combined first payment. */
+export async function enrollParentPlanAction(
+  term: PaymentPlanTerm,
+  reservedScheduleId: string,
+  reservedChunkIndex: number,
+  childEmails: string[],
+  includeSelf: boolean,
+  expectedFirstPaymentCents?: number,
+): Promise<EnrollParentPlanResult> {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/billing/plans");
+  if (!Array.isArray(childEmails) || childEmails.length > 10 || childEmails.some((e) => typeof e !== "string")) {
+    return { ok: false, startPaymentId: null, amountCents: null, error: "Check the email addresses and try again." };
+  }
+  try {
+    await consumeRateLimit(prisma, `parent-plan:${session.user.id}`, { windowMinutes: 60, max: 10, message: "Too many tries. Please wait a while and try again." });
+  } catch (error) {
+    if (error instanceof RateLimitError) return { ok: false, startPaymentId: null, amountCents: null, error: error.message };
+    throw error;
+  }
+  try {
+    const { startPayment } = await createParentPlans({
+      payerId: session.user.id,
+      cadence: OFFERED_PLAN_CADENCE,
+      term,
+      zelleHandle: process.env.ZELLE_HANDLE ?? "payments@yourplatform.com",
+      reservedScheduleId,
+      reservedChunkIndex,
+      childEmails,
+      includeSelf: Boolean(includeSelf),
+      expectedFirstPaymentCents: typeof expectedFirstPaymentCents === "number" ? expectedFirstPaymentCents : undefined,
+    });
+    revalidatePath("/", "layout");
+    return { ok: true, startPaymentId: startPayment.id, amountCents: startPayment.amountCents, error: null };
+  } catch (error) {
+    if (error instanceof PaymentPlanError) return { ok: false, startPaymentId: null, amountCents: null, error: error.message };
+    throw error;
+  }
+}
+
 // ---------------------------------------------------------------------------
-// Switching a paid plan into a family plan. It ends the person's current plan once the family's first payment is approved, so it
+// Switching a paid plan into a group plan. It ends the person's current plan once the group's first payment is approved, so it
 // takes their password and a code emailed to them, checked again here on the server each time.
 // ---------------------------------------------------------------------------
 
@@ -256,7 +304,7 @@ export async function requestSwitchToFamilyCodeAction(password: string): Promise
   return { ok: true };
 }
 
-/** Step 2: password and code again, then the family is set up. The current plan keeps running until the family's first payment is approved. */
+/** Step 2: password and code again, then the group is set up. The current plan keeps running until the group's first payment is approved. */
 export async function confirmSwitchToFamilyAction(
   password: string,
   code: string,

@@ -15,10 +15,23 @@ export type Audience = "SOLO" | "FAMILY";
 
 /** The pricing page links here with ?who=family or ?who=solo. Anything else is a solo plan. */
 export function parseAudience(value: string | null | undefined): Audience {
-  return value?.trim().toLowerCase() === "family" ? "FAMILY" : "SOLO";
+  const v = value?.trim().toLowerCase();
+  return v === "family" || v === "group" || v === "parent" ? "FAMILY" : "SOLO";
 }
 
-/** Counts people from the rows of a family form. An added row counts as a person at once, even before an email is typed in it. */
+/** "?who=parent" opens the plan page in parent mode (a parent paying for the children they linked). */
+export function parseParentMode(value: string | null | undefined): boolean {
+  return value?.trim().toLowerCase() === "parent";
+}
+
+/** People on a parent-paid plan: the linked children typed in, plus the parent when they learn too. */
+export function parentHeadcount(childRows: string[], includeSelf: boolean): { people: number; filled: number; empty: number; canAdd: boolean; atMax: boolean } {
+  const people = childRows.length + (includeSelf ? 1 : 0);
+  const filled = childRows.filter((row) => row.trim().length > 0).length;
+  return { people, filled, empty: childRows.length - filled, canAdd: people < MAX_FAMILY_MEMBERS, atMax: people >= MAX_FAMILY_MEMBERS };
+}
+
+/** Counts people from the rows of a group form. An added row counts as a person at once, even before an email is typed in it. */
 export function headcount(memberRows: string[]): { people: number; filled: number; empty: number; canAdd: boolean; atMax: boolean } {
   const people = 1 + memberRows.length;
   const filled = memberRows.filter((row) => row.trim().length > 0).length;
@@ -49,18 +62,28 @@ export function checkoutTotals(input: {
   audience: Audience;
   memberRows: string[];
   personalDiscountPercent?: number;
+  /** Parent mode: the rows are children, the parent counts as a person only when they learn too, and one person pays the solo price. */
+  parent?: { includeSelf: boolean };
 }): CheckoutTotals {
-  const { cadence, term, pricing, audience, memberRows, personalDiscountPercent = 0 } = input;
+  const { cadence, term, pricing, audience, memberRows, personalDiscountPercent = 0, parent } = input;
   const list = calculatePaymentPlanRate(cadence, term, pricing);
   const monthly = calculatePaymentPlanRate(cadence, "MONTHLY", pricing);
-  const people = audience === "FAMILY" ? Math.min(MAX_FAMILY_MEMBERS, Math.max(MIN_FAMILY_MEMBERS, headcount(memberRows).people)) : 1;
-  // A family keeps the family rate; the owner's personal discount applies to a solo plan, the same rule the server charges by.
-  const perPaymentCents =
+  const people =
     audience === "FAMILY"
+      ? parent
+        ? Math.min(MAX_FAMILY_MEMBERS, Math.max(1, parentHeadcount(memberRows, parent.includeSelf).people))
+        : Math.min(MAX_FAMILY_MEMBERS, Math.max(MIN_FAMILY_MEMBERS, headcount(memberRows).people))
+      : 1;
+  // A group keeps the group rate; the owner's personal discount applies to a solo plan, the same rule the server charges by.
+  // A parent paying for one person pays the solo price (no personal discount, it is the child's plan), for two or more the group rate.
+  const perPaymentCents =
+    audience === "FAMILY" && people >= 2
       ? calculateFamilyBundleTotal(cadence, term, people, pricing).perStudentMonthlyCents
-      : personalDiscountPercent > 0
-        ? discountedPlanPriceCents(list.installmentAmountCents, personalDiscountPercent)
-        : list.installmentAmountCents;
+      : audience === "FAMILY"
+        ? list.installmentAmountCents
+        : personalDiscountPercent > 0
+          ? discountedPlanPriceCents(list.installmentAmountCents, personalDiscountPercent)
+          : list.installmentAmountCents;
   return {
     people,
     payments: list.termMonths,
@@ -74,10 +97,10 @@ export function checkoutTotals(input: {
 }
 
 /** What is still needed before the plan can start, in the order the page asks for it, or null when nothing is. */
-export function missingForCheckout(input: { audience: Audience; memberRows: string[]; slotChosen: boolean }): string | null {
+export function missingForCheckout(input: { audience: Audience; memberRows: string[]; slotChosen: boolean; parent?: boolean }): string | null {
   if (input.audience === "FAMILY") {
     const { empty } = headcount(input.memberRows);
-    if (input.memberRows.length === 0) return "Add a family member";
+    if (input.memberRows.length === 0) return input.parent ? "Add your child's account" : "Add a person";
     if (empty > 0) return empty === 1 ? "Fill in or remove the empty email" : "Fill in or remove the empty emails";
   }
   if (!input.slotChosen) return "Pick a weekly time";

@@ -79,9 +79,9 @@ export function TermsContent() {
         </p>
       </TermsSection>
 
-      <TermsSection title="Family plans" id="family-plans">
+      <TermsSection title="Group plans" id="family-plans">
         <p>
-          <span className="font-medium text-[rgb(var(--c-s-50))]">Who can be in one.</span> A family plan is for 2 to 8 people. Everyone needs their own
+          <span className="font-medium text-[rgb(var(--c-s-50))]">Who can be in one.</span> A group plan is for 2 to 8 people. Everyone needs their own
           account in their own name. The person who sets it up is the payer and is also a student on the plan. Each person pays a lower price than the
           solo price.
         </p>
@@ -93,8 +93,8 @@ export function TermsContent() {
         <p>
           <span className="font-medium text-[rgb(var(--c-s-50))]">The payer pays for everyone.</span> The payer makes one combined first payment from
           their own bank account, and then pays each person&apos;s bill every 28 days. The plan starts for everyone together, or for nobody. If the
-          payer stops paying, every plan in the family ends when its paid 28 days run out. If the payer cancels, the family plan ends for everyone. If
-          someone else leaves and only one person is left, that person pays the solo price from their next bill. A family can be changed only once in a
+          payer stops paying, every plan in the group ends when its paid 28 days run out. If the payer cancels, the group plan ends for everyone. If
+          someone else leaves and only one person is left, that person pays the solo price from their next bill. A group can be changed only once in a
           limited period, so people cannot move in and out for the discount.
         </p>
         <p>
@@ -103,8 +103,26 @@ export function TermsContent() {
           with them, one class a week, in Online Lessons. Each person has their own teacher time. Nobody is booked into someone else&apos;s class.
         </p>
         <p>
-          <span className="font-medium text-[rgb(var(--c-s-50))]">Credits expire.</span> The same rule applies to everyone in the family: credits are
+          <span className="font-medium text-[rgb(var(--c-s-50))]">Credits expire.</span> The same rule applies to everyone in the group: credits are
           good until the end of that bill&apos;s 28 days, and unused credits expire. The payer is not paid back for credits other people did not use.
+        </p>
+      </TermsSection>
+
+      <TermsSection title="Parent mode" id="parent-mode">
+        <p>
+          <span className="font-medium text-[rgb(var(--c-s-50))]">Linking is by invitation.</span> A parent can ask to link to a child&apos;s own account
+          by its email. Nothing is shared until the child accepts. Either side can end the link at any time in Settings. A request that was declined
+          cannot be sent again by the same person for 30 days.
+        </p>
+        <p>
+          <span className="font-medium text-[rgb(var(--c-s-50))]">What a linked parent can do.</span> See the child&apos;s progress, practice and classes,
+          book, move or cancel their classes (the same rules as for the child, including the cancellation cutoff), move their weekly time, and pay for their
+          plan. A parent does not have to be on a plan to pay for a child, and can also learn on a plan of their own.
+        </p>
+        <p>
+          <span className="font-medium text-[rgb(var(--c-s-50))]">Paying.</span> The parent makes one combined first payment from their own bank account
+          and then pays each child&apos;s bill every 28 days. One child is priced like a solo plan; two or more people on the same payment get the group
+          price. If the parent stops paying, the plans end when their paid 28 days run out. A parent leaving their own plan does not end their children&apos;s plans.
         </p>
       </TermsSection>
 

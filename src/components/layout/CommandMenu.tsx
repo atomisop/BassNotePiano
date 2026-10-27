@@ -169,6 +169,9 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
             Profile
             {hint("/profile")}
           </CommandItem>
+          <CommandItem value="parent mode children kids progress pay" onSelect={() => go("/parent")}>
+            Parent mode
+          </CommandItem>
           <CommandItem value="account settings" onSelect={() => go("/account")}>
             Settings
             {hint("/account")}
