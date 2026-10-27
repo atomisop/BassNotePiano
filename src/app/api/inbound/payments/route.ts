@@ -81,7 +81,7 @@ export async function POST(req: Request) {
         from: field("from"),
         subject: field("subject").slice(0, 300),
         body: emailBodyText(field("body-plain"), field("body-html")).slice(0, 6000),
-        reason: check.reason ?? "its sender check failed",
+        reason: `${check.reason ?? "its sender check failed"}${check.gmailSawBankSignature ? ". Gmail recorded that the bank's own signature passed, so forwarding probably broke the check" : ""}`,
       });
       return NextResponse.json({ outcome });
     }

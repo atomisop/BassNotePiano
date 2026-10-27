@@ -6,6 +6,7 @@ import { approveZellePayment } from "@/lib/payments";
 import { logAudit } from "@/lib/audit";
 import { unmatchedReceiptWhere } from "@/lib/paymentPipelineStatus";
 import { namesMatch, phoneAgrees } from "@/lib/paymentEmail";
+import { rankPayments, type Confidence } from "@/lib/paymentScoring";
 
 // Bank and Venmo emails that matched no payment, and what an admin can do
 // about them: attach one to a payment, or dismiss it. Every function here
@@ -26,7 +27,9 @@ export interface UnmatchedReceipt {
    * Open payments for exactly the same amount: the only ones this email may be attached to. `phoneMatch` marks a
    * student whose typed-in number agrees with the email's: a pointer for the admin, never an approval.
    */
-  candidates: { id: string; status: string; studentName: string | null; studentEmail: string; createdAt: Date; phoneMatch: boolean }[];
+  candidates: { id: string; status: string; studentName: string | null; studentEmail: string; createdAt: Date; phoneMatch: boolean; score: number; reasons: string[] }[];
+  /** How sure the ranking is about the top candidate: strong (a clear, code-backed lead), likely, or weak. */
+  confidence: Confidence;
 }
 
 export async function listUnmatchedReceipts(now = new Date()): Promise<UnmatchedReceipt[]> {
@@ -38,23 +41,60 @@ export async function listUnmatchedReceipts(now = new Date()): Promise<Unmatched
   if (receipts.length === 0) return [];
   const open = await prisma.zellePayment.findMany({
     where: { status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] }, amountCents: { in: receipts.map((r) => r.amountCents) } },
-    select: { id: true, status: true, amountCents: true, createdAt: true, senderPhone: true, user: { select: { name: true, email: true, phone: true } } },
+    select: {
+      id: true,
+      status: true,
+      amountCents: true,
+      createdAt: true,
+      submittedAt: true,
+      senderPhone: true,
+      user: { select: { name: true, email: true, phone: true, payerAliases: { select: { name: true } } } },
+      // A parent-paid or group bill is paid by the family's payer, whose name is the one the bank shows.
+      familyGroup: { select: { payer: { select: { name: true, payerAliases: { select: { name: true } } } } } },
+      paymentPlan: { select: { familyGroup: { select: { payer: { select: { name: true, payerAliases: { select: { name: true } } } } } } } },
+    },
     orderBy: { createdAt: "desc" },
   });
-  return receipts.map((r) => ({
-    id: r.id,
-    method: r.method,
-    senderName: r.senderName,
-    amountCents: r.amountCents,
-    memo: r.memo,
-    receivedAt: r.createdAt,
-    senderPhoneLast4: r.senderPhone ? r.senderPhone.slice(-4) : r.senderPhoneLast4,
-    candidates: open
-      .filter((p) => p.amountCents === r.amountCents)
-      .map((p) => ({ id: p.id, status: p.status, studentName: p.user.name, studentEmail: p.user.email, createdAt: p.createdAt, phoneMatch: phoneAgrees(p.senderPhone ?? p.user.phone, r) }))
-      // Students whose number agrees with the email come first.
-      .sort((a, b) => Number(b.phoneMatch) - Number(a.phoneMatch)),
-  }));
+  return receipts.map((r) => {
+    const sameAmount = open.filter((p) => p.amountCents === r.amountCents);
+    const { ranked, confidence } = rankPayments(
+      sameAmount.map((p) => {
+        const payer = p.familyGroup?.payer ?? p.paymentPlan?.familyGroup?.payer ?? null;
+        return {
+          id: p.id,
+          status: p.status,
+          createdAt: p.createdAt,
+          submittedAt: p.submittedAt,
+          senderPhone: p.senderPhone,
+          phone: p.user.phone,
+          payerNames: [p.user.name, ...p.user.payerAliases.map((a) => a.name), ...(payer ? [payer.name, ...payer.payerAliases.map((a) => a.name)] : [])],
+          raw: p,
+        };
+      }),
+      { senderName: r.senderName, memo: r.memo, receivedAt: r.createdAt, senderPhoneLast4: r.senderPhone ? r.senderPhone.slice(-4) : r.senderPhoneLast4 },
+    );
+    return {
+      id: r.id,
+      method: r.method,
+      senderName: r.senderName,
+      amountCents: r.amountCents,
+      memo: r.memo,
+      receivedAt: r.createdAt,
+      senderPhoneLast4: r.senderPhone ? r.senderPhone.slice(-4) : r.senderPhoneLast4,
+      confidence,
+      // Best first: the ranking already counts a matching phone, the code, the name and the timing.
+      candidates: ranked.map((c) => ({
+        id: c.id,
+        status: c.status,
+        studentName: c.raw.user.name,
+        studentEmail: c.raw.user.email,
+        createdAt: c.createdAt,
+        phoneMatch: phoneAgrees(c.raw.senderPhone ?? c.raw.user.phone, r),
+        score: c.score,
+        reasons: c.reasons,
+      })),
+    };
+  });
 }
 
 /**

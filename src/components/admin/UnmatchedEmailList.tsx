@@ -15,7 +15,8 @@ export interface UnmatchedEmailRow {
   /** Last four digits of the phone the email showed for the sender, if any. */
   senderPhoneLast4: string | null;
   receivedAtMs: number;
-  candidates: { id: string; status: string; studentName: string | null; studentEmail: string; createdAtMs: number; phoneMatch: boolean }[];
+  candidates: { id: string; status: string; studentName: string | null; studentEmail: string; createdAtMs: number; phoneMatch: boolean; score: number; reasons: string[] }[];
+  confidence: "strong" | "likely" | "weak";
 }
 
 type Result = { ok: boolean; error: string | null };
@@ -106,6 +107,10 @@ export function UnmatchedEmailList({
                     <span className="min-w-0 text-small text-slate-200">
                       {who} <span className="text-slate-500">· {STATUS_LABEL[c.status] ?? c.status.toLowerCase()}, started {ago(c.createdAtMs)}</span>
                       {c.phoneMatch && <span className="ml-2 rounded-full bg-[rgb(var(--signal)/0.16)] px-2 py-0.5 text-small font-medium text-signal-fg">Phone matches</span>}
+                      {c.id === row.candidates[0]?.id && row.confidence !== "weak" && (
+                        <span className="ml-2 rounded-full bg-emerald-400/15 px-2 py-0.5 text-small font-medium text-emerald-300">{row.confidence === "strong" ? "Best match" : "Likely"}</span>
+                      )}
+                      {c.reasons.length > 0 && <span className="mt-0.5 block text-small text-slate-500">{c.reasons.join(" · ")}</span>}
                     </span>
                     {isConfirming ? (
                       <span className="flex gap-2">
