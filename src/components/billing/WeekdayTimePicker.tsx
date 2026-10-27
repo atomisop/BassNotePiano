@@ -189,7 +189,7 @@ function WaitButton({ waiting, busy, onPress, compact = false }: { waiting: bool
       onClick={() => {
         if (!busy) onPress();
       }}
-      className={buttonVariants({ variant: waiting ? "secondary" : "primary", size: "sm", className: cn(compact ? "shrink-0" : "mt-3", !waiting && "text-black", busy && "cursor-progress") })}
+      className={buttonVariants({ variant: "secondary", size: "sm", className: cn(compact ? "shrink-0" : "mt-3", busy && "cursor-progress") })}
     >
       {busy && <MorphingSquare size={14} className="mr-2 shrink-0" />}
       {waiting ? (busy ? "Stopping…" : "Stop waiting") : busy ? "Adding you…" : "Tell me when it opens"}
