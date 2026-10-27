@@ -446,12 +446,16 @@ export async function holdUnverifiedPaymentEmail(input: { messageId: string; fro
   return "rejected";
 }
 
-export async function ingestPaymentEmail(input: {
-  messageId: string;
-  from: string;
-  subject: string;
-  body: string;
-}): Promise<IngestOutcome> {
+export async function ingestPaymentEmail(
+  input: {
+    messageId: string;
+    from: string;
+    subject: string;
+    body: string;
+  },
+  /** forceCheck: whatever this email settles stays in the owner's "unchecked" list (its sender was only softly verified). */
+  options: { forceCheck?: boolean } = {},
+): Promise<IngestOutcome> {
   if (!isAllowedSender(input.from)) return "ignored";
   // Money taken back by Venmo (a reversed or cancelled payment) is not a new payment; the admins are told instead.
   if (await reportReversal(input)) return "ignored";
@@ -507,7 +511,7 @@ export async function ingestPaymentEmail(input: {
   const match = picked?.payment ?? null;
   if (picked && (await getBoolSetting("payments.emailAutoApprove"))) {
     // The weaker ways in leave the payment in the owner's unchecked list to be confirmed.
-    const needsCheck = Boolean(picked.duplicate) || picked.via === "phone" || picked.via === "amount" || picked.via === "codeTypo";
+    const needsCheck = Boolean(options.forceCheck) || Boolean(picked.duplicate) || picked.via === "phone" || picked.via === "amount" || picked.via === "codeTypo";
     if (await approveFromReceipt(picked.payment.id, receipt, { needsCheck, via: picked.via })) return "approved";
   }
   if (!match && (await getBoolSetting("payments.amountMismatchNotice"))) await warnAboutAmountMismatch(receipt).catch((err) => console.error("Amount mismatch notice failed (non-blocking):", err));

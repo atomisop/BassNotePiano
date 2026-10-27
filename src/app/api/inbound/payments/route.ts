@@ -73,7 +73,18 @@ export async function POST(req: Request) {
     const messageId = normalizeMessageId(headers.get("message-id") ?? field("Message-Id"));
     if (!messageId) return NextResponse.json({ outcome: "ignored", reason: "no message id" });
 
-    const check = checkForwardedBankMail({ fromEmail: sender.email, dkimResult: headers.get("x-mailgun-dkim-check-result"), rawHeaders });
+    // The verdict is normally a message header; some routes post it as a form field instead.
+    const dkimResult = headers.get("x-mailgun-dkim-check-result") ?? (field("X-Mailgun-Dkim-Check-Result") || field("x-mailgun-dkim-check-result") || undefined);
+    const check = checkForwardedBankMail({ fromEmail: sender.email, dkimResult, rawHeaders });
+    if (!check.ok && check.soft) {
+      // No verdict from Mailgun, but the bank's own signature is on the message and Gmail saw it pass: read it like a verified email, and leave
+      // whatever it settles in the owner's "unchecked" list.
+      const outcome = await ingestPaymentEmail(
+        { messageId, from: field("from"), subject: field("subject").slice(0, 300), body: emailBodyText(field("body-plain"), field("body-html")).slice(0, 6000) },
+        { forceCheck: true },
+      );
+      return NextResponse.json({ outcome });
+    }
     if (!check.ok) {
       // Not trusted to approve anything, but still read: a payment whose code and exact amount it carries is put in front of the owner.
       const outcome = await holdUnverifiedPaymentEmail({

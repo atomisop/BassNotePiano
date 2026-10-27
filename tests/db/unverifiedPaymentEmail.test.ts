@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/auth", () => ({ getServerSession: async () => null, getServerAuthSession: async () => null, authOptions: {} }));
-import { holdUnverifiedPaymentEmail } from "@/lib/paymentEmail";
+import { holdUnverifiedPaymentEmail, ingestPaymentEmail } from "@/lib/paymentEmail";
 import { paymentReferenceCode } from "@/lib/paymentReference";
 import { makeUser, newTag, prisma } from "./helpers";
 
@@ -54,5 +54,18 @@ describe("a forwarded bank email that failed the signature check", () => {
   it("a code that is not any open payment's stays ignored", async () => {
     await openPayment(55555);
     expect(await holdUnverifiedPaymentEmail(sofi(55555, "Message: BNP-ZZZZZ"))).toBe("rejected");
+  });
+});
+
+describe("a softly verified email", () => {
+  it("settles the payment by its code but leaves it in the owner's unchecked list", async () => {
+    const payment = await openPayment(23456);
+    const { reason: _reason, ...email } = sofi(23456, `Message: ${paymentReferenceCode(payment.id)}`);
+    void _reason;
+    expect(await ingestPaymentEmail(email, { forceCheck: true })).toBe("approved");
+    const after = await prisma.zellePayment.findUniqueOrThrow({ where: { id: payment.id } });
+    expect(after.status).toBe("VERIFIED");
+    expect(after.autoApproved).toBe(true);
+    expect(after.checkedAt).toBeNull();
   });
 });
