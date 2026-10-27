@@ -13,6 +13,7 @@ import { looksLikeEmail } from "@/lib/familyMemberCheck";
 import { CheckoutBar } from "@/components/billing/CheckoutBar";
 import { WeekdayTimePicker } from "@/components/billing/WeekdayTimePicker";
 import { Dialog } from "@/components/ui/Dialog";
+import { Hint } from "@/components/ui/Hint";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { Tabs } from "@/components/ui/Tabs";
@@ -314,6 +315,7 @@ export function NewPlanForm({
               <button type="button" aria-pressed={parentMode} onClick={() => setParentMode(true)} className={buttonVariants({ variant: parentMode ? "primary" : "secondary", size: "sm" })}>
                 Parent mode
               </button>
+              <Hint>Group: you hold the one weekly class time, and everyone else books their own. Parent mode: the weekly time is your child&apos;s, and you can see and change their schedule from your account.</Hint>
             </div>
           )}
           <div className="flex items-baseline justify-between gap-3">
