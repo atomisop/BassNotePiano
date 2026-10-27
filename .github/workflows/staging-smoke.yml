@@ -1,0 +1,37 @@
+name: Staging smoke checks
+
+# Runs the five checks against the staging site every night, and on demand (Actions tab > Staging smoke checks > Run workflow).
+# Needs the repository secrets listed in docs/STAGING.md. A failure emails the people who watch this repository.
+on:
+  schedule:
+    - cron: "30 7 * * *"
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Run only these checks (for example 4 or 1,5). Empty runs all five."
+        required: false
+        default: ""
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx playwright-core install --with-deps chromium
+      - name: Run the five checks
+        env:
+          SMOKE_BASE_URL: ${{ secrets.SMOKE_BASE_URL }}
+          STAGING_SEED_PASSWORD: ${{ secrets.STAGING_SEED_PASSWORD }}
+          STAGING_SMOKE_TOKEN: ${{ secrets.STAGING_SMOKE_TOKEN }}
+          MAILGUN_SIGNING_KEY: ${{ secrets.MAILGUN_SIGNING_KEY }}
+          PAYMENT_INBOX_TOKEN: ${{ secrets.PAYMENT_INBOX_TOKEN }}
+          SMOKE_ONLY: ${{ github.event.inputs.only }}
+        run: |
+          if [ -z "$SMOKE_BASE_URL" ]; then echo "SMOKE_BASE_URL is not set: staging is not configured yet (see docs/STAGING.md)."; exit 0; fi
+          node scripts/smoke/run.mjs

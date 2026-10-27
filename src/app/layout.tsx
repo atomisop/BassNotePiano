@@ -132,11 +132,15 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
   },
 
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true, "max-image-preview": "large" },
-  },
+  // The staging copy must never be indexed.
+  robots:
+    process.env.APP_ENV === "staging" || process.env.NEXT_PUBLIC_APP_ENV === "staging"
+      ? { index: false, follow: false }
+      : {
+          index: true,
+          follow: true,
+          googleBot: { index: true, follow: true, "max-image-preview": "large" },
+        },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -163,6 +167,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* No flat ambient wash here by design, each area (marketing sections,
             auth shell, app shell) sets its own ground. See
             design-system/bass-note-piano/MASTER.md. */}
+        {process.env.NEXT_PUBLIC_APP_ENV === "staging" && (
+          <div aria-hidden className="pointer-events-none fixed left-1/2 top-0 z-[90] -translate-x-1/2 rounded-b-md bg-amber-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-950">
+            Staging
+          </div>
+        )}
         <Providers>{children}</Providers>
       </body>
     </html>
