@@ -17,7 +17,9 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
-    "upload:media": "tsx scripts/upload-marketing-media.ts"
+    "upload:media": "tsx scripts/upload-marketing-media.ts",
+    "smoke": "node scripts/smoke/run.mjs",
+    "seed:staging": "node scripts/seed-staging.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -80,6 +82,7 @@
     "dotenv": "^17.4.2",
     "eslint": "^8.57.1",
     "eslint-config-next": "^15.5.27",
+    "playwright-core": "^1.64.1",
     "postcss": "^8.5.25",
     "prisma": "^5.19.0",
     "shadcn": "^4.16.2",

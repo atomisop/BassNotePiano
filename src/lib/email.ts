@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { isStaging, stagingMayEmail } from "@/lib/appEnv";
 import { tagAppLinks } from "@/lib/recipientTag";
 import type { VerificationPurpose } from "@prisma/client";
 import { SCALE_GROUPS } from "@/lib/curriculum";
@@ -68,6 +69,13 @@ async function sendEmail({ to, subject, html: rawHtml, text: rawText, from, unsu
   const html = await tagAppLinks(rawHtml, to);
   const text = await tagAppLinks(rawText, to);
   const client = getResendClient();
+
+  // The staging copy never emails real people: only the test allow-list, and never throws for a missing key. Only the subject is logged
+  // (bodies carry sign-in codes).
+  if (isStaging() && (!client || !stagingMayEmail(to))) {
+    console.log(`[staging] email to ${to} not sent: ${subject}`);
+    return;
+  }
 
   if (!client) {
     // Never log a message body in production: these emails carry sign-in and

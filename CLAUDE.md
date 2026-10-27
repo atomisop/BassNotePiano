@@ -538,6 +538,10 @@ The old "family plan" is now called **Group plan** everywhere a person reads it 
 
 Admin > Classes > Schedule > Reserved (`AdminReservations`, `ownerReservationsAdmin.ts`, table `OwnerReservation`): the owner keeps a day (every window, `chunkIndex` null) or chosen hours for a named customer (name, email and phone required). Unlike a `SlotHold` (a reminder that never blocks), this BLOCKS: `bookClass`, `adminBookClass`, `bookFamilyClass`, `rescheduleClassBooking` and `bookExtraSessionOccurrence` refuse it ("reserved by the owner"), a plan's weekly auto-booking skips that week (`createReservedBookingIfAbsent`), and `getUpcomingOccurrences` marks it `isBooked` (+ `reservedByOwner`), so students just see the time as taken and never see the customer. Creating one is refused when someone already has a class in it. Release (two taps) frees it. Audited as `reservation.create` / `reservation.release`. The overview (`/admin`) sections are dropdowns at every width (`PhoneAccordion alwaysCollapsible`).
 
+## Staging and smoke checks (added 2026-10-27, `docs/STAGING.md`)
+
+`APP_ENV=staging` (+ `NEXT_PUBLIC_APP_ENV=staging`) makes a deploy the safe testing copy (`lib/appEnv.ts`): a STAGING tag, `noindex`, no email to anyone outside the test allow-list (`stagingMayEmail`, guard in `sendEmail`), and the staging-only `/api/staging/open-test-payment` (404 elsewhere, needs `STAGING_SMOKE_TOKEN`). `scripts/seed-staging.mjs` (refuses without `I_AM_SEEDING_STAGING=yes`) makes the test accounts. `npm run smoke` (`scripts/smoke/`) runs five checks against `SMOKE_BASE_URL`: site and security, sign in and roles, classes and schedule, parent mode, payments pipeline (signed test bank emails through `scripts/send-test-bank-email.mjs`). `.github/workflows/staging-smoke.yml` runs them nightly and does nothing until the `SMOKE_BASE_URL` secret exists. A new feature that changes sign in, booking, parent mode or the payment email path should get a step in the matching check.
+
 ## Activity log (added 2026-10-21)
 
 Admin > Overview > Activity (`/admin/activity`, owner only) is a searchable view of `AuditLog`: text search over action, details and actor email, a kind filter
