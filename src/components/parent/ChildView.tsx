@@ -19,10 +19,24 @@ function dayLabel(day: string) {
 
 /** One linked child, in four tabs: how far they have got, how they have practiced, their classes, and their plan. */
 export function ChildView({ view }: { view: ChildViewData }) {
-  const [tab, setTab] = useState<TabId>("progress");
+  const [tab, setTab] = useState<TabId>("classes");
   const open = view.scales.filter((s) => !s.locked);
   return (
     <div className="mt-6">
+      <dl className="mb-5 grid grid-cols-3 gap-2 text-small">
+        <div className="rounded-xl bg-neu-base px-3 py-2.5 shadow-raised-low">
+          <dt className="text-slate-500">Next class</dt>
+          <dd className="mt-0.5 truncate font-medium text-slate-100">{view.upcoming[0] ? formatDateTime(view.upcoming[0].scheduledAt) : "None"}</dd>
+        </div>
+        <div className="rounded-xl bg-neu-base px-3 py-2.5 shadow-raised-low">
+          <dt className="text-slate-500">Plan</dt>
+          <dd className="mt-0.5 truncate font-medium text-slate-100">{view.plan ? view.plan.weeklyTime ?? "Active" : "None"}</dd>
+        </div>
+        <div className="rounded-xl bg-neu-base px-3 py-2.5 shadow-raised-low">
+          <dt className="text-slate-500">Credits</dt>
+          <dd className="mt-0.5 truncate font-medium tabular-nums text-slate-100">{view.creditsLabel}</dd>
+        </div>
+      </dl>
       <div className="lg:flex lg:justify-start">
         <Tabs
           label="Sections"
