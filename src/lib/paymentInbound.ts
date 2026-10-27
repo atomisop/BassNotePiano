@@ -48,9 +48,40 @@ export function domainAligned(signedDomain: string, fromDomain: string): boolean
   return s === f || f.endsWith(`.${s}`);
 }
 
+/**
+ * What Gmail itself recorded when the bank's email reached it (the first ARC-Authentication-Results, set by mx.google.com): true when it
+ * saw a passing DKIM signature from the sender's own domain. Anyone could write that header, so it never approves anything: it is a
+ * hint the owner sees on a held payment ("Gmail says the bank's signature passed"), which is almost always the case when forwarding broke
+ * Mailgun's own check.
+ */
+export function gmailSawBankSignature(rawHeaders: string | null | undefined, fromEmail: string): boolean {
+  const fromDomain = fromEmail.split("@")[1]?.toLowerCase();
+  if (!rawHeaders || !fromDomain) return false;
+  try {
+    const parsed: unknown = JSON.parse(rawHeaders);
+    if (!Array.isArray(parsed)) return false;
+    const values = parsed
+      .filter((pair): pair is [string, string] => Array.isArray(pair) && typeof pair[0] === "string" && typeof pair[1] === "string" && pair[0].toLowerCase() === "arc-authentication-results")
+      .map((pair) => pair[1]);
+    // i=1 is the first hop: Google's own check of the message as the bank sent it.
+    const first = values.find((v) => /(?:^|\s)i=1\b/.test(v) && /mx\.google\.com/i.test(v));
+    if (!first) return false;
+    const dkimPass = /dkim=pass[^;]*/gi;
+    for (const match of first.matchAll(dkimPass)) {
+      const d = /header\.(?:d|i)=@?([a-z0-9.-]+)/i.exec(match[0]);
+      if (d && domainAligned(d[1].toLowerCase(), fromDomain)) return true;
+    }
+  } catch {
+    // Unreadable headers count as nothing seen.
+  }
+  return false;
+}
+
 export interface ForwardCheck {
   ok: boolean;
   reason?: string;
+  /** Gmail recorded a passing bank signature (see gmailSawBankSignature); only a hint, never trusted to approve. */
+  gmailSawBankSignature?: boolean;
 }
 
 /**
@@ -65,11 +96,11 @@ export function checkForwardedBankMail(input: { fromEmail: string; dkimResult: s
     // Say what Mailgun reported and which signatures the message carried, so a failure can be traced without a lookup.
     const reported = input.dkimResult?.trim() ? `Mailgun reported "${input.dkimResult.trim().slice(0, 40)}"` : "Mailgun reported no result";
     const carried = signed.length > 0 ? `signed by ${signed.slice(0, 5).join(", ")}` : "no DKIM signature on the message";
-    return { ok: false, reason: `its signature check did not pass (${reported}; ${carried})` };
+    return { ok: false, reason: `its signature check did not pass (${reported}; ${carried})`, gmailSawBankSignature: gmailSawBankSignature(input.rawHeaders, input.fromEmail) };
   }
   const fromDomain = input.fromEmail.split("@")[1]?.toLowerCase();
   if (!fromDomain) return { ok: false, reason: "it has no sender address" };
-  if (!signed.some((d) => domainAligned(d, fromDomain))) return { ok: false, reason: `no signature belongs to ${fromDomain}` };
+  if (!signed.some((d) => domainAligned(d, fromDomain))) return { ok: false, reason: `no signature belongs to ${fromDomain}`, gmailSawBankSignature: gmailSawBankSignature(input.rawHeaders, input.fromEmail) };
   return { ok: true };
 }
 
