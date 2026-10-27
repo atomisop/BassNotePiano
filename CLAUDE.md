@@ -195,6 +195,8 @@ one student's open payment but whose amount is different sends that student a
 payment-email pipeline (`findPaymentPipelineProblem`), with a constant line so it alerts once.
 Accounts now need a first and last name (`src/lib/studentName.ts`).
 
+**A forwarded email that FAILS the sender signature check is still read** (`holdUnverifiedPaymentEmail`): if it carries a real payment's BNP code AND that payment's exact amount, that one payment moves to "waiting for your approval" with a note and an admin alert, and is never auto-approved; anything else is ignored with the old alert.
+
 **Payment emails arrive by forwarding** (added 2026-10-10, `docs/PAYMENT-EMAIL-FORWARDING.md`): Gmail forwards bank/SoFi/Venmo mail to
 the private address `pay-<PAYMENT_INBOX_TOKEN>@inbox.bassnotepiano.com`; a Mailgun route posts it to `/api/inbound/payments`, which
 checks the private address, Mailgun's signature, a bank sender domain and the bank's own DKIM signature aligned with the sender
