@@ -28,13 +28,15 @@ const nameOf = (u: { name: string | null; email: string }) => u.name ?? u.email;
 /** Asks a child's account to be linked. Nothing is shared until they accept. */
 export async function sendParentLink(parentId: string, rawEmail: string): Promise<LinkState> {
   const email = rawEmail.trim().toLowerCase();
+  // Limits come BEFORE the lookup: the answers differ ("no account" vs "needs a name"), so unlimited tries would list who has an account.
+  await consumeRateLimit(prisma, `parent-link:${parentId}`, { windowMinutes: 60, max: 20, message: "Too many requests. Please wait a while and try again." });
+  await consumeRateLimit(prisma, `parent-link-pair:${parentId}:${email.slice(0, 120)}`, { windowMinutes: 60, max: 3, message: "You already asked this account a few times. Please wait before asking again." });
   const check = await checkFamilyMember(parentId, email);
   if (check === "self") throw new ParentLinkError("That is your own account.");
   if (check === "invalid") throw new ParentLinkError("That does not look like an email yet.");
   if (check === "no_account") throw new ParentLinkError("No account with this email. Your child needs to register first.");
   if (check === "needs_name") throw new ParentLinkError("This account needs a first and last name before it can be linked.");
 
-  await consumeRateLimit(prisma, `parent-link:${parentId}`, { windowMinutes: 60, max: 20, message: "Too many requests. Please wait a while and try again." });
 
   const [parent, child] = await Promise.all([
     prisma.user.findUniqueOrThrow({ where: { id: parentId }, select: { name: true, email: true } }),
@@ -89,8 +91,10 @@ export async function respondToParentLink(childId: string, linkId: string, accep
 
 /** Ends a link from either side (the parent removing a child, a child removing a parent) or withdraws a waiting request. */
 export async function endParentLink(userId: string, otherId: string): Promise<void> {
+  // A child who ends a link is remembered like a "no": the same parent cannot ask again straight away (see PARENT_LINK_DECLINE_DAYS).
+  await prisma.parentLink.updateMany({ where: { parentId: otherId, childId: userId, status: { in: ["PENDING", "ACCEPTED"] } }, data: { status: "DECLINED", respondedAt: new Date() } });
   await prisma.parentLink.deleteMany({
-    where: { status: { not: "DECLINED" }, OR: [{ parentId: userId, childId: otherId }, { parentId: otherId, childId: userId }] },
+    where: { status: { not: "DECLINED" }, parentId: userId, childId: otherId },
   });
 }
 
