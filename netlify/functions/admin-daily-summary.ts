@@ -7,6 +7,7 @@ import { sendNotificationEmailWithCta, sendTodoListEmail, getAppUrl, type TodoEm
 import { getBoolSetting } from "../../src/lib/siteSettings";
 import { getFollowUps } from "../../src/lib/adminFollowUps";
 import { countUnmatchedReceipts, getPaymentPipelineHealth } from "../../src/lib/paymentPipelineStatus";
+import { getPaymentDigestFacts } from "../../src/lib/paymentDigest";
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -28,7 +29,7 @@ export const handler = schedule("0 12 * * *", async () =>
   }
   const now = Date.now();
   const today = todayBoundsEt();
-  const [pendingPayments, uncheckedAuto, unmatchedEmails, applications, openChats, classesToday, unmarked, stoppedJobs, pipeline, followUps] = await Promise.all([
+  const [pendingPayments, uncheckedAuto, unmatchedEmails, applications, openChats, classesToday, unmarked, stoppedJobs, pipeline, followUps, paymentFacts] = await Promise.all([
     prisma.zellePayment.count({ where: { status: "PENDING_REVIEW" } }),
     prisma.zellePayment.count({ where: { autoApproved: true, checkedAt: null, status: "VERIFIED" } }),
     // Payment emails that matched nobody and nobody has dismissed (the same count the Overview shows).
@@ -46,6 +47,7 @@ export const handler = schedule("0 12 * * *", async () =>
     // Payments someone says they sent, with no bank email for two days: the Gmail script has probably stopped.
     getPaymentPipelineHealth(new Date(now)),
     getFollowUps(new Date(now)),
+    getPaymentDigestFacts(new Date(now)).catch(() => ({ waitingOverDay: 0, likelyMatches: 0 })),
   ]);
   const pipelineQuiet = pipeline.status === "quiet";
 
@@ -64,6 +66,8 @@ export const handler = schedule("0 12 * * *", async () =>
     item(pendingPayments, "payment waiting for review", "payments waiting for review", "/admin/payments"),
     item(uncheckedAuto, "auto-approved payment to check", "auto-approved payments to check", "/admin/payments?status=UNCHECKED"),
     item(unmatchedEmails, "payment email that matched no one", "payment emails that matched no one", "/admin/payments?tab=emails"),
+    item(paymentFacts.likelyMatches, "of those already has a likely payment (one tap to approve)", "of those already have a likely payment (one tap each to approve)", "/admin/payments?tab=emails"),
+    item(paymentFacts.waitingOverDay, "payment has waited for you more than a day", "payments have waited for you more than a day", "/admin/payments"),
     item(applications, "class application to review", "class applications to review", "/admin/students"),
     item(openChats, "open support chat", "open support chats", "/admin/support"),
     item(unmarked, "finished class with no attendance marked", "finished classes with no attendance marked", "/admin/schedule?view=ATTENDANCE"),
