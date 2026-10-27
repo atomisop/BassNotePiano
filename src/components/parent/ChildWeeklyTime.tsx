@@ -7,7 +7,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { toast } from "@/components/ui/Toaster";
-import { childWeeklyChoicesAction, parentMoveWeeklyTimeAction, type WeeklyChoice } from "@/app/(dashboard)/parent/actions";
+import { childWeeklyChoicesAction, parentEndChildPlanAction, parentMoveWeeklyTimeAction, type WeeklyChoice } from "@/app/(dashboard)/parent/actions";
 
 /** Moves the child's whole plan to another weekly time: the standing day and hour and every class already booked on it. */
 export function ChildWeeklyTime({ childId }: { childId: string }) {
@@ -81,5 +81,28 @@ export function ChildWeeklyTime({ childId }: { childId: string }) {
         )}
       </Dialog>
     </>
+  );
+}
+
+/** Ends the plan the parent pays for (two taps). The child keeps what is already paid for. */
+export function EndChildPlanButton({ childId }: { childId: string }) {
+  const router = useRouter();
+  const [sure, setSure] = useState(false);
+  const [busy, setBusy] = useState(false);
+  async function end() {
+    if (!sure) return setSure(true);
+    setBusy(true);
+    const result = await parentEndChildPlanAction(childId).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
+    setBusy(false);
+    setSure(false);
+    if (!result.ok) return void toast.warning(result.error);
+    toast.success("Plan ended");
+    router.refresh();
+  }
+  return (
+    <button type="button" onClick={() => void end()} disabled={busy} aria-label={sure ? "Tap again to end this plan" : "End this plan"} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+      {busy && <MorphingSquare size={12} className="mr-1.5" />}
+      {sure ? "Sure? End the plan" : "End this plan"}
+    </button>
   );
 }

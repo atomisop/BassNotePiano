@@ -727,6 +727,8 @@ export async function cancelPaymentPlanBySelf(
   userId: string,
   reason: PlanCancellationReason,
   reasonNote: string | null,
+  /** A linked parent ending their child's plan (the parent pays for it, so only they or the payer may end it). */
+  options: { byParentId?: string } = {},
 ): Promise<void> {
   if (!Object.values(PlanCancellationReason).includes(reason) || reason === "NON_PAYMENT") {
     throw new PaymentPlanError(`"${reason}" isn't a valid reason.`);
@@ -738,6 +740,13 @@ export async function cancelPaymentPlanBySelf(
 
   const plan = await prisma.paymentPlan.findFirst({ where: { userId, status: "ACTIVE" } });
   if (!plan) throw new PaymentPlanError("You don't have an active payment plan.");
+  // A plan a parent pays for is not the child's to cancel: only the parent who pays (or the payer, if it is their own plan) can end it.
+  if (plan.familyGroupId) {
+    const group = await prisma.familyPlanGroup.findUnique({ where: { id: plan.familyGroupId }, select: { kind: true, payerId: true } });
+    if (group?.kind === "PARENT" && group.payerId !== userId && group.payerId !== options.byParentId) {
+      throw new PaymentPlanError("Your parent pays for this plan, so they decide when it ends. Ask them to end it from Parent mode.");
+    }
+  }
 
   await assertNoOpenInstallment(plan.id);
 

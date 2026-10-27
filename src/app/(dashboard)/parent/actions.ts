@@ -20,7 +20,7 @@ import {
   type ParentRequest,
 } from "@/lib/parentLinks";
 import { bookClass, cancelClassBooking, ClassBookingError, getReservableSlots, getUpcomingOccurrences, rescheduleClassBooking } from "@/lib/classSchedule";
-import { changeReservedSlot, PaymentPlanError } from "@/lib/paymentPlans";
+import { cancelPaymentPlanBySelf, changeReservedSlot, PaymentPlanError } from "@/lib/paymentPlans";
 import { getHoldChoices } from "@/lib/contacts";
 import { PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import { createNotification } from "@/lib/notifications";
@@ -202,4 +202,16 @@ export async function getParentModeStateAction(): Promise<ParentModeState> {
   const user = await requireUser();
   const [children, toMe] = await Promise.all([listLinksFromParent(user.id), listLinksToChild(user.id)]);
   return { children, requests: toMe.requests, parents: toMe.parents };
+}
+
+/** A parent ends the plan they pay for. The child keeps the 28 days already paid; nothing is billed after. */
+export async function parentEndChildPlanAction(childId: string): Promise<{ ok: true } | Fail> {
+  try {
+    const { parent, parentName } = await actingFor(childId);
+    await cancelPaymentPlanBySelf(childId, "OTHER", `Ended by ${parentName}, who pays for the plan`, { byParentId: parent.id });
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: messageOf(err) };
+  }
 }
