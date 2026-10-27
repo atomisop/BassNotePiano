@@ -403,26 +403,38 @@ export async function holdUnverifiedPaymentEmail(input: { messageId: string; fro
     const parsed = isAllowedSender(input.from) ? parsePaymentEmail(input.subject, input.body) : null;
     const code = parsed ? referenceInMemo(parsed.memo) : null;
     if (parsed && code) {
-      const open = await prisma.zellePayment.findMany({ where: { status: "AWAITING_TRANSFER", amountCents: parsed.amountCents }, select: { id: true } });
+      const open = await prisma.zellePayment.findMany({ where: { status: { in: ["AWAITING_TRANSFER", "REJECTED", "PENDING_REVIEW"] }, amountCents: parsed.amountCents }, select: { id: true, status: true } });
       const hits = open.filter((payment) => normalizedCodeOf(payment.id) === code);
       if (hits.length === 1) {
-        const claimed = await prisma.zellePayment.updateMany({
-          where: { id: hits[0].id, status: "AWAITING_TRANSFER" },
-          data: {
-            status: "PENDING_REVIEW",
-            submittedAt: new Date(),
-            senderName: parsed.name.slice(0, 120),
-            method: parsed.method,
-            note: `A bank email with this payment's code and the exact amount arrived, but it could not be verified (${input.reason}). Check your bank app, then approve.`,
-          },
-        });
-        if (claimed.count === 1) {
-          await notifyAdmins("PAYMENT_EMAIL_REJECTED", {
-            type: "ADMIN_ALERT",
-            title: "A payment is waiting for your check",
-            body: `A forwarded email from ${parsed.name} for ${(parsed.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })} carries a payment's code, but it could not be verified (${input.reason}). The payment is waiting in Admin > Payments. Check your bank app, then approve it.`,
-            cta: { label: "Open payments", path: "/admin/payments" },
-          }).catch((err) => console.error("Held payment alert failed (non-blocking):", err));
+        const hit = hits[0];
+        const money = (parsed.amountCents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+        let moved = false;
+        if (hit.status !== "PENDING_REVIEW") {
+          const claimed = await prisma.zellePayment.updateMany({
+            where: { id: hit.id, status: { in: ["AWAITING_TRANSFER", "REJECTED"] } },
+            data: {
+              status: "PENDING_REVIEW",
+              submittedAt: new Date(),
+              rejectionReason: null,
+              senderName: parsed.name.slice(0, 120),
+              method: parsed.method,
+              note: `A bank email with this payment's code and the exact amount arrived, but it could not be verified (${input.reason}). Check your bank app, then approve.`,
+            },
+          });
+          moved = claimed.count === 1;
+        }
+        // The student may already have tapped "I've sent it": then it is already in the queue, and the owner just needs to know the email matched.
+        if (moved || hit.status === "PENDING_REVIEW") {
+          const key = `payment-email-held:${normalizeMessageId(input.messageId).slice(0, 160)}`;
+          const fresh = await prisma.appSetting.create({ data: { key, value: String(Date.now()) } }).then(() => true, (err) => ((err as { code?: string })?.code === "P2002" ? false : Promise.reject(err)));
+          if (fresh) {
+            await notifyAdmins("PAYMENT_EMAIL_REJECTED", {
+              type: "ADMIN_ALERT",
+              title: "A payment is waiting for your check",
+              body: `A forwarded email from ${parsed.name} for ${money} carries a payment's code, but it could not be verified (${input.reason}). That payment is waiting in Admin > Payments. Check your bank app, then approve it.`,
+              cta: { label: "Open payments", path: "/admin/payments" },
+            }).catch((err) => console.error("Held payment alert failed (non-blocking):", err));
+          }
           return "held";
         }
       }
