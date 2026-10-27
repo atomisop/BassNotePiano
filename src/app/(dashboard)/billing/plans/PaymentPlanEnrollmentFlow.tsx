@@ -389,7 +389,7 @@ export function PaymentPlanEnrollmentFlow({
                 ? `Group plan for ${fam.memberCount} accounts. Everyone starts together when this combined first payment arrives, and it must come from your own bank account.`
                 : `Group plan for ${fam.memberCount} accounts. You pay every member's 28-day bill from your own bank account.`}
             {fam.memberNames && fam.memberNames.length > 0 && ` In this group: ${fam.memberNames.join(", ")}.`}
-            {fam.weeklyTime && ` Your weekly class together: ${fam.weeklyTime}.`}
+            {fam.weeklyTime && ` Your own weekly class: ${fam.weeklyTime}. It is not a shared class, and everyone else in the group picks their own times.`}
           </p>
         )}
         {memberView && !fam.waitingForStart ? null : installment ? (
