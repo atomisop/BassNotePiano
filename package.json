@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "hooks:on": "git config core.hooksPath .githooks",
     "test": "vitest run",
     "test:db": "vitest run --config vitest.db.config.ts",
     "postinstall": "prisma generate",

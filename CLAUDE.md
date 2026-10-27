@@ -542,6 +542,10 @@ Admin > Classes > Schedule > Reserved (`AdminReservations`, `ownerReservationsAd
 
 `APP_ENV=staging` (+ `NEXT_PUBLIC_APP_ENV=staging`) makes a deploy the safe testing copy (`lib/appEnv.ts`): a STAGING tag, `noindex`, no email to anyone outside the test allow-list (`stagingMayEmail`, guard in `sendEmail`), and the staging-only `/api/staging/open-test-payment` (404 elsewhere, needs `STAGING_SMOKE_TOKEN`). `scripts/seed-staging.mjs` (refuses without `I_AM_SEEDING_STAGING=yes`) makes the test accounts. `npm run smoke` (`scripts/smoke/`) runs five checks against `SMOKE_BASE_URL`: site and security, sign in and roles, classes and schedule, parent mode, payments pipeline (signed test bank emails through `scripts/send-test-bank-email.mjs`). `.github/workflows/staging-smoke.yml` runs them nightly and does nothing until the `SMOKE_BASE_URL` secret exists. A new feature that changes sign in, booking, parent mode or the payment email path should get a step in the matching check.
 
+## Catching a broken change before CI (added 2026-10-27)
+
+A file that starts with `"use server"` may only export async functions and types; a constant or class there fails `next build` but not `tsc` or lint, so it once reached CI and emailed the owner. `tests/useServerExports.test.ts` reads every such file under `src` (part of `npm test`, so CI too). `.githooks/pre-push` runs the type check, lint and all tests before every push; turn it on once per checkout with `npm run hooks:on` (`git push --no-verify` skips it). Still run `npm run build` before opening a PR that touches routes or actions.
+
 ## Activity log (added 2026-10-21)
 
 Admin > Overview > Activity (`/admin/activity`, owner only) is a searchable view of `AuditLog`: text search over action, details and actor email, a kind filter

@@ -179,16 +179,21 @@ describe("a parent paying for a child only", () => {
 describe("the parent working with the child's schedule", () => {
   it("sees the child's progress and practice, and the child's plan weekly time can be moved by the child's plan rules", async () => {
     const { parent, child } = await linked();
-    const { plans, startPayment } = await startPlan(parent.id, [child.email], false, await slot(2, "15:00"), "TERM_3");
+    // Days a few days ahead (Eastern), so the move is never refused for a class starting within 6 hours, whatever time the test runs.
+    const today = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" })).getDay();
+    const oldDay = (today + 3) % 7;
+    const newDay = (today + 4) % 7;
+    const dayName = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][oldDay];
+    const { plans, startPayment } = await startPlan(parent.id, [child.email], false, await slot(oldDay, "15:00"), "TERM_3");
     await submitZellePaymentReference(parent.id, startPayment.id, { senderName: "Parent Tester" });
     await approveZellePayment(startPayment.id, null);
     const view = await getChildView(parent.id, child.id);
     expect(view).toMatchObject({ id: child.id, canMoveWeeklyTime: true });
-    expect(view.plan?.weeklyTime).toMatch(/Tuesday/);
+    expect(view.plan?.weeklyTime).toMatch(new RegExp(dayName));
     expect(view.scales.length).toBeGreaterThan(0);
     expect(view.practice.strip).toHaveLength(30);
     // The weekly time can move (a parent-paid plan is not locked to the teacher the way a group plan is).
-    const newSlot = await slot(4, "15:00");
+    const newSlot = await slot(newDay, "15:00");
     await changeReservedSlot(child.id, newSlot, 0);
     expect((await prisma.paymentPlan.findUniqueOrThrow({ where: { id: plans[0].id } })).reservedScheduleId).toBe(newSlot);
     // Another parent cannot see this child.
