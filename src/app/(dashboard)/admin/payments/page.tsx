@@ -179,7 +179,10 @@ async function EmailsTab() {
               studentEmail: c.studentEmail,
               createdAtMs: c.createdAt.getTime(),
               phoneMatch: c.phoneMatch,
+              score: c.score,
+              reasons: c.reasons,
             })),
+            confidence: r.confidence,
           }))}
           onMatch={matchReceiptAction}
           onDismiss={dismissReceiptAction}
