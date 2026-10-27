@@ -28,7 +28,7 @@ const field =
  * exist" check the plan form uses), the child accepts, and from then on the parent can open the child's progress, practice and classes.
  * A child sees who is asking, and can accept, decline or end a link at any time.
  */
-export function ParentLinksPanel({ compact = false }: { compact?: boolean }) {
+export function ParentLinksPanel() {
   const router = useRouter();
   const [state, setState] = useState<ParentModeState | null>(null);
   const [email, setEmail] = useState("");
@@ -94,7 +94,6 @@ export function ParentLinksPanel({ compact = false }: { compact?: boolean }) {
     router.refresh();
   }
 
-  const linked = state?.children.filter((c) => c.status === "ACCEPTED") ?? [];
 
   return (
     <div className="space-y-5">
@@ -128,38 +127,35 @@ export function ParentLinksPanel({ compact = false }: { compact?: boolean }) {
           {state.children.length > 0 && (
             <ul className="divide-y divide-slate-50/10" aria-label="Linked children">
               {state.children.map((c) => (
-                <li key={c.linkId} className="flex items-center justify-between gap-3 py-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-small font-medium text-slate-100">{c.name}</p>
-                    <p className="truncate text-small text-slate-500">{c.status === "ACCEPTED" ? c.email : `Waiting for them to accept · ${c.email}`}</p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {c.status === "ACCEPTED" ? (
-                      <>
-                        <Link href={`/parent/${c.childId}`} className={buttonVariants({ variant: "secondary", size: "sm" })}>
-                          Open
-                          <ArrowRight aria-hidden className="ml-1.5 h-3.5 w-3.5" />
-                        </Link>
-                        <button type="button" aria-label={`End the link with ${c.name}`} disabled={busy === `end:${c.childId}`} onClick={() => void run(`end:${c.childId}`, () => endParentLinkAction(c.childId), "Link ended")} className={buttonVariants({ variant: "ghost", size: "sm", className: "h-8 w-8 px-0" })}>
-                          <Link2Off aria-hidden className="h-4 w-4" />
-                        </button>
-                      </>
-                    ) : (
+                <li key={c.linkId} className="flex items-center gap-2 py-2">
+                  {c.status === "ACCEPTED" ? (
+                    // The whole row opens the child's page, so there is no small button to find.
+                    <Link href={`/parent/${c.childId}`} className="press-soft group flex min-w-0 flex-1 items-center justify-between gap-3 rounded-control bg-neu-lift px-4 py-3 shadow-raised-low transition hover:shadow-raised-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                      <span className="min-w-0">
+                        <span className="block truncate text-small font-medium text-slate-100">{c.name}</span>
+                        <span className="block truncate text-small text-slate-500">Linked · open their progress, practice and classes</span>
+                      </span>
+                      <ArrowRight aria-hidden className="h-4 w-4 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                  ) : (
+                    <div className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-control bg-neu-base px-4 py-3 shadow-pressed-low">
+                      <span className="min-w-0">
+                        <span className="block truncate text-small font-medium text-slate-300">{c.name}</span>
+                        <span className="block truncate text-small text-slate-500">Waiting for them to accept · {c.email}</span>
+                      </span>
                       <button type="button" disabled={busy === `cancel:${c.childId}`} onClick={() => void run(`cancel:${c.childId}`, () => cancelParentLinkAction(c.email), "Request withdrawn")} className={buttonVariants({ variant: "secondary", size: "sm" })}>
                         Withdraw
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
+                  {c.status === "ACCEPTED" && (
+                    <button type="button" aria-label={`End the link with ${c.name}`} title="End the link" disabled={busy === `end:${c.childId}`} onClick={() => void run(`end:${c.childId}`, () => endParentLinkAction(c.childId), "Link ended")} className={buttonVariants({ variant: "ghost", size: "sm", className: "h-9 w-9 shrink-0 px-0" })}>
+                      <Link2Off aria-hidden className="h-4 w-4" />
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
-          )}
-
-          {!compact && linked.length > 0 && (
-            <Link href="/parent" className={buttonVariants({ variant: "secondary", size: "sm" })}>
-              Open Parent mode
-              <ArrowRight aria-hidden className="ml-1.5 h-3.5 w-3.5" />
-            </Link>
           )}
 
           {state.requests.length > 0 && (

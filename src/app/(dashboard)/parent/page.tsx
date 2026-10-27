@@ -96,7 +96,7 @@ export default async function ParentPage() {
 
       <section className="mt-8 rounded-2xl bg-neu-base p-5 shadow-raised-low" aria-label="Add or manage children">
         <h2 className="mb-4 text-body font-semibold text-slate-50">Link an account</h2>
-        <ParentLinksPanel compact />
+        <ParentLinksPanel />
       </section>
     </WideLayout>
   );

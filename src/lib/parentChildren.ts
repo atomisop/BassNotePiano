@@ -131,6 +131,8 @@ export async function listChildSummaries(parentId: string): Promise<ChildSummary
 
 export interface ParentBill {
   paymentId: string;
+  /** The children this payment covers (a first payment can cover several). */
+  childIds: string[];
   childName: string;
   label: string;
   status: "AWAITING_TRANSFER" | "PENDING_REVIEW" | "REJECTED";
@@ -158,6 +160,7 @@ export async function listParentBills(parentId: string, zelleHandle: string): Pr
       if (start && group.plans.length > 0) {
         bills.push({
           paymentId: start.id,
+          childIds: group.plans.map((p) => p.userId),
           childName: group.plans.map((p) => p.user.name ?? p.user.email).join(", "),
           label: "First payment",
           status: start.status as ParentBill["status"],
@@ -174,6 +177,7 @@ export async function listParentBills(parentId: string, zelleHandle: string): Pr
       if (payment) {
         bills.push({
           paymentId: payment.id,
+          childIds: [plan.userId],
           childName: plan.user.name ?? plan.user.email,
           label: `28-day bill ${payment.installmentNumber ?? ""}`.trim(),
           status: payment.status as ParentBill["status"],
