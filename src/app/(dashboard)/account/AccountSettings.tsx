@@ -126,7 +126,24 @@ function TabIcon({ path, className = "h-[18px] w-[18px] shrink-0" }: { path: str
   );
 }
 
-function SectionCard({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+/**
+ * `advanced` cards start closed behind their title (a native disclosure, so
+ * it works without JavaScript and is keyboard and screen reader friendly):
+ * options most people never need stay out of the way until asked for.
+ */
+function SectionCard({ title, hint, advanced = false, children }: { title: string; hint?: string; advanced?: boolean; children: React.ReactNode }) {
+  if (advanced) {
+    return (
+      <details className="glass-surface group p-6 [&_summary::-webkit-details-marker]:hidden">
+        <summary className="tap flex cursor-pointer list-none items-center justify-between gap-2 text-body font-semibold text-slate-50">
+          {title}
+          <span aria-hidden className="text-slate-400 transition group-open:rotate-90">›</span>
+        </summary>
+        {hint && <p className="mt-2 text-small text-slate-400">{hint}</p>}
+        <div className="mt-4">{children}</div>
+      </details>
+    );
+  }
   return (
     <div className="glass-surface p-6">
       <h2 className="flex items-center gap-1 text-body text-slate-50 font-semibold">
@@ -454,7 +471,7 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
 
       <AccountGroup id="privacy" title="Privacy & data">
         <PrivacySection history={history} />
-        <SectionCard title="Download my data">
+        <SectionCard advanced title="Download my data">
           <a href="/api/account/export" download className={buttonVariants({ variant: "secondary", size: "sm" })}>
             Download my data
           </a>
@@ -476,7 +493,7 @@ function AccountSection({ account, history, twoStep }: { account: AccountOvervie
 // who wants it gone sooner.
 function PrivacySection({ history }: { history: AssistantMessage[] }) {
   return (
-    <SectionCard title="Saved Atom conversations">
+    <SectionCard advanced title="Saved Atom conversations">
       <div>
         <h3 className="text-small font-medium text-slate-200">History → Atom</h3>
         <div className="mt-3 max-h-96 space-y-2 overflow-y-auto rounded-xl p-3 bg-neu-base shadow-raised-low">
@@ -844,7 +861,7 @@ function ReferralCard() {
 
   if (!data) return null;
   return (
-    <SectionCard title="Invite a friend">
+    <SectionCard advanced title="Invite a friend">
       <p className="text-small text-slate-400">
         Send your link. When your friend starts a 84 or 168 day plan and their first payment goes through, you both get {data.percent}% off for {data.months} months.
       </p>
@@ -961,7 +978,7 @@ function PushCard() {
   if (state === "loading" || state === "unavailable") return null;
 
   return (
-    <SectionCard title="Reminders on your phone">
+    <SectionCard advanced title="Reminders on your phone">
       {state === "needs-home-screen" && (
         <p className="mt-3 text-small text-slate-300">
           On iPhone and iPad, first add Bass Note Piano to your Home Screen: tap the Share button in Safari, then &quot;Add to Home Screen&quot;, open it from there and come back to this page.
@@ -1026,7 +1043,7 @@ function CalendarFeedCard() {
   }
 
   return (
-    <SectionCard title="Your classes in your calendar" hint="Keep the link private: anyone who has it can see your class times.">
+    <SectionCard advanced title="Your classes in your calendar" hint="Keep the link private: anyone who has it can see your class times.">
       {links === undefined ? (
         <p className="mt-3 text-small text-slate-500">Loading…</p>
       ) : links === null ? (
@@ -1078,7 +1095,7 @@ function SignedInDevicesCard() {
   }, []);
 
   return (
-    <SectionCard title="Where you are signed in">
+    <SectionCard advanced title="Where you are signed in">
       {devices === null ? (
         <p className="text-small text-slate-500">Loading…</p>
       ) : devices.length === 0 ? (
@@ -1134,7 +1151,7 @@ function SignOutOtherDevicesCard() {
   }
 
   return (
-    <SectionCard title="Sign out of other devices">
+    <SectionCard advanced title="Sign out of other devices">
       <button
         type="button"
         onClick={handleClick}
@@ -1207,7 +1224,7 @@ function DangerZoneSection() {
   }
 
   return (
-    <SectionCard title="Danger zone">
+    <SectionCard advanced title="Danger zone">
       <div className="rounded-xl border border-red-500/30 bg-neu-base p-4 shadow-pressed-low">
         <p className="text-small text-slate-200">
           This deletes your profile, curriculum progress, class bookings, credits, messages, and everything else tied
@@ -1322,7 +1339,7 @@ function TutorialsSection() {
   useEffect(() => setInstalled(isStandalone()), []);
   return (
     <>
-      <SectionCard title="Tutorials">
+      <SectionCard advanced title="Tutorials">
         <button
           type="button"
           onClick={() => router.push("/dashboard?tour=1")}
@@ -1331,7 +1348,7 @@ function TutorialsSection() {
           Replay app tour
         </button>
       </SectionCard>
-      <SectionCard title="Add to your Home Screen">
+      <SectionCard advanced title="Add to your Home Screen">
         <p className="text-small text-slate-400">
           {installed
             ? "You are already using Bass Note Piano from your Home Screen. The steps are here in case you set up another phone."

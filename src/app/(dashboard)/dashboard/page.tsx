@@ -110,6 +110,10 @@ export default async function DashboardPage() {
   });
   const earnedBadgeCodes = badgeRows.map((b) => b.code);
 
+  // One main action on the screen. Normally it is the next step; in the half hour before a class
+  // (or while it runs) joining the call is what matters, so it takes the main button and the next step steps back.
+  const joinNow = nextClass !== null && !nextClass.inPerson && (nextClass.scheduledAt.getTime() - Date.now()) / 60_000 <= 30;
+
   const streak = user?.currentStreak ?? 0;
 
   // Each card is a function, called once per place it renders (never reuse one
@@ -169,7 +173,7 @@ export default async function DashboardPage() {
       <p className="mt-2 text-body font-semibold text-slate-50">{nextStep.action}</p>
       <p className="mt-1 max-w-[60ch] text-small text-slate-400">{nextStep.detail}</p>
       <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Link href={nextStep.href} className={cn(buttonVariants(), "relative z-(--z-front)")}>
+        <Link href={nextStep.href} className={cn(buttonVariants({ variant: joinNow ? "secondary" : "default" }), "relative z-(--z-front)")}>
           {nextStep.cta}
           <ArrowIcon />
         </Link>
@@ -188,8 +192,7 @@ export default async function DashboardPage() {
   );
 
   const nextClassCard = () => {
-    const minutesAway = nextClass ? (nextClass.scheduledAt.getTime() - Date.now()) / 60_000 : 0;
-    const canJoin = nextClass !== null && !nextClass.inPerson && minutesAway <= 30;
+    const canJoin = joinNow;
     const length = nextClass ? Math.round((nextClass.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES) : CLASS_MINUTES;
     return (
       <Card className="relative z-(--z-mid)">
@@ -212,7 +215,7 @@ export default async function DashboardPage() {
               )}
               <a
                 href={`/api/calendar/class?s=${encodeURIComponent(nextClass.scheduledAt.toISOString())}&m=${length}`}
-                className={buttonVariants({ variant: "secondary", size: "sm" })}
+                className="tap inline-flex items-center text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline"
               >
                 Add to calendar
               </a>
@@ -224,7 +227,7 @@ export default async function DashboardPage() {
         ) : (
           <>
             <p className="mt-2 text-body font-semibold text-slate-50">No class booked</p>
-            <Link href="/lessons" className={cn(buttonVariants(), "relative z-(--z-front) mt-4")}>
+            <Link href="/lessons" className={cn(buttonVariants({ variant: "secondary" }), "relative z-(--z-front) mt-4")}>
               Book a class
               <ArrowIcon />
             </Link>
@@ -283,7 +286,7 @@ export default async function DashboardPage() {
         <div className="h-full rounded-full bg-[rgb(var(--signal))] transition-all" style={{ width: `${Math.round((practice.todaySeconds / DAILY_GOAL_SECONDS) * 100)}%` }} />
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Link href="/practice" className={cn(buttonVariants(), "relative z-(--z-front)")}>
+        <Link href="/practice" className={cn(buttonVariants({ variant: "secondary" }), "relative z-(--z-front)")}>
           {practice.completedToday ? "Practice more" : practice.todaySeconds > 0 ? "Continue" : "Start practice"}
           <ArrowIcon />
         </Link>
@@ -291,21 +294,6 @@ export default async function DashboardPage() {
           {practice.streak} day streak
         </span>
       </div>
-    </Card>
-  );
-
-  const badgesCard = () => (
-    <Card>
-      <Eyebrow>Badges</Eyebrow>
-      <p className="mt-2 text-small text-slate-50">
-        {earnedBadgeCodes.length} of {BADGES.length} earned
-      </p>
-      <Link
-        href="/profile"
-        className="tap mt-1 inline-flex items-center text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline"
-      >
-        See them on your profile
-      </Link>
     </Card>
   );
 
@@ -323,7 +311,7 @@ export default async function DashboardPage() {
         <CardDeck
           className="md:hidden"
           label="Your home cards"
-          labels={[...(showGettingStarted ? ["Get started"] : []), "Your next step", "Finger practice", "Next class", "This week", "Progress", "Badges"]}
+          labels={[...(showGettingStarted ? ["Get started"] : []), "Your next step", "Finger practice", "Next class", "This week", "Progress"]}
         >
           {showGettingStarted && gettingStartedCard()}
           {nextStepCard()}
@@ -331,7 +319,6 @@ export default async function DashboardPage() {
           {nextClassCard()}
           {weekCard()}
           {progressCard()}
-          {badgesCard()}
         </CardDeck>
 
         {/* ---- Desktop: one band of cards, on the same four columns as the
