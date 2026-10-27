@@ -197,6 +197,8 @@ Accounts now need a first and last name (`src/lib/studentName.ts`).
 
 **A forwarded email that FAILS the sender signature check is still read** (`holdUnverifiedPaymentEmail`): if it carries a real payment's BNP code AND that payment's exact amount, that one payment moves to "waiting for your approval" with a note and an admin alert, and is never auto-approved; anything else is ignored with the old alert.
 
+**Soft trust**: when Mailgun gives NO verdict (not a failure) but the message carries a signature from the sender's own domain and Gmail recorded the bank's signature as passing (`checkForwardedBankMail().soft`), the email is read like a verified one and anything it settles stays in the owner's "unchecked" list (`ingestPaymentEmail(..., { forceCheck: true })`). An explicit failure, another domain, or no Gmail hint still only reaches the hold path above.
+
 **Payment emails arrive by forwarding** (added 2026-10-10, `docs/PAYMENT-EMAIL-FORWARDING.md`): Gmail forwards bank/SoFi/Venmo mail to
 the private address `pay-<PAYMENT_INBOX_TOKEN>@inbox.bassnotepiano.com`; a Mailgun route posts it to `/api/inbound/payments`, which
 checks the private address, Mailgun's signature, a bank sender domain and the bank's own DKIM signature aligned with the sender

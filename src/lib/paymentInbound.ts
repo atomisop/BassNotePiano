@@ -82,6 +82,11 @@ export interface ForwardCheck {
   reason?: string;
   /** Gmail recorded a passing bank signature (see gmailSawBankSignature); only a hint, never trusted to approve. */
   gmailSawBankSignature?: boolean;
+  /**
+   * Mailgun gave NO verdict at all (not a failure), the message carries a signature from the sender's own domain, and Gmail recorded the bank's
+   * signature as passing. Such an email may be read like a verified one, but anything it settles stays in the owner's "unchecked" list.
+   */
+  soft?: boolean;
 }
 
 /**
@@ -96,7 +101,11 @@ export function checkForwardedBankMail(input: { fromEmail: string; dkimResult: s
     // Say what Mailgun reported and which signatures the message carried, so a failure can be traced without a lookup.
     const reported = input.dkimResult?.trim() ? `Mailgun reported "${input.dkimResult.trim().slice(0, 40)}"` : "Mailgun reported no result";
     const carried = signed.length > 0 ? `signed by ${signed.slice(0, 5).join(", ")}` : "no DKIM signature on the message";
-    return { ok: false, reason: `its signature check did not pass (${reported}; ${carried})`, gmailSawBankSignature: gmailSawBankSignature(input.rawHeaders, input.fromEmail) };
+    const fromDomainForSoft = input.fromEmail.split("@")[1]?.toLowerCase();
+    const sawBank = gmailSawBankSignature(input.rawHeaders, input.fromEmail);
+    const noVerdict = !input.dkimResult?.trim();
+    const aligned = Boolean(fromDomainForSoft) && signed.some((d) => domainAligned(d, fromDomainForSoft as string));
+    return { ok: false, reason: `its signature check did not pass (${reported}; ${carried})`, gmailSawBankSignature: sawBank, soft: noVerdict && aligned && sawBank };
   }
   const fromDomain = input.fromEmail.split("@")[1]?.toLowerCase();
   if (!fromDomain) return { ok: false, reason: "it has no sender address" };

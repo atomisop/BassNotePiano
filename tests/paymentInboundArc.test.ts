@@ -23,3 +23,17 @@ describe("what Gmail recorded about the bank's signature", () => {
     expect(check.gmailSawBankSignature).toBe(true);
   });
 });
+
+describe("an email Mailgun gave no verdict on", () => {
+  const signed = (arc: string, d = "o.sofi.org") => JSON.stringify([["DKIM-Signature", `v=1; a=rsa-sha256; d=${d}; s=x; b=abc`], ["ARC-Authentication-Results", arc]]);
+  const arc = "i=1; mx.google.com; dkim=pass header.i=@o.sofi.org";
+  it("is soft-trusted when the bank's signature is on it AND Gmail saw it pass", () => {
+    const check = checkForwardedBankMail({ fromEmail: "no-reply@o.sofi.org", dkimResult: undefined, rawHeaders: signed(arc) });
+    expect(check).toMatchObject({ ok: false, soft: true });
+  });
+  it("is not soft-trusted with an explicit failure, another domain's signature, or no Gmail hint", () => {
+    expect(checkForwardedBankMail({ fromEmail: "no-reply@o.sofi.org", dkimResult: "fail", rawHeaders: signed(arc) }).soft).toBe(false);
+    expect(checkForwardedBankMail({ fromEmail: "no-reply@o.sofi.org", dkimResult: undefined, rawHeaders: signed(arc, "evil.example") }).soft).toBe(false);
+    expect(checkForwardedBankMail({ fromEmail: "no-reply@o.sofi.org", dkimResult: undefined, rawHeaders: JSON.stringify([["DKIM-Signature", "d=o.sofi.org; s=x"]]) }).soft).toBe(false);
+  });
+});
