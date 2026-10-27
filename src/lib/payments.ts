@@ -418,7 +418,8 @@ export async function submitZellePaymentReference(
       // which would misleadingly attach an old code to a new submission
       // that never provided one.
       referenceCode: null,
-      note: input.note,
+      // A screenshot pre-check line (see receipt-actions.ts) stays on the payment, ahead of whatever the payer types.
+      note: [payment.note?.startsWith("Screenshot check:") ? payment.note.split("\n")[0] : null, input.note].filter(Boolean).join("\n") || null,
       method: input.method === "VENMO" ? "VENMO" : "ZELLE",
       status: "PENDING_REVIEW",
       submittedAt: new Date(),

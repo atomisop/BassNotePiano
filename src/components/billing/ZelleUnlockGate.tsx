@@ -9,6 +9,7 @@ import type { ZelleReferenceSubmission } from "@/lib/payments";
 import { PaymentWaitNotice } from "@/components/billing/PaymentWaitNotice";
 import { buttonVariants } from "@/components/ui/button";
 import { announceChange } from "@/lib/liveEvents";
+import { precheckReceiptAction } from "@/app/(dashboard)/billing/receipt-actions";
 
 export interface ZelleUnlockGateProps {
   status: ZellePaymentStatus;
@@ -97,6 +98,7 @@ export function ZelleUnlockGate({
         zelleHandle={zelleHandle}
         paymentId={paymentId}
         onSubmit={handleSubmit}
+        onPrecheck={(base64, mimeType) => precheckReceiptAction(paymentId, base64, mimeType)}
         checkStatus={checkStatus}
         onVerified={() => {
           announceChange("payments");
