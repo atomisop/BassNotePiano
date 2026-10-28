@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { describe, expect, it, vi } from "vitest";
 
 // A signed-in STUDENT is blocked from the admin area by the server, not just shown no menu. Every admin server action, the admin
