@@ -158,7 +158,7 @@ export default async function AdminOverviewPage() {
                       {row.detail ? <span className="text-slate-400"> · {row.detail}</span> : null}
                     </p>
                     <p className="mt-0.5 text-slate-500">
-                      {row.actorEmail ?? "System"} · {new Date(row.createdAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                      {row.actorEmail ?? "System"} · {new Date(row.createdAt).toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
                     </p>
                   </li>
                 ))}
@@ -197,7 +197,7 @@ export default async function AdminOverviewPage() {
               {jobs.map((job) => {
                 const bad = isStopped(job.state);
                 const when = job.lastRanAt
-                  ? new Date(job.lastRanAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+                  ? new Date(job.lastRanAt).toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
                   : null;
                 const text =
                   job.state === "never" ? "has never run" : job.state === "failed" ? `failed, ${when}` : job.state === "late" ? `late, last ran ${when}` : when ?? "not run yet";
