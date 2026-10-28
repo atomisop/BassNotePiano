@@ -321,17 +321,19 @@ export default async function DashboardPage() {
           {progressCard()}
         </CardDeck>
 
-        {/* ---- Desktop: one band of cards, on the same four columns as the
-            scales below. The next step is only as wide as it needs to be, and
-            the week and progress cards take the space it used to leave empty,
-            so there is no side column and the scales get the full width. ---- */}
-        <div className="hidden gap-3 md:grid md:grid-cols-2 lg:grid-cols-4 [&>*>*]:h-full">
-          {showGettingStarted && <div className="md:col-span-2 lg:col-span-4">{gettingStartedCard()}</div>}
-          <div className="md:col-span-2 lg:col-span-4">{nextStepCard()}</div>
-          <div className="lg:col-span-2">{practiceCard()}</div>
-          <div className="lg:col-span-2">{nextClassCard()}</div>
-          <div>{weekCard()}</div>
-          <div>{progressCard()}</div>
+        {/* ---- Desktop: what to do on the left, what is coming on the right (like the reference's main area and side panel).
+            Below xl it is one band of cards. From xl the next class, the week and progress stack in a right column. ---- */}
+        <div className="hidden md:block xl:grid xl:grid-cols-[minmax(0,1fr)_21rem] xl:items-start xl:gap-6">
+          <div className="grid min-w-0 gap-3 md:grid-cols-2 [&>*>*]:h-full">
+            {showGettingStarted && <div className="md:col-span-2">{gettingStartedCard()}</div>}
+            <div className="md:col-span-2">{nextStepCard()}</div>
+            <div className="md:col-span-2">{practiceCard()}</div>
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-3 xl:mt-0 xl:grid-cols-1 [&>*>*]:h-full">
+            <div>{nextClassCard()}</div>
+            <div>{weekCard()}</div>
+            <div>{progressCard()}</div>
+          </div>
         </div>
 
         <TeacherNotesCard studentId={session.user.id} />

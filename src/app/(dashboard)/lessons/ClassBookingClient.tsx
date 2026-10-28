@@ -14,6 +14,7 @@ import {
   cancelClassBookingAction,
   rescheduleClassBookingAction,
 } from "./actions";
+import { BookingAgenda, type AgendaRow } from "./BookingAgenda";
 import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { CheckIcon, XIcon } from "@/components/ui/icons";
@@ -587,6 +588,19 @@ export function ClassBookingClient({
     });
   }
 
+  // The month agenda (wide screens): a tap picks the day, and in the plain just-me case also picks that time. In every other case
+  // (family, moving a class, a weekly limit) it only opens the day, where the cards with their own buttons are.
+  const agendaRows = useMemo<AgendaRow[]>(
+    () => rows.map((r) => ({ key: rowKey(r), occurrenceDateMs: r.occurrenceDateMs, scheduledAt: r.scheduledAt, durationMin: r.durationMin, isBooked: r.isBooked, reservedForYou: r.reservedForYou })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows],
+  );
+  function pickFromAgenda(key: string, day: string) {
+    setSelectedDateKey(day);
+    const row = rows.find((r) => rowKey(r) === key);
+    if (row && !row.isBooked && mode === "SOLO" && !reschedulingBooking && !weeklyLimited) toggleSelected(row);
+  }
+
   const occurrenceGroups = useMemo(() => groupOccurrencesByWeek(displayRows), [displayRows]);
   const upcoming = useMemo(() => bookings.filter((b) => b.status === "SCHEDULED").sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)), [bookings]);
   const history = useMemo(() => bookings.filter((b) => b.status !== "SCHEDULED"), [bookings]);
@@ -983,6 +997,13 @@ export function ClassBookingClient({
             ) : (
               <p className="text-small text-slate-500">No classes scheduled.</p>
             )}
+            {rows.length > 0 && (
+              <p className="hidden items-center gap-4 px-1 text-small text-slate-400 lg:flex">
+                <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-signal" aria-hidden />Open {rows.filter((r) => !r.isBooked).length}</span>
+                <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-slate-500" aria-hidden />Taken {rows.filter((r) => r.isBooked).length}</span>
+                <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[rgb(var(--tint-green-fg))]" aria-hidden />Picked {selectedKeys.size}</span>
+              </p>
+            )}
             {/* The next few booked classes, beside the calendar on a computer (the Upcoming tab still has them all). */}
             {upcoming.length > 0 && (
               <div className="hidden rounded-2xl border border-(--neu-edge) p-4 lg:block">
@@ -1005,6 +1026,11 @@ export function ClassBookingClient({
             </div>
 
               <div className="min-w-0 lg:order-1">
+            {rows.length > 0 && (
+              <div className="mb-6 hidden lg:block">
+                <BookingAgenda rows={agendaRows} selectedDateKey={selectedDateKey} pickedKeys={selectedKeys} onPick={pickFromAgenda} />
+              </div>
+            )}
             {extraPayment && (
               <div className="glass-surface-elevated mt-6 p-5">
                 <p className="mb-3 text-small text-slate-400">
