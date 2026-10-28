@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { pausedJobNames } from "@/lib/jobPause";
 
 // A daily job that Netlify did not run (a gap in its scheduler, a failed deploy window) used to stay red until the next day's
 // run. This runs it as soon as the scheduler is back. It is only for jobs that are safe to run late: each one's own comment says a
@@ -57,7 +58,10 @@ export async function runCatchUps(
     lastOk[slot.name] = row?.ranAt ?? null;
   }
   const ran: string[] = [];
+  // A job the owner paused stays paused: never run it late.
+  const paused = await pausedJobNames().catch(() => new Set<string>());
   for (const { name, slot } of dueCatchUps(now, lastOk)) {
+    if (paused.has(name)) continue;
     const run = runners[name];
     if (!run) continue;
     const claimed = await prisma.appSetting
