@@ -1025,9 +1025,11 @@
     --ground: 0 0 0; /* the page itself: true black, like apple.com's dark bands */
     --neu-base: 22 22 23; /* cards and panels, a step above the ground */
     --neu-lift: 29 29 31;
-    --neu-hi: rgb(255 255 255 / 0);
+    /* Pressables (buttons, chips, toggles) keep the soft light-and-shade depth; cards and pages stay flat (see --flat-lo). */
+    --neu-hi: rgb(255 255 255 / 0.04);
     --neu-lo: rgb(0 0 0 / 0.55);
     --neu-top: rgb(255 255 255 / 0.05);
+    --flat-lo: rgb(0 0 0 / 0.55);
     --neu-edge: rgb(255 255 255 / 0.12);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
@@ -1039,9 +1041,10 @@
     --ground: 245 245 247; /* #f5f5f7, the light gray band on apple.com */
     --neu-base: 255 255 255; /* cards are white on that gray */
     --neu-lift: 255 255 255;
-    --neu-hi: rgb(255 255 255 / 0);
-    --neu-lo: rgb(0 0 0 / 0.14);
-    --neu-top: rgb(255 255 255 / 0);
+    --neu-hi: rgb(255 255 255 / 0.95);
+    --neu-lo: rgb(140 140 158 / 0.38);
+    --neu-top: rgb(255 255 255 / 0.9);
+    --flat-lo: rgb(0 0 0 / 0.14);
     --neu-edge: rgb(0 0 0 / 0.08);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
@@ -1061,20 +1064,20 @@
   :root,
   [data-mode="dark"],
   [data-mode="light"] {
-    --neu-raised-low: 0 0 0 1px var(--neu-edge);
-    --neu-raised-mid: 0 0 0 1px var(--neu-edge), 0 2px 8px -2px var(--neu-lo);
-    --neu-raised-high: 0 0 0 1px var(--neu-edge), 0 8px 24px -8px var(--neu-lo);
+    --neu-raised-low: -2px -2px 5px var(--neu-hi), 2px 2px 6px var(--neu-lo), inset 0 1px 0 var(--neu-top);
+    --neu-raised-mid: -4px -4px 10px var(--neu-hi), 4px 4px 11px var(--neu-lo), inset 0 1px 0 var(--neu-top);
+    --neu-raised-high: -6px -6px 16px var(--neu-hi), 7px 7px 18px var(--neu-lo), inset 0 1px 0 var(--neu-top);
     /* Floating depth for the dock: one long ambient shadow under a hairline. */
-    --neu-float: 0 0 0 1px var(--neu-edge), 0 18px 40px -12px var(--neu-lo);
-    --neu-pressed-low: inset 0 1px 2px var(--neu-lo);
-    --neu-pressed-mid: inset 0 2px 4px var(--neu-lo);
-    --neu-pressed-high: inset 0 3px 6px var(--neu-lo);
+    --neu-float: var(--neu-raised-high), inset 0 1px 0 var(--neu-edge), 0 22px 36px -14px var(--neu-lo);
+    --neu-pressed-low: inset -1px -1px 3px var(--neu-hi), inset 2px 2px 4px var(--neu-lo);
+    --neu-pressed-mid: inset -2px -2px 6px var(--neu-hi), inset 3px 3px 7px var(--neu-lo);
+    --neu-pressed-high: inset -3px -3px 8px var(--neu-hi), inset 4px 4px 10px var(--neu-lo);
 
     /* Existing plane tokens now read from the neumorphic ones, so every
        card and button that used them follows without editing call sites. */
     --plane-mid-bg: var(--neu-base);
-    --plane-mid-shadow: var(--neu-raised-mid);
-    --plane-front-shadow: var(--neu-raised-high);
+    --plane-mid-shadow: 0 0 0 1px var(--neu-edge), 0 2px 8px -2px var(--flat-lo);
+    --plane-front-shadow: 0 0 0 1px var(--neu-edge), 0 8px 24px -8px var(--flat-lo);
   }
 
   /* The redesign rules apply everywhere by default (set on <body> so
