@@ -21,7 +21,8 @@ function count(n: number, one: string, many: string): string | null {
 // Runs once daily at 12:00 UTC (8am Eastern). Plain queries on purpose: this
 // runs outside Next, so it must not pull in anything that needs the request
 // cache (see the other scheduled functions).
-export const handler = schedule("0 12 * * *", async () =>
+// The job body is exported so the catch-up (src/lib/jobCatchUp.ts) can run it when a scheduled run was missed.
+export const runAdminDailySummary = () =>
   runJob("admin-daily-summary", async () => {
   if (!(await getBoolSetting("reminders.adminDailySummary"))) {
     console.log("Admin daily summary: turned off in settings");
@@ -117,4 +118,6 @@ export const handler = schedule("0 12 * * *", async () =>
   await sendTodoListEmail(OWNER_EMAIL, "Today's to-do", [classLine, digest].filter(Boolean).join(" ") || null, parts);
   console.log(`Admin daily summary: sent (${parts.length} items, ${classesToday.length} classes)`);
   return { statusCode: 200 };
-}));
+});
+
+export const handler = schedule("0 12 * * *", async () => runAdminDailySummary());
