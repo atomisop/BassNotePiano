@@ -14,10 +14,10 @@ const ITEMS = [
 export function InstrumentPicker() {
   return (
     <section className="mx-auto w-full max-w-6xl px-6 pb-24 pt-24 md:pb-40 md:pt-40">
-      <h2 className="mb-8">
+      <h2 className="mb-10 text-center">
         <WordsPullUp
           text="Choose your instrument"
-          className="text-[clamp(2rem,5vw,4rem)] font-medium leading-[0.95] tracking-[-0.05em] text-[#E1E0CC]"
+          className="justify-center text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-[1] tracking-[-0.035em] text-[#E1E0CC]"
         />
       </h2>
       <ElasticGallery items={ITEMS} />

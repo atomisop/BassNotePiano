@@ -162,7 +162,7 @@ export function MarketingNav() {
       <header
         className={[
           "fixed inset-x-0 top-0 z-40 transition-colors duration-500",
-          lifted ? "border-b border-[rgb(var(--c-s-50)/0.1)] bg-[rgb(var(--c-s-950)/0.8)] backdrop-blur-xl" : "border-b border-transparent",
+          lifted ? "border-b border-[rgb(var(--c-s-50)/0.1)] bg-[rgb(var(--c-s-950)/0.72)] backdrop-blur-[20px] backdrop-saturate-[1.8]" : "border-b border-transparent",
         ].join(" ")}
       >
         {/* HOMEPAGE REPLACEMENT: header-2's own "compact state on scroll" is

@@ -130,7 +130,7 @@
   --shadow-plane-front: var(--plane-front-shadow);
   --shadow-signal: var(--signal-glow);
 
-  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-ios: cubic-bezier(0.4, 0, 0.6, 1); /* apple.com's curve */
   /* Release curve for pressable things: overshoots, then settles. The
      linear() form is a real spring; older browsers get the one-bounce bezier. */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -138,7 +138,7 @@
   /* Every Tailwind `transition*` utility without its own duration/curve now
      uses the same iOS ease, so hover, press and toggle changes all settle the
      same way instead of mixing 150ms linear-ish easings. */
-  --default-transition-duration: 220ms;
+  --default-transition-duration: 240ms;
   --default-transition-timing-function: var(--ease-ios);
 
   /* Page widths for the four shared page layouts in
@@ -1014,21 +1014,21 @@
 
     /* Motion: short and purposeful. */
     --dur-fast: 140ms;
-    --dur-base: 220ms;
-    --dur-slow: 360ms;
+    --dur-base: 240ms;
+    --dur-slow: 320ms;
   }
 
   /* Neumorphic base + the two shadow colors, per mode. Dark is near-black
      ground (#111111, the Claude app's) with cards a step lighter, so the light-side shadow has room to show. Light is a soft
      gray, darker than paper white, for the same reason. */
   [data-mode="dark"] {
-    --ground: 12 12 12; /* the page itself: deeper than the Claude app's #111111 */
-    --neu-base: 21 21 21; /* cards and panels, a step above the ground */
-    --neu-lift: 29 29 29;
-    --neu-hi: rgb(255 255 255 / 0.03);
-    --neu-lo: rgb(0 0 0 / 0.5);
-    --neu-top: rgb(255 255 255 / 0.04);
-    --neu-edge: rgb(255 255 255 / 0.1);
+    --ground: 0 0 0; /* the page itself: true black, like apple.com's dark bands */
+    --neu-base: 22 22 23; /* cards and panels, a step above the ground */
+    --neu-lift: 29 29 31;
+    --neu-hi: rgb(255 255 255 / 0);
+    --neu-lo: rgb(0 0 0 / 0.55);
+    --neu-top: rgb(255 255 255 / 0.05);
+    --neu-edge: rgb(255 255 255 / 0.12);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
     --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.35), 0 10px 28px -8px rgb(var(--c-a-400) / 0.45);
@@ -1036,13 +1036,13 @@
   }
 
   [data-mode="light"] {
-    --ground: 229 229 233; /* light mode keeps one flat soft grey for page and cards */
-    --neu-base: 229 229 233;
-    --neu-lift: 244 244 248;
-    --neu-hi: rgb(255 255 255 / 0.95);
-    --neu-lo: rgb(140 140 158 / 0.38);
-    --neu-top: rgb(255 255 255 / 0.9);
-    --neu-edge: rgb(0 0 0 / 0.1);
+    --ground: 245 245 247; /* #f5f5f7, the light gray band on apple.com */
+    --neu-base: 255 255 255; /* cards are white on that gray */
+    --neu-lift: 255 255 255;
+    --neu-hi: rgb(255 255 255 / 0);
+    --neu-lo: rgb(0 0 0 / 0.14);
+    --neu-top: rgb(255 255 255 / 0);
+    --neu-edge: rgb(0 0 0 / 0.08);
     --signal: var(--c-a-400);
     --signal-ink: 26 20 14;
     --signal-glow: 0 0 0 1px rgb(var(--c-a-400) / 0.3), 0 10px 24px -10px rgb(var(--c-a-400) / 0.5);
@@ -1061,15 +1061,14 @@
   :root,
   [data-mode="dark"],
   [data-mode="light"] {
-    --neu-raised-low: -2px -2px 5px var(--neu-hi), 2px 2px 6px var(--neu-lo), inset 0 1px 0 var(--neu-top);
-    --neu-raised-mid: -4px -4px 10px var(--neu-hi), 4px 4px 11px var(--neu-lo), inset 0 1px 0 var(--neu-top);
-    --neu-raised-high: -6px -6px 16px var(--neu-hi), 7px 7px 18px var(--neu-lo), inset 0 1px 0 var(--neu-top);
-    /* Floating depth for the dock: the high raised shape plus a long ambient
-       shadow underneath, so it reads as hovering above the page. */
-    --neu-float: var(--neu-raised-high), inset 0 1px 0 var(--neu-edge), 0 22px 36px -14px var(--neu-lo);
-    --neu-pressed-low: inset -1px -1px 3px var(--neu-hi), inset 2px 2px 4px var(--neu-lo);
-    --neu-pressed-mid: inset -2px -2px 6px var(--neu-hi), inset 3px 3px 7px var(--neu-lo);
-    --neu-pressed-high: inset -3px -3px 8px var(--neu-hi), inset 4px 4px 10px var(--neu-lo);
+    --neu-raised-low: 0 0 0 1px var(--neu-edge);
+    --neu-raised-mid: 0 0 0 1px var(--neu-edge), 0 2px 8px -2px var(--neu-lo);
+    --neu-raised-high: 0 0 0 1px var(--neu-edge), 0 8px 24px -8px var(--neu-lo);
+    /* Floating depth for the dock: one long ambient shadow under a hairline. */
+    --neu-float: 0 0 0 1px var(--neu-edge), 0 18px 40px -12px var(--neu-lo);
+    --neu-pressed-low: inset 0 1px 2px var(--neu-lo);
+    --neu-pressed-mid: inset 0 2px 4px var(--neu-lo);
+    --neu-pressed-high: inset 0 3px 6px var(--neu-lo);
 
     /* Existing plane tokens now read from the neumorphic ones, so every
        card and button that used them follows without editing call sites. */

@@ -54,7 +54,7 @@ export function Solution() {
           <div className="min-w-0 md:col-span-6">
             <WordsPullUp
               text="Everything in one place."
-              className="text-[clamp(2.5rem,6vw,5rem)] font-medium leading-[0.92] tracking-[-0.05em] text-[#E1E0CC]"
+              className="text-[clamp(2.5rem,6vw,5rem)] font-semibold leading-[1] tracking-[-0.035em] text-[#E1E0CC]"
             />
             <Accordion type="single" collapsible className="mt-10" defaultValue="feature-0">
               {FEATURES.map((feature, i) => (
