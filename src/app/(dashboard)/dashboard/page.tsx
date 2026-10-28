@@ -21,6 +21,8 @@ import { CardDeck } from "@/components/ui/CardDeck";
 import { buttonVariants } from "@/components/ui/button";
 import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { TeacherNotesCard } from "@/components/dashboard/TeacherNotesCard";
+import { AdminHomeCard } from "@/components/dashboard/AdminHomeCard";
+import { loadAdminHomeRows } from "@/lib/adminHome";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { formatEtDateTime } from "@/lib/classScheduleLabels";
 import { DISCORD_INVITE_URL, discordChannelUrl } from "@/lib/discord";
@@ -115,6 +117,8 @@ export default async function DashboardPage() {
   const joinNow = nextClass !== null && !nextClass.inPerson && (nextClass.scheduledAt.getTime() - Date.now()) / 60_000 <= 30;
 
   const streak = user?.currentStreak ?? 0;
+  // Admins get one extra card first: today's classes and what is waiting (read once, drawn in each place the cards appear).
+  const adminHomeRows = session.user.role === "ADMIN" ? await loadAdminHomeRows() : null;
 
   // Each card is a function, called once per place it renders (never reuse one
   // element twice: a streamed <Suspense> reused in two spots fails to hydrate): the phone deck below
@@ -311,8 +315,9 @@ export default async function DashboardPage() {
         <CardDeck
           className="md:hidden"
           label="Your home cards"
-          labels={[...(showGettingStarted ? ["Get started"] : []), "Your next step", "Finger practice", "Next class", "This week", "Progress"]}
+          labels={[...(adminHomeRows ? ["Today"] : []), ...(showGettingStarted ? ["Get started"] : []), "Your next step", "Finger practice", "Next class", "This week", "Progress"]}
         >
+          {adminHomeRows && <AdminHomeCard rows={adminHomeRows} />}
           {showGettingStarted && gettingStartedCard()}
           {nextStepCard()}
           {practiceCard()}
@@ -326,6 +331,7 @@ export default async function DashboardPage() {
             the week and progress cards take the space it used to leave empty,
             so there is no side column and the scales get the full width. ---- */}
         <div className="hidden gap-3 md:grid md:grid-cols-2 lg:grid-cols-4 [&>*>*]:h-full">
+          {adminHomeRows && <div className="md:col-span-2 lg:col-span-4"><AdminHomeCard rows={adminHomeRows} /></div>}
           {showGettingStarted && <div className="md:col-span-2 lg:col-span-4">{gettingStartedCard()}</div>}
           <div className="md:col-span-2 lg:col-span-4">{nextStepCard()}</div>
           <div className="lg:col-span-2">{practiceCard()}</div>

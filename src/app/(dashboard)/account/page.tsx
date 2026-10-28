@@ -8,6 +8,9 @@ import { loadPersistedHistory } from "@/lib/assistant";
 import { phoneVerifyMode } from "@/lib/phoneVerification";
 import { unusedBackupCodeCount } from "@/lib/adminTwoStep";
 import { AccountSettings } from "./AccountSettings";
+import { isOwnerEmail } from "@/lib/adminNotifications";
+import { getAdminNavBadges } from "@/lib/admin";
+import { visibleAdminHubs, hubWaiting } from "@/lib/adminNav";
 
 export const metadata = { title: "Settings" };
 
@@ -44,6 +47,20 @@ export default async function AccountPage() {
   ]);
   if (!user) redirect("/login");
   const familyDetails = await getFamilyDetails(session.user.id, activePlan);
+  // Admins reach every admin page from here. The role is read from the database record, and each admin page still checks it itself.
+  const adminHubs =
+    user.role === "ADMIN"
+      ? await getAdminNavBadges()
+          .catch(() => ({}) as Record<string, number>)
+          .then((badges) =>
+            visibleAdminHubs(isOwnerEmail(user.email)).map((hub) => ({
+              id: hub.id,
+              label: hub.label,
+              waiting: hubWaiting(hub, badges),
+              pages: hub.pages.map((p) => ({ href: p.href, label: p.label, waiting: Math.max(0, badges[p.href] ?? 0) })),
+            })),
+          )
+      : null;
 
   return (
     <AccountSettings
@@ -72,6 +89,7 @@ export default async function AccountPage() {
         notifyEmailClasses: user.notifyEmailClasses,
       }}
       assistantHistory={assistantHistory}
+      adminHubs={adminHubs}
       activePlan={
         activePlan
           ? {
