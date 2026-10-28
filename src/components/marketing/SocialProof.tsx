@@ -23,7 +23,7 @@ export function SocialProof() {
     <section className="mx-auto w-full max-w-6xl px-6 pb-24 md:pb-40">
       <WordsPullUp
         text="Nothing here asks you to take our word for it."
-        className="max-w-[18ch] text-[clamp(2.5rem,6vw,5rem)] font-medium leading-[0.92] tracking-[-0.05em] text-[#E1E0CC]"
+        className="max-w-[18ch] text-[clamp(2.5rem,6vw,5rem)] font-semibold leading-[1] tracking-[-0.035em] text-[#E1E0CC]"
       />
       <ScrollReveal className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
         {PROOF_POINTS.map((point, i) => (

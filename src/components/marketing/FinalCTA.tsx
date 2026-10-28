@@ -10,10 +10,10 @@ export function FinalCTA() {
   const isLoggedIn = Boolean(session?.user);
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-6 py-24 md:py-40">
+    <section className="mx-auto flex w-full max-w-4xl flex-col items-center px-6 py-28 text-center md:py-44">
       <WordsPullUp
         text="You already knew the sound. Now you can play it."
-        className="text-[clamp(2.75rem,8vw,7rem)] font-medium leading-[0.9] tracking-[-0.06em] text-[#E1E0CC]"
+        className="justify-center text-[clamp(2.5rem,7vw,5.5rem)] font-semibold leading-[1] tracking-[-0.035em] text-[#E1E0CC]"
       />
       <ScrollReveal className="mt-10">
         <PillCTA href={isLoggedIn ? "/dashboard" : "/register"}>{isLoggedIn ? "Go to dashboard" : "Get started"}</PillCTA>
