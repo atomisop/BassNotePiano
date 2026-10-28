@@ -58,7 +58,7 @@ function ProductCard({ product }: { product: ShopProduct }) {
         <p className="text-small leading-relaxed text-[#E1E0CC]/60">{product.blurb}</p>
         <div className="mt-auto flex items-center justify-between gap-3 pt-5">
           <span className="text-xl font-medium tracking-[-0.02em] text-[#E1E0CC]">{formatUsd(product.priceCents)}</span>
-          <PillCTA href={product.amazonUrl} external>
+          <PillCTA href={product.amazonUrl} external className="px-4 text-sm sm:px-5">
             View on Amazon
           </PillCTA>
         </div>
