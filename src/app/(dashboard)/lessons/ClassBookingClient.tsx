@@ -14,6 +14,7 @@ import {
   cancelClassBookingAction,
   rescheduleClassBookingAction,
 } from "./actions";
+import { BookingAgenda, type AgendaRow } from "./BookingAgenda";
 import { BookingCalendar, dayKey } from "./BookingCalendar";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { CheckIcon, XIcon } from "@/components/ui/icons";
@@ -587,6 +588,19 @@ export function ClassBookingClient({
     });
   }
 
+  // The month agenda (wide screens): a tap picks the day, and in the plain just-me case also picks that time. In every other case
+  // (family, moving a class, a weekly limit) it only opens the day, where the cards with their own buttons are.
+  const agendaRows = useMemo<AgendaRow[]>(
+    () => rows.map((r) => ({ key: rowKey(r), occurrenceDateMs: r.occurrenceDateMs, scheduledAt: r.scheduledAt, durationMin: r.durationMin, isBooked: r.isBooked, reservedForYou: r.reservedForYou })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows],
+  );
+  function pickFromAgenda(key: string, day: string) {
+    setSelectedDateKey(day);
+    const row = rows.find((r) => rowKey(r) === key);
+    if (row && !row.isBooked && mode === "SOLO" && !reschedulingBooking && !weeklyLimited) toggleSelected(row);
+  }
+
   const occurrenceGroups = useMemo(() => groupOccurrencesByWeek(displayRows), [displayRows]);
   const upcoming = useMemo(() => bookings.filter((b) => b.status === "SCHEDULED").sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)), [bookings]);
   const history = useMemo(() => bookings.filter((b) => b.status !== "SCHEDULED"), [bookings]);
@@ -883,16 +897,16 @@ export function ClassBookingClient({
 
   return (
     <WideLayout>
-      {/* One centered column on computers, everything stacked, the same as the payment plan screen. */}
-      <div className="mx-auto w-full max-w-2xl">
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)] lg:text-center">
+      {/* One column on phones and tablets. From lg up the Book tab uses the width: times on the left, the calendar on the right. */}
+      <div className="mx-auto w-full max-w-2xl lg:max-w-6xl">
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
         {extraMode ? "Extra sessions" : "Live Lessons"}
       </p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50 lg:text-center">
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">
         {extraMode ? "Book an extra class" : "Book a class"}
       </h1>
 
-      <div className="mt-(--space-group) lg:flex lg:justify-center">
+      <div className="mt-(--space-group)">
         <Tabs<TabId>
           label="Booking, upcoming and past classes"
           value={tab}
@@ -974,7 +988,8 @@ export function ClassBookingClient({
             )}
 
             {/* The calendar and the day's times side by side from lg up, so picking a time needs no scrolling on a computer. */}
-            <div className="mt-5">
+            <div className="mt-5 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-8">
+            <div className="space-y-4 lg:order-2 lg:sticky lg:top-0">
             {rows.length > 0 ? (
               <div id="booking-calendar" className="scroll-mt-20">
                 <BookingCalendar occurrences={rows} selectedDateKey={selectedDateKey} onSelectDate={setSelectedDateKey} />
@@ -982,8 +997,40 @@ export function ClassBookingClient({
             ) : (
               <p className="text-small text-slate-500">No classes scheduled.</p>
             )}
+            {rows.length > 0 && (
+              <p className="hidden items-center gap-4 px-1 text-small text-slate-400 lg:flex">
+                <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-signal" aria-hidden />Open {rows.filter((r) => !r.isBooked).length}</span>
+                <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-slate-500" aria-hidden />Taken {rows.filter((r) => r.isBooked).length}</span>
+                <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[rgb(var(--tint-green-fg))]" aria-hidden />Picked {selectedKeys.size}</span>
+              </p>
+            )}
+            {/* The next few booked classes, beside the calendar on a computer (the Upcoming tab still has them all). */}
+            {upcoming.length > 0 && (
+              <div className="hidden rounded-2xl border border-(--neu-edge) p-4 lg:block">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-small font-semibold text-slate-50">Upcoming classes</p>
+                  <button type="button" onClick={() => setTab("upcoming")} className="text-small text-signal-fg hover:underline">
+                    See all
+                  </button>
+                </div>
+                <ul className="space-y-2">
+                  {upcoming.slice(0, 3).map((b, i) => (
+                    <li key={b.id} className={`${["tint-purple", "tint-peach", "tint-blue"][i % 3]} rounded-xl px-3 py-2.5`}>
+                      <p className="text-small font-semibold">{formatDateTime(b.scheduledAt)}</p>
+                      {b.label && <p className="text-small opacity-80">{b.label}</p>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            </div>
 
-              <div className="min-w-0">
+              <div className="min-w-0 lg:order-1">
+            {rows.length > 0 && (
+              <div className="mb-6 hidden lg:block">
+                <BookingAgenda rows={agendaRows} selectedDateKey={selectedDateKey} pickedKeys={selectedKeys} onPick={pickFromAgenda} />
+              </div>
+            )}
             {extraPayment && (
               <div className="glass-surface-elevated mt-6 p-5">
                 <p className="mb-3 text-small text-slate-400">

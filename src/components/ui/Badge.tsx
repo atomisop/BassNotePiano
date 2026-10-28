@@ -3,13 +3,12 @@ import { cn } from "@/lib/utils";
 import { Check, Lock, TriangleAlert, X } from "lucide-react";
 
 /**
- * Status chips. Status is information, not an action, so none of these use
- * the signal green (STEP 2C, rule 2). Each tone pairs an icon with text, so
- * status never relies on color alone:
+ * Status chips. Each tone pairs an icon with text, so status never relies on
+ * color alone, and now also carries a pastel wash (the reference look):
  * - neutral: plain label
- * - success: check icon, paper text
- * - warning: triangle icon, paper text
- * - danger: cross icon, red text
+ * - success: check icon, soft green
+ * - warning: triangle icon, soft yellow
+ * - danger: cross icon, soft pink
  * - locked: lock icon, gray
  */
 type Tone = "neutral" | "success" | "warning" | "danger" | "locked";
@@ -23,18 +22,18 @@ const ICONS: Record<Tone, ReactNode> = {
 };
 
 const TONES: Record<Tone, string> = {
-  neutral: "text-slate-200",
-  success: "text-slate-50",
-  warning: "text-slate-50",
-  danger: "text-[rgb(var(--c-rd-300))]",
-  locked: "text-slate-400",
+  neutral: "bg-neu-base text-slate-200 shadow-pressed-low",
+  success: "tint-green",
+  warning: "tint-yellow",
+  danger: "tint-pink",
+  locked: "bg-neu-base text-slate-400 shadow-pressed-low",
 };
 
 export function Badge({ tone = "neutral", children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full bg-neu-base px-2.5 py-0.5 text-small font-medium shadow-pressed-low",
+        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-small font-medium",
         TONES[tone],
         className,
       )}

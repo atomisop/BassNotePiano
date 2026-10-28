@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 
 /**
@@ -83,6 +83,13 @@ export function BookingCalendar({
     const first = sortedDayKeys[0] ? new Date(sortedDayKeys[0]) : new Date(todayMidnight);
     return { year: first.getUTCFullYear(), monthIndex: first.getUTCMonth() };
   });
+
+  // Follow the chosen day: tapping a time in the month list (or a day anywhere) moves this calendar to that day's month.
+  useEffect(() => {
+    if (!selectedDateKey) return;
+    const d = new Date(selectedDateKey);
+    setViewMonth((v) => (v.year === d.getUTCFullYear() && v.monthIndex === d.getUTCMonth() ? v : { year: d.getUTCFullYear(), monthIndex: d.getUTCMonth() }));
+  }, [selectedDateKey]);
 
   const minMonth = sortedDayKeys.length > 0 ? new Date(sortedDayKeys[0]) : new Date(todayMidnight);
   const maxMonth = sortedDayKeys.length > 0 ? new Date(sortedDayKeys[sortedDayKeys.length - 1]) : new Date(todayMidnight);

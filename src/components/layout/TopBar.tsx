@@ -5,6 +5,7 @@ import { StudentNotesPanel } from "@/components/admin/StudentNotesPanel";
 import { AdminAttendanceQuickPanel } from "@/components/admin/AdminAttendanceQuickPanel";
 import { ProfileMenu } from "./ProfileMenu";
 import { AdminTopLink } from "./AdminTopLink";
+import { Breadcrumb } from "./Breadcrumb";
 import { LiveClassesTopLink } from "./LiveClassesTopLink";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { AskAiButton } from "./AskAiButton";
@@ -70,7 +71,7 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
   // `(dashboard)/layout.tsx` adds `pt-16` to this header's old flex parent
   // to reserve the 64px this now paints over instead of occupying in flow.
   return (
-    <header className="pointer-events-none fixed inset-x-0 top-0 z-[45] flex h-12 items-center justify-between border-b border-[var(--neu-edge)] bg-[rgb(var(--ground)/0.72)] px-3 backdrop-blur-[20px] backdrop-saturate-[1.8] md:px-4">
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-[45] flex h-12 items-center justify-between border-b border-[var(--neu-edge)] bg-[rgb(var(--ground)/0.72)] px-3 backdrop-blur-[20px] backdrop-saturate-[1.8] md:px-4 lg:border-transparent lg:bg-transparent lg:backdrop-blur-none lg:backdrop-saturate-100">
       {/* No bar and no logo: only the controls float. The header ignores the mouse so it never blocks the page; its two groups take it back. */}
       <div className="pointer-events-auto flex items-center gap-2">
         {/* The logo is shown on phones only; from md up the sidebar and toggle take its place. */}
@@ -78,6 +79,7 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
           <BrandMark />
         </div>
         <SidebarToggle />
+        <Breadcrumb />
       </div>
       <div className="pointer-events-auto flex items-center gap-2 md:gap-3">
         {/* Leftmost of the right-hand cluster: Ask AI, admin, attendance, bell, profile. */}

@@ -121,7 +121,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             chaining up to the body once it hits the top/bottom, without
             it, an iOS overscroll bounce here could visibly tug at the fixed
             shell around it, the same "things move weird" complaint. */}
-        <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pb-32 pt-4 md:px-6 md:pb-32 md:pt-5 lg:pb-8"><NavPendingGate>{children}</NavPendingGate></PullToRefreshMain>
+        <PullToRefreshMain className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pb-32 pt-4 md:px-6 md:pb-32 md:pt-5 lg:mb-3 lg:mr-3 lg:rounded-3xl lg:border lg:border-(--neu-edge) lg:bg-neu-base lg:px-8 lg:pb-8 lg:pt-6"><NavPendingGate>{children}</NavPendingGate></PullToRefreshMain>
       </div>
       <SwipeBack />
       <AutoRefresh />
@@ -131,7 +131,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="lg:hidden">
         <AppDock unreadMessageCount={unreadMessageCount} />
       </div>
-      <AppSidebar unreadMessageCount={unreadMessageCount} cards={sidebarCards} isAdmin={isAdmin} />
+      <AppSidebar unreadMessageCount={unreadMessageCount} cards={sidebarCards} isAdmin={isAdmin} account={{ name: session.user.name ?? session.user.email ?? "You", role: isAdmin ? "Teacher" : "Student", image: session.user.image ?? null }} />
       <CommandMenu isAdmin={isAdmin} />
             <Suspense fallback={null}>
         <OnboardingTour autoShow={shouldShowTour} />

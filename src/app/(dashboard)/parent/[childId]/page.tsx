@@ -2,6 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { getServerAuthSession } from "@/lib/auth";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { BackLink } from "@/components/ui/BackLink";
+import { ChildSwitcher } from "@/components/parent/ChildSwitcher";
+import { prisma } from "@/lib/prisma";
 import { ChildView } from "@/components/parent/ChildView";
 import Link from "next/link";
 import { Plus } from "lucide-react";
@@ -23,6 +25,8 @@ export default async function ParentChildPage({ params }: { params: Promise<{ ch
   const [view, allBills] = await Promise.all([getChildView(session.user.id, childId), listParentBills(session.user.id, zelleHandle)]);
   // Everything for this child in one place: what is due for them shows here, so the parent never has to go to Billing.
   const bills = allBills.filter((b) => b.childIds.includes(childId));
+  // Just names, for the "Switch child" picker (the page it opens checks access itself).
+  const kids = (await prisma.parentLink.findMany({ where: { parentId: session.user.id, status: "ACCEPTED" }, select: { child: { select: { id: true, name: true } } }, orderBy: { createdAt: "asc" } })).map((l) => ({ id: l.child.id, name: l.child.name ?? "Child" }));
 
   return (
     <WideLayout>
@@ -30,7 +34,10 @@ export default async function ParentChildPage({ params }: { params: Promise<{ ch
         Back
       </BackLink>
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Parent mode</p>
-      <h1 className="mt-1.5 font-hero text-hero font-bold text-balance text-slate-50">{view.name}</h1>
+      <div className="mt-1.5 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-hero text-hero font-bold text-balance text-slate-50">{view.name}</h1>
+        <ChildSwitcher currentId={childId} kids={kids} />
+      </div>
       {bills.length > 0 && (
         <section className="mt-5 space-y-4" aria-label="To pay">
           {bills.map((bill) => (
