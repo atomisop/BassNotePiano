@@ -25,7 +25,8 @@ import {
 // it is ever stranger-bookable. Existence-based per occurrence (checked via
 // createReservedBookingIfAbsent), so a missed run just means the window
 // catches back up on the next one, nothing is lost.
-export const handler = schedule("30 9 * * *", async () =>
+// The job body is exported so the catch-up (src/lib/jobCatchUp.ts) can run it when a scheduled run was missed.
+export const runPaymentPlanReservations = () =>
   runJob("payment-plan-reservations", async () => {
   const plans = await prisma.paymentPlan.findMany({
     where: { reservedScheduleId: { not: null }, OR: livePaymentPlanConditions() },
@@ -153,4 +154,6 @@ export const handler = schedule("30 9 * * *", async () =>
     `Payment plan reservations: processed ${plans.length} plan(s), booked ${booked} occurrence(s), skipped ${skippedInsufficientCredits} for insufficient credits, notified ${notifiedInactive} inactive-schedule plan(s).`,
   );
   return { statusCode: 200 };
-}));
+});
+
+export const handler = schedule("30 9 * * *", async () => runPaymentPlanReservations());

@@ -20,7 +20,8 @@ import { CREDITS_PER_CLASS, creditsLabelFromStored } from "../../src/lib/classCr
 // exclusive by construction (a grant's expiresAt is either still in the
 // future, the warning phase's whole domain, or already past, the sweep
 // phase's), so the two never double up on the same grant in one run.
-export const handler = schedule("0 9 * * *", async () =>
+// The job body is exported so the catch-up (src/lib/jobCatchUp.ts) can run it when a scheduled run was missed.
+export const runCreditExpiry = () =>
   runJob("credit-expiry", async () => {
   // One shared instant for both phases (rather than each defaulting its own
   // `now` independently a few lines apart), keeps "expiring soon" and
@@ -67,4 +68,6 @@ export const handler = schedule("0 9 * * *", async () =>
     `Credit expiry: warned ${warned.length} grant(s) expiring soon, expired ${expired.length} grant(s) totaling ${totalExpired} credit(s).`,
   );
   return { statusCode: 200 };
-}));
+});
+
+export const handler = schedule("0 9 * * *", async () => runCreditExpiry());
