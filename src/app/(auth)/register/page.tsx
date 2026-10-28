@@ -121,7 +121,9 @@ function RegisterForm() {
 
     // Account exists but isn't usable yet, a verification code was just
     // emailed. Signing in happens at the end of that flow, not here.
+    const created = await res.json().catch(() => null);
     const params = new URLSearchParams({ email, callbackUrl });
+    if (created?.emailSent === false) params.set("sendFailed", "1");
     router.push(`/verify-email?${params}`);
   }
 

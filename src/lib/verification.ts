@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { sendVerificationCodeEmail } from "@/lib/email";
 import { sendSms } from "@/lib/sms";
 import { getNumberSetting } from "@/lib/siteSettings";
+import { reportError } from "@/lib/reportError";
 
 // Code lifetime, wrong tries, and the request throttle below are admin settings (Settings → Security).
 
@@ -99,7 +100,8 @@ export async function createAndSendCode(params: CreateCodeParams): Promise<{ ok:
     }
     return { ok: true };
   } catch (err) {
-    console.error(`Failed to send ${params.purpose} code for ${normalizedEmail}:`, err instanceof Error ? err.message : err);
+    // Reaches GlitchTip, not just the server log: a code that never leaves is a person locked out of signing up.
+    reportError(err, `${params.purpose} code could not be sent`);
     return { ok: false };
   }
 }

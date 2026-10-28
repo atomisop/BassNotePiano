@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { getNumberSetting } from "@/lib/siteSettings";
 import { verifyCode, createAndSendCode, createSilentCode, RateLimitError, type VerifyCodeResult } from "@/lib/verification";
 import { sendWelcomeEmail } from "@/lib/email";
 import { notifyAdmins } from "@/lib/adminNotifications";
@@ -64,10 +65,10 @@ export async function verifyEmailAction(email: string, code: string) {
   }
 }
 
-/** Doesn't leak account existence, nothing to resend if already verified, and
- *  a RateLimitError is swallowed for the same reason (see forgot-password's
- *  requestPasswordResetAction for the full reasoning). Wrapped in
- *  withTimingFloor for the same reason too, see requestPasswordResetAction. */
+/** Nothing to resend if already verified, and an unknown address answers the same as a known one. A person who has asked for
+ *  several codes in a row IS told to wait: staying silent here once made the button say "sent" while nothing was sent, and
+ *  the sign-up screen already says plainly when an address has an account, so this reveals nothing new.
+ *  Wrapped in withTimingFloor so the answer takes the same time either way, see requestPasswordResetAction. */
 export async function resendVerificationEmailAction(email: string): Promise<{ ok: true } | { ok: false; error: string }> {
   return withTimingFloor(async () => {
     const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
@@ -78,6 +79,11 @@ export async function resendVerificationEmailAction(email: string): Promise<{ ok
       if (!sent.ok) return { ok: false as const, error: "We couldn't send the email just now. Please try again in a minute." };
     } catch (err) {
       if (!(err instanceof RateLimitError)) throw err;
+      const minutes = await getNumberSetting("security.codeIssueWindowMinutes");
+      return {
+        ok: false as const,
+        error: `You've asked for several codes in a row, so new ones are paused for about ${minutes} minutes. The newest one we sent still works for a few minutes: check your inbox, and the Promotions, Updates and Spam folders.`,
+      };
     }
     return { ok: true as const };
   });
