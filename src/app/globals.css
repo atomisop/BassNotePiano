@@ -1721,3 +1721,41 @@ input[type="radio"],
 .tint-blue { background: var(--tint-blue-bg); color: var(--tint-blue-fg); }
 .tint-pink { background: var(--tint-pink-bg); color: var(--tint-pink-fg); }
 .tint-yellow { background: var(--tint-yellow-bg); color: var(--tint-yellow-fg); }
+
+
+/* Skeleton loaders: a soft block with a lighter band sweeping across it, left to right, on a loop (the usual video-site look). The band
+   is a gradient that moves by transform, so it costs no layout. Reduced motion gets a still block. */
+:root,
+[data-mode="dark"] {
+  --skeleton-base: rgb(255 255 255 / 0.07);
+  --skeleton-shine: rgb(255 255 255 / 0.13);
+}
+[data-mode="light"] {
+  --skeleton-base: rgb(0 0 0 / 0.07);
+  --skeleton-shine: rgb(255 255 255 / 0.75);
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--skeleton-base);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent 0%, var(--skeleton-shine) 50%, transparent 100%);
+  animation: skeleton-sweep 1.6s ease-in-out infinite;
+  animation-delay: var(--skeleton-delay, 0s);
+}
+@keyframes skeleton-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+    display: none;
+  }
+}
