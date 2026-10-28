@@ -16,6 +16,9 @@ import { RefreshTasksButton } from "@/components/admin/RefreshTasksButton";
 import { OverviewStats } from "@/components/admin/OverviewStats";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { PhoneAccordion } from "@/components/ui/PhoneAccordion";
+import { Chip, HeroCard, LimitCard, MiniStats, ShowCard } from "@/components/dashboard/FinanceCards";
+import { DueThisWeek } from "@/components/admin/DueThisWeek";
+import { getDueWeek } from "@/lib/adminDue";
 import { ModuleHealthSection, ModuleHealthSkeleton } from "@/components/admin/ModuleHealthSection";
 
 function formatUsd(cents: number) {
@@ -28,8 +31,16 @@ function formatUsd(cents: number) {
 export const metadata = { title: "Admin: Overview" };
 
 export default async function AdminOverviewPage() {
-  const [stats, trends, session, subs, attention, followUps, waiting] = await Promise.all([getOverviewStats(), getOverviewTrends(6), getServerAuthSession(), getSubscriptionStats(), getAttentionItems(), getFollowUps(), getAdminPayments("PENDING_REVIEW", 1)]);
+  const [stats, trends, session, subs, attention, followUps, waiting, dueWeek] = await Promise.all([getOverviewStats(), getOverviewTrends(6), getServerAuthSession(), getSubscriptionStats(), getAttentionItems(), getFollowUps(), getAdminPayments("PENDING_REVIEW", 1), getDueWeek()]);
   const isOwner = isOwnerEmail(session?.user?.email);
+  const firstName = (session?.user?.name ?? "").trim().split(/\s+/)[0] || null;
+  // Revenue against last month, from the six-month trend (dollars per month): the change chip on the hero card.
+  const revenueNow = trends.revenue[trends.revenue.length - 1]?.value ?? 0;
+  const revenuePrev = trends.revenue[trends.revenue.length - 2]?.value ?? 0;
+  const revenueDelta = revenuePrev > 0 ? Math.round(((revenueNow - revenuePrev) / revenuePrev) * 100) : null;
+  const hourEt = Number(new Date().toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", hour12: false }));
+  const greeting = hourEt < 12 ? "morning" : hourEt < 18 ? "afternoon" : "evening";
+  const waitingTotal = attention.length;
   const [activity, jobs, visits] = isOwner
     ? await Promise.all([
         listAudit(20),
@@ -41,24 +52,80 @@ export default async function AdminOverviewPage() {
   return (
     <div>
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Overview</h1>
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{firstName ? `Good ${greeting}, ${firstName}.` : "Overview"}</h1>
+      <p className="mt-1 text-small text-slate-500">What needs you, what is coming, and how the studio is doing.</p>
 
-      <PhoneAccordion alwaysCollapsible defaultOpen title="Needs you now" summary={attention.length === 0 ? "Nothing waiting" : `${attention.length} waiting`} className="mt-6 rounded-2xl bg-neu-base p-4 shadow-raised-low">
-        {attention.length === 0 ? (
-          <p className="mt-2 text-small text-slate-500">Nothing is waiting.</p>
-        ) : (
-          <ul className="mt-2 divide-y divide-slate-50/10">
-            {attention.map((item, i) => (
-              <li key={`${item.href}|${item.label}`}>
-                <Link href={item.href} className="tap flex items-center justify-between gap-3 py-2.5 text-small transition hover:opacity-80">
-                  <span className="text-slate-200">{item.label}</span>
-                  <span className={`${["tint-peach", "tint-purple", "tint-blue", "tint-pink", "tint-yellow"][i % 5]} rounded-full px-2.5 py-0.5 font-semibold tabular-nums`}>{item.count}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </PhoneAccordion>
+      {/* Left: the money story in four cards. Right: what needs you and who owes what this week. One column on phones. */}
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem] xl:items-start">
+        <div className="grid min-w-0 gap-4">
+          <HeroCard
+            eyebrow="Verified revenue"
+            title={formatUsd(stats.totalRevenueCents)}
+            detail={stats.pendingRevenueCents > 0 ? `${formatUsd(stats.pendingRevenueCents)} waiting for review, not counted yet` : "Every payment you have approved so far"}
+            chip={revenueDelta !== null ? <Chip tone={revenueDelta >= 0 ? "up" : "down"}>{revenueDelta >= 0 ? "↑" : "↓"} {Math.abs(revenueDelta)}% this month</Chip> : undefined}
+            primary={{ href: "/admin/payments", label: waiting.total > 0 ? `Review payments (${waiting.total})` : "Payments" }}
+            secondary={{ href: "/admin/payment-plans", label: "Plans" }}
+          />
+          <MiniStats
+            title="Subscribers"
+            note={`${subs.active} active`}
+            items={[
+              { label: "Paying", value: String(subs.active), status: "Active", on: subs.active > 0 },
+              { label: "Per 28 days", value: formatUsd(subs.monthlyCents), status: "Recurring", on: subs.monthlyCents > 0 },
+              { label: "Overdue", value: String(subs.overdue), status: subs.overdue > 0 ? "Late" : "On time", on: false },
+            ]}
+          />
+          <LimitCard
+            title="Subscribers up to date"
+            done={`${Math.max(0, subs.active - subs.overdue)} paid up`}
+            goal={`${subs.active} subscribers`}
+            fraction={subs.active > 0 ? (subs.active - subs.overdue) / subs.active : 1}
+            label="Share of subscribers with no overdue bill"
+          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <ShowCard
+              tone="dark"
+              title="Needs you"
+              chip={waitingTotal > 0 ? "Open" : "Clear"}
+              big={waitingTotal > 0 ? `${waitingTotal} ${waitingTotal === 1 ? "item" : "items"} waiting` : "Nothing waiting"}
+              sub={attention[0]?.label}
+              action={attention[0] ? { href: attention[0].href, label: "Start here" } : undefined}
+            />
+            <ShowCard
+              tone="orange"
+              title="Due in 7 days"
+              chip={`${dueWeek.items.length} ${dueWeek.items.length === 1 ? "bill" : "bills"}`}
+              big={formatUsd(dueWeek.totalCents)}
+              sub={dueWeek.overdue.length > 0 ? `${dueWeek.overdue.length} already late (${formatUsd(dueWeek.overdueCents)})` : "No one is late"}
+              action={{ href: "/admin/payment-plans", label: "See plans" }}
+            />
+          </div>
+        </div>
+
+        <div className="grid min-w-0 gap-6">
+          <section aria-label="Needs you now" className="rounded-2xl border border-(--neu-edge) p-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="text-body font-semibold text-slate-50">Needs you now</h2>
+              <p className="text-small text-slate-500">{attention.length === 0 ? "Nothing waiting" : `${attention.length} ${attention.length === 1 ? "item" : "items"}`}</p>
+            </div>
+            {attention.length === 0 ? (
+              <p className="mt-2 text-small text-slate-500">Nothing is waiting.</p>
+            ) : (
+              <ul className="mt-2 divide-y divide-(--neu-edge)">
+                {attention.map((item) => (
+                  <li key={`${item.href}|${item.label}`}>
+                    <Link href={item.href} className="tap flex items-center justify-between gap-3 py-2.5 text-small transition hover:opacity-80">
+                      <span className="text-slate-200">{item.label}</span>
+                      <Chip tone="orange">{item.count}</Chip>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+          <DueThisWeek week={dueWeek} />
+        </div>
+      </div>
 
       {waiting.payments.length > 0 && (
         <section className="mt-4">
@@ -105,44 +172,15 @@ export default async function AdminOverviewPage() {
         </PhoneAccordion>
       )}
 
-      {/* Two trend cards over the last six months, both from real rows
-          (User.createdAt and VERIFIED payments). Flat stretches are real
-          flat stretches, no smoothing, no seeded history. */}
-      <PhoneAccordion alwaysCollapsible title="Signups and revenue" summary={formatUsd(stats.totalRevenueCents)} className="mt-4 rounded-2xl bg-neu-base shadow-raised-low">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <MetricCard
-          label="Signups"
-          value={stats.totalUsers.toLocaleString()}
-          hint="Last 6 months"
-          data={trends.signups}
-          variant="bar"
-        />
-        <MetricCard
-          label="Verified revenue"
-          value={formatUsd(stats.totalRevenueCents)}
-          hint={stats.pendingRevenueCents > 0 ? `${formatUsd(stats.pendingRevenueCents)} waiting for review, not counted yet` : "Last 6 months"}
-          data={trends.revenue}
-          variant="area"
-          tone="success"
-        />
-      </div>
-      </PhoneAccordion>
-
-      <PhoneAccordion alwaysCollapsible title="Subscriptions" summary={`${subs.active} active${subs.overdue > 0 ? `, ${subs.overdue} overdue` : ""}`} warn={subs.overdue > 0} className="mt-4 rounded-2xl bg-neu-base shadow-raised-low">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: "Subscribers", value: String(subs.active) },
-          { label: "Per 28 days", value: formatUsd(subs.monthlyCents) },
-          { label: "Due this week", value: `${subs.dueSoon} · ${formatUsd(subs.dueSoonCents)}` },
-          { label: "Overdue", value: String(subs.overdue), warn: subs.overdue > 0 },
-        ].map((tile) => (
-          <div key={tile.label} className="rounded-xl bg-[rgb(var(--c-s-50)/0.04)] p-4">
-            <p className="text-small text-slate-500">{tile.label}</p>
-            <p className={`mt-1 text-body font-semibold ${tile.warn ? "text-red-300" : "text-slate-50"}`}>{tile.value}</p>
-          </div>
-        ))}
-      </div>
-      </PhoneAccordion>
+      {/* Two trend cards over the last six months, both from real rows (User.createdAt and VERIFIED payments). Flat stretches are real flat
+          stretches, no smoothing, no seeded history. */}
+      <section aria-label="Trends" className="mt-6">
+        <h2 className="mb-3 text-body font-semibold text-slate-50">Trends, last 6 months</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <MetricCard label="Signups" value={stats.totalUsers.toLocaleString()} hint="All accounts" data={trends.signups} variant="bar" />
+          <MetricCard label="Verified revenue" value={formatUsd(stats.totalRevenueCents)} hint="Approved payments" data={trends.revenue} variant="area" tone="success" />
+        </div>
+      </section>
 
       {isOwner && (
         <div className="mt-4 grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
