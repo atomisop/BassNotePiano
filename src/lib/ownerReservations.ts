@@ -21,11 +21,27 @@ export function reservationCovers(r: ReservationLike, scheduleId: string, occurr
 
 export const OWNER_RESERVED_MESSAGE = "This time is reserved by the owner.";
 
-/** The live reservation that keeps this class, if any. */
-export async function findOwnerReservation(db: Db, scheduleId: string, occurrenceDate: Date, chunkIndex: number) {
-  return db.ownerReservation.findFirst({
+/**
+ * True when the reservation is for this person: their account's VERIFIED email equals the one the owner typed (capitals ignored).
+ * An unverified address never counts, so signing up with someone else's email cannot unlock their time. Nothing else is compared
+ * (no Gmail dot or plus-tag folding): an exact match is the safe reading of "the right customer".
+ */
+export function reservationIsFor(reservationEmail: string, user: { email: string | null; emailVerified: Date | null } | null): boolean {
+  if (!user?.email || !user.emailVerified) return false;
+  return user.email.trim().toLowerCase() === reservationEmail.trim().toLowerCase();
+}
+
+/**
+ * The live reservation that keeps this class from the given person, if any. Pass `forStudentId` and a reservation made for that
+ * person (see reservationIsFor) does not count: it is their time. Without it every live reservation counts.
+ */
+export async function findOwnerReservation(db: Db, scheduleId: string, occurrenceDate: Date, chunkIndex: number, forStudentId?: string) {
+  const rows = await db.ownerReservation.findMany({
     where: { scheduleId, occurrenceDate, releasedAt: null, OR: [{ chunkIndex: null }, { chunkIndex }] },
   });
+  if (rows.length === 0 || !forStudentId) return rows[0] ?? null;
+  const user = await db.user.findUnique({ where: { id: forStudentId }, select: { email: true, emailVerified: true } });
+  return rows.find((r) => !reservationIsFor(r.email, user)) ?? null;
 }
 
 export interface ReservationInput {

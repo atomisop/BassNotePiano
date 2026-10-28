@@ -16,6 +16,8 @@ import { createClassSchedule, updateClassSchedule, setClassScheduleActive, Class
 import { searchStudentsForBooking, type BookableStudent } from "@/lib/admin";
 import { createOwnerReservation, releaseOwnerReservation, getReservableHours, type ReservableHour } from "@/lib/ownerReservationsAdmin";
 import { logAudit } from "@/lib/audit";
+import { sendReservationEmail } from "@/lib/email";
+import { reportError } from "@/lib/reportError";
 
 async function requireAdmin() {
   const session = await getServerAuthSession();
@@ -191,13 +193,23 @@ export async function reserveForCustomerAction(input: {
   email: string;
   phone: string;
   note?: string;
-}): Promise<{ ok: true } | { ok: false; error: string }> {
+}): Promise<{ ok: true; emailed: boolean } | { ok: false; error: string }> {
   const admin = await requireAdmin();
   try {
     const result = await createOwnerReservation(admin.id, input);
     await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "reservation.create", targetType: "OwnerReservation", targetId: result.groupId, detail: `${input.date} for ${input.name.trim()}` });
     revalidatePath("/", "layout");
-    return { ok: true };
+    // Tell the customer. A failed email never undoes the reservation: the owner is told so they can reach out themselves.
+    let emailed = true;
+    try {
+      const to = input.email.trim().toLowerCase();
+      const account = await prisma.user.findUnique({ where: { email: to }, select: { id: true } });
+      await sendReservationEmail(to, { name: input.name, when: result.when, hasAccount: Boolean(account) });
+    } catch (err) {
+      emailed = false;
+      reportError(err, "reservation email");
+    }
+    return { ok: true, emailed };
   } catch (err) {
     return { ok: false, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
   }

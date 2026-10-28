@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { isStaging, stagingMayEmail } from "@/lib/appEnv";
 import { tagAppLinks } from "@/lib/recipientTag";
+import { reservationEmailBody } from "@/lib/reservationEmail";
 import type { VerificationPurpose } from "@prisma/client";
 import { SCALE_GROUPS } from "@/lib/curriculum";
 import type { EmailCategory } from "@/lib/emailPreferences";
@@ -490,6 +491,22 @@ export async function sendNotificationEmailWithCta(
   const html = emailShell(title, `<div style="margin:0 0 22px;">${bodyToHtml(body)}</div>${ctaButtonHtml(cta)}`, { kind, unsubscribePageUrl: links?.page, preheader: preheaderFrom(body) });
   const text = `${body}\n\n${cta.label}: ${cta.url}${links ? `\n\nUnsubscribe: ${links.page}` : ""}`;
   await sendEmail({ to, subject: title, html, text, unsubscribePostUrl: links?.post });
+}
+
+/**
+ * Tells a customer the owner kept a class time for them and to start a subscription to claim it. Sent to an address the owner
+ * typed, so it carries no unsubscribe link (like an applicant reply) and its button never holds the customer's email: it goes to
+ * the plans page for someone with an account, or to sign-up for someone without one.
+ */
+export async function sendReservationEmail(to: string, input: { name: string; when: string; hasAccount: boolean }): Promise<void> {
+  const body = reservationEmailBody({ name: input.name, when: input.when, email: to, hasAccount: input.hasAccount });
+  await sendNotificationEmailWithCta(
+    to,
+    "A class time is reserved for you",
+    body,
+    { label: "Start your subscription", url: getAppUrl(input.hasAccount ? "/billing/plans" : "/register") },
+    "default",
+  );
 }
 
 function formatUsdCents(cents: number): string {
