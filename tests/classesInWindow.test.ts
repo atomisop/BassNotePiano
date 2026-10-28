@@ -47,5 +47,6 @@ describe("how many classes a paid month holds", () => {
       }
     }
     expect(fives).toBeGreaterThan(0);
-  });
+    // A plain day-by-day count over a whole year is CPU heavy: it timed out at the default 5 seconds when the whole suite ran at once.
+  }, 60_000);
 });
