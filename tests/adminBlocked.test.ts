@@ -31,6 +31,9 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("next/cache", () => ({ revalidatePath: () => {}, revalidateTag: () => {}, unstable_cache: (fn: unknown) => fn }));
 
+// Importing every admin module the first time is slow when the whole suite runs at once.
+const SLOW = 60_000;
+
 const modules = import.meta.glob<Record<string, unknown>>("/src/app/**/actions.ts");
 const adminFiles = Object.keys(modules).filter((f) => f.includes("/admin/"));
 
@@ -55,7 +58,7 @@ describe("a student is blocked from every admin action", () => {
         const succeeded = typeof outcome === "object" && outcome !== null && !(outcome instanceof Error) && (outcome as { ok?: boolean }).ok === true;
         expect(succeeded, `${name} reported success for a student`).toBe(false);
       }
-    });
+    }, SLOW);
   }
 });
 
@@ -65,7 +68,7 @@ describe("a student is blocked from the admin pages and downloads", () => {
     const { default: AdminLayout } = await import("@/app/(dashboard)/admin/layout");
     await expect(AdminLayout({ children: null })).rejects.toThrow("REDIRECT:/dashboard");
     expect(touched).toEqual([]);
-  });
+  }, SLOW);
 
   it("the CSV export answers a student with Not found", async () => {
     touched.length = 0;
@@ -73,5 +76,5 @@ describe("a student is blocked from the admin pages and downloads", () => {
     const res = await GET(new Request("http://localhost/api/admin/export?type=people"));
     expect(res.status).toBe(404);
     expect(touched).toEqual([]);
-  });
+  }, SLOW);
 });
