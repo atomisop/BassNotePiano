@@ -6,7 +6,7 @@ import Link from "next/link";
 import { CalendarDays, ChevronDown, CreditCard, Inbox, LayoutDashboard, Settings, Users, type LucideIcon } from "lucide-react";
 import { Dialog } from "@/components/ui/Dialog";
 import { isHeadingForFlyout, type Point } from "@/lib/safeTriangle";
-import { ADMIN_HUBS, visibleAdminHubs, hubWaiting, locateAdminPage, type AdminHub, type AdminHubId, type AdminNavBadges } from "@/lib/adminNav";
+import { ADMIN_HUBS, hubWaiting, locateAdminPage, type AdminHub, type AdminHubId, type AdminNavBadges } from "@/lib/adminNav";
 
 /**
  * The admin menu: six choices (Overview, Billing, People, Classes, Inbox, Setup). Each one holds its related pages as tabs
@@ -48,7 +48,7 @@ function useCurrentHub(): AdminHub {
  * page two levels deep is one move away. Reaching for the flyout in a diagonal does not swap it for the row you cross on the way (the
  * "safe triangle", see lib/safeTriangle.ts).
  */
-function AdminSideRail({ badges, hubs }: { badges: AdminNavBadges; hubs: AdminHub[] }) {
+function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
   const current = useCurrentHub();
   const pathname = usePathname();
   const [openId, setOpenId] = useState<AdminHubId | null>(null);
@@ -88,7 +88,7 @@ function AdminSideRail({ badges, hubs }: { badges: AdminNavBadges; hubs: AdminHu
 
   return (
     <nav ref={navRef} aria-label="Admin sections" className="hidden w-48 shrink-0 flex-col gap-1 md:sticky md:top-0 md:flex md:self-start">
-      {hubs.map((hub) => {
+      {ADMIN_HUBS.map((hub) => {
         const active = hub.id === current.id;
         const Icon = HUB_ICON[hub.id];
         const hasPages = hub.pages.length > 1;
@@ -161,11 +161,11 @@ function AdminSideRail({ badges, hubs }: { badges: AdminNavBadges; hubs: AdminHu
  * Phones: one bar that names the section you are on and opens a sheet of the six. Nothing scrolls, and each row says what is inside
  * it, so nobody has to guess where a page went.
  */
-function AdminPhoneMenu({ badges, hubs }: { badges: AdminNavBadges; hubs: AdminHub[] }) {
+function AdminPhoneMenu({ badges }: { badges: AdminNavBadges }) {
   const current = useCurrentHub();
   const [open, setOpen] = useState(false);
   const CurrentIcon = HUB_ICON[current.id];
-  const waiting = hubs.reduce((sum, hub) => sum + hubWaiting(hub, badges), 0);
+  const waiting = ADMIN_HUBS.reduce((sum, hub) => sum + hubWaiting(hub, badges), 0);
 
   return (
     <div className="mb-3 md:hidden">
@@ -188,7 +188,7 @@ function AdminPhoneMenu({ badges, hubs }: { badges: AdminNavBadges; hubs: AdminH
       <Dialog open={open} onOpenChange={setOpen} title="Admin menu">
         <nav aria-label="Admin sections">
           <ul className="grid grid-cols-1 gap-2">
-            {hubs.map((hub) => {
+            {ADMIN_HUBS.map((hub) => {
               const active = hub.id === current.id;
               const Icon = HUB_ICON[hub.id];
               const count = hubWaiting(hub, badges);
@@ -224,12 +224,11 @@ function AdminPhoneMenu({ badges, hubs }: { badges: AdminNavBadges; hubs: AdminH
   );
 }
 
-export function AdminNav({ badges = {}, isOwner = true }: { badges?: AdminNavBadges; isOwner?: boolean }) {
-  const hubs = visibleAdminHubs(isOwner);
+export function AdminNav({ badges = {} }: { badges?: AdminNavBadges }) {
   return (
     <>
-      <AdminPhoneMenu badges={badges} hubs={hubs} />
-      <AdminSideRail badges={badges} hubs={hubs} />
+      <AdminPhoneMenu badges={badges} />
+      <AdminSideRail badges={badges} />
     </>
   );
 }
@@ -238,13 +237,11 @@ export function AdminNav({ badges = {}, isOwner = true }: { badges?: AdminNavBad
  * The pages inside the current section, as one row of tabs above the page (nothing for a section with a single page). Evenly
  * spaced across a phone so none of it scrolls sideways; underlined, so it never reads as the page's own filter pills below it.
  */
-export function AdminSectionTabs({ badges = {}, isOwner = true }: { badges?: AdminNavBadges; isOwner?: boolean }) {
+export function AdminSectionTabs({ badges = {} }: { badges?: AdminNavBadges }) {
   const pathname = usePathname();
   const located = locateAdminPage(pathname);
-  if (!located) return null;
-  const hub = { ...located.hub, pages: located.hub.pages.filter((p) => isOwner || !p.ownerOnly) };
-  const currentPage = located.page;
-  if (hub.pages.length < 2) return null;
+  if (!located || located.hub.pages.length < 2) return null;
+  const { hub, page: currentPage } = located;
 
   return (
     <nav aria-label={`${hub.label} pages`} className="mb-5 border-b border-(--neu-edge)">

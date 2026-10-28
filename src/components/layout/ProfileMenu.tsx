@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { OwnerStarBadge } from "@/components/ui/OwnerStar";
 import { popoverVariants } from "@/lib/motionTokens";
 import { startNavigation } from "@/lib/navigationState";
-import { Bell, CalendarDays, ClipboardCheck, NotebookPen } from "lucide-react";
+import { Bell, CalendarDays, ClipboardCheck, NotebookPen, Shield } from "lucide-react";
 import { ATTENDANCE_READY_COUNT, OPEN_ATTENDANCE, OPEN_NOTIFICATIONS, OPEN_STUDENT_NOTES, UNREAD_COUNT, announce, listen } from "@/lib/topBarEvents";
 
 // Same glyph AccountSettings.tsx's own "Sign out" row uses (TAB_ICONS.logout),
@@ -152,7 +152,9 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
           {appExtras && (
             <div className="md:hidden">
               <MenuAction icon={<Bell className="h-4 w-4" strokeWidth={1.5} />} label="Notifications and mail" count={unread} onClick={() => { setOpen(false); announce(OPEN_NOTIFICATIONS); }} />
-              {!appExtras.isAdmin && (
+              {appExtras.isAdmin ? (
+                <MenuLink href="/admin" icon={<Shield className="h-4 w-4" strokeWidth={1.5} />} label="Admin" onNavigate={() => setOpen(false)} />
+              ) : (
                 <MenuLink href="/lessons" icon={<CalendarDays className="h-4 w-4" strokeWidth={1.5} />} label="Live classes" onNavigate={() => setOpen(false)} />
               )}
               {isOwner && (

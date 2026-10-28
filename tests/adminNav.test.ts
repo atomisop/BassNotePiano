@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ADMIN_HUBS, allAdminPages, hubWaiting, locateAdminPage, visibleAdminHubs } from "@/lib/adminNav";
+import { ADMIN_HUBS, allAdminPages, hubWaiting, locateAdminPage } from "@/lib/adminNav";
 
 describe("admin menu", () => {
   it("has six choices", () => {
@@ -47,18 +47,5 @@ describe("hubWaiting", () => {
     expect(hubWaiting(billing, { "/admin/payments": 3, "/admin/payment-plans": 2, "/admin/support": 9 })).toBe(5);
     expect(hubWaiting(billing, {})).toBe(0);
     expect(hubWaiting(billing, { "/admin/payments": -4 })).toBe(0);
-  });
-});
-
-describe("visibleAdminHubs", () => {
-  it("shows the owner everything", () => {
-    expect(visibleAdminHubs(true).flatMap((h) => h.pages)).toHaveLength(18);
-  });
-  it("leaves the owner-only pages out for any other admin, and drops a hub with nothing left", () => {
-    const hubs = visibleAdminHubs(false);
-    const hrefs = hubs.flatMap((h) => h.pages.map((p) => p.href));
-    for (const href of ["/admin/pricing", "/admin/settings", "/admin/security", "/admin/activity"]) expect(hrefs).not.toContain(href);
-    expect(hubs.map((h) => h.id)).not.toContain("setup");
-    expect(hrefs).toContain("/admin/payments");
   });
 });
