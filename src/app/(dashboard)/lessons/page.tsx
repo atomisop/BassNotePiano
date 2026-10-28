@@ -58,7 +58,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
     // booking isn't actually free to spend again, even though the real
     // charge for it hasn't landed yet, see getEffectiveClassCredits.
     getEffectiveClassCredits(session.user.id),
-    getUpcomingOccurrences(),
+    getUpcomingOccurrences(session.user.id),
     getUserClassBookings(session.user.id),
     getSupportContactId(),
     hasLivePaymentPlan(session.user.id),
@@ -92,6 +92,7 @@ export default async function LessonsPage(props: { searchParams: Promise<{ tab?:
         occurrenceDateMs: o.occurrenceDate.getTime(),
         scheduledAt: o.scheduledAt.toISOString(),
         isBooked: o.isBooked,
+        reservedForYou: o.reservedForYou,
       }))}
       initialBookings={bookings.map((b) => ({
         id: b.id,

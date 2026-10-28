@@ -143,7 +143,7 @@ export interface OpenClassSlot {
 export async function childOpenSlotsAction(childId: string): Promise<{ ok: true; slots: OpenClassSlot[] } | Fail> {
   try {
     await actingFor(childId);
-    const open = (await getUpcomingOccurrences()).filter((o) => !o.isBooked).slice(0, 40);
+    const open = (await getUpcomingOccurrences(childId)).filter((o) => !o.isBooked).slice(0, 40);
     return { ok: true, slots: open.map((o) => ({ scheduleId: o.scheduleId, occurrenceDateMs: o.occurrenceDate.getTime(), chunkIndex: o.chunkIndex, scheduledAt: o.scheduledAt.toISOString(), label: o.label })) };
   } catch (err) {
     return { ok: false, error: messageOf(err) };

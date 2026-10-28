@@ -62,7 +62,8 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
     }).catch(() => ({ ok: false as const, error: "Something went wrong. Try again." }));
     setBusy(false);
     if (!result.ok) return toast.warning(result.error);
-    toast.success("Reserved");
+    if (result.emailed) toast.success(`Reserved. ${name.trim().split(/\s+/)[0] || "The customer"} was emailed.`);
+    else toast.warning("Reserved, but the email could not be sent. Tell the customer yourself.");
     setDate("");
     setPicked(new Set());
     setName("");
@@ -174,7 +175,15 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
                   <p className="text-small font-medium text-slate-100">
                     {r.dayLabel} <span className="font-normal text-slate-400">· {r.what}</span>
                   </p>
-                  <p className="mt-0.5 text-[11px] uppercase tracking-wide text-signal-fg">Reserved by the owner</p>
+                  <p className="mt-0.5 text-[11px] uppercase tracking-wide text-signal-fg">
+                    {r.booked
+                      ? "Booked by the customer"
+                      : r.account === "verified"
+                        ? "Reserved: the customer can book it"
+                        : r.account === "unverified"
+                          ? "Reserved: their email is not verified yet"
+                          : "Reserved: waiting for them to sign up"}
+                  </p>
                   <p className="mt-1 break-words text-small text-slate-300">{r.name}</p>
                   <p className="break-words text-small text-slate-500">
                     {r.email} · {r.phone}

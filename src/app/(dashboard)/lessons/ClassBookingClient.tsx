@@ -46,6 +46,8 @@ interface OccurrenceRow {
   occurrenceDateMs: number;
   scheduledAt: string;
   isBooked: boolean;
+  /** The owner kept this time for this student: open to them, locked for everyone else. */
+  reservedForYou?: boolean;
 }
 
 interface BookingRow {
@@ -1084,6 +1086,9 @@ export function ClassBookingClient({
                           to {formatEndTime(row.scheduledAt, cost)}
                           {cost !== CREDITS_PER_CLASS && ` · ${creditsLabel(cost)}`}
                         </span>
+                        {row.reservedForYou && !row.isBooked && (
+                          <span className="mt-1 inline-block whitespace-nowrap rounded-full bg-signal/15 px-2 py-0.5 text-small font-medium text-signal-fg">Reserved for you</span>
+                        )}
                       </span>
                     );
 
