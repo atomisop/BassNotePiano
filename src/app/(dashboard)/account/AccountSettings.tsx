@@ -64,15 +64,6 @@ interface AccountSettingsProps {
   activePlan: ActivePlanInfo | null;
   /** Set for the admin only (students never see two-step sign-in). */
   twoStep: { enabled: boolean; backupLeft: number } | null;
-  /** Set for admins only: the pages they can open, grouped as the admin menu groups them, with what is waiting. */
-  adminHubs: SettingsAdminHub[] | null;
-}
-
-export interface SettingsAdminHub {
-  id: string;
-  label: string;
-  waiting: number;
-  pages: { href: string; label: string; waiting: number }[];
 }
 
 const TAB_ICONS = {
@@ -90,7 +81,6 @@ const TAB_ICONS = {
   logout: "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9",
   danger: "M4 7h16M9 7V5a2 2 0 012-2h2a2 2 0 012 2v2m3 0-1 12a2 2 0 01-2 2H8a2 2 0 01-2-2L5 7h14z",
   privacy: "M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z",
-  admin: "M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3zM9 12l2 2 4-4",
 } as const;
 
 // Grouped into defined categories rather than one flat list, order here is
@@ -104,8 +94,6 @@ const TABS = [
   { id: "appearance", label: "Themes & Appearance", icon: TAB_ICONS.appearance, category: "Preferences" },
   { id: "membership", label: "Membership & Purchases", icon: TAB_ICONS.membership, category: "Billing" },
   { id: "tutorials", label: "Tutorials", icon: TAB_ICONS.tutorials, category: "Help" },
-  // Shown to admins only (see groupedTabs). The pages themselves still check the role on the server.
-  { id: "admin", label: "Admin", icon: TAB_ICONS.admin, category: "Admin" },
 ] as const;
 
 // Password, privacy and delete used to be tabs of their own. They are groups inside Account now, so old
@@ -117,10 +105,9 @@ type Category = (typeof TABS)[number]["category"];
 
 /** Groups TABS by category, preserving the array's own order, no re-sort,
     so category order is controlled entirely by TABS above. */
-function groupedTabs(isAdmin: boolean): { category: Category; tabs: (typeof TABS)[number][] }[] {
+function groupedTabs(): { category: Category; tabs: (typeof TABS)[number][] }[] {
   const groups: { category: Category; tabs: (typeof TABS)[number][] }[] = [];
   for (const tab of TABS) {
-    if (tab.id === "admin" && !isAdmin) continue;
     const last = groups[groups.length - 1];
     if (last && last.category === tab.category) {
       last.tabs.push(tab);
@@ -236,10 +223,10 @@ function CategoryHeading({ category, isFirst }: { category: Category; isFirst: b
 // tab with inline content, but it belongs with Tutorials conceptually, not
 // off on its own). "Sign out" stays below everything, uncategorized, it's
 // an action, not a setting.
-function DesktopSettingsNav({ activeTab, onSelect, isAdmin }: { activeTab: TabId; onSelect: (tab: TabId) => void; isAdmin: boolean }) {
+function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelect: (tab: TabId) => void }) {
   return (
     <nav className="sticky top-6 hidden w-56 shrink-0 flex-col gap-1 self-start glass-surface p-2 lg:flex">
-      {groupedTabs(isAdmin).map((group, i) => (
+      {groupedTabs().map((group, i) => (
         <div key={group.category}>
           <CategoryHeading category={group.category} isFirst={i === 0} />
           <div className="flex flex-col gap-1">
@@ -277,14 +264,14 @@ function DesktopSettingsNav({ activeTab, onSelect, isAdmin }: { activeTab: TabId
 // the desktop nav, no content shown until tapped. Each row pushes a
 // full-screen SlideOverPanel instead of swapping content in place. Sign out
 // stays bottom-pinned, always last, same reasoning as the desktop nav.
-function MobileSettingsMenu({ onSelect, isAdmin }: { onSelect: (tab: TabId) => void; isAdmin: boolean }) {
+function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
   // Each category is its own raised card; every icon sits in a small pressed
   // well. Rows press in on tap so the list reads as physical buttons.
   const row = "tap flex w-full items-center gap-3 px-4 py-3 text-left transition active:shadow-pressed-low";
   const well = "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neu-base text-slate-400 shadow-pressed-low";
   return (
     <div className="space-y-5 lg:hidden">
-      {groupedTabs(isAdmin).map((group) => (
+      {groupedTabs().map((group) => (
         <section key={group.category}>
           <p
             className="px-1 pb-2 text-small font-semibold uppercase tracking-[0.16em] text-slate-500"
@@ -337,7 +324,6 @@ function TabContent({
   assistantHistory,
   activePlan,
   twoStep,
-  adminHubs,
 }: {
   tab: TabId;
   account: AccountOverview;
@@ -346,9 +332,7 @@ function TabContent({
   assistantHistory: AssistantMessage[];
   activePlan: ActivePlanInfo | null;
   twoStep: AccountSettingsProps["twoStep"];
-  adminHubs: SettingsAdminHub[] | null;
 }) {
-  if (tab === "admin" && adminHubs) return <AdminSection hubs={adminHubs} />;
   if (tab === "notifications") return <NotificationSettingsSection initial={initialNotificationPreferences} />;
   if (tab === "membership") return <MembershipSection activePlan={activePlan} />;
   if (tab === "appearance") return <AppearanceSection />;
@@ -559,13 +543,11 @@ function AccountSettingsInner({
   assistantHistory,
   activePlan,
   twoStep,
-  adminHubs,
 }: AccountSettingsProps) {
   const router = useRouter();
-  const knownTab = (id: string | null): id is TabId => TABS.some((t) => t.id === id && (t.id !== "admin" || Boolean(adminHubs)));
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
-  const initialTab: TabId = knownTab(requestedTab) ? requestedTab : (requestedTab && LEGACY_TABS[requestedTab]) || "account";
+  const initialTab: TabId = TABS.some((t) => t.id === requestedTab) ? (requestedTab as TabId) : (requestedTab && LEGACY_TABS[requestedTab]) || "account";
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [mobileOpenTab, setMobileOpenTab] = useState<TabId | null>(null);
 
@@ -575,7 +557,7 @@ function AccountSettingsInner({
   // menu list below shows no content on its own.
   useEffect(() => {
     if (!requestedTab) return;
-    const target: TabId | undefined = knownTab(requestedTab) ? requestedTab : LEGACY_TABS[requestedTab];
+    const target: TabId | undefined = TABS.some((t) => t.id === requestedTab) ? (requestedTab as TabId) : LEGACY_TABS[requestedTab];
     if (!target) return;
     if (window.matchMedia("(max-width: 1023px)").matches) {
       setMobileOpenTab(target);
@@ -602,8 +584,8 @@ function AccountSettingsInner({
         }
         menu={
           <>
-            <DesktopSettingsNav activeTab={activeTab} onSelect={selectDesktopTab} isAdmin={Boolean(adminHubs)} />
-            <MobileSettingsMenu onSelect={openMobileTab} isAdmin={Boolean(adminHubs)} />
+            <DesktopSettingsNav activeTab={activeTab} onSelect={selectDesktopTab} />
+            <MobileSettingsMenu onSelect={openMobileTab} />
           </>
         }
       >
@@ -616,7 +598,6 @@ function AccountSettingsInner({
             assistantHistory={assistantHistory}
             activePlan={activePlan}
             twoStep={twoStep}
-            adminHubs={adminHubs}
           />
         </div>
       </SettingsLayout>
@@ -635,7 +616,6 @@ function AccountSettingsInner({
             assistantHistory={assistantHistory}
             activePlan={activePlan}
             twoStep={twoStep}
-            adminHubs={adminHubs}
           />
         )}
       </SlideOverPanel>
@@ -1436,38 +1416,5 @@ function NotificationSettingsSection({ initial }: { initial: NotificationPrefere
       </div>
       {success && !submitting && <p className="mt-3 text-small text-slate-50">Saved.</p>}
     </SectionCard>
-  );
-}
-
-
-/** Every admin page, grouped the way the admin menu groups them. Each row is a plain link to the page's own address. */
-function AdminSection({ hubs }: { hubs: SettingsAdminHub[] }) {
-  return (
-    <div className="space-y-6">
-      {hubs.map((hub) => (
-        <SectionCard key={hub.id} title={hub.label}>
-          <ul className="space-y-1">
-            {hub.pages.map((page) => (
-              <li key={page.href}>
-                <Link
-                  href={page.href}
-                  className="tap flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low"
-                >
-                  <span>{page.label}</span>
-                  <span className="flex items-center gap-2">
-                    {page.waiting > 0 && (
-                      <span aria-label={`${page.waiting} waiting`} className="rounded-full bg-signal px-2 py-0.5 text-xs font-semibold text-signal-ink">
-                        {page.waiting}
-                      </span>
-                    )}
-                    <TabIcon path={TAB_ICONS.chevron} className="h-4 w-4 shrink-0 text-slate-500" />
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </SectionCard>
-      ))}
-    </div>
   );
 }

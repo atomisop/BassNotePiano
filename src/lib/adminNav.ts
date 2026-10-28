@@ -10,8 +10,6 @@ export interface AdminPage {
   href: string;
   /** The tab's name; it is also the page's own heading. Kept to one short word so four tabs fit across a phone. */
   label: string;
-  /** Only the owner can open it: any other admin is sent back to the Overview, so their menus leave it out. */
-  ownerOnly?: boolean;
 }
 
 export interface AdminHub {
@@ -28,7 +26,7 @@ export const ADMIN_HUBS: AdminHub[] = [
     pages: [
       { href: "/admin/payments", label: "Payments" },
       { href: "/admin/payment-plans", label: "Plans" },
-      { href: "/admin/pricing", label: "Pricing", ownerOnly: true },
+      { href: "/admin/pricing", label: "Pricing" },
     ],
   },
   {
@@ -64,9 +62,9 @@ export const ADMIN_HUBS: AdminHub[] = [
     id: "setup",
     label: "Setup",
     pages: [
-      { href: "/admin/settings", label: "Settings", ownerOnly: true },
-      { href: "/admin/security", label: "Security", ownerOnly: true },
-      { href: "/admin/activity", label: "Activity", ownerOnly: true },
+      { href: "/admin/settings", label: "Settings" },
+      { href: "/admin/security", label: "Security" },
+      { href: "/admin/activity", label: "Activity" },
     ],
   },
 ];
@@ -100,10 +98,4 @@ export function hubWaiting(hub: AdminHub, badges: AdminNavBadges): number {
 /** Every page, once: a hub's pages are the menu's whole content, so nothing can be missing or listed twice. */
 export function allAdminPages(): AdminPage[] {
   return ADMIN_HUBS.flatMap((hub) => hub.pages);
-}
-
-/** The hubs a person can actually open: owner-only pages are dropped for other admins, and a hub left with no pages goes too. */
-export function visibleAdminHubs(isOwner: boolean): AdminHub[] {
-  if (isOwner) return ADMIN_HUBS;
-  return ADMIN_HUBS.map((hub) => ({ ...hub, pages: hub.pages.filter((page) => !page.ownerOnly) })).filter((hub) => hub.pages.length > 0);
 }
