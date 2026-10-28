@@ -43,7 +43,7 @@ export function CheckoutBar(props: {
           document.body,
         )}
       {/* lg and up: no dock, so it sticks near the bottom of the content. */}
-      <div className="sticky bottom-2 z-30 hidden lg:block">
+      <div data-summary className="sticky bottom-2 z-30 hidden lg:block xl:bottom-auto xl:top-4 xl:col-start-2 xl:row-start-1 xl:row-span-2 xl:self-start">
         <Bar {...props} />
       </div>
       {/* Room at the end of the form so the last thing on the page can scroll up above the fixed bar. */}
@@ -54,7 +54,7 @@ export function CheckoutBar(props: {
 
 function Bar({ priceCents, priceNote, total, hint, actionLabel, onAction }: { priceCents: number; priceNote: string; total?: string | null; hint: string | null; actionLabel: string; onAction: () => void }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-neu-lift p-3 shadow-raised-high ring-1 ring-[rgb(var(--c-s-50)/0.1)]">
+    <div className="flex items-center gap-3 rounded-2xl bg-neu-lift p-3 shadow-raised-high ring-1 ring-[rgb(var(--c-s-50)/0.1)] xl:flex-col xl:items-stretch xl:gap-4 xl:p-5">
       <div className="min-w-0 flex-1" aria-live="polite">
         <p className="text-body font-semibold leading-tight text-slate-50">
           <NumberTicker value={priceCents} format={usd} /> <span className="text-small font-normal text-slate-400">{priceNote}</span>
@@ -72,7 +72,7 @@ function Bar({ priceCents, priceNote, total, hint, actionLabel, onAction }: { pr
           }
           onAction();
         }}
-        className={buttonVariants({ variant: "primary", className: cn("shrink-0", hint !== null && "cursor-not-allowed opacity-45 saturate-50") })}
+        className={buttonVariants({ variant: "primary", className: cn("shrink-0 xl:w-full", hint !== null && "cursor-not-allowed opacity-45 saturate-50") })}
       >
         {actionLabel}
       </button>

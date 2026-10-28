@@ -259,7 +259,7 @@ export function NewPlanForm({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 xl:grid xl:grid-cols-[minmax(0,1fr)_19rem] xl:items-start xl:gap-x-8 xl:gap-y-6 xl:space-y-0 xl:[&>*:not([data-summary])]:col-start-1">
       {!parent?.only && (
       <div className="lg:flex lg:justify-center">
       <Tabs
