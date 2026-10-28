@@ -883,16 +883,16 @@ export function ClassBookingClient({
 
   return (
     <WideLayout>
-      {/* One centered column on computers, everything stacked, the same as the payment plan screen. */}
-      <div className="mx-auto w-full max-w-2xl">
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)] lg:text-center">
+      {/* One column on phones and tablets. From lg up the Book tab uses the width: times on the left, the calendar on the right. */}
+      <div className="mx-auto w-full max-w-2xl lg:max-w-6xl">
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">
         {extraMode ? "Extra sessions" : "Live Lessons"}
       </p>
-      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50 lg:text-center">
+      <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">
         {extraMode ? "Book an extra class" : "Book a class"}
       </h1>
 
-      <div className="mt-(--space-group) lg:flex lg:justify-center">
+      <div className="mt-(--space-group)">
         <Tabs<TabId>
           label="Booking, upcoming and past classes"
           value={tab}
@@ -974,7 +974,8 @@ export function ClassBookingClient({
             )}
 
             {/* The calendar and the day's times side by side from lg up, so picking a time needs no scrolling on a computer. */}
-            <div className="mt-5">
+            <div className="mt-5 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-8">
+            <div className="space-y-4 lg:order-2 lg:sticky lg:top-0">
             {rows.length > 0 ? (
               <div id="booking-calendar" className="scroll-mt-20">
                 <BookingCalendar occurrences={rows} selectedDateKey={selectedDateKey} onSelectDate={setSelectedDateKey} />
@@ -982,8 +983,28 @@ export function ClassBookingClient({
             ) : (
               <p className="text-small text-slate-500">No classes scheduled.</p>
             )}
+            {/* The next few booked classes, beside the calendar on a computer (the Upcoming tab still has them all). */}
+            {upcoming.length > 0 && (
+              <div className="hidden rounded-2xl border border-(--neu-edge) p-4 lg:block">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-small font-semibold text-slate-50">Upcoming classes</p>
+                  <button type="button" onClick={() => setTab("upcoming")} className="text-small text-signal-fg hover:underline">
+                    See all
+                  </button>
+                </div>
+                <ul className="space-y-2">
+                  {upcoming.slice(0, 3).map((b, i) => (
+                    <li key={b.id} className={`${["tint-purple", "tint-peach", "tint-blue"][i % 3]} rounded-xl px-3 py-2.5`}>
+                      <p className="text-small font-semibold">{formatDateTime(b.scheduledAt)}</p>
+                      {b.label && <p className="text-small opacity-80">{b.label}</p>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            </div>
 
-              <div className="min-w-0">
+              <div className="min-w-0 lg:order-1">
             {extraPayment && (
               <div className="glass-surface-elevated mt-6 p-5">
                 <p className="mb-3 text-small text-slate-400">

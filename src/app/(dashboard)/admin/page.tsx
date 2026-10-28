@@ -48,11 +48,11 @@ export default async function AdminOverviewPage() {
           <p className="mt-2 text-small text-slate-500">Nothing is waiting.</p>
         ) : (
           <ul className="mt-2 divide-y divide-slate-50/10">
-            {attention.map((item) => (
+            {attention.map((item, i) => (
               <li key={`${item.href}|${item.label}`}>
                 <Link href={item.href} className="tap flex items-center justify-between gap-3 py-2.5 text-small transition hover:opacity-80">
                   <span className="text-slate-200">{item.label}</span>
-                  <span className="rounded-full bg-[rgb(var(--signal)/0.14)] px-2.5 py-0.5 font-semibold tabular-nums text-signal-fg">{item.count}</span>
+                  <span className={`${["tint-peach", "tint-purple", "tint-blue", "tint-pink", "tint-yellow"][i % 5]} rounded-full px-2.5 py-0.5 font-semibold tabular-nums`}>{item.count}</span>
                 </Link>
               </li>
             ))}
