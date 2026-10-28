@@ -262,7 +262,19 @@ export interface NotificationPreferencesInput {
 
 export async function updateNotificationPreferencesAction(input: NotificationPreferencesInput) {
   const { id } = await requireSession();
-  await prisma.user.update({ where: { id }, data: input });
+  // Named fields only, each forced to a boolean. A server action receives whatever object the browser posts (the
+  // interface above is not checked at runtime), so `data: input` once let a signed-in student also write `role`,
+  // `email`, `emailVerified` or any other column of their own row.
+  await prisma.user.update({
+    where: { id },
+    data: {
+      notifyEmailPayments: input?.notifyEmailPayments === true,
+      notifyEmailRoleUpdates: input?.notifyEmailRoleUpdates === true,
+      notifyEmailSocial: input?.notifyEmailSocial === true,
+      notifyEmailReminders: input?.notifyEmailReminders === true,
+      notifyEmailClasses: input?.notifyEmailClasses === true,
+    },
+  });
   // Practice reminders also decide the practice banner, and the shell is where the banners are decided.
   revalidatePath("/", "layout");
   return { ok: true as const };
