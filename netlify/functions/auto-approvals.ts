@@ -8,7 +8,8 @@ import { approveClassRegistration } from "../../src/lib/classRegistration";
 
 // Daily at 13:00 UTC. Does only what the owner switched on, and does nothing
 // at all while both switches are off (the default).
-export const handler = schedule("0 13 * * *", async () =>
+// The job body is exported so the catch-up (src/lib/jobCatchUp.ts) can run it when a scheduled run was missed.
+export const runAutoApprovals = () =>
   runJob("auto-approvals", async () => {
     const settings = await getAutomations();
     let scales = 0;
@@ -51,4 +52,6 @@ export const handler = schedule("0 13 * * *", async () =>
 
     console.log(`Auto approvals: ${scales} scales released, ${applications} applications approved`);
     return { statusCode: 200 };
-  }));
+  });
+
+export const handler = schedule("0 13 * * *", async () => runAutoApprovals());

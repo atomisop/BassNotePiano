@@ -16,15 +16,17 @@ describe("runCatchUps", () => {
       "credit-expiry": async () => void calls.push("credit-expiry"),
       "payment-plan-reservations": async () => void calls.push("payment-plan-reservations"),
       "admin-daily-summary": async () => void calls.push("admin-daily-summary"),
+      "auto-approvals": async () => void calls.push("auto-approvals"),
+      "mail-chain-probe": async () => void calls.push("mail-chain-probe"),
     };
     const first = await runCatchUps(runners, NOW);
-    expect(first).toEqual(["credit-expiry", "payment-plan-reservations", "admin-daily-summary"]);
+    expect(first).toEqual(["credit-expiry", "payment-plan-reservations", "admin-daily-summary", "auto-approvals", "mail-chain-probe"]);
     expect(calls).toEqual(first);
 
     // A second pass (an overlapping run, or ten minutes later with the runners not having recorded anything) claims nothing.
     const second = await runCatchUps(runners, new Date(NOW.getTime() + 10 * 60_000));
     expect(second).toEqual([]);
-    expect(calls).toHaveLength(3);
+    expect(calls).toHaveLength(5);
   });
 
   it("does not retry a late run that failed (the failure is recorded for the owner, not hammered)", async () => {
@@ -37,6 +39,8 @@ describe("runCatchUps", () => {
       },
       "payment-plan-reservations": async () => undefined,
       "admin-daily-summary": async () => undefined,
+      "auto-approvals": async () => undefined,
+      "mail-chain-probe": async () => undefined,
     };
     await runCatchUps(runners, later);
     await runCatchUps(runners, new Date(later.getTime() + 10 * 60_000));

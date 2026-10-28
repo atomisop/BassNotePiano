@@ -12,15 +12,22 @@ describe("latestSlotTime", () => {
 });
 
 describe("dueCatchUps", () => {
-  const lastOk = (credit: string | null, reservations: string | null, summary: string | null) => ({
+  const lastOk = (credit: string | null, reservations: string | null, summary: string | null, approvals: string | null = "2026-10-28T13:00:05Z", probe: string | null = "2026-10-28T13:00:09Z") => ({
     "credit-expiry": credit ? d(credit) : null,
     "payment-plan-reservations": reservations ? d(reservations) : null,
     "admin-daily-summary": summary ? d(summary) : null,
+    "auto-approvals": approvals ? d(approvals) : null,
+    "mail-chain-probe": probe ? d(probe) : null,
   });
 
   it("catches up exactly the three that were missed (the Oct 28 gap)", () => {
     const due = dueCatchUps(d("2026-10-28T18:59:00Z"), lastOk("2026-10-27T09:00:04Z", "2026-10-27T09:30:03Z", "2026-10-27T12:00:02Z"));
     expect(due.map((x) => x.name)).toEqual(["credit-expiry", "payment-plan-reservations", "admin-daily-summary"]);
+  });
+
+  it("also catches up the two 13:00 UTC jobs the scheduler missed by five minutes", () => {
+    const due = dueCatchUps(d("2026-10-28T19:20:00Z"), lastOk("2026-10-28T09:00:04Z", "2026-10-28T09:30:03Z", "2026-10-28T12:00:02Z", "2026-10-27T13:00:05Z", "2026-10-27T13:00:09Z"));
+    expect(due.map((x) => x.name)).toEqual(["auto-approvals", "mail-chain-probe"]);
   });
 
   it("does nothing for a job that already ran since its slot", () => {

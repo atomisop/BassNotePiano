@@ -15,6 +15,9 @@ export const CATCH_UP_SLOTS: DailySlot[] = [
   { name: "credit-expiry", hourUtc: 9, minuteUtc: 0 },
   { name: "payment-plan-reservations", hourUtc: 9, minuteUtc: 30 },
   { name: "admin-daily-summary", hourUtc: 12, minuteUtc: 0 },
+  // Both safe late: auto-approvals acts only on what is ready now (and nothing while the owner's switches are off); the probe sends one test email.
+  { name: "auto-approvals", hourUtc: 13, minuteUtc: 0 },
+  { name: "mail-chain-probe", hourUtc: 13, minuteUtc: 0 },
 ];
 
 /** The normal scheduler gets this long to run a job before the catch-up steps in, so the two never run the same job together. */
