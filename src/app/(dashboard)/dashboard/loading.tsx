@@ -3,7 +3,7 @@ import { WideLayout } from "@/components/layout/PageLayouts";
 
 /**
  * Mirrors Home in the order and widths it shows: the greeting; on phones one swipeable card with its dots, from md the band of cards (the
- * next step across, practice and next class two columns each, then the week and progress cards); then the Your learning tabs with the
+ * next step and practice, with next class, the week and progress in a right-hand column from xl); then the Your learning tabs with the
  * grid / list switch and the scale cards (one column on phones, up to four from xl) with the Show all button on phones.
  */
 export default function DashboardLoading() {
@@ -29,31 +29,48 @@ export default function DashboardLoading() {
             </div>
           </div>
 
-          <div className="hidden gap-3 md:grid md:grid-cols-2 lg:grid-cols-4">
-            <div className="glass-surface h-40 p-5 md:col-span-2 lg:col-span-4">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="mt-3 h-6 w-64" />
-              <Skeleton className="mt-3 h-4 w-full max-w-md" />
-              <Skeleton className="mt-5 h-11 w-44" />
+          {/* From xl: what to do on the left, next class, the week and progress stacked on the right (same as the real page). */}
+          <div className="hidden md:block xl:grid xl:grid-cols-[minmax(0,1fr)_21rem] xl:items-start xl:gap-6">
+            <div className="grid min-w-0 gap-3 md:grid-cols-2">
+              <div className="glass-surface h-40 p-5 md:col-span-2">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton delay={0.1} className="mt-3 h-6 w-64" />
+                <Skeleton delay={0.2} className="mt-3 h-4 w-full max-w-md" />
+                <Skeleton delay={0.3} className="mt-5 h-11 w-44 rounded-full" />
+              </div>
+              <div className="glass-surface h-44 p-5 md:col-span-2">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton delay={0.1} className="mt-3 h-6 w-56" />
+                <Skeleton delay={0.2} className="mt-4 h-2 w-full rounded-full" />
+                <Skeleton delay={0.3} className="mt-5 h-11 w-36 rounded-full" />
+              </div>
             </div>
-            <div className="glass-surface h-44 p-5 lg:col-span-2">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="mt-3 h-6 w-56" />
-              <Skeleton className="mt-4 h-2 w-full" />
-              <Skeleton className="mt-5 h-11 w-36" />
-            </div>
-            <div className="glass-surface h-44 p-5 lg:col-span-2">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="mt-3 h-6 w-40" />
-              <Skeleton className="mt-5 h-11 w-36" />
-            </div>
-            <div className="glass-surface h-32 p-5">
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="mt-3 h-7 w-24" />
-            </div>
-            <div className="glass-surface h-32 p-5">
-              <Skeleton className="h-3 w-20" />
-              <Skeleton className="mt-3 h-7 w-24" />
+            <div className="mt-3 grid gap-3 md:grid-cols-3 xl:mt-0 xl:grid-cols-1">
+              <div className="glass-surface h-32 p-5">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton delay={0.1} className="mt-3 h-6 w-32" />
+                <Skeleton delay={0.2} className="mt-4 h-9 w-28 rounded-full" />
+              </div>
+              <div className="glass-surface h-32 p-5">
+                <Skeleton className="h-3 w-20" />
+                <div className="mt-3 flex gap-2">
+                  {Array.from({ length: 7 }).map((_, i) => (
+                    <Skeleton key={i} delay={i * 0.06} className="h-8 w-8 rounded-full" />
+                  ))}
+                </div>
+                <Skeleton delay={0.3} className="mt-4 h-3 w-24" />
+              </div>
+              <div className="glass-surface h-44 p-5">
+                <Skeleton className="h-3 w-20" />
+                <div className="mt-3 flex items-center gap-4">
+                  <Skeleton className="h-20 w-20 shrink-0 rounded-full" />
+                  <div className="grid flex-1 grid-cols-2 gap-3">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <Skeleton key={i} delay={i * 0.08} className="h-8 w-full" />
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
