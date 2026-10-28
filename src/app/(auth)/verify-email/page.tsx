@@ -30,7 +30,10 @@ function VerifyEmailForm() {
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
   const [code, setCode] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  // Sign-up could not email the first code: say so up front and let them tap Resend, rather than wait for mail that was never sent.
+  const [error, setError] = useState<string | null>(
+    searchParams.get("sendFailed") === "1" ? "We couldn't email your code just now. Tap Resend below to try again." : null,
+  );
   const [submitting, setSubmitting] = useState(false);
   const [resent, setResent] = useState(false);
 

@@ -112,7 +112,9 @@ export async function POST(req: NextRequest) {
     }
     // Came in through a friend's link: remember who (the reward waits for their first paid 3 or 6 month plan). Never blocks sign-up.
     if (body?.ref) await attachReferral(user.id, body.ref);
-    await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
+    // The account exists either way. If the email could not be sent the screen says so and offers "Resend", instead of
+    // moving on to "enter your code" as if one were on its way.
+    const sent = await createAndSendCode({ email: user.email, userId: user.id, purpose: "EMAIL_VERIFY" });
     // Owner only (see ADMIN_NOTIFICATION_KINDS): who signed up, still unverified.
     // After the code goes out and never blocking: a failed alert must not leave
     // the account created but the person stuck without a code.
@@ -123,7 +125,7 @@ export async function POST(req: NextRequest) {
       emailCategory: "social",
       cta: { label: "View account", path: `/admin/users/${user.id}` },
     }).catch((err) => console.error("New account alert failed (non-blocking):", err));
-    return NextResponse.json(user, { status: 201 });
+    return NextResponse.json({ ...user, emailSent: sent.ok }, { status: 201 });
   } catch (err) {
     if (isPhoneConflict(err)) return NextResponse.json({ error: PHONE_TAKEN }, { status: 409 });
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
