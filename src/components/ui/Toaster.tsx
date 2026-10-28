@@ -60,11 +60,21 @@ type ToastExtras = {
   duration?: number | null;
 };
 
+/**
+ * Sileo only stretches into its gooey two-part shape (a small title pill with the body hanging below it, joined by a blob neck)
+ * when a toast has a body. A bare one-line toast stays a flat pill and never morphs. So a toast given only a message shows a
+ * short label in the pill and the message as the body; one given its own description keeps its own title.
+ */
+const PILL_LABEL = { success: "Done", error: "Something went wrong", warning: "Heads up", info: "Note" } as const;
+
+function withBody(kind: keyof typeof PILL_LABEL, title: string, description?: SileoOptions["description"]) {
+  return description ? { title, description } : { title: PILL_LABEL[kind], description: title };
+}
+
 function show(kind: "success" | "error" | "warning" | "info") {
   return (title: string, extras: ToastExtras = {}) =>
     sileo[kind]({
-      title,
-      description: extras.description,
+      ...withBody(kind, title, extras.description),
       duration: extras.duration,
       button: extras.action ? { title: extras.action.label, onClick: extras.action.onClick } : undefined,
     });
@@ -76,8 +86,7 @@ function show(kind: "success" | "error" | "warning" | "info") {
  */
 function undo(title: string, onUndo: () => void | Promise<void>, extras: Omit<ToastExtras, "action"> = {}) {
   return sileo.info({
-    title,
-    description: extras.description,
+    ...withBody("info", title, extras.description),
     duration: extras.duration ?? 6000,
     button: {
       title: "Undo",
@@ -100,12 +109,12 @@ async function run<T>(
   try {
     const value = await work;
     sileo.dismiss(id);
-    sileo.success({ title: typeof messages.success === "function" ? messages.success(value) : messages.success });
+    sileo.success(withBody("success", typeof messages.success === "function" ? messages.success(value) : messages.success));
     return value;
   } catch (err) {
     sileo.dismiss(id);
     const text = typeof messages.error === "function" ? messages.error(err) : (messages.error ?? "Something went wrong. Try again.");
-    sileo.error({ title: text });
+    sileo.error(withBody("error", text));
     throw err;
   }
 }
