@@ -4,7 +4,6 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { StudentNotesPanel } from "@/components/admin/StudentNotesPanel";
 import { AdminAttendanceQuickPanel } from "@/components/admin/AdminAttendanceQuickPanel";
 import { ProfileMenu } from "./ProfileMenu";
-import { AdminTopLink } from "./AdminTopLink";
 import { LiveClassesTopLink } from "./LiveClassesTopLink";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { AskAiButton } from "./AskAiButton";
@@ -103,7 +102,7 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
         {/* Buttons sit in one pressed-in tray so they read as raised keys set into the bar. */}
         <div className="flex items-center gap-1.5 rounded-2xl bg-neu-base p-1 shadow-pressed-low">
         <div className="hidden md:contents">
-        {isAdmin ? <AdminTopLink /> : <LiveClassesTopLink />}
+        {!isAdmin && <LiveClassesTopLink />}
         {/* Owner only. Quick Present/No-show from anywhere, by direct instruction, the
             full roster at Schedule → Attendance still exists for
             history/cancellation, this is just the fast path for the one
