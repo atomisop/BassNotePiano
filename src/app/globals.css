@@ -730,6 +730,17 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
+    overflow: clip;
+  }
+
+  /* The shell boxes (the fixed screen and the column beside the sidebar) must never move. `overflow: hidden` hides what spills out but
+     the box is still a scroll container: `scrollIntoView`, `focus()`, a text drag near an edge, find-in-page and anchors all scroll it
+     (a scrollIntoView on a lower card moved the shell 670px). The island then slid up under the top bar and left a gap under it.
+     `overflow: clip` clips the same way but is not scrollable at all, by anyone, so no caller can shift the shell. The first line is the
+     fallback for browsers without `clip` (Safari before 16). Only <main> scrolls. */
+  .shell-lock {
+    overflow: hidden;
+    overflow: clip;
   }
 
   /* iOS Safari's default tap-highlight, a translucent gray rectangle,

@@ -88,7 +88,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <MeStatusProvider initial={meStatus}>
     <PricingProvider pricing={pricing} personalDiscountPercent={personalDiscountPercent}>
     <WhatsNewProvider entry={LATEST_ENTRY} showInitially={showWhatsNew}>
-    <div data-surface="app" className="pad-safe-x fixed inset-0 flex overflow-hidden bg-ground">
+    <div data-surface="app" className="pad-safe-x shell-lock fixed inset-0 flex bg-ground">
       {/* No photographic backdrop behind the app shell, deliberately. The
           previous system wallpapered every authenticated page with a piano
           photo; on paper that reads as a smudge under the text rather than
@@ -111,7 +111,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           64px here by sitting in flow. This padding reserves that same
           64px so AnnouncementBanner/main start right below it instead of
           rendering underneath it. */}
-      <div className="app-shell-col flex min-w-0 flex-1 flex-col overflow-hidden pt-12 lg:pl-52">
+      <div className="app-shell-col shell-lock flex min-w-0 flex-1 flex-col pt-12 lg:pl-52">
         <TopBar isAdmin={isAdmin} isOwner={isOwner} />
         <AnnouncementBanner announcement={activeAnnouncement} />
         {/* pb-32 at every width (the bottom padding used to be overridden by md:py-10, which left only 40px under the last content on a desktop, so the always-on dock covered it), the floating AppDock now
