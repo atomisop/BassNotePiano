@@ -160,3 +160,52 @@ export function ShowCard({
     </div>
   );
 }
+
+/**
+ * One sideways card with a few short facts next to each other (next class, credits, today's practice), each a label, one big
+ * value and one line or action. Raised like the other cards; the facts are separated by pressed-in dividers, and a progress
+ * item shows a pressed-in track.
+ */
+export function StatusStrip({
+  items,
+}: {
+  items: {
+    label: string;
+    value: string;
+    sub?: string;
+    action?: Action;
+    /** 0 to 1: draws a progress track under the value. */
+    fraction?: number;
+  }[];
+}) {
+  return (
+    <section className="grid grid-cols-1 overflow-hidden rounded-3xl bg-neu-base shadow-raised-mid sm:grid-cols-3">
+      {items.map((it, i) => (
+        <div key={it.label} className={cn("flex min-w-0 flex-col justify-between gap-2 p-4 sm:p-5", i > 0 && "border-t border-(--neu-edge) sm:border-l sm:border-t-0")}>
+          <div className="min-w-0">
+            <p className="text-small text-slate-400">{it.label}</p>
+            <p className="mt-1 truncate text-body font-semibold text-slate-50 sm:text-lg">{it.value}</p>
+            {it.fraction !== undefined && (
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-neu-base shadow-pressed-low" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(Math.min(1, it.fraction) * 100)} aria-label={it.label}>
+                <div className="h-full rounded-full bg-signal transition-all" style={{ width: `${Math.max(0, Math.min(100, Math.round(it.fraction * 100)))}%` }} />
+              </div>
+            )}
+            {it.sub && <p className="mt-1.5 truncate text-small text-slate-500">{it.sub}</p>}
+          </div>
+          {it.action &&
+            (it.action.external ? (
+              <a href={it.action.href} target="_blank" rel="noopener noreferrer" className="tap inline-flex w-fit items-center gap-1 rounded-full bg-neu-base px-3 py-1 text-small font-semibold text-slate-100 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low">
+                {it.action.label}
+                <ArrowRight aria-hidden className="h-3.5 w-3.5" />
+              </a>
+            ) : (
+              <Link href={it.action.href} className="tap inline-flex w-fit items-center gap-1 rounded-full bg-neu-base px-3 py-1 text-small font-semibold text-slate-100 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low">
+                {it.action.label}
+                <ArrowRight aria-hidden className="h-3.5 w-3.5" />
+              </Link>
+            ))}
+        </div>
+      ))}
+    </section>
+  );
+}
