@@ -63,6 +63,8 @@ export function StudentScheduler(props: StudentSchedulerProps) {
   const [day, setDay] = useState<string | null>(null);
   const [ownTime, setOwnTime] = useState("");
   const [bookDay, setBookDay] = useState<string | null>(null);
+  // A typed time is not one of the weekly times, so moving there creates a new one-off time: ask first.
+  const [confirmNew, setConfirmNew] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [canceling, setCanceling] = useState<SchedulerBooking | null>(null);
@@ -101,6 +103,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
     setPicked(null);
     setDay(null);
     setOwnTime("");
+    setConfirmNew(false);
     setError(null);
   }
 
@@ -108,6 +111,10 @@ export function StudentScheduler(props: StudentSchedulerProps) {
 
   async function doMove() {
     if (!moving || (!useOwn && !picked)) return;
+    if (useOwn && !confirmNew) {
+      setConfirmNew(true);
+      return;
+    }
     setBusy(true);
     setError(null);
     const result = useOwn ? await onMoveToTime(moving.id, day!, ownTime) : await onMove(moving.id, picked!.scheduleId, picked!.occurrenceDateMs, picked!.chunkIndex);
@@ -118,6 +125,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
     setPicked(null);
     setDay(null);
     setOwnTime("");
+    setConfirmNew(false);
     setSlots(null);
     router.refresh();
   }
@@ -241,16 +249,36 @@ export function StudentScheduler(props: StudentSchedulerProps) {
         description={moving ? `Now: ${formatEtShort(moving.scheduledAt)}` : undefined}
         footer={
           <div className="flex flex-wrap justify-end gap-2">
-            <Button type="button" variant="secondary" disabled={busy} onClick={closeMove}>
-              Never mind
-            </Button>
-            <Button type="button" disabled={(!useOwn && !picked) || busy} loading={busy} onClick={doMove}>
-              {useOwn ? `Move to ${day} at ${ownTime}` : picked ? `Move to ${formatEtShort(picked.scheduledAt)}` : "Pick a time"}
-            </Button>
+            {confirmNew ? (
+              <>
+                <Button type="button" variant="secondary" disabled={busy} onClick={() => setConfirmNew(false)}>
+                  Back
+                </Button>
+                <Button type="button" disabled={busy} loading={busy} onClick={doMove}>
+                  Yes, create it and move
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button type="button" variant="secondary" disabled={busy} onClick={closeMove}>
+                  Never mind
+                </Button>
+                <Button type="button" disabled={(!useOwn && !picked) || busy} loading={busy} onClick={doMove}>
+                  {useOwn ? `Move to ${day} at ${ownTime}` : picked ? `Move to ${formatEtShort(picked.scheduledAt)}` : "Pick a time"}
+                </Button>
+              </>
+            )}
           </div>
         }
       >
-        {slots === null ? (
+        {confirmNew ? (
+          <div className="rounded-xl border border-[rgb(var(--c-s-50)/0.35)] bg-[rgb(var(--c-s-50)/0.06)] p-4">
+            <p className="text-body font-semibold text-slate-50">This time does not exist yet</p>
+            <p className="mt-1 text-small text-slate-300">
+              {day} at {ownTime} is not one of your weekly times. Create it as a one-time slot and move {studentName} there?
+            </p>
+          </div>
+        ) : slots === null ? (
           <p className="text-small text-slate-500">Loading open times…</p>
         ) : (
           <SlotCalendarPicker slots={slotsReady} allowAnyDay day={day} onDay={setDay} picked={picked} onPick={setPicked} ownTime={ownTime} onOwnTime={setOwnTime} />

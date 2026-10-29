@@ -91,6 +91,7 @@ export function SlotCalendarPicker({
               </div>
             </>
           )}
+          {allowAnyDay && daySlots.length === 0 && <p className="mb-2 text-small text-slate-500">No weekly times that day. Type a start time to create one.</p>}
           {allowAnyDay && (
             <div className={daySlots.length > 0 ? "mt-3" : ""}>
               <p className="mb-1.5 flex items-center gap-1 text-small font-medium text-slate-200">
