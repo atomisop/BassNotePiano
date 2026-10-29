@@ -17,6 +17,7 @@ import {
   undoAttendanceAction,
   adminCancelBookingAction,
   adminMoveBookingAction,
+  adminMoveBookingToTimeAction,
   setClassInPersonAction,
   searchStudentsForBookingAction,
   adminBookClassAction,
@@ -153,6 +154,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
             onCancelBooking={adminCancelBookingAction}
             openSlots={openSlots}
             onMoveBooking={adminMoveBookingAction}
+            onMoveBookingToTime={adminMoveBookingToTimeAction}
             onSetInPerson={setClassInPersonAction}
             onUndoAttendance={undoAttendanceAction}
           />

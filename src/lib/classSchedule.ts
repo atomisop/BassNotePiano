@@ -261,6 +261,101 @@ export function classOccurrencesInWindow(schedule: { dayOfWeek: number; startTim
   return starts;
 }
 
+// ---------------------------------------------------------------------------
+// Custom-time moves (admin only): a class can be moved to ANY future date and
+// start time, as long as its 45 minutes do not overlap another class. The
+// booking still needs a schedule row, so the exact day and time gets a hidden
+// one-off schedule (inactive, labelled ONE_OFF_LABEL), never shown as a weekly
+// slot. Back-to-back classes are fine; only an overlap is refused.
+// ---------------------------------------------------------------------------
+
+export const ONE_OFF_LABEL = "One-off";
+
+/** "YYYY-MM-DD" and "HH:mm" as ET wall-clock values, or null when they are not a real date and time. */
+export function parseCustomTime(date: string, time: string): { occurrenceDate: Date; scheduledAt: Date; startTime: string } | null {
+  const d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  const t = /^(\d{2}):(\d{2})$/.exec(time);
+  if (!d || !t) return null;
+  const [year, month, day, hour, minute] = [d[1], d[2], d[3], t[1], t[2]].map(Number);
+  const occurrenceDate = new Date(Date.UTC(year, month - 1, day));
+  if (occurrenceDate.getUTCMonth() !== month - 1 || occurrenceDate.getUTCDate() !== day) return null;
+  if (hour > 23 || minute > 59) return null;
+  return { occurrenceDate, scheduledAt: etWallTimeToUtc(year, month, day, hour, minute), startTime: time };
+}
+
+/** True when two classes starting at these instants would overlap (touching end to start does not). */
+export function classesOverlap(a: Date, b: Date): boolean {
+  return Math.abs(a.getTime() - b.getTime()) < CLASS_MINUTES * 60_000;
+}
+
+/** The hidden one-off schedule for this exact day-of-week and start time, made on first use. */
+async function oneOffScheduleFor(tx: Prisma.TransactionClient, occurrenceDate: Date, startTime: string) {
+  const dayOfWeek = occurrenceDate.getUTCDay();
+  const found = await tx.classSchedule.findFirst({ where: { label: ONE_OFF_LABEL, active: false, dayOfWeek, startTime, durationMin: CLASS_MINUTES } });
+  if (found) return found;
+  const chunk = chunksForSchedule({ durationMin: CLASS_MINUTES })[0];
+  return tx.classSchedule.create({ data: { dayOfWeek, startTime, durationMin: CLASS_MINUTES, creditCost: chunk.creditCost, label: ONE_OFF_LABEL, active: false } });
+}
+
+/** Another student's class on a custom (one-off) time that overlaps this start, or null. Weekly slots are guarded by their own exact-time checks. */
+async function oneOffOverlap(tx: Prisma.TransactionClient, scheduledAt: Date, studentId: string, excludeBookingId?: string) {
+  const span = CLASS_MINUTES * 60_000;
+  return tx.classBooking.findFirst({
+    where: {
+      status: "SCHEDULED",
+      studentId: { not: studentId },
+      ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
+      schedule: { label: ONE_OFF_LABEL },
+      scheduledAt: { gt: new Date(scheduledAt.getTime() - span), lt: new Date(scheduledAt.getTime() + span) },
+    },
+    select: { id: true },
+  });
+}
+
+/**
+ * Refuses a custom time that overlaps any other class, an owner reservation held for someone else, or another student's
+ * payment-plan weekly time. Same-student classes count too (one student cannot be in two places).
+ */
+async function assertCustomTimeFree(tx: Prisma.TransactionClient, studentId: string, scheduledAt: Date, occurrenceDate: Date, excludeBookingId: string) {
+  const span = CLASS_MINUTES * 60_000;
+  const clash = await tx.classBooking.findFirst({
+    where: {
+      status: "SCHEDULED",
+      id: { not: excludeBookingId },
+      scheduledAt: { gt: new Date(scheduledAt.getTime() - span), lt: new Date(scheduledAt.getTime() + span) },
+    },
+    select: { scheduledAt: true },
+  });
+  if (clash) {
+    throw new ClassBookingError(`That overlaps a class at ${formatEtDateTime(clash.scheduledAt)}. Pick a time that does not touch it.`);
+  }
+
+  const reservations = await tx.ownerReservation.findMany({ where: { releasedAt: null, occurrenceDate }, include: { schedule: true } });
+  if (reservations.length > 0) {
+    const user = await tx.user.findUnique({ where: { id: studentId }, select: { email: true, emailVerified: true } });
+    for (const r of reservations) {
+      if (reservationIsFor(r.email, user)) continue;
+      const chunks = chunksForSchedule(r.schedule).filter((c) => r.chunkIndex === null || c.chunkIndex === r.chunkIndex);
+      if (chunks.some((c) => classesOverlap(computeScheduledAt(r.schedule, occurrenceDate, c), scheduledAt))) throw new ClassBookingError(OWNER_RESERVED_MESSAGE);
+    }
+  }
+
+  const plans = await tx.paymentPlan.findMany({
+    where: { userId: { not: studentId }, reservedScheduleId: { not: null }, OR: livePaymentPlanConditions() },
+    select: { reservedScheduleId: true, reservedChunkIndex: true },
+  });
+  if (plans.length > 0) {
+    const schedules = await tx.classSchedule.findMany({ where: { id: { in: plans.map((p) => p.reservedScheduleId as string) }, dayOfWeek: occurrenceDate.getUTCDay() } });
+    for (const plan of plans) {
+      const schedule = schedules.find((s) => s.id === plan.reservedScheduleId);
+      const chunk = schedule ? chunksForSchedule(schedule).find((c) => c.chunkIndex === plan.reservedChunkIndex) : undefined;
+      if (schedule && chunk && classesOverlap(computeScheduledAt(schedule, occurrenceDate, chunk), scheduledAt)) {
+        throw new ClassBookingError("This time is reserved for another student's payment plan.");
+      }
+    }
+  }
+}
+
 /** Every active weekly slot's next OCCURRENCES_PER_SLOT bookable chunks, with live availability. */
 /**
  * Pass `viewerId` for a screen shown to one student: a time the owner reserved for that student (their verified email matches)
@@ -317,6 +412,9 @@ export async function getUpcomingOccurrences(viewerId?: string): Promise<ClassOc
   const ownerReservations = await prisma.ownerReservation.findMany({
     where: { releasedAt: null, OR: candidates.map((c) => ({ scheduleId: c.schedule.id, occurrenceDate: c.occurrenceDate })) },
   });
+  const oneOffStarts = (
+    await prisma.classBooking.findMany({ where: { status: "SCHEDULED", scheduledAt: { gt: new Date(now) }, schedule: { label: ONE_OFF_LABEL } }, select: { scheduledAt: true } })
+  ).map((b) => b.scheduledAt);
   const bookedKeys = new Set(
     bookedCounts.filter((s) => s._count._all > 0).map((s) => `${s.scheduleId}:${s.occurrenceDate.getTime()}:${s.scheduledAt.getTime()}`),
   );
@@ -337,7 +435,7 @@ export async function getUpcomingOccurrences(viewerId?: string): Promise<ClassOc
         scheduledAt: c.scheduledAt,
         reservedByOwner: blocking.length > 0,
         reservedForYou: covering.length > 0 && blocking.length === 0,
-        isBooked: bookedKeys.has(`${c.schedule.id}:${c.occurrenceDate.getTime()}:${c.scheduledAt.getTime()}`) || blocking.length > 0,
+        isBooked: bookedKeys.has(`${c.schedule.id}:${c.occurrenceDate.getTime()}:${c.scheduledAt.getTime()}`) || blocking.length > 0 || oneOffStarts.some((at) => classesOverlap(at, c.scheduledAt)),
       };
     })
     .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
@@ -529,6 +627,7 @@ export async function bookClass(
         if (takenByAnyone && takenByAnyone.studentId !== studentId) {
           throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
         }
+        if (await oneOffOverlap(tx, scheduledAt, studentId)) throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
         if (await findOwnerReservation(tx, scheduleId, occurrenceDate, chunkIndex, studentId)) throw new ClassBookingError(OWNER_RESERVED_MESSAGE);
 
         // Defense-in-depth against a Payment Plan's own reserved slot,
@@ -1466,7 +1565,7 @@ export async function rescheduleClassBooking(
   newChunkIndex: number,
   newCreditsToBook?: number,
   /** byAdmin: the studio moves the class for the student. The student-facing switch, the cancellation cutoff, the booking-request mode and the weekly limit do not apply. */
-  options: { byAdmin?: boolean } = {},
+  options: { byAdmin?: boolean; /** Admin only: move to this exact ET date (YYYY-MM-DD) and start time (HH:mm) instead of a weekly slot. */ customTime?: { date: string; time: string } } = {},
 ) {
   const byAdmin = Boolean(options.byAdmin);
   const oldBooking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId } });
@@ -1485,9 +1584,11 @@ export async function rescheduleClassBooking(
     );
   }
 
-  const newSchedule = await prisma.classSchedule.findUniqueOrThrow({ where: { id: newScheduleId } });
-  if (!newSchedule.active) throw new ClassBookingError("This class is no longer offered.");
-  const chunk = chunksForSchedule(newSchedule)[newChunkIndex];
+  const custom = byAdmin && options.customTime ? parseCustomTime(options.customTime.date, options.customTime.time) : null;
+  if (byAdmin && options.customTime && !custom) throw new ClassBookingError("Pick a real date and time.");
+  const newSchedule = custom ? null : await prisma.classSchedule.findUniqueOrThrow({ where: { id: newScheduleId } });
+  if (newSchedule && !newSchedule.active) throw new ClassBookingError("This class is no longer offered.");
+  const chunk = custom ? chunksForSchedule({ durationMin: CLASS_MINUTES })[0] : chunksForSchedule(newSchedule!)[newChunkIndex];
   if (!chunk) throw new ClassBookingError("That time slot doesn't exist.");
 
   // One fixed class size, same as bookClass.
@@ -1496,14 +1597,14 @@ export async function rescheduleClassBooking(
     throw new ClassBookingError("Classes are 45 minutes. Please book a full class.");
   }
 
-  const newOccurrenceDate = new Date(newOccurrenceDateMs);
-  const newScheduledAt = computeScheduledAt(newSchedule, newOccurrenceDate, chunk);
+  const newOccurrenceDate = custom ? custom.occurrenceDate : new Date(newOccurrenceDateMs);
+  const newScheduledAt = custom ? custom.scheduledAt : computeScheduledAt(newSchedule!, newOccurrenceDate, chunk);
   if (newScheduledAt.getTime() <= Date.now()) {
     throw new ClassBookingError("That class has already started or passed.");
   }
   if (!byAdmin) await assertBookingAllowed(newScheduledAt);
   if (
-    newScheduleId === oldBooking.scheduleId &&
+    (custom || newScheduleId === oldBooking.scheduleId) &&
     newOccurrenceDate.getTime() === oldBooking.occurrenceDate.getTime() &&
     newScheduledAt.getTime() === oldBooking.scheduledAt.getTime()
   ) {
@@ -1520,20 +1621,29 @@ export async function rescheduleClassBooking(
   try {
     newBooking = await prisma.$transaction(
       async (tx) => {
-        const takenByAnyone = await tx.classBooking.findFirst({
-          where: { scheduleId: newScheduleId, occurrenceDate: newOccurrenceDate, scheduledAt: newScheduledAt, status: "SCHEDULED" },
-        });
-        if (takenByAnyone && takenByAnyone.studentId !== studentId) {
-          throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
-        }
-        if (await findOwnerReservation(tx, newScheduleId, newOccurrenceDate, newChunkIndex, studentId)) throw new ClassBookingError(OWNER_RESERVED_MESSAGE);
+        // A custom time lives on its own hidden one-off schedule and is checked by overlap; a weekly slot by its exact instant.
+        const targetScheduleId = custom ? (await oneOffScheduleFor(tx, newOccurrenceDate, custom.startTime)).id : newScheduleId;
+        if (custom) {
+          await assertCustomTimeFree(tx, studentId, newScheduledAt, newOccurrenceDate, oldBooking.id);
+        } else {
+          const takenByAnyone = await tx.classBooking.findFirst({
+            where: { scheduleId: newScheduleId, occurrenceDate: newOccurrenceDate, scheduledAt: newScheduledAt, status: "SCHEDULED" },
+          });
+          if (takenByAnyone && takenByAnyone.studentId !== studentId) {
+            throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
+          }
+          if (await oneOffOverlap(tx, newScheduledAt, studentId, oldBooking.id)) {
+            throw new ClassBookingError("This time was just booked by someone else. Pick another slot.");
+          }
+          if (await findOwnerReservation(tx, newScheduleId, newOccurrenceDate, newChunkIndex, studentId)) throw new ClassBookingError(OWNER_RESERVED_MESSAGE);
 
-        const reservedByOtherPlan = await tx.paymentPlan.findFirst({
-          where: { reservedScheduleId: newScheduleId, reservedChunkIndex: newChunkIndex, userId: { not: studentId }, OR: livePaymentPlanConditions() },
-          select: { id: true },
-        });
-        if (reservedByOtherPlan) {
-          throw new ClassBookingError("This time is reserved for another student's payment plan.");
+          const reservedByOtherPlan = await tx.paymentPlan.findFirst({
+            where: { reservedScheduleId: newScheduleId, reservedChunkIndex: newChunkIndex, userId: { not: studentId }, OR: livePaymentPlanConditions() },
+            select: { id: true },
+          });
+          if (reservedByOtherPlan) {
+            throw new ClassBookingError("This time is reserved for another student's payment plan.");
+          }
         }
 
         // Excludes both the target schedule (self-rebook idiom, same as
@@ -1544,7 +1654,7 @@ export async function rescheduleClassBooking(
             studentId,
             occurrenceDate: newOccurrenceDate,
             status: "SCHEDULED",
-            NOT: [{ scheduleId: newScheduleId }, { id: oldBooking.id }],
+            NOT: [{ scheduleId: targetScheduleId }, { id: oldBooking.id }],
           },
           select: { id: true },
         });
@@ -1582,7 +1692,7 @@ export async function rescheduleClassBooking(
         // canceling the old booking above just made this exact
         // (studentId, scheduleId, occurrenceDate) key available to reuse.
         const existingTarget = await tx.classBooking.findUnique({
-          where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId: newScheduleId, occurrenceDate: newOccurrenceDate } },
+          where: { studentId_scheduleId_occurrenceDate: { studentId, scheduleId: targetScheduleId, occurrenceDate: newOccurrenceDate } },
         });
 
         if (existingTarget) {
@@ -1604,7 +1714,7 @@ export async function rescheduleClassBooking(
         return tx.classBooking.create({
           data: {
             studentId,
-            scheduleId: newScheduleId,
+            scheduleId: targetScheduleId,
             occurrenceDate: newOccurrenceDate,
             scheduledAt: newScheduledAt,
             creditsSpent: credits,

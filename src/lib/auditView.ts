@@ -10,6 +10,7 @@ const LABELS: Record<string, string> = {
   "plan.cancel": "Canceled a plan",
   "plan.pause": "Paused a plan",
   "plan.move-time": "Moved a plan to a new weekly time",
+  "booking.move-custom": "Moved a class to a custom date and time",
   "reservation.create": "Reserved a time for a customer",
   "reservation.release": "Released a reservation",
   "calendar.reset": "Made a new calendar link",

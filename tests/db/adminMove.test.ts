@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/auth", () => ({ getServerAuthSession: async () => null, authOptions: {} }));
-import { ClassBookingError, computeScheduledAt, chunksForSchedule, rescheduleClassBooking } from "@/lib/classSchedule";
+import { ClassBookingError, computeScheduledAt, chunksForSchedule, rescheduleClassBooking, parseCustomTime, ONE_OFF_LABEL, classesOverlap } from "@/lib/classSchedule";
+import { getAllClassSchedules } from "@/lib/classScheduleManage";
 import { makeUser, newTag, prisma } from "./helpers";
 
 const tag = newTag("am");
@@ -81,5 +82,38 @@ describe("an admin moves a class in one step", () => {
       data: { studentId: stu.id, scheduleId: from.id, occurrenceDate: dateAt(-3), scheduledAt: new Date(Date.now() - 3 * day), creditsSpent: 2 },
     });
     await expect(rescheduleClassBooking(stu.id, past.id, to.id, target(15).ms, 0, undefined, { byAdmin: true })).rejects.toThrow(/already started/);
+  });
+
+  describe("to any date and time of the admin's choosing", () => {
+    const ymd = (daysAhead: number) => dateAt(daysAhead).toISOString().slice(0, 10);
+
+    it("moves a class far into the future on a time no weekly slot offers, and hides the one-off row from the weekly list", async () => {
+      const b = await bookingInside(24 * 40);
+      const moved = await rescheduleClassBooking(stu.id, b.id, "", 0, 0, undefined, { byAdmin: true, customTime: { date: ymd(200), time: "17:20" } });
+      expect(moved.scheduledAt.getTime()).toBe(parseCustomTime(ymd(200), "17:20")!.scheduledAt.getTime());
+      expect((await prisma.classBooking.findUniqueOrThrow({ where: { id: b.id } })).status).toBe("CANCELED");
+      const schedule = await prisma.classSchedule.findUniqueOrThrow({ where: { id: moved.scheduleId } });
+      expect(schedule.label).toBe(ONE_OFF_LABEL);
+      expect(schedule.active).toBe(false);
+      expect((await getAllClassSchedules()).some((x) => x.id === schedule.id)).toBe(false);
+    });
+
+    it("refuses a time that overlaps another class, allows one that only touches it", async () => {
+      const at = parseCustomTime(ymd(210), "10:00")!;
+      await prisma.classBooking.create({ data: { studentId: other.id, scheduleId: to.id, occurrenceDate: at.occurrenceDate, scheduledAt: at.scheduledAt, creditsSpent: 2 } });
+      const b = await bookingInside(24 * 41);
+      await expect(
+        rescheduleClassBooking(stu.id, b.id, "", 0, 0, undefined, { byAdmin: true, customTime: { date: ymd(210), time: "10:30" } }),
+      ).rejects.toThrow(/overlaps a class/);
+      expect((await prisma.classBooking.findUniqueOrThrow({ where: { id: b.id } })).status).toBe("SCHEDULED");
+      const moved = await rescheduleClassBooking(stu.id, b.id, "", 0, 0, undefined, { byAdmin: true, customTime: { date: ymd(210), time: "10:45" } });
+      expect(classesOverlap(moved.scheduledAt, at.scheduledAt)).toBe(false);
+    });
+
+    it("rejects a made-up date or a time in the past", async () => {
+      const b = await bookingInside(24 * 42);
+      await expect(rescheduleClassBooking(stu.id, b.id, "", 0, 0, undefined, { byAdmin: true, customTime: { date: "2026-02-31", time: "10:00" } })).rejects.toThrow(/real date/);
+      await expect(rescheduleClassBooking(stu.id, b.id, "", 0, 0, undefined, { byAdmin: true, customTime: { date: ymd(-2), time: "10:00" } })).rejects.toThrow(/already started/);
+    });
   });
 });

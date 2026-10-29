@@ -114,6 +114,20 @@ export async function adminMoveBookingAction(bookingId: string, scheduleId: stri
   }
 }
 
+/** Moves a class to any future date and start time (ET), as long as its 45 minutes overlap no other class. */
+export async function adminMoveBookingToTimeAction(bookingId: string, date: string, time: string) {
+  const admin = await requireAdmin();
+  try {
+    const booking = await prisma.classBooking.findUniqueOrThrow({ where: { id: bookingId }, select: { studentId: true } });
+    await rescheduleClassBooking(booking.studentId, bookingId, "", 0, 0, undefined, { byAdmin: true, customTime: { date, time } });
+    await logAudit({ actorId: admin.id, actorEmail: admin.email, action: "booking.move-custom", targetType: "ClassBooking", targetId: bookingId, detail: `${date} ${time} ET` });
+    revalidatePath("/", "layout");
+    return { ok: true as const };
+  } catch (err) {
+    return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
+  }
+}
+
 /** The Online / In person switch on the attendance list. In person means no Discord call for that class. */
 export async function setClassInPersonAction(bookingId: string, inPerson: boolean) {
   await requireAdmin();
