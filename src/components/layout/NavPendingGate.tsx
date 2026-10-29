@@ -15,6 +15,7 @@ export const NAV_PENDING_EVENT = "bnp-nav-pending";
 
 const SKELETONS: Record<string, () => ReactNode> = {
   "/dashboard": () => <DashboardLoading />,
+  "/roadmap": () => <DashboardLoading />,
   "/lessons": () => <LessonsLoading />,
   "/friends": () => <FriendsLoading />,
   "/messages": () => <MessagesLoading />,

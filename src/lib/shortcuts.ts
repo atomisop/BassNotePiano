@@ -11,6 +11,7 @@ export interface GoShortcut {
 
 export const GO_SHORTCUTS: GoShortcut[] = [
   { key: "h", href: "/dashboard", label: "Home" },
+  { key: "r", href: "/roadmap", label: "Roadmap" },
   { key: "p", href: "/practice", label: "Practice" },
   { key: "l", href: "/lessons", label: "Online lessons" },
   { key: "f", href: "/friends", label: "Friends" },

@@ -2390,3 +2390,7 @@ body:has([data-surface="app"]) .glass-surface-modal {
   fill: var(--dock-cut);
   stroke: var(--dock-cut);
 }
+.dock-icon-filled.lucide-map > :nth-child(n + 2) {
+  fill: none;
+  stroke: var(--dock-cut);
+}

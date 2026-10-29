@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Music2, CalendarCheck, Users, MessageSquare, User, Settings, Globe, ArrowUpRight, Search, Sun, Moon, type LucideIcon } from "lucide-react";
+import { Home, Map, Music2, CalendarCheck, Users, MessageSquare, User, Settings, Globe, ArrowUpRight, Search, Sun, Moon, type LucideIcon } from "lucide-react";
 import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { SidebarSpotlight } from "@/components/layout/SidebarSpotlight";
 import type { SidebarCard } from "@/lib/sidebarCards";
@@ -21,7 +21,8 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "Main menu",
     items: [
-      { href: "/dashboard", label: "Home", icon: Home, dataTour: "nav-roadmap", match: ["/scales"] },
+      { href: "/dashboard", label: "Home", icon: Home },
+      { href: "/roadmap", label: "Roadmap", icon: Map, dataTour: "nav-roadmap", match: ["/scales"] },
       { href: "/practice", label: "Practice", icon: Music2 },
       { href: "/lessons", label: "Online Lessons", icon: CalendarCheck, dataTour: "nav-lessons" },
     ],
@@ -29,7 +30,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "Community",
     items: [
-      { href: "/friends", label: "Friends", icon: Users, dataTour: "nav-friends" },
+      { href: "/friends", label: "Friends", icon: Users },
       { href: "/messages", label: "Messages", icon: MessageSquare, dataTour: "nav-messages" },
     ],
   },

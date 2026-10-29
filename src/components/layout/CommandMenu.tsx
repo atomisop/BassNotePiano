@@ -149,9 +149,13 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
         )}
 
         <CommandGroup heading="Go to">
-          <CommandItem value="dashboard roadmap home" onSelect={() => go("/dashboard")}>
-            Dashboard
+          <CommandItem value="home dashboard start" onSelect={() => go("/dashboard")}>
+            Home
             {hint("/dashboard")}
+          </CommandItem>
+          <CommandItem value="roadmap scales course curriculum" onSelect={() => go("/roadmap")}>
+            Roadmap
+            {hint("/roadmap")}
           </CommandItem>
           <CommandItem value="classes lessons booking discord zoom" onSelect={() => go("/lessons")}>
             Book a class

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
-import { Home, CalendarCheck, Users, MessageSquare, Settings, type LucideIcon } from "lucide-react";
+import { Home, Map, CalendarCheck, MessageSquare, Settings, type LucideIcon } from "lucide-react";
 import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { onChange } from "@/lib/liveEvents";
 import { SCROLL_TOP_EVENT } from "@/components/layout/ScrollAssist";
@@ -20,8 +20,8 @@ const POLL_INTERVAL_MS = 30_000;
 // instruction.
 const NAV_ICON: Record<string, LucideIcon> = {
   home: Home,
+  roadmap: Map,
   lessons: CalendarCheck,
-  friends: Users,
   messages: MessageSquare,
   settings: Settings,
 };
@@ -56,9 +56,9 @@ export interface AppDockProps {
 // instead of silently skipping almost every step (`findVisibleTarget`
 // treats a missing/invisible target as "skip this one").
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Home", icon: "home", dataTour: "nav-roadmap" },
+  { href: "/dashboard", label: "Home", icon: "home" },
+  { href: "/roadmap", label: "Roadmap", icon: "roadmap", dataTour: "nav-roadmap" },
   { href: "/lessons", label: "Online Lessons", icon: "lessons", dataTour: "nav-lessons" },
-  { href: "/friends", label: "Friends", icon: "friends", dataTour: "nav-friends" },
   { href: "/messages", label: "Messages", icon: "messages", dataTour: "nav-messages" },
   { href: "/account", label: "Settings", icon: "settings", dataTour: "nav-settings" },
 ] as const;
@@ -151,7 +151,9 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
         {/* Real refraction: the page bends at the rim like light through a water bottle, with only a touch of blur. */}
         <GlassLens radius="full" bezel={26} strength={30} magnify={0.5} blur={1.5} />
         {NAV_ITEMS.map((item) => {
-          const active = (pendingHref ?? pathname) === item.href;
+          const at = pendingHref ?? pathname;
+          // A scale's page belongs to the Roadmap tab.
+          const active = at === item.href || (item.href === "/roadmap" && at.startsWith("/scales/"));
           const current = pathname === item.href;
           const badge = item.href === "/messages" ? unreadMessageCount : 0;
           const Icon = NAV_ICON[item.icon];
