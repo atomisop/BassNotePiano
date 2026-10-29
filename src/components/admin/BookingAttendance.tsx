@@ -148,9 +148,6 @@ export function BookingAttendance({ bookingId, status, attendance, scheduledAt, 
       )}
 
       {!attendance && status === "SCHEDULED" && hasHappened && markButtons}
-      {!attendance && status === "SCHEDULED" && !hasHappened && (
-        <span className="inline-flex h-8 items-center rounded-lg px-2 text-small text-slate-500">Upcoming</span>
-      )}
     </div>
   );
 }
