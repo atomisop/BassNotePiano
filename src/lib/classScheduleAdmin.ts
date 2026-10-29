@@ -83,6 +83,7 @@ const ADMIN_ROSTER_WINDOW_DAYS = 60;
 
 export interface PendingAttendanceRow {
   bookingId: string;
+  studentId: string;
   studentName: string | null;
   studentEmail: string;
   scheduleLabel: string | null;
@@ -100,13 +101,14 @@ export interface PendingAttendanceRow {
 export async function getPendingAttendanceBookings(limit = 20): Promise<PendingAttendanceRow[]> {
   const bookings = await prisma.classBooking.findMany({
     where: { status: "SCHEDULED", scheduledAt: { lte: new Date() } },
-    include: { student: { select: { name: true, email: true } }, schedule: { select: { label: true } } },
+    include: { student: { select: { id: true, name: true, email: true } }, schedule: { select: { label: true } } },
     orderBy: { scheduledAt: "asc" },
     take: limit,
   });
 
   return bookings.map((b) => ({
     bookingId: b.id,
+    studentId: b.student.id,
     studentName: b.student.name,
     studentEmail: b.student.email,
     scheduleLabel: b.schedule.label,
@@ -132,7 +134,7 @@ export interface BookingFeedRow extends PendingAttendanceRow {
 export async function getBookingFeed(limit = 300): Promise<BookingFeedRow[]> {
   const bookings = await prisma.classBooking.findMany({
     where: { status: "SCHEDULED" },
-    include: { student: { select: { name: true, email: true } }, schedule: { select: { label: true } } },
+    include: { student: { select: { id: true, name: true, email: true } }, schedule: { select: { label: true } } },
     orderBy: { scheduledAt: "asc" },
     take: limit,
   });
@@ -141,6 +143,7 @@ export async function getBookingFeed(limit = 300): Promise<BookingFeedRow[]> {
     .filter((b) => b.scheduledAt.getTime() < weekEnd) // this week, plus any past class still waiting for an attendance call
     .map((b) => ({
     bookingId: b.id,
+    studentId: b.student.id,
     studentName: b.student.name,
     studentEmail: b.student.email,
     scheduleLabel: b.schedule.label,
@@ -173,6 +176,7 @@ export async function getBookingFeed(limit = 300): Promise<BookingFeedRow[]> {
     if (!upcoming) continue;
     rows.push({
       bookingId: `plan:${plan.id}`,
+      studentId: plan.userId,
       studentName: plan.user.name,
       studentEmail: plan.user.email,
       scheduleLabel: slot.label,

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { getReservableSlotsForChangeAction, changeReservedSlotAction, cancelClassBookingAction } from "../lessons/actions";
+import { getReservableSlotsForChangeAction, changeReservedSlotAction, cancelClassBookingAction } from "./actions";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { DISCORD_INVITE_URL } from "@/lib/discord";

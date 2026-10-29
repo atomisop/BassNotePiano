@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatDateTime } from "@/lib/classScheduleLabels";
+import { formatEtShort as formatDateTime } from "@/lib/classScheduleLabels";
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/Dialog";

@@ -13,6 +13,7 @@ import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/Tabs";
+import { formatEtShort } from "@/lib/classScheduleLabels";
 
 export interface CustomerProfileProps {
   profile: CustomerProfileData;
@@ -25,7 +26,6 @@ export interface CustomerProfileProps {
   onClearAssistantHistory: (userId: string) => Promise<void>;
   onSetRole: (userId: string, role: Role) => Promise<void>;
   onAdjustCredits: (userId: string, amount: number, reasonNote: string) => Promise<{ ok: true; balance: number } | { ok: false; error: string }>;
-  onCancelBooking: (bookingId: string, reason?: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   onForceSignOut: (userId: string) => Promise<void>;
   onForgetPayerName: (userId: string, aliasId: string) => Promise<void>;
   /** Frees this account's phone number (a number belongs to one account). */
@@ -44,7 +44,7 @@ function formatDate(d: Date | string) {
 }
 
 function formatDateTime(d: Date | string) {
-  return new Date(d).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return formatEtShort(d, { weekday: false });
 }
 
 function SectionCard({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
@@ -145,7 +145,6 @@ export function CustomerProfile({
   onClearAssistantHistory,
   onSetRole,
   onAdjustCredits,
-  onCancelBooking,
   onForceSignOut,
   onForgetPayerName,
   onClearPhone,
@@ -180,8 +179,6 @@ export function CustomerProfile({
   // amount is easy to typo (wrong sign, extra digit) and was previously one
   // submit away from changing a real balance with nothing to double-check.
   const [creditConfirming, setCreditConfirming] = useState(false);
-  const [cancelingBookingId, setCancelingBookingId] = useState<string | null>(null);
-  const [cancelReason, setCancelReason] = useState("");
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const [confirmingBan, setConfirmingBan] = useState(false);
   const [banReason, setBanReason] = useState("");
@@ -244,21 +241,6 @@ export function CustomerProfile({
     router.refresh();
   }
 
-  async function handleCancelBooking(bookingId: string) {
-    setBusy(true);
-    setError(null);
-    const result = await onCancelBooking(bookingId, cancelReason.trim() || undefined);
-    if (!result.ok) {
-      setError(result.error);
-      setBusy(false);
-      return;
-    }
-    setCancelingBookingId(null);
-    setCancelReason("");
-    setBusy(false);
-    router.refresh();
-  }
-
   async function handleBan() {
     setBusy(true);
     setError(null);
@@ -304,7 +286,6 @@ export function CustomerProfile({
     </button>
   );
 
-  const upcomingBookings = profile.bookings.filter((b) => b.status === "SCHEDULED");
   const pastBookings = profile.bookings.filter((b) => b.status !== "SCHEDULED");
 
   return (

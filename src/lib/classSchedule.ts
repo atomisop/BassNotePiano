@@ -1072,6 +1072,7 @@ export async function bookFamilyClass(
       async (tx) => {
         const takenByAnyone = await tx.classBooking.findFirst({ where: { scheduleId, occurrenceDate, scheduledAt, status: "SCHEDULED" } });
         if (takenByAnyone) throw new ClassBookingError("This time was just booked. Pick another slot.");
+        if (await oneOffOverlap(tx, scheduledAt, "")) throw new ClassBookingError("This time was just booked. Pick another slot.");
         if (await findOwnerReservation(tx, scheduleId, occurrenceDate, chunkIndex)) throw new ClassBookingError(OWNER_RESERVED_MESSAGE);
 
         // Same defense-in-depth as bookClass's own guard (see its comment),

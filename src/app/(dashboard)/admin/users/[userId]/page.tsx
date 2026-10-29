@@ -123,7 +123,6 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
           onClearAssistantHistory={clearAssistantHistoryAction}
           onSetRole={setUserRoleAction}
           onAdjustCredits={adjustUserCreditsAction}
-          onCancelBooking={adminCancelBookingAction}
           onForceSignOut={adminForceSignOutAction}
           onForgetPayerName={forgetPayerNameAction}
           onClearPhone={adminClearPhoneAction}

@@ -4,8 +4,6 @@ import { getAdminOccurrences } from "@/lib/classScheduleAdmin";
 import { getAllClassSchedules, countUpcomingBookingsBySchedule } from "@/lib/classScheduleManage";
 import { AdminScheduleManager } from "@/components/admin/AdminScheduleManager";
 import { AdminAttendanceRoster } from "@/components/admin/AdminAttendanceRoster";
-import { AdminAttendanceByStudent } from "@/components/admin/AdminAttendanceByStudent";
-import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 import { teacherCalendarToken } from "@/lib/teacherCalendar";
 import {
   createClassScheduleAction,
@@ -13,7 +11,6 @@ import {
   setClassScheduleActiveAction,
   markAttendanceAction,
   undoAttendanceAction,
-  adminCancelBookingAction,
   setClassInPersonAction,
 } from "./actions";
 import { buttonVariants } from "@/components/ui/button";
@@ -37,7 +34,7 @@ const VIEWS: { label: string; value: ViewValue }[] = [
 
 export const metadata = { title: "Admin: Schedule" };
 
-export default async function AdminSchedulePage(props: { searchParams: Promise<{ view?: string; group?: string }> }) {
+export default async function AdminSchedulePage(props: { searchParams: Promise<{ view?: string }> }) {
   const searchParams = await props.searchParams;
   const requested = searchParams.view?.toUpperCase();
   const activeView = VIEWS.find((v) => v.value === requested)?.value ?? "WINDOWS";
@@ -74,7 +71,6 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
   if (activeView === "ATTENDANCE") {
     const occurrences = await getAdminOccurrences();
-    const byStudent = searchParams.group === "student";
 
     return (
       <div>
@@ -83,22 +79,7 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
         {viewSwitcher}
 
-        <div className="mt-4">
-          <AdminFilterTabs
-            label="Group attendance by"
-            items={[
-              { label: "By class", href: "/admin/schedule?view=ATTENDANCE", active: !byStudent },
-              { label: "By student", href: "/admin/schedule?view=ATTENDANCE&group=student", active: byStudent },
-            ]}
-          />
-        </div>
-
         <div className="mt-6">
-          {byStudent ? (
-            <AdminAttendanceByStudent
-              occurrences={occurrences.map((o) => ({ scheduleId: o.scheduleId, label: o.label, scheduledAt: o.scheduledAt.toISOString(), roster: o.roster }))}
-            />
-          ) : (
           <AdminAttendanceRoster
             occurrences={occurrences.map((o) => ({
               scheduleId: o.scheduleId,
@@ -109,11 +90,9 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
               roster: o.roster,
             }))}
             onMarkAttendance={markAttendanceAction}
-            onCancelBooking={adminCancelBookingAction}
             onSetInPerson={setClassInPersonAction}
             onUndoAttendance={undoAttendanceAction}
           />
-          )}
         </div>
       </div>
     );

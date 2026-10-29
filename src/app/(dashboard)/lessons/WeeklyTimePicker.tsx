@@ -5,7 +5,7 @@ import type { ReservableSlot } from "@/lib/classSchedule";
 import { CLASS_MINUTES } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { SlideOverPanel } from "@/components/layout/SlideOverPanel";
-import { BookingCalendar } from "../lessons/BookingCalendar";
+import { BookingCalendar } from "./BookingCalendar";
 import { buttonVariants } from "@/components/ui/button";
 
 const DAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];

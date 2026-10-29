@@ -3,8 +3,9 @@
 import { creditsLabelFromStored } from "@/lib/classCreditPricing";
 import { Avatar as UiAvatar } from "@/components/ui/Avatar";
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
+import { formatEtShort as formatDateTime, formatEtEndTime as formatEndTime } from "@/lib/classScheduleLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants, Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -68,7 +69,6 @@ interface OccurrenceGroup {
 export interface AdminAttendanceRosterProps {
   occurrences: OccurrenceGroup[];
   onMarkAttendance: (bookingId: string, attendance: "PRESENT" | "NO_SHOW") => Promise<void>;
-  onCancelBooking: (bookingId: string, reason?: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   onUndoAttendance: (bookingId: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   /** The Online / In person switch: in person means no Discord call for that class. */
   onSetInPerson?: (bookingId: string, inPerson: boolean) => Promise<{ ok: true } | { ok: false; error: string }>;
@@ -78,10 +78,9 @@ function Avatar({ image, name }: { image: string | null; name: string }) {
   return <UiAvatar image={image} label={name} size="sm" className="h-9 w-9" />;
 }
 
-export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelBooking, onUndoAttendance, onSetInPerson }: AdminAttendanceRosterProps) {
+export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onUndoAttendance, onSetInPerson }: AdminAttendanceRosterProps) {
   const router = useRouter();
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [cancelingId, setCancelingId] = useState<string | null>(null);
   const [modeBusyId, setModeBusyId] = useState<string | null>(null);
   // What the switch shows while the change is being saved.
   const [modeShown, setModeShown] = useState<Record<string, boolean>>({});
@@ -125,23 +124,6 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
     }
   }
 
-  async function handleCancel(bookingId: string) {
-    setError(null);
-    setBusyId(bookingId);
-    try {
-      const result = await onCancelBooking(bookingId, reason.trim() || undefined);
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      setCancelingId(null);
-      setReason("");
-      router.refresh();
-    } finally {
-      setBusyId(null);
-    }
-  }
-
   if (occurrences.length === 0) {
     return <div className="glass-surface p-8 text-center text-small text-slate-500">No bookings in the last 60 days.</div>;
   }
@@ -178,7 +160,6 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                   </p>
                   <div className="space-y-2">
                     {group.entries.map((entry) => {
-                      const isCanceling = cancelingId === entry.bookingId;
                       const canCancel = entry.status === "SCHEDULED";
                       const canMarkAttendance = entry.status === "SCHEDULED" && hasHappened;
                       return (
@@ -311,7 +292,7 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                   </div>
                                 )}
                               </div>
-                            ) : isCanceling ? null : (
+                            ) : (
                               <div className="flex flex-wrap gap-2">
                                 {canMarkAttendance && (
                                   <>
@@ -339,60 +320,17 @@ export function AdminAttendanceRoster({ occurrences, onMarkAttendance, onCancelB
                                   </span>
                                 )}
                                 {canCancel && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setError(null);
-                                      setReason("");
-                                      setCancelingId(entry.bookingId);
-                                    }}
-                                    disabled={busyId === entry.bookingId}
+                                  <Link
+                                    href={`/admin/users/${entry.studentId}#scheduler`}
                                     className={buttonVariants({ variant: "secondary", size: "sm" })}
+                                    title="Move or cancel in this student's Scheduler"
                                   >
-                                    Cancel booking
-                                  </button>
+                                    Scheduler
+                                  </Link>
                                 )}
                               </div>
                             )}
                           </div>
-
-                          {isCanceling && (
-                            <div className="mt-3 space-y-2 border-t border-ink/10 pt-3">
-                              <p className="text-small text-slate-500">
-                                Cancel and refund {entry.studentName ?? "the student"}&apos;s credit?
-                              </p>
-                              <input
-                                type="text"
-                                autoFocus
-                                value={reason}
-                                onChange={(e) => setReason(e.target.value)}
-                                placeholder="Reason (optional, shown to the student)"
-                                className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-red-400/60"
-                              />
-                              <div className="flex gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setCancelingId(null);
-                                    setReason("");
-                                  }}
-                                  disabled={busyId === entry.bookingId}
-                                  className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-                                >
-                                  Never mind
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleCancel(entry.bookingId)}
-                                  disabled={busyId === entry.bookingId}
-                                  className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
-                                >
-                                  {busyId === entry.bookingId && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
-                                  {busyId === entry.bookingId ? "Canceling…" : "Confirm cancel & refund"}
-                                </button>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       );
                     })}
