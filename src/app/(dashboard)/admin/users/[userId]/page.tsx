@@ -4,8 +4,7 @@ import { getCustomerProfile } from "@/lib/adminCustomer";
 import { CustomerProfile } from "@/components/admin/CustomerProfile";
 import { setCurriculumAccessAction, toggleScaleUnlockAction, clearAssistantHistoryAction, setUserRoleAction } from "../actions";
 import { adjustUserCreditsAction } from "../../payments/credit-actions";
-import { adminCancelBookingAction, adminMoveBookingAction, adminMoveBookingToTimeAction, adminBookClassAction } from "../../schedule/actions";
-import { getUpcomingOccurrences } from "@/lib/classSchedule";
+import { adminCancelBookingAction, adminMoveBookingAction, adminMoveBookingToTimeAction, adminBookClassAction, getOpenSlotsAction, markAttendanceAction, undoAttendanceAction, setClassInPersonAction } from "../../schedule/actions";
 import { StudentScheduler } from "@/components/admin/StudentScheduler";
 import { adminClearPhoneAction, adminForceSignOutAction, banUserAction, forgetPayerNameAction, unbanUserAction } from "./actions";
 import { BackLink } from "@/components/ui/BackLink";
@@ -27,25 +26,18 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
 
   // The at-a-glance strip and the change log: the first questions after "who is this?" are plan, credits, next class,
   // Discord, last seen, and what an admin already changed on the account.
-  const [plan, discord, changes, openOccurrences] = await Promise.all([
+  const [plan, discord, changes] = await Promise.all([
     prisma.paymentPlan.findFirst({ where: { userId: params.userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, select: { id: true, cadence: true, term: true, nextDueDate: true, familyGroupId: true, pausedAt: true, pauseUntil: true, reservedScheduleId: true } }),
     prisma.user.findUnique({ where: { id: params.userId }, select: { discordId: true, discordUsername: true } }),
     prisma.auditLog.findMany({ where: { targetId: params.userId }, orderBy: { createdAt: "desc" }, take: 8 }),
-    getUpcomingOccurrences(),
   ]);
   const nextBooking = profile.bookings.filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > Date.now()).sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())[0];
   const planPaused = plan ? isPausedNow(plan, new Date()) : false;
-  const upcoming = profile.bookings
-    .filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > Date.now())
-    .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
-  const openSlots = openOccurrences
-    .filter((o) => !o.isBooked)
-    .map((o) => ({ scheduleId: o.scheduleId, occurrenceDateMs: o.occurrenceDate.getTime(), chunkIndex: o.chunkIndex, label: o.label, scheduledAt: o.scheduledAt.toISOString(), creditCost: o.creditCost }));
   const planControls =
     plan && !plan.familyGroupId ? (
       <>
-        <AdminPausePlanButton planId={plan.id} state={{ paused: planPaused, until: plan.pauseUntil && !isIndefinitePause(plan) ? plan.pauseUntil.toISOString() : null }} />
-        {plan.reservedScheduleId && <AdminMovePlanTimeButton planId={plan.id} />}
+        <AdminPausePlanButton planId={plan.id} state={{ paused: planPaused, until: plan.pauseUntil && !isIndefinitePause(plan) ? plan.pauseUntil.toISOString() : null }} compact />
+        {plan.reservedScheduleId && <AdminMovePlanTimeButton planId={plan.id} compact />}
       </>
     ) : null;
   const facts: { label: string; value: string; warn?: boolean; extra?: ReactNode }[] = [
@@ -86,13 +78,16 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
             <StudentScheduler
               studentId={params.userId}
               studentName={profile.user.name ?? profile.user.email}
-              upcoming={upcoming.map((b) => ({ id: b.id, label: b.schedule.label, scheduledAt: b.scheduledAt.toISOString(), creditsSpent: b.creditsSpent }))}
-              openSlots={openSlots}
+              bookings={profile.bookings.map((b) => ({ id: b.id, label: b.schedule.label, scheduledAt: b.scheduledAt.toISOString(), creditsSpent: b.creditsSpent, status: b.status, attendance: b.attendance, inPerson: b.inPerson }))}
+              loadOpenSlots={getOpenSlotsAction}
               planControls={planControls}
               onMove={adminMoveBookingAction}
               onMoveToTime={adminMoveBookingToTimeAction}
               onCancel={adminCancelBookingAction}
               onBook={adminBookClassAction}
+              onMark={markAttendanceAction}
+              onUndo={undoAttendanceAction}
+              onSetInPerson={setClassInPersonAction}
             />
           }
           changeLog={

@@ -10,6 +10,7 @@ import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { isIndefinitePause, isPausedNow } from "@/lib/planPause";
+import { ViewMore } from "@/components/ui/ViewMore";
 
 export interface PaymentPlanListProps {
   plans: AdminPaymentPlan[];
@@ -124,7 +125,8 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
       <AdminListSearch value={query} onChange={setQuery} placeholder="Search student, plan, status" shown={shown.length} total={plans.length} />
       {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
       {recordError && <p className="text-small text-red-400">{recordError}</p>}
-      {shown.map((plan) => (
+      <ViewMore items={shown} initial={8}>
+      {(plan) => (
         <div key={plan.id} className="glass-surface p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -292,7 +294,8 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
               </div>
             ))}
         </div>
-      ))}
+      )}
+      </ViewMore>
     </div>
   );
 }

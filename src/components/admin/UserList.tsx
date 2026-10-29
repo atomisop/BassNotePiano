@@ -8,6 +8,7 @@ import { AdminListSearch } from "@/components/admin/AdminListSearch";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
+import { ViewMore } from "@/components/ui/ViewMore";
 
 export interface UserListRow {
   id: string;
@@ -106,7 +107,8 @@ export function UserList({
         <p className="glass-surface p-8 text-center text-small text-slate-500">No one found.</p>
       ) : (
         <ul className="glass-surface divide-y divide-slate-50/10 px-4">
-          {rows.map((row) => (
+          <ViewMore items={rows} initial={15} step={20}>
+          {(row) => (
             <li key={row.id} className="flex items-center gap-2">
               <RowCheck checked={picked.has(row.id)} onChange={(on) => toggle(row.id, on)} label={`Select ${row.name ?? row.email}`} />
               <Link href={`/admin/users/${row.id}`} className="tap flex min-w-0 flex-1 items-center gap-3 py-3.5">
@@ -139,7 +141,8 @@ export function UserList({
                 </button>
               )}
             </li>
-          ))}
+          )}
+          </ViewMore>
         </ul>
       )}
     </div>

@@ -13,6 +13,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { BulkBar, RowCheck } from "@/components/admin/BulkBar";
 import { toast } from "@/components/ui/Toaster";
+import { ViewMore } from "@/components/ui/ViewMore";
 
 export interface PaymentQueueProps {
   payments: PendingZellePayment[];
@@ -273,7 +274,8 @@ export function PaymentQueue({
         ]}
         extra={pickedList.length > 0 && pickedPending.length !== pickedList.length && pickedUnchecked.length !== pickedList.length ? <span className="text-small text-slate-500">Pick only one kind to act on them together.</span> : null}
       />
-      {shown.map((payment) => {
+      <ViewMore items={shown} initial={8}>
+      {(payment) => {
         const { eyebrow, title } = describePayment(payment);
         return (
         <div key={payment.id} className="glass-surface p-5">
@@ -542,7 +544,8 @@ export function PaymentQueue({
             ))}
         </div>
         );
-      })}
+      }}
+      </ViewMore>
     </div>
   );
 }

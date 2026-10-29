@@ -6,6 +6,7 @@ import type { AssistantEscalationStatus, SupportThreadSource } from "@prisma/cli
 import { getSupportThreadsAction, type AdminThreadSummary } from "@/app/(dashboard)/admin/support/actions";
 import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
+import { ViewMore } from "@/components/ui/ViewMore";
 
 const LIST_POLL_MS = 15_000;
 
@@ -109,9 +110,11 @@ export function SupportThreadList({ initialThreads, source, filter, currentAdmin
         <div className="glass-surface p-8 text-center text-small text-slate-500">{emptyMessage}</div>
       ) : (
         <div className="glass-surface divide-y divide-ink/10 overflow-hidden">
-          {threads.map((thread) => (
+          <ViewMore items={threads} initial={12} step={20}>
+          {(thread) => (
             <ThreadRow key={thread.id} thread={thread} href={hrefFor(thread)} currentAdminId={currentAdminId} />
-          ))}
+          )}
+          </ViewMore>
         </div>
       )}
     </div>

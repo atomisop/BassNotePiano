@@ -9,6 +9,7 @@ import type { AdminClassRegistration } from "@/lib/classRegistration";
 import { INSTRUMENT_LABEL, SKILL_LABEL } from "@/lib/classRegistrationLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { ViewMore } from "@/components/ui/ViewMore";
 
 export interface StudentQueueProps {
   registrations: AdminClassRegistration[];
@@ -77,7 +78,8 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
     <div className="space-y-3">
       <AdminListSearch value={query} onChange={setQuery} placeholder="Search name, email, instrument" shown={shown.length} total={registrations.length} />
       {shown.length === 0 && <p className="text-small text-slate-400">Nothing matches that search.</p>}
-      {shown.map((reg) => (
+      <ViewMore items={shown} initial={8}>
+      {(reg) => (
         <div key={reg.id} className="glass-surface p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-start gap-3">
@@ -197,7 +199,8 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
             </div>
           )}
         </div>
-      ))}
+      )}
+      </ViewMore>
     </div>
   );
 }

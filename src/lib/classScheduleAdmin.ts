@@ -203,7 +203,9 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
   // One roadmap lookup per distinct student, not per booking row, the same
   // student can appear across several occurrences inside the window, and
   // their curriculum progress doesn't change from one row to the next.
-  const studentIds = Array.from(new Set(bookings.map((b) => b.student.id)));
+  // Only classes still waiting for an attendance call show where the student is in the curriculum, so the many
+  // already-marked classes in the 60-day window cost no roadmap lookup at all (this was most of the page's load time).
+  const studentIds = Array.from(new Set(bookings.filter((b) => b.status === "SCHEDULED" && !b.attendance).map((b) => b.student.id)));
   const focusByStudent = new Map(
     await Promise.all(studentIds.map(async (id) => [id, summarizeFocus(await getRoadmap(id))] as const)),
   );
@@ -238,7 +240,7 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
       creditsSpent: b.creditsSpent,
       inPerson: b.inPerson,
       familyBookingGroupId: b.familyBookingGroupId,
-      focus: focusByStudent.get(b.student.id)!,
+      focus: focusByStudent.get(b.student.id) ?? { scaleOrder: null, scaleLabel: "", action: "" },
     });
   }
 

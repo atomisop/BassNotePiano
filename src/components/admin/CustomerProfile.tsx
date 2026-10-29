@@ -14,6 +14,7 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/Tabs";
 import { formatEtShort } from "@/lib/classScheduleLabels";
+import { ViewMore } from "@/components/ui/ViewMore";
 
 export interface CustomerProfileProps {
   profile: CustomerProfileData;
@@ -286,7 +287,6 @@ export function CustomerProfile({
     </button>
   );
 
-  const pastBookings = profile.bookings.filter((b) => b.status !== "SCHEDULED");
 
   return (
     <div className="space-y-5">
@@ -609,34 +609,6 @@ export function CustomerProfile({
               </div>
             )}
             {creditSuccess && <p className="mt-2 text-small text-slate-50">{creditSuccess}</p>}
-
-            {pastBookings.length > 0 && (
-              <div className="mt-5 border-t border-ink/10 pt-4">
-                <p className="text-small font-medium uppercase tracking-wide text-slate-500">Past bookings</p>
-                <div className="mt-2 space-y-1.5">
-                  {pastBookings.slice(0, 8).map((b) => (
-                    <div key={b.id} className="flex items-center justify-between gap-2 text-small">
-                      <span className="text-slate-400">
-                        {b.schedule.label ?? "Class"} · {formatDateTime(b.scheduledAt)}
-                      </span>
-                      <span
-                        className={
-                          b.status === "CANCELED"
-                            ? "text-red-400"
-                            : b.attendance === "PRESENT"
-                              ? "text-slate-50"
-                              : b.attendance === "NO_SHOW"
-                                ? "text-red-400"
-                                : "text-slate-500"
-                        }
-                      >
-                        {b.status === "CANCELED" ? "Canceled" : b.attendance ?? "Completed"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </SectionCard>
 
         </div>
@@ -650,7 +622,8 @@ export function CustomerProfile({
           <SectionCard title="Payment history">
             {profile.payments.length === 0 && <Empty>No payments submitted.</Empty>}
             <div className="space-y-2">
-              {profile.payments.map((p) => (
+              <ViewMore items={profile.payments} initial={4}>
+              {(p) => (
                 <div key={p.id} className="flex items-center justify-between gap-3 rounded-xl p-3 text-small bg-neu-base shadow-raised-low">
                   <div>
                     <p className="text-slate-100">
@@ -673,7 +646,8 @@ export function CustomerProfile({
                     {p.status.replace(/_/g, " ").toLowerCase()}
                   </span>
                 </div>
-              ))}
+              )}
+              </ViewMore>
             </div>
           </SectionCard>
 
@@ -738,14 +712,16 @@ export function CustomerProfile({
           {/* Activity timeline */}
           <SectionCard title="Activity">
             {profile.timeline.length === 0 && <Empty>Nothing recorded yet.</Empty>}
-            <div className="max-h-[36rem] space-y-3 overflow-y-auto pr-1">
-              {profile.timeline.map((event, i) => (
+            <div className="space-y-3">
+              <ViewMore items={profile.timeline} initial={6}>
+              {(event, i) => (
                 <div key={i} className="border-l-2 border-ink/10 pl-3">
                   <p className="text-small text-slate-500">{formatDateTime(event.at)}</p>
                   <p className="text-small text-slate-200">{event.label}</p>
                   {event.detail && <p className="text-small text-slate-500">{event.detail}</p>}
                 </div>
-              ))}
+              )}
+              </ViewMore>
             </div>
           </SectionCard>
           {changeLog}

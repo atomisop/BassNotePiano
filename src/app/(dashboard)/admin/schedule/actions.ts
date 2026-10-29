@@ -10,7 +10,7 @@ import { checkBotSetup, createLingeringTestChannel, isGuildMember, TEST_CHANNEL_
 import { discordChannelUrl } from "@/lib/discord";
 import { prisma } from "@/lib/prisma";
 import { getNumberSetting } from "@/lib/siteSettings";
-import { adminBookClass, rescheduleClassBooking, ClassBookingError } from "@/lib/classSchedule";
+import { adminBookClass, rescheduleClassBooking, getUpcomingOccurrences, ClassBookingError } from "@/lib/classSchedule";
 import { markAttendance, undoAttendance, adminCancelClassBooking, setClassInPerson, getPendingAttendanceBookings, getBookingFeed, type PendingAttendanceRow, type BookingFeedRow } from "@/lib/classScheduleAdmin";
 import { createClassSchedule, updateClassSchedule, setClassScheduleActive, ClassScheduleError, type ClassScheduleInput } from "@/lib/classScheduleManage";
 import { searchStudentsForBooking, type BookableStudent } from "@/lib/admin";
@@ -99,6 +99,15 @@ export async function adminCancelBookingAction(bookingId: string, reason?: strin
   } catch (err) {
     return { ok: false as const, error: err instanceof ClassBookingError ? err.message : "Something went wrong." };
   }
+}
+
+/** The open weekly times (not yet booked, not reserved), for the Move and Book pickers. Fetched when a picker opens so the student page itself loads faster. */
+export async function getOpenSlotsAction() {
+  await requireAdmin();
+  const upcoming = await getUpcomingOccurrences();
+  return upcoming
+    .filter((o) => !o.isBooked)
+    .map((o) => ({ scheduleId: o.scheduleId, occurrenceDateMs: o.occurrenceDate.getTime(), chunkIndex: o.chunkIndex, label: o.label, scheduledAt: o.scheduledAt.toISOString(), creditCost: o.creditCost }));
 }
 
 /** Moves a student's class to another open time in one step: the old class is freed and the new one booked together, or nothing changes. */
