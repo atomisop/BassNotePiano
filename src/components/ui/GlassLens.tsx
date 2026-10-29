@@ -10,6 +10,8 @@ import { buildGlassMaps, type GlassMaps } from "@/lib/liquidGlassMaps";
  * glass without the bending: blur, tint and the glowing rim.
  */
 
+const disperse = (amount: number) => Math.max(0, Math.min(3, amount));
+
 function refractionSupported(): boolean {
   if (typeof navigator === "undefined") return false;
   const brands = (navigator as Navigator & { userAgentData?: { brands: { brand: string }[] } }).userAgentData?.brands;
@@ -42,7 +44,18 @@ export function GlassLens({
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   const [refract, setRefract] = useState(false);
 
-  useEffect(() => setRefract(refractionSupported()), []);
+  const [tokens, setTokens] = useState({ refraction: 1, dispersion: 1, blur: 1.5 });
+  useEffect(() => {
+    setRefract(refractionSupported());
+    // The look is set in one place (the --lg-* variables in globals.css, and "reduce transparency" switches the bending off).
+    const style = getComputedStyle(document.documentElement);
+    const num = (name: string, fallback: number) => {
+      const v = parseFloat(style.getPropertyValue(name));
+      return Number.isFinite(v) ? v : fallback;
+    };
+    const reduced = window.matchMedia("(prefers-reduced-transparency: reduce)").matches;
+    setTokens({ refraction: reduced ? 0 : num("--lg-refraction", 1), dispersion: reduced ? 0 : num("--lg-dispersion", 1), blur: num("--lg-blur", 1.5) });
+  }, []);
 
   useEffect(() => {
     const el = host.current;
@@ -71,10 +84,11 @@ export function GlassLens({
 
   useEffect(() => {
     if (!size) return;
-    setMaps(buildGlassMaps({ width: size.w, height: size.h, radius: r, bezel: bz, strength }));
-  }, [size, r, bz, strength]);
+    setMaps(buildGlassMaps({ width: size.w, height: size.h, radius: r, bezel: bz, strength: strength * tokens.refraction }));
+  }, [size, r, bz, strength, tokens.refraction]);
 
-  const body = refract && maps ? `url(#${id}) blur(${blur}px) saturate(1.7) brightness(1.1)` : "blur(14px) saturate(1.8) brightness(1.08)";
+  const body = refract && maps && tokens.refraction > 0 ? `url(#${id}) blur(${blur * (tokens.blur / 1.5)}px) saturate(1.7) brightness(1.1)` : "blur(14px) saturate(1.8) brightness(1.08)";
+  const split = disperse(tokens.dispersion);
 
   return (
     <div ref={host} aria-hidden className={`pointer-events-none absolute inset-0 ${className}`} style={{ borderRadius: r || undefined }}>
@@ -82,7 +96,15 @@ export function GlassLens({
         <svg width={size.w} height={size.h} className="absolute left-0 top-0" style={{ pointerEvents: "none" }} colorInterpolationFilters="sRGB">
           <filter id={id} filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" x={0} y={0} width={size.w} height={size.h} colorInterpolationFilters="sRGB">
             <feImage href={maps.displacement} x={0} y={0} width={size.w} height={size.h} preserveAspectRatio="none" result="map" />
-            <feDisplacementMap in="SourceGraphic" in2="map" scale={maps.scale} xChannelSelector="R" yChannelSelector="G" />
+            {/* Each color is bent by a slightly different amount, so the edge splits into a faint rainbow (dispersion), like real glass. */}
+            <feDisplacementMap in="SourceGraphic" in2="map" scale={maps.scale} xChannelSelector="R" yChannelSelector="G" result="dr" />
+            <feColorMatrix in="dr" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="r" />
+            <feDisplacementMap in="SourceGraphic" in2="map" scale={maps.scale * (1 + 0.035 * split)} xChannelSelector="R" yChannelSelector="G" result="dg" />
+            <feColorMatrix in="dg" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="g" />
+            <feDisplacementMap in="SourceGraphic" in2="map" scale={maps.scale * (1 + 0.075 * split)} xChannelSelector="R" yChannelSelector="G" result="db" />
+            <feColorMatrix in="db" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="b" />
+            <feBlend in="r" in2="g" mode="screen" result="rg" />
+            <feBlend in="rg" in2="b" mode="screen" />
           </filter>
         </svg>
       )}

@@ -1,5 +1,6 @@
 "use client";
 
+import { GlassSlider } from "@/components/ui/GlassSlider";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FileText, FileVideo, Minus, Plus } from "lucide-react";
 import type { CourseLessonWithProgress } from "@/lib/courseContent";
@@ -56,15 +57,7 @@ export function MetronomePanel({ metronome }: { metronome: Metronome }) {
             <Plus className="h-4 w-4" />
           </Button>
         </div>
-        <input
-          type="range"
-          min={METRONOME_MIN_BPM}
-          max={METRONOME_MAX_BPM}
-          value={bpm}
-          onChange={(e) => setBpm(Number(e.target.value))}
-          aria-label="Tempo in beats per minute"
-          className="mt-4 h-11 w-full cursor-pointer accent-[rgb(var(--signal))]"
-        />
+        <GlassSlider className="mt-4" min={METRONOME_MIN_BPM} max={METRONOME_MAX_BPM} value={bpm} onChange={(e) => setBpm(Number(e.target.value))} aria-label="Tempo in beats per minute" />
       </div>
 
       <Tabs

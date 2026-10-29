@@ -2194,3 +2194,39 @@ html[data-theme-fade] *::after {
     animation-name: cmd-scrim-in;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Liquid Glass tokens: change the whole look from here. Read by GlassLens (refraction, blur) and by the .liquid styles above.
+     --lg-refraction   how hard the glass bends what is behind it (1 = as built, 0 = flat)
+     --lg-dispersion   the faint rainbow split along the glass edge (0 = none)
+     --lg-blur         blur of what is behind the middle of the glass, in px
+     --lg-ring         the faint outer ring around pressed or active glass
+   --------------------------------------------------------------------------- */
+:root {
+  --lg-refraction: 1;
+  --lg-dispersion: 1;
+  --lg-blur: 1.5px;
+  --lg-ring: rgb(255 255 255 / 0.28);
+}
+[data-mode="light"] {
+  --lg-ring: rgb(120 200 255 / 0.5);
+}
+/* Active or pressed glass gets a faint outer ring, like the back button in Apple's own shots. */
+.lg-ring {
+  position: relative;
+}
+.lg-ring::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: inherit;
+  border: 1px solid var(--lg-ring);
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 260ms var(--ease-ios), transform 420ms var(--ease-spring);
+  pointer-events: none;
+}
+.lg-ring:is([data-lg-press], [aria-current="page"], [aria-checked="true"], [data-state="checked"])::before {
+  opacity: 1;
+  transform: scale(1);
+}

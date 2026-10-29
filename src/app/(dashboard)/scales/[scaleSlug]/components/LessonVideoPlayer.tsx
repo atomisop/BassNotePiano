@@ -1,5 +1,6 @@
 "use client";
 
+import { GlassSlider } from "@/components/ui/GlassSlider";
 import { useEffect, useRef, useState } from "react";
 import { Maximize, Minimize, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX } from "lucide-react";
 
@@ -188,16 +189,7 @@ export function LessonVideoPlayer({
 
       {/* Control bar */}
       <div className="space-y-2 bg-slate-950 px-4 py-3">
-        <input
-          type="range"
-          min={0}
-          max={duration || 0}
-          step={0.1}
-          value={currentTime}
-          onChange={handleScrub}
-          aria-label="Seek"
-          className="h-1.5 w-full cursor-pointer accent-[rgb(var(--c-s-50))]"
-        />
+        <GlassSlider min={0} max={duration || 0} step={0.1} value={currentTime} onChange={handleScrub} aria-label="Seek" />
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <button
@@ -239,16 +231,7 @@ export function LessonVideoPlayer({
               >
                 {muted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
               </button>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
-                value={muted ? 0 : volume}
-                onChange={handleVolumeChange}
-                aria-label="Volume"
-                className="h-1 w-16 cursor-pointer accent-[rgb(var(--c-s-50))]"
-              />
+              <GlassSlider min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={handleVolumeChange} aria-label="Volume" className="w-24" />
             </div>
             <button
               type="button"
