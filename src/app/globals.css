@@ -2280,104 +2280,86 @@ html[data-theme-fade] *::after {
 }
 
 /* ---------------------------------------------------------------------------
-   The glass material (replaces the old raised and pressed neumorphism inside the app).
-   Every card, panel, button and field still uses the same classes (bg-neu-base, shadow-raised-*, shadow-pressed-*, glass-surface*);
-   only what those mean changes here:
-     - bg-neu-base is see-through smoky glass (dark) or milky glass (light), --neu-alpha sets how much;
-     - "raised" is a glass edge: a hairline, a bright top rim and a soft drop shadow, no light-and-shade bevel;
-     - "pressed" is a glass well: a hairline and a faint inner shade;
-     - cards and panels blur what is behind them (--glass-blur), small controls do not (cheaper, and they sit on cards anyway).
+   The card material inside the app (replaces the old raised and pressed neumorphism): flat, solid cards on a plain page, the way a
+   modern phone app looks. No outlines, no bevel, no haze. Every card, panel, button and field still uses the same classes
+   (bg-neu-base, shadow-raised-*, shadow-pressed-*, glass-surface*); only what those mean changes here:
+     - the page is a soft near-black (dark) or light gray (light), cards are one solid step lighter (dark) or white (light);
+     - "raised" lays a faint wash over the fill, so a card inside a card is one more step lighter and still reads as its own box;
+     - "pressed" (fields, wells, a held control) lays a faint shade over the fill instead.
+   The washes are inset shadows wide enough to fill the box: they tint the background and never the content.
    --------------------------------------------------------------------------- */
 [data-surface="app"],
 body:has([data-surface="app"]) {
-  --glass-blur: 28px;
-  --glass-edge: rgb(255 255 255 / 0.11);
-  --glass-rim: rgb(255 255 255 / 0.1);
-  --glass-drop: rgb(0 0 0 / 0.45);
-  --glass-well: rgb(0 0 0 / 0.28);
-  /* On the plain ground there is little behind a card to show, so the glass carries most of its own body (about the old card gray). */
-  --neu-base: 27 27 30;
-  --neu-lift: 36 36 40;
-  --neu-alpha: 0.86;
-  --neu-hi: rgb(255 255 255 / 0.08);
-  --neu-lo: rgb(255 255 255 / 0.08);
-  --neu-raised-low: inset 0 0 0 1px var(--glass-edge), inset 0 1px 0 var(--glass-rim), 0 2px 6px -2px var(--glass-drop);
-  --neu-raised-mid: inset 0 0 0 1px var(--glass-edge), inset 0 1px 0 var(--glass-rim), 0 10px 30px -12px var(--glass-drop);
-  --neu-raised-high: inset 0 0 0 1px var(--glass-edge), inset 0 1px 0 var(--glass-rim), 0 22px 48px -16px var(--glass-drop);
+  /* Sampled from the owner's reference app: page #121212, cards #222121 (a soft gray, a touch see-through), dock #333. */
+  --ground: 18 18 18;
+  --neu-base: 28 27 27;
+  --neu-lift: 38 37 37;
+  --neu-alpha: 0.94;
+  --card-wash: rgb(255 255 255 / 0.035);
+  --card-shade: rgb(0 0 0 / 0.24);
+  --card-line: rgb(255 255 255 / 0.07);
+  --neu-hi: var(--card-line);
+  --neu-lo: var(--card-line);
+  --neu-raised-low: inset 0 0 0 100vmax var(--card-wash);
+  --neu-raised-mid: inset 0 0 0 100vmax var(--card-wash);
+  --neu-raised-high: inset 0 0 0 100vmax var(--card-wash), 0 18px 40px -18px rgb(0 0 0 / 0.6);
   --neu-float: var(--neu-raised-high);
-  --neu-pressed-low: inset 0 0 0 1px var(--glass-edge), inset 0 1px 3px var(--glass-well);
-  --neu-pressed-mid: inset 0 0 0 1px var(--glass-edge), inset 0 2px 6px var(--glass-well);
-  --neu-pressed-high: inset 0 0 0 1px var(--glass-edge), inset 0 3px 10px var(--glass-well);
+  --neu-pressed-low: inset 0 0 0 100vmax var(--card-shade);
+  --neu-pressed-mid: inset 0 0 0 100vmax var(--card-shade);
+  --neu-pressed-high: inset 0 0 0 100vmax var(--card-shade);
   --plane-mid-shadow: var(--neu-raised-mid);
   --plane-front-shadow: var(--neu-raised-high);
   --surface-bg: rgb(var(--neu-base) / var(--neu-alpha));
   --surface-shadow: var(--neu-raised-mid);
-  --surface-blur: var(--glass-blur);
+  --surface-blur: 0px;
   --subtle-bg: rgb(var(--neu-base) / var(--neu-alpha));
   --subtle-border: transparent;
   --subtle-shadow: var(--neu-pressed-low);
   --subtle-blur: 0px;
-  --elev-bg: rgb(var(--neu-lift) / calc(var(--neu-alpha) + 0.08));
+  --elev-bg: rgb(var(--neu-lift));
   --elev-shadow: var(--neu-raised-high);
-  --elev-blur: var(--glass-blur);
+  --elev-blur: 0px;
 }
 [data-mode="light"] [data-surface="app"],
 [data-mode="light"] body:has([data-surface="app"]) {
-  --glass-edge: rgb(255 255 255 / 0.7);
-  --glass-rim: rgb(255 255 255 / 0.9);
-  --glass-drop: rgb(60 60 90 / 0.22);
-  --glass-well: rgb(40 40 70 / 0.1);
+  --ground: 242 242 245;
   --neu-base: 255 255 255;
   --neu-lift: 255 255 255;
-  --neu-alpha: 0.78;
-  --neu-hi: rgb(0 0 0 / 0.06);
-  --neu-lo: rgb(0 0 0 / 0.06);
+  --neu-alpha: 1;
+  --card-wash: rgb(0 0 0 / 0.018);
+  --card-shade: rgb(0 0 0 / 0.045);
+  --card-line: rgb(0 0 0 / 0.07);
+  --neu-raised-high: inset 0 0 0 100vmax var(--card-wash), 0 16px 36px -18px rgb(30 30 60 / 0.25);
 }
-
-/* Cards and panels blur what is behind them. The blur is on a layer under the card's content (::before), never on the card itself:
-   a card with its own backdrop-filter walls in every glass button inside it, whose lens then sees only the card and turns gray.
-   Glass buttons with a real lens and the bars that carry their own lens are left alone. */
-:is([data-surface="app"], body:has([data-surface="app"]) > :not([data-surface]))
-  :is([class*="shadow-raised-mid"], [class*="shadow-raised-high"], [class*="shadow-float"], .glass-surface, .glass-surface-elevated, .glass-surface-modal):not(.lg-glass):not([data-glass]) {
-  isolation: isolate;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-:where(:is([data-surface="app"], body:has([data-surface="app"]) > :not([data-surface]))
-  :is([class*="shadow-raised-mid"], [class*="shadow-raised-high"], [class*="shadow-float"], .glass-surface, .glass-surface-elevated, .glass-surface-modal):not(.lg-glass):not([data-glass]):not(.absolute):not(.fixed):not(.sticky)) {
-  position: relative;
-}
-:is([data-surface="app"], body:has([data-surface="app"]) > :not([data-surface]))
-  :is([class*="shadow-raised-mid"], [class*="shadow-raised-high"], [class*="shadow-float"], .glass-surface, .glass-surface-elevated, .glass-surface-modal):not(.lg-glass):not([data-glass])::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  pointer-events: none;
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.6);
-  backdrop-filter: blur(var(--glass-blur)) saturate(1.6);
-}
-/* Dialogs and menus that open over the page stay readable: the same glass with more body. */
+/* Dialogs and menus that open over the page get a soft border so they stand off what is under them. */
 body:has([data-surface="app"]) .glass-surface-modal {
-  background: rgb(var(--neu-base) / calc(var(--neu-alpha) + 0.3));
-  border-color: var(--glass-edge);
+  border-color: var(--card-line);
 }
-/* Engraved grooves become plain glass hairlines. */
+/* Engraved grooves become plain hairlines. */
 [data-surface="app"] .neu-groove-t {
-  box-shadow: inset 0 1px 0 var(--glass-edge);
+  box-shadow: inset 0 1px 0 var(--card-line);
 }
 [data-surface="app"] .neu-groove-b {
-  box-shadow: inset 0 -1px 0 var(--glass-edge);
+  box-shadow: inset 0 -1px 0 var(--card-line);
 }
 [data-surface="app"] .neu-groove-r {
-  box-shadow: inset -1px 0 0 var(--glass-edge);
+  box-shadow: inset -1px 0 0 var(--card-line);
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  [data-surface="app"],
-  body:has([data-surface="app"]) {
-    --neu-alpha: 0.94;
-    --glass-blur: 0px;
-  }
+/* The bottom dock: a solid pill with a light blur, and a darker capsule behind the page you are on. */
+.app-dock {
+  background: rgb(51 51 51 / 0.9);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  backdrop-filter: blur(18px) saturate(1.4);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06), 0 12px 32px -12px rgb(0 0 0 / 0.7);
+}
+.app-dock-active {
+  background: rgb(24 24 24 / 0.8);
+}
+[data-mode="light"] .app-dock {
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06), 0 10px 28px -12px rgb(30 30 60 / 0.3);
+}
+[data-mode="light"] .app-dock-active {
+  background: rgb(0 0 0 / 0.07);
 }

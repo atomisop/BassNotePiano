@@ -1,6 +1,5 @@
 "use client";
 
-import { GlassLens } from "@/components/ui/GlassLens";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -55,11 +54,11 @@ export interface AppDockProps {
 // instead of silently skipping almost every step (`findVisibleTarget`
 // treats a missing/invisible target as "skip this one").
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Home", icon: "home", dataTour: "nav-roadmap" },
-  { href: "/lessons", label: "Online Lessons", icon: "lessons", dataTour: "nav-lessons" },
-  { href: "/friends", label: "Friends", icon: "friends", dataTour: "nav-friends" },
-  { href: "/messages", label: "Messages", icon: "messages", dataTour: "nav-messages" },
-  { href: "/account", label: "Settings", icon: "settings", dataTour: "nav-settings" },
+  { href: "/dashboard", label: "Home", short: "Home", icon: "home", dataTour: "nav-roadmap" },
+  { href: "/lessons", label: "Online Lessons", short: "Lessons", icon: "lessons", dataTour: "nav-lessons" },
+  { href: "/friends", label: "Friends", short: "Friends", icon: "friends", dataTour: "nav-friends" },
+  { href: "/messages", label: "Messages", short: "Messages", icon: "messages", dataTour: "nav-messages" },
+  { href: "/account", label: "Settings", short: "Settings", icon: "settings", dataTour: "nav-settings" },
 ] as const;
 
 /**
@@ -165,16 +164,15 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
       aria-label="Primary"
       className="kb-hide pointer-events-none fixed inset-x-0 bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)-0.25rem))] z-40 flex justify-center px-5"
     >
-      {/* The Instagram-style floating pill: about 53pt tall, 20pt in from each side on a phone (capped on wider screens), five equal
-          slots, icons about 22pt, and a lighter capsule behind the page you are on that slides to the next one. Frosted white in the light theme, dark glass in the dark one (the colors come from the theme ramp, so they follow the mode on their own). */}
+      {/* A solid floating pill (a light blur behind it), five equal slots with the icon over a short name, and a darker capsule behind
+          the page you are on that slides to the next one. Colors come from .app-dock in globals.css, one set per theme. */}
       <motion.div
-        animate={{ scale: compact ? 0.82 : 1, y: compact ? 8 : 0 }}
-        transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 340, damping: 17, mass: 0.8 }}
+        animate={{ scale: compact ? 0.86 : 1, y: compact ? 8 : 0 }}
+        transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 340, damping: 22, mass: 0.8 }}
         style={{ transformOrigin: "50% 100%" }}
         data-glass=""
-        className="pointer-events-auto relative grid h-[53px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full p-1 shadow-[inset_0_0_0_1px_var(--lg-hairline)]"
+        className="app-dock pointer-events-auto relative grid h-16 w-full max-w-[26rem] grid-cols-5 items-center rounded-full p-1.5"
       >
-        <GlassLens radius="full" bezel={26} strength={28} magnify={0.55} blur={4} />
         {NAV_ITEMS.map((item) => {
           const active = (pendingHref ?? pathname) === item.href;
           const current = pathname === item.href;
@@ -200,32 +198,32 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                     }
               }
               data-tour={"dataTour" in item ? item.dataTour : undefined}
-              className="tap relative flex h-[45px] items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="tap relative flex h-full flex-col items-center justify-center gap-0.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {active && (
                 <motion.span
                   layoutId="dock-active-pill"
-                  transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 15, mass: 0.9 }}
-                  className="pointer-events-none absolute left-1/2 top-0 h-full w-[4.7rem] -translate-x-1/2 rounded-full"
-                >
-                  <GlassLens radius="full" bezel={16} strength={16} magnify={0.85} />
-                </motion.span>
+                  transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 30, mass: 0.9 }}
+                  className="app-dock-active pointer-events-none absolute inset-0 rounded-full"
+                />
               )}
               <motion.span
                 // Springs, not a timed keyframe list: tapping another tab mid-bounce takes over from where the icon is, instead of finishing or snapping.
                 whileTap={{ scale: 0.82 }}
-                animate={{ scale: active && !reduceMotion ? 1.14 : 1 }}
-                transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 14, mass: 0.7 }}
-                className="relative flex h-[22px] w-[22px] items-center justify-center [filter:drop-shadow(0_1px_2px_rgb(0_0_0/0.55))]"
+                transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 20, mass: 0.7 }}
+                className="relative flex h-[22px] w-[22px] items-center justify-center"
               >
                 <Icon
                   aria-hidden
                   strokeWidth={active ? 2.4 : 2}
                   fill={active && item.icon === "home" ? "currentColor" : "none"}
-                  className="h-[22px] w-[22px] text-slate-50"
+                  className={active ? "h-[22px] w-[22px] text-slate-50" : "h-[22px] w-[22px] text-slate-300"}
                 />
-                {Boolean(badge) && <span className="pointer-events-none absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ff3040] ring-2 ring-white dark:ring-[rgb(var(--c-s-900))]" />}
+                {Boolean(badge) && <span className="pointer-events-none absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ff3040]" />}
               </motion.span>
+              <span aria-hidden className={`relative text-[0.6875rem] font-medium leading-none ${active ? "text-slate-50" : "text-slate-300"}`}>
+                {item.short}
+              </span>
             </Link>
           );
         })}

@@ -53,7 +53,6 @@ export default async function AdminOverviewPage() {
     <div>
       <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{firstName ? `Good ${greeting}, ${firstName}.` : "Overview"}</h1>
-      <p className="mt-1 text-small text-slate-500">What needs you, what is coming, and how the studio is doing.</p>
 
       {/* Left: the money story in four cards. Right: what needs you and who owes what this week. One column on phones. */}
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem] xl:items-start">
