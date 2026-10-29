@@ -44,7 +44,7 @@ export function FAQ({ extraClassCents = EXTRA_CLASS_PRICE_CENTS }: { extraClassC
   const FAQS = faqs(extraClassCents);
   return (
     <section className="px-2 sm:px-3">
-      <div className="mx-auto max-w-[96rem] rounded-2xl bg-black px-6 py-16 md:rounded-[2rem] md:px-14 md:py-28">
+      <div className="mx-auto max-w-[96rem] rounded-2xl bg-black px-6 py-16 md:rounded-3xl md:px-14 md:py-28">
         <ScrollReveal className="grid grid-cols-1 gap-12 md:grid-cols-12">
           <div className="min-w-0 md:col-span-5">
             <WordsPullUp

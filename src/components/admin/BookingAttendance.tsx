@@ -21,7 +21,7 @@ export interface BookingAttendanceProps {
   onSetInPerson?: (bookingId: string, inPerson: boolean) => Promise<Result>;
 }
 
-const icon = "tap inline-flex h-8 items-center justify-center gap-1 rounded-lg px-2.5 text-small font-medium shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50";
+const icon = "tap inline-flex h-8 items-center justify-center gap-1 rounded-full px-2.5 text-small font-medium shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50";
 
 /**
  * Everything you do about one class's attendance, in one compact line: Online / In person, Present, No-show, and (once marked) edit or undo.

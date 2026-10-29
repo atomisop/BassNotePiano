@@ -619,7 +619,7 @@ export function ZellePaymentModal({
                     <button
                       type="button"
                       onClick={handleClose}
-                      className="mt-6 w-full rounded-xl py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className="mt-6 w-full rounded-full py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Done
                     </button>
@@ -657,7 +657,7 @@ export function ZellePaymentModal({
                     <button
                       type="button"
                       onClick={handleClose}
-                      className="mt-6 w-full rounded-xl py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className="mt-6 w-full rounded-full py-2.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Done
                     </button>

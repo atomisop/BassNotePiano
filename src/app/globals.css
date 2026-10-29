@@ -2042,6 +2042,16 @@ a[class*="shadow-raised-low"][class*="h-9"]:not([class*="liquid"]) {
   }
 }
 
+/* A main action that cannot be used yet goes neutral instead of a faded orange (half-transparent orange on the dark page read as a
+   muddy brown "something is wrong" colour). Doubled class to win over the lens rules further down. */
+.liquid-signal.liquid-signal:is(:disabled, [aria-disabled="true"]),
+button.bg-signal:disabled {
+  background: rgb(var(--c-s-800)) !important;
+  color: rgb(var(--c-s-400)) !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
 /* ---------------------------------------------------------------------------
    Switching between light and dark is a slow, even crossfade (the old look melts into the new one) instead of a blink. Where the
    browser has no View Transitions, every color eases over the same time instead.

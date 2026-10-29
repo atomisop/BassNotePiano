@@ -85,7 +85,7 @@ export function ScrollTimeline({
       aria-label={label}
       className="relative h-screen w-full p-2 sm:p-3"
     >
-      <div className="relative h-full w-full overflow-hidden rounded-2xl bg-black md:rounded-[2rem]">
+      <div className="relative h-full w-full overflow-hidden rounded-2xl bg-black md:rounded-3xl">
         <div
           ref={trackRef}
           className="relative flex h-full w-max items-stretch pl-6 md:pl-16"

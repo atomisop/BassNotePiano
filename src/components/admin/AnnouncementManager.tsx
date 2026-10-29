@@ -126,7 +126,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
               type="button"
               onClick={() => setConfirmingEmail(false)}
               disabled={submitting}
-              className="tap flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+              className="tap flex-1 rounded-full py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
               Cancel
             </button>
@@ -207,7 +207,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
               type="button"
               onClick={() => setDeleting(false)}
               disabled={busy}
-              className="tap flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+              className="tap flex-1 rounded-full py-1.5 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
             >
               Cancel
             </button>
@@ -215,7 +215,7 @@ function AnnouncementRow({ announcement, totalUsers, onChanged }: { announcement
               type="button"
               onClick={handleDelete}
               disabled={busy}
-              className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+              className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
             >
               {busy && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
               {busy ? "Deleting…" : "Confirm delete"}

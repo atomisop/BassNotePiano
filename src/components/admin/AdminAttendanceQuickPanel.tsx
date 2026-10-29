@@ -185,7 +185,7 @@ export function AdminAttendanceQuickPanel() {
   }
 
   const gatedClass =
-    "tap flex min-h-9 items-center justify-center gap-1 rounded-lg px-2.5 py-1.5 text-small font-medium transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-pressed-low disabled:hover:shadow-pressed-low";
+    "tap flex min-h-9 items-center justify-center gap-1 rounded-full px-2.5 py-1.5 text-small font-medium transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-pressed-low disabled:hover:shadow-pressed-low";
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -339,7 +339,7 @@ export function AdminAttendanceQuickPanel() {
                                     onClick={() => setOpen(false)}
                                     aria-label={`Open ${r.studentName ?? r.studentEmail}'s scheduler to move or cancel`}
                                     title="Move or cancel in this student's Scheduler"
-                                    className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-neu-base text-slate-200 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
+                                    className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neu-base text-slate-200 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
                                   >
                                     <CalendarDays className="h-4 w-4" strokeWidth={2} />
                                   </Link>

@@ -122,7 +122,7 @@ export function PasswordStrength({ value, rules = PASSWORD_RULES, showRules = tr
         <ul className="mt-3 grid gap-1.5">
           {evaluated.map((rule) => (
             <li key={rule.id} className="flex items-center gap-2">
-              <span className="relative grid size-[14px] shrink-0 place-items-center rounded-[4px] border border-slate-50/20 text-slate-950">
+              <span className="relative grid size-[14px] shrink-0 place-items-center rounded-sm border border-slate-50/20 text-slate-950">
                 <motion.span
                   className="absolute inset-0 rounded-[3px] bg-signal"
                   initial={false}

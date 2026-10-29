@@ -50,7 +50,7 @@ export interface StudentSchedulerProps {
   onSetInPerson: (bookingId: string, inPerson: boolean) => Promise<Result>;
 }
 
-const iconBtn = "tap inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-neu-base px-2.5 text-small font-medium text-slate-200 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50";
+const iconBtn = "tap inline-flex h-8 items-center justify-center gap-1 rounded-full bg-neu-base px-2.5 text-small font-medium text-slate-200 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50";
 
 /** One student's whole schedule on one screen: their classes (attendance, move, cancel), a new booking, and the plan's weekly time. */
 export function StudentScheduler(props: StudentSchedulerProps) {
@@ -186,7 +186,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
               <ArrowRightLeft aria-hidden className="h-3.5 w-3.5" />
               Move
             </button>
-            <button type="button" className="tap inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-red-600 px-2.5 text-small font-semibold text-white shadow-raised-low transition hover:bg-red-500 active:shadow-pressed-low" onClick={() => { setError(null); setCanceling(b); }} aria-label="Cancel this class">
+            <button type="button" className="tap inline-flex h-8 items-center justify-center gap-1 rounded-full bg-red-600 px-2.5 text-small font-semibold text-white shadow-raised-low transition hover:bg-red-500 active:shadow-pressed-low" onClick={() => { setError(null); setCanceling(b); }} aria-label="Cancel this class">
               <X aria-hidden className="h-3.5 w-3.5" />
               Cancel
             </button>

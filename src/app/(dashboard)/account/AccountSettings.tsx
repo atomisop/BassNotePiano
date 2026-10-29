@@ -42,6 +42,7 @@ import { PhoneCard, type PhoneState } from "@/components/account/PhoneCard";
 import { formatPhone } from "@/lib/phone";
 import { unlinkDiscordAction } from "../lessons/discordActions";
 import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { DiscordConnectLink } from "@/components/ui/DiscordLink";
 import { announceChange } from "@/lib/liveEvents";
 
@@ -166,11 +167,16 @@ function SectionCard({ title, hint, advanced = false, children }: { title: strin
 // existing `/about` page, which is its own substantial tabbed page
 // (About/Update notes/Terms). Styled to match the tab buttons above it so
 // it reads as part of the same list.
+// Every row in the desktop settings menu (tabs, Shop, About, Sign out) is the same shape; only the current one is filled.
+const NAV_ROW =
+  "tap flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-small font-medium text-slate-400 transition hover:bg-neu-lift hover:text-slate-100";
+const NAV_ROW_ACTIVE = "tap flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-small font-medium bg-neu-lift text-slate-50";
+
 function ShopLink({ back }: { back: string }) {
   return (
     <Link
       href={`/shop?back=${encodeURIComponent(back)}`}
-      className={buttonVariants({ variant: "outline", className: "text-left" })}
+      className={NAV_ROW}
     >
       <TabIcon path={TAB_ICONS.shop} />
       Shop
@@ -182,7 +188,7 @@ function AboutLink() {
   return (
     <Link
       href="/about"
-      className={buttonVariants({ variant: "outline", className: "text-left" })}
+      className={NAV_ROW}
     >
       <TabIcon path={TAB_ICONS.about} />
       About
@@ -200,7 +206,7 @@ function SignOutButton({ className = "" }: { className?: string }) {
         startNavigation();
         void signOut({ callbackUrl: "/" });
       }}
-      className={`tap flex items-center gap-2.5 rounded-xl border border-transparent px-3 py-2.5 text-left text-small text-slate-400 transition hover:text-slate-200 hover:shadow-raised-low active:shadow-pressed-low ${className}`}
+      className={cn(NAV_ROW, className)}
     >
       <TabIcon path={TAB_ICONS.logout} />
       Sign out
@@ -240,11 +246,8 @@ function DesktopSettingsNav({ activeTab, onSelect }: { activeTab: TabId; onSelec
                 key={tab.id}
                 type="button"
                 onClick={() => onSelect(tab.id)}
-                className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left text-small transition ${
-                  activeTab === tab.id
-                    ? "border-transparent bg-neu-base text-signal-fg shadow-pressed-low"
-                    : "border-transparent text-slate-400 hover:text-slate-200 hover:shadow-raised-low active:shadow-pressed-low"
-                }`}
+                aria-current={activeTab === tab.id ? "page" : undefined}
+                className={activeTab === tab.id ? NAV_ROW_ACTIVE : NAV_ROW}
               >
                 <TabIcon path={tab.icon} />
                 {tab.label}
@@ -820,7 +823,7 @@ function PasswordSection() {
               type="button"
               onClick={cancelCode}
               disabled={submitting}
-              className="tap flex w-full items-center justify-center rounded-lg bg-neu-base py-2 text-small font-medium text-slate-300 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50"
+              className="tap flex w-full items-center justify-center rounded-full bg-neu-base py-2 text-small font-medium text-slate-300 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50"
             >
               Cancel
             </button>
@@ -1275,14 +1278,14 @@ function DangerZoneSection() {
                 type="button"
                 onClick={reset}
                 disabled={sendingCode}
-                className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={sendingCode || !password}
-                className="tap flex flex-1 items-center justify-center rounded-lg bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                className="tap flex flex-1 items-center justify-center rounded-full bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
               >
                 {sendingCode && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {sendingCode ? "Sending code…" : "Send verification code"}
@@ -1325,14 +1328,14 @@ function DangerZoneSection() {
                 type="button"
                 onClick={reset}
                 disabled={deleting}
-                className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={deleting || !confirmed || code.length !== 6}
-                className="tap flex flex-1 items-center justify-center rounded-lg bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                className="tap flex flex-1 items-center justify-center rounded-full bg-red-600 py-2 text-small font-semibold text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
               >
                 {deleting && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}
                 {deleting ? "Deleting…" : "Permanently delete my account"}

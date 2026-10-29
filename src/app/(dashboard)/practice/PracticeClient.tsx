@@ -29,7 +29,7 @@ function mmss(totalSeconds: number): string {
 }
 
 const raisedKey =
-  "tap inline-flex items-center justify-center gap-2 rounded-xl bg-neu-base px-4 py-2.5 text-small font-semibold text-slate-100 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50";
+  "tap inline-flex items-center justify-center gap-2 rounded-full bg-neu-base px-4 py-2.5 text-small font-semibold text-slate-100 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-50";
 
 // ---------------------------------------------------------------------------
 // Piano: a mini keyboard with finger numbers, and the step chips

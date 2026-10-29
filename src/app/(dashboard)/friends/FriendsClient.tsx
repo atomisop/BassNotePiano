@@ -260,7 +260,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                           onClick={() => setBlockingId(friend.id)}
                           aria-label={`Block ${friend.name ?? friend.username ?? "this person"}`}
                           title="Block"
-                          className="tap flex h-9 w-9 items-center justify-center rounded-lg text-red-400 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                          className="tap flex h-9 w-9 items-center justify-center rounded-full text-red-400 transition hover:text-red-300 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                         >
                           <Ban size={18} strokeWidth={1.75} aria-hidden />
                         </button>
@@ -285,7 +285,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                       type="button"
                       onClick={() => handleUnblock(entry.user.id)}
                       disabled={action.pending}
-                      className={`tap flex shrink-0 items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
+                      className={`tap flex shrink-0 items-center rounded-full px-3 py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
                     >
                       {action.isPending(`unblock:${entry.user.id}`) && spin}
                       Unblock
@@ -366,7 +366,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                         type="button"
                         onClick={() => handleRespond(req.id, false)}
                         disabled={action.pending}
-                        className={`tap flex items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-400 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
+                        className={`tap flex items-center rounded-full px-3 py-1.5 text-small font-medium text-slate-400 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${busy}`}
                       >
                         {action.isPending(`reject:${req.id}`) && spin}
                         Reject

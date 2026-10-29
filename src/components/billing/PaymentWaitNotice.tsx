@@ -58,7 +58,7 @@ export function PaymentWaitNotice({ paymentId, submittedAt: initial = null, comp
         type="button"
         onClick={ask}
         disabled={busy}
-        className={`tap mt-3 inline-flex items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-small font-medium text-slate-100 transition disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${
+        className={`tap mt-3 inline-flex items-center justify-center gap-2 rounded-full px-3 py-1.5 text-small font-medium text-slate-100 transition disabled:opacity-60 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low ${
           notice.slow ? "ring-1 ring-signal/50" : ""
         }`}
       >

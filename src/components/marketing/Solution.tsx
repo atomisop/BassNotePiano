@@ -49,7 +49,7 @@ const SCREENS = [
 export function Solution() {
   return (
     <section id="curriculum" className="scroll-mt-24 px-2 sm:px-3">
-      <div className="mx-auto max-w-[96rem] rounded-2xl bg-black px-6 py-16 md:rounded-[2rem] md:px-14 md:py-28">
+      <div className="mx-auto max-w-[96rem] rounded-2xl bg-black px-6 py-16 md:rounded-3xl md:px-14 md:py-28">
         <ScrollReveal className="grid grid-cols-1 items-start gap-14 md:grid-cols-12">
           <div className="min-w-0 md:col-span-6">
             <WordsPullUp

@@ -119,7 +119,7 @@ function ClassCard({ occ, onMarkAttendance, onUndoAttendance, onSetInPerson }: {
                     href={`/admin/users/${entry.studentId}#scheduler`}
                     aria-label={`Open ${name}'s account to move or cancel`}
                     title="Move or cancel in the account"
-                    className="tap inline-flex h-8 w-8 items-center justify-center rounded-lg bg-neu-base text-slate-300 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap inline-flex h-8 w-8 items-center justify-center rounded-full bg-neu-base text-slate-300 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     <CalendarCog aria-hidden className="h-4 w-4" />
                   </Link>

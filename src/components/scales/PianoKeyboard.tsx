@@ -178,7 +178,7 @@ export function PianoKeyboard({
                     {...keyHandlers(midi, degreeIndex)}
                     aria-label={labelFor(midi, degreeIndex)}
                     className={cn(
-                      "relative flex flex-1 cursor-pointer flex-col items-center justify-end rounded-b-[7px] pb-3 outline-none transition-[background,box-shadow,transform] duration-75 ease-out focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-signal disabled:cursor-default motion-reduce:transition-none",
+                      "relative flex flex-1 cursor-pointer flex-col items-center justify-end rounded-b-sm pb-3 outline-none transition-[background,box-shadow,transform] duration-75 ease-out focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-signal disabled:cursor-default motion-reduce:transition-none",
                       lit
                         ? "translate-y-[2px] bg-signal shadow-[inset_0_-2px_0_rgb(0_0_0/0.25),0_0_18px_rgb(var(--signal)/0.45)]"
                         : "piano-white",
@@ -226,7 +226,7 @@ export function PianoKeyboard({
                       transform: `translateX(-50%) translateY(${lit ? 2 : 0}px)`,
                     }}
                     className={cn(
-                      "absolute top-0 z-10 flex h-[60%] cursor-pointer flex-col items-center justify-end rounded-b-[6px] pb-2 outline-none transition-[background,box-shadow,transform] duration-75 ease-out focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-signal disabled:cursor-default motion-reduce:transition-none",
+                      "absolute top-0 z-10 flex h-[60%] cursor-pointer flex-col items-center justify-end rounded-b-sm pb-2 outline-none transition-[background,box-shadow,transform] duration-75 ease-out focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-signal disabled:cursor-default motion-reduce:transition-none",
                       lit
                         ? "bg-signal shadow-[0_0_16px_rgb(var(--signal)/0.5)]"
                         : "piano-black",

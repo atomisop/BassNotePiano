@@ -382,7 +382,7 @@ export function PaymentQueue({
                     setReason("");
                   }}
                   disabled={busyId === payment.id}
-                  className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Cancel
                 </button>
@@ -390,7 +390,7 @@ export function PaymentQueue({
                   type="button"
                   onClick={() => handleReject(payment.id)}
                   disabled={busyId === payment.id || !reason.trim()}
-                  className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                  className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                 >
                   {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                   {busyId === payment.id ? "Rejecting…" : "Confirm reject"}
@@ -410,7 +410,7 @@ export function PaymentQueue({
                   type="button"
                   onClick={() => setApprovingId(null)}
                   disabled={busyId === payment.id}
-                  className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                  className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                 >
                   Cancel
                 </button>
@@ -431,7 +431,7 @@ export function PaymentQueue({
                 type="button"
                 onClick={() => setRejectingId(payment.id)}
                 disabled={busyId === payment.id}
-                className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 Reject
               </button>
@@ -476,7 +476,7 @@ export function PaymentQueue({
                       type="button"
                       onClick={() => setRefundingId(null)}
                       disabled={busyId === payment.id}
-                      className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Back
                     </button>
@@ -517,7 +517,7 @@ export function PaymentQueue({
                     type="button"
                     onClick={() => setDeletingId(null)}
                     disabled={busyId === payment.id}
-                    className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     Keep
                   </button>
@@ -525,7 +525,7 @@ export function PaymentQueue({
                     type="button"
                     onClick={() => handleDelete(payment.id)}
                     disabled={busyId === payment.id}
-                    className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                    className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                   >
                     {busyId === payment.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                     {busyId === payment.id ? "Deleting…" : "Delete payment"}

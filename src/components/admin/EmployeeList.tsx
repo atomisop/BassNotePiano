@@ -76,7 +76,7 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
                       type="button"
                       onClick={() => setConfirmingId(null)}
                       disabled={busyId === employee.id}
-                      className="tap flex-1 rounded-lg py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                      className="tap flex-1 rounded-full py-2 text-small font-medium text-slate-300 transition disabled:opacity-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                     >
                       Cancel
                     </button>
@@ -84,7 +84,7 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
                       type="button"
                       onClick={() => handleRevoke(employee.id)}
                       disabled={busyId === employee.id}
-                      className="tap flex flex-1 items-center justify-center rounded-lg bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
+                      className="tap flex flex-1 items-center justify-center rounded-full bg-red-500/95 py-2 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
                     >
                       {busyId === employee.id && <MorphingSquare size={13} className="mr-1.5 shrink-0" />}
                       {busyId === employee.id ? "Revoking…" : "Confirm revoke"}
@@ -96,7 +96,7 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
                   <button
                     type="button"
                     onClick={() => setConfirmingId(employee.id)}
-                    className="tap w-full rounded-lg py-2 text-small font-medium text-red-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                    className="tap w-full rounded-full py-2 text-small font-medium text-red-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
                   >
                     Revoke admin
                   </button>

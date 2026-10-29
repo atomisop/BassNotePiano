@@ -248,9 +248,9 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                   <div>
                     <span className="mb-1 block text-small font-medium text-slate-200">Bills paid</span>
                     <div className="flex items-center gap-2">
-                      <button type="button" aria-label="One fewer" onClick={() => setPaid((p) => Math.max(1, p - 1))} className="tap h-11 w-11 rounded-xl bg-neu-base text-title text-slate-200 shadow-raised-low">-</button>
+                      <button type="button" aria-label="One fewer" onClick={() => setPaid((p) => Math.max(1, p - 1))} className="tap h-11 w-11 rounded-full bg-neu-base text-title text-slate-200 shadow-raised-low">-</button>
                       <span className="min-w-10 text-center text-body font-semibold tabular-nums text-slate-50">{paid} of {cycles}</span>
-                      <button type="button" aria-label="One more" onClick={() => setPaid((p) => Math.min(cycles, p + 1))} className="tap h-11 w-11 rounded-xl bg-neu-base text-title text-slate-200 shadow-raised-low">+</button>
+                      <button type="button" aria-label="One more" onClick={() => setPaid((p) => Math.min(cycles, p + 1))} className="tap h-11 w-11 rounded-full bg-neu-base text-title text-slate-200 shadow-raised-low">+</button>
                     </div>
                   </div>
                 </div>
@@ -276,7 +276,7 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                         setTaught((t) => [...t, taughtInput].sort());
                         setTaughtInput("");
                       }}
-                      className="tap inline-flex h-11 items-center gap-1 rounded-xl bg-neu-base px-3 text-small font-medium text-slate-100 shadow-raised-low disabled:opacity-50"
+                      className="tap inline-flex h-11 items-center gap-1 rounded-full bg-neu-base px-3 text-small font-medium text-slate-100 shadow-raised-low disabled:opacity-50"
                     >
                       <Plus aria-hidden className="h-3.5 w-3.5" />
                       Add
