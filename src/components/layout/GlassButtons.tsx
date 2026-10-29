@@ -5,8 +5,8 @@ import { buildGlassMaps, type GlassMaps } from "@/lib/liquidGlassMaps";
 
 /**
  * Real Liquid Glass for every button in the app, from one place. It finds each glass control (the shared Button, tabs, the admin menu,
- * every small raised-style control) and gives it a lens: the page behind is refracted through a curved edge, split into a faint rainbow
- * where it bends, softly shaded inside the rim and lit from the side your pointer is on. Buttons of the same size share one lens, so a
+ * every small raised-style control) and gives it a lens: fully clear glass that refracts the page behind it through a curved edge, with a
+ * faint rainbow where it bends. No painted light and no tint. Buttons of the same size share one lens, so a
  * page full of buttons builds only a handful. The lens itself is drawn by CSS (.lg-glass::after in globals.css), which reads the filter
  * this sets on the button. Only browsers that can refract the backdrop get it (Chrome, Edge); the rest keep the blur-and-rim glass.
  */
@@ -37,14 +37,13 @@ const el = (name: string, attrs: Record<string, string | number>, children: Elem
   return node;
 };
 
-/** One lens: refraction with a rainbow split, a soft inner shadow along the rim, and live specular light from the glass's own surface. */
+/** One lens: clear glass that refracts the page behind it through a curved rim, with a faint rainbow split where it bends. */
 export function glassFilter(id: string, maps: GlassMaps, w: number, h: number, bezel: number, dispersion: number): SVGFilterElement {
   const split = Math.max(0, Math.min(3, dispersion));
   const channel = (name: string, scale: number, matrix: string) => [
     el("feDisplacementMap", { in: "SourceGraphic", in2: "map", scale, xChannelSelector: "R", yChannelSelector: "G", result: `d${name}` }),
     el("feColorMatrix", { in: `d${name}`, type: "matrix", values: matrix, result: name }),
   ];
-  const light = el("feDistantLight", { azimuth: 225, elevation: 32 });
   return el(
     "filter",
     { id, filterUnits: "userSpaceOnUse", primitiveUnits: "userSpaceOnUse", x: 0, y: 0, width: w, height: h, "color-interpolation-filters": "sRGB" },
@@ -54,14 +53,7 @@ export function glassFilter(id: string, maps: GlassMaps, w: number, h: number, b
       ...channel("g", maps.scale * (1 + 0.035 * split), "0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"),
       ...channel("b", maps.scale * (1 + 0.075 * split), "0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"),
       el("feBlend", { in: "r", in2: "g", mode: "screen", result: "rg" }),
-      el("feBlend", { in: "rg", in2: "b", mode: "screen", result: "refracted" }),
-      el("feImage", { href: maps.height, x: 0, y: 0, width: w, height: h, preserveAspectRatio: "none", result: "surface" }),
-      // Soft inner shadow: darker where the glass curves down to its edge.
-      el("feColorMatrix", { in: "surface", type: "matrix", values: "0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -0.24 0.24", result: "rimShadow" }),
-      el("feComposite", { in: "rimShadow", in2: "refracted", operator: "over", result: "shaded" }),
-      el("feSpecularLighting", { in: "surface", surfaceScale: Math.max(2, bezel * 0.45), specularConstant: 0.85, specularExponent: 26, "lighting-color": "#ffffff", result: "glint" }, [light]),
-      el("feComposite", { in: "glint", in2: "surface", operator: "in", result: "glintOnGlass" }),
-      el("feBlend", { in: "glintOnGlass", in2: "shaded", mode: "screen" }),
+      el("feBlend", { in: "rg", in2: "b", mode: "screen" }),
     ],
   ) as SVGFilterElement;
 }
@@ -161,29 +153,10 @@ export function GlassButtons() {
     const mo = new MutationObserver(later);
     mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
 
-    // The light: every lens is lit from the side the pointer (or finger) is on, measured from the middle of the screen.
-    let frame = 0;
-    let last: PointerEvent | null = null;
-    const aim = () => {
-      frame = 0;
-      if (!last) return;
-      const angle = Math.round((Math.atan2(last.clientY - window.innerHeight / 2, last.clientX - window.innerWidth / 2) * 180) / Math.PI);
-      defs.querySelectorAll("feDistantLight").forEach((l) => l.setAttribute("azimuth", String(angle)));
-    };
-    const onMove = (e: PointerEvent) => {
-      last = e;
-      if (!frame) frame = requestAnimationFrame(aim);
-    };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    window.addEventListener("pointerdown", onMove, { passive: true });
-
     return () => {
       mo.disconnect();
       resize.disconnect();
       window.clearTimeout(timer);
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerdown", onMove);
-      if (frame) cancelAnimationFrame(frame);
       defs.remove();
     };
   }, []);

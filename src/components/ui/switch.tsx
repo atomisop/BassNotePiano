@@ -43,7 +43,7 @@ const Switch = React.forwardRef<
         "pointer-events-none relative block h-4 w-4 rounded-full ring-0 motion-safe:transition-[transform,background-color] [transition-timing-function:cubic-bezier(0.2,1.15,0.3,1)] data-[state=checked]:translate-x-4 data-[state=checked]:bg-signal/70 data-[state=unchecked]:translate-x-0"
       )}
     >
-      <GlassLens radius="full" bezel={5} strength={5} blur={0.6} tint="linear-gradient(180deg, rgb(255 255 255 / 0.5), rgb(255 255 255 / 0.18))" />
+      <GlassLens radius="full" bezel={5} strength={5} />
     </SwitchPrimitives.Thumb>
   </SwitchPrimitives.Root>
 ))

@@ -73,9 +73,9 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
   // to reserve the 64px this now paints over instead of occupying in flow.
   return (
     <header className="pad-safe-x pointer-events-none fixed inset-x-0 top-0 z-[45] px-2 pt-1.5 md:px-3">
-      {/* A floating island of Liquid Glass (a long pill on phones): the page scrolls under it and is bent and magnified through it. */}
-      <div data-glass="" className="pointer-events-auto relative flex h-12 items-center justify-between rounded-full px-1.5 shadow-[0_10px_28px_-14px_rgb(0_0_0/0.55)] md:px-2">
-      <GlassLens radius="full" bezel={16} strength={14} magnify={0.35} blur={3} tint="var(--lg-bar-tint)" />
+      {/* A floating island of clear Liquid Glass, centered and only as wide as what it holds: the page scrolls under it and is bent and magnified through it. */}
+      <div data-glass="" className="pointer-events-auto relative mx-auto flex h-12 w-fit max-w-full items-center gap-3 rounded-full px-2 shadow-[inset_0_0_0_1px_var(--lg-hairline)] md:gap-5 md:px-3">
+      <GlassLens radius="full" bezel={18} strength={22} magnify={0.35} />
       {/* No bar and no logo: only the controls float. The header ignores the mouse so it never blocks the page; its two groups take it back. */}
       <div className="relative z-10 flex items-center gap-2">
         {/* The logo is shown on phones only; from md up the sidebar and toggle take its place. */}

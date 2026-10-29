@@ -28,7 +28,7 @@ export const GlassSlider = React.forwardRef<HTMLInputElement, Omit<React.InputHT
         className="lg-ring pointer-events-none absolute top-1/2 -translate-y-1/2 rounded-full transition-transform duration-150"
         style={{ width: THUMB_W, height: THUMB_H, left: `calc(${pct}% - ${(pct / 100) * THUMB_W}px)` }}
       >
-        <GlassLens radius="full" bezel={11} strength={13} blur={0.8} tint="linear-gradient(180deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.06))" />
+        <GlassLens radius="full" bezel={11} strength={13} />
       </span>
       <input
         ref={ref}

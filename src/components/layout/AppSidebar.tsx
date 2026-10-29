@@ -99,7 +99,7 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
           className="pointer-events-none absolute z-0 rounded-xl"
           style={{ top: sel.top, left: sel.left, width: sel.width, height: sel.height, transition: "top 460ms cubic-bezier(0.22,1.1,0.36,1), left 380ms var(--ease-ios), width 380ms var(--ease-ios), height 300ms var(--ease-ios)" }}
         >
-          <GlassLens radius={12} bezel={11} strength={9} tint="linear-gradient(180deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.07))" blur={1} />
+          <GlassLens radius={12} bezel={11} strength={10} />
         </span>
       )}
       {GROUPS.map((group) => (

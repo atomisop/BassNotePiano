@@ -40,7 +40,7 @@ export function GlassBubbles({ size = 40, gap = 10, children, className = "" }: 
       <div className="relative" style={row}>
         {items.map((child, i) => (
           <span key={i} className="lg-ring relative inline-flex shrink-0 items-center justify-center rounded-full" style={{ width: size, height: size }}>
-            <GlassLens radius="full" bezel={Math.round(size * 0.32)} strength={Math.round(size * 0.3)} blur={1} />
+            <GlassLens radius="full" bezel={Math.round(size * 0.32)} strength={Math.round(size * 0.3)} />
             <span className="relative z-10 flex h-full w-full items-center justify-center [&>*]:h-full [&>*]:w-full [&>*]:rounded-full">{child}</span>
           </span>
         ))}

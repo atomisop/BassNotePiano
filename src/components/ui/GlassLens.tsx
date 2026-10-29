@@ -24,7 +24,7 @@ export function GlassLens({
   strength = 16,
   magnify = 0.4,
   tint = "transparent",
-  blur = 1.5,
+  blur = 0,
   className = "",
 }: {
   /** Corner radius in px, or "full" for a pill. */
@@ -48,46 +48,6 @@ export function GlassLens({
   const [refract, setRefract] = useState(false);
 
   const [tokens, setTokens] = useState({ refraction: 1, dispersion: 1, blur: 1.5 });
-  const light = useRef<SVGFEDistantLightElement>(null);
-
-  // The light comes from wherever the pointer (or finger) is, so the rim lights up on the side facing it and follows as it moves.
-  useEffect(() => {
-    if (!refract) return;
-    let frame = 0;
-    let last: PointerEvent | null = null;
-    const aim = () => {
-      frame = 0;
-      const el = host.current;
-      const l = light.current;
-      if (!el || !l || !last) return;
-      const r = el.getBoundingClientRect();
-      const angle = (Math.atan2(last.clientY - (r.top + r.height / 2), last.clientX - (r.left + r.width / 2)) * 180) / Math.PI;
-      l.setAttribute("azimuth", String(Math.round(angle)));
-    };
-    const onMove = (e: PointerEvent) => {
-      last = e;
-      if (!frame) frame = requestAnimationFrame(aim);
-    };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    window.addEventListener("pointerdown", onMove, { passive: true });
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerdown", onMove);
-      if (frame) cancelAnimationFrame(frame);
-    };
-  }, [refract]);
-  useEffect(() => {
-    setRefract(refractionSupported());
-    // The look is set in one place (the --lg-* variables in globals.css, and "reduce transparency" switches the bending off).
-    const style = getComputedStyle(document.documentElement);
-    const num = (name: string, fallback: number) => {
-      const v = parseFloat(style.getPropertyValue(name));
-      return Number.isFinite(v) ? v : fallback;
-    };
-    const reduced = window.matchMedia("(prefers-reduced-transparency: reduce)").matches;
-    setTokens({ refraction: reduced ? 0 : num("--lg-refraction", 1), dispersion: reduced ? 0 : num("--lg-dispersion", 1), blur: num("--lg-blur", 1.5) });
-  }, []);
-
   useEffect(() => {
     const el = host.current;
     if (!el) return;
@@ -118,7 +78,7 @@ export function GlassLens({
     setMaps(buildGlassMaps({ width: size.w, height: size.h, radius: r, bezel: bz, strength: strength * tokens.refraction, magnify }));
   }, [size, r, bz, strength, magnify, tokens.refraction]);
 
-  const body = refract && maps && tokens.refraction > 0 ? `url(#${id}) blur(${blur * (tokens.blur / 1.5)}px) saturate(1.7) brightness(1.1)` : "blur(14px) saturate(1.8) brightness(1.08)";
+  const body = refract && maps && tokens.refraction > 0 ? `url(#${id})${blur > 0 ? ` blur(${blur}px)` : ""} saturate(1.15)` : "blur(14px) saturate(1.8) brightness(1.08)";
   const split = disperse(tokens.dispersion);
 
   return (
@@ -135,17 +95,7 @@ export function GlassLens({
             <feDisplacementMap in="SourceGraphic" in2="map" scale={maps.scale * (1 + 0.075 * split)} xChannelSelector="R" yChannelSelector="G" result="db" />
             <feColorMatrix in="db" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="b" />
             <feBlend in="r" in2="g" mode="screen" result="rg" />
-            <feBlend in="rg" in2="b" mode="screen" result="refracted" />
-            {/* Real light on the curved glass: a specular pass over the surface's own height, lit from the pointer's side. */}
-            <feImage href={maps.height} x={0} y={0} width={size.w} height={size.h} preserveAspectRatio="none" result="surface" />
-            <feSpecularLighting in="surface" surfaceScale={Math.max(2, bz * 0.45)} specularConstant={0.85} specularExponent={26} lightingColor="#ffffff" result="glint">
-              <feDistantLight ref={light} azimuth={225} elevation={32} />
-            </feSpecularLighting>
-            <feComposite in="glint" in2="surface" operator="in" result="glintOnGlass" />
-            {/* Soft inner shadow: darker where the glass curves down to its edge. */}
-            <feColorMatrix in="surface" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -0.24 0.24" result="rimShadow" />
-            <feComposite in="rimShadow" in2="refracted" operator="over" result="shaded" />
-            <feBlend in="glintOnGlass" in2="shaded" mode="screen" />
+            <feBlend in="rg" in2="b" mode="screen" />
           </filter>
         </svg>
       )}

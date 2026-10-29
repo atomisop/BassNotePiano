@@ -2199,14 +2199,14 @@ html[data-theme-fade] *::after {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
   filter: none !important;
-  --lg-bright: 1.08;
+  --lg-bright: 1;
 }
 :where(.lg-glass:not(.absolute):not(.fixed):not(.sticky)) {
   position: relative;
 }
 .lg-glass:not(.liquid-signal) {
   background: transparent !important;
-  box-shadow: 0 6px 16px -10px var(--lg-drop) !important;
+  box-shadow: inset 0 0 0 1px var(--lg-hairline) !important;
 }
 .lg-glass.liquid-signal {
   background: rgb(var(--cta-bg, var(--primary)) / 0.8) !important;
@@ -2214,7 +2214,7 @@ html[data-theme-fade] *::after {
 }
 @media (hover: hover) {
   .lg-glass:hover {
-    --lg-bright: 1.18;
+    --lg-bright: 1.1;
   }
 }
 .lg-glass::after {
@@ -2228,8 +2228,8 @@ html[data-theme-fade] *::after {
   transform: none;
   opacity: 1;
   transition: none;
-  -webkit-backdrop-filter: var(--lg-filter) blur(var(--lg-blur, 1.5px)) saturate(1.7) brightness(var(--lg-bright, 1.08));
-  backdrop-filter: var(--lg-filter) blur(var(--lg-blur, 1.5px)) saturate(1.7) brightness(var(--lg-bright, 1.08));
+  -webkit-backdrop-filter: var(--lg-filter) saturate(1.15) brightness(var(--lg-bright, 1));
+  backdrop-filter: var(--lg-filter) saturate(1.15) brightness(var(--lg-bright, 1));
   clip-path: inset(0 round var(--lg-r, 9999px));
 }
 
@@ -2239,4 +2239,12 @@ html[data-theme-fade] *::after {
 }
 [data-mode="light"] {
   --lg-bar-tint: rgb(255 255 255 / 0.4);
+}
+
+/* The one outline clear glass has: a hairline so its shape reads, nothing painted inside. */
+:root {
+  --lg-hairline: rgb(255 255 255 / 0.14);
+}
+[data-mode="light"] {
+  --lg-hairline: rgb(0 0 0 / 0.1);
 }
