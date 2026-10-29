@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Map, Music2, Trophy, CalendarCheck, Users, MessageSquare, User, Settings, Globe, ArrowUpRight, Search, Sun, Moon, type LucideIcon } from "lucide-react";
+import { Home, Map, Music2, Trophy, CalendarCheck, Users, MessageSquare, Settings, Globe, ArrowUpRight, Search, Sun, Moon, type LucideIcon } from "lucide-react";
 import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { SidebarSpotlight } from "@/components/layout/SidebarSpotlight";
 import type { SidebarCard } from "@/lib/sidebarCards";
@@ -38,7 +38,6 @@ const GROUPS: { title: string; items: Item[] }[] = [
   {
     title: "More",
     items: [
-      { href: "/profile", label: "Profile", icon: User },
       { href: "/account", label: "Settings", icon: Settings, dataTour: "nav-settings" },
       // The public homepage, in a new tab so the app stays where it is.
       { href: "/", label: "Website", icon: Globe, external: true },

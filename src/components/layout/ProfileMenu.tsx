@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { OwnerStarBadge } from "@/components/ui/OwnerStar";
 import { popoverVariants } from "@/lib/motionTokens";
 import { startNavigation } from "@/lib/navigationState";
-import { Bell, CalendarDays, ClipboardCheck, NotebookPen, Shield, Users } from "lucide-react";
+import { Bell, ClipboardCheck, NotebookPen, Shield, Users } from "lucide-react";
 import { ATTENDANCE_READY_COUNT, OPEN_ATTENDANCE, OPEN_NOTIFICATIONS, OPEN_STUDENT_NOTES, UNREAD_COUNT, announce, listen } from "@/lib/topBarEvents";
 
 // Same glyph AccountSettings.tsx's own "Sign out" row uses (TAB_ICONS.logout),
@@ -153,10 +153,8 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
             <div className="md:hidden">
               <MenuLink href="/friends" icon={<Users className="h-4 w-4" strokeWidth={1.5} />} label="Friends" onNavigate={() => setOpen(false)} />
               <MenuAction icon={<Bell className="h-4 w-4" strokeWidth={1.5} />} label="Notifications and mail" count={unread} onClick={() => { setOpen(false); announce(OPEN_NOTIFICATIONS); }} />
-              {appExtras.isAdmin ? (
+              {appExtras.isAdmin && (
                 <MenuLink href="/admin" icon={<Shield className="h-4 w-4" strokeWidth={1.5} />} label="Admin" onNavigate={() => setOpen(false)} />
-              ) : (
-                <MenuLink href="/lessons" icon={<CalendarDays className="h-4 w-4" strokeWidth={1.5} />} label="Live classes" onNavigate={() => setOpen(false)} />
               )}
               {isOwner && (
                 <>
@@ -168,13 +166,16 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
             </div>
           )}
 
-          <Link
-            href="/dashboard"
-            onClick={() => setOpen(false)}
-            className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
-          >
-            Home
-          </Link>
+          {/* Inside the app the dock and sidebar already have Home and Settings; the menu repeats them only on the public pages. */}
+          {!appExtras && (
+            <Link
+              href="/dashboard"
+              onClick={() => setOpen(false)}
+              className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
+            >
+              Home
+            </Link>
+          )}
           <Link
             href="/profile"
             onClick={() => setOpen(false)}
@@ -182,13 +183,15 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
           >
             Profile
           </Link>
-          <Link
-            href="/account"
-            onClick={() => setOpen(false)}
-            className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
-          >
-            Settings
-          </Link>
+          {!appExtras && (
+            <Link
+              href="/account"
+              onClick={() => setOpen(false)}
+              className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
+            >
+              Settings
+            </Link>
+          )}
 
           <div className="my-1.5 border-t border-ink/10" />
 

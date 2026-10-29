@@ -6,7 +6,6 @@ import { AdminAttendanceQuickPanel } from "@/components/admin/AdminAttendanceQui
 import { ProfileMenu } from "./ProfileMenu";
 import { AdminTopLink } from "./AdminTopLink";
 import { Breadcrumb } from "./Breadcrumb";
-import { LiveClassesTopLink } from "./LiveClassesTopLink";
 import { FriendsTopLink } from "./FriendsTopLink";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { AskAiButton } from "./AskAiButton";
@@ -110,8 +109,12 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
         {/* Buttons sit in one pressed-in tray so they read as raised keys set into the bar. */}
         <div className="flex items-center gap-1.5">
         <div className="hidden md:contents">
-        <FriendsTopLink />
-        {isAdmin ? <AdminTopLink /> : <LiveClassesTopLink />}
+        {/* Friends only where nothing else offers it: tablets (the dock has no Friends). From lg the sidebar has it; on phones the profile menu does.
+            No live classes button: Lessons is already in the dock and the sidebar. */}
+        <span className="contents lg:hidden">
+          <FriendsTopLink />
+        </span>
+        {isAdmin && <AdminTopLink />}
         {/* Owner only. Quick Present/No-show from anywhere, by direct instruction, the
             full roster at Schedule → Attendance still exists for
             history/cancellation, this is just the fast path for the one
