@@ -47,7 +47,7 @@ export function SectionCompleteCelebration({
           <path d="m5 13 4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
         </motion.svg>
       </motion.div>
-      <h3 className="relative text-body font-semibold text-slate-50">Lesson complete</h3>
+      <h3 className="relative text-title font-semibold text-slate-50">Lesson complete</h3>
       <p className="relative mx-auto mt-1 max-w-xs text-small text-slate-400">Saved to your progress.</p>
       <div className="relative mt-6 flex gap-2">
         <button

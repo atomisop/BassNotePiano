@@ -340,7 +340,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
           </div>
         }
       >
-        <input type="text" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (optional, shown to the student)" className="w-full glass-surface-subtle px-3 py-2 text-base text-slate-100 outline-none" />
+        <input type="text" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason (optional, shown to the student)" className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none" />
         {error && <p role="alert" className="mt-3 text-small text-red-400">{error}</p>}
       </Dialog>
     </div>

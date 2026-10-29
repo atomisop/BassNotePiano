@@ -141,13 +141,13 @@ export function ScheduleClient({
   return (
     <WideLayout className="space-y-6">
       <div>
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Weekly Classes</p>
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Weekly Classes</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Your schedule</h1>
       </div>
 
       {/* This week */}
       <div className="glass-surface rounded-2xl p-5 sm:p-6">
-        <p className="text-small font-medium uppercase tracking-[0.14em] text-slate-400">This week</p>
+        <p className="text-small font-medium uppercase tracking-caps text-slate-400">This week</p>
         {hasClassThisWeek ? (
           <p className="mt-2 text-small text-slate-300">
             <span className="text-slate-50">✓ Booked</span>
@@ -172,7 +172,7 @@ export function ScheduleClient({
 
       {/* Your classes */}
       <div className="glass-surface rounded-2xl p-5 sm:p-6">
-        <p className="text-small font-medium uppercase tracking-[0.14em] text-slate-400">Your classes</p>
+        <p className="text-small font-medium uppercase tracking-caps text-slate-400">Your classes</p>
         {upcomingBookings.length === 0 ? (
           <p className="mt-3 text-small text-slate-500">Nothing booked yet.</p>
         ) : (

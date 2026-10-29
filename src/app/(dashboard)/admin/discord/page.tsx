@@ -19,7 +19,7 @@ export default async function AdminDiscordPage() {
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Admin</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Discord</h1>
       <p className="mt-2 max-w-[70ch] text-small text-slate-500">
         Class calls are made in Discord, so each student connects their account once. Joining the server by the invite link does not connect them: they must press Connect Discord on their Lessons page. Here you can see who has and who has not, tell them how, and disconnect anyone.

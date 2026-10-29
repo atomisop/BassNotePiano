@@ -124,7 +124,7 @@ export function PhoneCard({ state }: { state: PhoneState }) {
   return (
     <div ref={ref} data-phone-card className="glass-surface p-6">
       <div className="flex items-start justify-between gap-3">
-        <h2 className="flex items-center gap-1 text-body font-semibold text-slate-50">
+        <h2 className="flex items-center gap-1 text-title font-semibold text-slate-50">
           Phone number
           <Hint>{PHONE_HELP} Used to match your payments and reach you. Never shared.</Hint>
         </h2>

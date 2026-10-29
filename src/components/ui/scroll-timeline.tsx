@@ -97,7 +97,7 @@ export function ScrollTimeline({
           />
 
           <div className="relative flex w-[min(82vw,34rem)] shrink-0 flex-col justify-center pr-8">
-            <p className="mb-4 text-small uppercase tracking-[0.18em] text-cream/60">
+            <p className="mb-4 text-small uppercase tracking-caps text-cream/60">
               {label}
             </p>
             <h2 className="text-[clamp(3rem,9vw,8rem)] font-medium leading-[0.88] tracking-[-0.06em] text-cream">
@@ -130,7 +130,7 @@ export function ScrollTimeline({
                   <p className="font-mono text-small text-amber-400">
                     {step.marker}
                   </p>
-                  <h3 className="mt-2 text-[clamp(1.5rem,3vw,2.25rem)] font-medium leading-[1] tracking-[-0.04em] text-cream">
+                  <h3 className="mt-2 text-[clamp(1.5rem,3vw,2.25rem)] font-medium leading-[1] tracking-display text-cream">
                     {step.title}
                   </h3>
                   <p className="mt-3 max-w-[24rem] text-small leading-relaxed text-cream/60 md:text-body">

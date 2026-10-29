@@ -148,7 +148,7 @@ export default async function BillingPlansPage(
         />
       </div>
       <div className="text-center xl:text-left">
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Weekly Classes</p>
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Weekly Classes</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment plan</h1>
       </div>
 

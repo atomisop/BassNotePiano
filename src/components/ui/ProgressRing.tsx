@@ -81,7 +81,7 @@ export function ProgressRing({
         </span>
       </div>
       {caption && (
-        <span className="mt-2 text-small uppercase tracking-[0.14em] text-slate-400">
+        <span className="mt-2 text-small uppercase tracking-caps text-slate-400">
           {caption}
         </span>
       )}

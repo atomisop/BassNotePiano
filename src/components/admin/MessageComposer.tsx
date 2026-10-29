@@ -116,7 +116,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
   return (
     <div className="space-y-6">
       <div className="glass-surface p-6">
-        <h2 className="text-body text-slate-50 font-semibold">New message</h2>
+        <h2 className="text-title text-slate-50 font-semibold">New message</h2>
 
         <div className="mt-4 space-y-3">
           {recipients.length > 0 && (
@@ -227,7 +227,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
       </div>
 
       <div className="glass-surface p-6">
-        <h2 className="text-body text-slate-50 font-semibold">History</h2>
+        <h2 className="text-title text-slate-50 font-semibold">History</h2>
         <div className="mt-4 space-y-3">
           {sent.length === 0 ? (
             <p className="text-small text-slate-500">No messages yet.</p>

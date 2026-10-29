@@ -38,7 +38,7 @@ export function Card({ interactive, selected, muted, padded = true, className, .
 export function Eyebrow({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p
-      className={cn("text-small font-semibold uppercase tracking-[0.16em] text-slate-400", className)}
+      className={cn("text-small font-semibold uppercase tracking-caps text-slate-400", className)}
       {...props}
     />
   );

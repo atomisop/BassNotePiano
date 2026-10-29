@@ -48,7 +48,7 @@ export default async function AdminPaymentsPage(
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Admin</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payments</h1>
       <TopTabs active="payments" unmatched={unmatched} />
       <PaymentPipelineBanner health={health} />
@@ -154,7 +154,7 @@ async function EmailsTab() {
   const isOwner = isOwnerEmail(session?.user?.email);
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Admin</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payments</h1>
       <TopTabs active="emails" unmatched={rows.length} />
       <PaymentPipelineBanner health={health} />
@@ -198,7 +198,7 @@ async function CreditsTab() {
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Admin</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payments</h1>
       <TopTabs active="credits" unmatched={await countUnmatchedReceipts()} />
 

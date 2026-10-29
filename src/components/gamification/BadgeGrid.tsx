@@ -74,7 +74,7 @@ export function BadgeGrid({ earnedCodes }: BadgeGridProps) {
         const badges = BADGES.filter((b) => b.category === category);
         return (
           <div key={category}>
-            <p className="mb-2.5 text-small font-semibold uppercase tracking-[0.16em] text-slate-400">
+            <p className="mb-2.5 text-small font-semibold uppercase tracking-caps text-slate-400">
               {CATEGORY_LABELS[category]}
             </p>
             <div className="flex flex-wrap gap-3">

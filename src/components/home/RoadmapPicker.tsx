@@ -38,7 +38,7 @@ export function RoadmapPicker({ roadmaps, selectedId }: { roadmaps: PickerRoadma
                 <RoadmapArtwork artwork={r.artwork} className={cn("h-12 w-12 shrink-0", !s.open && "opacity-50")} />
                 <span className="min-w-0">
                   <span className="block truncate text-small font-semibold text-slate-50">{r.name}</span>
-                  <span className="mt-0.5 flex items-center gap-1 text-[0.75rem] text-slate-400">
+                  <span className="mt-0.5 flex items-center gap-1 text-caption text-slate-400">
                     {s.done ? (
                       <>
                         <Check aria-hidden className="h-3.5 w-3.5" /> Finished

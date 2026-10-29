@@ -114,7 +114,7 @@ export function BookingAgenda({
                 >
                   {new Date(ms).getUTCDate()}
                 </span>
-                <span className="text-[0.6875rem] uppercase tracking-wide text-slate-500">
+                <span className="text-caption uppercase tracking-wide text-slate-500">
                   {new Date(ms).toLocaleDateString(undefined, { weekday: "short", timeZone: "UTC" })}
                 </span>
               </span>
@@ -139,7 +139,7 @@ export function BookingAgenda({
                         </span>
                         <span className="min-w-0">
                           <span className="block text-small font-semibold leading-tight">{timeLabel(r.scheduledAt)}</span>
-                          <span className="block text-[0.6875rem] leading-tight opacity-80">
+                          <span className="block text-caption leading-tight opacity-80">
                             {r.isBooked ? "Taken" : picked ? "Picked" : r.reservedForYou ? "Reserved for you" : `Open · ${r.durationMin} min`}
                           </span>
                         </span>

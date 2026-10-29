@@ -195,10 +195,10 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
               </svg>
             </button>
             <div>
-              <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">
+              <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
                 Scale-Spelling Quiz
               </p>
-              <h2 id="quiz-modal-title" className="mt-1 text-body text-slate-50 font-semibold">
+              <h2 id="quiz-modal-title" className="mt-1 text-title text-slate-50 font-semibold">
                 {scaleTitle}
               </h2>
             </div>
@@ -319,7 +319,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
                         </svg>
                       )}
                     </motion.div>
-                    <h3 className="text-body text-slate-50">
+                    <h3 className="text-title text-slate-50">
                       {result.passed ? "Quiz passed" : "Not quite yet"}
                     </h3>
                     <p className="mx-auto mt-1.5 max-w-xs text-small text-slate-400">

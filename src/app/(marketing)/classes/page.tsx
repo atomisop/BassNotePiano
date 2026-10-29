@@ -22,7 +22,7 @@ export default function ClassesPage() {
       <main id="main-content" tabIndex={-1} className="outline-none">
         <section className="relative mx-auto max-w-lg px-6 pb-24 pt-28">
           <div className="text-center">
-            <h1 className="text-balance font-serif text-hero leading-tight tracking-[-0.02em] text-slate-50 sm:text-hero">
+            <h1 className="text-balance font-serif text-hero leading-tight tracking-tight text-slate-50 sm:text-hero">
               Learn with us via Discord
             </h1>
           </div>

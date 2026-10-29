@@ -40,7 +40,7 @@ export function EmptyState({
           {icon}
         </div>
       )}
-      <h3 className="text-body font-semibold text-slate-50">{title}</h3>
+      <h3 className="text-title font-semibold text-slate-50">{title}</h3>
       {description && <p className="mt-1.5 max-w-[42ch] text-small text-slate-400">{description}</p>}
 
       {actionLabel && actionHref && (

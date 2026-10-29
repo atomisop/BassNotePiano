@@ -605,7 +605,7 @@ export function NotificationBell() {
                     <div className="space-y-5">
                       {groupNotifications(shown).map((section) => (
                         <div key={section.label}>
-                          <p className="mb-2 px-1 text-small font-medium uppercase tracking-[0.2em] text-slate-500">{section.label}</p>
+                          <p className="mb-2 px-1 text-small font-medium uppercase tracking-caps text-slate-500">{section.label}</p>
                           <div className="space-y-2">
                             {section.clusters.map((cluster) =>
                               cluster.items.length === 1 ? (

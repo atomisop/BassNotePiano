@@ -24,7 +24,7 @@ export function FingerPracticeGate({
     <div className="mx-auto max-w-xl py-10">
       <Card>
         <Eyebrow>Daily finger exercises</Eyebrow>
-        <h1 className="mt-2 text-body font-semibold text-slate-50">Finish today&apos;s 10 minutes first</h1>
+        <h1 className="mt-2 text-title font-semibold text-slate-50">Finish today&apos;s 10 minutes first</h1>
         <p className="mt-3 text-small font-medium text-slate-200">{started ? `${left} minute${left === 1 ? "" : "s"} left today` : "10 minutes to go"}</p>
         {streak > 0 && <p className="mt-1 text-small text-slate-500">{streak} day streak. Don&apos;t break it.</p>}
         <Link href={practiceHref(returnTo)} className={cn(buttonVariants(), "mt-5")}>

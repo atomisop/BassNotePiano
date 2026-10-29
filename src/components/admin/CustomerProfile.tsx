@@ -52,7 +52,7 @@ function SectionCard({ title, action, children }: { title: string; action?: Reac
   return (
     <div className="glass-surface p-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-body text-slate-50 font-semibold">{title}</h2>
+        <h2 className="text-title text-slate-50 font-semibold">{title}</h2>
         {action}
       </div>
       <div className="mt-4">{children}</div>
@@ -322,7 +322,7 @@ export function CustomerProfile({
                   onChange={(e) => setBanReason(e.target.value)}
                   maxLength={500}
                   rows={2}
-                  className="mt-1 w-full rounded-lg bg-neu-base px-3 py-2 text-base text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500"
+                  className="mt-1 w-full rounded-lg bg-neu-base px-3 py-2 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500"
                   placeholder="Why, so you remember"
                 />
                 <div className="mt-3 flex flex-wrap gap-2">

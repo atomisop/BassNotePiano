@@ -130,10 +130,10 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
         <div key={plan.id} className="glass-surface p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">
+              <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
                 {describePaymentPlan(plan.cadence, plan.term)}
               </p>
-              <h2 className="mt-1 text-body text-slate-50 font-semibold">{plan.user.name ?? plan.user.email}</h2>
+              <h2 className="mt-1 text-title text-slate-50 font-semibold">{plan.user.name ?? plan.user.email}</h2>
               {plan.familyGroup && (
                 <p className="mt-1 text-small text-slate-400">
                   Family plan of {plan.familyGroup._count.plans}, paid by {plan.familyGroup.payer.name ?? plan.familyGroup.payer.email}

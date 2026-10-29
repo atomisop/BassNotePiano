@@ -283,8 +283,8 @@ export function PaymentQueue({
             <div className="flex items-start gap-2">
               {canTick(payment) && <RowCheck checked={picked.has(payment.id)} onChange={(on) => toggle(payment.id, on)} label={`Select ${payment.user.name ?? payment.user.email}`} />}
               <div>
-              <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">{eyebrow}</p>
-              <h2 className="mt-1 text-body text-slate-50 font-semibold">{title}</h2>
+              <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">{eyebrow}</p>
+              <h2 className="mt-1 text-title text-slate-50 font-semibold">{title}</h2>
               <p className="mt-1 text-small text-slate-500">{payment.user.name ?? payment.user.email}</p>
               {payment.purpose === "FAMILY_BUNDLE" && payment.familyBundleRecipients.length > 0 && (
                 <p className="mt-1 text-small text-slate-500">

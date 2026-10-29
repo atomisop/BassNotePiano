@@ -193,7 +193,7 @@ export function MarketingNav() {
                 wordmark treatment (studied directly), not the small label
                 this replaces. Colored in the accent at the time; neutral
                 again now under the "premium black and white" pass. */}
-            <span className="hidden whitespace-nowrap font-serif text-body font-bold lowercase tracking-[-0.01em] text-slate-50 xl:inline">
+            <span className="hidden whitespace-nowrap font-serif text-body font-bold lowercase tracking-tight text-slate-50 xl:inline">
               Bass Note Piano
             </span>
             {/* Phones and tablets show the logo alone (the link keeps its aria-label);

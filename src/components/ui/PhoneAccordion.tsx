@@ -47,7 +47,7 @@ export function PhoneAccordion({
     <AccordionPrimitive.Root asChild type="single" collapsible value={value} onValueChange={setValue}>
       <section id={id} className={cn("p-5", className)}>
         <AccordionPrimitive.Item value="section">
-          {!alwaysCollapsible && <h2 className="hidden text-body font-semibold text-slate-50 md:block">{title}</h2>}
+          {!alwaysCollapsible && <h2 className="hidden text-title font-semibold text-slate-50 md:block">{title}</h2>}
           <AccordionPrimitive.Header asChild>
             <h2 className={alwaysCollapsible ? undefined : "md:hidden"} data-jump-title={title}>
               <AccordionPrimitive.Trigger className="tap -my-1 flex w-full items-center justify-between gap-3 py-1 text-left">

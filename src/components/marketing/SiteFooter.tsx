@@ -45,7 +45,7 @@ export function SiteFooter() {
                 again now under the "premium black and white" pass. */}
             <Link href="/" className="flex items-center gap-2">
               <Image src="/logo-mark.png" alt="" width={32} height={32} className="h-8 w-8" />
-              <span className="font-serif text-small font-bold lowercase tracking-[-0.01em] text-slate-50">
+              <span className="font-serif text-small font-bold lowercase tracking-tight text-slate-50">
                 Bass Note Piano
               </span>
             </Link>
@@ -66,7 +66,7 @@ export function SiteFooter() {
                 level on every one of them. h2 is correct on those and still
                 correct on the homepage, where the last content heading is
                 also an h2. Visual size is set by the classes, not the tag. */}
-            <h2 className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Explore</h2>
+            <h2 className="text-small font-medium uppercase tracking-caps text-slate-50/80">Explore</h2>
             <ul className="mt-4 flex flex-col gap-3 text-small">
               {EXPLORE_LINKS.map((link) => (
                 <li key={link.href}>
@@ -79,7 +79,7 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <h2 className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Account</h2>
+            <h2 className="text-small font-medium uppercase tracking-caps text-slate-50/80">Account</h2>
             <ul className="mt-4 flex flex-col gap-3 text-small">
               {isLoggedIn ? (
                 <li>

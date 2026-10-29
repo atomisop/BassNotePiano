@@ -90,7 +90,7 @@ export function Hero() {
         <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/75" />
 
         <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-6 pb-16 text-center md:pb-24">
-          <h1 className="text-[clamp(3rem,11vw,8rem)] font-semibold leading-[0.95] tracking-[-0.04em] text-cream">
+          <h1 className="text-[clamp(3rem,11vw,8rem)] font-semibold leading-[0.95] tracking-display text-cream">
             <WordsPullUp text="Bass Note Piano" className="justify-center" />
           </h1>
           <motion.p

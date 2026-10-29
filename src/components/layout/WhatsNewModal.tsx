@@ -62,8 +62,8 @@ export function WhatsNewModal({ open, onClose, entry }: { open: boolean; onClose
             exit="exit"
             className="glass-surface-modal relative max-h-[88dvh] w-full max-w-sm overflow-y-auto overscroll-contain p-6"
           >
-            <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">What&apos;s new · v{entry.version}</p>
-            <h2 id="whats-new-title" className="mt-1.5 text-body text-slate-50 font-semibold">
+            <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">What&apos;s new · v{entry.version}</p>
+            <h2 id="whats-new-title" className="mt-1.5 text-title text-slate-50 font-semibold">
               {entry.title}
             </h2>
 

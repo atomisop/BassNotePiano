@@ -80,7 +80,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
 
   return (
     <div className="glass-surface p-6">
-      <h2 className="text-body text-slate-50 font-semibold">New announcement</h2>
+      <h2 className="text-title text-slate-50 font-semibold">New announcement</h2>
 
       <div className="mt-4 space-y-3">
         <input
@@ -265,7 +265,7 @@ export function AnnouncementManager({
       <ComposeForm totalUsers={totalUsers} onPublished={refresh} />
 
       <div className="glass-surface p-6">
-        <h2 className="text-body text-slate-50 font-semibold">History</h2>
+        <h2 className="text-title text-slate-50 font-semibold">History</h2>
 
         <div className="mt-4 space-y-3">
           {initialAnnouncements.length === 0 ? (

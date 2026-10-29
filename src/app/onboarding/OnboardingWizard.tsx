@@ -190,7 +190,7 @@ export function OnboardingWizard() {
         />
       </div>
 
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
         Step {step + 1} of {STEP_TITLES.length}
         {optional ? " · optional" : ""}
       </p>

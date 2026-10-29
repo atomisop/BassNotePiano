@@ -33,7 +33,7 @@ export function AdminTwoStepCard({ enabled: initiallyEnabled, backupLeft }: { en
   const field = "mt-2 w-full max-w-xs";
   return (
     <div className="glass-surface p-6">
-      <h2 className="text-body font-semibold text-slate-50">Two-step sign-in (admin)</h2>
+      <h2 className="text-title font-semibold text-slate-50">Two-step sign-in (admin)</h2>
       <div className="mt-4 space-y-3 text-small text-slate-300">
         {codes ? (
           <>

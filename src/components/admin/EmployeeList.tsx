@@ -45,7 +45,7 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
           <div key={employee.id} className="glass-surface p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="truncate text-body font-semibold text-slate-50">{employee.name ?? employee.email}</h2>
+                <h2 className="truncate text-title font-semibold text-slate-50">{employee.name ?? employee.email}</h2>
                 <p className="mt-1 truncate text-small text-slate-500">{employee.email}</p>
                 <p className="mt-1 text-small text-slate-500">
                   Joined {new Date(employee.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}

@@ -210,7 +210,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
         .filter((g) => g.rows.length > 0)
         .map((group) => (
           <div key={group.day} className="glass-surface p-5">
-            <h2 className="text-body text-slate-50 font-semibold">{group.label}</h2>
+            <h2 className="text-title text-slate-50 font-semibold">{group.label}</h2>
             <div className="mt-3 space-y-2">
               {group.rows.map((row) =>
                 editingId === row.id ? (
@@ -301,7 +301,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
 
       {adding ? (
         <div className="glass-surface p-5">
-          <h2 className="mb-3 text-body text-slate-50 font-semibold">New weekly slot</h2>
+          <h2 className="mb-3 text-title text-slate-50 font-semibold">New weekly slot</h2>
           <ScheduleForm
             initial={{ dayOfWeek: 1, startTime: "11:00", endTime: "13:00", label: null }}
             submitting={submitting}

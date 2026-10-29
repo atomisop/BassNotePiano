@@ -201,7 +201,7 @@ function BookingCard({
           <span className="text-small font-medium uppercase tracking-wide text-slate-500">
             {start.toLocaleDateString(undefined, { weekday: "short" })}
           </span>
-          <span className="text-xl font-bold leading-none text-slate-50">{start.getDate()}</span>
+          <span className="text-title font-bold leading-none text-slate-50">{start.getDate()}</span>
           <span className="text-small text-slate-500">{start.toLocaleDateString(undefined, { month: "short" })}</span>
         </div>
         <div className="min-w-0 flex-1">
@@ -899,7 +899,7 @@ export function ClassBookingClient({
     <WideLayout>
       {/* One column on phones and tablets. From lg up the Book tab uses the width: times on the left, the calendar on the right. */}
       <div className="mx-auto w-full max-w-2xl lg:max-w-6xl">
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
         {extraMode ? "Extra sessions" : "Live Lessons"}
       </p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">

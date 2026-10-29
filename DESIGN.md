@@ -6,7 +6,8 @@ never a raw hex, px size or font name.
 
 ```text
 Feeling:  a calm, flat, dark practice studio. Content first, chrome quiet, one warm accent.
-Type:     Baloo 2 for page titles only, Sora for everything else, JetBrains Mono for keys and codes.
+Type:     Baloo 2 for page titles only. Inside the app everything else is the system font (SF Pro on Apple devices),
+          labels in sentence case; the public pages use Sora. JetBrains Mono for keys and codes.
           Five steps: caption 12 · small 13 · body 16 · title 20 · hero 28 to 44 (fluid).
           Weights: 400 text, 500 labels, 600 titles and buttons. Tabular numbers everywhere in the app.
 Colour:   ground #121212, cards one solid step lighter, an 11-step neutral ramp (slate-50 … slate-950).

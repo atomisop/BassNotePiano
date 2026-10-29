@@ -180,7 +180,7 @@ export function SettingsPanel({ defs, categories, initial, onSave, onReset }: Pr
         if (rows.length === 0) return null;
         return (
           <section key={c.id} id={`settings-${c.id}`} className={`glass-surface p-5 ${browsing && active !== c.id ? "hidden md:block" : ""}`}>
-            <h2 className="text-body font-semibold text-slate-50">{c.label}</h2>
+            <h2 className="text-title font-semibold text-slate-50">{c.label}</h2>
             <p className="text-small text-slate-500">{c.blurb}</p>
             <div className="mt-2 divide-y divide-slate-700/40">
               {rows.map((d) => (

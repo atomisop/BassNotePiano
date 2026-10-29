@@ -17,7 +17,7 @@ export function InstrumentPicker() {
       <h2 className="mb-10 text-center">
         <WordsPullUp
           text="Choose your instrument"
-          className="justify-center text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-[1] tracking-[-0.035em] text-cream"
+          className="justify-center text-[clamp(2rem,5vw,3.5rem)] font-semibold leading-[1] tracking-display text-cream"
         />
       </h2>
       <ElasticGallery items={ITEMS} />

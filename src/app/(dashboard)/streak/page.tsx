@@ -69,7 +69,7 @@ export default async function StreakPage() {
                 />
               </div>
               <div className="min-w-0">
-                <p className="text-[3.25rem] font-bold leading-none tabular-nums text-slate-50 md:text-[4rem]">{status.streak}</p>
+                <p className="text-figure font-bold tabular-nums text-slate-50">{status.streak}</p>
                 <p className="mt-1 text-body font-semibold text-slate-200">day streak</p>
               </div>
             </div>
@@ -187,7 +187,7 @@ function Fact({ icon, value, label }: { icon: React.ReactNode; value: number; la
   return (
     <div className="flex flex-col items-center text-center">
       <span className="text-slate-400">{icon}</span>
-      <span className="mt-1.5 text-[1.5rem] font-bold leading-none tabular-nums text-slate-50">{value}</span>
+      <span className="mt-1.5 text-headline font-bold leading-none tabular-nums text-slate-50">{value}</span>
       <span className="mt-1 text-small text-slate-400">{label}</span>
     </div>
   );

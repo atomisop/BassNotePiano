@@ -54,7 +54,7 @@ export function ScaleListRows({ roadmap, currentSlug, onRowClick, phoneHiddenFro
                 isCurrent ? "bg-signal/6 shadow-[inset_3px_0_0_rgb(var(--signal))]" : "hover:bg-ink/5"
               }`}
             >
-              <span className="w-8 shrink-0 text-small font-semibold tabular-nums text-slate-400 sm:w-14 sm:uppercase sm:tracking-[0.15em]">
+              <span className="w-8 shrink-0 text-small font-semibold tabular-nums text-slate-400 sm:w-14 sm:uppercase sm:tracking-caps">
                 {scale.scaleGroup.code.replace("Scale ", "#")}
               </span>
 

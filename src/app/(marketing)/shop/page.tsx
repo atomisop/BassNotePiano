@@ -41,7 +41,7 @@ export default async function ShopPage(props: { searchParams: Promise<{ back?: s
               Back
             </BackLink>
           )}
-          <h1 className="mb-4 text-2xl font-medium tracking-[-0.03em] text-cream md:text-3xl">Gear that works for beginners</h1>
+          <h1 className="mb-4 text-2xl font-medium tracking-display text-cream md:text-3xl">Gear that works for beginners</h1>
           <p role="note" className="mb-8 max-w-2xl rounded-xl border border-cream/15 bg-cream/5 px-4 py-3 text-small text-cream/80">
             Prices shown here are a guide and might be different on Amazon when you look. Some items might not be available.
           </p>

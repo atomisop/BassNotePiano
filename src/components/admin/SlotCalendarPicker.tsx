@@ -150,7 +150,7 @@ export function SlotCalendarPicker({
                   onOwnTime(e.target.value);
                   onPick(null);
                 }}
-                className="w-40 rounded-lg bg-neu-base px-3 py-2 text-base text-slate-100 shadow-raised-low"
+                className="w-40 rounded-lg bg-neu-base px-3 py-2 text-body text-slate-100 shadow-raised-low"
               />
             </div>
           )}

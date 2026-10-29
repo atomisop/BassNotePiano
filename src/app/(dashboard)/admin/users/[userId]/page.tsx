@@ -66,7 +66,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
       <BackLink href="/admin/users" className="tap inline-flex items-center text-small font-medium text-slate-500 transition hover:text-slate-300">
         ← Back
       </BackLink>
-      <p className="mt-3 text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Admin</p>
+      <p className="mt-3 text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{profile.user.name ?? profile.user.email}</h1>
 
       <dl className="mt-5 grid grid-cols-2 gap-2 rounded-2xl bg-neu-base p-3 shadow-raised-low sm:grid-cols-4 lg:grid-cols-7">
@@ -102,7 +102,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
             changes.length > 0 ? (
               <section className="glass-surface p-5">
                 <div className="flex items-baseline justify-between gap-3">
-                  <h2 className="text-body font-semibold text-slate-50">Changes made on this account</h2>
+                  <h2 className="text-title font-semibold text-slate-50">Changes made on this account</h2>
                   <Link href={`/admin/activity?user=${params.userId}&days=all`} className="text-small text-slate-400 underline underline-offset-4 hover:text-slate-200">See all</Link>
                 </div>
                 <ul className="mt-3 divide-y divide-slate-50/10">

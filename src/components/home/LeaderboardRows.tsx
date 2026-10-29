@@ -29,7 +29,7 @@ export function LeaderboardRows({ rows, viewerId, compact = false }: { rows: Lea
                 {me && <span className="font-normal text-slate-400"> (you)</span>}
               </span>
               {!compact && (
-                <span className="mt-0.5 flex items-center gap-3 text-[0.75rem] text-slate-400">
+                <span className="mt-0.5 flex items-center gap-3 text-caption text-slate-400">
                   <span className="inline-flex items-center gap-1">
                     <Flame aria-hidden className="h-3.5 w-3.5" />
                     {r.streak} day streak
@@ -43,7 +43,7 @@ export function LeaderboardRows({ rows, viewerId, compact = false }: { rows: Lea
             </span>
             <span className="shrink-0 text-right">
               <span className="block text-small font-bold tabular-nums text-slate-50">{r.minutes}</span>
-              <span className="block text-[0.6875rem] text-slate-500">min</span>
+              <span className="block text-caption text-slate-500">min</span>
             </span>
           </li>
         );

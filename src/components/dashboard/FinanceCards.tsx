@@ -81,7 +81,7 @@ export function MiniStats({ title, note, items }: { title: string; note?: string
           <div key={it.label} className="rounded-2xl bg-neu-base shadow-pressed-low p-3">
             <p className="text-small text-slate-400">{it.label}</p>
             <p className="mt-1 text-body font-semibold tabular-nums text-slate-50">{it.value}</p>
-            <p className={cn("mt-1 flex items-center gap-1.5 text-[0.6875rem]", it.on ? "text-signal-fg" : "text-slate-500")}>
+            <p className={cn("mt-1 flex items-center gap-1.5 text-caption", it.on ? "text-signal-fg" : "text-slate-500")}>
               <span aria-hidden className={cn("h-1.5 w-1.5 rounded-full", it.on ? "bg-signal" : "bg-slate-500")} />
               {it.status}
             </p>
@@ -137,7 +137,7 @@ export function ShowCard({
         <Chip tone="dark">{chip}</Chip>
       </div>
       <div>
-        <p className="text-balance text-body font-semibold leading-snug sm:text-xl">{big}</p>
+        <p className="text-balance text-body font-semibold leading-snug sm:text-title">{big}</p>
         {sub && <p className="mt-1 text-small text-white/70">{sub}</p>}
         {action &&
           (action.external ? (
@@ -184,7 +184,7 @@ export function StatusStrip({
         <div key={it.label} className={cn("flex min-w-0 flex-col justify-between gap-2 p-4 sm:p-5", i > 0 && "border-t border-(--neu-edge) sm:border-l sm:border-t-0")}>
           <div className="min-w-0">
             <p className="text-small text-slate-400">{it.label}</p>
-            <p className="mt-1 truncate text-body font-semibold text-slate-50 sm:text-lg">{it.value}</p>
+            <p className="mt-1 truncate text-body font-semibold text-slate-50 sm:text-title">{it.value}</p>
             {it.fraction !== undefined && (
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-neu-base shadow-pressed-low" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(Math.min(1, it.fraction) * 100)} aria-label={it.label}>
                 <div className="h-full rounded-full bg-signal transition-all" style={{ width: `${Math.max(0, Math.min(100, Math.round(it.fraction * 100)))}%` }} />

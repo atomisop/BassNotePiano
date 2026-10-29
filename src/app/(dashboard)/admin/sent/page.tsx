@@ -13,7 +13,7 @@ const DAYS = [
 ];
 const when = (d: Date) => d.toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 const whenDay = (d: Date) => d.toLocaleDateString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", year: "numeric" });
-const field = "h-11 w-full rounded-lg bg-neu-base px-2.5 sm:px-3 text-base text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
+const field = "h-11 w-full rounded-lg bg-neu-base px-2.5 sm:px-3 text-body text-slate-100 shadow-pressed-low outline-none placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-ring";
 const CHANNEL_LABEL = { bell: "Bell", mail: "Mail" } as const;
 
 /** Admin > Inbox > Sent: which notice went to whom, from the bell and from Mail. */
@@ -45,7 +45,7 @@ export default async function AdminSentPage(props: { searchParams: Promise<{ q?:
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Admin</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Sent</h1>
 
       <div role="group" aria-label="How to list them" className="mt-5 flex w-fit gap-1.5 rounded-full bg-neu-base p-1 shadow-pressed-low">

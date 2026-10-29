@@ -53,11 +53,11 @@ function ProductCard({ product }: { product: ShopProduct }) {
         />
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3 pt-5">
-        <p className="text-small uppercase tracking-[0.18em] text-cream/60">{product.brand}</p>
-        <h2 className="text-balance text-body font-medium leading-snug tracking-[-0.01em] text-cream">{product.name}</h2>
+        <p className="text-small uppercase tracking-caps text-cream/60">{product.brand}</p>
+        <h2 className="text-balance text-body font-medium leading-snug tracking-tight text-cream">{product.name}</h2>
         <p className="text-small leading-relaxed text-cream/60">{product.blurb}</p>
         <div className="mt-auto flex items-center justify-between gap-3 pt-5">
-          <span className="text-xl font-medium tracking-[-0.02em] text-cream">{formatUsd(product.priceCents)}</span>
+          <span className="text-xl font-medium tracking-tight text-cream">{formatUsd(product.priceCents)}</span>
           <PillCTA href={product.amazonUrl} external className="px-4 text-sm sm:px-5">
             View on Amazon
           </PillCTA>

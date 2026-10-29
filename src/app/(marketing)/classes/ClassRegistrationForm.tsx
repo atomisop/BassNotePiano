@@ -114,7 +114,7 @@ export function ClassRegistrationForm() {
   if (success) {
     return (
       <div className="glass-surface-elevated p-8 text-center">
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Request received</p>
+        <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Request received</p>
         <h3 className="mt-2 font-serif text-body text-slate-50">Thanks, {fullName.split(" ")[0]}.</h3>
         {/* No coming-soon branch here anymore: the instrument pill for
             Drums/Vocal is disabled now, so `instrument` can never actually

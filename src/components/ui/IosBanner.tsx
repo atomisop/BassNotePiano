@@ -125,11 +125,11 @@ export function IosBanner({
           <div className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-mark.png" alt="" width={20} height={20} className="h-5 w-5 rounded-[6px] object-cover" />
-            <span className="text-[12px] font-semibold uppercase tracking-wide text-slate-400">Bass Note Piano</span>
-            <span className="ml-auto text-[12px] text-slate-500 [@media(hover:hover)]:mr-7">now</span>
+            <span className="text-caption font-semibold uppercase tracking-wide text-slate-400">Bass Note Piano</span>
+            <span className="ml-auto text-caption text-slate-500 [@media(hover:hover)]:mr-7">now</span>
           </div>
-          <p className="mt-1.5 text-[15px] font-semibold leading-snug text-slate-100">{title}</p>
-          <p className="text-[15px] leading-snug text-slate-300">{body}</p>
+          <p className="mt-1.5 text-body font-semibold leading-snug text-slate-100">{title}</p>
+          <p className="text-small text-slate-300">{body}</p>
         </Tap>
         {/* The grab bar, like the one under a banner on an iPhone. */}
         <span aria-hidden className="pointer-events-none absolute bottom-1.5 left-1/2 h-[5px] w-9 -translate-x-1/2 rounded-full bg-slate-500/50" />

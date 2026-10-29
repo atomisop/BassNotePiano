@@ -170,7 +170,7 @@ function Pill({
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="glass-surface p-6">
-      <h2 className="text-body text-slate-50 font-semibold">{title}</h2>
+      <h2 className="text-title text-slate-50 font-semibold">{title}</h2>
       <div className="mt-4">{children}</div>
     </div>
   );

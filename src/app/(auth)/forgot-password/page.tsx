@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
       animate="visible"
       className="w-full glass-surface-elevated p-7"
     >
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Reset password</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Reset password</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Forgot your password?</h1>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">

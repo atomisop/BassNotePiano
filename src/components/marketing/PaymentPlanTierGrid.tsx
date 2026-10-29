@@ -166,7 +166,7 @@ export function PaymentPlanTierGrid({
                 )}
               </p>
               <p className="mt-1 flex items-baseline gap-1.5">
-                <span className={`font-serif tabular-nums ${narrow ? "text-[1.75rem] leading-none" : "text-hero"} ${featured ? "text-amber-400" : "text-slate-50"}`}>
+                <span className={`font-serif tabular-nums ${narrow ? "text-headline leading-none" : "text-hero"} ${featured ? "text-amber-400" : "text-slate-50"}`}>
                   <NumberTicker value={perStudentCents} format={formatUsd} />
                 </span>
                 <span className="text-small text-slate-400">{isFamily ? "/student per 28 days" : "/28 days"}</span>

@@ -49,7 +49,7 @@ export default async function AdminUsersPage(props: { searchParams: Promise<{ q?
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Admin</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Accounts</h1>
 
       <div className="mt-6">

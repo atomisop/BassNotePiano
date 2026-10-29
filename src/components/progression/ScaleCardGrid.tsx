@@ -62,7 +62,7 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick, phoneHiddenFr
               )}
             >
               <div className="flex items-center justify-between gap-2">
-                <p className="text-small font-semibold uppercase tracking-[0.16em] text-slate-400">
+                <p className="text-small font-semibold uppercase tracking-caps text-slate-400">
                   {scale.scaleGroup.code}
                 </p>
                 {isCurrent ? (
@@ -76,7 +76,7 @@ export function ScaleCardGrid({ roadmap, currentSlug, onCardClick, phoneHiddenFr
                 )}
               </div>
 
-              <h3 className={cn("mt-2 text-body font-semibold", locked ? "text-slate-400" : "text-slate-50")}>
+              <h3 className={cn("mt-2 text-title font-semibold", locked ? "text-slate-400" : "text-slate-50")}>
                 {scale.scaleGroup.title}
               </h3>
               {scale.scaleGroup.kinitName && <p className="mt-0.5 text-small text-slate-400">{scale.scaleGroup.kinitName}</p>}

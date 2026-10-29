@@ -16,7 +16,7 @@ export function DueThisWeek({ week }: { week: DueWeek }) {
   return (
     <section aria-label="Payments due in the next 7 days" className="rounded-2xl bg-neu-base shadow-raised-mid p-4">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="flex items-center gap-1 text-body font-semibold text-slate-50">
+        <h2 className="flex items-center gap-1 text-title font-semibold text-slate-50">
           Due in 7 days
           <Hint label="What this counts">Subscribers whose next 28-day bill lands in the next week. Days are Eastern.</Hint>
         </h2>
@@ -28,15 +28,15 @@ export function DueThisWeek({ week }: { week: DueWeek }) {
       <div className={week.items.length === 0 ? "hidden" : "mt-4 grid grid-cols-7 gap-2"} role="img" aria-label={`Bills due per day: ${week.days.map((d) => `${d.weekday} ${d.count}`).join(", ")}`}>
         {week.days.map((d) => (
           <div key={d.key} className="flex flex-col items-center gap-1.5">
-            <span className="h-4 text-[0.6875rem] font-semibold tabular-nums text-slate-300">{d.count > 0 ? d.count : ""}</span>
+            <span className="h-4 text-caption font-semibold tabular-nums text-slate-300">{d.count > 0 ? d.count : ""}</span>
             <div className="flex h-20 w-full items-end justify-center">
               <div
                 className={`w-full max-w-7 rounded-lg ${d.count === 0 ? "bg-slate-50/8" : d.isToday ? "bg-signal" : "bg-slate-50/85"}`}
                 style={{ height: d.count === 0 ? 6 : `${Math.max(14, Math.round((d.cents / max) * 100))}%` }}
               />
             </div>
-            <span className={`text-[0.6875rem] ${d.isToday ? "font-semibold text-signal-fg" : "text-slate-500"}`}>{d.isToday ? "Today" : d.weekday}</span>
-            <span className="text-[0.6875rem] tabular-nums text-slate-500">{d.dayOfMonth}</span>
+            <span className={`text-caption ${d.isToday ? "font-semibold text-signal-fg" : "text-slate-500"}`}>{d.isToday ? "Today" : d.weekday}</span>
+            <span className="text-caption tabular-nums text-slate-500">{d.dayOfMonth}</span>
           </div>
         ))}
       </div>
@@ -54,7 +54,7 @@ export function DueThisWeek({ week }: { week: DueWeek }) {
                   .map((i) => (
                     <li key={i.userId}>
                       <Link href={`/admin/users/${i.userId}`} className="tap flex items-center gap-3 py-2 text-small hover:opacity-80">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-50/10 text-[0.6875rem] font-semibold text-slate-200">{i.name.charAt(0).toUpperCase()}</span>
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-50/10 text-caption font-semibold text-slate-200">{i.name.charAt(0).toUpperCase()}</span>
                         <span className="min-w-0 flex-1 truncate text-slate-100">{i.name}</span>
                         <span className="tabular-nums text-slate-300">{usd(i.amountCents)}</span>
                       </Link>
@@ -77,7 +77,7 @@ export function DueThisWeek({ week }: { week: DueWeek }) {
               <li key={o.userId}>
                 <Link href={`/admin/users/${o.userId}`} className="tap flex items-center gap-3 py-2 text-small hover:opacity-80">
                   <span className="min-w-0 flex-1 truncate text-slate-100">{o.name}</span>
-                  <span className="rounded-full bg-signal/16 px-2 py-0.5 text-[0.6875rem] font-semibold text-signal-fg">{o.daysLate}d late</span>
+                  <span className="rounded-full bg-signal/16 px-2 py-0.5 text-caption font-semibold text-signal-fg">{o.daysLate}d late</span>
                   <span className="tabular-nums text-slate-300">{usd(o.amountCents)}</span>
                 </Link>
               </li>

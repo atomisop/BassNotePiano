@@ -151,7 +151,7 @@ function SectionCard({ title, hint, advanced = false, children }: { title: strin
   }
   return (
     <div className="glass-surface p-6">
-      <h2 className="flex items-center gap-1 text-body text-slate-50 font-semibold">
+      <h2 className="flex items-center gap-1 text-title text-slate-50 font-semibold">
         {title}
         {hint && <Hint>{hint}</Hint>}
       </h2>
@@ -215,7 +215,7 @@ function SignOutButton({ className = "" }: { className?: string }) {
 function CategoryHeading({ category, isFirst }: { category: Category; isFirst: boolean }) {
   return (
     <p
-      className={`px-3 pb-1 text-small font-semibold uppercase tracking-[0.16em] text-slate-500 ${isFirst ? "" : "mt-3"}`}
+      className={`px-3 pb-1 text-small font-semibold uppercase tracking-caps text-slate-500 ${isFirst ? "" : "mt-3"}`}
     >
       {category}
     </p>
@@ -279,7 +279,7 @@ function MobileSettingsMenu({ onSelect }: { onSelect: (tab: TabId) => void }) {
       {groupedTabs().map((group) => (
         <section key={group.category}>
           <p
-            className="px-1 pb-2 text-small font-semibold uppercase tracking-[0.16em] text-slate-500"
+            className="px-1 pb-2 text-small font-semibold uppercase tracking-caps text-slate-500"
           >
             {group.category}
           </p>
@@ -349,7 +349,7 @@ function AccountGroup({ id, title, blurb, danger, children }: { id: string; titl
   return (
     <section data-account-group={id} className="scroll-mt-4 space-y-4">
       <div>
-        <h2 className={`text-small font-semibold uppercase tracking-[0.16em] ${danger ? "text-red-300" : "text-slate-400"}`}>{title}</h2>
+        <h2 className={`text-small font-semibold uppercase tracking-caps ${danger ? "text-red-300" : "text-slate-400"}`}>{title}</h2>
         {blurb && <p className="mt-1 text-small text-slate-500">{blurb}</p>}
       </div>
       {children}
@@ -540,7 +540,7 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
 function AppearanceSection() {
   return (
     <section>
-      <h2 className="text-body text-slate-50 font-semibold">Themes &amp; appearance</h2>
+      <h2 className="text-title text-slate-50 font-semibold">Themes &amp; appearance</h2>
       <div className="mt-6">
         <ThemePicker />
       </div>
@@ -878,7 +878,7 @@ function ReferralCard() {
         Send your link. When your friend starts a 84 or 168 day plan and their first payment goes through, you both get {data.percent}% off for {data.months} months.
       </p>
       <label htmlFor="ref-link" className="sr-only">Your invite link</label>
-      <input id="ref-link" readOnly value={data.link} onFocus={(e) => e.currentTarget.select()} className="mt-3 h-11 w-full rounded-lg bg-neu-base px-3 text-base text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+      <input id="ref-link" readOnly value={data.link} onFocus={(e) => e.currentTarget.select()} className="mt-3 h-11 w-full rounded-lg bg-neu-base px-3 text-body text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <button type="button" onClick={copy} className={buttonVariants({ variant: "primary", size: "sm", className: "text-black" })}>{copied ? "Copied" : "Copy link"}</button>
         <span className="text-small text-slate-400">
@@ -1067,7 +1067,7 @@ function CalendarFeedCard() {
             <button type="button" onClick={copy} className={buttonVariants({ variant: "secondary", size: "sm" })}>{copied ? "Copied" : "Copy link"}</button>
           </div>
           <label htmlFor="cal-link" className="sr-only">Your calendar link</label>
-          <input id="cal-link" readOnly value={links.https} onFocus={(e) => e.currentTarget.select()} className="h-11 w-full rounded-lg bg-neu-base px-3 text-base text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+          <input id="cal-link" readOnly value={links.https} onFocus={(e) => e.currentTarget.select()} className="h-11 w-full rounded-lg bg-neu-base px-3 text-body text-slate-300 shadow-pressed-low outline-none focus-visible:ring-2 focus-visible:ring-ring" />
           {!confirmReset ? (
             <button type="button" onClick={() => setConfirmReset(true)} className="text-small text-slate-400 underline underline-offset-4 hover:text-slate-200">Make a new link</button>
           ) : (

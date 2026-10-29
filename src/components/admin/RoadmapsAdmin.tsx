@@ -80,7 +80,7 @@ function RoadmapCard({ roadmap: r, first, last }: { roadmap: AdminRoadmap; first
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-body font-semibold text-slate-50">{r.name}</p>
-            <span className={cn("rounded-full px-2 py-0.5 text-[0.75rem] font-semibold", r.visible ? "bg-signal/14 text-signal-fg" : "bg-neu-base text-slate-400 shadow-pressed-low")}>
+            <span className={cn("rounded-full px-2 py-0.5 text-caption font-semibold", r.visible ? "bg-signal/14 text-signal-fg" : "bg-neu-base text-slate-400 shadow-pressed-low")}>
               {r.visible ? "Students see it" : "Hidden"}
             </span>
           </div>
@@ -128,7 +128,7 @@ function RoadmapCard({ roadmap: r, first, last }: { roadmap: AdminRoadmap; first
               <span className="block truncate text-small font-semibold text-slate-100">
                 {s.code} · {s.title}
               </span>
-              <span className="block text-[0.75rem] text-slate-500">
+              <span className="block text-caption text-slate-500">
                 {s.lessons} lesson{s.lessons === 1 ? "" : "s"}
               </span>
             </span>
@@ -227,7 +227,7 @@ function RoadmapForm({ roadmap, onDone }: { roadmap?: AdminRoadmap; onDone: () =
               type="button"
               aria-pressed={artwork === key}
               onClick={() => setArtwork(key)}
-              className={cn("tap flex flex-col items-center gap-1 rounded-xl p-1.5 text-[0.75rem] text-slate-300", artwork === key && "ring-2 ring-signal")}
+              className={cn("tap flex flex-col items-center gap-1 rounded-xl p-1.5 text-caption text-slate-300", artwork === key && "ring-2 ring-signal")}
             >
               <RoadmapArtwork artwork={key} className="h-10 w-14" />
               {a.label}

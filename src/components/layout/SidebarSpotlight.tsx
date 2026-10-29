@@ -34,7 +34,7 @@ function when(iso: string): string {
 function Shell({ href, icon: Icon, label, tone = "signal", children, cta }: { href?: string; icon: LucideIcon; label: string; tone?: "signal" | "warn"; children: ReactNode; cta?: string }) {
   const body = (
     <>
-      <span className="flex items-center gap-1.5 px-3 pt-3 text-small font-semibold uppercase tracking-[0.14em] text-slate-500">
+      <span className="flex items-center gap-1.5 px-3 pt-3 text-small font-semibold uppercase tracking-caps text-slate-500">
         <Icon className={`h-3.5 w-3.5 ${tone === "warn" ? "text-red-300" : "text-signal-fg"}`} aria-hidden />
         {label}
       </span>

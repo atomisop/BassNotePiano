@@ -70,7 +70,7 @@ export function SupportChatWindow({
               }`}
             >
               {m.body}
-              <span className={`mt-0.5 block text-[11px] ${m.mine ? "text-slate-900/60" : "text-slate-500"}`}>
+              <span className={`mt-0.5 block text-caption ${m.mine ? "text-slate-900/60" : "text-slate-500"}`}>
                 {new Date(m.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
               </span>
             </div>

@@ -24,7 +24,7 @@ export function PillCTA({
       href={href}
       {...externalProps}
       className={cn(
-        "tap group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 py-2.5 text-base font-medium transition-[filter,background-color] hover:brightness-110 active:brightness-95",
+        "tap group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 py-2.5 text-body font-medium transition-[filter,background-color] hover:brightness-110 active:brightness-95",
         secondary
           ? "border border-amber-400 text-amber-400 hover:bg-amber-400/10"
           : "bg-amber-400 text-black",

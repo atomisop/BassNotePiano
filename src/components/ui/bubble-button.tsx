@@ -77,7 +77,7 @@ const UsageBadge = React.forwardRef<HTMLDivElement, UsageBadgeProps>(({ icon, pl
             ref={ref}
             className={cn(
               // "group" enables group-hover states for child elements
-              "group relative inline-flex cursor-default items-center gap-3 overflow-hidden rounded-full border bg-secondary px-4 py-2 text-base font-medium text-secondary-foreground shadow-sm transition-all hover:shadow-md",
+              "group relative inline-flex cursor-default items-center gap-3 overflow-hidden rounded-full border bg-secondary px-4 py-2 text-body font-medium text-secondary-foreground shadow-sm transition-all hover:shadow-md",
               className,
             )}
           >

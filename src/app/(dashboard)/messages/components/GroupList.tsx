@@ -20,7 +20,7 @@ export function GroupList({
   return (
     <div className="p-2">
       <div className="flex items-center justify-between px-2 pb-1.5 pt-3">
-        <p className="text-small font-semibold uppercase tracking-[0.16em] text-slate-500">Groups</p>
+        <p className="text-small font-semibold uppercase tracking-caps text-slate-500">Groups</p>
         <button
           type="button"
           onClick={onNewGroup}

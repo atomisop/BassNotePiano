@@ -31,12 +31,12 @@ export default async function AdminSecurityPage() {
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Admin</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Security</h1>
       <p className="mt-2 text-small text-slate-500">A stricter content security policy (it stops injected scripts) is running in report-only mode: nothing is blocked, but every browser tells us what it would have blocked.</p>
 
       <section className="glass-surface mt-6 p-5" aria-label="Is it safe to enforce?">
-        <h2 className="text-body font-semibold text-slate-50">Is it safe to turn on?</h2>
+        <h2 className="text-title font-semibold text-slate-50">Is it safe to turn on?</h2>
         {rows.length === 0 ? (
           <p className="mt-2 text-small text-slate-300">No reports yet. Reports arrive as people use the site; check again after a few days of normal use.</p>
         ) : realRecent.length === 0 ? (
@@ -56,7 +56,7 @@ export default async function AdminSecurityPage() {
       </section>
 
       <section className="glass-surface mt-5 p-5" aria-label="Reports">
-        <h2 className="text-body font-semibold text-slate-50">Reports</h2>
+        <h2 className="text-title font-semibold text-slate-50">Reports</h2>
         {rows.length === 0 ? (
           <p className="mt-2 text-small text-slate-500">Nothing yet.</p>
         ) : (

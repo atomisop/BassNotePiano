@@ -329,10 +329,10 @@ export function ZellePaymentModal({
             <div className="px-6 pb-6 pt-5">
               <div className="mb-5 flex items-start justify-between">
                 <div>
-                  <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">
+                  <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">
                     {scaleCode} · {eyebrowLabel}
                   </p>
-                  <h2 id="zelle-modal-title" className="mt-1 text-body text-slate-50 font-semibold">
+                  <h2 id="zelle-modal-title" className="mt-1 text-title text-slate-50 font-semibold">
                     {scaleTitle}
                   </h2>
                 </div>
@@ -615,7 +615,7 @@ export function ZellePaymentModal({
                         <path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </motion.div>
-                    <h3 className="text-body text-slate-50">Payment received</h3>
+                    <h3 className="text-title text-slate-50">Payment received</h3>
                     <button
                       type="button"
                       onClick={handleClose}
@@ -650,7 +650,7 @@ export function ZellePaymentModal({
                         <circle cx="12" cy="12" r="9" />
                       </motion.svg>
                     </motion.div>
-                    <h3 className="text-body text-slate-50">Confirmation received</h3>
+                    <h3 className="text-title text-slate-50">Confirmation received</h3>
                     <p className="mx-auto mt-1.5 max-w-xs text-small text-slate-400">
                       We&apos;re verifying your transfer.
                     </p>

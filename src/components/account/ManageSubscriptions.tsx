@@ -198,7 +198,7 @@ export function ManageSubscriptions({ activePlan, onChangeTerm, onCancel }: Mana
       {activePlan && progress && view === "summary" && (
         <div className="space-y-4">
           <div className="rounded-2xl bg-neu-base p-5 shadow-raised-low">
-            <p className="text-small font-medium uppercase tracking-[0.15em] text-slate-50/80">Your plan</p>
+            <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Your plan</p>
             <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <p className="font-serif text-hero text-slate-50">{currentLabel}</p>
               {activePlan.installmentAmountCents !== undefined && (

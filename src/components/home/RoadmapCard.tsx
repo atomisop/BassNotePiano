@@ -33,7 +33,7 @@ export function RoadmapCard({
       <RoadmapKeys />
       <div className="relative flex min-h-[15rem] flex-col p-5 md:min-h-[17rem] md:p-6">
         <p className="text-small font-medium text-white/80">Your roadmap</p>
-        <p className="mt-1 text-[1.5rem] font-bold leading-tight">{name}</p>
+        <p className="mt-1 text-headline font-bold leading-tight">{name}</p>
         {current && (
           <p className="mt-1 text-body text-white/85">
             {current.code} · {current.title}

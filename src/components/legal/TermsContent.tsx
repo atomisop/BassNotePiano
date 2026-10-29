@@ -10,7 +10,7 @@ export const TERMS_LAST_UPDATED = "October 24, 2026";
 function TermsSection({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   return (
     <div id={id} className="scroll-mt-24 border-b border-ink/10 pb-6 last:border-b-0 last:pb-0">
-      <h2 className="font-serif text-body text-slate-50">{title}</h2>
+      <h2 className="font-serif text-title text-slate-50">{title}</h2>
       <div className="mt-2 space-y-2 text-small leading-relaxed text-slate-400">{children}</div>
     </div>
   );

@@ -51,7 +51,7 @@ export default async function AdminOverviewPage() {
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Admin</p>
+      <p className="text-small font-medium uppercase tracking-caps text-slate-50/80">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{firstName ? `Good ${greeting}, ${firstName}.` : "Overview"}</h1>
 
       {/* Left: the money story in four cards. Right: what needs you and who owes what this week. One column on phones. */}
@@ -104,7 +104,7 @@ export default async function AdminOverviewPage() {
         <div className="grid min-w-0 gap-6">
           <section aria-label="Needs you now" className="rounded-2xl bg-neu-base shadow-raised-mid p-4">
             <div className="flex items-baseline justify-between gap-3">
-              <h2 className="text-body font-semibold text-slate-50">Needs you now</h2>
+              <h2 className="text-title font-semibold text-slate-50">Needs you now</h2>
               <p className="text-small text-slate-500">{attention.length === 0 ? "Nothing waiting" : `${attention.length} ${attention.length === 1 ? "item" : "items"}`}</p>
             </div>
             {attention.length === 0 ? (
@@ -129,7 +129,7 @@ export default async function AdminOverviewPage() {
       {waiting.payments.length > 0 && (
         <section className="mt-4">
           <div className="mb-2 flex items-baseline justify-between gap-3">
-            <h2 className="text-body font-semibold text-slate-50">Approve without leaving</h2>
+            <h2 className="text-title font-semibold text-slate-50">Approve without leaving</h2>
             {waiting.total > 3 && (
               <Link href="/admin/payments" className="text-small text-slate-400 underline-offset-4 hover:text-slate-100 hover:underline">
                 All {waiting.total} waiting
@@ -174,7 +174,7 @@ export default async function AdminOverviewPage() {
       {/* Two trend cards over the last six months, both from real rows (User.createdAt and VERIFIED payments). Flat stretches are real flat
           stretches, no smoothing, no seeded history. */}
       <section aria-label="Trends" className="mt-6">
-        <h2 className="mb-3 text-body font-semibold text-slate-50">Trends, last 6 months</h2>
+        <h2 className="mb-3 text-title font-semibold text-slate-50">Trends, last 6 months</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <MetricCard label="Signups" value={stats.totalUsers.toLocaleString()} hint="All accounts" data={trends.signups} variant="bar" />
           <MetricCard label="Verified revenue" value={formatUsd(stats.totalRevenueCents)} hint="Approved payments" data={trends.revenue} variant="area" tone="success" />

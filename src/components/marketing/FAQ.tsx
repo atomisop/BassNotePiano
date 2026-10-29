@@ -49,7 +49,7 @@ export function FAQ({ extraClassCents = EXTRA_CLASS_PRICE_CENTS }: { extraClassC
           <div className="min-w-0 md:col-span-5">
             <WordsPullUp
               text="Before you commit to anything."
-              className="max-w-[12ch] text-[clamp(2.5rem,6vw,5rem)] font-semibold leading-[1] tracking-[-0.035em] text-cream"
+              className="max-w-[12ch] text-[clamp(2.5rem,6vw,5rem)] font-semibold leading-[1] tracking-display text-cream"
             />
           </div>
 

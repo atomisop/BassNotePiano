@@ -173,7 +173,7 @@ export function ContactHolds({
 
   return (
     <Card>
-      <h2 className="text-body font-semibold text-slate-50">Reserved times</h2>
+      <h2 className="text-title font-semibold text-slate-50">Reserved times</h2>
       <p className="mt-1 text-small text-slate-400">A reminder only. When you book someone into one of these times from Schedule, you are asked first. Nothing is blocked.</p>
       <ul className="mt-4 grid gap-2">
         {active.length === 0 && <li className="text-small text-slate-500">No reserved times.</li>}
@@ -263,7 +263,7 @@ export function ContactSessions({
 
   return (
     <Card>
-      <h2 className="text-body font-semibold text-slate-50">Classes taken</h2>
+      <h2 className="text-title font-semibold text-slate-50">Classes taken</h2>
       <p className="mt-1 text-small text-slate-400">{sessions.length === 0 ? "None logged yet." : `${attended} attended, ${sessions.length - attended} missed.`}</p>
       <ul className="mt-4 grid gap-2">
         {sessions.map((session) => (

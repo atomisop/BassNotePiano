@@ -85,7 +85,7 @@ export function StudentQueue({ registrations, onApprove, onReject, emptyMessage 
             <div className="flex items-start gap-3">
               <Avatar image={reg.user?.image} name={reg.fullName} />
               <div>
-                <h2 className="text-body text-slate-50 font-semibold">{reg.fullName}</h2>
+                <h2 className="text-title text-slate-50 font-semibold">{reg.fullName}</h2>
                 <p className="mt-0.5 text-small text-slate-500">
                   {INSTRUMENT_LABEL[reg.instrument]} · {SKILL_LABEL[reg.skillLevel]}
                   {reg.user?.username && <> · @{reg.user.username}</>}

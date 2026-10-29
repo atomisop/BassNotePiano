@@ -35,7 +35,7 @@ export function ChildSwitcher({ currentId, kids }: { currentId: string; kids: { 
         aria-haspopup="dialog"
         className="tap inline-flex items-center gap-2 rounded-full bg-neu-base px-3 py-1.5 text-small font-medium text-slate-100 shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
       >
-        <span className={`${TINTS[kids.findIndex((k) => k.id === currentId) % TINTS.length]} flex h-6 w-6 items-center justify-center rounded-full text-[0.6875rem] font-semibold`}>
+        <span className={`${TINTS[kids.findIndex((k) => k.id === currentId) % TINTS.length]} flex h-6 w-6 items-center justify-center rounded-full text-caption font-semibold`}>
           {(current?.name ?? "?").charAt(0).toUpperCase()}
         </span>
         Switch child

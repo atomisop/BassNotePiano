@@ -36,7 +36,7 @@ export default async function AdminContactPage(props: { params: Promise<{ contac
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{contact.name}</h1>
       <div className="mt-6 grid gap-4">
         <Card>
-          <h2 className="mb-4 text-body font-semibold text-slate-50">Details</h2>
+          <h2 className="mb-4 text-title font-semibold text-slate-50">Details</h2>
           <ContactForm
             initial={{
               name: contact.name,
