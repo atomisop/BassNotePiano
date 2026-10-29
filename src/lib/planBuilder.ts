@@ -160,7 +160,10 @@ export interface PlanBuilderPreview {
   timeline: PlanTimeline;
   nextBill: string | null;
   creditsGiven: number;
+  /** Stored credits that will be spent now (taught days not already marked present). */
   creditsCharged: number;
+  /** Taught days that are already marked present on file: nothing more is charged for them. */
+  alreadyMarked: string[];
 }
 
 export async function previewPlanBuilder(input: PlanBuilderInput): Promise<PlanBuilderPreview> {
@@ -170,15 +173,33 @@ export async function previewPlanBuilder(input: PlanBuilderInput): Promise<PlanB
   const perClass = PLAN_CADENCE_CREDITS_PER_WEEK[OFFERED_PLAN_CADENCE];
   const startInstant = etMidnight(input.startDate);
   const liveCycles = Array.from({ length: r.installmentsPaid }, (_, k) => addBillingCycles(startInstant, k + 1)).filter((end) => end.getTime() > Date.now()).length;
-  return { mode: r.plan ? "existing" : "new", timeline, nextBill: timeline.nextBill, creditsGiven: r.plan ? 0 : liveCycles * (perClass * 4), creditsCharged: input.chargeTaught ? input.taughtDates.length * perClass : 0 };
+  const marked = input.taughtDates.length
+    ? await prisma.classBooking.findMany({ where: { studentId: input.userId, status: "COMPLETED", occurrenceDate: { in: input.taughtDates.map((d) => parseYmd(d)!) } }, select: { occurrenceDate: true } })
+    : [];
+  const alreadyMarked = marked.map((b) => b.occurrenceDate.toISOString().slice(0, 10));
+  const toCharge = input.taughtDates.filter((d) => !alreadyMarked.includes(d)).length;
+  return { mode: r.plan ? "existing" : "new", timeline, nextBill: timeline.nextBill, creditsGiven: r.plan ? 0 : liveCycles * (perClass * 4), creditsCharged: input.chargeTaught ? toCharge * perClass : 0, alreadyMarked };
 }
 
-export async function applyPlanBuilder(adminId: string, input: PlanBuilderInput): Promise<{ planId: string; created: boolean }> {
+export interface PlanBuilderResult {
+  planId: string;
+  created: boolean;
+  /** Stored credits spent by this run. */
+  charged: number;
+  /** Taught days that were already marked present, so nothing more was charged for them. */
+  alreadyMarked: string[];
+  balanceBefore: number;
+  balanceAfter: number;
+}
+
+export async function applyPlanBuilder(adminId: string, input: PlanBuilderInput): Promise<PlanBuilderResult> {
   if (input.recordPayment) {
     const open = await prisma.paymentPlan.findFirst({ where: { userId: input.userId, status: "ACTIVE" }, select: { id: true } });
     if (open) await recordPlanPaymentReceived(open.id, adminId);
   }
   const r = await resolve(input);
+  const balanceBefore = (await prisma.user.findUniqueOrThrow({ where: { id: input.userId }, select: { classCredits: true } })).classCredits;
+  const alreadyMarked: string[] = [];
   const perClass = PLAN_CADENCE_CREDITS_PER_WEEK[OFFERED_PLAN_CADENCE];
   const startInstant = etMidnight(input.startDate);
   const nextDue = addBillingCycles(startInstant, r.installmentsPaid);
@@ -231,7 +252,10 @@ export async function applyPlanBuilder(adminId: string, input: PlanBuilderInput)
       const occurrenceDate = parseYmd(d)!;
       const scheduledAt = computeScheduledAt(r.schedule, occurrenceDate, r.chunk);
       const existing = await tx.classBooking.findUnique({ where: { studentId_scheduleId_occurrenceDate: { studentId: input.userId, scheduleId: input.scheduleId, occurrenceDate } } });
-      if (existing?.status === "COMPLETED") continue;
+      if (existing?.status === "COMPLETED") {
+        alreadyMarked.push(d);
+        continue;
+      }
       const data = { status: "COMPLETED" as const, attendance: "PRESENT" as const, scheduledAt, creditsSpent: perClass, reservedByPlanId: id, refunded: false, canceledReason: null };
       if (existing) await tx.classBooking.update({ where: { id: existing.id }, data });
       else await tx.classBooking.create({ data: { studentId: input.userId, scheduleId: input.scheduleId, occurrenceDate, ...data } });
@@ -259,5 +283,6 @@ export async function applyPlanBuilder(adminId: string, input: PlanBuilderInput)
     emailCategory: "classes",
   }).catch(() => undefined);
   await logAudit({ actorId: adminId, action: "plan.build", targetType: "PaymentPlan", targetId: planId, detail: `${r.plan ? "re-anchored" : "created"} start ${input.startDate}, ${r.installmentsPaid} paid, ${input.taughtDates.length} taught` });
-  return { planId, created: !r.plan };
+  const balanceAfter = (await prisma.user.findUniqueOrThrow({ where: { id: input.userId }, select: { classCredits: true } })).classCredits;
+  return { planId, created: !r.plan, charged: charged.reduce((n, q) => n + q, 0), alreadyMarked, balanceBefore, balanceAfter };
 }

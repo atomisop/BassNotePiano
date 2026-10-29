@@ -113,10 +113,14 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
   async function apply() {
     if (!input || !preview) return;
     setBusy(true);
-    const result = await planBuilderApplyAction(input, key).catch(() => ({ ok: false, error: "Something went wrong. Check the plan before trying again." as string | null }));
+    const result = await planBuilderApplyAction(input, key).catch(() => ({ ok: false, error: "Something went wrong. Check the plan before trying again." as string | null, result: undefined }));
     setBusy(false);
     if (!result.ok) return setError(result.error ?? "Could not apply.");
-    toast.success(ctx?.mode === "new" ? "Plan created" : "Plan rebuilt");
+    const done = result.result;
+    const classes = (stored: number) => `${stored / 2} credit${stored === 2 ? "" : "s"}`;
+    if (done && done.charged > 0) toast.success(`Charged ${classes(done.charged)}. Credits ${done.balanceBefore / 2} to ${done.balanceAfter / 2}.`);
+    else if (done && done.alreadyMarked.length > 0) toast.warning(`${done.alreadyMarked.map(dateLabel).join(", ")} was already marked present, so nothing more was charged. Credits stay ${done.balanceAfter / 2}.`);
+    else toast.success(ctx?.mode === "new" ? "Plan created" : "Plan rebuilt");
     setKey(newIdempotencyKey());
     setOpen(false);
     router.refresh();
@@ -291,6 +295,11 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                     {preview.creditsCharged > 0 ? ` · -${preview.creditsCharged / 2} used` : ""}
                   </span>
                 </p>
+                {preview.alreadyMarked.length > 0 && (
+                  <p className="mt-1 text-small text-amber-300">
+                    {preview.alreadyMarked.map(dateLabel).join(", ")} is already marked present on her account, so it will not be charged again.
+                  </p>
+                )}
                 <div className="mt-2 space-y-2">
                   <ViewMore items={preview.timeline.cycles} initial={2} step={6}>
                     {(c) => (
