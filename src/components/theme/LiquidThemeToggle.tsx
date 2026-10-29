@@ -2,6 +2,7 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
+import { GlassLens } from "@/components/ui/GlassLens";
 
 /**
  * The dark / light switch, as a pane of Liquid Glass: a recessed track with the current mode written on it and a glass lens that slides
@@ -28,10 +29,13 @@ export function LiquidThemeToggle({ className = "" }: { className?: string }) {
       </span>
       <span
         aria-hidden
-        className="liquid liquid-rim absolute left-0 top-0 flex h-14 w-[4.25rem] items-center justify-center rounded-full transition-transform duration-500 [transition-timing-function:cubic-bezier(0.2,1.15,0.3,1)]"
+        className="liquid-rim absolute left-0 top-0 flex h-14 w-[4.25rem] items-center justify-center rounded-full transition-transform duration-500 [transition-timing-function:cubic-bezier(0.2,1.15,0.3,1)]"
         style={{ transform: dark ? "translateX(5.75rem)" : "translateX(0)" }}
       >
+        <GlassLens radius="full" bezel={20} strength={22} blur={1} />
+        <span className="relative z-10 flex">
         {dark ? <Moon className="h-6 w-6 text-white drop-shadow-[0_0_8px_rgb(255_255_255/0.8)]" fill="currentColor" /> : <Sun className="h-6 w-6 text-slate-50 drop-shadow-[0_0_8px_rgb(255_255_255/0.8)]" />}
+        </span>
       </span>
     </button>
   );

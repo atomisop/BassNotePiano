@@ -1,0 +1,144 @@
+// The physics behind Liquid Glass, as two small images made on a canvas for one pane of glass of a given size:
+//
+//  * a DISPLACEMENT map: how far, and which way, each pixel of the page behind the glass is shifted by refraction. Near the edge the glass
+//    is a curved bezel (a "convex squircle": height = (1 - (1 - s)^4)^(1/4), s = 0 at the edge to 1 at the bezel's inner end). The slope
+//    gives the angle at which light meets the surface, Snell's law (air 1.0, glass 1.5) bends it, and the sideways shift is how far the ray
+//    lands from where it would have without glass. Flat interior pixels are not shifted at all. Encoded the way feDisplacementMap reads it:
+//    red = x, green = y, 128 = no shift.
+//  * a SPECULAR map: the thin bright rim where the curved edge catches a light from the upper left (and a fainter one from the lower
+//    right), so the edge glows the way real glass does.
+//
+// Pure functions of the size, so they are cached and tested.
+
+export interface GlassMaps {
+  displacement: string;
+  specular: string;
+  /** The feDisplacementMap `scale` that turns the map's -1..1 into real pixels of shift. */
+  scale: number;
+}
+
+export interface GlassShape {
+  width: number;
+  height: number;
+  /** Corner radius in px (half the height for a pill). */
+  radius: number;
+  /** Width of the curved edge in px. */
+  bezel: number;
+  /** The largest shift in px (at the very edge). */
+  strength: number;
+}
+
+const N_GLASS = 1.5;
+const MAX_ANGLE = (82 * Math.PI) / 180;
+
+/** The glass height at s (0 edge .. 1 end of bezel): a convex squircle. */
+export const squircle = (s: number) => Math.pow(1 - Math.pow(1 - s, 4), 0.25);
+
+/** How strongly a ray is shifted at s: the sideways distance between the bent ray and the straight one, before normalizing. */
+export function refractionAt(s: number): number {
+  const delta = 0.001;
+  const a = Math.max(0, s - delta);
+  const b = Math.min(1, s + delta);
+  const slope = Math.abs((squircle(b) - squircle(a)) / (b - a));
+  const theta1 = Math.min(MAX_ANGLE, Math.atan(slope));
+  const theta2 = Math.asin(Math.sin(theta1) / N_GLASS);
+  return Math.tan(theta1) - Math.tan(theta2);
+}
+
+/** Distance in px from a point to the inside of a rounded rectangle's edge (positive inside), and the outward direction there. */
+export function edgeInfo(px: number, py: number, w: number, h: number, r: number): { depth: number; nx: number; ny: number } {
+  const cx = w / 2;
+  const cy = h / 2;
+  const dx = px - cx;
+  const dy = py - cy;
+  const qx = Math.abs(dx) - (cx - r);
+  const qy = Math.abs(dy) - (cy - r);
+  const outside = Math.hypot(Math.max(qx, 0), Math.max(qy, 0));
+  const signed = outside + Math.min(Math.max(qx, qy), 0) - r; // negative inside
+  let nx: number;
+  let ny: number;
+  if (qx > 0 && qy > 0) {
+    const len = Math.hypot(qx, qy) || 1;
+    nx = (Math.sign(dx) * qx) / len;
+    ny = (Math.sign(dy) * qy) / len;
+  } else if (qx > qy) {
+    nx = Math.sign(dx) || 1;
+    ny = 0;
+  } else {
+    nx = 0;
+    ny = Math.sign(dy) || 1;
+  }
+  return { depth: -signed, nx, ny };
+}
+
+/** The per-pixel numbers (no canvas), exported so they can be tested: displacement vector in -1..1 and specular alpha in 0..1. */
+export function glassPixel(px: number, py: number, shape: GlassShape, maxRefraction: number): { vx: number; vy: number; spec: number } {
+  const { width, height, radius, bezel } = shape;
+  const { depth, nx, ny } = edgeInfo(px, py, width, height, radius);
+  if (depth < 0 || depth >= bezel) return { vx: 0, vy: 0, spec: 0 };
+  const s = Math.min(1, depth / bezel);
+  const m = Math.min(1, refractionAt(s) / maxRefraction);
+  // Light from the upper left (strong) and the lower right (faint), concentrated in a thin rim along the edge.
+  const rim = Math.max(0, 1 - depth / Math.max(2.5, bezel * 0.22));
+  const l1 = Math.max(0, nx * -0.7071 + ny * -0.7071);
+  const l2 = Math.max(0, nx * 0.7071 + ny * 0.7071);
+  const spec = Math.min(1, rim * rim * (Math.pow(l1, 1.6) * 1 + Math.pow(l2, 1.6) * 0.42 + 0.12));
+  return { vx: nx * m, vy: ny * m, spec };
+}
+
+const cache = new Map<string, GlassMaps>();
+
+export function buildGlassMaps(shape: GlassShape): GlassMaps | null {
+  if (typeof document === "undefined") return null;
+  const w = Math.max(2, Math.round(shape.width));
+  const h = Math.max(2, Math.round(shape.height));
+  const key = `${w}x${h}:${Math.round(shape.radius)}:${Math.round(shape.bezel)}:${shape.strength}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+
+  const maxRefraction = refractionAt(0.001);
+  const disp = document.createElement("canvas");
+  disp.width = w;
+  disp.height = h;
+  const dctx = disp.getContext("2d");
+  const SPEC = 2; // the rim is drawn at twice the resolution so it stays crisp
+  const spec = document.createElement("canvas");
+  spec.width = w * SPEC;
+  spec.height = h * SPEC;
+  const sctx = spec.getContext("2d");
+  if (!dctx || !sctx) return null;
+
+  const d = dctx.createImageData(w, h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const { vx, vy } = glassPixel(x + 0.5, y + 0.5, { ...shape, width: w, height: h }, maxRefraction);
+      const i = (y * w + x) * 4;
+      d.data[i] = Math.round(128 + vx * 127);
+      d.data[i + 1] = Math.round(128 + vy * 127);
+      d.data[i + 2] = 128;
+      d.data[i + 3] = 255;
+    }
+  }
+  dctx.putImageData(d, 0, 0);
+
+  const sw = w * SPEC;
+  const sh = h * SPEC;
+  const s = sctx.createImageData(sw, sh);
+  const scaled: GlassShape = { width: sw, height: sh, radius: shape.radius * SPEC, bezel: shape.bezel * SPEC, strength: shape.strength };
+  for (let y = 0; y < sh; y++) {
+    for (let x = 0; x < sw; x++) {
+      const { spec: a } = glassPixel(x + 0.5, y + 0.5, scaled, maxRefraction);
+      const i = (y * sw + x) * 4;
+      s.data[i] = 255;
+      s.data[i + 1] = 255;
+      s.data[i + 2] = 255;
+      s.data[i + 3] = Math.round(a * 255);
+    }
+  }
+  sctx.putImageData(s, 0, 0);
+
+  const maps: GlassMaps = { displacement: disp.toDataURL("image/png"), specular: spec.toDataURL("image/png"), scale: shape.strength * 2 };
+  if (cache.size > 60) cache.clear();
+  cache.set(key, maps);
+  return maps;
+}

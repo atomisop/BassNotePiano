@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Music2, CalendarCheck, Users, MessageSquare, User, Settings, Globe, ArrowUpRight, Search, Sun, Moon, type LucideIcon } from "lucide-react";
@@ -11,6 +11,7 @@ import { Kbd } from "@/components/ui/Kbd";
 import { goKeysFor, OPEN_COMMAND_EVENT } from "@/lib/shortcuts";
 import { themeMode } from "@/lib/themes";
 import { useTheme } from "@/components/theme/ThemeProvider";
+import { GlassLens } from "@/components/ui/GlassLens";
 
 type Item = { href: string; label: string; icon: LucideIcon; dataTour?: string; match?: string[]; external?: boolean };
 
@@ -56,13 +57,53 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  // The selector: one pane of Liquid Glass that glides to whichever page is open (it follows the row as the sidebar opens, closes or scrolls).
+  const navRef = useRef<HTMLElement>(null);
+  const [sel, setSel] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const el = nav.querySelector<HTMLElement>('a[aria-current="page"]');
+      setSel(el ? { top: el.offsetTop, left: el.offsetLeft, width: el.offsetWidth, height: el.offsetHeight } : null);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+    measure();
+    const ro = new ResizeObserver(schedule);
+    ro.observe(nav);
+    nav.querySelectorAll("a").forEach((a) => ro.observe(a));
+    // The width of the open or closing sidebar changes over a third of a second: keep up with it.
+    const timer = window.setInterval(schedule, 40);
+    const stop = window.setTimeout(() => window.clearInterval(timer), 500);
+    return () => {
+      ro.disconnect();
+      window.clearInterval(timer);
+      window.clearTimeout(stop);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [pathname, mounted]);
+
   return (
     <nav
+      ref={navRef}
       aria-label="Primary"
       className="app-sidebar fixed bottom-0 left-0 top-12 z-40 hidden w-52 flex-col gap-5 overflow-y-auto overflow-x-hidden bg-ground px-3 pb-3 pt-2 lg:flex"
     >
+      {sel && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute z-0 rounded-xl"
+          style={{ top: sel.top, left: sel.left, width: sel.width, height: sel.height, transition: "top 460ms cubic-bezier(0.22,1.1,0.36,1), left 380ms var(--ease-ios), width 380ms var(--ease-ios), height 300ms var(--ease-ios)" }}
+        >
+          <GlassLens radius={12} bezel={11} strength={9} tint="linear-gradient(180deg, rgb(255 255 255 / 0.2), rgb(255 255 255 / 0.07))" blur={1} />
+        </span>
+      )}
       {GROUPS.map((group) => (
-        <div key={group.title} className="sb-group">
+        <div key={group.title} className="sb-group relative z-10">
           <p className="sb-group-title px-2.5 pb-1.5 text-small font-medium text-slate-500">{group.title}</p>
           <ul className="grid gap-0.5">
             {group.items.map((item) => {
@@ -97,7 +138,7 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
                     aria-current={active ? "page" : undefined}
                     className={`sb-item group/sb press-soft relative flex h-10 items-center gap-3 rounded-xl px-3 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                       active
-                        ? "bg-neu-lift text-slate-50 shadow-raised-low"
+                        ? "text-slate-50"
                         : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
                     }`}
                   >
