@@ -18,7 +18,7 @@ export default function AccountLoading() {
           {GROUPS.map((rows, g) => (
             <div key={g}>
               <Skeleton className="mb-2 h-3 w-20" />
-              <div className="glass-surface divide-y divide-[rgb(var(--c-s-50)/0.08)]">
+              <div className="glass-surface divide-y divide-slate-50/8">
                 {Array.from({ length: rows }).map((_, i) => (
                   <div key={i} className="flex h-14 items-center gap-3 px-4">
                     <Skeleton className="h-6 w-6 shrink-0 rounded-full" />

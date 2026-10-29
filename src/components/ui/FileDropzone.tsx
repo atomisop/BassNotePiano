@@ -111,8 +111,8 @@ export function FileDropzone({
         className={cn(
           "flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-9 text-center transition",
           dragging
-            ? "border-[rgb(var(--c-s-50))] bg-[rgb(var(--c-s-50)/0.1)]"
-            : "border-ink/15 hover:border-[rgb(var(--c-s-50)/0.5)] hover:bg-[rgb(var(--c-s-50))]/[0.04]",
+            ? "border-slate-50 bg-slate-50/10"
+            : "border-ink/15 hover:border-slate-50/50 hover:bg-slate-50/[0.04]",
           disabled && "pointer-events-none opacity-50",
         )}
       >
@@ -123,7 +123,7 @@ export function FileDropzone({
           fill="none"
           stroke="currentColor"
           strokeWidth="1.8"
-          className="text-[rgb(var(--c-s-50))]"
+          className="text-slate-50"
           aria-hidden
         >
           <path d="M12 16V4m0 0L7 9m5-5 5 5" strokeLinecap="round" strokeLinejoin="round" />

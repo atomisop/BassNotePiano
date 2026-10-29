@@ -20,7 +20,7 @@ export function Kbd({ keys, className }: { keys: string[]; className?: string })
       {keys.map((key, i) => (
         <kbd
           key={`${key}-${i}`}
-          className="inline-flex h-5 min-w-5 items-center justify-center rounded-[6px] border border-(--neu-edge) bg-[rgb(var(--c-s-50)/0.06)] px-1 font-sans text-[11px] font-medium leading-none text-slate-400"
+          className="inline-flex h-5 min-w-5 items-center justify-center rounded-[6px] border border-(--neu-edge) bg-slate-50/6 px-1 font-sans text-[11px] font-medium leading-none text-slate-400"
         >
           {key === "Mod" ? (apple ? "⌘" : "Ctrl") : key}
         </kbd>

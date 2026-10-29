@@ -30,7 +30,7 @@ function EmailToggle({ checked, onChange }: { checked: boolean; onChange: (next:
       aria-label="Also send this announcement by email"
       onClick={() => onChange(!checked)}
       className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-        checked ? "bg-[rgb(var(--c-a-400))]" : "bg-slate-700"
+        checked ? "bg-amber-400" : "bg-slate-700"
       }`}
     >
       <span
@@ -89,7 +89,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Title, e.g. New scale added: Bati"
           maxLength={120}
-          className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+          className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
         />
         <textarea
           value={body}
@@ -97,7 +97,7 @@ function ComposeForm({ totalUsers, onPublished }: { totalUsers: number; onPublis
           placeholder="Message…"
           maxLength={1000}
           rows={3}
-          className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+          className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
         />
       </div>
 

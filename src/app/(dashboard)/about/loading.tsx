@@ -14,7 +14,7 @@ export default function AboutLoading() {
         <Skeleton className="mt-2.5 h-10 w-36" />
 
         <div className="mt-6 lg:flex lg:gap-8">
-          <div className="glass-surface divide-y divide-[rgb(var(--c-s-50)/0.08)] lg:h-fit lg:w-56 lg:shrink-0">
+          <div className="glass-surface divide-y divide-slate-50/8 lg:h-fit lg:w-56 lg:shrink-0">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="flex h-[53px] items-center gap-3 px-4">
                 <Skeleton className="h-5 w-5 shrink-0 rounded-full" />

@@ -204,7 +204,7 @@ function DockLabel({ children, className, ...rest }: DockLabelProps) {
           exit={{ opacity: 0, y: 0 }}
           transition={FADE}
           className={cn(
-            'glass-surface-subtle absolute -top-6 left-1/2 w-fit whitespace-pre rounded-md px-2 py-0.5 text-small text-[rgb(var(--c-s-50))]',
+            'glass-surface-subtle absolute -top-6 left-1/2 w-fit whitespace-pre rounded-md px-2 py-0.5 text-small text-slate-50',
             className
           )}
           role='tooltip'

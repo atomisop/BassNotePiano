@@ -80,7 +80,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               This was still the pre-Pianote-pass title-case/split-color
               version. Fully accent-colored at the time; neutral again now
               under the "premium black and white" pass. */}
-          <p className="text-body font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]">
+          <p className="text-body font-bold lowercase tracking-[-0.01em] text-slate-50">
             Bass Note Piano
           </p>
           {/* Hidden below `sm` specifically, the one purely decorative line

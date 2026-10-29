@@ -145,12 +145,12 @@ export function NotesPanel({
         className="mt-3 min-h-64 w-full flex-1 resize-y rounded-control p-3 text-body text-slate-50 placeholder:text-slate-500 focus-visible:border-signal focus-visible:outline-none bg-neu-base shadow-raised-low"
       />
       <div className="mt-2 flex items-center justify-between gap-3 text-small" aria-live="polite">
-        <span className={state.kind === "error" ? "text-[rgb(var(--c-rd-300))]" : "text-slate-400"}>
+        <span className={state.kind === "error" ? "text-red-300" : "text-slate-400"}>
           {state.kind === "saving" && "Saving…"}
           {state.kind === "saved" && "Saved"}
           {state.kind === "error" && state.message}
         </span>
-        <span className={cn("tabular-nums", over ? "text-[rgb(var(--c-rd-300))]" : "text-slate-500")}>
+        <span className={cn("tabular-nums", over ? "text-red-300" : "text-slate-500")}>
           {body.length.toLocaleString("en-US")} / {SCALE_NOTE_MAX_LENGTH.toLocaleString("en-US")}
         </span>
       </div>

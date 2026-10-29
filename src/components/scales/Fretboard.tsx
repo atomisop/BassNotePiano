@@ -237,13 +237,13 @@ export function Fretboard({
                         aria-label={labelFor(degreeIndex, openStringName[stringIndex], fret)}
                         aria-pressed={inScale}
                         style={{ width }}
-                        className="group relative flex shrink-0 cursor-pointer items-center justify-center focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--signal))] disabled:cursor-default"
+                        className="group relative flex shrink-0 cursor-pointer items-center justify-center focus-visible:z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-signal disabled:cursor-default"
                       >
                         {inScale ? (
                           <span
                             className={`flex h-6 w-6 items-center justify-center rounded-full text-small font-semibold leading-none transition-transform duration-100 group-active:scale-90 ${
                               isActive
-                                ? "bg-[rgb(var(--signal))] text-[rgb(var(--signal-ink))] shadow-[0_0_12px_rgb(var(--signal)/0.6)]"
+                                ? "bg-signal text-signal-ink shadow-[0_0_12px_rgb(var(--signal)/0.6)]"
                                 : "fretboard-finger"
                             }`}
                           >

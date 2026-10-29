@@ -97,7 +97,7 @@ export function BookingAttendance({ bookingId, status, attendance, scheduledAt, 
             onClick={toggleMode}
             aria-pressed={inPersonShown}
             aria-label={inPersonShown ? "In person. Tap to switch to online." : "Online. Tap to switch to in person."}
-            className={`${icon} ${inPersonShown ? "bg-[rgb(var(--c-s-50)/0.12)] text-[rgb(var(--c-s-50))]" : "bg-neu-base text-slate-300"}`}
+            className={`${icon} ${inPersonShown ? "bg-slate-50/12 text-slate-50" : "bg-neu-base text-slate-300"}`}
           >
             {inPersonShown ? <MapPin aria-hidden className="h-3.5 w-3.5" /> : <Video aria-hidden className="h-3.5 w-3.5" />}
             {inPersonShown ? "In person" : "Online"}
@@ -125,7 +125,7 @@ export function BookingAttendance({ bookingId, status, attendance, scheduledAt, 
               <button type="button" onClick={() => setConfirmUndo(false)} disabled={busy} className={`${icon} bg-neu-base text-slate-300`}>
                 Keep
               </button>
-              <button type="button" onClick={undo} disabled={busy} className={`${icon} bg-[rgb(var(--c-s-50))] text-slate-950`}>
+              <button type="button" onClick={undo} disabled={busy} className={`${icon} bg-slate-50 text-slate-950`}>
                 {busy && <MorphingSquare size={11} />}
                 Undo and refund
               </button>

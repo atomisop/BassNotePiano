@@ -79,7 +79,7 @@ export function EmployeesView({ employees, currentUserId, onRevoke, notification
       )}
 
       {tab === "AUTOMATION" && automations ? (
-        <div className="glass-surface divide-y divide-[rgb(var(--c-s-50)/0.08)] p-2">
+        <div className="glass-surface divide-y divide-slate-50/8 p-2">
           {error && <p className="px-3 py-2 text-small text-red-400">{error}</p>}
           {automations.map((row) => (
             <div key={row.key} className="flex items-center justify-between gap-4 px-3 py-3.5">
@@ -117,7 +117,7 @@ export function EmployeesView({ employees, currentUserId, onRevoke, notification
                     <span className="w-11 text-center">Staff</span>
                   </div>
                 </div>
-                <div className="divide-y divide-[rgb(var(--c-s-50)/0.08)]">
+                <div className="divide-y divide-slate-50/8">
                   {rows.map((row) => (
                     <div key={row.kind} className="flex items-center justify-between gap-4 px-3 py-3.5">
                       <p className="text-small text-slate-200">{row.label}</p>

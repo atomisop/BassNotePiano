@@ -64,7 +64,7 @@ export function PlanCancellationFeedbackList({ feedback }: { feedback: PlanCance
           </p>
 
           <div className="mt-2 rounded-lg p-3 bg-neu-base shadow-raised-low">
-            <p className="text-small font-medium uppercase tracking-[0.1em] text-[rgb(var(--c-s-50))]">
+            <p className="text-small font-medium uppercase tracking-[0.1em] text-slate-50">
               {plan.cancellationReason ? REASON_LABELS[plan.cancellationReason] : "No reason given"}
             </p>
             {plan.cancellationReasonNote && (

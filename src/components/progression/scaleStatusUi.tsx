@@ -66,7 +66,7 @@ export function Checklist({ scale, emphasised }: { scale: ScaleAccessState; emph
           <span
             key={item.label}
             className={`h-1 flex-1 rounded-full transition-colors ${
-              item.done ? "bg-[rgb(var(--c-s-50))]" : "bg-neu-base shadow-pressed-low"
+              item.done ? "bg-slate-50" : "bg-neu-base shadow-pressed-low"
             }`}
           />
         ))}

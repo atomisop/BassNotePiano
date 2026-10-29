@@ -153,7 +153,7 @@ function Pill({
       disabled={comingSoon}
       className={`tap flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-small font-medium transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-ink/10 ${
         selected
-          ? "border-[rgb(var(--c-s-50)/0.6)] bg-[rgb(var(--c-s-50)/0.1)] text-[rgb(var(--c-s-50))]"
+          ? "border-slate-50/60 bg-slate-50/10 text-slate-50"
           : "border-transparent text-slate-400 bg-neu-base shadow-raised-low"
       }`}
     >
@@ -402,7 +402,7 @@ function NameSection({ initialName, onDone }: { initialName: string | null; onDo
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={submitting}
-          className="flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+          className="flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
         />
         <button
           type="submit"
@@ -444,7 +444,7 @@ function UsernameSection({ initialUsername }: { initialUsername: string | null }
   return (
     <SectionCard title="Username">
       <form onSubmit={handleSubmit} className="flex gap-2">
-        <div className="flex flex-1 items-center glass-surface-subtle pl-3 focus-within:border-[rgb(var(--c-s-50)/0.6)]">
+        <div className="flex flex-1 items-center glass-surface-subtle pl-3 focus-within:border-slate-50/60">
           <span className="text-small text-slate-500">@</span>
           <input
             type="text"

@@ -97,7 +97,7 @@ function VerifyEmailForm() {
       >
         <p className="text-small text-slate-400">
           Missing email.{" "}
-          <Link href="/register" className="text-[rgb(var(--c-s-50))] transition hover:opacity-70">
+          <Link href="/register" className="text-slate-50 transition hover:opacity-70">
             Start over
           </Link>
           .
@@ -120,7 +120,7 @@ function VerifyEmailForm() {
         <ArrowLeftIcon size={16} />
         Back
       </BackLink>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Almost there</p>
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Almost there</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Verify your email</h1>
       <p className="mt-2 text-small text-slate-500">
         Code sent to <span className="text-slate-300">{email}</span>.
@@ -180,7 +180,7 @@ function VerifyEmailForm() {
       </button>
       {cooldown.clicks >= RESEND_CLICKS_BEFORE_HELP && (
         <p className="mt-3 text-center text-small text-slate-500">
-          Still nothing? Email <a href="mailto:music@bassnotepiano.com" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">music@bassnotepiano.com</a> and we&apos;ll sort it out by hand.
+          Still nothing? Email <a href="mailto:music@bassnotepiano.com" className="text-slate-50 underline hover:opacity-70">music@bassnotepiano.com</a> and we&apos;ll sort it out by hand.
         </p>
       )}
     </motion.div>

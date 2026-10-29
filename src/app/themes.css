@@ -58,7 +58,7 @@
   --surface-border: rgba(26, 21, 15, 0.12);
   --surface-shadow: 0 1px 2px rgba(26, 21, 15, 0.04), 0 4px 12px -4px rgba(26, 21, 15, 0.06);
   --surface-blur: 14px;
-  --surface-radius: 0.75rem;
+  --surface-radius: 1rem;
 
   --elev-bg: rgba(255, 255, 255, 0.7);
   /* Neutral now, not accent-tinted, `--c-ink` (this theme's own hairline
@@ -130,7 +130,7 @@
   --surface-border: rgba(255, 255, 255, 0.1);
   --surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 12px -4px rgba(0, 0, 0, 0.5);
   --surface-blur: 14px;
-  --surface-radius: 0.5rem;
+  --surface-radius: 1rem;
 
   /* Neutral now, not accent-tinted, plain white at two opacities instead
      of a white/accent blend, and `--c-ink` (this theme's own hairline

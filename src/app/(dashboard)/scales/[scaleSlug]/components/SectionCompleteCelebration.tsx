@@ -30,7 +30,7 @@ export function SectionCompleteCelebration({
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ ...SPRING.lively, delay: 0.05 }}
-        className="relative mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.08)]"
+        className="relative mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-50/8"
       >
         <motion.svg
           width="26"

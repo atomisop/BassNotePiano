@@ -51,7 +51,7 @@ export default async function AdminOverviewPage() {
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{firstName ? `Good ${greeting}, ${firstName}.` : "Overview"}</h1>
 
       {/* Left: the money story in four cards. Right: what needs you and who owes what this week. One column on phones. */}
@@ -149,7 +149,7 @@ export default async function AdminOverviewPage() {
                   <Link href={f.href} className="font-medium text-slate-200 hover:underline">
                     {f.title}
                   </Link>
-                  <span className="rounded-full bg-[rgb(var(--signal)/0.14)] px-2.5 py-0.5 font-semibold tabular-nums text-signal-fg">{f.total}</span>
+                  <span className="rounded-full bg-signal/14 px-2.5 py-0.5 font-semibold tabular-nums text-signal-fg">{f.total}</span>
                 </div>
                 <p className="mt-0.5 text-slate-500">{f.hint}</p>
                 {f.people.length > 0 && (

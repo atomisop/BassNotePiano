@@ -114,7 +114,7 @@ export function IosBanner({
           startY.current = null;
           setDrag(0);
         }}
-        className="pointer-events-auto relative w-[min(26rem,calc(100vw-1rem))] touch-pan-x select-none rounded-[26px] border border-white/30 bg-[rgb(var(--neu-base)/0.8)] shadow-[0_12px_40px_rgb(0_0_0/0.28)] backdrop-blur-2xl backdrop-saturate-150 motion-reduce:transition-none"
+        className="pointer-events-auto relative w-[min(26rem,calc(100vw-1rem))] touch-pan-x select-none rounded-[26px] border border-white/30 bg-neu-base/80 shadow-[0_12px_40px_rgb(0_0_0/0.28)] backdrop-blur-2xl backdrop-saturate-150 motion-reduce:transition-none"
         style={{
           transform: shown ? `translateY(${drag}px)` : "translateY(-140%)",
           opacity: shown ? 1 : 0,

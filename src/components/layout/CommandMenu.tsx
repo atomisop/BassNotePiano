@@ -218,7 +218,7 @@ export function CommandMenu({ isAdmin }: { isAdmin: boolean }) {
               value={`${scale.code} ${scale.title} ${scale.kinitName ?? ""} ${scale.formula}`}
               onSelect={() => go(`/scales/${scale.slug}`)}
             >
-              <span className="font-mono text-small text-[rgb(var(--c-s-50)/0.8)]">{scale.code}</span>
+              <span className="font-mono text-small text-slate-50/80">{scale.code}</span>
               <span className="truncate">{scale.kinitName ?? scale.title}</span>
             </CommandItem>
           ))}

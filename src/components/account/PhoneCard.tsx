@@ -129,7 +129,7 @@ export function PhoneCard({ state }: { state: PhoneState }) {
           <Hint>{PHONE_HELP} Used to match your payments and reach you. Never shared.</Hint>
         </h2>
         {mode === "view" && state.phone && (
-          <span className={`rounded-full px-2.5 py-0.5 text-small font-medium ${state.verified ? "bg-[rgb(var(--signal)/0.16)] text-signal-fg" : "bg-slate-700/60 text-slate-300"}`}>
+          <span className={`rounded-full px-2.5 py-0.5 text-small font-medium ${state.verified ? "bg-signal/16 text-signal-fg" : "bg-slate-700/60 text-slate-300"}`}>
             {state.verified ? "Verified" : "Saved"}
           </span>
         )}

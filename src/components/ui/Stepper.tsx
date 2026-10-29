@@ -132,7 +132,7 @@ function Marker({ index, done, active }: { index: number; done: boolean; active:
       className={cn(
         "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-small font-semibold",
         active
-          ? "bg-[rgb(var(--c-s-50))] text-slate-950"
+          ? "bg-slate-50 text-slate-950"
           : "border-2 border-ink/10 bg-slate-950 text-slate-500",
       )}
     >

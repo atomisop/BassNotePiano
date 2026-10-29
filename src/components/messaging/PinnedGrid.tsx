@@ -35,7 +35,7 @@ export function PinnedGrid({
                 type="button"
                 onClick={() => onSelect(c.friendId)}
                 className={`overflow-hidden rounded-full border-2 transition ${
-                  active ? "border-[rgb(var(--c-s-50))] shadow-pressed-low" : "border-transparent bg-neu-base shadow-raised-low"
+                  active ? "border-slate-50 shadow-pressed-low" : "border-transparent bg-neu-base shadow-raised-low"
                 }`}
               >
                 <Avatar userId={c.friendId} image={c.friendImage} label={c.friendName ?? c.friendUsername ?? "?"} className="h-16 w-16 text-body font-semibold" />
@@ -44,7 +44,7 @@ export function PinnedGrid({
               {showBadge && (
                 <span
                   className={`absolute -right-2 -top-1 flex max-w-[6rem] items-center justify-center rounded-full border border-ink/10 px-2 py-1 text-small font-medium shadow-raised-mid ${
-                    c.isTyping ? "bg-[rgb(var(--c-s-50))] text-slate-950" : "bg-neu-base text-slate-100"
+                    c.isTyping ? "bg-slate-50 text-slate-950" : "bg-neu-base text-slate-100"
                   }`}
                 >
                   {c.isTyping ? <TypingIndicator /> : truncateSnippet(c.lastMessageBody ?? "")}
@@ -58,7 +58,7 @@ export function PinnedGrid({
                   onTogglePin(c.friendId);
                 }}
                 aria-label="Unpin conversation"
-                className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-[rgb(var(--c-s-50))] shadow transition hover:bg-slate-900 hover:opacity-70 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
+                className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-slate-50 shadow transition hover:bg-slate-900 hover:opacity-70 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 <PinIcon filled className="h-3 w-3" />
               </button>

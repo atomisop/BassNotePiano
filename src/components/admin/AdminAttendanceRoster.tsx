@@ -95,7 +95,7 @@ function ClassCard({ occ, onMarkAttendance, onUndoAttendance, onSetInPerson }: {
                     </Hint>
                   </p>
                   {entry.focus.scaleLabel && (
-                    <p className="truncate text-small text-[rgb(var(--c-s-50))]">
+                    <p className="truncate text-small text-slate-50">
                       {entry.focus.scaleLabel}
                       {entry.focus.action ? ` · ${entry.focus.action}` : ""}
                     </p>

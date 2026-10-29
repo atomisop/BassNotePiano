@@ -53,7 +53,7 @@ export function MessageSupportButton({
         disabled={busy}
         className={
           className ??
-          "tap inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-60"
+          "tap inline-flex items-center rounded-lg px-3 py-1.5 text-small font-medium text-slate-300 transition hover:text-slate-50 bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low disabled:opacity-60"
         }
       >
         {busy && <MorphingSquare size={12} className="mr-1.5 shrink-0" />}

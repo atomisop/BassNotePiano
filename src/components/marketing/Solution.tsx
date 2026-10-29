@@ -54,15 +54,15 @@ export function Solution() {
           <div className="min-w-0 md:col-span-6">
             <WordsPullUp
               text="Everything in one place."
-              className="text-[clamp(2.5rem,6vw,5rem)] font-semibold leading-[1] tracking-[-0.035em] text-[#E1E0CC]"
+              className="text-[clamp(2.5rem,6vw,5rem)] font-semibold leading-[1] tracking-[-0.035em] text-cream"
             />
             <Accordion type="single" collapsible className="mt-10" defaultValue="feature-0">
               {FEATURES.map((feature, i) => (
-                <AccordionItem key={feature.title} value={`feature-${i}`} className="border-[#E1E0CC]/15">
-                  <AccordionTrigger className="text-left text-body font-medium text-[#E1E0CC] no-underline hover:no-underline">
+                <AccordionItem key={feature.title} value={`feature-${i}`} className="border-cream/15">
+                  <AccordionTrigger className="text-left text-body font-medium text-cream no-underline hover:no-underline">
                     {feature.title}
                   </AccordionTrigger>
-                  <AccordionContent className="text-small leading-relaxed text-[#E1E0CC]/60">{feature.body}</AccordionContent>
+                  <AccordionContent className="text-small leading-relaxed text-cream/60">{feature.body}</AccordionContent>
                 </AccordionItem>
               ))}
             </Accordion>

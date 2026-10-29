@@ -348,18 +348,18 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         </div>
       </div>
 
-      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] bg-neu-base shadow-pressed-low p-3.5 text-small text-slate-300">
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-50/20 bg-neu-base shadow-pressed-low p-3.5 text-small text-slate-300">
         <input
           type="checkbox"
           checked={acknowledged}
           onChange={(e) => setAcknowledged(e.target.checked)}
-          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-s-50))]"
+          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-slate-50"
         />
         <span>
           I understand these classes go directly to the accounts listed above, not to my own, and that the purchase is{" "}
-          <span className="font-medium text-[rgb(var(--c-s-50))]">non-refundable</span>. The only way a class comes back is
+          <span className="font-medium text-slate-50">non-refundable</span>. The only way a class comes back is
           canceling a booking 24+ hours before it starts. Full{" "}
-          <Link href="/terms" target="_blank" className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
+          <Link href="/terms" target="_blank" className="text-slate-50 underline hover:opacity-70">
             terms &amp; refund policy
           </Link>
           .

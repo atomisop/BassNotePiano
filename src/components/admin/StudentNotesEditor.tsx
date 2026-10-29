@@ -79,7 +79,7 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
         />
         <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
           <label className="tap inline-flex cursor-pointer items-center gap-2 text-small text-slate-300">
-            <input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--signal))]" />
+            <input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)} className="h-4 w-4 accent-signal" />
             Hide from student
           </label>
           <div className="flex gap-1.5">
@@ -126,7 +126,7 @@ export function StudentNotesEditor({ studentId }: { studentId: string }) {
                 </span>
                 <span
                   className={`rounded-full px-2 py-0.5 text-small font-medium ${
-                    n.hiddenFromStudent ? "bg-slate-700/60 text-slate-300" : "bg-[rgb(var(--signal)/0.16)] text-signal-fg"
+                    n.hiddenFromStudent ? "bg-slate-700/60 text-slate-300" : "bg-signal/16 text-signal-fg"
                   }`}
                 >
                   {n.hiddenFromStudent ? "Private" : "Student can see"}

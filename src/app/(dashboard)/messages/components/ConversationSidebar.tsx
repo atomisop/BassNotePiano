@@ -48,7 +48,7 @@ export function ConversationSidebar({
   return (
     <div className="flex h-full w-full flex-col overflow-y-auto md:w-[350px] md:shrink-0 md:neu-groove-r">
       <div className="px-4 pb-3 pt-4">
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
+        <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Social</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1 text-slate-50">Messages</h1>
         <input
           type="search"

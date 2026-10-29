@@ -273,7 +273,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
         }
       >
         {confirmNew ? (
-          <div className="rounded-xl border border-[rgb(var(--c-s-50)/0.35)] bg-neu-base shadow-pressed-low p-4">
+          <div className="rounded-xl border border-slate-50/35 bg-neu-base shadow-pressed-low p-4">
             <p className="text-body font-semibold text-slate-50">This time does not exist yet</p>
             <p className="mt-1 text-small text-slate-300">
               {day} at {ownTime} is not one of your weekly times. Create it as a one-time slot and move {studentName} there?

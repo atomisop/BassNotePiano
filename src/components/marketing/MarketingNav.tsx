@@ -162,7 +162,7 @@ export function MarketingNav() {
       <header
         className={[
           "fixed inset-x-0 top-0 z-40 transition-colors duration-500",
-          lifted ? "border-b border-[rgb(var(--c-s-50)/0.1)] bg-[rgb(var(--c-s-950)/0.72)] backdrop-blur-[20px] backdrop-saturate-[1.8]" : "border-b border-transparent",
+          lifted ? "border-b border-slate-50/10 bg-slate-950/72 backdrop-blur-[20px] backdrop-saturate-[1.8]" : "border-b border-transparent",
         ].join(" ")}
       >
         {/* HOMEPAGE REPLACEMENT: header-2's own "compact state on scroll" is
@@ -193,7 +193,7 @@ export function MarketingNav() {
                 wordmark treatment (studied directly), not the small label
                 this replaces. Colored in the accent at the time; neutral
                 again now under the "premium black and white" pass. */}
-            <span className="hidden whitespace-nowrap font-serif text-body font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))] xl:inline">
+            <span className="hidden whitespace-nowrap font-serif text-body font-bold lowercase tracking-[-0.01em] text-slate-50 xl:inline">
               Bass Note Piano
             </span>
             {/* Phones and tablets show the logo alone (the link keeps its aria-label);
@@ -218,7 +218,7 @@ export function MarketingNav() {
                   aria-current={isActive ? "page" : undefined}
                   className={
                     isActive
-                      ? "tap flex h-9 items-center !rounded-full bg-neu-base px-4 text-small font-medium text-[rgb(var(--c-s-50))] shadow-pressed-mid transition duration-200"
+                      ? "tap flex h-9 items-center !rounded-full bg-neu-base px-4 text-small font-medium text-slate-50 shadow-pressed-mid transition duration-200"
                       : "neu-btn tap flex h-9 items-center !rounded-full px-4 text-small font-medium duration-200"
                   }
                 >
@@ -273,7 +273,7 @@ export function MarketingNav() {
             {!isLoggedIn && !loadingSession && (
               <Link
                 href={primary.href}
-                className="tap inline-flex h-10 items-center justify-center rounded-full bg-[rgb(var(--c-a-400))] px-5 text-small font-semibold text-black shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
+                className="tap inline-flex h-10 items-center justify-center rounded-full bg-amber-400 px-5 text-small font-semibold text-black shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
               >
                 {primary.label}
               </Link>
@@ -305,14 +305,14 @@ export function MarketingNav() {
                     <Link
                       href={secondary.href}
                       onClick={openLogin}
-                      className="neu-btn tap flex h-9 items-center rounded-full px-3 text-small font-semibold !text-[rgb(var(--c-s-50))]"
+                      className="neu-btn tap flex h-9 items-center rounded-full px-3 text-small font-semibold !text-slate-50"
                     >
                       {secondary.label}
                     </Link>
                   )}
                   <Link
                     href={primary.href}
-                    className="tap hidden h-9 items-center rounded-full bg-[rgb(var(--c-a-400))] px-4 text-small font-semibold text-black shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low min-[360px]:flex"
+                    className="tap hidden h-9 items-center rounded-full bg-amber-400 px-4 text-small font-semibold text-black shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low min-[360px]:flex"
                   >
                     {primary.label}
                   </Link>
@@ -329,8 +329,8 @@ export function MarketingNav() {
             className="neu-btn flex h-11 w-11 items-center justify-center !rounded-full md:hidden"
           >
             <span className="flex flex-col gap-[5px]">
-              <span className="block h-px w-5 bg-[rgb(var(--c-s-50))]" />
-              <span className="block h-px w-5 bg-[rgb(var(--c-s-50))]" />
+              <span className="block h-px w-5 bg-slate-50" />
+              <span className="block h-px w-5 bg-slate-50" />
             </span>
           </button>
           </div>
@@ -356,17 +356,17 @@ export function MarketingNav() {
             // it. Same `overscroll-contain` convention `<main>` already uses
             // in `(dashboard)/layout.tsx`, so this panel's own scroll can't
             // rubber-band chain up into the (already non-scrolling) body.
-            className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-[rgb(var(--c-s-950)/0.97)] backdrop-blur-2xl md:hidden"
+            className="fixed inset-0 z-50 overflow-y-auto overscroll-contain bg-slate-950/97 backdrop-blur-2xl md:hidden"
           >
             <div className="flex h-20 items-center justify-between px-6">
-              <span className="font-serif text-body font-bold lowercase text-[rgb(var(--c-s-50))]">
+              <span className="font-serif text-body font-bold lowercase text-slate-50">
                 Bass Note Piano
               </span>
               <button
                 type="button"
                 onClick={() => setMenuOpen(false)}
                 aria-label="Close menu"
-                className="-mr-3 flex h-11 w-11 items-center justify-center text-[rgb(var(--c-s-50))]"
+                className="-mr-3 flex h-11 w-11 items-center justify-center text-slate-50"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
                   <path d="M5 5l14 14M19 5L5 19" strokeLinecap="round" />
@@ -388,8 +388,8 @@ export function MarketingNav() {
                     href={link.href}
                     onClick={link.href === "/login" ? openLogin : () => setMenuOpen(false)}
                     aria-current={isActive ? "page" : undefined}
-                    className={`display-3 border-b border-[rgb(var(--c-s-50)/0.08)] py-6 ${
-                      isActive ? "text-[rgb(var(--c-s-50))]" : ""
+                    className={`display-3 border-b border-slate-50/8 py-6 ${
+                      isActive ? "text-slate-50" : ""
                     }`}
                   >
                     {link.label}
@@ -404,14 +404,14 @@ export function MarketingNav() {
                   <Link
                     href="/profile"
                     onClick={() => setMenuOpen(false)}
-                    className="display-3 border-b border-[rgb(var(--c-s-50)/0.08)] py-6"
+                    className="display-3 border-b border-slate-50/8 py-6"
                   >
                     Profile
                   </Link>
                   <Link
                     href="/account"
                     onClick={() => setMenuOpen(false)}
-                    className="display-3 border-b border-[rgb(var(--c-s-50)/0.08)] py-6"
+                    className="display-3 border-b border-slate-50/8 py-6"
                   >
                     Settings
                   </Link>
@@ -421,7 +421,7 @@ export function MarketingNav() {
                       startNavigation();
                       void signOut({ callbackUrl: "/" });
                     }}
-                    className="display-3 border-b border-[rgb(var(--c-s-50)/0.08)] py-6 text-left text-[rgb(var(--c-s-300))]"
+                    className="display-3 border-b border-slate-50/8 py-6 text-left text-slate-300"
                   >
                     Log out
                   </button>
@@ -432,7 +432,7 @@ export function MarketingNav() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setMenuOpen(false)}
-                className="display-3 flex items-center gap-3 border-b border-[rgb(var(--c-s-50)/0.08)] py-6"
+                className="display-3 flex items-center gap-3 border-b border-slate-50/8 py-6"
               >
                 <DiscordIcon size={28} className="text-[#5865F2]" />
                 Discord

@@ -35,14 +35,14 @@ export default async function ShopPage(props: { searchParams: Promise<{ back?: s
           {back && (
             <BackLink
               href={back}
-              className="tap mb-8 inline-flex items-center gap-2 rounded-full bg-black py-2 pl-3 pr-5 text-small font-medium text-[#E1E0CC] transition hover:opacity-80"
+              className="tap mb-8 inline-flex items-center gap-2 rounded-full bg-black py-2 pl-3 pr-5 text-small font-medium text-cream transition hover:opacity-80"
             >
               <ArrowLeft className="h-4 w-4" />
               Back
             </BackLink>
           )}
-          <h1 className="mb-4 text-2xl font-medium tracking-[-0.03em] text-[#E1E0CC] md:text-3xl">Gear that works for beginners</h1>
-          <p role="note" className="mb-8 max-w-2xl rounded-xl border border-[#E1E0CC]/15 bg-[#E1E0CC]/5 px-4 py-3 text-small text-[#E1E0CC]/80">
+          <h1 className="mb-4 text-2xl font-medium tracking-[-0.03em] text-cream md:text-3xl">Gear that works for beginners</h1>
+          <p role="note" className="mb-8 max-w-2xl rounded-xl border border-cream/15 bg-cream/5 px-4 py-3 text-small text-cream/80">
             Prices shown here are a guide and might be different on Amazon when you look. Some items might not be available.
           </p>
 

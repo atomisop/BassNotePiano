@@ -141,7 +141,7 @@ export function ScheduleClient({
   return (
     <WideLayout className="space-y-6">
       <div>
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Weekly Classes</p>
+        <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Weekly Classes</p>
         <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Your schedule</h1>
       </div>
 
@@ -150,7 +150,7 @@ export function ScheduleClient({
         <p className="text-small font-medium uppercase tracking-[0.14em] text-slate-400">This week</p>
         {hasClassThisWeek ? (
           <p className="mt-2 text-small text-slate-300">
-            <span className="text-[rgb(var(--c-s-50))]">✓ Booked</span>
+            <span className="text-slate-50">✓ Booked</span>
           </p>
         ) : weeklyTime ? (
           <p className="mt-2 text-small text-slate-300">
@@ -160,7 +160,7 @@ export function ScheduleClient({
           <p className="mt-2 text-small text-slate-300">
             No weekly time set.{" "}
             {supportContactId ? (
-              <Link href={`/messages?with=${supportContactId}`} className="text-[rgb(var(--c-s-50))] underline hover:opacity-70">
+              <Link href={`/messages?with=${supportContactId}`} className="text-slate-50 underline hover:opacity-70">
                 Message support
               </Link>
             ) : (

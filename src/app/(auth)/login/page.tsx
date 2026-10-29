@@ -48,7 +48,7 @@ function LoginCard() {
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="visible" className="w-full glass-surface-elevated p-7">
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Welcome back</p>
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Welcome back</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Log in to continue</h1>
       <div className="mt-6">
         <LoginForm callbackUrl={callbackUrl} />

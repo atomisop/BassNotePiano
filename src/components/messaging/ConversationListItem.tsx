@@ -44,7 +44,7 @@ export function ConversationListItem({
           <div className="mt-0.5 flex items-center justify-between gap-2">
             <p className="truncate text-small">
               {c.isTyping ? (
-                <span className="text-[rgb(var(--c-s-50))]">typing…</span>
+                <span className="text-slate-50">typing…</span>
               ) : (
                 <span className={c.unreadCount > 0 ? "text-slate-300" : "text-slate-500"}>{c.lastMessageBody ?? "No messages yet"}</span>
               )}
@@ -57,7 +57,7 @@ export function ConversationListItem({
         type="button"
         onClick={onTogglePin}
         aria-label="Pin conversation"
-        className="tap mr-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 opacity-60 transition hover:text-[rgb(var(--c-s-50))] hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100"
+        className="tap mr-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 opacity-60 transition hover:text-slate-50 hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100"
       >
         <PinIcon />
       </button>

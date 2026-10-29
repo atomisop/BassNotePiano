@@ -34,7 +34,7 @@ export default function MessagesLoading() {
           </div>
 
           <div className="hidden min-w-0 flex-1 flex-col p-5 md:flex">
-            <div className="flex items-center gap-3 border-b border-[rgb(var(--c-s-50)/0.08)] pb-4">
+            <div className="flex items-center gap-3 border-b border-slate-50/8 pb-4">
               <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
               <Skeleton className="h-4 w-32" />
             </div>

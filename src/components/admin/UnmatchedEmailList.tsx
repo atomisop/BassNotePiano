@@ -106,7 +106,7 @@ export function UnmatchedEmailList({
                   <div key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-neu-base px-3 py-2 shadow-pressed-low">
                     <span className="min-w-0 text-small text-slate-200">
                       {who} <span className="text-slate-500">· {STATUS_LABEL[c.status] ?? c.status.toLowerCase()}, started {ago(c.createdAtMs)}</span>
-                      {c.phoneMatch && <span className="ml-2 rounded-full bg-[rgb(var(--signal)/0.16)] px-2 py-0.5 text-small font-medium text-signal-fg">Phone matches</span>}
+                      {c.phoneMatch && <span className="ml-2 rounded-full bg-signal/16 px-2 py-0.5 text-small font-medium text-signal-fg">Phone matches</span>}
                       {c.id === row.candidates[0]?.id && row.confidence !== "weak" && (
                         <span className="ml-2 rounded-full bg-emerald-400/15 px-2 py-0.5 text-small font-medium text-emerald-300">{row.confidence === "strong" ? "Best match" : "Likely"}</span>
                       )}

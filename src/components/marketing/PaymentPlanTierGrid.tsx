@@ -138,14 +138,14 @@ export function PaymentPlanTierGrid({
           <div
             className={`relative flex flex-1 flex-col ${narrow ? "gap-4 p-4" : "gap-7 p-7 sm:p-8"} rounded-2xl ${
               featured
-                ? "bg-neu-base shadow-raised-high ring-2 ring-[rgb(var(--c-a-400))] shadow-[0_0_48px_-8px_rgb(var(--c-a-400)/0.55)]"
+                ? "bg-neu-base shadow-raised-high ring-2 ring-amber-400 shadow-[0_0_48px_-8px_rgb(var(--c-a-400)/0.55)]"
                 : "glass-surface opacity-90 transition hover:opacity-100 hover:shadow-raised-high"
             }`}
           >
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
               <p className="font-serif text-body text-slate-50">{option.label}</p>
               {featured ? (
-                <span className="rounded-full bg-[rgb(var(--c-a-400))] px-3 py-1 text-small font-bold text-black">Best value</span>
+                <span className="rounded-full bg-amber-400 px-3 py-1 text-small font-bold text-black">Best value</span>
               ) : isMonthly && !isFamily && !narrow ? (
                 <span className="rounded-full bg-slate-800 px-3 py-1 text-small font-medium text-slate-300">No commitment</span>
               ) : null}
@@ -166,7 +166,7 @@ export function PaymentPlanTierGrid({
                 )}
               </p>
               <p className="mt-1 flex items-baseline gap-1.5">
-                <span className={`font-serif tabular-nums ${narrow ? "text-[1.75rem] leading-none" : "text-hero"} ${featured ? "text-[rgb(var(--c-a-400))]" : "text-slate-50"}`}>
+                <span className={`font-serif tabular-nums ${narrow ? "text-[1.75rem] leading-none" : "text-hero"} ${featured ? "text-amber-400" : "text-slate-50"}`}>
                   <NumberTicker value={perStudentCents} format={formatUsd} />
                 </span>
                 <span className="text-small text-slate-400">{isFamily ? "/student per 28 days" : "/28 days"}</span>
@@ -178,7 +178,7 @@ export function PaymentPlanTierGrid({
             <ul className="flex flex-1 flex-col gap-3.5">
               {features.map((feature, i) => (
                 <li key={i} className="flex items-start gap-3 text-small text-slate-300">
-                  <CheckIcon size={16} className="mt-0.5 shrink-0 text-[rgb(var(--c-s-50))]" />
+                  <CheckIcon size={16} className="mt-0.5 shrink-0 text-slate-50" />
                   <span className="min-w-0">{feature}</span>
                 </li>
               ))}
@@ -193,8 +193,8 @@ export function PaymentPlanTierGrid({
                   option.value === switchTo.currentTerm
                     ? "bg-neu-base text-slate-400 shadow-pressed-low"
                     : featured
-                      ? "bg-[rgb(var(--c-a-400))] text-black shadow-raised-mid hover:brightness-110 active:shadow-pressed-low disabled:opacity-60"
-                      : "bg-neu-base text-slate-100 shadow-raised-low hover:text-[rgb(var(--c-s-50))] active:shadow-pressed-low disabled:opacity-60"
+                      ? "bg-amber-400 text-black shadow-raised-mid hover:brightness-110 active:shadow-pressed-low disabled:opacity-60"
+                      : "bg-neu-base text-slate-100 shadow-raised-low hover:text-slate-50 active:shadow-pressed-low disabled:opacity-60"
                 }`}
               >
                 {switchTo.pendingTerm === option.value && <MorphingSquare size={14} className="mr-2 shrink-0" />}
@@ -205,8 +205,8 @@ export function PaymentPlanTierGrid({
                 href={`/billing/plans?term=${option.value}&who=${isFamily ? "family" : "solo"}`}
                 className={`flex h-12 items-center justify-center rounded-xl text-small font-semibold transition ${
                   featured
-                    ? "bg-[rgb(var(--c-a-400))] text-black shadow-raised-mid hover:brightness-110 active:shadow-pressed-low"
-                    : "bg-neu-base text-slate-100 shadow-raised-low active:shadow-pressed-low hover:text-[rgb(var(--c-s-50))]"
+                    ? "bg-amber-400 text-black shadow-raised-mid hover:brightness-110 active:shadow-pressed-low"
+                    : "bg-neu-base text-slate-100 shadow-raised-low active:shadow-pressed-low hover:text-slate-50"
                 }`}
               >
                 {isFamily ? "Bundle & save" : "Start plan"}

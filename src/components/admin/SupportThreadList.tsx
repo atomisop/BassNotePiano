@@ -11,7 +11,7 @@ import { ViewMore } from "@/components/ui/ViewMore";
 const LIST_POLL_MS = 15_000;
 
 const STATUS_STYLE: Record<string, string> = {
-  OPEN: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]",
+  OPEN: "bg-slate-50/15 text-slate-50",
   RESOLVED: "bg-slate-50/15 text-slate-100",
 };
 
@@ -42,7 +42,7 @@ function ThreadRow({ thread, href, currentAdminId }: { thread: AdminThreadSummar
     <Link href={href} className="tap flex w-full flex-col gap-1 px-4 py-3 text-left transition hover:bg-ink/5">
       <div className="flex items-center justify-between gap-2">
         <span className="flex min-w-0 items-center gap-1.5 truncate text-small font-medium text-slate-100">
-          {thread.hasUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[rgb(var(--c-s-50))]" />}
+          {thread.hasUnread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-slate-50" />}
           <span className="truncate">{thread.user?.name || thread.contactName || thread.contactEmail}</span>
         </span>
         <span className="flex shrink-0 items-center gap-1.5">
@@ -62,7 +62,7 @@ function ThreadRow({ thread, href, currentAdminId }: { thread: AdminThreadSummar
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small text-slate-500">
         <span>{relativeTime(thread.createdAt)}</span>
         {thread.assignedTo && (
-          <span className={assignedToMe ? "font-medium text-[rgb(var(--c-s-50))]" : "text-slate-400"}>
+          <span className={assignedToMe ? "font-medium text-slate-50" : "text-slate-400"}>
             · {assignedToMe ? "Assigned to you" : `Assigned to ${thread.assignedTo.name ?? "an admin"}`}
           </span>
         )}

@@ -21,7 +21,7 @@ export default async function ParentPage() {
 
   return (
     <WideLayout>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Account</p>
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Account</p>
       <h1 className="mt-1.5 font-hero text-hero font-bold text-balance text-slate-50">Parent mode</h1>
 
       {bills.length > 0 && (

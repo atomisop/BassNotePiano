@@ -80,7 +80,7 @@ function RoadmapCard({ roadmap: r, first, last }: { roadmap: AdminRoadmap; first
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-body font-semibold text-slate-50">{r.name}</p>
-            <span className={cn("rounded-full px-2 py-0.5 text-[0.75rem] font-semibold", r.visible ? "bg-[rgb(var(--signal)/0.14)] text-signal-fg" : "bg-neu-base text-slate-400 shadow-pressed-low")}>
+            <span className={cn("rounded-full px-2 py-0.5 text-[0.75rem] font-semibold", r.visible ? "bg-signal/14 text-signal-fg" : "bg-neu-base text-slate-400 shadow-pressed-low")}>
               {r.visible ? "Students see it" : "Hidden"}
             </span>
           </div>

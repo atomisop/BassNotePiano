@@ -30,7 +30,7 @@ export async function ModuleHealthSection() {
                   className="size-24 text-body"
                 />
               </div>
-              <p className="mt-3 text-small font-medium uppercase tracking-wide text-[rgb(var(--c-s-50)/0.8)]">{row.code}</p>
+              <p className="mt-3 text-small font-medium uppercase tracking-wide text-slate-50/80">{row.code}</p>
               <p className="mt-0.5 line-clamp-2 min-h-[2.5rem] text-small text-slate-300">{row.title}</p>
               <div className="mt-3 grid w-full grid-cols-2 gap-2">
                 <div className="rounded-xl bg-neu-base px-2 py-1.5 shadow-pressed-low">

@@ -75,7 +75,7 @@ function DiscordCard() {
       href="/api/discord/connect"
       className="press-soft block overflow-hidden rounded-card bg-neu-lift shadow-raised-low hover:shadow-raised-mid focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <span aria-hidden className="link-scene relative flex h-24 items-center justify-center gap-1.5 bg-[rgb(var(--c-s-950))]">
+      <span aria-hidden className="link-scene relative flex h-24 items-center justify-center gap-1.5 bg-slate-950">
         <span className="link-star left-[14%] top-[22%]" />
         <span className="link-star left-[82%] top-[30%] [animation-delay:0.7s]" />
         <span className="link-star left-[26%] top-[78%] [animation-delay:1.3s]" />
@@ -242,7 +242,7 @@ function rawSlotFor(card: SidebarCard): Slot {
                 <li key={item.href + item.label}>
                   <Link href={item.href} prefetch className="tap flex items-center justify-between gap-2 rounded-control px-1.5 py-1 text-small text-slate-200 hover:bg-slate-800/50">
                     <span className="truncate">{item.label}</span>
-                    <span className="rounded-full bg-[rgb(var(--signal)/0.14)] px-2 font-semibold tabular-nums text-signal-fg">{item.count}</span>
+                    <span className="rounded-full bg-signal/14 px-2 font-semibold tabular-nums text-signal-fg">{item.count}</span>
                   </Link>
                 </li>
               ))}

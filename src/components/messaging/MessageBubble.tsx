@@ -130,7 +130,7 @@ export function MessageBubble({
             WhatsApp both use. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute left-0 flex items-center text-[rgb(var(--c-s-50))] transition-opacity"
+          className="pointer-events-none absolute left-0 flex items-center text-slate-50 transition-opacity"
           style={{ opacity: swipe.dragX > 10 ? Math.min(1, swipe.dragX / 44) : 0 }}
         >
           <ReplyArrowIcon size={16} />
@@ -150,7 +150,7 @@ export function MessageBubble({
           style={{ touchAction: "pan-y" }}
           className={`min-w-0 select-none rounded-2xl px-3.5 py-2 text-body [-webkit-touch-callout:none] md:select-text ${
             isMine
-              ? `bg-[rgb(var(--signal)/0.16)] text-slate-50 shadow-raised-low ${endsCluster ? "rounded-br-md" : ""}`
+              ? `bg-signal/16 text-slate-50 shadow-raised-low ${endsCluster ? "rounded-br-md" : ""}`
               : `bg-neu-base text-slate-100 shadow-raised-low ${endsCluster ? "rounded-bl-md" : ""}`
           }`}
         >
@@ -159,7 +159,7 @@ export function MessageBubble({
               type="button"
               onClick={() => onJumpToReply?.(reply.id)}
               className={`tap mb-1.5 block w-full rounded-lg border-l-2 px-2 py-1 text-left text-small ${
-                "border-[rgb(var(--c-s-50)/0.4)] bg-ink/5"
+                "border-slate-50/40 bg-ink/5"
               }`}
             >
               <p className="font-medium">{reply.senderLabel}</p>

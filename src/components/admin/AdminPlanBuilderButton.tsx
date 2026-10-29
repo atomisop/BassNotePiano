@@ -24,7 +24,7 @@ const todayEt = () => new Date().toLocaleDateString("en-CA", { timeZone: "Americ
 
 const STATE: Record<TimelineClassState, { label: string; cls: string }> = {
   taught: { label: "taught", cls: "bg-emerald-400/15 text-emerald-300" },
-  booked: { label: "booked", cls: "bg-[rgb(var(--signal)/0.16)] text-signal-fg" },
+  booked: { label: "booked", cls: "bg-signal/16 text-signal-fg" },
   missed: { label: "missed", cls: "bg-amber-400/15 text-amber-300" },
   unpaid: { label: "not paid yet", cls: "bg-neu-base text-slate-500 shadow-pressed-low" },
 };
@@ -187,12 +187,12 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                 </label>
                 <div className="space-y-1.5 rounded-xl bg-neu-base p-3 shadow-pressed-low">
                   <label className="flex items-center gap-2 text-small text-slate-200">
-                    <input type="checkbox" checked={charge} onChange={(e) => setCharge(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--signal))]" />
+                    <input type="checkbox" checked={charge} onChange={(e) => setCharge(e.target.checked)} className="h-4 w-4 accent-signal" />
                     Spend 1 class credit for the class taught
                   </label>
                   {ctx.openPayment && (
                     <label className="flex items-center gap-2 text-small text-slate-200">
-                      <input type="checkbox" checked={recordPay} onChange={(e) => setRecordPay(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--signal))]" />
+                      <input type="checkbox" checked={recordPay} onChange={(e) => setRecordPay(e.target.checked)} className="h-4 w-4 accent-signal" />
                       The bill is not marked paid yet: mark {usd(ctx.amountCents)} received
                     </label>
                   )}
@@ -284,7 +284,7 @@ export function AdminPlanBuilderButton({ userId }: { userId: string }) {
                   </div>
                   {taught.length > 0 && (
                     <label className="mt-2 flex items-center gap-2 text-small text-slate-300">
-                      <input type="checkbox" checked={charge} onChange={(e) => setCharge(e.target.checked)} className="h-4 w-4 accent-[rgb(var(--signal))]" />
+                      <input type="checkbox" checked={charge} onChange={(e) => setCharge(e.target.checked)} className="h-4 w-4 accent-signal" />
                       Spend a class credit for each
                     </label>
                   )}

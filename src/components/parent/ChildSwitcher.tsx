@@ -79,7 +79,7 @@ export function ChildSwitcher({ currentId, kids }: { currentId: string; kids: { 
                 <button
                   type="button"
                   onClick={() => setPicked(k.id)}
-                  className={`tap flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition ${on ? "bg-[rgb(var(--c-s-50)/0.06)]" : "hover:bg-[rgb(var(--c-s-50)/0.04)]"}`}
+                  className={`tap flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition ${on ? "bg-slate-50/6" : "hover:bg-slate-50/4"}`}
                 >
                   <span className={`${TINTS[kids.findIndex((x) => x.id === k.id) % TINTS.length]} flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-small font-semibold`}>
                     {k.name.charAt(0).toUpperCase()}

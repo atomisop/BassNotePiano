@@ -127,7 +127,7 @@ export function AdminReservations({ hours, reservations }: { hours: ReservableHo
                               return next;
                             })
                           }
-                          className={`tap rounded-full px-3.5 py-1.5 text-small transition ${on ? "bg-signal text-slate-950" : "bg-[rgb(var(--c-s-50)/0.06)] text-slate-300 hover:text-slate-50"}`}
+                          className={`tap rounded-full px-3.5 py-1.5 text-small transition ${on ? "bg-signal text-slate-950" : "bg-slate-50/6 text-slate-300 hover:text-slate-50"}`}
                         >
                           {h.time}
                         </button>

@@ -50,7 +50,7 @@ function Row({ def, value, onSave, onReset }: { def: SettingDef; value: SettingV
       <div className="min-w-0 sm:max-w-[34rem]">
         <p className="text-body font-medium text-slate-100">
           {def.label}
-          {changed && <span className="ml-2 rounded-full bg-[rgb(var(--signal)/0.16)] px-2 py-0.5 text-small font-medium text-signal-fg">Changed</span>}
+          {changed && <span className="ml-2 rounded-full bg-signal/16 px-2 py-0.5 text-small font-medium text-signal-fg">Changed</span>}
         </p>
         <p className="mt-0.5 text-small text-slate-500">{def.help}</p>
         {error && <p className="mt-1 text-small text-red-400">{error}</p>}

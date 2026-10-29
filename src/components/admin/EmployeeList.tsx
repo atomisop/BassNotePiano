@@ -53,7 +53,7 @@ export function EmployeeList({ employees, currentUserId, canRevoke: viewerCanRev
               </div>
               <div className="flex flex-col items-end gap-1.5">
                 {employee.isOwner && (
-                  <span className="rounded-full bg-[rgb(var(--c-s-50)/0.15)] px-2.5 py-1 text-small font-medium uppercase tracking-wide text-[rgb(var(--c-s-50))]">
+                  <span className="rounded-full bg-slate-50/15 px-2.5 py-1 text-small font-medium uppercase tracking-wide text-slate-50">
                     Owner
                   </span>
                 )}

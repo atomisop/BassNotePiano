@@ -351,7 +351,7 @@ export function CustomerProfile({
                       onClick={() => {
                         if (window.confirm("Clear this phone number? It frees the number so its real owner can add it to their own account.")) void withBusy(() => onClearPhone(user.id));
                       }}
-                      className="tap ml-2 text-[rgb(var(--c-s-50))] underline hover:opacity-70"
+                      className="tap ml-2 text-slate-50 underline hover:opacity-70"
                     >
                       Clear
                     </button>
@@ -368,7 +368,7 @@ export function CustomerProfile({
               <div className="flex flex-wrap gap-2">
                 <span
                   className={`rounded-full px-2.5 py-1 text-small font-medium uppercase tracking-wide ${
-                    user.role === "ADMIN" ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "bg-neu-base shadow-pressed-low text-slate-400"
+                    user.role === "ADMIN" ? "bg-slate-50/15 text-slate-50" : "bg-neu-base shadow-pressed-low text-slate-400"
                   }`}
                 >
                   {user.role}
@@ -385,7 +385,7 @@ export function CustomerProfile({
 
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
               {pendingAction === "curriculum" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
+                <span className="flex items-center gap-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
                   {user.hasCurriculumAccess
                     ? "Remove complimentary access?"
                     : "Give complimentary curriculum access?"}
@@ -414,7 +414,7 @@ export function CustomerProfile({
               )}
 
               {pendingAction === "role" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
+                <span className="flex items-center gap-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
                   {user.role === "ADMIN"
                     ? "Remove admin access from this account? They are signed out right away."
                     : "Make this account an admin? They will be able to manage payments, users and credits."}
@@ -529,7 +529,7 @@ export function CustomerProfile({
                     onClick={() => withBusy(() => onToggleScale(user.id, scale.scaleGroup.slug, scale.status === "LOCKED"))}
                     className={`tap shrink-0 rounded-lg border px-3 py-1.5 text-small font-medium transition disabled:opacity-40 ${
                       scale.status === "LOCKED"
-                        ? "border-[rgb(var(--c-s-50)/0.3)] text-[rgb(var(--c-s-50))] hover:bg-[rgb(var(--c-s-50)/0.1)]"
+                        ? "border-slate-50/30 text-slate-50 hover:bg-slate-50/10"
                         : "border-transparent text-slate-400 bg-neu-base shadow-raised-low"
                     }`}
                   >
@@ -560,7 +560,7 @@ export function CustomerProfile({
                   onChange={(e) => setCreditAmount(e.target.value)}
                   placeholder="e.g. 4 or -2"
                   disabled={creditConfirming}
-                  className="mt-1 w-28 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+                  className="mt-1 w-28 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
                 />
               </div>
               <div className="flex-1">
@@ -574,7 +574,7 @@ export function CustomerProfile({
                   onChange={(e) => setCreditReason(e.target.value)}
                   placeholder="e.g. Paid via Venmo instead of Zelle"
                   disabled={creditConfirming}
-                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
                 />
               </div>
               {!creditConfirming && (
@@ -588,7 +588,7 @@ export function CustomerProfile({
               )}
             </form>
             {creditConfirming && (
-              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low px-3 py-2 text-small text-slate-200">
+              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low px-3 py-2 text-small text-slate-200">
                 {Number(creditAmount) > 0 ? "Grant" : "Deduct"}{" "}
                 <span className="font-semibold text-slate-50">
                   {formatCredits(Math.abs(Number(creditAmount)))} credit{Math.abs(Number(creditAmount)) === 1 ? "" : "s"}
@@ -697,7 +697,7 @@ export function CustomerProfile({
                     <span className="text-small text-slate-500">{formatDate(t.createdAt)}</span>
                     <span
                       className={`rounded-full px-2 py-0.5 text-small font-medium uppercase tracking-wide ${
-                        t.status === "OPEN" ? "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]" : "bg-slate-50/15 text-slate-100"
+                        t.status === "OPEN" ? "bg-slate-50/15 text-slate-50" : "bg-slate-50/15 text-slate-100"
                       }`}
                     >
                       {t.status === "OPEN" ? "Open" : "Resolved"}

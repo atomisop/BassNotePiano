@@ -146,7 +146,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={recipients.length ? "Add someone else" : "Search a name or email"}
-                className="w-full glass-surface-subtle py-2 pl-9 pr-3 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                className="w-full glass-surface-subtle py-2 pl-9 pr-3 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
               />
             </div>
             {query.trim().length >= 2 && (
@@ -189,7 +189,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Title, e.g. About your last payment"
             maxLength={120}
-            className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+            className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
           />
           <textarea
             value={body}
@@ -197,7 +197,7 @@ export function MessageComposer({ sent }: { sent: SentRow[] }) {
             placeholder="Message…"
             maxLength={2000}
             rows={5}
-            className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+            className="w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
           />
         </div>
 

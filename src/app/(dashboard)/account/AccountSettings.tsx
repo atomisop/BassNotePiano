@@ -349,7 +349,7 @@ function AccountGroup({ id, title, blurb, danger, children }: { id: string; titl
   return (
     <section data-account-group={id} className="scroll-mt-4 space-y-4">
       <div>
-        <h2 className={`text-small font-semibold uppercase tracking-[0.16em] ${danger ? "text-[rgb(var(--c-rd-300))]" : "text-slate-400"}`}>{title}</h2>
+        <h2 className={`text-small font-semibold uppercase tracking-[0.16em] ${danger ? "text-red-300" : "text-slate-400"}`}>{title}</h2>
         {blurb && <p className="mt-1 text-small text-slate-500">{blurb}</p>}
       </div>
       {children}
@@ -368,7 +368,7 @@ function InfoRow({ label, children }: { label: string; children: React.ReactNode
 
 function Badge({ ok, children }: { ok: boolean; children: React.ReactNode }) {
   return (
-    <span className={`ml-2 rounded-full px-2 py-0.5 text-small font-medium ${ok ? "bg-[rgb(var(--signal)/0.16)] text-signal-fg" : "bg-slate-700/60 text-slate-300"}`}>{children}</span>
+    <span className={`ml-2 rounded-full px-2 py-0.5 text-small font-medium ${ok ? "bg-signal/16 text-signal-fg" : "bg-slate-700/60 text-slate-300"}`}>{children}</span>
   );
 }
 
@@ -528,7 +528,7 @@ function PrivacySection({ history }: { history: AssistantMessage[] }) {
           )}
         </div>
         <p className="mt-3 text-small text-slate-500">
-          <Link href="/privacy" className="underline underline-offset-2 text-[rgb(var(--c-s-50))] hover:opacity-70">
+          <Link href="/privacy" className="underline underline-offset-2 text-slate-50 hover:opacity-70">
             Privacy policy
           </Link>
         </p>
@@ -649,7 +649,7 @@ function MembershipSection({ activePlan }: { activePlan: ActivePlanInfo | null }
       <SectionCard title="Membership & purchases">
         <Link
           href="/billing/plans"
-          className="flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low"
+          className="flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-slate-50 bg-neu-base shadow-raised-low"
         >
           Payment plan
           <span className="text-slate-500">→</span>
@@ -657,7 +657,7 @@ function MembershipSection({ activePlan }: { activePlan: ActivePlanInfo | null }
 
         <Link
           href="/billing/history"
-          className="mt-3 flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-[rgb(var(--c-s-50))] bg-neu-base shadow-raised-low"
+          className="mt-3 flex items-center justify-between rounded-xl p-4 text-small text-slate-200 transition hover:text-slate-50 bg-neu-base shadow-raised-low"
         >
           Payment history
           <span className="text-slate-500">→</span>

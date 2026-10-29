@@ -18,7 +18,7 @@ export default async function AdminTodayPage() {
 
   return (
     <div>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Today</h1>
       <p className="mt-2 text-small text-slate-500">
         {now.toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long", month: "long", day: "numeric" })}

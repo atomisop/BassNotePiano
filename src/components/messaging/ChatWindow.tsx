@@ -162,7 +162,7 @@ export function ChatWindow({
         <div className="min-w-0 flex-1">
           <p className="truncate text-body font-semibold text-slate-100">{conversation.friendName ?? "Unnamed"}</p>
           {conversation.isTyping ? (
-            <p className="flex items-center gap-1.5 text-small text-[rgb(var(--c-s-50))]">
+            <p className="flex items-center gap-1.5 text-small text-slate-50">
               typing <TypingIndicator />
             </p>
           ) : (
@@ -214,7 +214,7 @@ export function ChatWindow({
 
       {replyingTo && (
         <div className="flex items-center gap-2 bg-neu-base shadow-pressed-low px-4 py-2">
-          <div className="min-w-0 flex-1 border-l-2 border-[rgb(var(--c-s-50)/0.5)] pl-2">
+          <div className="min-w-0 flex-1 border-l-2 border-slate-50/50 pl-2">
             <p className="text-small font-medium text-slate-300">
               Replying to {replyingTo.senderId === conversation.friendId ? conversation.friendName ?? conversation.friendUsername ?? "Unnamed" : "yourself"}
             </p>

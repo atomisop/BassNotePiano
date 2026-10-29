@@ -57,7 +57,7 @@ export function ProgressBar({
       className={cn("h-2.5 w-full overflow-hidden rounded-full bg-neu-base p-0.5 shadow-pressed-low", !readout && className)}
     >
       <div
-        className="h-full rounded-full bg-[rgb(var(--c-s-50))] transition-[width] duration-(--dur-base) ease-(--ease-ios) motion-reduce:transition-none"
+        className="h-full rounded-full bg-slate-50 transition-[width] duration-(--dur-base) ease-(--ease-ios) motion-reduce:transition-none"
         style={{ width: `${pct}%` }}
       />
     </div>

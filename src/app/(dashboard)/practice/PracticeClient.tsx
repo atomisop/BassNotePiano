@@ -81,7 +81,7 @@ function PianoSectionView({ section, activeStep }: { section: PianoSection; acti
             }`}
           >
             <span className="text-small font-semibold leading-none">{step.note}</span>
-            <span className="mt-1 text-small font-bold leading-none text-[rgb(var(--signal))]">{step.finger}</span>
+            <span className="mt-1 text-small font-bold leading-none text-signal">{step.finger}</span>
           </span>
         ))}
       </div>
@@ -91,7 +91,7 @@ function PianoSectionView({ section, activeStep }: { section: PianoSection; acti
           <div
             key={i}
             className={`relative flex flex-1 items-end justify-center rounded-b-md pb-1 text-small font-bold transition ${
-              litKey === i ? "bg-[rgb(var(--signal))] text-[rgb(var(--signal-ink))]" : "bg-slate-200/90 text-slate-500"
+              litKey === i ? "bg-signal text-signal-ink" : "bg-slate-200/90 text-slate-500"
             }`}
           >
             {litKey === i ? litFinger : "CDEFGAB"[i % 7]}
@@ -130,7 +130,7 @@ function GuitarTab({ exercise, activeStep }: { exercise: GuitarExercise; activeS
       <div className="flex flex-wrap gap-1.5">
         {legend.map(([key, name]) => (
           <span key={key} className="inline-flex items-center gap-1.5 rounded-full bg-neu-base px-3 py-1 text-small text-slate-300 shadow-pressed-low">
-            <span className="font-bold text-[rgb(var(--signal))]">{key}</span>
+            <span className="font-bold text-signal">{key}</span>
             {name}
           </span>
         ))}
@@ -156,7 +156,7 @@ function GuitarTab({ exercise, activeStep }: { exercise: GuitarExercise; activeS
                   {step.string === str && (
                     <span
                       className={`relative z-10 flex h-8 min-w-8 items-center justify-center rounded-full px-1 text-small font-bold ${
-                        lit === i ? "bg-[rgb(var(--signal))] text-[rgb(var(--signal-ink))]" : "bg-neu-base text-slate-100 shadow-raised-low"
+                        lit === i ? "bg-signal text-signal-ink" : "bg-neu-base text-slate-100 shadow-raised-low"
                       }`}
                     >
                       {step.fret}
@@ -164,7 +164,7 @@ function GuitarTab({ exercise, activeStep }: { exercise: GuitarExercise; activeS
                   )}
                 </div>
               ))}
-              <span className="mt-1 flex h-7 items-center text-small font-bold text-[rgb(var(--signal))]">
+              <span className="mt-1 flex h-7 items-center text-small font-bold text-signal">
                 {step.finger === 0 ? (step.pickFinger ? "" : "open") : step.finger}
               </span>
             </div>
@@ -368,7 +368,7 @@ export function PracticeClient({
               onClick={() => chooseExercise(e.id, e.bpm)}
               aria-pressed={e.id === exerciseId}
               className={`tap shrink-0 snap-start scroll-mx-4 rounded-xl bg-neu-base px-4 py-2.5 text-small font-semibold transition ${
-                e.id === exerciseId ? "text-[rgb(var(--signal))] shadow-pressed-low" : "text-slate-300 shadow-raised-low hover:shadow-raised-mid"
+                e.id === exerciseId ? "text-signal shadow-pressed-low" : "text-slate-300 shadow-raised-low hover:shadow-raised-mid"
               }`}
             >
               {e.title}
@@ -392,7 +392,7 @@ export function PracticeClient({
             <ol className="space-y-2 text-small text-slate-300">
               {exercise.how.map((line, i) => (
                 <li key={i} className="flex gap-2.5">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-neu-base text-small font-bold text-[rgb(var(--signal))] shadow-pressed-low">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-neu-base text-small font-bold text-signal shadow-pressed-low">
                     {i + 1}
                   </span>
                   {line}
@@ -411,7 +411,7 @@ export function PracticeClient({
             {Array.from({ length: metronome.beatsPerBar }).map((_, i) => (
               <span
                 key={i}
-                className={`h-3 w-3 rounded-full transition ${metronome.running && metronome.beat === i ? "bg-[rgb(var(--signal))]" : "bg-neu-base shadow-pressed-low"}`}
+                className={`h-3 w-3 rounded-full transition ${metronome.running && metronome.beat === i ? "bg-signal" : "bg-neu-base shadow-pressed-low"}`}
               />
             ))}
           </div>

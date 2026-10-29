@@ -66,7 +66,7 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
       <BackLink href="/admin/users" className="tap inline-flex items-center text-small font-medium text-slate-500 transition hover:text-slate-300">
         ← Back
       </BackLink>
-      <p className="mt-3 text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
+      <p className="mt-3 text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Admin</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">{profile.user.name ?? profile.user.email}</h1>
 
       <dl className="mt-5 grid grid-cols-2 gap-2 rounded-2xl bg-neu-base p-3 shadow-raised-low sm:grid-cols-4 lg:grid-cols-7">

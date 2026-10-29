@@ -183,7 +183,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
     return (
       <WideLayout className="space-y-6">
         <div>
-          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
+          <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Social</p>
           <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Friends</h1>
         </div>
         <SectionCard title="Set a username first">
@@ -203,7 +203,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
       mobile="stack"
       header={
         <div>
-          <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Social</p>
+          <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Social</p>
           <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Friends</h1>
           <p className="mt-1 text-small text-slate-500">
             You&apos;re <span className="text-slate-300">@{username}</span>.
@@ -306,7 +306,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search @username"
-                className="flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+                className="flex-1 glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
               />
               <button
                 type="submit"

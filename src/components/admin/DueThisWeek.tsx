@@ -31,7 +31,7 @@ export function DueThisWeek({ week }: { week: DueWeek }) {
             <span className="h-4 text-[0.6875rem] font-semibold tabular-nums text-slate-300">{d.count > 0 ? d.count : ""}</span>
             <div className="flex h-20 w-full items-end justify-center">
               <div
-                className={`w-full max-w-7 rounded-lg ${d.count === 0 ? "bg-[rgb(var(--c-s-50)/0.08)]" : d.isToday ? "bg-signal" : "bg-[rgb(var(--c-s-50)/0.85)]"}`}
+                className={`w-full max-w-7 rounded-lg ${d.count === 0 ? "bg-slate-50/8" : d.isToday ? "bg-signal" : "bg-slate-50/85"}`}
                 style={{ height: d.count === 0 ? 6 : `${Math.max(14, Math.round((d.cents / max) * 100))}%` }}
               />
             </div>
@@ -48,13 +48,13 @@ export function DueThisWeek({ week }: { week: DueWeek }) {
               <p className="mb-1 text-small font-medium text-slate-400">
                 {d.isToday ? "Today" : d.weekday}, {d.dayOfMonth} · {usd(d.cents)}
               </p>
-              <ul className="divide-y divide-(--neu-edge) rounded-xl bg-[rgb(var(--c-s-50)/0.03)] px-3">
+              <ul className="divide-y divide-(--neu-edge) rounded-xl bg-slate-50/3 px-3">
                 {week.items
                   .filter((i) => i.dayKey === d.key)
                   .map((i) => (
                     <li key={i.userId}>
                       <Link href={`/admin/users/${i.userId}`} className="tap flex items-center gap-3 py-2 text-small hover:opacity-80">
-                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.1)] text-[0.6875rem] font-semibold text-slate-200">{i.name.charAt(0).toUpperCase()}</span>
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-50/10 text-[0.6875rem] font-semibold text-slate-200">{i.name.charAt(0).toUpperCase()}</span>
                         <span className="min-w-0 flex-1 truncate text-slate-100">{i.name}</span>
                         <span className="tabular-nums text-slate-300">{usd(i.amountCents)}</span>
                       </Link>
@@ -72,12 +72,12 @@ export function DueThisWeek({ week }: { week: DueWeek }) {
             <span>Already late</span>
             <span className="tabular-nums">{usd(week.overdueCents)}</span>
           </p>
-          <ul className="divide-y divide-(--neu-edge) rounded-xl bg-[rgb(var(--c-s-50)/0.03)] px-3">
+          <ul className="divide-y divide-(--neu-edge) rounded-xl bg-slate-50/3 px-3">
             {week.overdue.map((o) => (
               <li key={o.userId}>
                 <Link href={`/admin/users/${o.userId}`} className="tap flex items-center gap-3 py-2 text-small hover:opacity-80">
                   <span className="min-w-0 flex-1 truncate text-slate-100">{o.name}</span>
-                  <span className="rounded-full bg-[rgb(var(--signal)/0.16)] px-2 py-0.5 text-[0.6875rem] font-semibold text-signal-fg">{o.daysLate}d late</span>
+                  <span className="rounded-full bg-signal/16 px-2 py-0.5 text-[0.6875rem] font-semibold text-signal-fg">{o.daysLate}d late</span>
                   <span className="tabular-nums text-slate-300">{usd(o.amountCents)}</span>
                 </Link>
               </li>

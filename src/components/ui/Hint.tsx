@@ -62,7 +62,7 @@ export function Hint({
             align === "right" ? "right-0" : align === "center" ? "left-1/2 -translate-x-1/2" : "left-0",
           )}
         >
-        <span className="block w-64 max-w-[calc(100vw-3rem)] rounded-xl bg-neu-lift p-3 text-small font-normal normal-case leading-snug tracking-normal text-slate-200 shadow-raised-high ring-1 ring-[rgb(var(--c-s-50)/0.1)]">
+        <span className="block w-64 max-w-[calc(100vw-3rem)] rounded-xl bg-neu-lift p-3 text-small font-normal normal-case leading-snug tracking-normal text-slate-200 shadow-raised-high ring-1 ring-slate-50/10">
           {children}
         </span>
         </span>

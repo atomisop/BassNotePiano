@@ -180,7 +180,7 @@ export function PianoKeyboard({
                     className={cn(
                       "relative flex flex-1 cursor-pointer flex-col items-center justify-end rounded-b-[7px] pb-3 outline-none transition-[background,box-shadow,transform] duration-75 ease-out focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-signal disabled:cursor-default motion-reduce:transition-none",
                       lit
-                        ? "translate-y-[2px] bg-[rgb(var(--signal))] shadow-[inset_0_-2px_0_rgb(0_0_0/0.25),0_0_18px_rgb(var(--signal)/0.45)]"
+                        ? "translate-y-[2px] bg-signal shadow-[inset_0_-2px_0_rgb(0_0_0/0.25),0_0_18px_rgb(var(--signal)/0.45)]"
                         : "piano-white",
                     )}
                   >
@@ -188,7 +188,7 @@ export function PianoKeyboard({
                       <span
                         className={cn(
                           "flex h-7 min-w-7 items-center justify-center rounded-full px-1 text-small font-semibold leading-none",
-                          lit ? "text-[rgb(var(--signal-ink))]" : "piano-marker-on-white",
+                          lit ? "text-signal-ink" : "piano-marker-on-white",
                         )}
                       >
                         {notes[degreeIndex]}
@@ -228,7 +228,7 @@ export function PianoKeyboard({
                     className={cn(
                       "absolute top-0 z-10 flex h-[60%] cursor-pointer flex-col items-center justify-end rounded-b-[6px] pb-2 outline-none transition-[background,box-shadow,transform] duration-75 ease-out focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-signal disabled:cursor-default motion-reduce:transition-none",
                       lit
-                        ? "bg-[rgb(var(--signal))] shadow-[0_0_16px_rgb(var(--signal)/0.5)]"
+                        ? "bg-signal shadow-[0_0_16px_rgb(var(--signal)/0.5)]"
                         : "piano-black",
                     )}
                   >
@@ -236,7 +236,7 @@ export function PianoKeyboard({
                       <span
                         className={cn(
                           "flex h-6 min-w-6 items-center justify-center rounded-full px-0.5 text-small font-semibold leading-none",
-                          lit ? "text-[rgb(var(--signal-ink))]" : "piano-marker-on-black",
+                          lit ? "text-signal-ink" : "piano-marker-on-black",
                         )}
                       >
                         {notes[degreeIndex]}

@@ -14,7 +14,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
             This was still the pre-Pianote-pass uppercase/split-color
             version. Fully accent-colored at the time; neutral again now
             under the "premium black and white" pass. */}
-        <span className="text-small font-bold lowercase tracking-[-0.01em] text-[rgb(var(--c-s-50))]">
+        <span className="text-small font-bold lowercase tracking-[-0.01em] text-slate-50">
           Bass Note Piano
         </span>
       </header>

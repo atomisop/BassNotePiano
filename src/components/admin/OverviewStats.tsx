@@ -32,7 +32,7 @@ export function OverviewStats({ stats, children }: OverviewStatsProps) {
             className={`p-5 ${card.highlight ? "glass-surface-elevated" : "glass-surface"}`}
           >
             <p className="text-small font-medium text-slate-500">{card.label}</p>
-            <p className={`mt-2 text-body font-semibold ${card.highlight ? "text-[rgb(var(--c-s-50))]" : "text-slate-50"}`}>
+            <p className={`mt-2 text-body font-semibold ${card.highlight ? "text-slate-50" : "text-slate-50"}`}>
               {card.value}
             </p>
           </motion.div>

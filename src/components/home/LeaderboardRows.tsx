@@ -12,7 +12,7 @@ export function LeaderboardRows({ rows, viewerId, compact = false }: { rows: Lea
         return (
           <li
             key={r.userId}
-            className={cn("flex items-center gap-3 rounded-xl px-2.5 py-2", me ? "bg-[rgb(var(--signal)/0.12)]" : "bg-neu-base shadow-pressed-low")}
+            className={cn("flex items-center gap-3 rounded-xl px-2.5 py-2", me ? "bg-signal/12" : "bg-neu-base shadow-pressed-low")}
           >
             <span
               className={cn(

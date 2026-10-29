@@ -105,7 +105,7 @@ export function BookingAgenda({
           const weekday = new Date(ms).getUTCDay();
           const isSelected = selectedDateKey === key;
           return (
-            <li key={key} className={`grid grid-cols-[2.75rem_minmax(0,1fr)] items-center gap-3 px-3 py-3 ${isSelected ? "bg-[rgb(var(--c-s-50)/0.04)]" : ""}`}>
+            <li key={key} className={`grid grid-cols-[2.75rem_minmax(0,1fr)] items-center gap-3 px-3 py-3 ${isSelected ? "bg-slate-50/4" : ""}`}>
               <span className="flex flex-col items-center text-center">
                 <span
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-small font-semibold tabular-nums ${
@@ -124,7 +124,7 @@ export function BookingAgenda({
                 <div className="flex flex-wrap gap-2">
                   {list.map((r) => {
                     const picked = pickedKeys.has(r.key);
-                    const tone = r.isBooked ? "bg-[rgb(var(--c-s-50)/0.06)] text-slate-500" : picked ? "tint-green" : r.reservedForYou ? "tint-peach" : "tint-blue";
+                    const tone = r.isBooked ? "bg-slate-50/6 text-slate-500" : picked ? "tint-green" : r.reservedForYou ? "tint-peach" : "tint-blue";
                     return (
                       <button
                         key={r.key}
@@ -134,7 +134,7 @@ export function BookingAgenda({
                         onClick={() => onPick(r.key, key)}
                         className={`tap flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-left transition disabled:cursor-not-allowed ${tone} ${r.isBooked ? "" : "hover:brightness-110"}`}
                       >
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[rgb(var(--c-s-50)/0.12)]">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-50/12">
                           <Clock aria-hidden className="h-4 w-4" strokeWidth={1.75} />
                         </span>
                         <span className="min-w-0">

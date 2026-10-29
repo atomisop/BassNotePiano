@@ -333,7 +333,7 @@ export function NewPlanForm({
                     key={email}
                     type="button"
                     onClick={() => setMemberRows((prev) => (prev.length === 1 && prev[0].trim() === "" ? [email] : [...prev, email]))}
-                    className="tap rounded-full bg-[rgb(var(--c-s-50)/0.06)] px-3.5 py-1.5 text-small text-slate-300 transition hover:text-slate-50"
+                    className="tap rounded-full bg-slate-50/6 px-3.5 py-1.5 text-small text-slate-300 transition hover:text-slate-50"
                   >
                     + {email}
                   </button>
@@ -511,22 +511,22 @@ export function NewPlanForm({
           )}
         </dl>
 
-        <label className="mt-4 flex cursor-pointer items-start gap-2.5 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] bg-neu-base shadow-pressed-low p-3.5 text-small text-slate-300">
+        <label className="mt-4 flex cursor-pointer items-start gap-2.5 rounded-xl border border-slate-50/20 bg-neu-base shadow-pressed-low p-3.5 text-small text-slate-300">
           <input
             type="checkbox"
             checked={acknowledged}
             onChange={(e) => setAcknowledged(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-[rgb(var(--c-s-50))]"
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-ink/10 bg-slate-950 accent-slate-50"
           />
           <span>
             I have read and agree to the{" "}
-            <a href="/terms#payment-plans" target="_blank" rel="noopener noreferrer" className="font-semibold text-[rgb(var(--c-s-50))] underline underline-offset-2">
+            <a href="/terms#payment-plans" target="_blank" rel="noopener noreferrer" className="font-semibold text-slate-50 underline underline-offset-2">
               Terms and Conditions
             </a>
             {isFamily && (
               <>
                 , including the{" "}
-                <a href={isParent ? "/terms#parent-mode" : "/terms#family-plans"} target="_blank" rel="noopener noreferrer" className="font-semibold text-[rgb(var(--c-s-50))] underline underline-offset-2">
+                <a href={isParent ? "/terms#parent-mode" : "/terms#family-plans"} target="_blank" rel="noopener noreferrer" className="font-semibold text-slate-50 underline underline-offset-2">
                   {isParent ? "parent mode rules" : "group plan rules"}
                 </a>
               </>

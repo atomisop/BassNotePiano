@@ -161,7 +161,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search students by name or email…"
-          className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)]"
+          className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60"
         />
 
         <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">
@@ -175,10 +175,10 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 type="button"
                 onClick={() => selectUser(user)}
                 className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition ${
-                  active ? "border-[rgb(var(--c-s-50)/0.5)] bg-[rgb(var(--c-s-50)/0.1)]" : "border-transparent bg-neu-base shadow-raised-low"
+                  active ? "border-slate-50/50 bg-slate-50/10" : "border-transparent bg-neu-base shadow-raised-low"
                 }`}
               >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-small font-medium text-[rgb(var(--c-s-50))]">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-50/15 text-small font-medium text-slate-50">
                   {user.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={user.image} alt="" className="h-full w-full object-cover" />
@@ -232,7 +232,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   disabled={confirming}
                   min={1}
                   placeholder={mode === "revoke" ? "e.g. 2" : "e.g. 4"}
-                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+                  className="mt-1 w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
                 />
                 {mode === "revoke" && selected.classCredits > 0 && !confirming && (
                   <button
@@ -255,7 +255,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                   rows={2}
                   disabled={confirming}
                   placeholder="e.g. Paid via Venmo instead of Zelle"
-                  className="mt-1 w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-[rgb(var(--c-s-50)/0.6)] disabled:opacity-60"
+                  className="mt-1 w-full resize-none glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-slate-50/60 disabled:opacity-60"
                 />
               </div>
 
@@ -267,7 +267,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 // click" shape as PaymentQueue/StudentQueue's own Approve
                 // confirm. The number itself, spelled out in words, is the
                 // part a typo hides right up until this step.
-                <div className="space-y-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low p-3">
+                <div className="space-y-2 rounded-lg border border-slate-50/30 bg-neu-base shadow-pressed-low p-3">
                   <p className="text-small text-slate-200">
                     {mode === "grant" ? "Grant" : "Revoke"} <span className="font-semibold text-slate-50">{formatCredits(Number(amount))} credit{Number(amount) === 1 ? "" : "s"}</span>{" "}
                     {mode === "grant" ? "to" : "from"} {selected.name ?? selected.email}?

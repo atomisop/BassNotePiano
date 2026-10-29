@@ -17,11 +17,11 @@ export interface Action {
 /** A small round-cornered chip: a status or a change, e.g. "Scale 1" or "+8% this month". */
 export function Chip({ children, tone = "neutral", className }: { children: React.ReactNode; tone?: "neutral" | "orange" | "dark" | "up" | "down"; className?: string }) {
   const tones = {
-    neutral: "bg-[rgb(var(--c-s-50)/0.08)] text-slate-300",
-    orange: "bg-[rgb(var(--signal)/0.16)] text-signal-fg",
+    neutral: "bg-slate-50/8 text-slate-300",
+    orange: "bg-signal/16 text-signal-fg",
     dark: "bg-white/15 text-white",
-    up: "bg-[rgb(var(--signal)/0.16)] text-signal-fg",
-    down: "bg-[rgb(var(--c-s-50)/0.08)] text-slate-300",
+    up: "bg-signal/16 text-signal-fg",
+    down: "bg-slate-50/8 text-slate-300",
   } as const;
   return <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-small font-medium tabular-nums", tones[tone], className)}>{children}</span>;
 }
@@ -98,7 +98,7 @@ export function LimitCard({ title, done, goal, fraction, label }: { title: strin
   return (
     <section className="rounded-3xl bg-neu-base shadow-raised-mid p-5">
       <p className="text-small font-medium text-slate-100">{title}</p>
-      <div className="mt-3 h-3 overflow-hidden rounded-full bg-[rgb(var(--c-s-50)/0.08)]" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={label}>
+      <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-50/8" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={label}>
         <div className="h-full rounded-full bg-signal transition-all" style={{ width: `${pct}%` }} />
       </div>
       <div className="mt-2 flex items-baseline justify-between text-small tabular-nums">

@@ -18,7 +18,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_STYLE: Record<string, string> = {
   AWAITING_TRANSFER: "bg-neu-base shadow-pressed-low text-slate-400",
-  PENDING_REVIEW: "bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]",
+  PENDING_REVIEW: "bg-slate-50/15 text-slate-50",
   VERIFIED: "bg-slate-50/15 text-slate-100",
   REJECTED: "bg-red-400/15 text-red-300",
   EXPIRED: "bg-neu-base shadow-pressed-low text-slate-500",
@@ -81,7 +81,7 @@ export default async function BillingHistoryPage() {
         <ArrowLeftIcon size={16} />
         Back
       </BackLink>
-      <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Billing</p>
+      <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">Billing</p>
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Payment history</h1>
 
       {payments.length === 0 ? (
@@ -96,7 +96,7 @@ export default async function BillingHistoryPage() {
             <div key={payment.id} className="glass-surface p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">{eyebrow}</p>
+                  <p className="text-small font-medium uppercase tracking-[0.2em] text-slate-50/80">{eyebrow}</p>
                   <p className="mt-1 text-slate-100">{title}</p>
                   <p className="mt-1 text-small text-slate-400">
                     {new Date(payment.createdAt).toLocaleDateString(undefined, {
