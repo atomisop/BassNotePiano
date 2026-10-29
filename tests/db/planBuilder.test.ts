@@ -3,6 +3,7 @@ vi.mock("@/lib/auth", () => ({ getServerSession: async () => null, getServerAuth
 import { canonicalEmail } from "@/lib/canonicalEmail";
 import { applyPlanBuilder, getPlanBuilderContext, previewPlanBuilder, type PlanBuilderInput } from "@/lib/planBuilder";
 import { addBillingCycles } from "@/lib/billingCycle";
+import { chunksForSchedule, computeScheduledAt } from "@/lib/classSchedule";
 import { newTag, prisma } from "./helpers";
 
 const tag = newTag("pb");
@@ -97,5 +98,30 @@ describe("the plan builder", () => {
     const other = await account("other");
     await applyPlanBuilder(admin.id, { ...base, userId: other.id });
     await expect(previewPlanBuilder(base)).rejects.toThrow(/taken/);
+  });
+
+  it("lines a late payer up with the day she was taught: bill marked received, next bill 28 days after that day, and a week canceled earlier by hand is laid again", async () => {
+    const { admin, student, slot, wed } = await setup();
+    const plan = await prisma.paymentPlan.create({
+      data: { userId: student.id, cadence: "MIN_60_WEEKLY", term: "TERM_6", installmentAmountCents: 16499, creditsPerInstallment: 8, termMonths: 6, installmentsPaid: 0, nextDueDate: new Date(Date.now() - 3 * DAY), reservedScheduleId: slot.id, reservedChunkIndex: 0 },
+    });
+    await prisma.zellePayment.create({ data: { userId: student.id, purpose: "PAYMENT_PLAN_INSTALLMENT", paymentPlanId: plan.id, installmentNumber: 1, amountCents: 16499, lessonQuantity: 8, zelleHandle: "x", status: "AWAITING_TRANSFER" } });
+    expect((await getPlanBuilderContext(student.id)).openPayment).toBe(true);
+
+    // The Wednesday after the taught one, canceled by hand earlier (this used to make the booking job skip it).
+    const nextWed = new Date(new Date(`${wed}T12:00:00Z`).getTime() + 7 * DAY);
+    const occurrenceDate = new Date(Date.UTC(nextWed.getUTCFullYear(), nextWed.getUTCMonth(), nextWed.getUTCDate()));
+    const scheduledAt = computeScheduledAt(slot, occurrenceDate, chunksForSchedule(slot)[0]);
+    await prisma.classBooking.create({ data: { studentId: student.id, scheduleId: slot.id, occurrenceDate, scheduledAt, status: "CANCELED", canceledReason: "Canceled by studio", creditsSpent: 2, reservedByPlanId: plan.id } });
+
+    await applyPlanBuilder(admin.id, { userId: student.id, term: "TERM_6", scheduleId: slot.id, chunkIndex: 0, startDate: wed, installmentsPaid: 1, taughtDates: [wed], chargeTaught: true, recordPayment: true });
+
+    const after = await prisma.paymentPlan.findUniqueOrThrow({ where: { id: plan.id } });
+    expect(after.installmentsPaid).toBe(1);
+    const startMs = new Date(`${wed}T00:00:00-04:00`).getTime();
+    expect(Math.abs(after.nextDueDate.getTime() - addBillingCycles(new Date(startMs), 1).getTime())).toBeLessThan(2 * 3_600_000);
+    expect((await prisma.user.findUniqueOrThrow({ where: { id: student.id } })).classCredits).toBe(6);
+    const week = await prisma.classBooking.findUniqueOrThrow({ where: { studentId_scheduleId_occurrenceDate: { studentId: student.id, scheduleId: slot.id, occurrenceDate } } });
+    if (scheduledAt.getTime() > Date.now() && scheduledAt.getTime() < after.nextDueDate.getTime()) expect(week.status).toBe("SCHEDULED");
   });
 });

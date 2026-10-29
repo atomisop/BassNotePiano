@@ -11,8 +11,6 @@ import { BackLink } from "@/components/ui/BackLink";
 import { prisma } from "@/lib/prisma";
 import type { ReactNode } from "react";
 import { AdminPausePlanButton } from "@/components/admin/AdminPausePlanButton";
-import { AdminMovePlanTimeButton } from "@/components/admin/AdminMovePlanTimeButton";
-import { AdminSettleLateButton } from "@/components/admin/AdminSettleLateButton";
 import { AdminPlanBuilderButton } from "@/components/admin/AdminPlanBuilderButton";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { getServerAuthSession } from "@/lib/auth";
@@ -45,8 +43,6 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
         {plan && !plan.familyGroupId && (
           <>
             <AdminPausePlanButton planId={plan.id} state={{ paused: planPaused, until: plan.pauseUntil && !isIndefinitePause(plan) ? plan.pauseUntil.toISOString() : null }} compact />
-            <AdminMovePlanTimeButton planId={plan.id} compact hasTime={Boolean(plan.reservedScheduleId)} />
-            {isOwner && <AdminSettleLateButton planId={plan.id} />}
           </>
         )}
         {isOwner && <AdminPlanBuilderButton userId={params.userId} />}

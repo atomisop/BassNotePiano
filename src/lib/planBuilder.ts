@@ -4,7 +4,7 @@ import { addBillingCycles } from "@/lib/billingCycle";
 import { calculatePaymentPlanRate, describePaymentPlan, discountedPlanPriceCents, isPlanTermOffered, PLAN_CADENCE_CREDITS_PER_WEEK, OFFERED_PLAN_CADENCE } from "@/lib/classCreditPricing";
 import { chunksForSchedule, computeScheduledAt, etWallTimeToUtc, getReservableSlots } from "@/lib/classSchedule";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";
-import { PaymentPlanError, bookReservedWindowForPlan } from "@/lib/paymentPlans";
+import { PaymentPlanError, bookReservedWindowForPlan, recordPlanPaymentReceived } from "@/lib/paymentPlans";
 import { getPricingConfig } from "@/lib/pricing";
 import { getDiscountPercent } from "@/lib/accountDiscounts";
 import { drawDownCredits } from "@/lib/creditLedger";
@@ -33,6 +33,8 @@ export interface PlanBuilderInput {
   taughtDates: string[];
   /** Spend a class credit for each taught class. */
   chargeTaught: boolean;
+  /** An existing plan with an unpaid bill: mark that bill received first (the same as the Payments screen does). */
+  recordPayment?: boolean;
 }
 
 const todayEt = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
@@ -51,6 +53,8 @@ export interface PlanBuilderContext {
   amountCents: number;
   currentStart: string | null;
   slot: { scheduleId: string; chunkIndex: number } | null;
+  /** The existing plan has a bill that is not marked paid yet. */
+  openPayment: boolean;
   choices: { scheduleId: string; chunkIndex: number; dayOfWeek: number; startTime: string; label: string }[];
   terms: { term: PaymentPlanTerm; label: string; cycles: number; amountCents: number }[];
 }
@@ -95,6 +99,7 @@ export async function getPlanBuilderContext(userId: string): Promise<PlanBuilder
     amountCents: plan?.installmentAmountCents ?? t.amountCents,
     currentStart: plan ? new Date(addBillingCycles(plan.nextDueDate, -plan.installmentsPaid).getTime()).toLocaleDateString("en-CA", { timeZone: "America/New_York" }) : null,
     slot: current,
+    openPayment: plan ? (await prisma.zellePayment.count({ where: { paymentPlanId: plan.id, status: { in: ["AWAITING_TRANSFER", "PENDING_REVIEW"] } } })) > 0 : false,
     choices,
     terms,
   };
@@ -169,6 +174,10 @@ export async function previewPlanBuilder(input: PlanBuilderInput): Promise<PlanB
 }
 
 export async function applyPlanBuilder(adminId: string, input: PlanBuilderInput): Promise<{ planId: string; created: boolean }> {
+  if (input.recordPayment) {
+    const open = await prisma.paymentPlan.findFirst({ where: { userId: input.userId, status: "ACTIVE" }, select: { id: true } });
+    if (open) await recordPlanPaymentReceived(open.id, adminId);
+  }
   const r = await resolve(input);
   const perClass = PLAN_CADENCE_CREDITS_PER_WEEK[OFFERED_PLAN_CADENCE];
   const startInstant = etMidnight(input.startDate);
@@ -232,7 +241,10 @@ export async function applyPlanBuilder(adminId: string, input: PlanBuilderInput)
       }
     }
 
-    // Re-lay the schedule: the old future weekly classes go (no reason, so the booking job lays them again), the new ones follow.
+    // Re-lay the schedule from scratch. Future classes that were canceled earlier (by hand, while trying to fix this) would be
+    // skipped by the booking job as "canceled on purpose", which is how whole weeks went missing: clear that, so every week of the
+    // paid cycle is laid again. The old future weekly classes go next (no reason, so they are laid again too).
+    await tx.classBooking.updateMany({ where: { studentId: input.userId, scheduleId: input.scheduleId, status: "CANCELED", scheduledAt: { gt: now }, canceledReason: { not: null } }, data: { canceledReason: null } });
     await tx.classBooking.updateMany({ where: { studentId: input.userId, reservedByPlanId: id, status: "SCHEDULED", scheduledAt: { gt: now } }, data: { status: "CANCELED", refunded: true, canceledReason: null } });
     return id;
   });
