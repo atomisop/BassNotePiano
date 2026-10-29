@@ -7,6 +7,7 @@ import { ProfileMenu } from "./ProfileMenu";
 import { AdminTopLink } from "./AdminTopLink";
 import { Breadcrumb } from "./Breadcrumb";
 import { LiveClassesTopLink } from "./LiveClassesTopLink";
+import { FriendsTopLink } from "./FriendsTopLink";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { AskAiButton } from "./AskAiButton";
 import { CreditsBadge } from "./CreditsBadge";
@@ -109,6 +110,7 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
         {/* Buttons sit in one pressed-in tray so they read as raised keys set into the bar. */}
         <div className="flex items-center gap-1.5">
         <div className="hidden md:contents">
+        <FriendsTopLink />
         {isAdmin ? <AdminTopLink /> : <LiveClassesTopLink />}
         {/* Owner only. Quick Present/No-show from anywhere, by direct instruction, the
             full roster at Schedule → Attendance still exists for
