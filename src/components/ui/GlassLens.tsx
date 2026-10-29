@@ -22,6 +22,7 @@ export function GlassLens({
   radius,
   bezel = 14,
   strength = 16,
+  magnify = 0.4,
   tint = "linear-gradient(180deg, rgb(255 255 255 / 0.14), rgb(255 255 255 / 0.04))",
   blur = 1.5,
   className = "",
@@ -32,6 +33,8 @@ export function GlassLens({
   bezel?: number;
   /** The largest shift of the page behind the edge, in px. */
   strength?: number;
+  /** How much the whole face magnifies what is behind it (0 to 1). */
+  magnify?: number;
   /** The glass body's own color, a CSS background. */
   tint?: string;
   /** Blur of what is behind the middle of the glass, px (small: glass is clear). */
@@ -84,8 +87,8 @@ export function GlassLens({
 
   useEffect(() => {
     if (!size) return;
-    setMaps(buildGlassMaps({ width: size.w, height: size.h, radius: r, bezel: bz, strength: strength * tokens.refraction }));
-  }, [size, r, bz, strength, tokens.refraction]);
+    setMaps(buildGlassMaps({ width: size.w, height: size.h, radius: r, bezel: bz, strength: strength * tokens.refraction, magnify }));
+  }, [size, r, bz, strength, magnify, tokens.refraction]);
 
   const body = refract && maps && tokens.refraction > 0 ? `url(#${id}) blur(${blur * (tokens.blur / 1.5)}px) saturate(1.7) brightness(1.1)` : "blur(14px) saturate(1.8) brightness(1.08)";
   const split = disperse(tokens.dispersion);
@@ -112,7 +115,7 @@ export function GlassLens({
       {maps && (
         <div
           className="absolute inset-0"
-          style={{ borderRadius: r || undefined, backgroundImage: `url(${maps.specular})`, backgroundSize: "100% 100%", mixBlendMode: "screen", opacity: 0.95 }}
+          style={{ borderRadius: r || undefined, backgroundImage: `url(${maps.specular})`, backgroundSize: "100% 100%", opacity: 0.95 }}
         />
       )}
     </div>

@@ -26,6 +26,8 @@ export interface GlassShape {
   bezel: number;
   /** The largest shift in px (at the very edge). */
   strength: number;
+  /** How much the flat middle magnifies what is behind it, 0 (none) to 1 (strong). A lens enlarges its whole face, not only its rim. */
+  magnify?: number;
 }
 
 const N_GLASS = 1.5;
@@ -72,10 +74,15 @@ export function edgeInfo(px: number, py: number, w: number, h: number, r: number
 }
 
 /** The per-pixel numbers (no canvas), exported so they can be tested: displacement vector in -1..1 and specular alpha in 0..1. */
-export function glassPixel(px: number, py: number, shape: GlassShape, maxRefraction: number): { vx: number; vy: number; spec: number } {
+export function glassPixel(px: number, py: number, shape: GlassShape, maxRefraction: number): { vx: number; vy: number; spec: number; shade: number } {
   const { width, height, radius, bezel } = shape;
   const { depth, nx, ny } = edgeInfo(px, py, width, height, radius);
-  if (depth < 0 || depth >= bezel) return { vx: 0, vy: 0, spec: 0 };
+  if (depth < 0) return { vx: 0, vy: 0, spec: 0, shade: 0 };
+  if (depth >= bezel) {
+    // The flat face: sample a little closer to the center, which magnifies what is behind it (more toward the ends).
+    const k = (shape.magnify ?? 0.4) * 0.5;
+    return { vx: (-(px - width / 2) / (width / 2)) * k, vy: (-(py - height / 2) / (height / 2)) * k, spec: 0, shade: 0 };
+  }
   const s = Math.min(1, depth / bezel);
   const m = Math.min(1, refractionAt(s) / maxRefraction);
   // Light from the upper left (strong) and the lower right (faint), concentrated in a thin rim along the edge.
@@ -83,7 +90,10 @@ export function glassPixel(px: number, py: number, shape: GlassShape, maxRefract
   const l1 = Math.max(0, nx * -0.7071 + ny * -0.7071);
   const l2 = Math.max(0, nx * 0.7071 + ny * 0.7071);
   const spec = Math.min(1, rim * rim * (Math.pow(l1, 1.6) * 1 + Math.pow(l2, 1.6) * 0.42 + 0.12));
-  return { vx: nx * m, vy: ny * m, spec };
+  // The curved edge also shades what is under it: lighter where it faces the light, darker where it faces away, so the glass has body
+  // even over a plain background where there is nothing to bend.
+  const shade = Math.min(0.55, Math.pow(1 - s, 2) * (0.1 + 0.5 * Math.pow(l2, 1.2)));
+  return { vx: nx * m, vy: ny * m, spec, shade };
 }
 
 const cache = new Map<string, GlassMaps>();
@@ -92,7 +102,7 @@ export function buildGlassMaps(shape: GlassShape): GlassMaps | null {
   if (typeof document === "undefined") return null;
   const w = Math.max(2, Math.round(shape.width));
   const h = Math.max(2, Math.round(shape.height));
-  const key = `${w}x${h}:${Math.round(shape.radius)}:${Math.round(shape.bezel)}:${shape.strength}`;
+  const key = `${w}x${h}:${Math.round(shape.radius)}:${Math.round(shape.bezel)}:${shape.strength}:${shape.magnify ?? 0.4}`;
   const hit = cache.get(key);
   if (hit) return hit;
 
@@ -124,15 +134,17 @@ export function buildGlassMaps(shape: GlassShape): GlassMaps | null {
   const sw = w * SPEC;
   const sh = h * SPEC;
   const s = sctx.createImageData(sw, sh);
-  const scaled: GlassShape = { width: sw, height: sh, radius: shape.radius * SPEC, bezel: shape.bezel * SPEC, strength: shape.strength };
+  const scaled: GlassShape = { width: sw, height: sh, radius: shape.radius * SPEC, bezel: shape.bezel * SPEC, strength: shape.strength, magnify: shape.magnify };
   for (let y = 0; y < sh; y++) {
     for (let x = 0; x < sw; x++) {
-      const { spec: a } = glassPixel(x + 0.5, y + 0.5, scaled, maxRefraction);
+      const { spec: a, shade } = glassPixel(x + 0.5, y + 0.5, scaled, maxRefraction);
       const i = (y * sw + x) * 4;
-      s.data[i] = 255;
-      s.data[i + 1] = 255;
-      s.data[i + 2] = 255;
-      s.data[i + 3] = Math.round(a * 255);
+      const alpha = a + shade * (1 - a);
+      const c = alpha > 0 ? Math.round((255 * a) / (a + shade + 1e-6)) : 0;
+      s.data[i] = c;
+      s.data[i + 1] = c;
+      s.data[i + 2] = c;
+      s.data[i + 3] = Math.round(alpha * 255);
     }
   }
   sctx.putImageData(s, 0, 0);

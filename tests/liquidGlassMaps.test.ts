@@ -27,7 +27,13 @@ describe("liquid glass physics", () => {
   it("shifts nothing in the middle and pushes the edge outward, and lights the upper-left rim most", () => {
     const shape = { width: 200, height: 50, radius: 25, bezel: 16, strength: 16 };
     const max = refractionAt(0.001);
-    expect(glassPixel(100, 25, shape, max)).toEqual({ vx: 0, vy: 0, spec: 0 });
+    const middle = glassPixel(100, 25, shape, max);
+    expect(Math.abs(middle.vx)).toBe(0);
+    expect(Math.abs(middle.vy)).toBe(0);
+    expect(middle.spec).toBe(0);
+    // Away from the center the flat face still magnifies: it samples a little closer to the middle.
+    expect(glassPixel(160, 25, shape, max).vx).toBeLessThan(0);
+    expect(glassPixel(40, 25, shape, max).vx).toBeGreaterThan(0);
     const edge = glassPixel(1.5, 25, shape, max);
     expect(edge.vx).toBeLessThan(0); // the left edge samples from further left
     const upperLeft = glassPixel(8, 8, shape, max).spec;

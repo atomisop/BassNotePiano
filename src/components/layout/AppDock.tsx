@@ -173,7 +173,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
         style={{ transformOrigin: "50% 100%" }}
         className="liquid-rim pointer-events-auto relative grid h-[53px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full p-1 shadow-[0_14px_30px_-12px_rgb(0_0_0/0.45)]"
       >
-        <GlassLens radius="full" bezel={20} strength={18} blur={1.5} />
+        <GlassLens radius="full" bezel={26} strength={26} magnify={0.55} blur={1.2} />
         {NAV_ITEMS.map((item) => {
           const active = (pendingHref ?? pathname) === item.href;
           const current = pathname === item.href;
