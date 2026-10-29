@@ -2290,11 +2290,12 @@ html[data-theme-fade] *::after {
    --------------------------------------------------------------------------- */
 [data-surface="app"],
 body:has([data-surface="app"]) {
-  /* Sampled from the owner's reference app: page #121212, cards #222121 (a soft gray, a touch see-through), dock #333. */
+  /* Sampled from the owner's reference app: page #121212, cards #222121, dock #333. Cards are solid: stacked cards (the phone card
+     deck) must never show the one behind through them. */
   --ground: 18 18 18;
-  --neu-base: 28 27 27;
+  --neu-base: 27 26 26;
   --neu-lift: 38 37 37;
-  --neu-alpha: 0.94;
+  --neu-alpha: 1;
   --card-wash: rgb(255 255 255 / 0.035);
   --card-shade: rgb(0 0 0 / 0.24);
   --card-line: rgb(255 255 255 / 0.07);

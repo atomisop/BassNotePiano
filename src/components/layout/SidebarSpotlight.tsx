@@ -121,7 +121,7 @@ function railFor(card: SidebarCard): Rail | undefined {
     case "scaleUnlocked":
       return { icon: Sparkles, label: `${card.scaleCode} is open`, href: `/scales/${card.slug}`, dot: true };
     case "scaleWaiting":
-      return { icon: Hourglass, label: "Waiting for your teacher", href: "/dashboard" };
+      return { icon: Hourglass, label: "Waiting for your teacher", href: "/roadmap" };
     case "streak":
       return { icon: Flame, label: card.practicedToday ? "Practiced today" : "Practice today", href: "/practice", dot: !card.practicedToday };
     case "continueLesson":
@@ -184,7 +184,7 @@ function rawSlotFor(card: SidebarCard): Slot {
       return {
         id: "scaleWaiting",
         node: () => (
-          <Shell href="/dashboard" icon={Hourglass} label="Next scale">
+          <Shell href="/roadmap" icon={Hourglass} label="Next scale">
             <Big>{card.scaleCode} is done</Big>
             <Sub>Waiting for your teacher to open the next one.</Sub>
           </Shell>

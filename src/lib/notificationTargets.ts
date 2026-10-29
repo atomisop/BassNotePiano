@@ -34,7 +34,7 @@ export const DEFAULT_NOTIFICATION_HREF: Record<NotificationType, string> = {
   CREDITS_EXPIRING_SOON: "/lessons",
   RESERVED_SLOT_UNAVAILABLE: "/billing/plans",
   PLAN_CANCELLATION_FEEDBACK: "/admin/payment-plans?status=FEEDBACK",
-  CURRICULUM_ACCESS_GRANTED: "/dashboard",
+  CURRICULUM_ACCESS_GRANTED: "/roadmap",
   RESERVED_SLOT_CHANGED: "/billing/plans",
   CLASS_REMINDER: "/lessons",
   CURRICULUM_ACCESS_REVOKED: "/billing/plans",

@@ -173,7 +173,7 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
             onClick={() => setOpen(false)}
             className="tap block rounded-lg px-2.5 py-2 text-small text-slate-300 transition hover:bg-slate-800/60 hover:text-slate-100"
           >
-            Dashboard
+            Home
           </Link>
           <Link
             href="/profile"

@@ -57,6 +57,7 @@ export async function saveStudentNoteAction(
     const adminId = await requireAdminId();
     const note = noteId ? await updateNote(noteId, body, hiddenFromStudent) : await createNote(studentId, adminId, body, hiddenFromStudent);
     revalidatePath("/dashboard");
+    revalidatePath("/roadmap");
     return { ok: true, note };
   } catch (err) {
     return fail(err);
@@ -68,6 +69,7 @@ export async function deleteStudentNoteAction(noteId: string): Promise<Result<un
     await requireAdminId();
     await deleteNote(noteId);
     revalidatePath("/dashboard");
+    revalidatePath("/roadmap");
     return { ok: true };
   } catch (err) {
     return fail(err);

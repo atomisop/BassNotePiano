@@ -389,7 +389,7 @@ export function ScaleWorkspace(props: ScaleWorkspaceProps) {
   const center = (
     <div className="min-w-0">
       <div className="flex items-center justify-between gap-3">
-        <BackLink href="/dashboard" className="inline-flex min-h-9 items-center gap-1.5 text-small text-slate-400 transition-colors hover:text-slate-50">
+        <BackLink href="/roadmap" className="inline-flex min-h-9 items-center gap-1.5 text-small text-slate-400 transition-colors hover:text-slate-50">
           <ArrowLeft className="h-4 w-4" aria-hidden />
           Back
         </BackLink>

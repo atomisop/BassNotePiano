@@ -75,7 +75,7 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
   return (
     <header className="pad-safe-x pointer-events-none fixed inset-x-0 top-0 z-[45] px-2 pt-[max(0.375rem,env(safe-area-inset-top))] md:px-3">
       {/* A floating pill, the same solid, lightly blurred material as the bottom dock: full width on phones (kept below the notch and Dynamic Island), centered and only as wide as what it holds from iPad up. The page scrolls under it. */}
-      <div data-glass="" className="app-dock pointer-events-auto relative flex h-12 w-full items-center justify-between gap-3 rounded-full px-2 md:mx-auto md:w-fit md:max-w-full md:justify-start md:gap-5 md:px-3">
+      <div data-glass="" className="app-dock pointer-events-auto relative flex h-12 w-full items-center justify-between gap-2 rounded-full px-1.5 min-[360px]:gap-3 min-[360px]:px-2 md:mx-auto md:w-fit md:max-w-full md:justify-start md:gap-5 md:px-3">
       {/* No bar and no logo: only the controls float. The header ignores the mouse so it never blocks the page; its two groups take it back. */}
       <div className="relative z-10 flex items-center gap-2">
         {/* The logo is shown on phones only; from md up the sidebar and toggle take its place. */}
@@ -85,7 +85,7 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
         <SidebarToggle />
         <Breadcrumb />
       </div>
-      <div className="relative z-10 flex items-center gap-2 md:gap-3">
+      <div className="relative z-10 flex items-center gap-1.5 min-[360px]:gap-2 md:gap-3">
         {/* Leftmost of the right-hand cluster: Ask AI, admin, attendance, bell, profile. */}
         {/* Phones (under 768px) show only the credit badge, Ask AI and the profile picture: every other button is in the profile
             menu there (ProfileMenu appExtras). Tablets and computers show them all. The hidden buttons stay mounted
