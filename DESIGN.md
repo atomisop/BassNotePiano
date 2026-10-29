@@ -8,7 +8,7 @@ never a raw hex, px size or font name.
 Feeling:  a calm, flat, dark practice studio. Content first, chrome quiet, one warm accent.
 Type:     Baloo 2 for page titles only. Inside the app everything else is the system font (SF Pro on Apple devices),
           labels in sentence case; the public pages use Sora. JetBrains Mono for keys and codes.
-          Five steps: caption 12 · small 13 · body 16 · title 20 · hero 28 to 44 (fluid).
+          Six steps: caption 12 · small 13 · body 16 · title 20 · headline 24 · hero 28 to 44 (fluid), plus one big figure for counters.
           Weights: 400 text, 500 labels, 600 titles and buttons. Tabular numbers everywhere in the app.
 Colour:   ground #121212, cards one solid step lighter, an 11-step neutral ramp (slate-50 … slate-950).
           One accent, the logo orange (signal), meaning "your next step" or "tap this": at most 3 per screen.
@@ -27,7 +27,11 @@ Depth:    flat. Cards are a solid fill with no border or shadow. Only things tha
 | `text-small` | 13 / 1.4 | labels, buttons, list rows, most UI text |
 | `text-body` | 16 / 1.6 | reading text: lesson instructions, chat, descriptions |
 | `text-title` | 20 / 1.3 | a card's or section's own heading |
+| `text-headline` | 24 / 1.2 | the one big line on a feature card (Home's next step) |
 | `text-hero` | 28 to 44 / 1.02 | the page title (Baloo 2), one per page |
+| `text-figure` | 52 to 64 / 1 | a counter that is the point of the screen (the streak) |
+
+Tiny count badges (the 9+ on the bell) keep 10px; nothing else sits off the scale.
 
 Marketing pages may use larger display sizes for their hero only.
 
