@@ -43,7 +43,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     // screen, the Create account form most of all, could not be scrolled to
     // the bottom. Now the form scrolls inside its own box, with the content
     // still centered whenever it fits.
-    <div data-surface="app" className="fixed inset-0 overflow-y-auto overscroll-contain">
+    <div data-surface="app" className="kb-fit fixed inset-0 overflow-y-auto overscroll-contain">
       <PageHitBeacon />
       <div className="relative flex min-h-full flex-col items-center justify-center px-6 py-6 sm:py-16">
       {/* Login and register are the top of their own flow, with nothing

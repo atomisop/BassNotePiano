@@ -267,7 +267,7 @@ export function AdminCreditGrantPanel({ initialUsers, recentAdjustments, onSearc
                 // click" shape as PaymentQueue/StudentQueue's own Approve
                 // confirm. The number itself, spelled out in words, is the
                 // part a typo hides right up until this step.
-                <div className="space-y-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] p-3">
+                <div className="space-y-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low p-3">
                   <p className="text-small text-slate-200">
                     {mode === "grant" ? "Grant" : "Revoke"} <span className="font-semibold text-slate-50">{formatCredits(Number(amount))} credit{Number(amount) === 1 ? "" : "s"}</span>{" "}
                     {mode === "grant" ? "to" : "from"} {selected.name ?? selected.email}?

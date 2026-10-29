@@ -35,7 +35,7 @@ export function CheckoutBar(props: {
       {/* Phones and tablets: fixed above the dock. */}
       {mounted &&
         createPortal(
-          <div className="pointer-events-none fixed inset-x-0 bottom-[calc(max(1.25rem,env(safe-area-inset-bottom,0px)-0.25rem)+4.25rem)] z-30 flex justify-center px-4 lg:hidden">
+          <div className="kb-hide pointer-events-none fixed inset-x-0 bottom-[calc(max(1.25rem,env(safe-area-inset-bottom,0px)-0.25rem)+4.25rem)] z-30 flex justify-center px-4 lg:hidden">
             <div className="pointer-events-auto w-full max-w-xl">
               <Bar {...props} />
             </div>

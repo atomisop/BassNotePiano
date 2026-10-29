@@ -32,7 +32,7 @@ import { startNavigation } from "@/lib/navigationState";
 function FormError({ message }: { message: string }) {
   if (message === BANNED_MESSAGE) {
     return (
-      <p role="alert" className="rounded-xl border border-red-500/50 bg-red-500/10 px-4 py-3 text-small font-semibold text-red-400">
+      <p role="alert" className="rounded-xl border border-red-500/50 bg-neu-base shadow-pressed-low px-4 py-3 text-small font-semibold text-red-400">
         {message}
       </p>
     );

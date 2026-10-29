@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { formatDateTime, formatEndTime } from "@/lib/classScheduleLabels";
 import { MorphingSquare } from "@/components/ui/morphing-square";
-import { getReservableSlotsForChangeAction, changeReservedSlotAction, cancelClassBookingAction } from "../lessons/actions";
+import { getReservableSlotsForChangeAction, changeReservedSlotAction, cancelClassBookingAction } from "./actions";
 import type { ReservableSlot } from "@/lib/classSchedule";
 import { WideLayout } from "@/components/layout/PageLayouts";
 import { DISCORD_INVITE_URL } from "@/lib/discord";
@@ -290,7 +290,7 @@ export function ScheduleClient({
             way solo self-reschedule is (a real open slot, no conflicts) via
             changeReservedSlot. */}
         {changeSuccess && (
-          <p className="mt-4 rounded-lg bg-slate-50/5 px-3.5 py-2.5 text-small text-slate-50 bg-neu-base shadow-raised-low">
+          <p className="mt-4 rounded-lg px-3.5 py-2.5 text-small text-slate-50 bg-neu-base shadow-raised-low">
             Your weekly time changed.
           </p>
         )}

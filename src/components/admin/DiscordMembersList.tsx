@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
+import { ViewMore } from "@/components/ui/ViewMore";
 
 export interface DiscordMemberRow {
   id: string;
@@ -104,7 +105,8 @@ export function DiscordMembersList({
         <p className="glass-surface p-8 text-center text-small text-slate-500">No one found.</p>
       ) : (
         <ul className="glass-surface divide-y divide-slate-50/10 px-4">
-          {visible.map((row) => (
+          <ViewMore items={visible} initial={15} step={20}>
+          {(row) => (
             <li key={row.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-3.5">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-body text-slate-50">
@@ -153,7 +155,8 @@ export function DiscordMembersList({
                 </>
               )}
             </li>
-          ))}
+          )}
+          </ViewMore>
         </ul>
       )}
     </div>

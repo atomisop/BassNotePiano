@@ -10,7 +10,7 @@ export function PaymentPipelineBanner({ health }: { health: PaymentPipelineHealt
   if (health.status === "quiet") {
     const silence = health.hoursSinceEmail === null ? "has ever arrived" : `has arrived for ${Math.max(2, Math.floor(health.hoursSinceEmail / 24))} days`;
     return (
-      <div role="alert" className="mt-6 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-small text-amber-200">
+      <div role="alert" className="mt-6 rounded-xl border border-amber-400/30 bg-neu-base shadow-pressed-low px-4 py-3 text-small text-amber-200">
         <p className="font-semibold">Bank and Venmo emails may have stopped.</p>
         <p className="mt-1">
           No payment email {silence}, but {health.waitingPayments} payment{health.waitingPayments === 1 ? " is" : "s are"} waiting. The

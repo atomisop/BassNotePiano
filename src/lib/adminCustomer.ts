@@ -185,7 +185,7 @@ function buildTimeline(data: {
     events.push({
       at: b.createdAt,
       label: "Class booked",
-      detail: `${b.schedule.label ?? "Class"} · ${b.scheduledAt.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`,
+      detail: `${b.schedule.label ?? "Class"} · ${b.scheduledAt.toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} ET`,
     });
     if (b.status === "CANCELED") {
       events.push({

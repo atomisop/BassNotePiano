@@ -65,7 +65,7 @@ export function Dialog({
             if (info.offset.y > 120 || info.velocity.y > 600) onOpenChange(false);
           }}
           className={cn(
-            "fixed z-(--z-overlay) flex max-h-[90svh] flex-col bg-neu-base text-slate-100 shadow-raised-high outline-none",
+            "kb-lift fixed z-(--z-overlay) flex max-h-[90svh] flex-col bg-neu-base text-slate-100 shadow-raised-high outline-none",
             // Phone: bottom sheet.
             "inset-x-0 bottom-0 rounded-t-sheet pb-[max(1.25rem,env(safe-area-inset-bottom))] data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom",
             // md and up: centered modal.

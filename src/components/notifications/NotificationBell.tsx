@@ -511,7 +511,7 @@ export function NotificationBell() {
               // strip stays on the left, tapping it closes the panel, and the
               // panel itself only takes part of the screen (never full width).
               <motion.div
-                className="fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full justify-end"
+                className="kb-fit fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full justify-end"
                 initial="hidden"
                 animate="visible"
                 exit="hidden"

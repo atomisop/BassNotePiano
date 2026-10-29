@@ -36,7 +36,7 @@ export function SkeletonPill({ className }: { className?: string }) {
 /** A card-shaped surface that holds other skeleton pieces, so a screen reads as the same boxes it will become. */
 export function SkeletonCard({ className, children }: { className?: string; children?: React.ReactNode }) {
   return (
-    <div aria-hidden className={cn("rounded-2xl border border-(--neu-edge) p-4", className)}>
+    <div aria-hidden className={cn("rounded-2xl bg-neu-base shadow-raised-mid p-4", className)}>
       {children}
     </div>
   );

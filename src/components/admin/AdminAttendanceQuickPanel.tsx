@@ -5,8 +5,8 @@ import { PulsatingDots } from "@/components/ui/pulsating-loader";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Check, ChevronDown, ClipboardCheck, X as XIcon } from "lucide-react";
-import { adminCancelBookingAction, getBookingFeedAction, markAttendanceAction } from "@/app/(dashboard)/admin/schedule/actions";
+import { CalendarDays, Check, ChevronDown, ClipboardCheck, X as XIcon } from "lucide-react";
+import { getBookingFeedAction, markAttendanceAction } from "@/app/(dashboard)/admin/schedule/actions";
 import { Collapse } from "@/components/ui/Collapse";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
@@ -18,6 +18,7 @@ const ATTENDANCE_OPENS_MIN_BEFORE = 10;
 
 interface FeedRow {
   bookingId: string;
+  studentId: string;
   studentName: string | null;
   studentEmail: string;
   scheduleLabel: string | null;
@@ -32,22 +33,22 @@ interface DayGroup {
   rows: FeedRow[];
 }
 
+const ET = "America/New_York";
+
 function dayKeyOf(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-CA"); // YYYY-MM-DD in the viewer's own time zone
+  return new Date(iso).toLocaleDateString("en-CA", { timeZone: ET }); // YYYY-MM-DD, Eastern
 }
 
 function dayLabelOf(iso: string): string {
-  const d = new Date(iso);
-  const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const diff = Math.round((startOf(d) - startOf(new Date())) / 86_400_000);
+  const diff = Math.round((Date.parse(dayKeyOf(iso)) - Date.parse(dayKeyOf(new Date().toISOString()))) / 86_400_000);
   if (diff === 0) return "Today";
   if (diff === 1) return "Tomorrow";
   if (diff === -1) return "Yesterday";
-  return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  return new Date(iso).toLocaleDateString("en-US", { timeZone: ET, weekday: "short", month: "short", day: "numeric" });
 }
 
 function timeOf(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString("en-US", { timeZone: ET, hour: "numeric", minute: "2-digit" });
 }
 
 /**
@@ -70,7 +71,6 @@ export function AdminAttendanceQuickPanel() {
   const [rows, setRows] = useState<FeedRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Which day drop-downs the admin has toggled by hand; anything not in here
   // uses its default (open for today and anything that needs a call).
@@ -177,25 +177,6 @@ export function AdminAttendanceQuickPanel() {
       await markAttendanceAction(bookingId, attendance);
       removedRef.current.set(bookingId, Date.now());
       setRows((prev) => prev.filter((r) => r.bookingId !== bookingId));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  async function handleCancel(bookingId: string) {
-    setBusyId(bookingId);
-    setError(null);
-    try {
-      const result = await adminCancelBookingAction(bookingId);
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      removedRef.current.set(bookingId, Date.now());
-      setRows((prev) => prev.filter((r) => r.bookingId !== bookingId));
-      setConfirmCancelId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -323,7 +304,6 @@ export function AdminAttendanceQuickPanel() {
                             }
                             const ready = isReady(r.scheduledAt);
                             const busy = busyId === r.bookingId;
-                            const confirming = confirmCancelId === r.bookingId;
                             return (
                               <div key={r.bookingId} className="rounded-lg bg-neu-base p-2.5 shadow-raised-low">
                                 <div className="flex items-center gap-2">
@@ -354,41 +334,16 @@ export function AdminAttendanceQuickPanel() {
                                     {busy ? <MorphingSquare size={11} /> : <XIcon className="h-3.5 w-3.5" strokeWidth={2} />}
                                     Absent
                                   </button>
-                                  <button
-                                    type="button"
-                                    disabled={busy}
-                                    onClick={() => setConfirmCancelId(confirming ? null : r.bookingId)}
-                                    aria-label={`Cancel booking for ${r.studentName ?? r.studentEmail}`}
-                                    title="Cancel this booking"
-                                    className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500 text-white shadow-raised-low transition hover:bg-red-400 active:shadow-pressed-low disabled:cursor-not-allowed disabled:opacity-50"
+                                  <Link
+                                    href={`/admin/users/${r.studentId}#scheduler`}
+                                    onClick={() => setOpen(false)}
+                                    aria-label={`Open ${r.studentName ?? r.studentEmail}'s scheduler to move or cancel`}
+                                    title="Move or cancel in this student's Scheduler"
+                                    className="tap flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-neu-base text-slate-200 shadow-raised-low transition hover:shadow-raised-mid active:shadow-pressed-low"
                                   >
-                                    <XIcon className="h-4 w-4" strokeWidth={2.5} />
-                                  </button>
+                                    <CalendarDays className="h-4 w-4" strokeWidth={2} />
+                                  </Link>
                                 </div>
-                                {confirming && (
-                                  <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-neu-base px-2.5 py-2 shadow-pressed-low">
-                                    <p className="text-small text-slate-300">Cancel this booking? The student is told and not charged.</p>
-                                    <div className="flex shrink-0 gap-1.5">
-                                      <button
-                                        type="button"
-                                        onClick={() => setConfirmCancelId(null)}
-                                        disabled={busy}
-                                        className={buttonVariants({ variant: "secondary", size: "sm" })}
-                                      >
-                                        Keep
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleCancel(r.bookingId)}
-                                        disabled={busy}
-                                        className={buttonVariants({ variant: "danger", size: "sm" })}
-                                      >
-                                        {busy && <MorphingSquare size={11} />}
-                                        Cancel booking
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
                               </div>
                             );
                           })}

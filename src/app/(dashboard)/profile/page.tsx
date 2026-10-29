@@ -53,7 +53,7 @@ export default async function ProfilePage() {
         Back
       </BackLink>
       <div className="flex items-center gap-4">
-        <div className="h-16 w-16 overflow-hidden rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)]">
+        <div className="h-16 w-16 overflow-hidden rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low">
           {user.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={user.image} alt="" className="h-full w-full object-cover" />

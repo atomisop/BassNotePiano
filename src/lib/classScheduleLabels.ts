@@ -18,6 +18,26 @@ export function formatEtDateTime(date: Date): string {
   return `${text} ET`;
 }
 
+const ET = "America/New_York";
+
+/** "Sat, Oct 31, 2:00 PM": a class time in Eastern, wherever the screen or server runs. Admin screens use this so one class never reads as two times. */
+export function formatEtShort(when: string | Date, opts: { weekday?: boolean } = { weekday: true }): string {
+  return new Date(when).toLocaleString("en-US", {
+    timeZone: ET,
+    ...(opts.weekday === false ? {} : { weekday: "short" as const }),
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+/** The Eastern clock time a booking that spent `credits` ends at. */
+export function formatEtEndTime(scheduledAtIso: string, credits: number): string {
+  const end = new Date(new Date(scheduledAtIso).getTime() + (credits / CREDITS_PER_CLASS) * CLASS_MINUTES * 60_000);
+  return end.toLocaleTimeString("en-US", { timeZone: ET, hour: "numeric", minute: "2-digit" });
+}
+
 export function formatDateTime(iso: string) {
   return new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }

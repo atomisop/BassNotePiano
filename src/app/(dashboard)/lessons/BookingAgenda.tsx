@@ -97,7 +97,7 @@ export function BookingAgenda({
         })}
       </div>
 
-      <ol className="max-h-[34rem] divide-y divide-(--neu-edge) overflow-y-auto rounded-2xl border border-(--neu-edge)">
+      <ol className="max-h-[34rem] divide-y divide-(--neu-edge) overflow-y-auto rounded-2xl bg-neu-base shadow-raised-mid">
         {days.map((ms) => {
           const key = dayKey(ms);
           const list = byDay.get(key) ?? [];

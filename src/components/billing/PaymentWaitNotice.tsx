@@ -51,7 +51,7 @@ export function PaymentWaitNotice({ paymentId, submittedAt: initial = null, comp
   }
 
   return (
-    <div className={compact ? "mt-3 rounded-xl bg-neu-base px-4 py-3 shadow-pressed-low" : "rounded-2xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] p-6 text-center"}>
+    <div className={compact ? "mt-3 rounded-xl bg-neu-base px-4 py-3 shadow-pressed-low" : "rounded-2xl border border-[rgb(var(--c-s-50)/0.2)] bg-neu-base shadow-pressed-low p-6 text-center"}>
       <p className={compact ? "text-small font-medium text-slate-100" : "text-small font-medium text-[rgb(var(--c-s-50))]"}>{notice.headline}</p>
       <p className={`mt-1 text-small ${compact ? "text-slate-400" : "text-slate-300"}`}>{notice.detail}</p>
       <button

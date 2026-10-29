@@ -19,7 +19,7 @@ import {
 import { getActivePaymentPlan, getFifthClassOffer } from "@/lib/paymentPlans";
 import { getSupportContactId } from "@/lib/admin";
 import { ClassBookingClient } from "./ClassBookingClient";
-import { ScheduleClient } from "../schedule/ScheduleClient";
+import { ScheduleClient } from "./ScheduleClient";
 import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { LessonsHub } from "./LessonsHub";
 import { addMinutesToHHmm } from "@/lib/classScheduleLabels";

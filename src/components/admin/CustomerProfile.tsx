@@ -13,17 +13,20 @@ import { formatPhone } from "@/lib/phone";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/Tabs";
+import { formatEtShort } from "@/lib/classScheduleLabels";
+import { ViewMore } from "@/components/ui/ViewMore";
 
 export interface CustomerProfileProps {
   profile: CustomerProfileData;
   /** Shown at the bottom of the Support tab (the changes admins made on this account). */
   changeLog?: React.ReactNode;
+  /** The Scheduler tab: this student's classes, booking and weekly time (built by the page). */
+  scheduler?: React.ReactNode;
   onSetCurriculumAccess: (userId: string, hasAccess: boolean) => Promise<void>;
   onToggleScale: (userId: string, scaleSlug: string, unlock: boolean) => Promise<void>;
   onClearAssistantHistory: (userId: string) => Promise<void>;
   onSetRole: (userId: string, role: Role) => Promise<void>;
   onAdjustCredits: (userId: string, amount: number, reasonNote: string) => Promise<{ ok: true; balance: number } | { ok: false; error: string }>;
-  onCancelBooking: (bookingId: string, reason?: string) => Promise<{ ok: true } | { ok: false; error: string }>;
   onForceSignOut: (userId: string) => Promise<void>;
   onForgetPayerName: (userId: string, aliasId: string) => Promise<void>;
   /** Frees this account's phone number (a number belongs to one account). */
@@ -42,7 +45,7 @@ function formatDate(d: Date | string) {
 }
 
 function formatDateTime(d: Date | string) {
-  return new Date(d).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return formatEtShort(d, { weekday: false });
 }
 
 function SectionCard({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
@@ -120,11 +123,12 @@ function PracticeStrip({ practice }: { practice: CustomerProfileData["practice"]
   );
 }
 
-type ProfileTab = "overview" | "learning" | "classes" | "money" | "support";
+type ProfileTab = "overview" | "learning" | "classes" | "scheduler" | "money" | "support";
 const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "learning", label: "Learning" },
   { id: "classes", label: "Classes" },
+  { id: "scheduler", label: "Scheduler" },
   { id: "money", label: "Money" },
   { id: "support", label: "Support" },
 ];
@@ -136,12 +140,12 @@ function Empty({ children }: { children: React.ReactNode }) {
 export function CustomerProfile({
   profile,
   changeLog,
+  scheduler,
   onSetCurriculumAccess,
   onToggleScale,
   onClearAssistantHistory,
   onSetRole,
   onAdjustCredits,
-  onCancelBooking,
   onForceSignOut,
   onForgetPayerName,
   onClearPhone,
@@ -176,8 +180,6 @@ export function CustomerProfile({
   // amount is easy to typo (wrong sign, extra digit) and was previously one
   // submit away from changing a real balance with nothing to double-check.
   const [creditConfirming, setCreditConfirming] = useState(false);
-  const [cancelingBookingId, setCancelingBookingId] = useState<string | null>(null);
-  const [cancelReason, setCancelReason] = useState("");
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const [confirmingBan, setConfirmingBan] = useState(false);
   const [banReason, setBanReason] = useState("");
@@ -240,21 +242,6 @@ export function CustomerProfile({
     router.refresh();
   }
 
-  async function handleCancelBooking(bookingId: string) {
-    setBusy(true);
-    setError(null);
-    const result = await onCancelBooking(bookingId, cancelReason.trim() || undefined);
-    if (!result.ok) {
-      setError(result.error);
-      setBusy(false);
-      return;
-    }
-    setCancelingBookingId(null);
-    setCancelReason("");
-    setBusy(false);
-    router.refresh();
-  }
-
   async function handleBan() {
     setBusy(true);
     setError(null);
@@ -300,13 +287,11 @@ export function CustomerProfile({
     </button>
   );
 
-  const upcomingBookings = profile.bookings.filter((b) => b.status === "SCHEDULED");
-  const pastBookings = profile.bookings.filter((b) => b.status !== "SCHEDULED");
 
   return (
     <div className="space-y-5">
       {error && (
-        <div className="rounded-xl border border-red-400/30 bg-red-400/10 p-3 text-small text-red-300">{error}</div>
+        <div className="rounded-xl border border-red-400/30 bg-neu-base shadow-pressed-low p-3 text-small text-red-300">{error}</div>
       )}
 
       <Tabs<ProfileTab> label="Sections of this account" items={PROFILE_TABS} value={tab} onChange={chooseTab} />
@@ -316,14 +301,14 @@ export function CustomerProfile({
           {/* Identity + account-level quick actions */}
           <SectionCard title="Account" action={banButton}>
             {user.bannedAt && (
-              <div role="status" className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-small text-red-300">
+              <div role="status" className="mb-4 rounded-xl border border-red-500/40 bg-neu-base shadow-pressed-low p-3 text-small text-red-300">
                 <p className="font-semibold">Permanently banned on {formatDate(user.bannedAt)}. They cannot sign in.</p>
                 {banSummary && <p className="mt-1">Terminated: {banSummary}</p>}
                 {user.bannedReason && <p className="mt-1 text-red-300/80">Your note: {user.bannedReason}</p>}
               </div>
             )}
             {confirmingBan && !user.bannedAt && (
-              <div className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 p-4">
+              <div className="mb-4 rounded-xl border border-red-500/40 bg-neu-base shadow-pressed-low p-4">
                 <p className="text-small font-semibold text-red-300">Permanently ban {user.name ?? user.email}?</p>
                 <p className="mt-1 text-small text-slate-300">
                   This is a termination. They are signed out everywhere and can never sign in again, their payment plan and every booked class are canceled, their trial and free access end, and they are removed from your Discord server. Money they already paid is not touched, and a payment waiting for your review is left for you. They will see a red notice that they have been permanently banned. You can lift the ban later, but the cancellations stay.
@@ -400,7 +385,7 @@ export function CustomerProfile({
 
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
               {pendingAction === "curriculum" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-1.5 text-small text-slate-200">
+                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
                   {user.hasCurriculumAccess
                     ? "Remove complimentary access?"
                     : "Give complimentary curriculum access?"}
@@ -429,7 +414,7 @@ export function CustomerProfile({
               )}
 
               {pendingAction === "role" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-1.5 text-small text-slate-200">
+                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
                   {user.role === "ADMIN"
                     ? "Remove admin access from this account? They are signed out right away."
                     : "Make this account an admin? They will be able to manage payments, users and credits."}
@@ -458,7 +443,7 @@ export function CustomerProfile({
               )}
 
               {pendingAction === "history" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-red-400/5 px-3 py-1.5 text-small text-red-300">
+                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-red-300">
                   Permanently delete this account&apos;s stored Atom history?
                   <button
                     type="button"
@@ -494,7 +479,7 @@ export function CustomerProfile({
                   Sign out everywhere
                 </button>
               ) : (
-                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-red-400/5 px-3 py-1.5 text-small text-red-300">
+                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-red-300">
                   Sign out every device this account is logged into?
                   <button
                     type="button"
@@ -603,7 +588,7 @@ export function CustomerProfile({
               )}
             </form>
             {creditConfirming && (
-              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-2 text-small text-slate-200">
+              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low px-3 py-2 text-small text-slate-200">
                 {Number(creditAmount) > 0 ? "Grant" : "Deduct"}{" "}
                 <span className="font-semibold text-slate-50">
                   {formatCredits(Math.abs(Number(creditAmount)))} credit{Math.abs(Number(creditAmount)) === 1 ? "" : "s"}
@@ -624,95 +609,12 @@ export function CustomerProfile({
               </div>
             )}
             {creditSuccess && <p className="mt-2 text-small text-slate-50">{creditSuccess}</p>}
-
-            <div className="mt-5 border-t border-ink/10 pt-4">
-              <p className="text-small font-medium uppercase tracking-wide text-slate-500">Upcoming bookings</p>
-              <div className="mt-2 space-y-2">
-                {upcomingBookings.length === 0 && <Empty>No upcoming bookings.</Empty>}
-                {upcomingBookings.map((b) => (
-                  <div key={b.id} className="rounded-xl p-3 bg-neu-base shadow-raised-low">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <p className="text-small text-slate-100">{b.schedule.label ?? "Class"}</p>
-                        <p className="text-small text-slate-500">
-                          {formatDateTime(b.scheduledAt)} · {creditsLabelFromStored(b.creditsSpent)}
-                        </p>
-                      </div>
-                      {cancelingBookingId === b.id ? (
-                        <div className="flex w-full flex-col gap-2 border-t border-ink/10 pt-2">
-                          <input
-                            type="text"
-                            autoFocus
-                            value={cancelReason}
-                            onChange={(e) => setCancelReason(e.target.value)}
-                            placeholder="Reason (optional, shown to the student)"
-                            className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-red-400/60"
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCancelingBookingId(null);
-                                setCancelReason("");
-                              }}
-                              className="tap flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-                            >
-                              Never mind
-                            </button>
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => handleCancelBooking(b.id)}
-                              className="tap flex-1 rounded-lg bg-red-500/95 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
-                            >
-                              Confirm cancel & refund
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setCancelingBookingId(b.id)}
-                          className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
-                        >
-                          Cancel booking
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {pastBookings.length > 0 && (
-              <div className="mt-5 border-t border-ink/10 pt-4">
-                <p className="text-small font-medium uppercase tracking-wide text-slate-500">Past bookings</p>
-                <div className="mt-2 space-y-1.5">
-                  {pastBookings.slice(0, 8).map((b) => (
-                    <div key={b.id} className="flex items-center justify-between gap-2 text-small">
-                      <span className="text-slate-400">
-                        {b.schedule.label ?? "Class"} · {formatDateTime(b.scheduledAt)}
-                      </span>
-                      <span
-                        className={
-                          b.status === "CANCELED"
-                            ? "text-red-400"
-                            : b.attendance === "PRESENT"
-                              ? "text-slate-50"
-                              : b.attendance === "NO_SHOW"
-                                ? "text-red-400"
-                                : "text-slate-500"
-                        }
-                      >
-                        {b.status === "CANCELED" ? "Canceled" : b.attendance ?? "Completed"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </SectionCard>
 
+        </div>
+
+        <div hidden={tab !== "scheduler"} className="space-y-5">
+          {scheduler}
         </div>
 
         <div hidden={tab !== "money"} className="space-y-5">
@@ -720,7 +622,8 @@ export function CustomerProfile({
           <SectionCard title="Payment history">
             {profile.payments.length === 0 && <Empty>No payments submitted.</Empty>}
             <div className="space-y-2">
-              {profile.payments.map((p) => (
+              <ViewMore items={profile.payments} initial={4}>
+              {(p) => (
                 <div key={p.id} className="flex items-center justify-between gap-3 rounded-xl p-3 text-small bg-neu-base shadow-raised-low">
                   <div>
                     <p className="text-slate-100">
@@ -743,7 +646,8 @@ export function CustomerProfile({
                     {p.status.replace(/_/g, " ").toLowerCase()}
                   </span>
                 </div>
-              ))}
+              )}
+              </ViewMore>
             </div>
           </SectionCard>
 
@@ -808,14 +712,16 @@ export function CustomerProfile({
           {/* Activity timeline */}
           <SectionCard title="Activity">
             {profile.timeline.length === 0 && <Empty>Nothing recorded yet.</Empty>}
-            <div className="max-h-[36rem] space-y-3 overflow-y-auto pr-1">
-              {profile.timeline.map((event, i) => (
+            <div className="space-y-3">
+              <ViewMore items={profile.timeline} initial={6}>
+              {(event, i) => (
                 <div key={i} className="border-l-2 border-ink/10 pl-3">
                   <p className="text-small text-slate-500">{formatDateTime(event.at)}</p>
                   <p className="text-small text-slate-200">{event.label}</p>
                   {event.detail && <p className="text-small text-slate-500">{event.detail}</p>}
                 </div>
-              ))}
+              )}
+              </ViewMore>
             </div>
           </SectionCard>
           {changeLog}

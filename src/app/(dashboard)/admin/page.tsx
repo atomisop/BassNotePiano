@@ -103,7 +103,7 @@ export default async function AdminOverviewPage() {
         </div>
 
         <div className="grid min-w-0 gap-6">
-          <section aria-label="Needs you now" className="rounded-2xl border border-(--neu-edge) p-4">
+          <section aria-label="Needs you now" className="rounded-2xl bg-neu-base shadow-raised-mid p-4">
             <div className="flex items-baseline justify-between gap-3">
               <h2 className="text-body font-semibold text-slate-50">Needs you now</h2>
               <p className="text-small text-slate-500">{attention.length === 0 ? "Nothing waiting" : `${attention.length} ${attention.length === 1 ? "item" : "items"}`}</p>

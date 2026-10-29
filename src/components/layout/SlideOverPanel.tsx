@@ -66,7 +66,7 @@ export function SlideOverPanel({
         // or get clipped once the toolbar's actually showing, and this app
         // shell already hit that exact bug once before, see
         // (dashboard)/layout.tsx's own h-[100svh] comment.
-        <motion.div className="fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full justify-end" initial="hidden" animate="visible" exit="hidden">
+        <motion.div className="kb-fit fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full justify-end" initial="hidden" animate="visible" exit="hidden">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

@@ -173,7 +173,7 @@ export function QuizModal({ isOpen, onClose, scaleTitle, scaleSlug, onSubmit, pa
           // which inset-0's bottom:0 constraint is exactly the shape of that
           // bug. h-[100svh] pins this to the smallest the viewport is ever
           // going to be instead, the same fix already proven here.
-          className="fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full flex-col overflow-hidden bg-slate-950"
+          className="kb-fit fixed inset-x-0 top-0 z-50 flex h-[100svh] w-full flex-col overflow-hidden bg-slate-950"
         >
           {step === "result" && result?.passed && <SuccessGlowPulse />}
           <div className="h-1 w-full shrink-0 bg-gradient-to-r from-[rgb(var(--c-s-300)/0.4)] via-[rgb(var(--c-s-50))] to-[rgb(var(--c-s-300)/0.4)]" />

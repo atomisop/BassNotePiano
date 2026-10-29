@@ -4,7 +4,8 @@ import { getCustomerProfile } from "@/lib/adminCustomer";
 import { CustomerProfile } from "@/components/admin/CustomerProfile";
 import { setCurriculumAccessAction, toggleScaleUnlockAction, clearAssistantHistoryAction, setUserRoleAction } from "../actions";
 import { adjustUserCreditsAction } from "../../payments/credit-actions";
-import { adminCancelBookingAction } from "../../schedule/actions";
+import { adminCancelBookingAction, adminMoveBookingAction, adminMoveBookingToTimeAction, adminBookClassAction, getOpenSlotsAction, markAttendanceAction, undoAttendanceAction, setClassInPersonAction } from "../../schedule/actions";
+import { StudentScheduler } from "@/components/admin/StudentScheduler";
 import { adminClearPhoneAction, adminForceSignOutAction, banUserAction, forgetPayerNameAction, unbanUserAction } from "./actions";
 import { BackLink } from "@/components/ui/BackLink";
 import { prisma } from "@/lib/prisma";
@@ -32,18 +33,17 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
   ]);
   const nextBooking = profile.bookings.filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > Date.now()).sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())[0];
   const planPaused = plan ? isPausedNow(plan, new Date()) : false;
+  const planControls =
+    plan && !plan.familyGroupId ? (
+      <>
+        <AdminPausePlanButton planId={plan.id} state={{ paused: planPaused, until: plan.pauseUntil && !isIndefinitePause(plan) ? plan.pauseUntil.toISOString() : null }} compact />
+        {plan.reservedScheduleId && <AdminMovePlanTimeButton planId={plan.id} compact />}
+      </>
+    ) : null;
   const facts: { label: string; value: string; warn?: boolean; extra?: ReactNode }[] = [
     {
       label: "Plan",
       value: plan ? describePaymentPlan(plan.cadence, plan.term) : "None",
-      extra:
-        plan && !plan.familyGroupId ? (
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            {!planPaused && <span className="inline-block rounded-full bg-emerald-400/15 px-2 py-0.5 text-small font-medium uppercase tracking-wide text-emerald-300">Active</span>}
-            <AdminPausePlanButton planId={plan.id} state={{ paused: planPaused, until: plan.pauseUntil && !isIndefinitePause(plan) ? plan.pauseUntil.toISOString() : null }} compact />
-            {plan.reservedScheduleId && <AdminMovePlanTimeButton planId={plan.id} compact />}
-          </div>
-        ) : null,
     },
     { label: "Next bill", value: plan && planPaused && isIndefinitePause(plan) ? "Paused" : plan ? when(plan.nextDueDate).replace(/, \d+:\d+ [AP]M$/, "") : "None", warn: !!plan && plan.nextDueDate.getTime() < Date.now() },
     { label: "Credits", value: formatCredits(storedToCredits(profile.user.classCredits)) },
@@ -74,6 +74,22 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
       <div className="mt-6">
         <CustomerProfile
           profile={profile}
+          scheduler={
+            <StudentScheduler
+              studentId={params.userId}
+              studentName={profile.user.name ?? profile.user.email}
+              bookings={profile.bookings.map((b) => ({ id: b.id, label: b.schedule.label, scheduledAt: b.scheduledAt.toISOString(), creditsSpent: b.creditsSpent, status: b.status, attendance: b.attendance, inPerson: b.inPerson }))}
+              loadOpenSlots={getOpenSlotsAction}
+              planControls={planControls}
+              onMove={adminMoveBookingAction}
+              onMoveToTime={adminMoveBookingToTimeAction}
+              onCancel={adminCancelBookingAction}
+              onBook={adminBookClassAction}
+              onMark={markAttendanceAction}
+              onUndo={undoAttendanceAction}
+              onSetInPerson={setClassInPersonAction}
+            />
+          }
           changeLog={
             changes.length > 0 ? (
               <section className="glass-surface p-5">
@@ -102,7 +118,6 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
           onClearAssistantHistory={clearAssistantHistoryAction}
           onSetRole={setUserRoleAction}
           onAdjustCredits={adjustUserCreditsAction}
-          onCancelBooking={adminCancelBookingAction}
           onForceSignOut={adminForceSignOutAction}
           onForgetPayerName={forgetPayerNameAction}
           onClearPhone={adminClearPhoneAction}

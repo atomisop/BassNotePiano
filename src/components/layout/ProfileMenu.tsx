@@ -131,7 +131,7 @@ export function ProfileMenu({ name, username, email, image, isOwner = false, tri
           className="glass-surface-elevated absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 overflow-hidden p-1.5"
         >
           <div className="flex items-center gap-3 px-2.5 py-2">
-            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.1)]">
+            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low">
               {image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={image} alt="" className="h-full w-full object-cover" />

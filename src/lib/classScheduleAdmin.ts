@@ -83,6 +83,7 @@ const ADMIN_ROSTER_WINDOW_DAYS = 60;
 
 export interface PendingAttendanceRow {
   bookingId: string;
+  studentId: string;
   studentName: string | null;
   studentEmail: string;
   scheduleLabel: string | null;
@@ -100,13 +101,14 @@ export interface PendingAttendanceRow {
 export async function getPendingAttendanceBookings(limit = 20): Promise<PendingAttendanceRow[]> {
   const bookings = await prisma.classBooking.findMany({
     where: { status: "SCHEDULED", scheduledAt: { lte: new Date() } },
-    include: { student: { select: { name: true, email: true } }, schedule: { select: { label: true } } },
+    include: { student: { select: { id: true, name: true, email: true } }, schedule: { select: { label: true } } },
     orderBy: { scheduledAt: "asc" },
     take: limit,
   });
 
   return bookings.map((b) => ({
     bookingId: b.id,
+    studentId: b.student.id,
     studentName: b.student.name,
     studentEmail: b.student.email,
     scheduleLabel: b.schedule.label,
@@ -132,7 +134,7 @@ export interface BookingFeedRow extends PendingAttendanceRow {
 export async function getBookingFeed(limit = 300): Promise<BookingFeedRow[]> {
   const bookings = await prisma.classBooking.findMany({
     where: { status: "SCHEDULED" },
-    include: { student: { select: { name: true, email: true } }, schedule: { select: { label: true } } },
+    include: { student: { select: { id: true, name: true, email: true } }, schedule: { select: { label: true } } },
     orderBy: { scheduledAt: "asc" },
     take: limit,
   });
@@ -141,6 +143,7 @@ export async function getBookingFeed(limit = 300): Promise<BookingFeedRow[]> {
     .filter((b) => b.scheduledAt.getTime() < weekEnd) // this week, plus any past class still waiting for an attendance call
     .map((b) => ({
     bookingId: b.id,
+    studentId: b.student.id,
     studentName: b.student.name,
     studentEmail: b.student.email,
     scheduleLabel: b.schedule.label,
@@ -173,6 +176,7 @@ export async function getBookingFeed(limit = 300): Promise<BookingFeedRow[]> {
     if (!upcoming) continue;
     rows.push({
       bookingId: `plan:${plan.id}`,
+      studentId: plan.userId,
       studentName: plan.user.name,
       studentEmail: plan.user.email,
       scheduleLabel: slot.label,
@@ -199,7 +203,9 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
   // One roadmap lookup per distinct student, not per booking row, the same
   // student can appear across several occurrences inside the window, and
   // their curriculum progress doesn't change from one row to the next.
-  const studentIds = Array.from(new Set(bookings.map((b) => b.student.id)));
+  // Only classes still waiting for an attendance call show where the student is in the curriculum, so the many
+  // already-marked classes in the 60-day window cost no roadmap lookup at all (this was most of the page's load time).
+  const studentIds = Array.from(new Set(bookings.filter((b) => b.status === "SCHEDULED" && !b.attendance).map((b) => b.student.id)));
   const focusByStudent = new Map(
     await Promise.all(studentIds.map(async (id) => [id, summarizeFocus(await getRoadmap(id))] as const)),
   );
@@ -234,7 +240,7 @@ export async function getAdminOccurrences(): Promise<AdminOccurrenceGroup[]> {
       creditsSpent: b.creditsSpent,
       inPerson: b.inPerson,
       familyBookingGroupId: b.familyBookingGroupId,
-      focus: focusByStudent.get(b.student.id)!,
+      focus: focusByStudent.get(b.student.id) ?? { scaleOrder: null, scaleLabel: "", action: "" },
     });
   }
 

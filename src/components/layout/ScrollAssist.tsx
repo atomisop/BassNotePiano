@@ -178,7 +178,7 @@ export function ScrollAssist() {
     <>
       {show && (
         // Bottom left, clear of the dock (which is centred) and of Ask AI (bottom right).
-        <div className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+5.75rem)] left-4 z-(--z-chrome) flex flex-col gap-2.5 lg:bottom-6">
+        <div className="kb-hide fixed bottom-[calc(env(safe-area-inset-bottom,0px)+5.75rem)] left-4 z-(--z-chrome) flex flex-col gap-2.5 lg:bottom-6">
           {canJump && (
             <button type="button" aria-label="Jump to a section" onClick={openJump} className={buttonClass}>
               <List aria-hidden className="h-5 w-5" />
