@@ -124,4 +124,21 @@ describe("the plan builder", () => {
     const week = await prisma.classBooking.findUniqueOrThrow({ where: { studentId_scheduleId_occurrenceDate: { studentId: student.id, scheduleId: slot.id, occurrenceDate } } });
     if (scheduledAt.getTime() > Date.now() && scheduledAt.getTime() < after.nextDueDate.getTime()) expect(week.status).toBe("SCHEDULED");
   });
+
+  it("says what it charged: one class for a taught day not yet marked, and nothing more for a day already marked present", async () => {
+    const { admin, student, slot, wed } = await setup();
+    const first = await applyPlanBuilder(admin.id, { userId: student.id, term: "TERM_6", scheduleId: slot.id, chunkIndex: 0, startDate: wed, installmentsPaid: 1, taughtDates: [wed], chargeTaught: true });
+    expect(first.charged).toBe(2);
+    expect(first.balanceBefore - first.balanceAfter).toBe(-6); // 8 given by the new plan, 2 spent
+    expect(first.alreadyMarked).toEqual([]);
+
+    const preview = await previewPlanBuilder({ userId: student.id, term: "TERM_6", scheduleId: slot.id, chunkIndex: 0, startDate: wed, installmentsPaid: 1, taughtDates: [wed], chargeTaught: true });
+    expect(preview.alreadyMarked).toEqual([wed]);
+    expect(preview.creditsCharged).toBe(0);
+
+    const again = await applyPlanBuilder(admin.id, { userId: student.id, term: "TERM_6", scheduleId: slot.id, chunkIndex: 0, startDate: wed, installmentsPaid: 1, taughtDates: [wed], chargeTaught: true });
+    expect(again.charged).toBe(0);
+    expect(again.alreadyMarked).toEqual([wed]);
+    expect(again.balanceAfter).toBe(again.balanceBefore);
+  });
 });

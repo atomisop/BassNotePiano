@@ -12,7 +12,7 @@ import { getHoldChoices } from "@/lib/contacts";
 import { PLAN_CADENCE_CREDITS_PER_WEEK } from "@/lib/classCreditPricing";
 import { getLateSettlementPreview, settleLatePayment, type LateSettlementInput, type LateSettlementPreview } from "@/lib/lateSettlement";
 import { runOnce } from "@/lib/idempotency";
-import { applyPlanBuilder, getPlanBuilderContext, previewPlanBuilder, type PlanBuilderContext, type PlanBuilderInput, type PlanBuilderPreview } from "@/lib/planBuilder";
+import { applyPlanBuilder, getPlanBuilderContext, previewPlanBuilder, type PlanBuilderContext, type PlanBuilderInput, type PlanBuilderPreview, type PlanBuilderResult } from "@/lib/planBuilder";
 
 // The admin layout's redirect only protects rendering, Server Actions are
 // separate RPC endpoints the layout never runs for, so this is the actual
@@ -180,8 +180,8 @@ export async function planBuilderPreviewAction(input: PlanBuilderInput): Promise
   }
 }
 
-/** Owner only: sets up or re-anchors the plan from the chosen start date, in one step. */
-export async function planBuilderApplyAction(input: PlanBuilderInput, key?: string): Promise<{ ok: boolean; error: string | null }> {
+/** Owner only: sets up or re-anchors the plan from the chosen start date, in one step. Says what it charged. */
+export async function planBuilderApplyAction(input: PlanBuilderInput, key?: string): Promise<{ ok: boolean; error: string | null; result?: PlanBuilderResult }> {
   const admin = await requireAdmin();
   if (!isOwnerEmail(admin.email)) return { ok: false, error: "Only the owner can use the plan builder." };
   const result = await runOnce(
@@ -190,13 +190,13 @@ export async function planBuilderApplyAction(input: PlanBuilderInput, key?: stri
     key,
     async () => {
       try {
-        await applyPlanBuilder(admin.id, input);
-        return { ok: true, error: null as string | null };
+        const done = await applyPlanBuilder(admin.id, input);
+        return { ok: true, error: null as string | null, result: done as PlanBuilderResult | undefined };
       } catch (err) {
-        return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Check the plan before trying again." };
+        return { ok: false, error: err instanceof PaymentPlanError ? err.message : "Something went wrong. Check the plan before trying again.", result: undefined as PlanBuilderResult | undefined };
       }
     },
-    { isSuccess: (r) => r.ok, whileRunning: { ok: false, error: "Already working on it." as string | null } },
+    { isSuccess: (r) => r.ok, whileRunning: { ok: false, error: "Already working on it." as string | null, result: undefined as PlanBuilderResult | undefined } },
   );
   if (result.ok) revalidatePath("/", "layout");
   return result;
