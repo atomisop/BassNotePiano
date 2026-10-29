@@ -10,6 +10,8 @@ import { FriendsTopLink } from "./FriendsTopLink";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { AskAiButton } from "./AskAiButton";
 import { TopBarTools } from "./TopBarTools";
+import { AdminAlertsButton } from "./AdminAlertsButton";
+import type { SidebarCard } from "@/lib/sidebarCards";
 import { CreditsBadge } from "./CreditsBadge";
 import { StreakBadge } from "./StreakBadge";
 import { BrandMark } from "./BrandMark";
@@ -48,7 +50,7 @@ async function ProfileAvatarLink({ isAdmin }: { isAdmin: boolean }) {
   );
 }
 
-export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolean }) {
+export function TopBar({ isAdmin, isOwner, alertCards = [] }: { isAdmin: boolean; isOwner: boolean; alertCards?: SidebarCard[] }) {
   // fixed, not in-flow: this used to be a plain flex child (relative z-30)
   // that never scrolled away purely because it sat outside `<main>`'s own
   // scroll area in `(dashboard)/layout.tsx`, structurally sound, but a
@@ -74,8 +76,9 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
   // to reserve the 64px this now paints over instead of occupying in flow.
   return (
     <header className="pad-safe-x pointer-events-none fixed inset-x-0 top-0 z-[45] px-2 pt-[max(0.375rem,env(safe-area-inset-top))] md:px-3">
-      {/* A floating pill, the same solid, lightly blurred material as the bottom dock: full width on phones (kept below the notch and Dynamic Island), centered and only as wide as what it holds from iPad up. The page scrolls under it. */}
-      <div data-glass="" className="app-dock pointer-events-auto relative flex h-12 w-full items-center justify-between gap-2 rounded-full px-1.5 min-[360px]:gap-3 min-[360px]:px-2 md:mx-auto md:w-fit md:max-w-full md:justify-start md:gap-5 md:px-3">
+      {/* No bar at all: the logo and each button float on their own over the page, which scrolls under them (kept below the notch and
+          Dynamic Island on phones). Every button carries its own surface, so it stays readable over whatever passes underneath. */}
+      <div data-glass="" className="pointer-events-auto relative flex h-12 w-full items-center justify-between gap-2 rounded-full px-1.5 min-[360px]:gap-3 min-[360px]:px-2 md:mx-auto md:w-fit md:max-w-full md:justify-start md:gap-5 md:px-3">
       {/* No bar and no logo: only the controls float. The header ignores the mouse so it never blocks the page; its two groups take it back. */}
       <div className="relative z-10 flex items-center gap-2">
         {/* The logo is shown on phones only; from md up the sidebar and toggle take its place. */}
@@ -132,6 +135,8 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
             navigation first. */}
         {isOwner && <AdminAttendanceQuickPanel />}
         <NotificationBell />
+        {/* The admin's alerts (Discord, stopped jobs, what is waiting), right before the profile picture. */}
+        {isAdmin && <AdminAlertsButton cards={alertCards} />}
         </div>
         <ProfileAvatarLink isAdmin={isAdmin} />
         </div>

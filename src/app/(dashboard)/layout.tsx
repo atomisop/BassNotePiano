@@ -110,7 +110,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           64px so AnnouncementBanner/main start right below it instead of
           rendering underneath it. */}
       <div className="app-shell-col shell-lock flex min-w-0 flex-1 flex-col lg:pl-52">
-        <TopBar isAdmin={isAdmin} isOwner={isOwner} />
+        <TopBar isAdmin={isAdmin} isOwner={isOwner} alertCards={isAdmin ? sidebarCards : []} />
         <AnnouncementBanner announcement={activeAnnouncement} />
         {/* pb-32 at every width (the bottom padding used to be overridden by md:py-10, which left only 40px under the last content on a desktop, so the always-on dock covered it), the floating AppDock now
             covers phone widths too (fixed, not in flow), so this reserved

@@ -2364,15 +2364,30 @@ body:has([data-surface="app"]) .glass-surface-modal {
 [data-mode="light"] .app-dock-active {
   background: rgb(0 0 0 / 0.07);
 }
-/* The dock bends the page through it (GlassLens), so its own fill is thinner and it carries no blur of its own: a backdrop-filter on
-   the dock would wall the lens off from the page. */
+/* The dock (a copy of Instagram's tab bar): the lens (GlassLens) frosts and bends the page, so the pill itself only adds a smoky dark or
+   milky white tint, a hairline rim and a soft shadow, and carries no blur of its own (a backdrop-filter here would wall the lens off). */
 .app-dock.app-dock-lens {
-  background: rgb(51 51 51 / 0.5);
+  background: rgb(44 44 47 / 0.66);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.13), inset 0 1px 0 rgb(255 255 255 / 0.08), 0 10px 28px -10px rgb(0 0 0 / 0.7);
 }
 [data-mode="light"] .app-dock.app-dock-lens {
-  background: rgb(255 255 255 / 0.5);
+  background: rgb(252 252 253 / 0.72);
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 10px 28px -12px rgb(30 30 60 / 0.3);
+}
+.app-dock-lens .app-dock-active {
+  background: rgb(255 255 255 / 0.16);
+}
+[data-mode="light"] .app-dock-lens .app-dock-active {
+  background: rgb(0 0 0 / 0.07);
+}
+/* The filled icon's cut-out details take the capsule's look over the pill. */
+.app-dock-lens .dock-icon {
+  --dock-cut: rgb(78 78 81);
+}
+[data-mode="light"] .app-dock-lens .dock-icon {
+  --dock-cut: rgb(232 232 234);
 }
 
 /* The current tab's dock icon is filled. Where a filled shape would swallow its inner detail (the calendar's line and check, the

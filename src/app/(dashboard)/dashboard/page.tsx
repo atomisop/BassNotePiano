@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, Flame, Lightbulb, Map, Trophy, Users, Video } from "lucide-react";
+import { ArrowRight, Check, Flame, Lightbulb, Map, Trophy, Users, Video } from "lucide-react";
 import { getServerAuthSession } from "@/lib/auth";
 import { getHomeData } from "@/lib/homeData";
 import { getWeeklyLeaderboard } from "@/lib/leaderboard";
@@ -9,7 +9,8 @@ import { LeaderboardRows } from "@/components/home/LeaderboardRows";
 import { DAILY_GOAL_SECONDS } from "@/lib/fingerPractice";
 import { WEEKLY_GOAL_MINUTES } from "@/lib/homeRules";
 import { formatEtDateTime } from "@/lib/classScheduleLabels";
-import { CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
+import { CLASS_MINUTES, CREDITS_PER_CLASS, formatCredits } from "@/lib/classCreditPricing";
+import { TeacherNotesCard } from "@/components/dashboard/TeacherNotesCard";
 import { DISCORD_INVITE_URL, discordChannelUrl } from "@/lib/discord";
 import { cn } from "@/lib/utils";
 import { WideLayout } from "@/components/layout/PageLayouts";
@@ -102,7 +103,9 @@ export default async function HomePage() {
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
           <div className="contents min-w-0 lg:grid lg:gap-3">
             {/* Today's one thing. */}
-            <Card className="order-1 p-5 md:p-6">
+            {data.gettingStarted.length > 0 && <GettingStartedCard items={data.gettingStarted} className="order-1" />}
+
+            <Card className="order-2 p-5 md:p-6">
               <Eyebrow>Today</Eyebrow>
               <p className="mt-2 text-[1.25rem] font-semibold leading-snug text-slate-50">{data.nextStep.action}</p>
               <p className="mt-1 text-body text-slate-300">{data.nextStep.detail}</p>
@@ -125,7 +128,7 @@ export default async function HomePage() {
               </div>
             </Card>
 
-            <div className="order-2">
+            <div className="order-3">
             <RoadmapCard
               name={data.roadmap.name}
               artwork={data.roadmap.artwork}
@@ -136,11 +139,15 @@ export default async function HomePage() {
             />
             </div>
 
-            <TipCard tip={data.tip} className="order-6" />
+            <div className="order-8 empty:hidden">
+              <TeacherNotesCard studentId={session.user.id} />
+            </div>
+
+            <TipCard tip={data.tip} className="order-9" />
           </div>
 
           <div className="contents min-w-0 lg:grid lg:gap-3">
-            <Card className="order-3 p-5">
+            <Card className="order-4 p-5">
               <Eyebrow>Next class</Eyebrow>
               {nextClass ? (
                 <>
@@ -168,7 +175,7 @@ export default async function HomePage() {
               )}
             </Card>
 
-            <Card className="order-4 p-5">
+            <Card className="order-5 p-5">
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
                   <Eyebrow>Practice</Eyebrow>
@@ -202,7 +209,27 @@ export default async function HomePage() {
               )}
             </Card>
 
-            <Card className="order-5 p-5">
+            <Card className="order-6 p-5">
+              <Eyebrow>Progress</Eyebrow>
+              <div className="mt-3 flex items-center gap-5">
+                <ProgressRing
+                  value={data.progress.itemsDone}
+                  max={data.progress.itemsTotal}
+                  size={76}
+                  strokeWidth={7}
+                  label={`Roadmap progress: ${data.progress.itemsDone} of ${data.progress.itemsTotal} steps done`}
+                  caption={`${data.progress.itemsDone}/${data.progress.itemsTotal} steps`}
+                />
+                <div className="grid flex-1 grid-cols-2 gap-x-3 gap-y-3">
+                  <Stat value={`${data.progress.completedScales}/${data.progress.totalScales}`} label="Scales" />
+                  <Stat value={`${data.badgeCount}`} label="Badges" />
+                  <Stat value={`${practice.streak}`} label="Day streak" />
+                  <Stat value={formatCredits(data.credits)} label="Credits" />
+                </div>
+              </div>
+            </Card>
+
+            <Card className="order-7 p-5">
               <div className="flex items-center justify-between gap-3">
                 <Eyebrow>Leaderboard this week</Eyebrow>
                 <Trophy aria-hidden className="h-4 w-4 text-slate-400" />
@@ -219,7 +246,7 @@ export default async function HomePage() {
               </Link>
             </Card>
 
-            <Card className="order-7 p-5">
+            <Card className="order-10 p-5">
               <Eyebrow>Friends</Eyebrow>
               {data.friendsPracticing.length > 0 ? (
                 <p className="mt-2 text-body text-slate-100">
@@ -268,6 +295,59 @@ function TipCard({ tip, className }: { tip: { title: string; body: string }; cla
       </div>
       <p className="mt-2 text-body font-semibold text-slate-50">{tip.title}</p>
       <p className="mt-1 text-body text-slate-300">{tip.body}</p>
+    </Card>
+  );
+}
+
+/** One figure and its label. */
+function Stat({ value, label }: { value: string; label: string }) {
+  return (
+    <div>
+      <p className="text-body font-semibold tabular-nums text-slate-50">{value}</p>
+      <p className="text-small text-slate-400">{label}</p>
+    </div>
+  );
+}
+
+/** First-week checklist: each row ticks itself when the real thing happens, and the card is gone once all are done. */
+function GettingStartedCard({ items, className }: { items: { done: boolean; label: string; detail: string; href: string; external: boolean }[]; className?: string }) {
+  return (
+    <Card className={cn("p-5", className)}>
+      <Eyebrow>
+        Get started · {items.filter((g) => g.done).length} of {items.length}
+      </Eyebrow>
+      <ul className="mt-3 grid gap-1">
+        {items.map((g) => {
+          const row = (
+            <>
+              <span
+                aria-hidden
+                className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-full", g.done ? "bg-signal text-slate-950" : "bg-neu-base shadow-pressed-low")}
+              >
+                {g.done && <Check className="h-3 w-3" strokeWidth={3.5} />}
+              </span>
+              <span className="min-w-0">
+                <span className={cn("block text-body font-semibold", g.done ? "text-slate-500 line-through" : "text-slate-50")}>
+                  {g.label}
+                  <span className="sr-only">{g.done ? " (done)" : " (not done yet)"}</span>
+                </span>
+                {!g.done && <span className="block text-small text-slate-400">{g.detail}</span>}
+              </span>
+            </>
+          );
+          const cls = "tap flex items-center gap-3 rounded-control py-1.5";
+          if (g.done) return <li key={g.label} className={cls}>{row}</li>;
+          return (
+            <li key={g.label}>
+              {g.external ? (
+                <a href={g.href} className={cn(cls, "hover:bg-slate-800/40")}>{row}</a>
+              ) : (
+                <Link href={g.href} className={cn(cls, "hover:bg-slate-800/40")}>{row}</Link>
+              )}
+            </li>
+          );
+        })}
+      </ul>
     </Card>
   );
 }

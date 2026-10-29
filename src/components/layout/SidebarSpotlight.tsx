@@ -299,7 +299,19 @@ function creditsSlot(credits: number): Slot {
  * the others. The Discord invitation always comes first until Discord is linked. Cards are fetched fresh every minute, on
  * every page change and whenever the app announces a change.
  */
-export function SidebarSpotlight({ initial, isAdmin }: { initial: SidebarCard[]; isAdmin: boolean }) {
+export function SidebarSpotlight({
+  initial,
+  isAdmin,
+  mode = "carousel",
+  onAttention,
+}: {
+  initial: SidebarCard[];
+  isAdmin: boolean;
+  /** "carousel": one card at a time at the foot of the sidebar. "list": every card stacked (the admin's alerts window in the top bar). */
+  mode?: "carousel" | "list";
+  /** How many cards need attention (a count, a dot or a warning): the badge on the admin's alerts button. */
+  onAttention?: (count: number) => void;
+}) {
   const pathname = usePathname();
   const status = useMeStatus();
   const [cards, setCards] = useState<SidebarCard[]>(initial);
@@ -312,8 +324,9 @@ export function SidebarSpotlight({ initial, isAdmin }: { initial: SidebarCard[];
   useEffect(() => {
     let alive = true;
     async function load() {
-      // The sidebar only exists from lg up: on a phone there is nothing to update, so nothing is asked.
-      if (!window.matchMedia("(min-width: 1024px)").matches) return;
+      // The sidebar only exists from lg up: on a phone there is nothing to update, so nothing is asked. The admin's alerts window
+      // (list mode) lives in the top bar from md up.
+      if (!window.matchMedia(mode === "list" ? "(min-width: 768px)" : "(min-width: 1024px)").matches) return;
       try {
         const res = await fetch("/api/me/sidebar", { cache: "no-store", credentials: "same-origin" });
         if (res.ok && alive) setCards(((await res.json()) as { cards: SidebarCard[] }).cards);
@@ -338,7 +351,7 @@ export function SidebarSpotlight({ initial, isAdmin }: { initial: SidebarCard[];
       window.removeEventListener("bnp:status-changed", load);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [pathname]);
+  }, [pathname, mode]);
 
   // The countdown ticks twice a minute; it starts only in the browser so the server and first paint agree.
   useEffect(() => {
@@ -355,9 +368,23 @@ export function SidebarSpotlight({ initial, isAdmin }: { initial: SidebarCard[];
     server.splice(at + 1, 0, creditsSlot(status.credits));
   }
   slots.push(...server);
-  if (slots.length === 0) return null;
   // Most urgent first, so what needs attention is never hidden behind a gentler card.
   slots.sort((a, b) => (RANK[a.id] ?? 99) - (RANK[b.id] ?? 99));
+  const attention = slots.filter((s) => s.rail && ((s.rail.count ?? 0) > 0 || s.rail.dot || s.rail.warn)).length;
+  useEffect(() => onAttention?.(attention), [attention, onAttention]);
+
+  if (mode === "list") {
+    return slots.length === 0 ? (
+      <p className="px-1 py-4 text-center text-small text-slate-400">Nothing needs you right now.</p>
+    ) : (
+      <div className="grid gap-2">
+        {slots.map((s) => (
+          <div key={s.id}>{s.node(now)}</div>
+        ))}
+      </div>
+    );
+  }
+  if (slots.length === 0) return null;
 
   const current = slots[Math.min(index, slots.length - 1)];
   const rails = slots.filter((s): s is Slot & { rail: Rail } => Boolean(s.rail));

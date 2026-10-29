@@ -8,7 +8,20 @@ import { cn } from "@/lib/utils";
  * A tiny "i" that opens a small popup with one short line, only when someone taps it. For the few things that really need a word of
  * explanation (a privacy warning, a one-time step), so the screen itself stays free of explainer text. Closes on a tap elsewhere or Escape.
  */
-export function Hint({ children, label = "More info", className }: { children: React.ReactNode; label?: string; className?: string }) {
+export function Hint({
+  children,
+  label = "More info",
+  className,
+  side = "bottom",
+  align = "left",
+}: {
+  children: React.ReactNode;
+  label?: string;
+  className?: string;
+  /** Open above the "i" instead of below it (for an "i" near the bottom of a window). */
+  side?: "bottom" | "top";
+  align?: "left" | "right" | "center";
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLSpanElement>(null);
   const id = useId();
@@ -40,8 +53,18 @@ export function Hint({ children, label = "More info", className }: { children: R
         <Info aria-hidden className="h-4 w-4" strokeWidth={1.75} />
       </button>
       {open && (
-        <span id={id} role="note" className="absolute left-0 top-full z-50 mt-1.5 w-64 max-w-[calc(100vw-3rem)] rounded-xl bg-neu-lift p-3 text-small font-normal normal-case leading-snug tracking-normal text-slate-200 shadow-raised-high ring-1 ring-[rgb(var(--c-s-50)/0.1)]">
+        <span
+          id={id}
+          role="note"
+          className={cn(
+            "absolute z-50",
+            side === "top" ? "bottom-full mb-1.5" : "top-full mt-1.5",
+            align === "right" ? "right-0" : align === "center" ? "left-1/2 -translate-x-1/2" : "left-0",
+          )}
+        >
+        <span className="block w-64 max-w-[calc(100vw-3rem)] rounded-xl bg-neu-lift p-3 text-small font-normal normal-case leading-snug tracking-normal text-slate-200 shadow-raised-high ring-1 ring-[rgb(var(--c-s-50)/0.1)]">
           {children}
+        </span>
         </span>
       )}
     </span>

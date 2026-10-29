@@ -9,6 +9,7 @@ import { BADGES } from "@/lib/badges";
 import { STREAK_GOALS } from "@/lib/streakRules";
 import { minutesThisWeek, pickCelebration, tipOfTheDay, weekStartKey, type Win } from "@/lib/homeRules";
 import { roadmapsForViewer } from "@/lib/roadmaps";
+import { storedToCredits } from "@/lib/classCreditPricing";
 import { FIRST_ROADMAP_ID, summarizeRoadmaps } from "@/lib/roadmapRules";
 
 export interface HomeData {
@@ -30,6 +31,11 @@ export interface HomeData {
   friendsPracticing: string[];
   celebration: Win | null;
   tip: { title: string; body: string };
+  /** First-week checklist: Discord linked, a class booked, the first practice done. Empty once all three are done, and for the admin. */
+  gettingStarted: { done: boolean; label: string; detail: string; href: string; external: boolean }[];
+  badgeCount: number;
+  /** Credits on the account, in 45 minute classes. */
+  credits: number;
 }
 
 /** Everything the Home screen shows, in one round of queries. */
@@ -42,7 +48,7 @@ export async function getHomeData(user: { id: string; role: string; email: strin
   const [roadmap, roadmapList, profile, practice, nextClass, entitlement, pendingApplication, weekRows, badges, unlocks, friendRows] = await Promise.all([
     getRoadmap(userId),
     roadmapsForViewer(isAdmin),
-    prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { name: true, discordId: true, classCredits: true } }),
     getFingerPracticeStatus(userId),
     // Still counts for an hour after it starts, so "Join" is there if they are a little late.
     prisma.classBooking.findFirst({
@@ -65,6 +71,17 @@ export async function getHomeData(user: { id: string; role: string; email: strin
       select: { senderId: true, receiverId: true },
     }),
   ]);
+  const [everBooked, everPracticed, badgeCount] = await Promise.all([
+    prisma.classBooking.count({ where: { studentId: userId } }),
+    prisma.fingerPracticeDay.count({ where: { userId, completedAt: { not: null } } }),
+    prisma.userBadge.count({ where: { userId } }),
+  ]);
+  const checklist = [
+    { done: Boolean(profile?.discordId), label: "Link your Discord", detail: "Your live class call opens there.", href: "/api/discord/connect", external: true },
+    { done: everBooked > 0, label: "Book your first class", detail: "Pick a time that repeats every week.", href: "/lessons", external: false },
+    { done: everPracticed > 0, label: "Do your first 10 minutes of practice", detail: "It also opens your scales.", href: "/practice", external: false },
+  ];
+  const showChecklist = !isAdmin && entitlement.kind !== "NONE" && checklist.some((c) => !c.done);
 
   const trialDays = (await getBoolSetting("trial.enabled")) ? await getNumberSetting("trial.days") : 0;
   const starting = gettingStartedStep({ kind: entitlement.kind, applicationPending: pendingApplication > 0, trialDays });
@@ -126,5 +143,8 @@ export async function getHomeData(user: { id: string; role: string; email: strin
     friendsPracticing: live.map((r) => r.user.name?.split(" ")[0] ?? r.user.username ?? "A friend"),
     celebration: pickCelebration(wins, now),
     tip: tipOfTheDay(today),
+    gettingStarted: showChecklist ? checklist : [],
+    badgeCount,
+    credits: storedToCredits(profile?.classCredits ?? 0),
   };
 }
