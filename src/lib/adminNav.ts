@@ -65,6 +65,7 @@ export const ADMIN_HUBS: AdminHub[] = [
       { href: "/admin/settings", label: "Settings" },
       { href: "/admin/security", label: "Security" },
       { href: "/admin/activity", label: "Activity" },
+      { href: "/admin/roadmaps", label: "Roadmaps" },
     ],
   },
 ];

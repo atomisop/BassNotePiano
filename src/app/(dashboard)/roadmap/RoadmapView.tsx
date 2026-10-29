@@ -25,6 +25,9 @@ import { formatEtDateTime } from "@/lib/classScheduleLabels";
 import { DISCORD_INVITE_URL, discordChannelUrl } from "@/lib/discord";
 import { CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
 import { DiscordLink } from "@/components/ui/DiscordLink";
+import { roadmapsForViewer } from "@/lib/roadmaps";
+import { FIRST_ROADMAP_ID, summarizeRoadmaps } from "@/lib/roadmapRules";
+import { RoadmapPicker } from "@/components/home/RoadmapPicker";
 
 function ArrowIcon() {
   return (
@@ -66,12 +69,13 @@ function Stat({ value, label }: { value: string; label: string }) {
  * sits huge and faint behind it on the back plane; Continue is the one
  * green button.
  */
-export default async function RoadmapView() {
+export default async function RoadmapView({ roadmapSlug }: { roadmapSlug?: string } = {}) {
   const session = await getServerAuthSession();
   if (!session?.user) redirect("/login?callbackUrl=/dashboard");
 
-  const [roadmap, badgeRows, user, practice, nextClass, entitlement, pendingApplication, everBooked, everPracticed] = await Promise.all([
+  const [allScales, roadmapList, badgeRows, user, practice, nextClass, entitlement, pendingApplication, everBooked, everPracticed] = await Promise.all([
     getRoadmap(session.user.id),
+    roadmapsForViewer(session.user.role === "ADMIN"),
     prisma.userBadge.findMany({ where: { userId: session.user.id }, select: { code: true } }),
     prisma.user.findUnique({
       where: { id: session.user.id },
@@ -96,10 +100,20 @@ export default async function RoadmapView() {
     prisma.fingerPracticeDay.count({ where: { userId: session.user.id, completedAt: { not: null } } }),
   ]);
 
+  // The roadmap on screen: the one asked for (?roadmap=slug), else the one the student is on now. Its scales are the ones listed below;
+  // the next step still looks across every roadmap, since the chain runs straight through them.
+  const { byId: roadmapSummaries, currentId } = summarizeRoadmaps(
+    roadmapList,
+    allScales.map((s) => ({ roadmapId: s.scaleGroup.roadmapId, status: s.status, canAccess: s.canAccess })),
+  );
+  const selected = roadmapList.find((r) => r.slug === roadmapSlug) ?? roadmapList.find((r) => r.id === currentId) ?? roadmapList[0] ?? null;
+  const roadmap = selected ? allScales.filter((s) => (s.scaleGroup.roadmapId ?? FIRST_ROADMAP_ID) === selected.id) : allScales;
+  const selectedIndex = selected ? roadmapList.indexOf(selected) : -1;
+  const selectedLocked = selected ? !roadmapSummaries.get(selected.id)?.open : false;
   const progress = summariseProgress(roadmap);
   const trialDays = (await getBoolSetting("trial.enabled")) ? await getNumberSetting("trial.days") : 0;
   const starting = gettingStartedStep({ kind: entitlement.kind, applicationPending: pendingApplication > 0, trialDays });
-  const resolvedStep = resolveNextStep(roadmap);
+  const resolvedStep = resolveNextStep(allScales);
   const nextStep: NextStep = starting ? { ...resolvedStep, ...starting } : putFingerPracticeFirst(resolvedStep, {
     required: session.user.role !== "ADMIN",
     completedToday: practice.completedToday,
@@ -323,7 +337,22 @@ export default async function RoadmapView() {
 
         <TeacherNotesCard studentId={session.user.id} />
 
-        {/* ---- The path: tabs + scale grid --------------------------------- */}
+        {/* ---- The roadmaps, then the chosen one's scales ------------------- */}
+        {roadmapList.length > 1 && selected && (
+          <div className="grid gap-2">
+            <RoadmapPicker
+              selectedId={selected.id}
+              roadmaps={roadmapList.map((r) => ({ id: r.id, slug: r.slug, name: r.name, artwork: r.artwork, visible: r.visible, summary: roadmapSummaries.get(r.id)! }))}
+            />
+            {selectedLocked && selectedIndex > 0 && (
+              <p className="text-small text-slate-400">
+                {roadmap.length === 0
+                  ? "The scales for this roadmap are coming soon."
+                  : `This roadmap opens after you finish ${roadmapList[selectedIndex - 1].name}. Your teacher opens its first scale then.`}
+              </p>
+            )}
+          </div>
+        )}
         <div>
           <h2 className="sr-only">Your scales</h2>
           <ScaleRoadmap roadmap={roadmap} earnedBadgeCodes={earnedBadgeCodes} initialView={parseScaleView((await cookies()).get(SCALE_VIEW_COOKIE)?.value) ?? "grid"} />

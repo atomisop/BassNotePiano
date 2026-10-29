@@ -5,6 +5,7 @@ import { getLessonCompletionSummary } from "@/lib/courseContent";
 import { QUIZ_PASS_THRESHOLD } from "@/lib/curriculum";
 import { getCurriculumEntitlement } from "@/lib/entitlement";
 import { isFullAccess, TRIAL_SCALE_SLUG, type CurriculumAccessKind } from "@/lib/entitlementRules";
+import { hiddenRoadmapIds } from "@/lib/roadmaps";
 
 // Badge/streak bookkeeping is a best-effort side effect, a hiccup here
 // should never fail the actual checklist mutation the student is waiting on.
@@ -55,11 +56,14 @@ export interface ScaleAccessState {
  * since it also knows which individual scales the teacher has approved.
  */
 export async function getRoadmap(userId: string): Promise<ScaleAccessState[]> {
-  const [entitlement, scaleGroups, progressRows] = await Promise.all([
+  const [entitlement, allScaleGroups, progressRows, hidden] = await Promise.all([
     getCurriculumEntitlement(userId),
     prisma.scaleGroup.findMany({ orderBy: { order: "asc" } }),
     prisma.scaleProgress.findMany({ where: { userId } }),
+    hiddenRoadmapIds(),
   ]);
+  // Scales in a hidden roadmap do not exist for students yet; the admin sees everything.
+  const scaleGroups = entitlement.kind === "ADMIN" ? allScaleGroups : allScaleGroups.filter((sg) => !sg.roadmapId || !hidden.has(sg.roadmapId));
 
   const progressByGroupId = new Map(progressRows.map((p) => [p.scaleGroupId, p]));
 

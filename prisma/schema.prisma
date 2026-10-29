@@ -1356,6 +1356,10 @@ model ScaleGroup {
   // nothing reads it anymore; not worth a destructive column drop for it.
   priceCents Int @default(2500)
 
+  // The roadmap (chapter) this scale belongs to. Null means the first roadmap, so scales made by the seed need no roadmap.
+  roadmapId String?
+  roadmap   Roadmap? @relation(fields: [roadmapId], references: [id], onDelete: SetNull)
+
   progress      ScaleProgress[]
   quizAttempts  QuizAttempt[]
   zellePayments ZellePayment[]
@@ -1364,6 +1368,26 @@ model ScaleGroup {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([roadmapId])
+}
+
+// A roadmap: a run of consecutive scales shown to students as one course (Scales, Beginner Piano, Worship songs...). The curriculum
+// is still one ordered chain of scales (ScaleGroup.order); roadmaps are chapters of it in their own order, so each one opens after the
+// one before is finished, through the same teacher-approved unlock. Added and ordered by the owner in Admin > Setup > Roadmaps.
+model Roadmap {
+  id          String       @id @default(cuid())
+  slug        String       @unique
+  name        String
+  description String?      @db.Text
+  instrument  String? // "Piano", "Guitar", "Bass"; null for any instrument
+  level       String? // "Beginner", "Intermediate", "Advanced"
+  artwork     String       @default("dusk") // a key of ROADMAP_ARTWORKS (src/lib/roadmapRules.ts)
+  order       Int          @unique
+  visible     Boolean      @default(true)
+  scales      ScaleGroup[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 // Admin-authored course content (video or PDF) for one scale group's course

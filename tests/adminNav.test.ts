@@ -9,9 +9,9 @@ describe("admin menu", () => {
   it("lists every page once, so no page is missing and none is repeated", () => {
     const hrefs = allAdminPages().map((p) => p.href);
     expect(new Set(hrefs).size).toBe(hrefs.length);
-    expect(hrefs).toHaveLength(18);
+    expect(hrefs).toHaveLength(19);
     // The pages the old menu had.
-    for (const href of ["/admin", "/admin/activity", "/admin/payments", "/admin/payment-plans", "/admin/pricing", "/admin/students", "/admin/users", "/admin/contacts", "/admin/employees", "/admin/today", "/admin/schedule", "/admin/lessons", "/admin/discord", "/admin/support", "/admin/messages", "/admin/sent", "/admin/settings", "/admin/security"]) {
+    for (const href of ["/admin", "/admin/activity", "/admin/payments", "/admin/payment-plans", "/admin/pricing", "/admin/students", "/admin/users", "/admin/contacts", "/admin/employees", "/admin/today", "/admin/schedule", "/admin/lessons", "/admin/discord", "/admin/support", "/admin/messages", "/admin/sent", "/admin/settings", "/admin/security", "/admin/roadmaps"]) {
       expect(hrefs).toContain(href);
     }
   });

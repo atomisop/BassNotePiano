@@ -8,13 +8,18 @@ import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
 import { BADGES } from "@/lib/badges";
 import { STREAK_GOALS } from "@/lib/streakRules";
 import { minutesThisWeek, pickCelebration, tipOfTheDay, weekStartKey, type Win } from "@/lib/homeRules";
+import { roadmapsForViewer } from "@/lib/roadmaps";
+import { FIRST_ROADMAP_ID, summarizeRoadmaps } from "@/lib/roadmapRules";
 
 export interface HomeData {
   name: string | null;
   /** No plan and no trial yet (and not the admin): Home shows the free trial welcome instead of the student cards. */
   isNew: boolean;
   nextStep: NextStep;
+  /** Progress through the roadmap the student is on now. */
   progress: ReturnType<typeof summariseProgress>;
+  /** The roadmap the student is on now, for the picture card. */
+  roadmap: { name: string; artwork: string };
   /** The scale the student is on now, for the roadmap card. */
   currentScale: { code: string; title: string } | null;
   nextClass: { scheduledAt: Date; creditsSpent: number; discordChannelId: string | null; inPerson: boolean } | null;
@@ -34,8 +39,9 @@ export async function getHomeData(user: { id: string; role: string; email: strin
   const today = etDayKey(now);
   const isAdmin = user.role === "ADMIN";
 
-  const [roadmap, profile, practice, nextClass, entitlement, pendingApplication, weekRows, badges, unlocks, friendRows] = await Promise.all([
+  const [roadmap, roadmapList, profile, practice, nextClass, entitlement, pendingApplication, weekRows, badges, unlocks, friendRows] = await Promise.all([
     getRoadmap(userId),
+    roadmapsForViewer(isAdmin),
     prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
     getFingerPracticeStatus(userId),
     // Still counts for an hour after it starts, so "Join" is there if they are a little late.
@@ -71,7 +77,13 @@ export async function getHomeData(user: { id: string; role: string; email: strin
         minutesLeft: Math.max(0, Math.ceil((DAILY_GOAL_SECONDS - practice.todaySeconds) / 60)),
       });
 
-  const current = roadmap.find((s) => s.canAccess && s.status !== "COMPLETED") ?? roadmap.find((s) => s.canAccess) ?? null;
+  const { currentId } = summarizeRoadmaps(
+    roadmapList,
+    roadmap.map((s) => ({ roadmapId: s.scaleGroup.roadmapId, status: s.status, canAccess: s.canAccess })),
+  );
+  const currentRoadmap = roadmapList.find((r) => r.id === currentId) ?? roadmapList[0] ?? null;
+  const inCurrent = currentRoadmap ? roadmap.filter((s) => (s.scaleGroup.roadmapId ?? FIRST_ROADMAP_ID) === currentRoadmap.id) : roadmap;
+  const current = inCurrent.find((s) => s.canAccess && s.status !== "COMPLETED") ?? inCurrent.find((s) => s.canAccess) ?? inCurrent[0] ?? null;
 
   const friendIds = [...new Set(friendRows.map((r) => (r.senderId === userId ? r.receiverId : r.senderId)))];
   const live =
@@ -104,7 +116,8 @@ export async function getHomeData(user: { id: string; role: string; email: strin
     name: profile?.name ?? null,
     isNew: entitlement.kind === "NONE" && !isAdmin,
     nextStep,
-    progress: summariseProgress(roadmap),
+    progress: summariseProgress(inCurrent),
+    roadmap: { name: currentRoadmap?.name ?? "Scales", artwork: currentRoadmap?.artwork ?? "dusk" },
     currentScale: current ? { code: current.scaleGroup.code, title: current.scaleGroup.title } : null,
     nextClass,
     practice,

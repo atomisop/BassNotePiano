@@ -23,9 +23,6 @@ import { CelebrationCard } from "@/components/home/CelebrationCard";
 
 export const metadata = { title: "Home" };
 
-/** The first roadmap's name until roadmaps become their own records (Part 4 of the new Home design). */
-const ROADMAP_NAME = "Scales";
-
 /** "in 3 days", "tomorrow", "in 2 hours", "starting now". */
 function untilLabel(when: Date): string {
   const minutes = Math.round((when.getTime() - Date.now()) / 60_000);
@@ -130,7 +127,8 @@ export default async function HomePage() {
 
             <div className="order-2">
             <RoadmapCard
-              name={ROADMAP_NAME}
+              name={data.roadmap.name}
+              artwork={data.roadmap.artwork}
               current={data.currentScale}
               percent={data.progress.percent}
               completedScales={data.progress.completedScales}

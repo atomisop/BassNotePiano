@@ -1,31 +1,35 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { artworkColors } from "@/components/home/RoadmapArtwork";
 
 /**
- * The roadmap on Home: a big picture card (a warm dusk sky over a row of piano keys, like the reference app's verse card) with the
+ * The roadmap on Home: a big picture card (the roadmap's sky over a row of piano keys, like the reference app's verse card) with the
  * roadmap's name, the scale you are on, how far you are, and Continue. The whole card opens the Roadmap screen. The artwork is the
  * same in both themes, so its text is always light.
  */
 export function RoadmapCard({
   name,
+  artwork,
   current,
   percent,
   completedScales,
   totalScales,
 }: {
   name: string;
+  artwork: string;
   current: { code: string; title: string } | null;
   percent: number;
   completedScales: number;
   totalScales: number;
 }) {
+  const a = artworkColors(artwork);
   return (
     <Link
       href="/roadmap"
       aria-label={`Open your roadmap, ${name}. ${percent}% done.`}
       className="group relative block overflow-hidden rounded-card text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
     >
-      <div aria-hidden className="absolute inset-0 bg-[linear-gradient(180deg,#e9824c_0%,#b5533a_38%,#4a2a3a_72%,#1d1a22_100%)]" />
+      <div aria-hidden className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${a.from} 0%, ${a.via} 42%, ${a.to} 100%)` }} />
       <RoadmapKeys />
       <div className="relative flex min-h-[15rem] flex-col p-5 md:min-h-[17rem] md:p-6">
         <p className="text-small font-medium text-white/80">Your roadmap</p>
