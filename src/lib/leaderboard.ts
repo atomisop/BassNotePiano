@@ -19,14 +19,16 @@ export interface WeeklyLeaderboard {
   weekStart: string;
   /** The viewer turned on "hide me", so they are not on the board. */
   viewerHidden: boolean;
+  /** The viewer is a child linked to a parent: children are never on the board. */
+  viewerIsLinkedChild: boolean;
 }
 
 /** How many rows the full board shows: the studio is small, and this keeps the page light. */
 const MAX_ROWS = 50;
 
 /**
- * This week's practice minutes for the whole studio (Sunday to today, Eastern), ranked. Leaves out the admin, banned accounts and
- * anyone who chose to hide. Names are first name and last initial; nothing else about a person is shown.
+ * This week's practice minutes for the whole studio (Sunday to today, Eastern), ranked. Leaves out the admin, banned accounts,
+ * children linked to a parent (the owner's decision, 2026-10-29) and anyone who chose to hide. Names are first name and last initial; nothing else about a person is shown.
  */
 export async function getWeeklyLeaderboard(viewerId: string): Promise<WeeklyLeaderboard> {
   const today = etDayKey();
@@ -38,13 +40,22 @@ export async function getWeeklyLeaderboard(viewerId: string): Promise<WeeklyLead
       where: { day: { gte: weekStart, lte: today }, seconds: { gt: 0 } },
       _sum: { seconds: true },
     }),
-    prisma.user.findUnique({ where: { id: viewerId }, select: { hideFromLeaderboard: true } }),
+    prisma.user.findUnique({
+      where: { id: viewerId },
+      select: { hideFromLeaderboard: true, parentLinksAsChild: { where: { status: "ACCEPTED" }, select: { id: true }, take: 1 } },
+    }),
   ]);
 
   const ids = sums.map((s) => s.userId);
   const people = ids.length
     ? await prisma.user.findMany({
-        where: { id: { in: ids }, role: { not: "ADMIN" }, bannedAt: null, hideFromLeaderboard: false },
+        where: {
+          id: { in: ids },
+          role: { not: "ADMIN" },
+          bannedAt: null,
+          hideFromLeaderboard: false,
+          parentLinksAsChild: { none: { status: "ACCEPTED" } },
+        },
         select: { id: true, name: true, username: true, image: true },
       })
     : [];
@@ -75,6 +86,7 @@ export async function getWeeklyLeaderboard(viewerId: string): Promise<WeeklyLead
   return {
     weekStart,
     viewerHidden: Boolean(viewer?.hideFromLeaderboard),
+    viewerIsLinkedChild: (viewer?.parentLinksAsChild.length ?? 0) > 0,
     rows: ranked.map((r) => ({
       ...r,
       image: byId.get(r.userId)?.image ?? null,

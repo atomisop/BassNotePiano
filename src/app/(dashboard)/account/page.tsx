@@ -38,6 +38,7 @@ export default async function AccountPage() {
         role: true,
         totpEnabledAt: true,
         hideFromLeaderboard: true,
+        parentLinksAsChild: { where: { status: "ACCEPTED" }, select: { id: true }, take: 1 },
       },
     }),
     loadPersistedHistory(session.user.id),
@@ -63,6 +64,7 @@ export default async function AccountPage() {
         },
         discordUsername: discordLinkState({ discordId: user.discordId, discordUsername: user.discordUsername }).name,
         leaderboardHidden: user.hideFromLeaderboard,
+        leaderboardLinkedChild: user.parentLinksAsChild.length > 0,
       }}
       hasCurriculumAccess={session.user.hasCurriculumAccess}
       twoStep={user.role === "ADMIN" ? { enabled: Boolean(user.totpEnabledAt), backupLeft: user.totpEnabledAt ? await unusedBackupCodeCount(session.user.id) : 0 } : null}

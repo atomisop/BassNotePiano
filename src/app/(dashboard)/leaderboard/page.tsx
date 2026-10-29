@@ -32,7 +32,7 @@ export default async function LeaderboardPage() {
           ) : (
             <p className="py-6 text-center text-body text-slate-400">Nobody has practiced yet this week. Be the first.</p>
           )}
-          {!mine && !board.viewerHidden && session.user.role !== "ADMIN" && (
+          {!mine && !board.viewerHidden && !board.viewerIsLinkedChild && session.user.role !== "ADMIN" && (
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <p className="text-small text-slate-400">Practice today to get on the board.</p>
               <Link href="/practice" className={buttonVariants({ variant: "secondary", size: "sm" })}>
@@ -44,7 +44,11 @@ export default async function LeaderboardPage() {
 
         {session.user.role !== "ADMIN" && (
           <Card className="p-4 md:p-5">
-            <LeaderboardPrivacySwitch initialHidden={board.viewerHidden} />
+            {board.viewerIsLinkedChild ? (
+              <p className="text-small text-slate-400">Accounts linked to a parent are never shown on the leaderboard.</p>
+            ) : (
+              <LeaderboardPrivacySwitch initialHidden={board.viewerHidden} />
+            )}
           </Card>
         )}
       </div>
