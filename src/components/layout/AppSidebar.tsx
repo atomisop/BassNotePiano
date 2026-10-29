@@ -91,7 +91,7 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
     <nav
       ref={navRef}
       aria-label="Primary"
-      className="app-sidebar fixed bottom-0 left-0 top-0 z-40 pt-[4.25rem] hidden w-52 flex-col gap-5 overflow-y-auto overflow-x-hidden bg-ground px-3 pb-3 pt-2 lg:flex"
+      className="app-sidebar fixed bottom-0 left-0 top-0 z-40 pt-[4.25rem] hidden w-52 flex-col gap-5 overflow-y-auto overflow-x-hidden px-3 pb-3 pt-2 lg:flex"
     >
       {sel && (
         <span
@@ -163,7 +163,7 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
       <SidebarSpotlight initial={cards} isAdmin={isAdmin} />
 
       {/* Search (opens the command menu) next to the light/dark switch. */}
-      <div className="sb-tools sticky bottom-0 mt-auto flex items-center gap-2 bg-ground pt-1">
+      <div className="sb-tools sticky bottom-0 mt-auto flex items-center gap-2 pt-1">
         <button
           type="button"
           onClick={() => window.dispatchEvent(new Event(OPEN_COMMAND_EVENT))}

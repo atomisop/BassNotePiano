@@ -89,12 +89,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <PricingProvider pricing={pricing} personalDiscountPercent={personalDiscountPercent}>
     <WhatsNewProvider entry={LATEST_ENTRY} showInitially={showWhatsNew}>
     <div data-surface="app" className="pad-safe-x shell-lock fixed inset-0 flex bg-ground">
-      {/* No photographic backdrop behind the app shell, deliberately. The
-          previous system wallpapered every authenticated page with a piano
-          photo; on paper that reads as a smudge under the text rather than
-          atmosphere, and it forced a heavy scrim that muddied every surface
-          sitting on it. Photography now appears only where it is the subject
-          (the marketing pages), never as a bed for UI. */}
+      {/* Plain ground, no photo or colored wallpaper behind the app (the owner's choice, 2026-10-29). */}
       {/* fixed inset-0, not a viewport-unit height: the shell is pinned to the
           visible viewport edges, so it can never be taller or shorter than
           what is on screen. Viewport units were the root cause of the strip

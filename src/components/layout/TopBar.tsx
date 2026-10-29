@@ -75,7 +75,7 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
     <header className="pad-safe-x pointer-events-none fixed inset-x-0 top-0 z-[45] px-2 pt-[max(0.375rem,env(safe-area-inset-top))] md:px-3">
       {/* A floating island of clear Liquid Glass: full width on phones (kept below the notch and Dynamic Island), centered and only as wide as what it holds from iPad up. The page scrolls under it and is bent and magnified through it. */}
       <div data-glass="" className="pointer-events-auto relative flex h-12 w-full items-center justify-between gap-3 rounded-full px-2 shadow-[inset_0_0_0_1px_var(--lg-hairline)] md:mx-auto md:w-fit md:max-w-full md:justify-start md:gap-5 md:px-3">
-      <GlassLens radius="full" bezel={18} strength={22} magnify={0.35} />
+      <GlassLens radius="full" bezel={18} strength={22} magnify={0.35} blur={4} />
       {/* No bar and no logo: only the controls float. The header ignores the mouse so it never blocks the page; its two groups take it back. */}
       <div className="relative z-10 flex items-center gap-2">
         {/* The logo is shown on phones only; from md up the sidebar and toggle take its place. */}

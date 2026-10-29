@@ -174,7 +174,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
         data-glass=""
         className="pointer-events-auto relative grid h-[53px] w-full max-w-[26rem] grid-cols-5 items-center rounded-full p-1 shadow-[inset_0_0_0_1px_var(--lg-hairline)]"
       >
-        <GlassLens radius="full" bezel={26} strength={28} magnify={0.55} />
+        <GlassLens radius="full" bezel={26} strength={28} magnify={0.55} blur={4} />
         {NAV_ITEMS.map((item) => {
           const active = (pendingHref ?? pathname) === item.href;
           const current = pathname === item.href;
