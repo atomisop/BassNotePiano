@@ -136,7 +136,7 @@ function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
               aria-haspopup={hasPages ? "true" : undefined}
               aria-expanded={hasPages ? openId === hub.id : undefined}
               className={`press-soft flex h-10 items-center gap-2.5 rounded-control px-3 text-small font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                active ? "bg-neu-lift text-slate-50 shadow-pressed-low" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
+                active ? "liquid text-slate-50" : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-100"
               }`}
             >
               <Icon className={`h-4 w-4 shrink-0 ${active ? "text-signal-fg" : ""}`} strokeWidth={active ? 2.1 : 1.75} aria-hidden />
@@ -145,7 +145,7 @@ function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
             </Link>
             {hasPages && (
               <div ref={openId === hub.id ? flyoutRef : undefined} data-open={openId === hub.id} className="admin-flyout absolute left-full top-0 z-30 pl-1.5" role="group" aria-label={`${hub.label} pages`}>
-                <ul className="min-w-44 rounded-card bg-neu-lift p-1.5 shadow-raised-high">
+                <ul className="liquid min-w-44 rounded-card p-1.5 [backdrop-filter:blur(18px)_saturate(1.8)_brightness(1.1)]">
                   {hub.pages.map((page, i) => (
                     <li key={page.href} style={{ "--i": i } as React.CSSProperties}>
                       <Link

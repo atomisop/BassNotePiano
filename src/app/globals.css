@@ -2230,3 +2230,11 @@ html[data-theme-fade] *::after {
   opacity: 1;
   transform: scale(1);
 }
+
+/* The body color of sheets, dialogs and the search window: glass that stays readable (mostly opaque; the lens still bends the edge). */
+:root {
+  --lg-sheet-tint: rgb(26 26 28 / 0.8);
+}
+[data-mode="light"] {
+  --lg-sheet-tint: rgb(250 250 253 / 0.8);
+}

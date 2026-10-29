@@ -1,5 +1,6 @@
 "use client";
 
+import { GlassLens } from "@/components/ui/GlassLens";
 import * as React from "react";
 import { Command as CommandPrimitive } from "cmdk";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
@@ -53,16 +54,17 @@ function CommandDialog({
         <DialogPrimitive.Overlay className="cmd-scrim fixed inset-0 z-50" />
         <DialogPrimitive.Content
           ref={place}
-          className="cmd-window glass-surface fixed left-1/2 top-[18%] z-50 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 overflow-hidden !bg-surface p-0 shadow-raised-mid"
+          className="cmd-window fixed left-1/2 top-[18%] z-50 w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 rounded-[1.25rem] p-0 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.55)]"
           aria-label="Command menu"
         >
+          <GlassLens radius={20} bezel={18} strength={12} blur={18} tint="var(--lg-sheet-tint)" className="-z-10" />
           {/* Radix requires a title for screen readers; it's visually hidden
               because the search field already labels the dialog on screen. */}
           <DialogPrimitive.Title className="sr-only">Search and jump to</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">
             Type to search scales and pages, then press Enter.
           </DialogPrimitive.Description>
-          <Command className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-small [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-slate-500">
+          <Command className="!bg-transparent [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-small [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-slate-500">
             {children}
           </Command>
         </DialogPrimitive.Content>
