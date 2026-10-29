@@ -130,15 +130,15 @@
   --shadow-plane-front: var(--plane-front-shadow);
   --shadow-signal: var(--signal-glow);
 
-  --ease-ios: cubic-bezier(0.4, 0, 0.6, 1); /* apple.com's curve */
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1); /* Apple's UI curve: fast out of the blocks, long soft landing (the iOS sheet curve) */
   /* Release curve for pressable things: overshoots, then settles. The
      linear() form is a real spring; older browsers get the one-bounce bezier. */
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-spring: cubic-bezier(0.22, 1.12, 0.36, 1); /* a quiet overshoot, the way iOS springs settle */
 
   /* Every Tailwind `transition*` utility without its own duration/curve now
      uses the same iOS ease, so hover, press and toggle changes all settle the
      same way instead of mixing 150ms linear-ish easings. */
-  --default-transition-duration: 240ms;
+  --default-transition-duration: 200ms;
   --default-transition-timing-function: var(--ease-ios);
 
   /* Page widths for the four shared page layouts in
@@ -1829,5 +1829,54 @@ input[type="radio"],
   }
   html[data-keyboard="open"] .kb-hide {
     display: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Admin menu flyout, in Apple's motion language: it is always mounted (so opening costs nothing), animates only opacity and
+   transform (the compositor does the work), opens with a soft springy settle and closes quickly with a plain ease, and its rows
+   follow one after another a few milliseconds apart. Reduced motion gets a plain fade.
+   --------------------------------------------------------------------------- */
+.admin-flyout {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-8px) scale(0.96);
+  transform-origin: left top;
+  transition:
+    opacity 130ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 130ms cubic-bezier(0.32, 0.72, 0, 1),
+    visibility 0s linear 130ms;
+}
+.admin-flyout[data-open="true"] {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+  transition:
+    opacity 180ms cubic-bezier(0.32, 0.72, 0, 1),
+    transform 340ms cubic-bezier(0.2, 1.1, 0.3, 1),
+    visibility 0s;
+  will-change: transform, opacity;
+}
+.admin-flyout li {
+  opacity: 0;
+  transform: translateX(-5px);
+  transition: opacity 110ms ease-out, transform 110ms ease-out;
+}
+.admin-flyout[data-open="true"] li {
+  opacity: 1;
+  transform: none;
+  transition: opacity 220ms cubic-bezier(0.32, 0.72, 0, 1), transform 320ms cubic-bezier(0.2, 1.1, 0.3, 1);
+  transition-delay: calc(var(--i, 0) * 24ms + 30ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-flyout,
+  .admin-flyout[data-open="true"],
+  .admin-flyout li,
+  .admin-flyout[data-open="true"] li {
+    transform: none;
+    transition-duration: 100ms;
+    transition-delay: 0s;
   }
 }

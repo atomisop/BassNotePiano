@@ -12,7 +12,7 @@ import { RemindButton } from "@/components/admin/RemindButton";
 import { REMINDER_KINDS } from "@/lib/followUpReminders";
 import { getFollowUps } from "@/lib/adminFollowUps";
 import { getJobStatuses, isStopped } from "@/lib/jobRun";
-import { RefreshTasksButton } from "@/components/admin/RefreshTasksButton";
+import { AutomaticTasks } from "@/components/admin/AutomaticTasks";
 import { OverviewStats } from "@/components/admin/OverviewStats";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { PhoneAccordion } from "@/components/ui/PhoneAccordion";
@@ -221,35 +221,15 @@ export default async function AdminOverviewPage() {
             id="tasks"
             alwaysCollapsible
             title="Automatic tasks"
-            summary={jobs.filter((j) => isStopped(j.state)).length > 0 ? `${jobs.filter((j) => isStopped(j.state)).length} stopped` : "All running"}
+            summary={jobs.filter((j) => isStopped(j.state)).length > 0 ? `${jobs.filter((j) => isStopped(j.state)).length} stopped` : jobs.some((j) => j.state === "paused") ? `${jobs.filter((j) => j.state === "paused").length} paused` : "All running"}
             warn={jobs.some((j) => isStopped(j.state))}
             className="glass-surface scroll-mt-20"
           >
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-small text-slate-500">
-                Checked {new Date().toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", second: "2-digit" })} ET
-              </p>
-              <RefreshTasksButton />
-            </div>
-            <ul className="mt-3 divide-y divide-slate-50/10">
-              {jobs.map((job) => {
-                const bad = isStopped(job.state);
-                const when = job.lastRanAt
-                  ? new Date(job.lastRanAt).toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
-                  : null;
-                const text =
-                  job.state === "never" ? "has never run" : job.state === "failed" ? `failed, ${when}` : job.state === "late" ? `late, last ran ${when}` : when ?? "not run yet";
-                return (
-                  <li key={job.name} className="py-2.5 text-small">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-slate-200">{job.name}</span>
-                      <span className={bad ? "text-red-300" : "text-slate-500"}>{text}</span>
-                    </div>
-                    {job.state === "failed" && job.note && <p className="mt-1 break-words text-red-300/80">{job.note}</p>}
-                  </li>
-                );
-              })}
-            </ul>
+            <AutomaticTasks
+              jobs={jobs.map((j) => ({ name: j.name, state: j.state, lastRanAt: j.lastRanAt ? new Date(j.lastRanAt).toISOString() : null, note: j.note }))}
+              checkedAt={new Date().toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", second: "2-digit" })}
+              canPause={isOwner}
+            />
           </PhoneAccordion>
         </div>
       )}

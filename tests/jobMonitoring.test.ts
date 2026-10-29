@@ -15,6 +15,17 @@ import {
 const NOW = new Date("2026-10-08T12:00:00Z");
 const hoursAgo = (h: number) => new Date(NOW.getTime() - h * 3_600_000);
 
+describe("a paused job", () => {
+  it("is paused on purpose: not late, not failed, never counted as stopped", () => {
+    const now = new Date("2026-10-29T12:00:00Z");
+    const s = evaluateJob({ name: "x", maxSilenceHours: 30, last: null, trackingSince: new Date("2026-01-01T00:00:00Z"), addedAt: null, now, paused: true });
+    expect(s.state).toBe("paused");
+    expect(isStopped(s.state)).toBe(false);
+    const late = evaluateJob({ name: "x", maxSilenceHours: 30, last: { ranAt: new Date("2026-10-01T00:00:00Z"), ok: false, note: "boom" }, trackingSince: new Date("2026-01-01T00:00:00Z"), addedAt: null, now, paused: true });
+    expect(late.state).toBe("paused");
+  });
+});
+
 describe("evaluateJob", () => {
   const base = { name: "credit-expiry", maxSilenceHours: 30, now: NOW };
   it("is ok when it ran within its window", () => {

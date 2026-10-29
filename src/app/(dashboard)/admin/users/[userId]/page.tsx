@@ -12,6 +12,9 @@ import { prisma } from "@/lib/prisma";
 import type { ReactNode } from "react";
 import { AdminPausePlanButton } from "@/components/admin/AdminPausePlanButton";
 import { AdminMovePlanTimeButton } from "@/components/admin/AdminMovePlanTimeButton";
+import { AdminSettleLateButton } from "@/components/admin/AdminSettleLateButton";
+import { isOwnerEmail } from "@/lib/adminNotifications";
+import { getServerAuthSession } from "@/lib/auth";
 import { isIndefinitePause, isPausedNow } from "@/lib/planPause";
 import { describePaymentPlan, formatCredits, storedToCredits } from "@/lib/classCreditPricing";
 
@@ -32,12 +35,15 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
     prisma.auditLog.findMany({ where: { targetId: params.userId }, orderBy: { createdAt: "desc" }, take: 8 }),
   ]);
   const nextBooking = profile.bookings.filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > Date.now()).sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())[0];
+  const viewer = await getServerAuthSession();
+  const isOwner = isOwnerEmail(viewer?.user?.email);
   const planPaused = plan ? isPausedNow(plan, new Date()) : false;
   const planControls =
     plan && !plan.familyGroupId ? (
       <>
         <AdminPausePlanButton planId={plan.id} state={{ paused: planPaused, until: plan.pauseUntil && !isIndefinitePause(plan) ? plan.pauseUntil.toISOString() : null }} compact />
-        {plan.reservedScheduleId && <AdminMovePlanTimeButton planId={plan.id} compact />}
+        <AdminMovePlanTimeButton planId={plan.id} compact hasTime={Boolean(plan.reservedScheduleId)} />
+        {isOwner && <AdminSettleLateButton planId={plan.id} />}
       </>
     ) : null;
   const facts: { label: string; value: string; warn?: boolean; extra?: ReactNode }[] = [
