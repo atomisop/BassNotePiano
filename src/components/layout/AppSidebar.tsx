@@ -91,7 +91,7 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
     <nav
       ref={navRef}
       aria-label="Primary"
-      className="app-sidebar fixed bottom-0 left-0 top-[3.75rem] z-40 hidden w-52 flex-col gap-5 overflow-y-auto overflow-x-hidden bg-ground px-3 pb-3 pt-2 lg:flex"
+      className="app-sidebar fixed bottom-0 left-0 top-0 z-40 pt-[4.25rem] hidden w-52 flex-col gap-5 overflow-y-auto overflow-x-hidden bg-ground px-3 pb-3 pt-2 lg:flex"
     >
       {sel && (
         <span

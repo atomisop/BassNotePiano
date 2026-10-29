@@ -46,7 +46,7 @@ export function AnnouncementBanner({ announcement }: { announcement: ActiveAnnou
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -16, scale: 0.97 }}
           transition={SPRING.snappy}
-          className="glass-surface-elevated mx-4 mt-4 flex shrink-0 cursor-grab items-start gap-3 p-4 active:cursor-grabbing md:mx-8"
+          className="announcement-banner glass-surface-elevated mx-4 mt-4 flex shrink-0 cursor-grab items-start gap-3 p-4 active:cursor-grabbing md:mx-8"
         >
           <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--c-s-50)/0.15)] text-[rgb(var(--c-s-50))]">
             <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">

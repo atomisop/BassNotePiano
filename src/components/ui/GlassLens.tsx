@@ -49,6 +49,17 @@ export function GlassLens({
 
   const [tokens, setTokens] = useState({ refraction: 1, dispersion: 1, blur: 1.5 });
   useEffect(() => {
+    setRefract(refractionSupported());
+    // The look is set in one place (the --lg-* variables in globals.css), and "reduce transparency" switches the bending off.
+    const style = getComputedStyle(document.documentElement);
+    const num = (name: string, fallback: number) => {
+      const v = parseFloat(style.getPropertyValue(name));
+      return Number.isFinite(v) ? v : fallback;
+    };
+    const reduced = window.matchMedia("(prefers-reduced-transparency: reduce)").matches;
+    setTokens({ refraction: reduced ? 0 : num("--lg-refraction", 1), dispersion: reduced ? 0 : num("--lg-dispersion", 1), blur: num("--lg-blur", 1.5) });
+  }, []);
+  useEffect(() => {
     const el = host.current;
     if (!el) return;
     let frame = 0;

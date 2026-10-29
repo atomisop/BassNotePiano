@@ -2248,3 +2248,25 @@ html[data-theme-fade] *::after {
 [data-mode="light"] {
   --lg-hairline: rgb(0 0 0 / 0.1);
 }
+
+/* The top bar floats: the page starts at the very top and scrolls under it (no black strip reserved above the page). The first content
+   still begins below the bar, by padding inside the scroll area. A notice banner, when there is one, takes the bar's room instead. */
+.app-scroll-under-bar {
+  padding-top: calc(max(0.375rem, env(safe-area-inset-top)) + 3rem + 1rem);
+}
+@media (min-width: 768px) {
+  .app-scroll-under-bar {
+    padding-top: calc(0.375rem + 3rem + 1.25rem);
+  }
+}
+@media (min-width: 1024px) {
+  .app-scroll-under-bar {
+    padding-top: calc(0.375rem + 3rem + 1.5rem);
+  }
+}
+.app-shell-col > .announcement-banner {
+  margin-top: calc(max(0.375rem, env(safe-area-inset-top)) + 3.5rem);
+}
+.app-shell-col:has(> .announcement-banner) .app-scroll-under-bar {
+  padding-top: 1rem;
+}
