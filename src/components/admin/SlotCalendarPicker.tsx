@@ -13,6 +13,20 @@ export interface PickerSlot {
   creditCost: number;
 }
 
+export interface BookedTime {
+  id: string;
+  scheduledAt: string;
+  name: string;
+}
+
+const ET = "America/New_York";
+const CLASS_MS = 45 * 60_000;
+const etDay = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: ET });
+const etMinutes = (iso: string) => {
+  const [h, m] = new Date(iso).toLocaleTimeString("en-GB", { timeZone: ET, hour: "2-digit", minute: "2-digit", hour12: false }).split(":").map(Number);
+  return h * 60 + m;
+};
+
 const slotKey = (s: PickerSlot) => `${s.scheduleId}:${s.occurrenceDateMs}:${s.chunkIndex}`;
 const timeOf = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });
 
@@ -29,6 +43,7 @@ function todayEtMs(): number {
  */
 export function SlotCalendarPicker({
   slots,
+  booked,
   allowAnyDay,
   day,
   onDay,
@@ -38,6 +53,8 @@ export function SlotCalendarPicker({
   onOwnTime,
 }: {
   slots: PickerSlot[];
+  /** Classes already booked, shown on the chosen day so a custom time can be picked around them. */
+  booked: BookedTime[];
   allowAnyDay: boolean;
   day: string | null;
   onDay: (key: string | null) => void;
@@ -51,6 +68,14 @@ export function SlotCalendarPicker({
     const start = todayEtMs();
     return Array.from({ length: 366 }, (_, i) => ({ occurrenceDateMs: start + i * 86_400_000, isBooked: false }));
   }, [slots, allowAnyDay]);
+
+  const dayBooked = useMemo(() => (day ? booked.filter((b) => etDay(b.scheduledAt) === day).sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)) : []), [booked, day]);
+  const clash = useMemo(() => {
+    if (!day || !ownTime) return null;
+    const [h, m] = ownTime.split(":").map(Number);
+    const at = h * 60 + m;
+    return dayBooked.find((b) => Math.abs(etMinutes(b.scheduledAt) - at) < 45) ?? null;
+  }, [day, ownTime, dayBooked]);
 
   const daySlots = useMemo(() => (day ? slots.filter((s) => dayKey(s.occurrenceDateMs) === day) : []), [slots, day]);
 
@@ -91,6 +116,18 @@ export function SlotCalendarPicker({
               </div>
             </>
           )}
+          {dayBooked.length > 0 && (
+            <div className={daySlots.length > 0 ? "mt-3" : ""}>
+              <p className="mb-1.5 text-small font-medium text-slate-200">Already booked</p>
+              <div className="flex flex-wrap gap-1.5">
+                {dayBooked.map((b) => (
+                  <span key={b.id} className="rounded-lg bg-red-400/10 px-2.5 py-1 text-small text-red-300" title={b.name}>
+                    {timeOf(b.scheduledAt)} to {timeOf(new Date(new Date(b.scheduledAt).getTime() + CLASS_MS).toISOString())} · {b.name.split(" ")[0]}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           {allowAnyDay && daySlots.length === 0 && <p className="mb-2 text-small text-slate-500">No weekly times that day. Type a start time to create one.</p>}
           {allowAnyDay && (
             <div className={daySlots.length > 0 ? "mt-3" : ""}>
@@ -98,6 +135,7 @@ export function SlotCalendarPicker({
                 {daySlots.length > 0 ? "Or any start time" : "Start time (Eastern)"}
                 <Hint label="About custom times">The class is 45 minutes and only has to not overlap another class. Back to back is fine.</Hint>
               </p>
+              {clash && <p className="mb-1.5 text-small text-amber-300">That overlaps {clash.name.split(" ")[0]}&apos;s class at {timeOf(clash.scheduledAt)}.</p>}
               <input
                 type="time"
                 aria-label="Start time"

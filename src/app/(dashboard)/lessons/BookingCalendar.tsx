@@ -160,7 +160,7 @@ export function BookingCalendar({
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-7 gap-y-1 text-center">
+      <div className="no-wave mt-3 grid grid-cols-7 gap-y-1 text-center">
         {DAY_NAMES.map((d, i) => (
           <span key={i} className="text-small font-medium uppercase tracking-wide text-slate-500">
             {d}

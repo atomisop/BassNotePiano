@@ -101,13 +101,27 @@ export async function adminCancelBookingAction(bookingId: string, reason?: strin
   }
 }
 
-/** The open weekly times (not yet booked, not reserved), for the Move and Book pickers. Fetched when a picker opens so the student page itself loads faster. */
+/**
+ * What the Move and Book calendars show: the open weekly times, and every class already booked over the next year
+ * (so a custom time can be chosen around them). Fetched when a picker opens so the student page itself loads faster.
+ */
 export async function getOpenSlotsAction() {
   await requireAdmin();
-  const upcoming = await getUpcomingOccurrences();
-  return upcoming
-    .filter((o) => !o.isBooked)
-    .map((o) => ({ scheduleId: o.scheduleId, occurrenceDateMs: o.occurrenceDate.getTime(), chunkIndex: o.chunkIndex, label: o.label, scheduledAt: o.scheduledAt.toISOString(), creditCost: o.creditCost }));
+  const [upcoming, booked] = await Promise.all([
+    getUpcomingOccurrences(),
+    prisma.classBooking.findMany({
+      where: { status: "SCHEDULED", scheduledAt: { gte: new Date(), lte: new Date(Date.now() + 400 * 86_400_000) } },
+      select: { id: true, scheduledAt: true, student: { select: { name: true, email: true } } },
+      orderBy: { scheduledAt: "asc" },
+      take: 1000,
+    }),
+  ]);
+  return {
+    open: upcoming
+      .filter((o) => !o.isBooked)
+      .map((o) => ({ scheduleId: o.scheduleId, occurrenceDateMs: o.occurrenceDate.getTime(), chunkIndex: o.chunkIndex, label: o.label, scheduledAt: o.scheduledAt.toISOString(), creditCost: o.creditCost })),
+    booked: booked.map((b) => ({ id: b.id, scheduledAt: b.scheduledAt.toISOString(), name: b.student.name ?? b.student.email })),
+  };
 }
 
 /** Moves a student's class to another open time in one step: the old class is freed and the new one booked together, or nothing changes. */

@@ -1759,3 +1759,40 @@ input[type="radio"],
     display: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Wave reveal: anything laid out in a grid inside the signed-in app (cards, stat tiles, rows of buttons)
+   arrives one after another from left to right, a few milliseconds apart, so content loads like a wave
+   instead of all at once. The delay grows with the child's position and stops growing at the 12th, so a
+   long grid never waits more than about half a second. `backwards` fill leaves no transform behind (a
+   leftover transform would become the containing block of fixed children). Opt out with `no-wave` on the
+   grid (the calendar day cells do). Reduced motion gets none of it.
+   --------------------------------------------------------------------------- */
+@keyframes wave-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  #app-scroll .grid:not(.no-wave) > * {
+    animation: wave-in 420ms var(--ease-ios, ease-out) backwards;
+    animation-delay: 540ms;
+  }
+  #app-scroll .grid:not(.no-wave) > :nth-child(1) { animation-delay: 0ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(2) { animation-delay: 45ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(3) { animation-delay: 90ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(4) { animation-delay: 135ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(5) { animation-delay: 180ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(6) { animation-delay: 225ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(7) { animation-delay: 270ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(8) { animation-delay: 315ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(9) { animation-delay: 360ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(10) { animation-delay: 405ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(11) { animation-delay: 450ms; }
+  #app-scroll .grid:not(.no-wave) > :nth-child(12) { animation-delay: 495ms; }
+}
