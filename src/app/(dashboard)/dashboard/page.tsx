@@ -1,8 +1,253 @@
-import RoadmapView from "../roadmap/RoadmapView";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { ArrowRight, Flame, Lightbulb, Map, Users, Video } from "lucide-react";
+import { getServerAuthSession } from "@/lib/auth";
+import { getHomeData } from "@/lib/homeData";
+import { DAILY_GOAL_SECONDS } from "@/lib/fingerPractice";
+import { WEEKLY_GOAL_MINUTES } from "@/lib/homeRules";
+import { formatEtDateTime } from "@/lib/classScheduleLabels";
+import { CLASS_MINUTES, CREDITS_PER_CLASS } from "@/lib/classCreditPricing";
+import { DISCORD_INVITE_URL, discordChannelUrl } from "@/lib/discord";
+import { cn } from "@/lib/utils";
+import { WideLayout } from "@/components/layout/PageLayouts";
+import { TodayGreeting } from "@/components/dashboard/TodayGreeting";
+import { Card, Eyebrow } from "@/components/ui/Card";
+import { buttonVariants } from "@/components/ui/button";
+import { ProgressRing } from "@/components/ui/ProgressRing";
+import { DiscordLink } from "@/components/ui/DiscordLink";
+import { RoadmapCard } from "@/components/home/RoadmapCard";
+import { CelebrationCard } from "@/components/home/CelebrationCard";
 
 export const metadata = { title: "Home" };
 
-/** Home. Until the new welcome Home is built (Part 2 of docs/superpowers/specs/2026-10-29-new-home-and-roadmaps-design.md) it shows the roadmap. */
-export default function HomePage() {
-  return <RoadmapView />;
+/** The first roadmap's name until roadmaps become their own records (Part 4 of the new Home design). */
+const ROADMAP_NAME = "Scales";
+
+/** "in 3 days", "tomorrow", "in 2 hours", "starting now". */
+function untilLabel(when: Date): string {
+  const minutes = Math.round((when.getTime() - Date.now()) / 60_000);
+  if (minutes <= 0) return "starting now";
+  if (minutes < 60) return `in ${minutes} minute${minutes === 1 ? "" : "s"}`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `in ${hours} hour${hours === 1 ? "" : "s"}`;
+  const days = Math.round(hours / 24);
+  return days === 1 ? "tomorrow" : `in ${days} days`;
+}
+
+/**
+ * Home: a welcome and the one thing to do today. A new account (no plan, no trial) gets the free trial class and how the studio
+ * works; a student gets today's step, their roadmap, the next class, practice, a tip and their friends. The course itself lives on
+ * the Roadmap screen (/roadmap). Design: docs/superpowers/specs/2026-10-29-new-home-and-roadmaps-design.md.
+ */
+export default async function HomePage() {
+  const session = await getServerAuthSession();
+  if (!session?.user) redirect("/login?callbackUrl=/dashboard");
+  const data = await getHomeData({ id: session.user.id, role: session.user.role, email: session.user.email ?? null });
+
+  const greeting = (
+    <div className="pt-4 md:pt-6">
+      <TodayGreeting name={data.name} />
+    </div>
+  );
+
+  if (data.isNew) {
+    return (
+      <WideLayout>
+        <div className="grid grid-cols-1 gap-3 md:max-w-3xl">
+          {greeting}
+          <Card className="overflow-hidden p-5 md:p-7">
+            <Eyebrow>Start here</Eyebrow>
+            <p className="mt-2 text-[1.5rem] font-bold leading-tight text-slate-50 md:text-[1.75rem]">{data.nextStep.action}</p>
+            <p className="mt-2 max-w-xl text-body text-slate-300">{data.nextStep.detail}</p>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <Link href={data.nextStep.href} className={buttonVariants()}>
+                {data.nextStep.cta}
+                <ArrowRight aria-hidden className="h-4 w-4" />
+              </Link>
+              {data.nextStep.secondary && (
+                <Link href={data.nextStep.secondary.href} className={buttonVariants({ variant: "secondary" })}>
+                  {data.nextStep.secondary.cta}
+                </Link>
+              )}
+            </div>
+          </Card>
+          <Card className="p-5 md:p-6">
+            <Eyebrow>How it works</Eyebrow>
+            <ul className="mt-4 grid gap-4">
+              <HowRow icon={<Video className="h-5 w-5" />} title="Live classes on Discord" body="A real teacher every week, at a time you pick." />
+              <HowRow icon={<Map className="h-5 w-5" />} title="Your roadmap" body="Scales one at a time, opened by your teacher as you go." />
+              <HowRow icon={<Flame className="h-5 w-5" />} title="10 minutes a day" body="Daily finger practice builds your streak and your hands." />
+            </ul>
+          </Card>
+          <TipCard tip={data.tip} />
+        </div>
+      </WideLayout>
+    );
+  }
+
+  const { practice, nextClass } = data;
+  const joinNow = nextClass !== null && !nextClass.inPerson && (nextClass.scheduledAt.getTime() - Date.now()) / 60_000 <= 30;
+  const classLength = nextClass ? Math.round((nextClass.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES) : CLASS_MINUTES;
+
+  return (
+    <WideLayout>
+      <div className="grid grid-cols-1 gap-3">
+        {greeting}
+        {data.celebration && <CelebrationCard win={data.celebration} />}
+
+        {/* Phones get one column in the order below (the two column wrappers dissolve and `order` sorts the cards); from lg the
+            left column holds today, the roadmap and the tip, the right one the class, practice and friends. */}
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+          <div className="contents min-w-0 lg:grid lg:gap-3">
+            {/* Today's one thing. */}
+            <Card className="order-1 p-5 md:p-6">
+              <Eyebrow>Today</Eyebrow>
+              <p className="mt-2 text-[1.25rem] font-semibold leading-snug text-slate-50">{data.nextStep.action}</p>
+              <p className="mt-1 text-body text-slate-300">{data.nextStep.detail}</p>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                {joinNow && nextClass ? (
+                  <DiscordLink
+                    href={nextClass.discordChannelId ? discordChannelUrl(nextClass.discordChannelId) : DISCORD_INVITE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={buttonVariants()}
+                  >
+                    Join your class
+                  </DiscordLink>
+                ) : (
+                  <Link href={data.nextStep.href} className={buttonVariants()}>
+                    {data.nextStep.cta}
+                    <ArrowRight aria-hidden className="h-4 w-4" />
+                  </Link>
+                )}
+              </div>
+            </Card>
+
+            <div className="order-2">
+            <RoadmapCard
+              name={ROADMAP_NAME}
+              current={data.currentScale}
+              percent={data.progress.percent}
+              completedScales={data.progress.completedScales}
+              totalScales={data.progress.totalScales}
+            />
+            </div>
+
+            <TipCard tip={data.tip} className="order-5" />
+          </div>
+
+          <div className="contents min-w-0 lg:grid lg:gap-3">
+            <Card className="order-3 p-5">
+              <Eyebrow>Next class</Eyebrow>
+              {nextClass ? (
+                <>
+                  <p className="mt-2 text-body font-semibold text-slate-50">{formatEtDateTime(nextClass.scheduledAt)}</p>
+                  <p className="mt-1 text-small text-slate-400">{untilLabel(nextClass.scheduledAt)}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <a
+                      href={`/api/calendar/class?s=${encodeURIComponent(nextClass.scheduledAt.toISOString())}&m=${classLength}`}
+                      className="tap inline-flex items-center text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline"
+                    >
+                      Add to calendar
+                    </a>
+                    <Link href="/lessons" className="tap inline-flex items-center text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline">
+                      My classes
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="mt-2 text-body font-semibold text-slate-50">No class booked</p>
+                  <Link href="/lessons" className={cn(buttonVariants({ variant: "secondary" }), "mt-3")}>
+                    Book a class
+                  </Link>
+                </>
+              )}
+            </Card>
+
+            <Card className="order-4 p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <Eyebrow>Practice</Eyebrow>
+                  <Link href="/streak" className="mt-2 inline-flex items-center gap-1.5 text-body font-semibold text-slate-50 hover:underline">
+                    <Flame
+                      aria-hidden
+                      className={cn("h-5 w-5", practice.completedToday ? "text-signal-fg" : "text-slate-400")}
+                      fill={practice.completedToday ? "currentColor" : "none"}
+                    />
+                    {practice.streak} day streak
+                  </Link>
+                  <p className="mt-1 text-small text-slate-400">
+                    {practice.completedToday
+                      ? "Done for today"
+                      : `${Math.max(0, Math.ceil((DAILY_GOAL_SECONDS - practice.todaySeconds) / 60))} minutes left today`}
+                  </p>
+                </div>
+                <ProgressRing
+                  value={Math.min(data.weekMinutes, WEEKLY_GOAL_MINUTES)}
+                  max={WEEKLY_GOAL_MINUTES}
+                  size={76}
+                  strokeWidth={7}
+                  label={`This week: ${data.weekMinutes} of ${WEEKLY_GOAL_MINUTES} practice minutes`}
+                  caption={`${data.weekMinutes}/${WEEKLY_GOAL_MINUTES} min`}
+                />
+              </div>
+              {!practice.completedToday && (
+                <Link href="/practice" className={cn(buttonVariants({ variant: "secondary" }), "mt-4")}>
+                  {practice.todaySeconds > 0 ? "Continue practice" : "Start practice"}
+                </Link>
+              )}
+            </Card>
+
+            <Card className="order-6 p-5">
+              <Eyebrow>Friends</Eyebrow>
+              {data.friendsPracticing.length > 0 ? (
+                <p className="mt-2 text-body text-slate-100">
+                  <span className="font-semibold">{data.friendsPracticing.slice(0, 3).join(", ")}</span>{" "}
+                  {data.friendsPracticing.length === 1 ? "is" : "are"} practicing right now.
+                </p>
+              ) : data.friendCount > 0 ? (
+                <p className="mt-2 text-body text-slate-300">
+                  {data.friendCount} friend{data.friendCount === 1 ? "" : "s"}. Nobody is practicing right now, so you could be first today.
+                </p>
+              ) : (
+                <p className="mt-2 text-body text-slate-300">Practice is more fun with friends. Add someone from the studio.</p>
+              )}
+              <Link href="/friends" className="tap mt-3 inline-flex items-center gap-1.5 text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline">
+                <Users aria-hidden className="h-4 w-4" />
+                {data.friendCount > 0 ? "See friends" : "Find friends"}
+              </Link>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </WideLayout>
+  );
+}
+
+function HowRow({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
+  return (
+    <li className="flex items-start gap-3">
+      <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neu-base text-signal-fg shadow-pressed-low">
+        {icon}
+      </span>
+      <span className="min-w-0">
+        <span className="block text-body font-semibold text-slate-50">{title}</span>
+        <span className="block text-small text-slate-400">{body}</span>
+      </span>
+    </li>
+  );
+}
+
+function TipCard({ tip, className }: { tip: { title: string; body: string }; className?: string }) {
+  return (
+    <Card className={cn("p-5", className)}>
+      <div className="flex items-center gap-2 text-slate-400">
+        <Lightbulb aria-hidden className="h-4 w-4" />
+        <Eyebrow className="text-slate-400">Tip of the day</Eyebrow>
+      </div>
+      <p className="mt-2 text-body font-semibold text-slate-50">{tip.title}</p>
+      <p className="mt-1 text-body text-slate-300">{tip.body}</p>
+    </Card>
+  );
 }

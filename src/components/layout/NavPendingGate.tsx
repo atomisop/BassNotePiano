@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { withViewTransition } from "@/lib/viewTransition";
 import GenericLoading from "@/app/(dashboard)/loading";
 import DashboardLoading from "@/app/(dashboard)/dashboard/loading";
+import RoadmapLoading from "@/app/(dashboard)/roadmap/loading";
 import LessonsLoading from "@/app/(dashboard)/lessons/loading";
 import FriendsLoading from "@/app/(dashboard)/friends/loading";
 import MessagesLoading from "@/app/(dashboard)/messages/loading";
@@ -15,7 +16,7 @@ export const NAV_PENDING_EVENT = "bnp-nav-pending";
 
 const SKELETONS: Record<string, () => ReactNode> = {
   "/dashboard": () => <DashboardLoading />,
-  "/roadmap": () => <DashboardLoading />,
+  "/roadmap": () => <RoadmapLoading />,
   "/lessons": () => <LessonsLoading />,
   "/friends": () => <FriendsLoading />,
   "/messages": () => <MessagesLoading />,
