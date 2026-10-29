@@ -6,25 +6,56 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
-import { Home, Map, CalendarCheck, MessageSquare, Settings, type LucideIcon } from "lucide-react";
 import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { onChange } from "@/lib/liveEvents";
 import { SCROLL_TOP_EVENT } from "@/components/layout/ScrollAssist";
 import { NAV_PENDING_EVENT } from "@/components/layout/NavPendingGate";
+import { ICON_PATHS } from "@/components/layout/navIcons";
 
 // Same 30s cadence as NotificationBell's own poll, which this mirrors.
 const POLL_INTERVAL_MS = 30_000;
 
-// Swapped from the hand-drawn NavIcon/ICON_PATHS set (still used elsewhere,
-// see navIcons.tsx) to lucide-react for this dock specifically, by direct
-// instruction.
-const NAV_ICON: Record<string, LucideIcon> = {
-  home: Home,
-  roadmap: Map,
-  lessons: CalendarCheck,
-  messages: MessageSquare,
-  settings: Settings,
+// The app's own (BNP) icons, the hand-drawn set in navIcons.tsx, with a filled version for the tab you are on, the way Instagram's tab
+// bar fills the current icon. `fill` is the solid shape; `cut` is the inner detail drawn over it in the capsule's color (the calendar's
+// line and check, the gear's center), so the filled icon still reads; `line` is drawn in the icon color in both states.
+type DockGlyph = { outline: string; fill?: string; cut?: string; line?: string; /** The drawn size differs per icon; this evens them out. */ scale?: number };
+const DOCK_GLYPHS: Record<string, DockGlyph> = {
+  home: { outline: "M4 10.5L12 4l8 6.5V19a1 1 0 01-1 1h-4v-5h-6v5H5a1 1 0 01-1-1v-8.5z", fill: "M4 10.5L12 4l8 6.5V19a1 1 0 01-1 1h-4v-5h-6v5H5a1 1 0 01-1-1v-8.5z" },
+  roadmap: { outline: ICON_PATHS.roadmap },
+  lessons: {
+    outline: ICON_PATHS.lessons,
+    fill: "M5 6h14a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1z",
+    cut: "M4 9h16M9 14l2 2 4-4",
+    line: "M8 3v3M16 3v3",
+  },
+  messages: { outline: ICON_PATHS.messages, fill: ICON_PATHS.messages },
+  settings: {
+    outline: `${ICON_PATHS.settings}M12 14.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z`,
+    fill: ICON_PATHS.settings,
+    cut: "M12 14.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z",
+    scale: 1.45,
+  },
 };
+
+function DockGlyphIcon({ glyph, active }: { glyph: DockGlyph; active: boolean }) {
+  const s = glyph.scale ?? 1;
+  const stroke = { stroke: "currentColor", strokeWidth: (active ? 2 : 1.75) / s, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  return (
+    <svg aria-hidden viewBox="0 0 24 24" fill="none" className="h-[23px] w-[23px]">
+      <g transform={s === 1 ? undefined : `translate(12 12) scale(${s}) translate(-12 -12)`}>
+      {active && glyph.fill ? (
+        <>
+          <path d={glyph.fill} fill="currentColor" {...stroke} />
+          {glyph.cut && <path d={glyph.cut} {...stroke} stroke="var(--dock-cut)" />}
+          {glyph.line && <path d={glyph.line} {...stroke} />}
+        </>
+      ) : (
+        <path d={glyph.outline} {...stroke} strokeWidth={(active ? 2.4 : 1.75) / s} />
+      )}
+      </g>
+    </svg>
+  );
+}
 
 // How close the cursor has to get to the bottom edge to reveal a hidden
 // dock, and how long it lingers after the cursor leaves before hiding
@@ -116,6 +147,25 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
   // page change and every "messages" announcement), the same one the sidebar uses. It used to run its own timer.
   const unreadMessageCount = useUnreadMessages(initialUnreadMessageCount);
 
+  // Like Instagram's bar: scrolling down narrows the pill (same height, icons closer together); scrolling up or reaching the top
+  // widens it again. Only the page's own scroller (<main>) counts, not a list scrolling inside a page.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    let last = 0;
+    const onScroll = (e: Event) => {
+      const el = e.target;
+      if (!(el instanceof HTMLElement) || el.tagName !== "MAIN") return;
+      const top = el.scrollTop;
+      if (top < 24) setNarrow(false);
+      else if (top - last > 6) setNarrow(true);
+      else if (last - top > 6) setNarrow(false);
+      last = top;
+    };
+    document.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    return () => document.removeEventListener("scroll", onScroll, { capture: true });
+  }, []);
+  useEffect(() => setNarrow(false), [pathname]);
+
   // Opening a chat focuses its input, and iOS Safari answers by scrolling the
   // whole document to keep the input above the keyboard. The shell is a fixed
   // 100svh and never scrolls itself, so that document offset sticks after the
@@ -142,21 +192,22 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
       aria-label="Primary"
       className="kb-hide pointer-events-none fixed inset-x-0 bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)-0.25rem))] z-40 flex justify-center px-5"
     >
-      {/* A floating glass pill: the page bends through it, five equal icon slots (no names), and a darker capsule behind the page you are
-          on that slides to the next one. Colors come from .app-dock in globals.css, one set per theme. */}
+      {/* A copy of Instagram's floating tab bar: a 53pt glass pill 20pt from the edges, five icon slots with no names, and a lighter
+          capsule behind the tab you are on that slides to the next one. The page under it is frosted (you see color and shape, not
+          words) and bends at the rim. Colors come from .app-dock in globals.css, one set per theme. */}
       <div
         data-glass=""
-        className="app-dock app-dock-lens pointer-events-auto relative grid h-16 w-full max-w-[26rem] grid-cols-5 items-center rounded-full p-1.5"
+        style={{ width: narrow ? "83%" : "100%", transition: reduceMotion ? undefined : "width 420ms cubic-bezier(0.32, 0.72, 0, 1)" }}
+        className="app-dock app-dock-lens pointer-events-auto relative grid h-[53px] max-w-[26rem] grid-cols-5 items-center rounded-full px-[5px] py-[5px]"
       >
-        {/* Real refraction: the page bends at the rim like light through a water bottle, with only a touch of blur. */}
-        <GlassLens radius="full" bezel={26} strength={30} magnify={0.5} blur={1.5} />
+        <GlassLens radius="full" bezel={24} strength={30} magnify={0.45} blur={7} />
         {NAV_ITEMS.map((item) => {
           const at = pendingHref ?? pathname;
           // A scale's page belongs to the Roadmap tab.
           const active = at === item.href || (item.href === "/roadmap" && at.startsWith("/scales/"));
           const current = pathname === item.href;
           const badge = item.href === "/messages" ? unreadMessageCount : 0;
-          const Icon = NAV_ICON[item.icon];
+          const glyph = DOCK_GLYPHS[item.icon];
           return (
             <Link
               key={item.href}
@@ -183,21 +234,16 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
                 <motion.span
                   layoutId="dock-active-pill"
                   transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 420, damping: 30, mass: 0.9 }}
-                  className="app-dock-active pointer-events-none absolute inset-0 rounded-full"
+                  className="app-dock-active pointer-events-none absolute -inset-x-0.5 inset-y-0 rounded-full"
                 />
               )}
               <motion.span
                 // Springs, not a timed keyframe list: tapping another tab mid-bounce takes over from where the icon is, instead of finishing or snapping.
                 whileTap={{ scale: 0.82 }}
                 transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 520, damping: 20, mass: 0.7 }}
-                className="relative flex h-6 w-6 items-center justify-center"
+                className={`dock-icon relative flex h-6 w-6 items-center justify-center ${active ? "text-slate-50" : "text-slate-200"}`}
               >
-                <Icon
-                  aria-hidden
-                  strokeWidth={active ? 2.4 : 2}
-                  fill={active ? "currentColor" : "none"}
-                  className={active ? "dock-icon-filled h-6 w-6 text-slate-50" : "h-6 w-6 text-slate-300"}
-                />
+                <DockGlyphIcon glyph={glyph} active={active} />
                 {Boolean(badge) && <span className="pointer-events-none absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#ff3040]" />}
               </motion.span>
 

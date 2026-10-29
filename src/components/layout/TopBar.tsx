@@ -74,8 +74,9 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
   // to reserve the 64px this now paints over instead of occupying in flow.
   return (
     <header className="pad-safe-x pointer-events-none fixed inset-x-0 top-0 z-[45] px-2 pt-[max(0.375rem,env(safe-area-inset-top))] md:px-3">
-      {/* A floating pill, the same solid, lightly blurred material as the bottom dock: full width on phones (kept below the notch and Dynamic Island), centered and only as wide as what it holds from iPad up. The page scrolls under it. */}
-      <div data-glass="" className="app-dock pointer-events-auto relative flex h-12 w-full items-center justify-between gap-2 rounded-full px-1.5 min-[360px]:gap-3 min-[360px]:px-2 md:mx-auto md:w-fit md:max-w-full md:justify-start md:gap-5 md:px-3">
+      {/* No bar at all: the logo and each button float on their own over the page, which scrolls under them (kept below the notch and
+          Dynamic Island on phones). Every button carries its own surface, so it stays readable over whatever passes underneath. */}
+      <div data-glass="" className="pointer-events-auto relative flex h-12 w-full items-center justify-between gap-2 rounded-full px-1.5 min-[360px]:gap-3 min-[360px]:px-2 md:mx-auto md:w-fit md:max-w-full md:justify-start md:gap-5 md:px-3">
       {/* No bar and no logo: only the controls float. The header ignores the mouse so it never blocks the page; its two groups take it back. */}
       <div className="relative z-10 flex items-center gap-2">
         {/* The logo is shown on phones only; from md up the sidebar and toggle take its place. */}
