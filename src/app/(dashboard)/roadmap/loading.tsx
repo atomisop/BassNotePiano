@@ -1,7 +1,7 @@
 import { Skeleton, SkeletonScreen } from "@/components/ui/Skeleton";
 import { WideLayout } from "@/components/layout/PageLayouts";
 
-/** Mirrors the Roadmap screen: the header (name and progress line), the tabs with the grid / list switch, then the scale cards. */
+/** Mirrors the Roadmap screen: the header (the roadmap name), the tabs with the grid / list switch, then the scale cards. */
 export default function RoadmapLoading() {
   return (
     <SkeletonScreen label="Loading your roadmap">
@@ -10,7 +10,6 @@ export default function RoadmapLoading() {
           <div className="pt-4 md:pt-6">
             <Skeleton className="h-3 w-16" />
             <Skeleton className="mt-2.5 h-10 w-48 md:h-12" />
-            <Skeleton className="mt-2 h-4 w-64" />
           </div>
           <div className="flex items-center justify-between">
             <Skeleton className="h-10 w-64 rounded-full" />

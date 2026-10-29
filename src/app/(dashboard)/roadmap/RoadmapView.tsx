@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { getServerAuthSession } from "@/lib/auth";
 import { getRoadmap } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
-import { summariseProgress } from "@/lib/next-step";
 import { SCALE_VIEW_COOKIE, parseScaleView } from "@/lib/scaleView";
 import { roadmapsForViewer } from "@/lib/roadmaps";
 import { FIRST_ROADMAP_ID, summarizeRoadmaps } from "@/lib/roadmapRules";
@@ -13,7 +12,7 @@ import { WideLayout } from "@/components/layout/PageLayouts";
 import { RoadmapPicker } from "@/components/home/RoadmapPicker";
 
 /**
- * The Roadmap screen: the course itself and nothing else. A plain header (the roadmap's name and how far you are), the strip of
+ * The Roadmap screen: the course itself and nothing else. A plain header (the roadmap's name), the strip of
  * roadmaps when there is more than one, and the chosen roadmap's scales. The greeting and the day's cards (next step, practice, next
  * class, progress, getting started, teacher notes) live on Home.
  */
@@ -36,8 +35,6 @@ export default async function RoadmapView({ roadmapSlug }: { roadmapSlug?: strin
   const roadmap = selected ? allScales.filter((s) => (s.scaleGroup.roadmapId ?? FIRST_ROADMAP_ID) === selected.id) : allScales;
   const selectedIndex = selected ? roadmapList.indexOf(selected) : -1;
   const selectedLocked = selected ? !roadmapSummaries.get(selected.id)?.open : false;
-  const progress = summariseProgress(roadmap);
-  const current = roadmap.find((s) => s.canAccess && s.status !== "COMPLETED") ?? null;
 
   return (
     <WideLayout>
@@ -45,16 +42,6 @@ export default async function RoadmapView({ roadmapSlug }: { roadmapSlug?: strin
         <div className="pt-4 md:pt-6">
           <Eyebrow>Roadmap</Eyebrow>
           <h1 className="mt-1 text-hero font-semibold text-slate-50">{selected?.name ?? "Scales"}</h1>
-          <p className="mt-1 text-body text-slate-400">
-            {progress.completedScales} of {progress.totalScales} scales done · {progress.percent}%
-            {current && (
-              <>
-                {" "}
-                · Now on {current.scaleGroup.code}, {current.scaleGroup.title}
-              </>
-            )}
-          </p>
-          {selected?.description && <p className="mt-1 max-w-[60ch] text-small text-slate-500">{selected.description}</p>}
         </div>
 
         {roadmapList.length > 1 && selected && (
