@@ -12,8 +12,9 @@ import { MorphingSquare } from "@/components/ui/morphing-square";
 import { RegionError } from "@/components/ui/RegionError";
 import { usePoll } from "@/hooks/usePoll";
 import { FULLSCREEN_NAV_EVENT, setAtomPanelOpen } from "@/lib/overlayNav";
-import { ATOM_TRIGGER_EVENT, OPEN_ATOM_CASE_EVENT, OPEN_ATOM_EVENT, atomHiddenOn, isAtomTriggerPresent } from "@/lib/atomTrigger";
+import { ATOM_TRIGGER_EVENT, OPEN_ATOM_CASE_EVENT, OPEN_ATOM_EVENT, atomHiddenOn, isAtomTriggerPresent, type AtomAnchor } from "@/lib/atomTrigger";
 import { SPRING } from "@/lib/motionTokens";
+import { Hint } from "@/components/ui/Hint";
 
 /**
  * Atom, the "ask me anything" assistant, floating on every page (mounted
@@ -407,12 +408,17 @@ export function AssistantWidget() {
   // the floating launcher while it is mounted, and opens
   // this panel on click.
   const [hasTopBarTrigger, setHasTopBarTrigger] = useState(false);
+  // The button that opened the chat, when it asked to be pointed at (the sidebar's Ask AI on a computer): the window then opens just
+  // above it with a small pointer, instead of in the bottom right corner.
+  const [anchor, setAnchor] = useState<AtomAnchor | null>(null);
   useEffect(() => {
     setHasTopBarTrigger(isAtomTriggerPresent());
     function onTrigger(e: Event) {
       setHasTopBarTrigger(Boolean((e as CustomEvent<boolean>).detail));
     }
-    function onOpen() {
+    function onOpen(e: Event) {
+      const detail = (e as CustomEvent<AtomAnchor | null>).detail ?? null;
+      setAnchor(detail && window.innerWidth >= 1024 ? detail : null);
       openPanelRef.current();
     }
     window.addEventListener(ATOM_TRIGGER_EVENT, onTrigger);
@@ -804,8 +810,12 @@ export function AssistantWidget() {
 
   return createPortal(
     <div
-      className={`kb-atom fixed right-6 z-40 flex flex-col items-end gap-3 ${navOverlayOpen ? "hidden" : ""}`}
-      style={{ bottom: "calc(6rem + env(safe-area-inset-bottom))" }}
+      className={`kb-atom fixed z-40 flex flex-col gap-3 ${anchor && open ? "items-start" : "right-6 items-end"} ${navOverlayOpen ? "hidden" : ""}`}
+      style={
+        anchor && open
+          ? { left: anchor.left, bottom: `calc(100vh - ${anchor.top}px + 14px)` }
+          : { bottom: "calc(6rem + env(safe-area-inset-bottom))" }
+      }
     >
       <AnimatePresence>
         {open && (
@@ -814,6 +824,7 @@ export function AssistantWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.96 }}
             transition={SPRING.snappy}
+            style={{ boxShadow: `var(--neu-raised-high), ${AI_HALO}`, transformOrigin: anchor ? `${Math.min(anchor.width / 2, 40)}px 100%` : "100% 100%" }}
             // No local `--elev-border`/`--elev-bg` override anymore: Atom
             // used to force its own teal/blue material here regardless of
             // the active site theme, specifically so it wouldn't blend into
@@ -822,14 +833,22 @@ export function AssistantWidget() {
             // other `glass-surface-elevated` on the site does, so it looks
             // like the rest of the app (near-black Ink, or warm Paper),
             // rather than its own thing.
-            className="relative h-[min(70vh,560px)] w-[min(92vw,380px)] overflow-hidden rounded-3xl text-primary"
-            style={{ boxShadow: `var(--neu-raised-high), ${AI_HALO}` }}
+            className="relative h-[min(70vh,560px)] w-[min(92vw,380px)] rounded-3xl text-primary"
             role="dialog"
             aria-label="Chat with Atom"
             // Lenis (marketing smooth scroll) hijacks wheel events window-wide;
             // this tells it to leave scrolling inside the panel alone.
             data-lenis-prevent
           >
+            {/* The pointer under the window, aimed at the Ask AI button that opened it. */}
+            {anchor && (
+              <span
+                aria-hidden
+                className="absolute -bottom-1.5 h-3.5 w-3.5 rotate-45 rounded-[3px] bg-neu-base shadow-[1px_1px_0_0_rgb(var(--border))]"
+                style={{ left: Math.min(anchor.width / 2, 40) - 7 }}
+              />
+            )}
+            <div className="absolute inset-0 overflow-hidden rounded-3xl">
             <AiBorder rounded="rounded-3xl" glow surface="bg-neu-base" />
             <div className="relative z-10 flex h-full min-w-0 flex-col">
             {/* Used to carry a mobile-only teal→blue wash here, echoing the
@@ -864,20 +883,7 @@ export function AssistantWidget() {
             <div data-lenis-prevent className="min-w-0 flex-1 space-y-3 overflow-y-auto overscroll-contain p-4">
               {!inSupportMode && messages.length === 0 && (
                 <>
-                  <p className="text-small text-slate-400">
-                    Hi, I&apos;m Atom. Ask me about pricing, booking a class, policies, or anything else about Bass Note
-                    Piano.
-                  </p>
-                  {/* The notice a visitor should see BEFORE typing: what Atom is, where the words go, and what is kept. Mirrors the
-                      privacy policy (components/legal/PrivacyContent.tsx), so change them together. */}
-                  <p className="rounded-xl bg-neu-base p-3 text-small leading-relaxed text-slate-400 shadow-pressed-low">
-                    Atom is an AI assistant and can be wrong. What you type is sent to Google to write the reply, so please do not share
-                    passwords or card numbers. If you are signed in, your chats are saved to your account for 30 days. If you ask for our team,
-                    the conversation is shared with them.{" "}
-                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-medium text-slate-200 underline underline-offset-2">
-                      Privacy policy<span className="sr-only"> (opens in a new tab)</span>
-                    </a>
-                  </p>
+                  <p className="text-small text-slate-400">Hi, I&apos;m Atom. Ask me anything about Bass Note Piano.</p>
                 </>
               )}
 
@@ -1046,12 +1052,19 @@ export function AssistantWidget() {
                 {loading ? <MorphingSquare size={16} /> : <ArrowRight className="size-4" />}
               </GenerateAIButton>
             </form>
-            <p className="border-t border-border px-4 py-1.5 text-center text-small leading-snug text-slate-400">
-              {inSupportMode ? "This chat is saved so our team can read it and reply." : "AI assistant. Do not share passwords or card numbers."}{" "}
-              <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-slate-300">
-                Privacy<span className="sr-only"> policy (opens in a new tab)</span>
-              </a>
-            </p>
+            {/* The one line always shown before anyone types; the rest of the notice (what Atom is, where the words go, what is kept)
+                is behind the "i". Mirrors the privacy policy (components/legal/PrivacyContent.tsx), so change them together. */}
+            <div className="flex items-center justify-center gap-1 border-t border-border px-4 py-1 text-center text-small leading-snug text-slate-400">
+              <span>{inSupportMode ? "This chat is saved so our team can read it and reply." : "AI assistant. Don't share passwords or card numbers."}</span>
+              <Hint label="About Atom and your privacy" side="top" align="right">
+                Atom is an AI assistant and can be wrong. What you type is sent to Google to write the reply. If you are signed in, your chats
+                are saved to your account for 30 days. If you ask for our team, the conversation is shared with them.{" "}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2">
+                  Privacy policy<span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              </Hint>
+            </div>
+            </div>
             </div>
           </motion.div>
         )}

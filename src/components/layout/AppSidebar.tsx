@@ -77,6 +77,12 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin, adminB
 
   // The selector: one pane of Liquid Glass that glides to whichever page is open (it follows the row as the sidebar opens, closes or scrolls).
   const navRef = useRef<HTMLElement>(null);
+  // Atom's chat opens just above this button and points at it.
+  const askRef = useRef<HTMLDivElement>(null);
+  const askAtom = () => {
+    const r = askRef.current?.getBoundingClientRect();
+    openAtom(r ? { left: r.left, top: r.top, width: r.width } : undefined);
+  };
   const [sel, setSel] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
   useEffect(() => {
     const nav = navRef.current;
@@ -177,15 +183,18 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin, adminB
       ))}
 
       {/* Discord invitation (until linked), next class, streak, admin counts and the rest: one card at a time. */}
-      <SidebarSpotlight initial={cards} isAdmin={isAdmin} />
+      {/* The admin's cards live in the alerts window by the profile picture: this space holds the admin sections instead. */}
+      {!isAdmin && <SidebarSpotlight initial={cards} isAdmin={false} />}
 
       {/* Ask AI at the foot of the sidebar (search and the light/dark switch are in the top bar): the same Ask AI pill as in the top
           bar (orbiting orange ring, sparkle), just as wide as the sidebar. */}
       <div className="sb-tools sticky bottom-0 mt-auto pt-1">
         {!atomHiddenOn(pathname) && (
-        <GenerateAIButton calm ariaLabel="Ask AI" onClick={openAtom} className="sb-item tap h-10 w-full px-3">
-          <span className="sb-label">Ask AI</span>
-        </GenerateAIButton>
+        <div ref={askRef}>
+          <GenerateAIButton calm ariaLabel="Ask AI" onClick={askAtom} className="sb-item tap h-10 w-full px-3">
+            <span className="sb-label">Ask AI</span>
+          </GenerateAIButton>
+        </div>
         )}
       </div>
     </nav>

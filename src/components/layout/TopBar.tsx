@@ -10,6 +10,8 @@ import { FriendsTopLink } from "./FriendsTopLink";
 import { isOwnerEmail } from "@/lib/adminNotifications";
 import { AskAiButton } from "./AskAiButton";
 import { TopBarTools } from "./TopBarTools";
+import { AdminAlertsButton } from "./AdminAlertsButton";
+import type { SidebarCard } from "@/lib/sidebarCards";
 import { CreditsBadge } from "./CreditsBadge";
 import { StreakBadge } from "./StreakBadge";
 import { BrandMark } from "./BrandMark";
@@ -48,7 +50,7 @@ async function ProfileAvatarLink({ isAdmin }: { isAdmin: boolean }) {
   );
 }
 
-export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolean }) {
+export function TopBar({ isAdmin, isOwner, alertCards = [] }: { isAdmin: boolean; isOwner: boolean; alertCards?: SidebarCard[] }) {
   // fixed, not in-flow: this used to be a plain flex child (relative z-30)
   // that never scrolled away purely because it sat outside `<main>`'s own
   // scroll area in `(dashboard)/layout.tsx`, structurally sound, but a
@@ -133,6 +135,8 @@ export function TopBar({ isAdmin, isOwner }: { isAdmin: boolean; isOwner: boolea
             navigation first. */}
         {isOwner && <AdminAttendanceQuickPanel />}
         <NotificationBell />
+        {/* The admin's alerts (Discord, stopped jobs, what is waiting), right before the profile picture. */}
+        {isAdmin && <AdminAlertsButton cards={alertCards} />}
         </div>
         <ProfileAvatarLink isAdmin={isAdmin} />
         </div>

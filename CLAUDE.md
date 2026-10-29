@@ -359,8 +359,12 @@ and the practice repeat minutes no longer set the timing (the slots do); `phone.
   bills) carries a signed link (`src/lib/unsubscribe.ts`, HMAC of user + category, no sign-in) to `/unsubscribe` (a page that only asks) and a `List-Unsubscribe`
   one-click POST header to `/api/unsubscribe` (the only thing that changes a switch). Sign-in codes, security alerts, the welcome email, applicant replies and owner
   emails carry none, on purpose. Pass `unsubscribe: { userId, category }` when adding a new email of that kind.
-- **Atom** shows what it is and what is kept before anyone types (the empty-state paragraph and the footer line in `AssistantWidget.tsx`); keep it in step with
-  `PrivacyContent.tsx` and the privacy summary in `assistant.ts`.
+- **Atom** shows one warning line before anyone types (the footer: "AI assistant. Don't share passwords or card numbers.") and the rest of the
+  notice (what Atom is, that words go to Google, 30-day history, shared with the team on handoff) behind the "i" next to it, in `AssistantWidget.tsx`; keep it
+  in step with `PrivacyContent.tsx` and the privacy summary in `assistant.ts`. Opened from the sidebar's Ask AI on a computer, the window sits above that
+  button with a pointer (`openAtom(anchor)`).
+- **Admin alerts**: an admin's sidebar holds the admin sections, so their spotlight cards (Discord, stopped jobs, waiting counts, today's classes) live in the
+  alerts button by the profile picture (`AdminAlertsButton`, `SidebarSpotlight mode="list"`); students keep the cards at the foot of the sidebar.
 - **Accessibility**: run axe-core (WCAG 2.2 AA + best-practice) against the signed-out pages, Home, Lessons, Settings, Billing and the admin screens after UI changes.
   Custom modals must use `useDialogFocus` (focus in, Tab trapped, Escape, focus back). Never put `aria-label` on a bare `p`/`span` without a role; icon targets are at
   least 24px; links inside running text are underlined.
