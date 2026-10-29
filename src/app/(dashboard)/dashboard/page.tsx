@@ -297,8 +297,6 @@ export default async function DashboardPage() {
     </Card>
   );
 
-  // Wide screens: the left column in the finance-mockup style (hero card, three mini stats, a thick progress bar, a dark card and an
-  // orange card). Phones keep the swipeable card deck above; every action here is one the deck has too.
   return (
     <WideLayout>
       {/* grid-cols-1, not an automatic column: an automatic one grows to its widest unbreakable content, and the one-line scale titles in List view made the whole page wider than the phone. */}
@@ -308,10 +306,10 @@ export default async function DashboardPage() {
           <TodayGreeting name={user?.name ?? null} className="relative z-(--z-mid)" />
         </div>
 
-        {/* ---- The cards as one swipeable deck, on phones and computers alike. Finger practice is
+        {/* ---- Phones: the cards as one swipeable deck. Finger practice is
             first: it is the thing to do today, and it unlocks the scales. --- */}
         <CardDeck
-          className="mx-auto w-full max-w-2xl"
+          className="md:hidden"
           label="Your home cards"
           labels={[...(showGettingStarted ? ["Get started"] : []), "Your next step", "Finger practice", "Next class", "This week", "Progress"]}
         >
@@ -322,6 +320,21 @@ export default async function DashboardPage() {
           {weekCard()}
           {progressCard()}
         </CardDeck>
+
+        {/* ---- Desktop: what to do on the left, what is coming on the right (like the reference's main area and side panel).
+            Below xl it is one band of cards. From xl the next class, the week and progress stack in a right column. ---- */}
+        <div className="hidden md:block xl:grid xl:grid-cols-[minmax(0,1fr)_21rem] xl:items-start xl:gap-6">
+          <div className="grid min-w-0 gap-3 md:grid-cols-2 [&>*>*]:h-full">
+            {showGettingStarted && <div className="md:col-span-2">{gettingStartedCard()}</div>}
+            <div className="md:col-span-2">{nextStepCard()}</div>
+            <div className="md:col-span-2">{practiceCard()}</div>
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-3 xl:mt-0 xl:grid-cols-1 [&>*>*]:h-full">
+            <div>{nextClassCard()}</div>
+            <div>{weekCard()}</div>
+            <div>{progressCard()}</div>
+          </div>
+        </div>
 
         <TeacherNotesCard studentId={session.user.id} />
 
