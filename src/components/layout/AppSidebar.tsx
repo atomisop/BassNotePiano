@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Map, Music2, CalendarCheck, Users, MessageSquare, User, Settings, Globe, ArrowUpRight, Search, Sun, Moon, type LucideIcon } from "lucide-react";
+import { Home, Map, Music2, Trophy, CalendarCheck, Users, MessageSquare, User, Settings, Globe, ArrowUpRight, Search, Sun, Moon, type LucideIcon } from "lucide-react";
 import { useUnreadMessages } from "@/lib/useUnreadMessages";
 import { SidebarSpotlight } from "@/components/layout/SidebarSpotlight";
 import type { SidebarCard } from "@/lib/sidebarCards";
@@ -32,6 +32,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
     items: [
       { href: "/friends", label: "Friends", icon: Users },
       { href: "/messages", label: "Messages", icon: MessageSquare, dataTour: "nav-messages" },
+      { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
     ],
   },
   {

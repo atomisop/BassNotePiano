@@ -171,11 +171,11 @@ enum FamilyGroupKind {
 }
 
 model FamilyPlanGroup {
-  id        String   @id @default(cuid())
+  id        String          @id @default(cuid())
   kind      FamilyGroupKind @default(FAMILY)
   payerId   String
-  payer     User     @relation("FamilyPlanPayer", fields: [payerId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  payer     User            @relation("FamilyPlanPayer", fields: [payerId], references: [id], onDelete: Cascade)
+  createdAt DateTime        @default(now())
 
   // When the payer was already on a solo plan: that plan keeps running untouched until the family's combined first payment is
   // approved, and only then is it cancelled and replaced by the payer's family plan (same transaction, same weekly time).
@@ -868,7 +868,11 @@ model User {
   // As of the live-class-only model, hasCurriculumAccess is no longer set by
   // any purchase: it's the admin's complimentary override only. Real access
   // is derived from an active Payment Plan (src/lib/entitlement.ts).
-  hasCurriculumAccess  Boolean   @default(false)
+  hasCurriculumAccess Boolean @default(false)
+
+  // The studio leaderboard (weekly practice minutes) lists everyone except the admin, banned accounts and anyone who turned this
+  // on in Settings > Privacy.
+  hideFromLeaderboard  Boolean   @default(false)
   curriculumUnlockedAt DateTime?
 
   // Set once when a class application is approved (3 days out). Never

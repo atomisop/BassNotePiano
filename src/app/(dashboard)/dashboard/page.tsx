@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, Flame, Lightbulb, Map, Users, Video } from "lucide-react";
+import { ArrowRight, Flame, Lightbulb, Map, Trophy, Users, Video } from "lucide-react";
 import { getServerAuthSession } from "@/lib/auth";
 import { getHomeData } from "@/lib/homeData";
+import { getWeeklyLeaderboard } from "@/lib/leaderboard";
+import { topWithMe } from "@/lib/leaderboardRules";
+import { LeaderboardRows } from "@/components/home/LeaderboardRows";
 import { DAILY_GOAL_SECONDS } from "@/lib/fingerPractice";
 import { WEEKLY_GOAL_MINUTES } from "@/lib/homeRules";
 import { formatEtDateTime } from "@/lib/classScheduleLabels";
@@ -86,6 +89,8 @@ export default async function HomePage() {
   }
 
   const { practice, nextClass } = data;
+  const board = await getWeeklyLeaderboard(session.user.id);
+  const { top, me } = topWithMe(board.rows, 5, session.user.id);
   const joinNow = nextClass !== null && !nextClass.inPerson && (nextClass.scheduledAt.getTime() - Date.now()) / 60_000 <= 30;
   const classLength = nextClass ? Math.round((nextClass.creditsSpent / CREDITS_PER_CLASS) * CLASS_MINUTES) : CLASS_MINUTES;
 
@@ -133,7 +138,7 @@ export default async function HomePage() {
             />
             </div>
 
-            <TipCard tip={data.tip} className="order-5" />
+            <TipCard tip={data.tip} className="order-6" />
           </div>
 
           <div className="contents min-w-0 lg:grid lg:gap-3">
@@ -199,7 +204,24 @@ export default async function HomePage() {
               )}
             </Card>
 
-            <Card className="order-6 p-5">
+            <Card className="order-5 p-5">
+              <div className="flex items-center justify-between gap-3">
+                <Eyebrow>Leaderboard this week</Eyebrow>
+                <Trophy aria-hidden className="h-4 w-4 text-slate-400" />
+              </div>
+              {top.length > 0 ? (
+                <div className="mt-3">
+                  <LeaderboardRows rows={me ? [...top, me] : top} viewerId={session.user.id} compact />
+                </div>
+              ) : (
+                <p className="mt-2 text-body text-slate-300">Nobody has practiced yet this week. Be the first.</p>
+              )}
+              <Link href="/leaderboard" className="tap mt-3 inline-flex items-center gap-1.5 text-small font-semibold text-slate-300 underline-offset-4 hover:text-slate-50 hover:underline">
+                See the whole board
+              </Link>
+            </Card>
+
+            <Card className="order-7 p-5">
               <Eyebrow>Friends</Eyebrow>
               {data.friendsPracticing.length > 0 ? (
                 <p className="mt-2 text-body text-slate-100">

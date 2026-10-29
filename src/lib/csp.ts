@@ -51,7 +51,7 @@ export function buildStrictCsp(nonce: string, isDev: boolean, env: CspEnv): stri
 }
 
 /** Pages that need a signed-in session (the old middleware matcher): a prefix, or exactly /about and /onboarding. */
-const PROTECTED_PREFIXES = ["/dashboard", "/scales", "/admin", "/billing", "/account", "/friends", "/messages", "/lessons", "/practice", "/profile", "/mail", "/parent", "/roadmap", "/streak"];
+const PROTECTED_PREFIXES = ["/dashboard", "/scales", "/admin", "/billing", "/account", "/friends", "/messages", "/lessons", "/practice", "/profile", "/mail", "/parent", "/roadmap", "/streak", "/leaderboard"];
 const PROTECTED_EXACT = ["/about", "/onboarding"];
 
 export function isProtectedPath(pathname: string): boolean {

@@ -37,6 +37,7 @@ export default async function AccountPage() {
         notifyEmailClasses: true,
         role: true,
         totpEnabledAt: true,
+        hideFromLeaderboard: true,
       },
     }),
     loadPersistedHistory(session.user.id),
@@ -61,6 +62,7 @@ export default async function AccountPage() {
           verifyMode: await phoneVerifyMode(),
         },
         discordUsername: discordLinkState({ discordId: user.discordId, discordUsername: user.discordUsername }).name,
+        leaderboardHidden: user.hideFromLeaderboard,
       }}
       hasCurriculumAccess={session.user.hasCurriculumAccess}
       twoStep={user.role === "ADMIN" ? { enabled: Boolean(user.totpEnabledAt), backupLeft: user.totpEnabledAt ? await unusedBackupCodeCount(session.user.id) : 0 } : null}
