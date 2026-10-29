@@ -4,7 +4,9 @@ import { getCustomerProfile } from "@/lib/adminCustomer";
 import { CustomerProfile } from "@/components/admin/CustomerProfile";
 import { setCurriculumAccessAction, toggleScaleUnlockAction, clearAssistantHistoryAction, setUserRoleAction } from "../actions";
 import { adjustUserCreditsAction } from "../../payments/credit-actions";
-import { adminCancelBookingAction } from "../../schedule/actions";
+import { adminCancelBookingAction, adminMoveBookingAction, adminMoveBookingToTimeAction, adminBookClassAction } from "../../schedule/actions";
+import { getUpcomingOccurrences } from "@/lib/classSchedule";
+import { StudentScheduler } from "@/components/admin/StudentScheduler";
 import { adminClearPhoneAction, adminForceSignOutAction, banUserAction, forgetPayerNameAction, unbanUserAction } from "./actions";
 import { BackLink } from "@/components/ui/BackLink";
 import { prisma } from "@/lib/prisma";
@@ -25,25 +27,31 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
 
   // The at-a-glance strip and the change log: the first questions after "who is this?" are plan, credits, next class,
   // Discord, last seen, and what an admin already changed on the account.
-  const [plan, discord, changes] = await Promise.all([
+  const [plan, discord, changes, openOccurrences] = await Promise.all([
     prisma.paymentPlan.findFirst({ where: { userId: params.userId, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, select: { id: true, cadence: true, term: true, nextDueDate: true, familyGroupId: true, pausedAt: true, pauseUntil: true, reservedScheduleId: true } }),
     prisma.user.findUnique({ where: { id: params.userId }, select: { discordId: true, discordUsername: true } }),
     prisma.auditLog.findMany({ where: { targetId: params.userId }, orderBy: { createdAt: "desc" }, take: 8 }),
+    getUpcomingOccurrences(),
   ]);
   const nextBooking = profile.bookings.filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > Date.now()).sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())[0];
   const planPaused = plan ? isPausedNow(plan, new Date()) : false;
+  const upcoming = profile.bookings
+    .filter((b) => b.status === "SCHEDULED" && b.scheduledAt.getTime() > Date.now())
+    .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime());
+  const openSlots = openOccurrences
+    .filter((o) => !o.isBooked)
+    .map((o) => ({ scheduleId: o.scheduleId, occurrenceDateMs: o.occurrenceDate.getTime(), chunkIndex: o.chunkIndex, label: o.label, scheduledAt: o.scheduledAt.toISOString(), creditCost: o.creditCost }));
+  const planControls =
+    plan && !plan.familyGroupId ? (
+      <>
+        <AdminPausePlanButton planId={plan.id} state={{ paused: planPaused, until: plan.pauseUntil && !isIndefinitePause(plan) ? plan.pauseUntil.toISOString() : null }} />
+        {plan.reservedScheduleId && <AdminMovePlanTimeButton planId={plan.id} />}
+      </>
+    ) : null;
   const facts: { label: string; value: string; warn?: boolean; extra?: ReactNode }[] = [
     {
       label: "Plan",
       value: plan ? describePaymentPlan(plan.cadence, plan.term) : "None",
-      extra:
-        plan && !plan.familyGroupId ? (
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            {!planPaused && <span className="inline-block rounded-full bg-emerald-400/15 px-2 py-0.5 text-small font-medium uppercase tracking-wide text-emerald-300">Active</span>}
-            <AdminPausePlanButton planId={plan.id} state={{ paused: planPaused, until: plan.pauseUntil && !isIndefinitePause(plan) ? plan.pauseUntil.toISOString() : null }} compact />
-            {plan.reservedScheduleId && <AdminMovePlanTimeButton planId={plan.id} compact />}
-          </div>
-        ) : null,
     },
     { label: "Next bill", value: plan && planPaused && isIndefinitePause(plan) ? "Paused" : plan ? when(plan.nextDueDate).replace(/, \d+:\d+ [AP]M$/, "") : "None", warn: !!plan && plan.nextDueDate.getTime() < Date.now() },
     { label: "Credits", value: formatCredits(storedToCredits(profile.user.classCredits)) },
@@ -74,6 +82,19 @@ export default async function AdminCustomerPage(props: { params: Promise<{ userI
       <div className="mt-6">
         <CustomerProfile
           profile={profile}
+          scheduler={
+            <StudentScheduler
+              studentId={params.userId}
+              studentName={profile.user.name ?? profile.user.email}
+              upcoming={upcoming.map((b) => ({ id: b.id, label: b.schedule.label, scheduledAt: b.scheduledAt.toISOString(), creditsSpent: b.creditsSpent }))}
+              openSlots={openSlots}
+              planControls={planControls}
+              onMove={adminMoveBookingAction}
+              onMoveToTime={adminMoveBookingToTimeAction}
+              onCancel={adminCancelBookingAction}
+              onBook={adminBookClassAction}
+            />
+          }
           changeLog={
             changes.length > 0 ? (
               <section className="glass-surface p-5">

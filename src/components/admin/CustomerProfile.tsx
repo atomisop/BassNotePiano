@@ -18,6 +18,8 @@ export interface CustomerProfileProps {
   profile: CustomerProfileData;
   /** Shown at the bottom of the Support tab (the changes admins made on this account). */
   changeLog?: React.ReactNode;
+  /** The Scheduler tab: this student's classes, booking and weekly time (built by the page). */
+  scheduler?: React.ReactNode;
   onSetCurriculumAccess: (userId: string, hasAccess: boolean) => Promise<void>;
   onToggleScale: (userId: string, scaleSlug: string, unlock: boolean) => Promise<void>;
   onClearAssistantHistory: (userId: string) => Promise<void>;
@@ -120,11 +122,12 @@ function PracticeStrip({ practice }: { practice: CustomerProfileData["practice"]
   );
 }
 
-type ProfileTab = "overview" | "learning" | "classes" | "money" | "support";
+type ProfileTab = "overview" | "learning" | "classes" | "scheduler" | "money" | "support";
 const PROFILE_TABS: { id: ProfileTab; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "learning", label: "Learning" },
   { id: "classes", label: "Classes" },
+  { id: "scheduler", label: "Scheduler" },
   { id: "money", label: "Money" },
   { id: "support", label: "Support" },
 ];
@@ -136,6 +139,7 @@ function Empty({ children }: { children: React.ReactNode }) {
 export function CustomerProfile({
   profile,
   changeLog,
+  scheduler,
   onSetCurriculumAccess,
   onToggleScale,
   onClearAssistantHistory,
@@ -625,65 +629,6 @@ export function CustomerProfile({
             )}
             {creditSuccess && <p className="mt-2 text-small text-slate-50">{creditSuccess}</p>}
 
-            <div className="mt-5 border-t border-ink/10 pt-4">
-              <p className="text-small font-medium uppercase tracking-wide text-slate-500">Upcoming bookings</p>
-              <div className="mt-2 space-y-2">
-                {upcomingBookings.length === 0 && <Empty>No upcoming bookings.</Empty>}
-                {upcomingBookings.map((b) => (
-                  <div key={b.id} className="rounded-xl p-3 bg-neu-base shadow-raised-low">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <p className="text-small text-slate-100">{b.schedule.label ?? "Class"}</p>
-                        <p className="text-small text-slate-500">
-                          {formatDateTime(b.scheduledAt)} · {creditsLabelFromStored(b.creditsSpent)}
-                        </p>
-                      </div>
-                      {cancelingBookingId === b.id ? (
-                        <div className="flex w-full flex-col gap-2 border-t border-ink/10 pt-2">
-                          <input
-                            type="text"
-                            autoFocus
-                            value={cancelReason}
-                            onChange={(e) => setCancelReason(e.target.value)}
-                            placeholder="Reason (optional, shown to the student)"
-                            className="w-full glass-surface-subtle px-3 py-2 text-body text-slate-100 outline-none transition focus:border-red-400/60"
-                          />
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCancelingBookingId(null);
-                                setCancelReason("");
-                              }}
-                              className="tap flex-1 rounded-lg py-1.5 text-small font-medium text-slate-300 transition bg-neu-base shadow-raised-low hover:shadow-raised-mid active:shadow-pressed-low"
-                            >
-                              Never mind
-                            </button>
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => handleCancelBooking(b.id)}
-                              className="tap flex-1 rounded-lg bg-red-500/95 py-1.5 text-small font-semibold text-slate-950 transition hover:bg-red-500 disabled:opacity-50 shadow-raised-low active:shadow-pressed-low hover:shadow-raised-mid"
-                            >
-                              Confirm cancel & refund
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setCancelingBookingId(b.id)}
-                          className={buttonVariants({ variant: "secondary", size: "sm", className: "shrink-0" })}
-                        >
-                          Cancel booking
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {pastBookings.length > 0 && (
               <div className="mt-5 border-t border-ink/10 pt-4">
                 <p className="text-small font-medium uppercase tracking-wide text-slate-500">Past bookings</p>
@@ -713,6 +658,10 @@ export function CustomerProfile({
             )}
           </SectionCard>
 
+        </div>
+
+        <div hidden={tab !== "scheduler"} className="space-y-5">
+          {scheduler}
         </div>
 
         <div hidden={tab !== "money"} className="space-y-5">

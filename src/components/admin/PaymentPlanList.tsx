@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { AdminListSearch, matchesQuery } from "@/components/admin/AdminListSearch";
 
 import { useState } from "react";
@@ -8,8 +9,6 @@ import type { AdminPaymentPlan } from "@/lib/paymentPlans";
 import { describePaymentPlan } from "@/lib/classCreditPricing";
 import { MorphingSquare } from "@/components/ui/morphing-square";
 import { buttonVariants } from "@/components/ui/button";
-import { AdminPausePlanButton } from "@/components/admin/AdminPausePlanButton";
-import { AdminMovePlanTimeButton } from "@/components/admin/AdminMovePlanTimeButton";
 import { isIndefinitePause, isPausedNow } from "@/lib/planPause";
 
 export interface PaymentPlanListProps {
@@ -151,13 +150,10 @@ export function PaymentPlanList({ plans, onCancel, onRecordPayment, onResendBill
                   {STATUS_LABEL[plan.status]}
                 </span>
               )}
-              {plan.status === "ACTIVE" && plan.reservedScheduleId && <AdminMovePlanTimeButton planId={plan.id} compact />}
-              {plan.status === "ACTIVE" && !plan.familyGroupId && (
-                <AdminPausePlanButton
-                  planId={plan.id}
-                  state={{ paused: isPausedNow(plan, new Date()), until: plan.pauseUntil && !isIndefinitePause(plan) ? new Date(plan.pauseUntil).toISOString() : null }}
-                  compact
-                />
+              {plan.status === "ACTIVE" && (
+                <Link href={`/admin/users/${plan.user.id}#scheduler`} className="tap inline-flex items-center text-small font-medium text-[rgb(var(--c-s-50))] underline underline-offset-4">
+                  Scheduler
+                </Link>
               )}
               {plan.isOverdue && (
                 <span className="inline-block rounded-full bg-red-400/15 px-2.5 py-1 text-small font-medium uppercase tracking-wide text-red-300">

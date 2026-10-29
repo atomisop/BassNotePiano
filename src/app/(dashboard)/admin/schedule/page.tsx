@@ -7,8 +7,6 @@ import { AdminAttendanceRoster } from "@/components/admin/AdminAttendanceRoster"
 import { AdminAttendanceByStudent } from "@/components/admin/AdminAttendanceByStudent";
 import { AdminFilterTabs } from "@/components/admin/AdminFilterTabs";
 import { teacherCalendarToken } from "@/lib/teacherCalendar";
-import { AdminManualBooking } from "@/components/admin/AdminManualBooking";
-import { getActiveHolds } from "@/lib/contacts";
 import {
   createClassScheduleAction,
   updateClassScheduleAction,
@@ -16,18 +14,14 @@ import {
   markAttendanceAction,
   undoAttendanceAction,
   adminCancelBookingAction,
-  adminMoveBookingAction,
-  adminMoveBookingToTimeAction,
   setClassInPersonAction,
-  searchStudentsForBookingAction,
-  adminBookClassAction,
 } from "./actions";
 import { buttonVariants } from "@/components/ui/button";
 import { TAB_TRACK, tabItem } from "@/components/ui/tabStyles";
 import { AdminReservations } from "@/components/admin/AdminReservations";
 import { getReservableHours, listOwnerReservations } from "@/lib/ownerReservationsAdmin";
 
-type ViewValue = "WINDOWS" | "BOOKINGS" | "ATTENDANCE" | "RESERVED";
+type ViewValue = "WINDOWS" | "ATTENDANCE" | "RESERVED";
 
 // Bookings and attendance used to be one combined view here (and, before
 // that, their own top-level /admin/bookings tab), split into their own
@@ -37,7 +31,6 @@ type ViewValue = "WINDOWS" | "BOOKINGS" | "ATTENDANCE" | "RESERVED";
 // reach the booking tool (or vice versa) got in the way of both.
 const VIEWS: { label: string; value: ViewValue }[] = [
   { label: "Times", value: "WINDOWS" },
-  { label: "Bookings", value: "BOOKINGS" },
   { label: "Attendance", value: "ATTENDANCE" },
   { label: "Reserved", value: "RESERVED" },
 ];
@@ -63,37 +56,6 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
     </div>
   );
 
-  if (activeView === "BOOKINGS") {
-    const upcoming = await getUpcomingOccurrences();
-    const openOccurrences = upcoming.filter((o) => !o.isBooked);
-    const holds = await getActiveHolds();
-
-    return (
-      <div>
-        <p className="text-small font-medium uppercase tracking-[0.2em] text-[rgb(var(--c-s-50)/0.8)]">Admin</p>
-        <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Weekly schedule</h1>
-
-        {viewSwitcher}
-
-        <div className="mt-6">
-          <AdminManualBooking
-            holds={holds.map((h) => ({ contactId: h.contactId, contactName: h.contactName, scheduleId: h.scheduleId, chunkIndex: h.chunkIndex, untilMs: h.untilMs }))}
-            openOccurrences={openOccurrences.map((o) => ({
-              scheduleId: o.scheduleId,
-              occurrenceDateMs: o.occurrenceDate.getTime(),
-              chunkIndex: o.chunkIndex,
-              label: o.label,
-              scheduledAt: o.scheduledAt.toISOString(),
-              creditCost: o.creditCost,
-            }))}
-            onSearchStudents={searchStudentsForBookingAction}
-            onBook={adminBookClassAction}
-          />
-        </div>
-      </div>
-    );
-  }
-
   if (activeView === "RESERVED") {
     const [hours, reservations] = await Promise.all([getReservableHours(), listOwnerReservations()]);
     return (
@@ -112,10 +74,6 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
 
   if (activeView === "ATTENDANCE") {
     const occurrences = await getAdminOccurrences();
-    // Open times a class can be moved to, in the same one screen as the roster.
-    const openSlots = (await getUpcomingOccurrences())
-      .filter((o) => !o.isBooked)
-      .map((o) => ({ scheduleId: o.scheduleId, occurrenceDateMs: o.occurrenceDate.getTime(), chunkIndex: o.chunkIndex, label: o.label, scheduledAt: o.scheduledAt.toISOString() }));
     const byStudent = searchParams.group === "student";
 
     return (
@@ -152,9 +110,6 @@ export default async function AdminSchedulePage(props: { searchParams: Promise<{
             }))}
             onMarkAttendance={markAttendanceAction}
             onCancelBooking={adminCancelBookingAction}
-            openSlots={openSlots}
-            onMoveBooking={adminMoveBookingAction}
-            onMoveBookingToTime={adminMoveBookingToTimeAction}
             onSetInPerson={setClassInPersonAction}
             onUndoAttendance={undoAttendanceAction}
           />
