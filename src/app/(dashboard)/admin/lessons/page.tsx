@@ -22,7 +22,7 @@ export default async function AdminLessonsPage(props: { searchParams: Promise<{ 
       <h1 className="font-hero text-hero font-bold text-balance mt-1.5 text-slate-50">Lessons</h1>
 
       {!storageConfigured && (
-        <div className="mt-6 rounded-xl border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-4 py-3 text-small text-[rgb(var(--c-s-50))]">
+        <div className="mt-6 rounded-xl border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low px-4 py-3 text-small text-[rgb(var(--c-s-50))]">
           Object storage isn&apos;t configured. Set the <code className="font-mono text-small">R2_*</code> env vars
           before uploading.
         </div>

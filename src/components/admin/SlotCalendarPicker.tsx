@@ -44,6 +44,7 @@ function todayEtMs(): number {
 export function SlotCalendarPicker({
   slots,
   booked,
+  weekdays,
   allowAnyDay,
   day,
   onDay,
@@ -55,6 +56,8 @@ export function SlotCalendarPicker({
   slots: PickerSlot[];
   /** Classes already booked, shown on the chosen day so a custom time can be picked around them. */
   booked: BookedTime[];
+  /** Weekdays the studio teaches (0 = Sunday). With `allowAnyDay`, only these days light up, so a class is never moved to a day you do not teach. */
+  weekdays: number[];
   allowAnyDay: boolean;
   day: string | null;
   onDay: (key: string | null) => void;
@@ -66,8 +69,10 @@ export function SlotCalendarPicker({
   const occurrences = useMemo(() => {
     if (!allowAnyDay) return slots.map((s) => ({ occurrenceDateMs: s.occurrenceDateMs, isBooked: false }));
     const start = todayEtMs();
-    return Array.from({ length: 366 }, (_, i) => ({ occurrenceDateMs: start + i * 86_400_000, isBooked: false }));
-  }, [slots, allowAnyDay]);
+    return Array.from({ length: 366 }, (_, i) => start + i * 86_400_000)
+      .filter((ms) => weekdays.includes(new Date(ms).getUTCDay()))
+      .map((ms) => ({ occurrenceDateMs: ms, isBooked: false }));
+  }, [slots, allowAnyDay, weekdays]);
 
   const dayBooked = useMemo(() => (day ? booked.filter((b) => etDay(b.scheduledAt) === day).sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt)) : []), [booked, day]);
   const clash = useMemo(() => {

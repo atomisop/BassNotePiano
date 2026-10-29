@@ -1036,7 +1036,7 @@
     --ground: 0 0 0; /* the page itself: true black, like apple.com's dark bands */
     --neu-base: 22 22 23; /* cards and panels, a step above the ground */
     --neu-lift: 29 29 31;
-    /* Pressables (buttons, chips, toggles) keep the soft light-and-shade depth; cards and pages stay flat (see --flat-lo). */
+    /* Buttons, chips, toggles AND cards share one soft light-and-shade depth (see --neu-raised-*). */
     --neu-hi: rgb(255 255 255 / 0.04);
     --neu-lo: rgb(0 0 0 / 0.55);
     --neu-top: rgb(255 255 255 / 0.05);
@@ -1112,8 +1112,9 @@
     /* Existing plane tokens now read from the neumorphic ones, so every
        card and button that used them follows without editing call sites. */
     --plane-mid-bg: var(--neu-base);
-    --plane-mid-shadow: 0 0 0 1px var(--neu-edge), 0 2px 8px -2px var(--flat-lo);
-    --plane-front-shadow: 0 0 0 1px var(--neu-edge), 0 8px 24px -8px var(--flat-lo);
+    /* Cards are raised, not flat: the same light-and-shade as the buttons, one step larger. */
+    --plane-mid-shadow: var(--neu-raised-mid);
+    --plane-front-shadow: var(--neu-raised-high);
   }
 
   /* The redesign rules apply everywhere by default (set on <body> so
@@ -1795,4 +1796,38 @@ input[type="radio"],
   #app-scroll .grid:not(.no-wave) > :nth-child(10) { animation-delay: 405ms; }
   #app-scroll .grid:not(.no-wave) > :nth-child(11) { animation-delay: 450ms; }
   #app-scroll .grid:not(.no-wave) > :nth-child(12) { animation-delay: 495ms; }
+}
+
+/* ---------------------------------------------------------------------------
+   On-screen keyboard (phones and tablets only). KeyboardAvoider publishes the visible area's size while a field is
+   focused; these squeeze the full-screen shell, panels and sheets into it so the typing box is never hidden, and tuck
+   away the floating bars that would sit on top of the keyboard. Nothing here applies on a computer.
+   --------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  html[data-keyboard="open"] [data-surface="app"],
+  html[data-keyboard="open"] .kb-fit {
+    top: var(--vv-top, 0px) !important;
+    bottom: auto !important;
+    height: var(--vv-height, 100%) !important;
+  }
+  html[data-keyboard="open"] .kb-lift {
+    bottom: var(--kb-height, 0px) !important;
+    max-height: calc(var(--vv-height, 100svh) - 0.75rem) !important;
+  }
+  /* A tablet shows the sheet as a centered modal: center it in the visible area instead of sitting it on the keyboard. */
+  @media (min-width: 768px) {
+    html[data-keyboard="open"] .kb-lift {
+      bottom: auto !important;
+      top: calc(var(--vv-top, 0px) + var(--vv-height, 100svh) / 2) !important;
+    }
+  }
+  html[data-keyboard="open"] .kb-atom {
+    bottom: calc(var(--kb-height, 0px) + 0.75rem) !important;
+  }
+  html[data-keyboard="open"] .kb-atom [aria-label="Chat with Atom"] {
+    height: min(560px, calc(var(--vv-height, 100svh) - 1.5rem)) !important;
+  }
+  html[data-keyboard="open"] .kb-hide {
+    display: none !important;
+  }
 }

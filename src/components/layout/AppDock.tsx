@@ -162,7 +162,7 @@ export function AppDock({ unreadMessageCount: initialUnreadMessageCount }: AppDo
     <div
       role="navigation"
       aria-label="Primary"
-      className="pointer-events-none fixed inset-x-0 bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)-0.25rem))] z-40 flex justify-center px-5"
+      className="kb-hide pointer-events-none fixed inset-x-0 bottom-[max(1.25rem,calc(env(safe-area-inset-bottom)-0.25rem))] z-40 flex justify-center px-5"
     >
       {/* The Instagram-style floating pill: about 53pt tall, 20pt in from each side on a phone (capped on wider screens), five equal
           slots, icons about 22pt, and a lighter capsule behind the page you are on that slides to the next one. Frosted white in the light theme, dark glass in the dark one (the colors come from the theme ramp, so they follow the mode on their own). */}

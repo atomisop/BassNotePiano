@@ -68,7 +68,7 @@ export default function LessonsLoading() {
                       <Skeleton key={i} className="h-8 w-16 rounded-full" />
                     ))}
                   </div>
-                  <ol className="divide-y divide-(--neu-edge) rounded-2xl border border-(--neu-edge)">
+                  <ol className="divide-y divide-(--neu-edge) rounded-2xl bg-neu-base shadow-raised-mid">
                     {Array.from({ length: 7 }).map((_, i) => (
                       <li key={i} className="grid grid-cols-[2.75rem_minmax(0,1fr)] items-center gap-3 px-3 py-3">
                         <div className="flex flex-col items-center gap-1">

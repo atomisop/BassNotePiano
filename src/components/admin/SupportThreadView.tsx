@@ -56,7 +56,7 @@ function MessageRow({ message, visitorLabel }: { message: AdminThreadMessage; vi
           isVisitor
             ? "bg-[rgb(var(--c-s-50))] text-slate-950"
             : message.sender === "SUPPORT"
-              ? "border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.08)] text-slate-100"
+              ? "border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low text-slate-100"
               : "text-slate-300 bg-neu-base shadow-raised-low"
         }`}
       >

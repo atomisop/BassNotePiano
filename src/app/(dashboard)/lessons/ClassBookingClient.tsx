@@ -1006,7 +1006,7 @@ export function ClassBookingClient({
             )}
             {/* The next few booked classes, beside the calendar on a computer (the Upcoming tab still has them all). */}
             {upcoming.length > 0 && (
-              <div className="hidden rounded-2xl border border-(--neu-edge) p-4 lg:block">
+              <div className="hidden rounded-2xl bg-neu-base shadow-raised-mid p-4 lg:block">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-small font-semibold text-slate-50">Upcoming classes</p>
                   <button type="button" onClick={() => setTab("upcoming")} className="text-small text-signal-fg hover:underline">

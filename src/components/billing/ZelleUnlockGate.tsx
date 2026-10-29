@@ -74,7 +74,7 @@ export function ZelleUnlockGate({
   return (
     <>
       {status === "REJECTED" && (
-        <div className="mb-4 rounded-xl border border-red-400/20 bg-red-400/5 p-4 text-small text-red-300">
+        <div className="mb-4 rounded-xl border border-red-400/20 bg-neu-base shadow-pressed-low p-4 text-small text-red-300">
           Your last submission couldn&apos;t be verified{rejectionReason ? `: ${rejectionReason}` : "."} Double-check
           the reference code and try again.
         </div>

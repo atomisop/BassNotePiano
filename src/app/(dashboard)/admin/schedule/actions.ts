@@ -107,7 +107,7 @@ export async function adminCancelBookingAction(bookingId: string, reason?: strin
  */
 export async function getOpenSlotsAction() {
   await requireAdmin();
-  const [upcoming, booked] = await Promise.all([
+  const [upcoming, booked, windows] = await Promise.all([
     getUpcomingOccurrences(),
     prisma.classBooking.findMany({
       where: { status: "SCHEDULED", scheduledAt: { gte: new Date(), lte: new Date(Date.now() + 400 * 86_400_000) } },
@@ -115,8 +115,11 @@ export async function getOpenSlotsAction() {
       orderBy: { scheduledAt: "asc" },
       take: 1000,
     }),
+    prisma.classSchedule.findMany({ where: { active: true }, select: { dayOfWeek: true } }),
   ]);
   return {
+    /** The weekdays the studio teaches (an active weekly window exists), so the calendar lights only those days. */
+    weekdays: Array.from(new Set(windows.map((w) => w.dayOfWeek))),
     open: upcoming
       .filter((o) => !o.isBooked)
       .map((o) => ({ scheduleId: o.scheduleId, occurrenceDateMs: o.occurrenceDate.getTime(), chunkIndex: o.chunkIndex, label: o.label, scheduledAt: o.scheduledAt.toISOString(), creditCost: o.creditCost })),

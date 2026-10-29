@@ -17,7 +17,6 @@ import { StreakDots } from "@/components/gamification/StreakDots";
 import { TodayGreeting } from "@/components/dashboard/TodayGreeting";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Card, Eyebrow } from "@/components/ui/Card";
-import { Chip, HeroCard, LimitCard, MiniStats, ShowCard } from "@/components/dashboard/FinanceCards";
 import { CardDeck } from "@/components/ui/CardDeck";
 import { buttonVariants } from "@/components/ui/button";
 import { getBoolSetting, getNumberSetting } from "@/lib/siteSettings";
@@ -298,55 +297,6 @@ export default async function DashboardPage() {
     </Card>
   );
 
-  // Wide screens: the left column in the finance-mockup style (hero card, three mini stats, a thick progress bar, a dark card and an
-  // orange card). Phones keep the swipeable card deck above; every action here is one the deck has too.
-  const financeColumn = () => (
-    <div className="grid min-w-0 gap-4">
-      <HeroCard
-        eyebrow="Your next step"
-        title={nextStep.action}
-        detail={nextStep.detail}
-        chip={nextStep.scale && nextStep.kind !== "buy-curriculum" ? <Chip tone="orange">{nextStep.scale.scaleGroup.code}</Chip> : undefined}
-        primary={{ href: nextStep.href, label: nextStep.cta }}
-        secondary={nextStep.secondary ? { href: nextStep.secondary.href, label: nextStep.secondary.cta } : { href: "/practice", label: practice.completedToday ? "Practice more" : "Practice" }}
-        primaryQuiet={joinNow}
-      />
-      <MiniStats
-        title="Your numbers"
-        note={`${progress.completedScales} of ${progress.totalScales} scales done`}
-        items={[
-          { label: "Scales", value: `${progress.completedScales}/${progress.totalScales}`, status: progress.completedScales > 0 ? "Moving" : "Starting", on: progress.completedScales > 0 },
-          { label: "Badges", value: String(earnedBadgeCodes.length), status: earnedBadgeCodes.length > 0 ? "Earned" : "None yet", on: earnedBadgeCodes.length > 0 },
-          { label: "Day streak", value: String(streak), status: streak > 0 ? "Active" : "Start today", on: streak > 0 },
-        ]}
-      />
-      <LimitCard
-        title="Finger practice today"
-        done={`${Math.floor(practice.todaySeconds / 60)} min practiced`}
-        goal={`${Math.round(DAILY_GOAL_SECONDS / 60)} min goal`}
-        fraction={practice.todaySeconds / DAILY_GOAL_SECONDS}
-        label="Finger practice today"
-      />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <ShowCard
-          tone="dark"
-          title="Next class"
-          chip={nextClass ? "Booked" : "Open"}
-          big={nextClass ? formatEtDateTime(nextClass.scheduledAt) : "No class booked"}
-          sub={nextClass ? `${untilLabel(nextClass.scheduledAt)}${nextClass.inPerson ? " · In person" : ""}` : "Pick a time that repeats every week"}
-          action={
-            nextClass && joinNow
-              ? { href: nextClass.discordChannelId ? discordChannelUrl(nextClass.discordChannelId) : DISCORD_INVITE_URL, label: "Join on Discord", external: true }
-              : nextClass
-                ? { href: "/lessons", label: "My classes" }
-                : { href: "/lessons", label: "Book a class" }
-          }
-        />
-        <ShowCard tone="orange" title="Credits" chip="Balance" big={`${formatCredits(storedToCredits(user?.classCredits ?? 0))} credits`} sub="One credit is one 45 minute class" action={{ href: "/billing/plans", label: "Plans" }} />
-      </div>
-    </div>
-  );
-
   return (
     <WideLayout>
       {/* grid-cols-1, not an automatic column: an automatic one grows to its widest unbreakable content, and the one-line scale titles in List view made the whole page wider than the phone. */}
@@ -374,11 +324,13 @@ export default async function DashboardPage() {
         {/* ---- Desktop: what to do on the left, what is coming on the right (like the reference's main area and side panel).
             Below xl it is one band of cards. From xl the next class, the week and progress stack in a right column. ---- */}
         <div className="hidden md:block xl:grid xl:grid-cols-[minmax(0,1fr)_21rem] xl:items-start xl:gap-6">
-          <div className="grid min-w-0 gap-4">
-            {showGettingStarted && gettingStartedCard()}
-            {financeColumn()}
+          <div className="grid min-w-0 gap-3 md:grid-cols-2 [&>*>*]:h-full">
+            {showGettingStarted && <div className="md:col-span-2">{gettingStartedCard()}</div>}
+            <div className="md:col-span-2">{nextStepCard()}</div>
+            <div className="md:col-span-2">{practiceCard()}</div>
           </div>
-          <div className="mt-3 grid gap-3 md:grid-cols-2 xl:mt-0 xl:grid-cols-1 [&>*>*]:h-full">
+          <div className="mt-3 grid gap-3 md:grid-cols-3 xl:mt-0 xl:grid-cols-1 [&>*>*]:h-full">
+            <div>{nextClassCard()}</div>
             <div>{weekCard()}</div>
             <div>{progressCard()}</div>
           </div>

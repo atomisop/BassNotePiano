@@ -291,7 +291,7 @@ export function CustomerProfile({
   return (
     <div className="space-y-5">
       {error && (
-        <div className="rounded-xl border border-red-400/30 bg-red-400/10 p-3 text-small text-red-300">{error}</div>
+        <div className="rounded-xl border border-red-400/30 bg-neu-base shadow-pressed-low p-3 text-small text-red-300">{error}</div>
       )}
 
       <Tabs<ProfileTab> label="Sections of this account" items={PROFILE_TABS} value={tab} onChange={chooseTab} />
@@ -301,14 +301,14 @@ export function CustomerProfile({
           {/* Identity + account-level quick actions */}
           <SectionCard title="Account" action={banButton}>
             {user.bannedAt && (
-              <div role="status" className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-small text-red-300">
+              <div role="status" className="mb-4 rounded-xl border border-red-500/40 bg-neu-base shadow-pressed-low p-3 text-small text-red-300">
                 <p className="font-semibold">Permanently banned on {formatDate(user.bannedAt)}. They cannot sign in.</p>
                 {banSummary && <p className="mt-1">Terminated: {banSummary}</p>}
                 {user.bannedReason && <p className="mt-1 text-red-300/80">Your note: {user.bannedReason}</p>}
               </div>
             )}
             {confirmingBan && !user.bannedAt && (
-              <div className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 p-4">
+              <div className="mb-4 rounded-xl border border-red-500/40 bg-neu-base shadow-pressed-low p-4">
                 <p className="text-small font-semibold text-red-300">Permanently ban {user.name ?? user.email}?</p>
                 <p className="mt-1 text-small text-slate-300">
                   This is a termination. They are signed out everywhere and can never sign in again, their payment plan and every booked class are canceled, their trial and free access end, and they are removed from your Discord server. Money they already paid is not touched, and a payment waiting for your review is left for you. They will see a red notice that they have been permanently banned. You can lift the ban later, but the cancellations stay.
@@ -385,7 +385,7 @@ export function CustomerProfile({
 
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink/10 pt-4">
               {pendingAction === "curriculum" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-1.5 text-small text-slate-200">
+                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
                   {user.hasCurriculumAccess
                     ? "Remove complimentary access?"
                     : "Give complimentary curriculum access?"}
@@ -414,7 +414,7 @@ export function CustomerProfile({
               )}
 
               {pendingAction === "role" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-1.5 text-small text-slate-200">
+                <span className="flex items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-slate-200">
                   {user.role === "ADMIN"
                     ? "Remove admin access from this account? They are signed out right away."
                     : "Make this account an admin? They will be able to manage payments, users and credits."}
@@ -443,7 +443,7 @@ export function CustomerProfile({
               )}
 
               {pendingAction === "history" ? (
-                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-red-400/5 px-3 py-1.5 text-small text-red-300">
+                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-red-300">
                   Permanently delete this account&apos;s stored Atom history?
                   <button
                     type="button"
@@ -479,7 +479,7 @@ export function CustomerProfile({
                   Sign out everywhere
                 </button>
               ) : (
-                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-red-400/5 px-3 py-1.5 text-small text-red-300">
+                <span className="flex items-center gap-2 rounded-lg border border-red-400/30 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-red-300">
                   Sign out every device this account is logged into?
                   <button
                     type="button"
@@ -588,7 +588,7 @@ export function CustomerProfile({
               )}
             </form>
             {creditConfirming && (
-              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-[rgb(var(--c-s-50)/0.05)] px-3 py-2 text-small text-slate-200">
+              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low px-3 py-2 text-small text-slate-200">
                 {Number(creditAmount) > 0 ? "Grant" : "Deduct"}{" "}
                 <span className="font-semibold text-slate-50">
                   {formatCredits(Math.abs(Number(creditAmount)))} credit{Math.abs(Number(creditAmount)) === 1 ? "" : "s"}

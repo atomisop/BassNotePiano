@@ -348,7 +348,7 @@ export function FamilyBundleFlow({ zelleHandle }: { zelleHandle: string }) {
         </div>
       </div>
 
-      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] bg-[rgb(var(--c-s-50)/0.05)] p-3.5 text-small text-slate-300">
+      <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-[rgb(var(--c-s-50)/0.2)] bg-neu-base shadow-pressed-low p-3.5 text-small text-slate-300">
         <input
           type="checkbox"
           checked={acknowledged}

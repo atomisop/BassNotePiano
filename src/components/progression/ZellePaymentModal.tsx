@@ -299,7 +299,7 @@ export function ZellePaymentModal({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4"
+          className="kb-fit fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4"
           initial="hidden"
           animate="visible"
           exit="hidden"

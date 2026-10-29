@@ -214,7 +214,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
             <div className="mt-3 space-y-2">
               {group.rows.map((row) =>
                 editingId === row.id ? (
-                  <div key={row.id} className="rounded-xl border border-[rgb(var(--c-s-50)/0.3)] p-3">
+                  <div key={row.id} className="rounded-xl border border-[rgb(var(--c-s-50)/0.3)] bg-neu-base shadow-pressed-low p-3">
                     <ScheduleForm
                       initial={{
                         dayOfWeek: row.dayOfWeek,
@@ -274,7 +274,7 @@ export function AdminScheduleManager({ schedules, onCreate, onUpdate, onSetActiv
                       </button>
                     </div>
                     {confirmOffId === row.id && (
-                      <div className="w-full rounded-lg border border-red-400/20 p-3 text-small text-slate-300 sm:basis-full">
+                      <div className="w-full rounded-lg border border-red-400/20 bg-neu-base shadow-pressed-low p-3 text-small text-slate-300 sm:basis-full">
                         <p>
                           {row.upcomingBookings} upcoming class{row.upcomingBookings === 1 ? " is" : "es are"} booked on this time. Turning it off stops new
                           bookings only. What should happen to the booked classes?

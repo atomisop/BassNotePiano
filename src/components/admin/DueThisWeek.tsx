@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { DueWeek } from "@/lib/adminDue";
+import { Hint } from "@/components/ui/Hint";
 
 const usd = (cents: number) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 
@@ -13,16 +14,18 @@ export function DueThisWeek({ week }: { week: DueWeek }) {
   const byDay = week.days.filter((d) => d.count > 0);
 
   return (
-    <section aria-label="Payments due in the next 7 days" className="rounded-2xl border border-(--neu-edge) p-4">
+    <section aria-label="Payments due in the next 7 days" className="rounded-2xl bg-neu-base shadow-raised-mid p-4">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-body font-semibold text-slate-50">Due in the next 7 days</h2>
+        <h2 className="flex items-center gap-1 text-body font-semibold text-slate-50">
+          Due in 7 days
+          <Hint label="What this counts">Subscribers whose next 28-day bill lands in the next week. Days are Eastern.</Hint>
+        </h2>
         <p className="text-small tabular-nums text-slate-400">
           {week.items.length === 0 ? "Nothing due" : `${usd(week.totalCents)} · ${week.items.length} ${week.items.length === 1 ? "bill" : "bills"}`}
         </p>
       </div>
-      <p className="mt-0.5 text-small text-slate-500">Subscribers whose next bill lands in the next week. Days are Eastern.</p>
 
-      <div className="mt-4 grid grid-cols-7 gap-2" role="img" aria-label={`Bills due per day: ${week.days.map((d) => `${d.weekday} ${d.count}`).join(", ")}`}>
+      <div className={week.items.length === 0 ? "hidden" : "mt-4 grid grid-cols-7 gap-2"} role="img" aria-label={`Bills due per day: ${week.days.map((d) => `${d.weekday} ${d.count}`).join(", ")}`}>
         {week.days.map((d) => (
           <div key={d.key} className="flex flex-col items-center gap-1.5">
             <span className="h-4 text-[0.6875rem] font-semibold tabular-nums text-slate-300">{d.count > 0 ? d.count : ""}</span>

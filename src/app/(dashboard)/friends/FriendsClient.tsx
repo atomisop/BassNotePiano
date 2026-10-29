@@ -227,7 +227,7 @@ export function FriendsClient({ username, friends: allFriends, receivedRequests:
                       <ProfileLine profile={friend} />
                     </div>
                     {blockingId === friend.id ? (
-                      <span className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-red-900 bg-red-400/5 px-3 py-1.5 text-small text-red-300">
+                      <span className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-red-900 bg-neu-base shadow-pressed-low px-3 py-1.5 text-small text-red-300">
                         Block {friend.name ?? friend.username ?? "them"}?
                         <button
                           type="button"

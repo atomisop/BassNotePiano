@@ -40,7 +40,7 @@ export interface StudentSchedulerProps {
   bookings: SchedulerBooking[];
   /** The plan's own controls (pause, move the weekly time), drawn by the page. */
   planControls?: React.ReactNode;
-  loadOpenSlots: () => Promise<{ open: SchedulerSlot[]; booked: BookedTime[] }>;
+  loadOpenSlots: () => Promise<{ open: SchedulerSlot[]; booked: BookedTime[]; weekdays: number[] }>;
   onMove: (bookingId: string, scheduleId: string, occurrenceDateMs: number, chunkIndex: number) => Promise<Result>;
   onMoveToTime: (bookingId: string, date: string, time: string) => Promise<Result>;
   onCancel: (bookingId: string, reason?: string) => Promise<Result>;
@@ -56,7 +56,7 @@ const iconBtn = "tap inline-flex h-8 items-center justify-center gap-1 rounded-l
 export function StudentScheduler(props: StudentSchedulerProps) {
   const { studentId, studentName, bookings, planControls, loadOpenSlots, onMove, onMoveToTime, onCancel, onBook, onMark, onUndo, onSetInPerson } = props;
   const router = useRouter();
-  const [times, setTimes] = useState<{ open: SchedulerSlot[]; booked: BookedTime[] } | null>(null);
+  const [times, setTimes] = useState<{ open: SchedulerSlot[]; booked: BookedTime[]; weekdays: number[] } | null>(null);
   const [slotsBusy, setSlotsBusy] = useState(false);
   const [moving, setMoving] = useState<SchedulerBooking | null>(null);
   const [picked, setPicked] = useState<SchedulerSlot | null>(null);
@@ -273,7 +273,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
         }
       >
         {confirmNew ? (
-          <div className="rounded-xl border border-[rgb(var(--c-s-50)/0.35)] bg-[rgb(var(--c-s-50)/0.06)] p-4">
+          <div className="rounded-xl border border-[rgb(var(--c-s-50)/0.35)] bg-neu-base shadow-pressed-low p-4">
             <p className="text-body font-semibold text-slate-50">This time does not exist yet</p>
             <p className="mt-1 text-small text-slate-300">
               {day} at {ownTime} is not one of your weekly times. Create it as a one-time slot and move {studentName} there?
@@ -282,7 +282,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
         ) : times === null ? (
           <p className="text-small text-slate-500">Loading open times…</p>
         ) : (
-          <SlotCalendarPicker slots={slotsReady} booked={bookedReady} allowAnyDay day={day} onDay={setDay} picked={picked} onPick={setPicked} ownTime={ownTime} onOwnTime={setOwnTime} />
+          <SlotCalendarPicker slots={slotsReady} booked={bookedReady} weekdays={times?.weekdays ?? []} allowAnyDay day={day} onDay={setDay} picked={picked} onPick={setPicked} ownTime={ownTime} onOwnTime={setOwnTime} />
         )}
         {error && <p role="alert" className="mt-3 text-small text-red-400">{error}</p>}
       </Dialog>
@@ -313,7 +313,7 @@ export function StudentScheduler(props: StudentSchedulerProps) {
         {times === null ? (
           <p className="text-small text-slate-500">Loading open times…</p>
         ) : (
-          <SlotCalendarPicker slots={slotsReady} booked={[]} allowAnyDay={false} day={bookDay} onDay={setBookDay} picked={booking} onPick={setBooking} ownTime="" onOwnTime={() => {}} />
+          <SlotCalendarPicker slots={slotsReady} booked={[]} weekdays={[]} allowAnyDay={false} day={bookDay} onDay={setBookDay} picked={booking} onPick={setBooking} ownTime="" onOwnTime={() => {}} />
         )}
         {error && <p role="alert" className="mt-3 text-small text-red-400">{error}</p>}
       </Dialog>
