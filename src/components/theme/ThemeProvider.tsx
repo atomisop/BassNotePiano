@@ -1,5 +1,6 @@
 "use client";
 
+import { flushSync } from "react-dom";
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
@@ -101,8 +102,33 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [pathname, resolvedTheme]);
 
   const setTheme = useCallback((next: ThemeChoice) => {
-    setThemeState(next);
-    setResolvedTheme(resolve(next));
+    const change = () => {
+      setThemeState(next);
+      setResolvedTheme(resolve(next));
+    };
+    // A slow, even crossfade between the two looks instead of a blink: the browser's View Transition where it exists (the change has
+    // to land synchronously, hence flushSync), otherwise every color eases over the same time.
+    const root = document.documentElement;
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    type Doc = Document & { startViewTransition?: (cb: () => void) => { finished?: Promise<unknown> } };
+    const start = (document as Doc).startViewTransition;
+    if (reduced) {
+      change();
+    } else if (start) {
+      root.setAttribute("data-theme-switching", "");
+      try {
+        const transition = start.call(document, () => flushSync(change));
+        const clear = () => root.removeAttribute("data-theme-switching");
+        void transition.finished?.then(clear, clear);
+      } catch {
+        root.removeAttribute("data-theme-switching");
+        change();
+      }
+    } else {
+      root.setAttribute("data-theme-fade", "");
+      change();
+      window.setTimeout(() => root.removeAttribute("data-theme-fade"), 800);
+    }
     try {
       localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {

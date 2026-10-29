@@ -1341,13 +1341,59 @@
    so the content glides over. The transitions only switch on after the saved choice has been applied (`data-sidebar-anim`), so a page
    load never animates a sidebar that was left shrunk. */
 @media (min-width: 1024px) {
+  /* Everything that leaves when the rail closes is eased out, not switched off: the width glides on Apple's curve, the labels fade first
+     and then narrow to nothing, the group titles and the spotlight fold up, and a column of small alert icons fades in to take their
+     place. Hidden pieces also leave the reading order (visibility) once they are gone. */
+  .app-sidebar .sb-label {
+    max-width: 14rem;
+    opacity: 1;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .app-sidebar .sb-group-title {
+    max-height: 2rem;
+    opacity: 1;
+    overflow: hidden;
+  }
+  .app-sidebar .sb-spotlight {
+    max-height: 40rem;
+    opacity: 1;
+    overflow: hidden;
+  }
+  .app-sidebar .sb-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    overflow: hidden;
+    pointer-events: none;
+  }
   html[data-sidebar-anim] .app-sidebar {
     transition:
-      width 320ms var(--ease-ios),
-      padding 320ms var(--ease-ios);
+      width 380ms var(--ease-ios),
+      padding 380ms var(--ease-ios),
+      gap 380ms var(--ease-ios);
   }
   html[data-sidebar-anim] .app-shell-col {
-    transition: padding-left 320ms var(--ease-ios);
+    transition: padding-left 380ms var(--ease-ios);
+  }
+  html[data-sidebar-anim] .app-sidebar .sb-item {
+    transition: padding 380ms var(--ease-ios), gap 380ms var(--ease-ios), background-color 200ms, color 200ms, box-shadow 200ms, scale 420ms var(--ease-spring);
+  }
+  html[data-sidebar-anim] .app-sidebar .sb-label {
+    transition: opacity 240ms var(--ease-ios) 130ms, max-width 380ms var(--ease-ios), visibility 0s;
+  }
+  html[data-sidebar-anim] .app-sidebar .sb-group-title {
+    transition: opacity 220ms var(--ease-ios) 100ms, max-height 380ms var(--ease-ios), padding 380ms var(--ease-ios), visibility 0s;
+  }
+  html[data-sidebar-anim] .app-sidebar .sb-spotlight {
+    transition: opacity 240ms var(--ease-ios) 100ms, max-height 380ms var(--ease-ios), visibility 0s;
+  }
+  html[data-sidebar-anim] .app-sidebar .sb-rail {
+    transition: opacity 260ms var(--ease-ios), max-height 380ms var(--ease-ios), visibility 0s linear 380ms;
   }
   html[data-sidebar="collapsed"] .app-sidebar {
     width: 3.5rem;
@@ -1358,14 +1404,34 @@
   html[data-sidebar="collapsed"] .app-shell-col {
     padding-left: 3.5rem;
   }
-  html[data-sidebar="collapsed"] .app-sidebar .sb-label,
-  html[data-sidebar="collapsed"] .app-sidebar .sb-group-title,
+  html[data-sidebar="collapsed"] .app-sidebar .sb-label {
+    max-width: 0;
+    opacity: 0;
+    visibility: hidden;
+    margin: 0;
+  }
+  html[data-sidebar="collapsed"] .app-sidebar .sb-group-title {
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
   html[data-sidebar="collapsed"] .app-sidebar .sb-spotlight {
-    display: none;
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+  }
+  html[data-sidebar="collapsed"] .app-sidebar .sb-rail {
+    max-height: 30rem;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
   }
   html[data-sidebar="collapsed"] .app-sidebar .sb-item {
     justify-content: center;
     padding-inline: 0;
+    gap: 0;
   }
   /* A thin line between the groups stands in for their titles. */
   html[data-sidebar="collapsed"] .app-sidebar .sb-group + .sb-group {
@@ -1992,5 +2058,139 @@ a[class*="shadow-raised-low"][class*="h-9"]:not([class*="liquid"]) {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     background: rgb(var(--neu-base));
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Switching between light and dark is a slow, even crossfade (the old look melts into the new one) instead of a blink. Where the
+   browser has no View Transitions, every color eases over the same time instead.
+   --------------------------------------------------------------------------- */
+html[data-theme-switching]::view-transition-group(*),
+html[data-theme-switching]::view-transition-old(*),
+html[data-theme-switching]::view-transition-new(*) {
+  animation-duration: 750ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+html[data-theme-fade] *,
+html[data-theme-fade] *::before,
+html[data-theme-fade] *::after {
+  transition:
+    background-color 650ms cubic-bezier(0.4, 0, 0.2, 1),
+    color 650ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 650ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 650ms cubic-bezier(0.4, 0, 0.2, 1),
+    fill 650ms cubic-bezier(0.4, 0, 0.2, 1),
+    stroke 650ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Liquid press. Pressing a glass control makes it swell and light up (it does not dip like a plain button); letting go releases it with
+   a quick stretch and wobble that settles, like a drop of liquid. LiquidPress.tsx sets the two states; nothing here runs for people who
+   ask for reduced motion.
+   --------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  [data-lg-press] {
+    scale: 1.07 !important;
+    filter: brightness(1.22) saturate(1.25) drop-shadow(0 0 10px rgb(255 255 255 / 0.32));
+    transition-duration: 130ms !important;
+    transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1) !important;
+  }
+  [data-lg-release] {
+    animation: lg-release 680ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  }
+}
+@keyframes lg-release {
+  0% {
+    transform: scale(1.04, 0.95);
+    filter: brightness(1.22) drop-shadow(0 0 10px rgb(255 255 255 / 0.32));
+  }
+  22% {
+    transform: scale(0.965, 1.05);
+  }
+  45% {
+    transform: scale(1.025, 0.985);
+    filter: brightness(1.08) drop-shadow(0 0 5px rgb(255 255 255 / 0.15));
+  }
+  68% {
+    transform: scale(0.992, 1.006);
+  }
+  100% {
+    transform: scale(1, 1);
+    filter: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The search window: a Mac-style minimize and maximize. It grows out of the button that opened it (the offsets come from command.tsx) with a
+   soft overshoot, and folds back into the same button when it closes. Behind it the page is only softly blurred, not grayed out.
+   --------------------------------------------------------------------------- */
+.cmd-scrim {
+  background: rgb(0 0 0 / 0.04);
+  -webkit-backdrop-filter: blur(6px) saturate(1.1);
+  backdrop-filter: blur(6px) saturate(1.1);
+}
+.cmd-scrim[data-state="open"] {
+  animation: cmd-scrim-in 320ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+.cmd-scrim[data-state="closed"] {
+  animation: cmd-scrim-out 260ms cubic-bezier(0.4, 0, 0.6, 1) both;
+}
+.cmd-window {
+  transform-origin: center center;
+}
+.cmd-window[data-state="open"] {
+  animation: cmd-max 460ms cubic-bezier(0.22, 1.08, 0.36, 1) both;
+}
+.cmd-window[data-state="closed"] {
+  animation: cmd-min 300ms cubic-bezier(0.5, 0, 0.75, 0.4) both;
+}
+@keyframes cmd-max {
+  0% {
+    opacity: 0;
+    transform: translate(var(--cmd-dx, 0px), var(--cmd-dy, 0px)) scale(0.08, 0.04);
+    filter: blur(4px);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1, 1);
+    filter: blur(0);
+  }
+}
+@keyframes cmd-min {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1, 1);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--cmd-dx, 0px), var(--cmd-dy, 0px)) scale(0.08, 0.04);
+    filter: blur(4px);
+  }
+}
+@keyframes cmd-scrim-in {
+  from {
+    opacity: 0;
+    -webkit-backdrop-filter: blur(0);
+    backdrop-filter: blur(0);
+  }
+}
+@keyframes cmd-scrim-out {
+  to {
+    opacity: 0;
+    -webkit-backdrop-filter: blur(0);
+    backdrop-filter: blur(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cmd-window[data-state="open"],
+  .cmd-window[data-state="closed"] {
+    animation-duration: 120ms;
+    animation-name: cmd-scrim-in;
   }
 }

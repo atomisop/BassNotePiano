@@ -119,15 +119,14 @@ export function AppSidebar({ unreadMessageCount: initial, cards, isAdmin }: { un
       ))}
 
       {/* Discord invitation (until linked), next class, streak, admin counts and the rest: one card at a time. */}
-      <div className="sb-spotlight">
-        <SidebarSpotlight initial={cards} isAdmin={isAdmin} />
-      </div>
+      <SidebarSpotlight initial={cards} isAdmin={isAdmin} />
 
       {/* Search (opens the command menu) next to the light/dark switch. */}
       <div className="sb-tools sticky bottom-0 mt-auto flex items-center gap-2 bg-ground pt-1">
         <button
           type="button"
           onClick={() => window.dispatchEvent(new Event(OPEN_COMMAND_EVENT))}
+          data-search-trigger=""
           title="Search and commands"
           className="sb-item press-soft flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl bg-neu-base px-3 text-small font-medium text-slate-300 shadow-raised-low transition hover:text-slate-100 hover:shadow-raised-mid active:shadow-pressed-low focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
