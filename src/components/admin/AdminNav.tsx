@@ -60,7 +60,7 @@ function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
   const cancelClose = useCallback(() => window.clearTimeout(closeTimer.current), []);
   const closeSoon = useCallback(() => {
     window.clearTimeout(closeTimer.current);
-    closeTimer.current = window.setTimeout(() => setOpenId(null), 160);
+    closeTimer.current = window.setTimeout(() => setOpenId(null), 120);
   }, []);
 
   // A page change closes it.
@@ -69,7 +69,15 @@ function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
   // While a flyout is open and the pointer is on neither the row nor the flyout, keep it as long as the pointer is inside the triangle.
   useEffect(() => {
     if (!openId) return;
+    let frame = 0;
     const onMove = (e: MouseEvent) => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        judge(e);
+      });
+    };
+    const judge = (e: MouseEvent) => {
       const inside = (el: Element | null) => !!el && el.contains(e.target as Node);
       if (inside(flyoutRef.current) || inside(navRef.current?.querySelector(`[data-hub="${openId}"]`) ?? null)) return cancelClose();
       const rect = flyoutRef.current?.getBoundingClientRect();
@@ -80,8 +88,11 @@ function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
       }
       closeSoon();
     };
-    document.addEventListener("mousemove", onMove);
-    return () => document.removeEventListener("mousemove", onMove);
+    document.addEventListener("mousemove", onMove, { passive: true });
+    return () => {
+      document.removeEventListener("mousemove", onMove);
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, [openId, cancelClose, closeSoon]);
 
   useEffect(() => () => window.clearTimeout(closeTimer.current), []);
@@ -132,11 +143,11 @@ function AdminSideRail({ badges }: { badges: AdminNavBadges }) {
               <span className="truncate">{hub.label}</span>
               <Count count={hubWaiting(hub, badges)} className="ml-auto" />
             </Link>
-            {hasPages && openId === hub.id && (
-              <div ref={flyoutRef} className="absolute left-full top-0 z-30 pl-1.5" role="group" aria-label={`${hub.label} pages`}>
+            {hasPages && (
+              <div ref={openId === hub.id ? flyoutRef : undefined} data-open={openId === hub.id} className="admin-flyout absolute left-full top-0 z-30 pl-1.5" role="group" aria-label={`${hub.label} pages`}>
                 <ul className="min-w-44 rounded-card bg-neu-lift p-1.5 shadow-raised-high">
-                  {hub.pages.map((page) => (
-                    <li key={page.href}>
+                  {hub.pages.map((page, i) => (
+                    <li key={page.href} style={{ "--i": i } as React.CSSProperties}>
                       <Link
                         href={page.href}
                         prefetch
